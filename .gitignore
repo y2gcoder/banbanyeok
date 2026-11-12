@@ -1,0 +1,31 @@
+# 비밀값
+.env
+.env.*
+!.env.tpl
+!.env.example
+mise.local.toml
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# OS / 에디터
+.DS_Store
+.idea/
+.vscode/
+
+# 빌드 산출물
+__pycache__/
+*.pyc
+build/
+.gradle/
+node_modules/
+.next/
+.open-next/
+.wrangler/
+
+# 원본 데이터 (용량·권리)
+data/raw/
+data/cache/

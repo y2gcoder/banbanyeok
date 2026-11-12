@@ -1,0 +1,41 @@
+{
+  "SearchInfoBySubwayNameService": {
+    "list_total_count": 799,
+    "RESULT": {
+      "CODE": "INFO-000",
+      "MESSAGE": "정상 처리되었습니다"
+    },
+    "row": [
+      {
+        "STATION_CD": "1846",
+        "STATION_NM": "수원",
+        "LINE_NUM": "수인분당선",
+        "FR_CODE": "K245"
+      },
+      {
+        "STATION_CD": "1874",
+        "STATION_NM": "오목천",
+        "LINE_NUM": "수인분당선",
+        "FR_CODE": "K247"
+      },
+      {
+        "STATION_CD": "1888",
+        "STATION_NM": "인하대",
+        "LINE_NUM": "수인분당선",
+        "FR_CODE": "K269"
+      },
+      {
+        "STATION_CD": "2524",
+        "STATION_NM": "영등포구청",
+        "LINE_NUM": "05호선",
+        "FR_CODE": "523"
+      },
+      {
+        "STATION_CD": "2525",
+        "STATION_NM": "영등포시장",
+        "LINE_NUM": "05호선",
+        "FR_CODE": "524"
+      }
+    ]
+  }
+}

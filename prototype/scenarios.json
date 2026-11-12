@@ -1,0 +1,642 @@
+[
+  {
+    "id": "brief_70_vs_30_40",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "equal70",
+        "shorter"
+      ],
+      "times": [
+        [
+          70,
+          30
+        ],
+        [
+          70,
+          40
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "shorter",
+    "reason": "시간 차이 0보다 최장 40분이 우선이다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "fair_max_before_spread",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "quick",
+        "balanced"
+      ],
+      "times": [
+        [
+          10,
+          38
+        ],
+        [
+          40,
+          45
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "quick",
+    "reason": "차이가 커도 최장 40분이 45분보다 작다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "fair_spread_tie",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "uneven",
+        "balanced"
+      ],
+      "times": [
+        [
+          10,
+          35
+        ],
+        [
+          40,
+          40
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "balanced",
+    "reason": "최장 40분 동점이면 차이 5분이 30분보다 작다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "fair_total_third",
+    "input": {
+      "participants": [
+        "A",
+        "B",
+        "C"
+      ],
+      "candidates": [
+        "low",
+        "high"
+      ],
+      "times": [
+        [
+          10,
+          10
+        ],
+        [
+          20,
+          35
+        ],
+        [
+          40,
+          40
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "low",
+    "reason": "최장 40분, 차이 30분 동점에서 합계 70분이 85분보다 작다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "fast_total",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "one_side",
+        "middle"
+      ],
+      "times": [
+        [
+          0,
+          30
+        ],
+        [
+          50,
+          30
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fast",
+      "tolerance": 0
+    },
+    "expectedFirst": "one_side",
+    "reason": "합계 50분이 60분보다 작다.",
+    "expectedReasonContains": "합계"
+  },
+  {
+    "id": "fast_max_tie",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "one_side",
+        "middle"
+      ],
+      "times": [
+        [
+          0,
+          25
+        ],
+        [
+          50,
+          25
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fast",
+      "tolerance": 0
+    },
+    "expectedFirst": "middle",
+    "reason": "합계 50분 동점에서 최장 25분을 고른다.",
+    "expectedReasonContains": "합계"
+  },
+  {
+    "id": "favor_with_cap",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "baseline",
+        "near_A",
+        "extreme"
+      ],
+      "times": [
+        [
+          30,
+          10,
+          0
+        ],
+        [
+          30,
+          44,
+          70
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "mode": "favor:A",
+      "tolerance": 0
+    },
+    "expectedFirst": "near_A",
+    "reason": "공평 기준 B 30분의 상한 45분을 지키며 A 10분이 최소다.",
+    "expectedReasonContains": "A 우선"
+  },
+  {
+    "id": "favor_relative_cap",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "baseline",
+        "over"
+      ],
+      "times": [
+        [
+          20,
+          5
+        ],
+        [
+          20,
+          31
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "favor:A",
+      "tolerance": 0
+    },
+    "expectedFirst": "baseline",
+    "reason": "B 상한 20+min(15,10)=30분을 넘는 후보는 제외한다.",
+    "expectedReasonContains": "A 우선"
+  },
+  {
+    "id": "favor_absolute_cap",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "baseline",
+        "over"
+      ],
+      "times": [
+        [
+          40,
+          5
+        ],
+        [
+          40,
+          56
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "favor:A",
+      "tolerance": 0
+    },
+    "expectedFirst": "baseline",
+    "reason": "B 상한 40+min(15,20)=55분을 넘는 후보는 제외한다.",
+    "expectedReasonContains": "A 우선"
+  },
+  {
+    "id": "favor_other_person",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "baseline",
+        "near_B"
+      ],
+      "times": [
+        [
+          30,
+          44
+        ],
+        [
+          30,
+          10
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "favor:B",
+      "tolerance": 0
+    },
+    "expectedFirst": "near_B",
+    "reason": "B 우선 선택도 A의 상한 45분을 지킨다.",
+    "expectedReasonContains": "B 우선"
+  },
+  {
+    "id": "fair_four_people",
+    "input": {
+      "participants": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "candidates": [
+        "max45",
+        "max50"
+      ],
+      "times": [
+        [
+          20,
+          25
+        ],
+        [
+          30,
+          25
+        ],
+        [
+          40,
+          25
+        ],
+        [
+          45,
+          50
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "max45",
+    "reason": "4명에서도 최장 시간을 최소화한다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "unreachable",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "broken",
+        "reachable"
+      ],
+      "times": [
+        [
+          null,
+          30
+        ],
+        [
+          5,
+          40
+        ]
+      ],
+      "transfers": [
+        [
+          null,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "reachable",
+    "reason": "한 명이라도 경로가 없으면 후보에서 제외한다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "stable_station_id",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "z",
+        "a"
+      ],
+      "times": [
+        [
+          20,
+          20
+        ],
+        [
+          20,
+          20
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "a",
+    "reason": "모든 수치 동점은 역 ID 사전순으로 고정한다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "strict_minimax_default",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "shorter",
+        "balanced"
+      ],
+      "times": [
+        [
+          10,
+          40
+        ],
+        [
+          40,
+          42
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 0
+    },
+    "expectedFirst": "shorter",
+    "reason": "기본 허용오차 0이므로 최장 40분을 고른다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "optional_tolerance",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "shorter",
+        "balanced"
+      ],
+      "times": [
+        [
+          10,
+          40
+        ],
+        [
+          40,
+          42
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "fair",
+      "tolerance": 3
+    },
+    "expectedFirst": "balanced",
+    "reason": "옵션 3분이면 최장 40~43분을 묶고 차이가 작은 역을 고른다.",
+    "expectedReasonContains": "최장"
+  },
+  {
+    "id": "favor_cap_inclusive",
+    "input": {
+      "participants": [
+        "A",
+        "B"
+      ],
+      "candidates": [
+        "baseline",
+        "boundary"
+      ],
+      "times": [
+        [
+          30,
+          10
+        ],
+        [
+          30,
+          45
+        ]
+      ],
+      "transfers": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "mode": "favor:A",
+      "tolerance": 0
+    },
+    "expectedFirst": "boundary",
+    "reason": "상한과 정확히 같은 45분은 허용한다.",
+    "expectedReasonContains": "A 우선"
+  }
+]
