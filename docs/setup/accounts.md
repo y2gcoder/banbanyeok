@@ -18,7 +18,7 @@
 
 | 상태 | 계정 / 키 | 왜 필요한가 | 1Password 항목 | 비용 | 메모 |
 |---|---|---|---|---|---|
-| ⬜ | GCP 프로젝트 + 결제 계정 연결 | Cloud Run(서버), GCS(데이터 산출물), Secret Manager, WIF(키 없는 배포) | `gcp-project` (프로젝트 ID만) | 무료 구간 내 0원 목표 | 예산 알림(예: 월 5천 원)을 꼭 설정 |
+| ✅ | GCP 프로젝트 `banbanyeok-7eoxn` + 전용 결제 계정 `banbanyeok` | Cloud Run(서버), GCS(데이터 산출물), Secret Manager, WIF(키 없는 배포) | `gcp-project` (프로젝트 ID만) | 무료 구간 내 0원 목표 | 2026-11-13 완료. 예산 알림 월 5천 원(50·90·100%, 예측 100%). gcloud 구성 `banbanyeok`(서울 리전), 저장소 폴더에서는 `mise.local.toml`로 자동 선택. API: run, artifactregistry, secretmanager, storage, iamcredentials, sts, billingbudgets |
 | ⬜ | Postgres (Neon 또는 서울 리전 후보) | 방, 참여자, 익명 사용자 | `db-url-prod`, `db-url-dev` | 무료 | **리전은 S0에서 결정** (서버가 서울이라 서울 리전 선호) |
 | ⬜ | Cloudflare 계정 (Workers) | 웹 호스팅 (Next.js + OpenNext). 상업 이용 가능 | `cloudflare-api-token` (CI 배포용, 권한 최소화) | 무료, 필요 시 월 5달러 | 동적 OG의 CPU 한도는 S0b에서 실측 |
 | ⬜ | PostHog | 사용 통계 | `posthog-project-key` (공개되는 `phc_` 키), `posthog-personal-api-key` (필요할 때만) | 무료 (월 100만 이벤트) | US/EU 리전은 S0에서 결정 |
