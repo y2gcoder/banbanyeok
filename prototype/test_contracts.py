@@ -47,6 +47,17 @@ class LinkVectorTests(unittest.TestCase):
                                                       decoded['nicknames'])
                 self.assertEqual(item['expectedQuery'], again)
 
+    def test_nickname_separator_is_dot_and_encoded_queries_are_rfc3986_safe(self):
+        vectors = json.loads(gen_link_vectors.VECTORS_PATH.read_text(encoding='utf-8'))
+        allowed = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.=&')
+        for item in vectors['encode']:
+            with self.subTest(item=item['id']):
+                self.assertTrue(set(item['expectedQuery']) <= allowed, item['expectedQuery'])
+        nick = [i for i in vectors['encode'] if i['input']['nicknames']]
+        self.assertTrue(any('.' in i['expectedQuery'].split('n=')[1] for i in nick))
+        self.assertEqual('BAD_NICKNAMES', next(v['expectedError'] for v in vectors['decode']
+                                               if v['id'] == 'nickname_pipe_separator_rejected'))
+
 
 class FixtureTests(unittest.TestCase):
     def test_fixtures_are_reproduced(self):

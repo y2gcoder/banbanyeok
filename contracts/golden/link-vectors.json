@@ -73,7 +73,7 @@
           "지연"
         ]
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=66-87IiY|7KeA7Jew"
+      "expectedQuery": "v=1&o=03v.130&m=f&n=66-87IiY.7KeA7Jew"
     },
     {
       "id": "nicknames_partial",
@@ -91,7 +91,7 @@
           null
         ]
       },
-      "expectedQuery": "v=1&o=03v.130.225&m=q&n=|7KeA7Jew|",
+      "expectedQuery": "v=1&o=03v.130.225&m=q&n=.7KeA7Jew.",
       "note": "비어 있는 별칭은 빈 세그먼트"
     },
     {
@@ -108,7 +108,7 @@
           null
         ]
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE|"
+      "expectedQuery": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE."
     },
     {
       "id": "nickname_emoji_20_code_points",
@@ -124,7 +124,7 @@
           null
         ]
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI|",
+      "expectedQuery": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI.",
       "note": "길이는 UTF-16 단위가 아니라 코드포인트로 센다(JS의 String.length와 다르다)"
     },
     {
@@ -141,7 +141,7 @@
           "ÿÿ"
         ]
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=Pz8-Pg|w7_Dvw",
+      "expectedQuery": "v=1&o=03v.130&m=f&n=Pz8-Pg.w7_Dvw",
       "note": "base64url의 - 와 _ 가 나오는 입력"
     }
   ],
@@ -203,7 +203,7 @@
     },
     {
       "id": "roundtrip_nicknames_korean",
-      "query": "v=1&o=03v.130&m=f&n=66-87IiY|7KeA7Jew",
+      "query": "v=1&o=03v.130&m=f&n=66-87IiY.7KeA7Jew",
       "expected": {
         "origins": [
           "03v",
@@ -219,7 +219,7 @@
     },
     {
       "id": "roundtrip_nicknames_partial",
-      "query": "v=1&o=03v.130.225&m=q&n=|7KeA7Jew|",
+      "query": "v=1&o=03v.130.225&m=q&n=.7KeA7Jew.",
       "expected": {
         "origins": [
           "03v",
@@ -237,7 +237,7 @@
     },
     {
       "id": "roundtrip_nickname_ascii_20_max",
-      "query": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE|",
+      "query": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE.",
       "expected": {
         "origins": [
           "03v",
@@ -253,7 +253,7 @@
     },
     {
       "id": "roundtrip_nickname_emoji_20_code_points",
-      "query": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI|",
+      "query": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI.",
       "expected": {
         "origins": [
           "03v",
@@ -269,7 +269,7 @@
     },
     {
       "id": "roundtrip_nickname_base64_with_url_chars",
-      "query": "v=1&o=03v.130&m=f&n=Pz8-Pg|w7_Dvw",
+      "query": "v=1&o=03v.130&m=f&n=Pz8-Pg.w7_Dvw",
       "expected": {
         "origins": [
           "03v",
@@ -313,7 +313,7 @@
     },
     {
       "id": "percent_encoded_separator_accepted",
-      "query": "v=1&o=03v.130&m=f&n=66-87IiY%7C7KeA7Jew",
+      "query": "v=1&o=03v.130&m=f&n=66-87IiY%2E7KeA7Jew",
       "expected": {
         "origins": [
           "03v",
@@ -326,7 +326,7 @@
           "지연"
         ]
       },
-      "note": "`|`가 %7C로 와도 값을 먼저 퍼센트 디코딩한다"
+      "note": "`.`가 %2E로 와도 값을 먼저 퍼센트 디코딩한다"
     },
     {
       "id": "percent_encoded_dot_accepted",
@@ -425,28 +425,34 @@
     },
     {
       "id": "nickname_padding_rejected",
-      "query": "v=1&o=03v.130&m=f&n=7KeA==|7KeA",
+      "query": "v=1&o=03v.130&m=f&n=7KeA==.7KeA",
       "expectedError": "BAD_NICKNAMES"
     },
     {
       "id": "nickname_standard_base64_rejected",
-      "query": "v=1&o=03v.130&m=f&n=+/+/|7KeA",
+      "query": "v=1&o=03v.130&m=f&n=+/+/.7KeA",
       "expectedError": "BAD_NICKNAMES"
     },
     {
       "id": "nickname_invalid_utf8",
-      "query": "v=1&o=03v.130&m=f&n=_w|7KeA",
+      "query": "v=1&o=03v.130&m=f&n=_w.7KeA",
       "expectedError": "BAD_NICKNAMES",
       "note": "0xFF 한 바이트"
     },
     {
+      "id": "nickname_pipe_separator_rejected",
+      "query": "v=1&o=03v.130&m=f&n=66-87IiY|7KeA7Jew",
+      "expectedError": "BAD_NICKNAMES",
+      "note": "옛 구분자 `|`는 더 이상 쓰지 않는다"
+    },
+    {
       "id": "nickname_all_empty_not_canonical",
-      "query": "v=1&o=03v.130&m=f&n=|",
+      "query": "v=1&o=03v.130&m=f&n=.",
       "expectedError": "BAD_NICKNAMES"
     },
     {
       "id": "nickname_21_chars_rejected",
-      "query": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWFh|",
+      "query": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWFh.",
       "expectedError": "BAD_NICKNAMES"
     },
     {

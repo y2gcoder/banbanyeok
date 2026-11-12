@@ -69,7 +69,7 @@ def encode_query(origins, mode, favor_index=None, nicknames=None):
         for name in nicknames:
             if name and len(name) > MAX_NICKNAME_CODE_POINTS:
                 raise ValueError('nickname length')
-        parts.append('n=' + '|'.join(_b64url_encode(name or '') for name in nicknames))
+        parts.append('n=' + '.'.join(_b64url_encode(name or '') for name in nicknames))
     return '&'.join(parts)
 
 
@@ -112,7 +112,7 @@ def decode_query(query):
         raise LinkError('BAD_MODE')
     nicknames = None
     if 'n' in values:
-        segments = values['n'].split('|')
+        segments = values['n'].split('.')
         if len(segments) != len(origins):
             raise LinkError('BAD_NICKNAMES')
         nicknames = []
@@ -166,7 +166,7 @@ def build_vectors():
     # 비정규지만 허용되는 입력
     add_decode('param_order_is_free', f'm=f&o={c[0]}.{c[1]}&v=1', '파라미터 순서는 상관없다')
     add_decode('unknown_params_ignored', f'v=1&o={c[0]}.{c[1]}&m=q&utm_source=kakao&x=%ED%95%9C', '알 수 없는 키는 무시한다')
-    add_decode('percent_encoded_separator_accepted', f'v=1&o={c[0]}.{c[1]}&m=f&n=66-87IiY%7C7KeA7Jew', '`|`가 %7C로 와도 값을 먼저 퍼센트 디코딩한다')
+    add_decode('percent_encoded_separator_accepted', f'v=1&o={c[0]}.{c[1]}&m=f&n=66-87IiY%2E7KeA7Jew', '`.`가 %2E로 와도 값을 먼저 퍼센트 디코딩한다')
     add_decode('percent_encoded_dot_accepted', f'v=1&o={c[0]}%2E{c[1]}&m=f')
     # 거부
     add_decode('missing_version', f'o={c[0]}.{c[1]}&m=f')
@@ -185,12 +185,13 @@ def build_vectors():
     add_decode('favor_index_out_of_range', f'v=1&o={c[0]}.{c[1]}&m=p2')
     add_decode('duplicate_param', f'v=1&v=1&o={c[0]}.{c[1]}&m=f')
     add_decode('nickname_count_mismatch', f'v=1&o={c[0]}.{c[1]}&m=f&n=64')
-    add_decode('nickname_padding_rejected', f'v=1&o={c[0]}.{c[1]}&m=f&n=7KeA==|7KeA')
-    add_decode('nickname_standard_base64_rejected', f'v=1&o={c[0]}.{c[1]}&m=f&n=+/+/|7KeA')
-    add_decode('nickname_invalid_utf8', f'v=1&o={c[0]}.{c[1]}&m=f&n=_w|7KeA', '0xFF 한 바이트')
-    add_decode('nickname_all_empty_not_canonical', f'v=1&o={c[0]}.{c[1]}&m=f&n=|')
+    add_decode('nickname_padding_rejected', f'v=1&o={c[0]}.{c[1]}&m=f&n=7KeA==.7KeA')
+    add_decode('nickname_standard_base64_rejected', f'v=1&o={c[0]}.{c[1]}&m=f&n=+/+/.7KeA')
+    add_decode('nickname_invalid_utf8', f'v=1&o={c[0]}.{c[1]}&m=f&n=_w.7KeA', '0xFF 한 바이트')
+    add_decode('nickname_pipe_separator_rejected', f'v=1&o={c[0]}.{c[1]}&m=f&n=66-87IiY|7KeA7Jew', '옛 구분자 `|`는 더 이상 쓰지 않는다')
+    add_decode('nickname_all_empty_not_canonical', f'v=1&o={c[0]}.{c[1]}&m=f&n=.')
     too_long = _b64url_encode('a' * 21)
-    add_decode('nickname_21_chars_rejected', f'v=1&o={c[0]}.{c[1]}&m=f&n={too_long}|')
+    add_decode('nickname_21_chars_rejected', f'v=1&o={c[0]}.{c[1]}&m=f&n={too_long}.')
     add_decode('malformed_percent_escape', f'v=1&o={c[0]}.{c[1]}&m=%ZZ')
 
     return {
