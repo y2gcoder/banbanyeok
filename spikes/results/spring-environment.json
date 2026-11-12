@@ -1,0 +1,15 @@
+{
+  "spring_boot": "4.1.2",
+  "kotlin": "2.4.21",
+  "java": "Temurin 25.0.5+8",
+  "gradle": "9.3.1",
+  "postgres_server": "18.6 Debian arm64 Docker postgres:18",
+  "hibernate": "7.4.13.Final",
+  "postgres_jdbc": "42.7.14",
+  "flyway": "12.4.0",
+  "db_aot_jdbc_failure": "jdbcDialect AOT processing -> DataSourceProperties: Failed to determine a suitable driver class; environment and system properties were attempted; no successful JDBC AOT result",
+  "jpa_aot": "JVM mode succeeded; virtual threads enabled during AOT processing",
+  "virtual_threads": "X-Virtual-Thread=true asserted on every successful sample",
+  "database_migrations": "one warmup creates schema; timed launches validate existing migration; no SQL in fake recommend",
+  "memory": "ps RSS before jcmd; jcmd GC.heap_info heap snapshot after recommend; no forced GC; RSS is not peak"
+}

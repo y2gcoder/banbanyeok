@@ -25,8 +25,8 @@
 | plane 분리 | control = 파이프라인 + 검증 게이트 + 해시 산출물을 GCS에 발행 + manifest 포인터. data = 서버 + 웹. 관리자 서버 없음 | 코디네이터, C3 |
 | 비밀값 | 원본은 개인 1Password. 로컬은 `.env.tpl` + `op run`, CI는 OIDC(WIF) + 서비스 계정 또는 Environment secrets, 런타임은 Secret Manager | 사용자, C3 |
 | 웹 계산 | **웹은 추천을 직접 계산하지 않고 서버 API를 호출**. 웹과 서버의 결합은 `contracts/openapi.yaml`(contract-first)로만. KMP js 타깃은 끔. 입력 화면이 열릴 때 `/healthz`로 서버를 미리 깨움 | 사용자, 코디네이터 |
-| 서버 구조 | Gradle 멀티모듈 모듈러 모놀리스: `server/{app, room, recommendation, artifact}` + `build-logic` 관례 플러그인. 기능 모듈끼리 의존 금지. 헥사고널은 아님. 프레임워크는 Spring Boot(MVC + 가상 스레드, JDBC, JPA 없음)가 유력하며 S0b 실측 후 확정 | 사용자, 코디네이터 |
-| 웹 세부 | TypeScript, Tailwind v4, shadcn/ui(디자인 토큰 자체 설정), Pretendard, openapi-typescript + openapi-fetch, RSC + TanStack Query, nuqs(URL 상태), 전역 상태 없음, zod, es-hangul(초성 검색), Vitest, Playwright | 코디네이터 |
+| 서버 구조 | Gradle 멀티모듈 모듈러 모놀리스: `server/{app, room, recommendation, artifact}` + `build-logic` 관례 플러그인. 기능 모듈끼리 의존 금지. 헥사고널은 아님. 프레임워크는 **Spring Boot(MVC + 가상 스레드) + Liquibase(SQL changelog)**. JPA/JDBC는 S0b 실측으로 결정. **대체 규칙: Spring 콜드스타트 때문에 상시 가동(min 1) 비용이 들어야 한다면 Ktor + 코루틴(+ Exposed)으로 간다.** 실제로 갈아끼울 곳에만 포트(`ArtifactStore`, `TravelTimeProvider`, `Clock`/`IdGenerator`) | 사용자, 코디네이터 |
+| 웹 세부 | TypeScript, Tailwind v4, shadcn/ui **Base UI 기반**(디자인 토큰 자체 설정, 역 검색은 Base UI Combobox), Pretendard, openapi-typescript + openapi-fetch, RSC + TanStack Query, nuqs(URL 상태), 전역 상태 없음, zod, es-hangul(초성 검색), Vitest, Playwright | 코디네이터 |
 | 정적 검사 | TS: 엄격한 tsc, Biome(포맷+린트), typescript-eslint 타입 규칙 일부, Knip, dependency-cruiser, 계약 동기화 검사. Kotlin: ktlint, detekt, Konsist. 골격을 만들 때 같이 넣고 CI에서 강제 | 사용자, 코디네이터 |
 | 골든 테스트 | `contracts/golden/`으로 이관하고 전체 순위 스냅샷을 추가. Python 오라클과 Kotlin 각 타깃이 같은 스냅샷을 통과 | C3 |
 

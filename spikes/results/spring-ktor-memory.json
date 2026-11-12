@@ -1,0 +1,242 @@
+[
+  {
+    "variant": "ktor-default",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-cp",
+      "<repo>/spikes/ktor/build/install/ktor-startup/lib/alpn-api-1.1.3.v20160715.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/annotations-23.0.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/config-1.4.9.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-reflect-2.3.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-stdlib-2.4.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-coroutines-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-bytestring-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-core-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-serialization-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-events-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-cio-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-io-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-network-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-serialization-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-core-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-netty-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-startup.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-utils-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-websockets-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-classic-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-core-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-buffer-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-base-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-classes-quic-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-compression-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http2-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http3-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-marshalling-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-windows-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-protobuf-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-handler-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-resolver-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-unix-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/slf4j-api-2.0.19.jar",
+      "MainKt"
+    ],
+    "cwd": "<repo>/spikes/ktor",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 441.677,
+        "rss_bytes": 119816192,
+        "heap_used_bytes": 15181824,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 408.351,
+        "rss_bytes": 118898688,
+        "heap_used_bytes": 15280128,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 379.668,
+        "rss_bytes": 111362048,
+        "heap_used_bytes": 15034368,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 383.378,
+        "rss_bytes": 113426432,
+        "heap_used_bytes": 15488000,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 385.715,
+        "rss_bytes": 112345088,
+        "heap_used_bytes": 15181824,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      }
+    ],
+    "mean_first_ms": 399.758,
+    "mean_rss_bytes": 115169689.6,
+    "mean_heap_used_bytes": 15233228.8,
+    "mean_heap_committed_bytes": 35651584.0
+  },
+  {
+    "variant": "ktor-default",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-cp",
+      "<repo>/spikes/ktor/build/install/ktor-startup/lib/alpn-api-1.1.3.v20160715.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/annotations-23.0.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/config-1.4.9.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-reflect-2.3.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-stdlib-2.4.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-coroutines-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-bytestring-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-core-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-serialization-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-events-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-cio-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-io-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-network-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-serialization-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-core-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-netty-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-startup.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-utils-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-websockets-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-classic-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-core-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-buffer-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-base-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-classes-quic-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-compression-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http2-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http3-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-marshalling-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-windows-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-protobuf-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-handler-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-resolver-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-unix-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/slf4j-api-2.0.19.jar",
+      "MainKt"
+    ],
+    "cwd": "<repo>/spikes/ktor",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 379.809,
+        "rss_bytes": 113328128,
+        "heap_used_bytes": 18267136,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 378.245,
+        "rss_bytes": 113868800,
+        "heap_used_bytes": 18652160,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 385.758,
+        "rss_bytes": 112508928,
+        "heap_used_bytes": 18297856,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 393.017,
+        "rss_bytes": 118390784,
+        "heap_used_bytes": 18396160,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 383.531,
+        "rss_bytes": 119406592,
+        "heap_used_bytes": 18281472,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      }
+    ],
+    "mean_first_ms": 384.072,
+    "mean_rss_bytes": 115500646.4,
+    "mean_heap_used_bytes": 18378956.8,
+    "mean_heap_committed_bytes": 35651584.0
+  },
+  {
+    "variant": "ktor-cds",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Xshare:on",
+      "-XX:SharedArchiveFile=<repo>/spikes/ktor/build/appcds.jsa",
+      "-cp",
+      "<repo>/spikes/ktor/build/install/ktor-startup/lib/alpn-api-1.1.3.v20160715.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/annotations-23.0.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/config-1.4.9.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-reflect-2.3.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-stdlib-2.4.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-coroutines-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-bytestring-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-core-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-serialization-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-events-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-cio-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-io-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-network-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-serialization-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-core-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-netty-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-startup.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-utils-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-websockets-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-classic-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-core-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-buffer-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-base-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-classes-quic-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-compression-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http2-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http3-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-marshalling-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-windows-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-protobuf-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-handler-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-resolver-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-unix-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/slf4j-api-2.0.19.jar",
+      "MainKt"
+    ],
+    "cwd": "<repo>/spikes/ktor",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 214.062,
+        "rss_bytes": 105136128,
+        "heap_used_bytes": 9166848,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 210.295,
+        "rss_bytes": 105414656,
+        "heap_used_bytes": 9084928,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 211.162,
+        "rss_bytes": 105168896,
+        "heap_used_bytes": 9166848,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 206.159,
+        "rss_bytes": 104513536,
+        "heap_used_bytes": 9267200,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 211.39,
+        "rss_bytes": 105283584,
+        "heap_used_bytes": 9166848,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      }
+    ],
+    "mean_first_ms": 210.614,
+    "mean_rss_bytes": 105103360.0,
+    "mean_heap_used_bytes": 9170534.4,
+    "mean_heap_committed_bytes": 35651584.0
+  },
+  {
+    "variant": "ktor-cds",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Xshare:on",
+      "-XX:SharedArchiveFile=<repo>/spikes/ktor/build/appcds.jsa",
+      "-cp",
+      "<repo>/spikes/ktor/build/install/ktor-startup/lib/alpn-api-1.1.3.v20160715.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/annotations-23.0.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/config-1.4.9.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-reflect-2.3.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlin-stdlib-2.4.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-coroutines-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-bytestring-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-io-core-jvm-0.9.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/kotlinx-serialization-core-jvm-1.11.0.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-events-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-cio-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-http-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-io-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-network-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-serialization-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-core-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-server-netty-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-startup.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-utils-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/ktor-websockets-jvm-3.6.1.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-classic-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/logback-core-1.5.21.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-buffer-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-base-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-classes-quic-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-compression-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http2-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-http3-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-marshalling-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-linux-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-aarch_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-osx-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-native-quic-4.2.17.Final-windows-x86_64.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-codec-protobuf-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-handler-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-resolver-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-classes-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-epoll-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-kqueue-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/netty-transport-native-unix-common-4.2.17.Final.jar:<repo>/spikes/ktor/build/install/ktor-startup/lib/slf4j-api-2.0.19.jar",
+      "MainKt"
+    ],
+    "cwd": "<repo>/spikes/ktor",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 210.202,
+        "rss_bytes": 106037248,
+        "heap_used_bytes": 11078656,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 213.997,
+        "rss_bytes": 106086400,
+        "heap_used_bytes": 11160576,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 210.496,
+        "rss_bytes": 106233856,
+        "heap_used_bytes": 11406336,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 208.982,
+        "rss_bytes": 106381312,
+        "heap_used_bytes": 11242496,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      },
+      {
+        "status": "ok",
+        "first_ms": 214.586,
+        "rss_bytes": 105971712,
+        "heap_used_bytes": 11242496,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": null
+      }
+    ],
+    "mean_first_ms": 211.653,
+    "mean_rss_bytes": 106142105.6,
+    "mean_heap_used_bytes": 11226112.0,
+    "mean_heap_committed_bytes": 35651584.0
+  }
+]

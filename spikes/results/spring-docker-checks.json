@@ -1,0 +1,20 @@
+[
+  {
+    "config": "minimal",
+    "health": "ok:133120",
+    "virtual_thread": "true",
+    "cds": "-Xshare:on"
+  },
+  {
+    "config": "jdbc",
+    "health": "ok:133120",
+    "virtual_thread": "true",
+    "cds": "-Xshare:on"
+  },
+  {
+    "config": "jpa",
+    "health": "ok:133120",
+    "virtual_thread": "true",
+    "cds": "-Xshare:on"
+  }
+]

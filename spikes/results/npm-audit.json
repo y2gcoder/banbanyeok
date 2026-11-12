@@ -1,0 +1,112 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@opennextjs/cloudflare": {
+      "name": "@opennextjs/cloudflare",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "glob"
+      ],
+      "effects": [],
+      "range": ">=0.3.1",
+      "nodes": [
+        "node_modules/@opennextjs/cloudflare"
+      ],
+      "fixAvailable": {
+        "name": "@opennextjs/cloudflare",
+        "version": "0.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "glob": {
+      "name": "glob",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244013,
+          "name": "glob",
+          "dependency": "glob",
+          "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal",
+          "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=9.0.0 <=14.0.1"
+        },
+        "minimatch"
+      ],
+      "effects": [
+        "@opennextjs/cloudflare"
+      ],
+      "range": "9.0.0 - 14.0.1",
+      "nodes": [
+        "node_modules/glob"
+      ],
+      "fixAvailable": {
+        "name": "@opennextjs/cloudflare",
+        "version": "0.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "minimatch": {
+      "name": "minimatch",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244623,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has potential denial of service via globparts amplification",
+          "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-405"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=7.0.0 <11.0.1"
+        }
+      ],
+      "effects": [
+        "glob"
+      ],
+      "range": "7.0.0 - 11.0.0",
+      "nodes": [
+        "node_modules/minimatch"
+      ],
+      "fixAvailable": {
+        "name": "@opennextjs/cloudflare",
+        "version": "0.3.0",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 3,
+      "high": 0,
+      "critical": 0,
+      "total": 3
+    },
+    "dependencies": {
+      "prod": 317,
+      "dev": 6,
+      "optional": 77,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 398
+    }
+  }
+}

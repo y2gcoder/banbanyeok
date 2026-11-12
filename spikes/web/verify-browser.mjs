@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+import {writeFileSync} from 'node:fs';
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const page=await browser.newPage(); const errors=[];
+page.on('pageerror', e=>errors.push(e.message));
+await page.goto(process.env.URL || 'http://localhost:18300');
+await page.getByRole('button',{name:'계산'}).click();
+const result={server:await page.locator('#server').innerText(),client:await page.locator('#client').innerText(),errors};
+if(result.server!=='AAA,BBB,CCC'||result.client!=='AAA,BBB,CCC'||errors.length) throw new Error(JSON.stringify(result));
+await page.screenshot({path:`../results/browser-${process.env.LABEL||'test'}.png`});
+console.log(JSON.stringify(result));
+await browser.close();

@@ -1,0 +1,23 @@
+{
+  "minimal": {
+    "fatjar_bytes": 25645527,
+    "aot_fatjar_bytes": 25780795,
+    "macos_cds_bytes": 40861696,
+    "linux_cds_bytes": 40632320
+  },
+  "full": {
+    "fatjar_bytes": 31305070,
+    "aot_fatjar_bytes": 31599250
+  },
+  "jdbc": {
+    "fatjar_bytes": 34253507,
+    "macos_cds_bytes": 60063744,
+    "linux_cds_bytes": 59768832
+  },
+  "jpa": {
+    "fatjar_bytes": 60104633,
+    "aot_fatjar_bytes": 60466781,
+    "macos_cds_bytes": 95420416,
+    "linux_cds_bytes": 95158272
+  }
+}

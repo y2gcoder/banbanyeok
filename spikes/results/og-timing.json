@@ -1,0 +1,74 @@
+[
+  {
+    "font": "subset",
+    "first": {
+      "wall_ms": 116.52,
+      "server_timing": "og;dur=74.00",
+      "bytes": 13580
+    },
+    "warm": [
+      {
+        "wall_ms": 21.78,
+        "server_timing": "og;dur=15.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 18,
+        "server_timing": "og;dur=14.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 17.72,
+        "server_timing": "og;dur=14.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 17.53,
+        "server_timing": "og;dur=14.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 19.78,
+        "server_timing": "og;dur=17.00",
+        "bytes": 13580
+      }
+    ],
+    "mean_warm_wall_ms": 18.962
+  },
+  {
+    "font": "full",
+    "first": {
+      "wall_ms": 67.31,
+      "server_timing": "og;dur=64.00",
+      "bytes": 13580
+    },
+    "warm": [
+      {
+        "wall_ms": 65.82,
+        "server_timing": "og;dur=55.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 57.93,
+        "server_timing": "og;dur=55.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 43.08,
+        "server_timing": "og;dur=39.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 46.17,
+        "server_timing": "og;dur=36.00",
+        "bytes": 13580
+      },
+      {
+        "wall_ms": 54.6,
+        "server_timing": "og;dur=52.00",
+        "bytes": 13580
+      }
+    ],
+    "mean_warm_wall_ms": 53.52
+  }
+]

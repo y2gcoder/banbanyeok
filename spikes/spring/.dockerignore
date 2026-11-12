@@ -1,0 +1,6 @@
+.gradle/
+**/build-aot/
+**/build/extracted/
+**/build/classes/
+**/build/kotlin/
+**/build/tmp/

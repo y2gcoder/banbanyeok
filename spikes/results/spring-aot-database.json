@@ -1,0 +1,124 @@
+[
+  {
+    "variant": "jpa-aot",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.aot.enabled=true",
+      "-jar",
+      "<repo>/spikes/spring/jpa/build-aot/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 2092.26,
+        "rss_bytes": 357597184,
+        "heap_used_bytes": 50936832,
+        "heap_committed_bytes": 61865984,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2058.083,
+        "rss_bytes": 342540288,
+        "heap_used_bytes": 45984768,
+        "heap_committed_bytes": 55574528,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2108.286,
+        "rss_bytes": 301301760,
+        "heap_used_bytes": 41456640,
+        "heap_committed_bytes": 56623104,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2073.48,
+        "rss_bytes": 301268992,
+        "heap_used_bytes": 45784064,
+        "heap_committed_bytes": 55574528,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2072.431,
+        "rss_bytes": 336461824,
+        "heap_used_bytes": 33483776,
+        "heap_committed_bytes": 59768832,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 2080.908,
+    "mean_rss_bytes": 327834009.6,
+    "mean_heap_used_bytes": 43529216.0,
+    "mean_heap_committed_bytes": 57881395.2
+  },
+  {
+    "variant": "jpa-aot",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.aot.enabled=true",
+      "-jar",
+      "<repo>/spikes/spring/jpa/build-aot/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 2098.403,
+        "rss_bytes": 341032960,
+        "heap_used_bytes": 39427072,
+        "heap_committed_bytes": 60817408,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2128.229,
+        "rss_bytes": 333791232,
+        "heap_used_bytes": 39579648,
+        "heap_committed_bytes": 60817408,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2094.981,
+        "rss_bytes": 310018048,
+        "heap_used_bytes": 34933760,
+        "heap_committed_bytes": 60817408,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2092.328,
+        "rss_bytes": 324075520,
+        "heap_used_bytes": 49118208,
+        "heap_committed_bytes": 58720256,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 2092.037,
+        "rss_bytes": 320339968,
+        "heap_used_bytes": 44380160,
+        "heap_committed_bytes": 59768832,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 2101.196,
+    "mean_rss_bytes": 325851545.6,
+    "mean_heap_used_bytes": 41487769.6,
+    "mean_heap_committed_bytes": 60188262.4
+  }
+]

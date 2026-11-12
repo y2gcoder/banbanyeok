@@ -1,0 +1,92 @@
+[
+  {
+    "config": "minimal",
+    "variant": "fatjar",
+    "tag": "banbanyeok-s0b-spring-minimal-fatjar",
+    "build_exit": 0,
+    "bytes": 542653124,
+    "image_id": "sha256:73dfa5bff85142e691c56e6c06a122860904e938f101cea2ecad35fee260416a",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "minimal",
+    "variant": "extracted",
+    "tag": "banbanyeok-s0b-spring-minimal-extracted",
+    "build_exit": 0,
+    "bytes": 542246458,
+    "image_id": "sha256:b10245b0025ae9d488194d60f221a72b7482d6b58cceafc1fc832f7cc57028c6",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "minimal",
+    "variant": "cds",
+    "tag": "banbanyeok-s0b-spring-minimal-cds",
+    "build_exit": 0,
+    "bytes": 593956010,
+    "image_id": "sha256:9b33dcebcf5ff7a48a2ca74b0fc30481513ee045e6bb92d25e510681f9d00c9d",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "full",
+    "variant": "fatjar",
+    "tag": "banbanyeok-s0b-spring-full-fatjar",
+    "build_exit": 0,
+    "bytes": 553252105,
+    "image_id": "sha256:0feb07986455bb7320317bdb28d952a63adc7c97b6a30c35333c84812de261f6",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "jdbc",
+    "variant": "fatjar",
+    "tag": "banbanyeok-s0b-spring-jdbc-fatjar",
+    "build_exit": 0,
+    "bytes": 558808980,
+    "image_id": "sha256:c2ff92aa6dd98434183b69127c753d7be54ae57e92035dd09521d8b8574203f2",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "jdbc",
+    "variant": "extracted",
+    "tag": "banbanyeok-s0b-spring-jdbc-extracted",
+    "build_exit": 0,
+    "bytes": 558457421,
+    "image_id": "sha256:3d5428b311ce305ccbb0ede42af0c8c111a913089dc4ca217c176995e862e7b4",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "jdbc",
+    "variant": "cds",
+    "tag": "banbanyeok-s0b-spring-jdbc-cds",
+    "build_exit": 0,
+    "bytes": 634425050,
+    "image_id": "sha256:64e929b623ef5eaf7d45decd805cd8395c5852d4c5b103d4d19710a92e570600",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "jpa",
+    "variant": "fatjar",
+    "tag": "banbanyeok-s0b-spring-jpa-fatjar",
+    "build_exit": 0,
+    "bytes": 607917775,
+    "image_id": "sha256:e0ec03abe63ae6e60c2ed4a65a9c592326dac2735e43a4aadfc62cc244c7c871",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "jpa",
+    "variant": "extracted",
+    "tag": "banbanyeok-s0b-spring-jpa-extracted",
+    "build_exit": 0,
+    "bytes": 607600901,
+    "image_id": "sha256:fa56dffb16d0f5b1f84a07da1cecd1b6ac34d19980e9e82d1f8fdc960ede49d6",
+    "platform": "linux/arm64"
+  },
+  {
+    "config": "jpa",
+    "variant": "cds",
+    "tag": "banbanyeok-s0b-spring-jpa-cds",
+    "build_exit": 0,
+    "bytes": 727812435,
+    "image_id": "sha256:710664a40a292ddbac9c773bffab0ca0b276a1e1b5f3b4a332daa0beb09b5c8c",
+    "platform": "linux/arm64"
+  }
+]

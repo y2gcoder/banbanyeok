@@ -1,0 +1,22 @@
+{
+  "kotlin_org_jetbrains_kotlin_kotlin_dom_api_compat.mjs": {
+    "raw": 124,
+    "gzip": 120
+  },
+  "fair-core.mjs": {
+    "raw": 5900,
+    "gzip": 1472
+  },
+  "kotlin-kotlin-stdlib.mjs": {
+    "raw": 96693,
+    "gzip": 17915
+  },
+  "NotoSansKR-full.otf": {
+    "raw": 16433112,
+    "gzip": 13610743
+  },
+  "NotoSansKR-og.otf": {
+    "raw": 11040,
+    "gzip": 8356
+  }
+}

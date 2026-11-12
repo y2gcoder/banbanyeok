@@ -1,0 +1,228 @@
+[
+  {
+    "variant": "minimal-aot",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.aot.enabled=true",
+      "-jar",
+      "<repo>/spikes/spring/minimal/build-aot/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 862.068,
+        "rss_bytes": 200196096,
+        "heap_used_bytes": 20965376,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 869.222,
+        "rss_bytes": 199360512,
+        "heap_used_bytes": 21795840,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 863.818,
+        "rss_bytes": 198770688,
+        "heap_used_bytes": 21111808,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 860.325,
+        "rss_bytes": 197066752,
+        "heap_used_bytes": 21928960,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 869.462,
+        "rss_bytes": 202080256,
+        "heap_used_bytes": 21910528,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 864.979,
+    "mean_rss_bytes": 199494860.8,
+    "mean_heap_used_bytes": 21542502.4,
+    "mean_heap_committed_bytes": 38797312.0
+  },
+  {
+    "variant": "minimal-aot",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.aot.enabled=true",
+      "-jar",
+      "<repo>/spikes/spring/minimal/build-aot/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 859.541,
+        "rss_bytes": 192921600,
+        "heap_used_bytes": 23597056,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 869.858,
+        "rss_bytes": 197165056,
+        "heap_used_bytes": 23979008,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 880.201,
+        "rss_bytes": 194740224,
+        "heap_used_bytes": 24140800,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 873.446,
+        "rss_bytes": 204931072,
+        "heap_used_bytes": 24048640,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 861.942,
+        "rss_bytes": 183910400,
+        "heap_used_bytes": 22946816,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 868.998,
+    "mean_rss_bytes": 194733670.4,
+    "mean_heap_used_bytes": 23742464.0,
+    "mean_heap_committed_bytes": 42991616.0
+  },
+  {
+    "variant": "full-aot",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.aot.enabled=true",
+      "-Dspring.main.lazy-initialization=true",
+      "-jar",
+      "<repo>/spikes/spring/full/build-aot/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 781.292,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30808 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:50.837+09:00  INFO 30808 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:51.023+09:00  INFO 30808 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:51.030+09:00  INFO 30808 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:51.030+09:00  INFO 30808 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:51.041+09:00  INFO 30808 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 201 ms\n2026-11-12T22:51:51.141+09:00  WARN 30808 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:51.142+09:00  INFO 30808 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:51.154+09:00 ERROR 30808 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 783.38,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30846 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:51.607+09:00  INFO 30846 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:51.809+09:00  INFO 30846 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:51.816+09:00  INFO 30846 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:51.816+09:00  INFO 30846 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:51.828+09:00  INFO 30846 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 217 ms\n2026-11-12T22:51:51.925+09:00  WARN 30846 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:51.926+09:00  INFO 30846 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:51.938+09:00 ERROR 30846 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 780.501,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30847 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:52.400+09:00  INFO 30847 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:52.590+09:00  INFO 30847 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:52.596+09:00  INFO 30847 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:52.596+09:00  INFO 30847 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:52.607+09:00  INFO 30847 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 205 ms\n2026-11-12T22:51:52.705+09:00  WARN 30847 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:52.706+09:00  INFO 30847 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:52.717+09:00 ERROR 30847 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 769.141,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30884 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:53.176+09:00  INFO 30884 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:53.362+09:00  INFO 30884 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:53.368+09:00  INFO 30884 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:53.368+09:00  INFO 30884 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:53.379+09:00  INFO 30884 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 200 ms\n2026-11-12T22:51:53.477+09:00  WARN 30884 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:53.478+09:00  INFO 30884 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:53.490+09:00 ERROR 30884 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 772.778,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30887 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:53.941+09:00  INFO 30887 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:54.126+09:00  INFO 30887 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:54.133+09:00  INFO 30887 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:54.133+09:00  INFO 30887 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:54.144+09:00  INFO 30887 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 201 ms\n2026-11-12T22:51:54.244+09:00  WARN 30887 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:54.245+09:00  INFO 30887 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:54.257+09:00 ERROR 30887 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-aot",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.aot.enabled=true",
+      "-Dspring.main.lazy-initialization=true",
+      "-jar",
+      "<repo>/spikes/spring/full/build-aot/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 774.403,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30891 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:54.713+09:00  INFO 30891 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:54.905+09:00  INFO 30891 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:54.912+09:00  INFO 30891 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:54.912+09:00  INFO 30891 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:54.922+09:00  INFO 30891 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 207 ms\n2026-11-12T22:51:55.019+09:00  WARN 30891 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:55.021+09:00  INFO 30891 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:55.035+09:00 ERROR 30891 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 772.245,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30894 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:55.492+09:00  INFO 30894 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:55.678+09:00  INFO 30894 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:55.685+09:00  INFO 30894 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:55.685+09:00  INFO 30894 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:55.697+09:00  INFO 30894 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 201 ms\n2026-11-12T22:51:55.791+09:00  WARN 30894 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:55.793+09:00  INFO 30894 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:55.806+09:00 ERROR 30894 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 783.377,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30897 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:56.273+09:00  INFO 30897 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:56.459+09:00  INFO 30897 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:56.466+09:00  INFO 30897 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:56.466+09:00  INFO 30897 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:56.477+09:00  INFO 30897 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 202 ms\n2026-11-12T22:51:56.574+09:00  WARN 30897 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:56.575+09:00  INFO 30897 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:56.589+09:00 ERROR 30897 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 774.468,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30898 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:57.050+09:00  INFO 30898 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:57.236+09:00  INFO 30898 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:57.242+09:00  INFO 30898 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:57.243+09:00  INFO 30898 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:57.254+09:00  INFO 30898 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 201 ms\n2026-11-12T22:51:57.351+09:00  WARN 30898 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:57.353+09:00  INFO 30898 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:57.367+09:00 ERROR 30898 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 774.923,
+        "error_tail": "pplicationKt                      : Starting AOT-processed ApplicationKt using Java 25.0.5 with PID 30901 (<repo>/spikes/spring/full/build-aot/libs/app.jar started by <user> in <repo>/spikes/spring)\n2026-11-12T22:51:57.826+09:00  INFO 30901 --- [           main] spike.ApplicationKt                      : No active profile set, falling back to 1 default profile: \"default\"\n2026-11-12T22:51:58.014+09:00  INFO 30901 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18080 (http)\n2026-11-12T22:51:58.020+09:00  INFO 30901 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]\n2026-11-12T22:51:58.020+09:00  INFO 30901 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]\n2026-11-12T22:51:58.031+09:00  INFO 30901 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 203 ms\n2026-11-12T22:51:58.127+09:00  WARN 30901 --- [           main] s.s.c.ServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator': Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry': Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor': Instantiation of supplied bean failed\n2026-11-12T22:51:58.129+09:00  INFO 30901 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:51:58.142+09:00 ERROR 30901 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  }
+]

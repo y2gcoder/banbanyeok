@@ -1,0 +1,366 @@
+[
+  {
+    "variant": "minimal-fatjar-default",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "<repo>/spikes/spring/minimal/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 1077.781,
+        "rss_bytes": 198868992,
+        "heap_used_bytes": 22597632,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 967.089,
+        "rss_bytes": 199098368,
+        "heap_used_bytes": 25000960,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 976.526,
+        "rss_bytes": 195280896,
+        "heap_used_bytes": 24159232,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 993.02,
+        "rss_bytes": 200785920,
+        "heap_used_bytes": 20914176,
+        "heap_committed_bytes": 39845888,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 1004.302,
+        "rss_bytes": 203538432,
+        "heap_used_bytes": 22726656,
+        "heap_committed_bytes": 38797312,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 1003.744,
+    "mean_rss_bytes": 199514521.6,
+    "mean_heap_used_bytes": 23079731.2,
+    "mean_heap_committed_bytes": 39007027.2
+  },
+  {
+    "variant": "minimal-fatjar-default",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "<repo>/spikes/spring/minimal/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 974.142,
+        "rss_bytes": 206897152,
+        "heap_used_bytes": 25052160,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 985.533,
+        "rss_bytes": 199999488,
+        "heap_used_bytes": 24038400,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 1023.902,
+        "rss_bytes": 199622656,
+        "heap_used_bytes": 22430720,
+        "heap_committed_bytes": 45088768,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 991.883,
+        "rss_bytes": 200638464,
+        "heap_used_bytes": 24957952,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 987.481,
+        "rss_bytes": 203079680,
+        "heap_used_bytes": 23396352,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 992.588,
+    "mean_rss_bytes": 202047488.0,
+    "mean_heap_used_bytes": 23975116.8,
+    "mean_heap_committed_bytes": 43411046.4
+  },
+  {
+    "variant": "minimal-extracted-default",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 837.443,
+        "rss_bytes": 188710912,
+        "heap_used_bytes": 27109376,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 848.093,
+        "rss_bytes": 199753728,
+        "heap_used_bytes": 27642880,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 873.572,
+        "rss_bytes": 186400768,
+        "heap_used_bytes": 27260928,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 853.977,
+        "rss_bytes": 197263360,
+        "heap_used_bytes": 26997760,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 855.77,
+        "rss_bytes": 199081984,
+        "heap_used_bytes": 27968512,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 853.771,
+    "mean_rss_bytes": 194242150.4,
+    "mean_heap_used_bytes": 27395891.2,
+    "mean_heap_committed_bytes": 42991616.0
+  },
+  {
+    "variant": "minimal-extracted-default",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 853.69,
+        "rss_bytes": 186925056,
+        "heap_used_bytes": 29229056,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 854.328,
+        "rss_bytes": 189546496,
+        "heap_used_bytes": 29254656,
+        "heap_committed_bytes": 44040192,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 864.918,
+        "rss_bytes": 181977088,
+        "heap_used_bytes": 25092096,
+        "heap_committed_bytes": 36700160,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 849.381,
+        "rss_bytes": 186204160,
+        "heap_used_bytes": 28810240,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 854.819,
+        "rss_bytes": 192217088,
+        "heap_used_bytes": 29728768,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 855.427,
+    "mean_rss_bytes": 187373977.6,
+    "mean_heap_used_bytes": 28422963.2,
+    "mean_heap_committed_bytes": 41943040.0
+  },
+  {
+    "variant": "minimal-cds",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Xshare:on",
+      "-XX:SharedArchiveFile=application.jsa",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 555.897,
+        "rss_bytes": 189972480,
+        "heap_used_bytes": 25019392,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 552.949,
+        "rss_bytes": 184713216,
+        "heap_used_bytes": 26043392,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 561.718,
+        "rss_bytes": 198656000,
+        "heap_used_bytes": 24504320,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 549.535,
+        "rss_bytes": 188268544,
+        "heap_used_bytes": 23830528,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 552.008,
+        "rss_bytes": 194166784,
+        "heap_used_bytes": 24811520,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 554.421,
+    "mean_rss_bytes": 191155404.8,
+    "mean_heap_used_bytes": 24841830.4,
+    "mean_heap_committed_bytes": 35651584.0
+  },
+  {
+    "variant": "minimal-cds",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Xshare:on",
+      "-XX:SharedArchiveFile=application.jsa",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 545.435,
+        "rss_bytes": 181207040,
+        "heap_used_bytes": 24343552,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 551.731,
+        "rss_bytes": 192708608,
+        "heap_used_bytes": 31166464,
+        "heap_committed_bytes": 42991616,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 548.466,
+        "rss_bytes": 183631872,
+        "heap_used_bytes": 24416256,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 543.465,
+        "rss_bytes": 176291840,
+        "heap_used_bytes": 23248896,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 541.493,
+        "rss_bytes": 181665792,
+        "heap_used_bytes": 24519680,
+        "heap_committed_bytes": 35651584,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 546.118,
+    "mean_rss_bytes": 183101030.4,
+    "mean_heap_used_bytes": 25538969.6,
+    "mean_heap_committed_bytes": 37119590.4
+  }
+]

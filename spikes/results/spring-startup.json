@@ -1,0 +1,675 @@
+[
+  {
+    "variant": "minimal-fatjar-default",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "<repo>/spikes/spring/minimal/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 1062.145,
+        "rss_bytes": 208732160,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 1134.863,
+        "rss_bytes": 209190912,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 984.093,
+        "rss_bytes": 198098944,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 986.149,
+        "rss_bytes": 203309056,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 985.782,
+        "rss_bytes": 203227136,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 1030.606,
+    "mean_rss_bytes": 204511641.6,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "minimal-fatjar-default",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "<repo>/spikes/spring/minimal/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 997.881,
+        "rss_bytes": 202866688,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 985.194,
+        "rss_bytes": 205963264,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 975.483,
+        "rss_bytes": 206323712,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 983.151,
+        "rss_bytes": 203456512,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 982.546,
+        "rss_bytes": 206929920,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 984.851,
+    "mean_rss_bytes": 205108019.2,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "minimal-extracted-default",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 844.176,
+        "rss_bytes": 191430656,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 850.865,
+        "rss_bytes": 194936832,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 850.279,
+        "rss_bytes": 193101824,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 865.163,
+        "rss_bytes": 202129408,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 850.205,
+        "rss_bytes": 189939712,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 852.138,
+    "mean_rss_bytes": 194307686.4,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "minimal-extracted-default",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 848.435,
+        "rss_bytes": 197378048,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 871.873,
+        "rss_bytes": 194527232,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 858.967,
+        "rss_bytes": 191840256,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 856.117,
+        "rss_bytes": 192413696,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 855.396,
+        "rss_bytes": 193445888,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 858.158,
+    "mean_rss_bytes": 193921024.0,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "minimal-cds",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Xshare:on",
+      "-XX:SharedArchiveFile=application.jsa",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 534.247,
+        "rss_bytes": 200867840,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 535.262,
+        "rss_bytes": 189661184,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 534.51,
+        "rss_bytes": 193986560,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 538.807,
+        "rss_bytes": 191315968,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 539.27,
+        "rss_bytes": 179748864,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 536.419,
+    "mean_rss_bytes": 191116083.2,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "minimal-cds",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Xshare:on",
+      "-XX:SharedArchiveFile=application.jsa",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/minimal/build/extracted",
+    "samples": [
+      {
+        "status": "ok",
+        "first_ms": 535.25,
+        "rss_bytes": 196673536,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 533.844,
+        "rss_bytes": 194871296,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 532.14,
+        "rss_bytes": 186204160,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 565.989,
+        "rss_bytes": 185892864,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      },
+      {
+        "status": "ok",
+        "first_ms": 537.92,
+        "rss_bytes": 179388416,
+        "heap_used_bytes": null,
+        "heap_committed_bytes": null,
+        "virtual_thread": "true"
+      }
+    ],
+    "mean_first_ms": 541.029,
+    "mean_rss_bytes": 188606054.4,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-fatjar-default",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "<repo>/spikes/spring/full/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1258.109,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:13.762+09:00  INFO 28918 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:13.771+09:00  INFO 28918 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:13.778+09:00 ERROR 28918 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1161.04,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:14.925+09:00  INFO 28919 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:14.933+09:00  INFO 28919 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:14.938+09:00 ERROR 28919 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1176.998,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:16.111+09:00  INFO 28920 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:16.119+09:00  INFO 28920 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:16.125+09:00 ERROR 28920 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1147.458,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:17.264+09:00  INFO 28934 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:17.272+09:00  INFO 28934 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:17.278+09:00 ERROR 28934 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1157.499,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:18.422+09:00  INFO 28936 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:18.430+09:00  INFO 28936 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:18.435+09:00 ERROR 28936 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-fatjar-default",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-jar",
+      "<repo>/spikes/spring/full/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1160.246,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:19.580+09:00  INFO 28937 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:19.589+09:00  INFO 28937 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:19.594+09:00 ERROR 28937 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1150.943,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:20.731+09:00  INFO 28938 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:20.740+09:00  INFO 28938 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:20.745+09:00 ERROR 28938 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1181.838,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:21.909+09:00  INFO 28939 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:21.917+09:00  INFO 28939 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:21.922+09:00 ERROR 28939 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1161.783,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:23.075+09:00  INFO 28940 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:23.083+09:00  INFO 28940 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:23.089+09:00 ERROR 28940 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 1150.08,
+        "error_tail": "Endpoints' defined in class path resource [org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints]: Factory method 'pathMappedEndpoints' threw exception with message: Error creating bean with name 'healthEndpoint' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpoint' parameter 0: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:24.228+09:00  INFO 28941 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:24.238+09:00  INFO 28941 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:24.243+09:00 ERROR 28941 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-fatjar-lazy",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.main.lazy-initialization=true",
+      "-jar",
+      "<repo>/spikes/spring/full/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 959.645,
+        "error_tail": "11-12T22:47:25.190+09:00  WARN 28942 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:25.191+09:00  INFO 28942 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:25.199+09:00  INFO 28942 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:25.204+09:00 ERROR 28942 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 955.843,
+        "error_tail": "11-12T22:47:26.147+09:00  WARN 28943 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:26.148+09:00  INFO 28943 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:26.156+09:00  INFO 28943 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:26.162+09:00 ERROR 28943 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 977.504,
+        "error_tail": "11-12T22:47:27.116+09:00  WARN 28945 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:27.118+09:00  INFO 28945 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:27.129+09:00  INFO 28945 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:27.136+09:00 ERROR 28945 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 971.174,
+        "error_tail": "11-12T22:47:28.086+09:00  WARN 28949 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:28.088+09:00  INFO 28949 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:28.095+09:00  INFO 28949 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:28.101+09:00 ERROR 28949 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 968.361,
+        "error_tail": "11-12T22:47:29.060+09:00  WARN 28950 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:29.061+09:00  INFO 28950 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:29.068+09:00  INFO 28950 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:29.074+09:00 ERROR 28950 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-fatjar-lazy",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.main.lazy-initialization=true",
+      "-jar",
+      "<repo>/spikes/spring/full/build/libs/app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 969.327,
+        "error_tail": "11-12T22:47:30.030+09:00  WARN 28964 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:30.031+09:00  INFO 28964 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:30.039+09:00  INFO 28964 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:30.048+09:00 ERROR 28964 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 961.67,
+        "error_tail": "11-12T22:47:30.994+09:00  WARN 28967 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:30.996+09:00  INFO 28967 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:31.003+09:00  INFO 28967 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:31.009+09:00 ERROR 28967 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 966.826,
+        "error_tail": "11-12T22:47:31.958+09:00  WARN 28968 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:31.960+09:00  INFO 28968 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:31.967+09:00  INFO 28968 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:31.975+09:00 ERROR 28968 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 968.325,
+        "error_tail": "11-12T22:47:32.929+09:00  WARN 28972 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:32.930+09:00  INFO 28972 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:32.938+09:00  INFO 28972 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:32.946+09:00 ERROR 28972 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 963.03,
+        "error_tail": "11-12T22:47:33.893+09:00  WARN 28973 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:33.895+09:00  INFO 28973 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:33.903+09:00  INFO 28973 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:33.908+09:00 ERROR 28973 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-extracted-default",
+    "bytes": 133120,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.main.lazy-initialization=true",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/full/build/extracted",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 812.963,
+        "error_tail": "11-12T22:47:34.930+09:00  WARN 28975 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:34.931+09:00  INFO 28975 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:34.940+09:00  INFO 28975 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:34.944+09:00 ERROR 28975 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 824.715,
+        "error_tail": "11-12T22:47:35.742+09:00  WARN 28977 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:35.744+09:00  INFO 28977 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:35.752+09:00  INFO 28977 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:35.757+09:00 ERROR 28977 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 818.584,
+        "error_tail": "11-12T22:47:36.574+09:00  WARN 28978 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:36.576+09:00  INFO 28978 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:36.584+09:00  INFO 28978 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:36.589+09:00 ERROR 28978 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 808.786,
+        "error_tail": "11-12T22:47:37.389+09:00  WARN 28991 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:37.390+09:00  INFO 28991 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:37.399+09:00  INFO 28991 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:37.404+09:00 ERROR 28991 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 814.087,
+        "error_tail": "11-12T22:47:38.201+09:00  WARN 28992 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:38.202+09:00  INFO 28992 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:38.211+09:00  INFO 28992 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:38.215+09:00 ERROR 28992 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-extracted-default",
+    "bytes": 1048576,
+    "command": [
+      "java",
+      "-Xms32m",
+      "-Xmx256m",
+      "-Dspring.threads.virtual.enabled=true",
+      "-Dserver.port=18080",
+      "-Dspring.main.lazy-initialization=true",
+      "-jar",
+      "app.jar"
+    ],
+    "cwd": "<repo>/spikes/spring/full/build/extracted",
+    "samples": [
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 806.591,
+        "error_tail": "11-12T22:47:39.011+09:00  WARN 28993 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:39.012+09:00  INFO 28993 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:39.020+09:00  INFO 28993 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:39.028+09:00 ERROR 28993 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 816.558,
+        "error_tail": "11-12T22:47:39.826+09:00  WARN 28994 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:39.827+09:00  INFO 28994 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:39.835+09:00  INFO 28994 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:39.840+09:00 ERROR 28994 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 820.667,
+        "error_tail": "11-12T22:47:40.645+09:00  WARN 28995 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:40.646+09:00  INFO 28995 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:40.654+09:00  INFO 28995 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:40.661+09:00 ERROR 28995 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 816.588,
+        "error_tail": "11-12T22:47:41.450+09:00  WARN 29015 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:41.451+09:00  INFO 29015 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:41.459+09:00  INFO 29015 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:41.464+09:00 ERROR 29015 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      },
+      {
+        "status": "failed",
+        "exit_code": 1,
+        "elapsed_ms": 812.393,
+        "error_tail": "11-12T22:47:42.274+09:00  WARN 29016 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'healthEndpointGroupMembershipValidator' defined in class path resource [org/springframework/boot/health/autoconfigure/actuate/endpoint/HealthEndpointConfiguration.class]: Unsatisfied dependency expressed through method 'healthEndpointGroupMembershipValidator' parameter 1: Error creating bean with name 'healthContributorRegistry' defined in class path resource [org/springframework/boot/health/autoconfigure/registry/HealthContributorRegistryAutoConfiguration.class]: Unsatisfied dependency expressed through method 'healthContributorRegistry' parameter 0: Error creating bean with name 'dbHealthContributor' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration.class]: Failed to instantiate [org.springframework.boot.health.contributor.HealthContributor]: Factory method 'dbHealthContributor' threw exception with message: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class\n2026-11-12T22:47:42.275+09:00  INFO 29016 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]\n2026-11-12T22:47:42.283+09:00  INFO 29016 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : \n\nError starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.\n2026-11-12T22:47:42.288+09:00 ERROR 29016 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : \n\n***************************\nAPPLICATION FAILED TO START\n***************************\n\nDescription:\n\nFailed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.\n\nReason: Failed to determine a suitable driver class\n\n\nAction:\n\nConsider the following:\n\tIf you want an embedded database (H2, HSQL or Derby), please put it on the classpath.\n\tIf you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).\n\n"
+      }
+    ],
+    "mean_first_ms": null,
+    "mean_rss_bytes": null,
+    "mean_heap_used_bytes": null,
+    "mean_heap_committed_bytes": null
+  },
+  {
+    "variant": "full-cds-training",
+    "status": "failed",
+    "exit_code": 1
+  }
+]
