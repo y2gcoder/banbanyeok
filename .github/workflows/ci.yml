@@ -1,0 +1,93 @@
+# CI 골격. 경로 필터로 바뀐 부분만 돌린다. 배포는 없다(P8이 data-publish, deploy-server를 추가한다).
+# 서드파티 액션은 커밋 SHA로 고정한다(주석에 태그). 갱신은 의존성 봇 또는 수동으로 SHA를 다시 확인한다.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # paths-filter가 PR 변경 파일을 읽는다
+    outputs:
+      kotlin: ${{ steps.filter.outputs.kotlin }}
+      oracle: ${{ steps.filter.outputs.oracle }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            kotlin:
+              - 'shared/**'
+              - 'server/**'
+              - 'pipeline/**'
+              - 'android/**'
+              - 'build-logic/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - '*.kts'
+              - 'gradle.properties'
+              - 'mise.toml'
+              - 'contracts/**'
+              - 'data/registry/**'
+              - '.github/workflows/ci.yml'
+            oracle:
+              - 'prototype/**'
+              - 'contracts/**'
+              - 'data/registry/**'
+              - '.github/workflows/ci.yml'
+
+  # Kotlin: ./gradlew build = 컴파일 + jvm 테스트(shared 모듈은 commonTest를 jvm으로 실행) + commonMain 순수성 검사
+  kotlin:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # JDK는 mise.toml이 단일 출처다(로컬과 CI가 같은 버전).
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: java
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: ./gradlew build --console=plain
+
+  # 오라클 일치: Python 프로토타입이 스냅샷·픽스처·링크 벡터를 그대로 재생산하는지 확인한다.
+  # Kotlin 쪽이 같은 스냅샷을 통과하는지는 위 kotlin 잡의 shared 테스트가 확인한다(P1 이후 shared:core 포함).
+  oracle:
+    needs: changes
+    if: needs.changes.outputs.oracle == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: python3 -B -m unittest discover -s prototype -v
+      - run: |
+          python3 -B prototype/gen_expected.py --check
+          python3 -B prototype/gen_fixtures.py --check
+          python3 -B prototype/gen_link_vectors.py --check
+
+  # 브랜치 보호에서 필수로 지정할 단일 체크. 경로 필터로 건너뛴 잡은 통과로 본다.
+  ci-ok:
+    if: always()
+    needs: [changes, kotlin, oracle]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "changes=${{ needs.changes.result }} kotlin=${{ needs.kotlin.result }} oracle=${{ needs.oracle.result }}"
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            exit 1
+          fi

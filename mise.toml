@@ -1,0 +1,67 @@
+# 도구 버전 고정(로컬과 CI가 같은 파일을 쓴다: CI는 jdx/mise-action). 전역 mise 설정의 minimum_release_age=7d 정책을 따른다.
+[tools]
+# JDK: Temurin 25 (현재 LTS).
+#  - Gradle 9.8은 JVM 17~27에서 실행된다 (Gradle 호환성 표: https://docs.gradle.org/current/userguide/compatibility.html, 확인일 2026-11-12).
+#  - Kotlin 2.4는 -jvm-target 1.8~26을 지원한다 (https://kotlinlang.org/docs/compiler-reference.html, 확인일 2026-11-12).
+#    그래서 25 툴체인으로 컴파일·테스트하고, shared 라이브러리의 바이트코드는 17로 낮춘다(Android 소비용).
+#  - Ktor 3.6의 JDK 요구사항은 공식 문서에서 찾지 못했다. 대신 :server:test가 JDK 25에서 통과하는 것을 확인했다.
+#  - 서버 이미지(Cloud Run)는 같은 25를 쓴다. 비-LTS(26, 27)는 쓰지 않는다.
+java = "temurin-25.0.5"
+node = "24.22.2"
+pnpm = "12.16.1"
+gitleaks = "8.30.1"
+lefthook = "2.2.2"
+
+# OP_ACCOUNT는 비밀이 아니지만 개인 계정 주소를 퍼블릭 레포에 올리지 않으려고 mise.local.toml(gitignore)에 둔다.
+# 예시는 mise.local.toml.example.
+
+[tasks.doctor]
+description = "개발 환경 점검: JDK·node·pnpm 버전, 1Password 개인 계정(op whoami), 비밀값 보호 장치"
+run = "bash scripts/doctor.sh"
+
+[tasks."hooks:install"]
+description = "gitleaks pre-commit 훅 설치(lefthook). 클론한 뒤 한 번 실행한다"
+run = "lefthook install"
+
+[tasks."secrets:scan"]
+description = "gitleaks로 작업 트리와 git 히스토리 전체를 스캔"
+run = [
+  "gitleaks dir . --config .gitleaks.toml --redact --no-banner",
+  "gitleaks git . --config .gitleaks.toml --redact --no-banner",
+]
+
+[tasks.test]
+description = "Gradle 빌드(jvm·js 테스트 포함) + Python 오라클 테스트"
+run = [
+  "./gradlew build",
+  "python3 -B -m unittest discover -s prototype -v",
+]
+
+[tasks."golden:regen"]
+description = "오라클로 contracts/golden/(expected.ranking, link-vectors)와 contracts/fixtures/ 재생성(diff를 반드시 검토)"
+run = [
+  "python3 -B prototype/gen_expected.py",
+  "python3 -B prototype/gen_fixtures.py",
+  "python3 -B prototype/gen_link_vectors.py",
+]
+
+[tasks."golden:check"]
+description = "contracts의 스냅샷·픽스처가 오라클 결과와 같은지만 확인(파일을 바꾸지 않음)"
+run = [
+  "python3 -B prototype/gen_expected.py --check",
+  "python3 -B prototype/gen_fixtures.py --check",
+  "python3 -B prototype/gen_link_vectors.py --check",
+]
+
+# 비밀값이 필요한 실행은 op run으로 감싼다. 값은 .env.tpl의 op:// 참조에서 해석되고 디스크에 남지 않는다.
+[tasks."dev:pipeline"]
+description = "파이프라인 CLI 실행 (인자: mise run dev:pipeline -- build)"
+run = "op run --env-file=.env.tpl -- ./gradlew :pipeline:run --args=\"$@\""
+
+[tasks."dev:server"]
+description = "Ktor 서버 로컬 실행 (http://localhost:8080/healthz)"
+run = "op run --env-file=.env.tpl -- ./gradlew :server:run"
+
+[tasks."dev:web"]
+description = "Next.js 개발 서버 (web/은 P4가 만든 뒤에 동작)"
+run = "op run --env-file=.env.tpl -- pnpm --filter web dev"

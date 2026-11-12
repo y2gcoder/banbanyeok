@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "minClientSchema": 1,
+  "dataVersion": "20261112.1",
+  "generatedAt": "2026-11-12T00:00:00Z",
+  "registryVersion": 1,
+  "timeModel": "fixture-v1",
+  "originCount": 18,
+  "candidateCount": 6,
+  "files": {
+    "registry": {
+      "path": "versions/20261112.1/stations.9bf91ec4c8a5cb93.json",
+      "sha256": "9bf91ec4c8a5cb9322f104986a7c530029e8d8ab530aea14c1794d8832ddcec9",
+      "bytes": 4674
+    },
+    "candidates": {
+      "path": "versions/20261112.1/candidates.27d2a047085a8741.json",
+      "sha256": "27d2a047085a87417c7b7c2bbb6d4658a01f62a000af7ce68fa32315f7eefa2b",
+      "bytes": 137
+    },
+    "od": {
+      "path": "versions/20261112.1/od.19cc73e7f8df1451.bin",
+      "sha256": "19cc73e7f8df1451f2a5682bc24c72598f73abb6c4fb374fac0c4c62d0519dac",
+      "bytes": 404
+    }
+  }
+}

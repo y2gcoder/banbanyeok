@@ -1,0 +1,29 @@
+# gitleaks 설정. pre-commit(lefthook)과 CI(secrets-scan.yml)가 같은 파일을 쓴다.
+title = "banbanyeok gitleaks"
+
+[extend]
+useDefault = true   # 기본 규칙(1Password 서비스 계정 토큰 ops_..., GCP/AWS 키, 일반 API 키 등)을 모두 쓴다
+
+# PostHog: 프로젝트 토큰(phc_)은 공개해도 되지만 개인 API 키(phx_)는 절대 올리면 안 된다(tech-stack 7.5).
+[[rules]]
+id = "posthog-personal-api-key"
+description = "PostHog 개인 API 키(phx_)"
+regex = '''\bphx_[A-Za-z0-9]{30,}\b'''
+keywords = ["phx_"]
+
+# 1Password 연결 토큰은 기본 규칙에 없을 수 있어 직접 막는다.
+[[rules]]
+id = "onepassword-connect-or-service-token-assignment"
+description = "OP_SERVICE_ACCOUNT_TOKEN / OP_CONNECT_TOKEN에 실제 값을 대입"
+regex = '''(?i)\bOP_(?:SERVICE_ACCOUNT|CONNECT)_TOKEN\s*[:=]\s*['"]?(?:ops_|eyJ)[A-Za-z0-9_\-\.=]{20,}'''
+keywords = ["op_service_account_token", "op_connect_token"]
+
+# gitleaks dir 스캔은 .gitignore를 보지 않으므로, git에 올라가지 않는 산출물 폴더는 제외한다.
+[[allowlists]]
+description = "빌드 산출물·의존성 폴더(git에는 포함되지 않음)"
+paths = [
+  '''(^|/)(node_modules|build|\.gradle|\.kotlin|\.next|\.open-next|\.wrangler|\.pnpm-store)/''',
+]
+
+# 아무 키도 아닌 해시를 일반 키로 오탐하는 경우만 여기에 좁게 추가한다(파일 단위가 아니라 가능하면 패턴 단위).
+# 예: contracts/fixtures/manifest.sample.json의 sha256 값은 해시이지 비밀이 아니다.

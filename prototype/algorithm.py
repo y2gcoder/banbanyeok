@@ -4,6 +4,9 @@ import json
 import math
 from pathlib import Path
 
+# 골든 시나리오는 언어 중립 계약으로 contracts/golden/에 둔다(Kotlin 각 타깃도 같은 파일을 쓴다).
+SCENARIOS_PATH = Path(__file__).resolve().parent.parent / 'contracts' / 'golden' / 'scenarios.json'
+
 
 def _number(value):
     return type(value) in (int, float) and math.isfinite(value) and value >= 0
@@ -170,7 +173,7 @@ def main():
         print(f"\n[{mode}] (기준역 {result['baselineStationId']}, 상한 {result['favorCaps']})")
         for row in result['recommendations'][:3]:
             print(f"{row['rank']}. {row['stationId']} 시간={row['times']} 환승={row['transfers']} — {row['reason']}")
-    cases = json.loads(Path(__file__).with_name('scenarios.json').read_text())
+    cases = json.loads(SCENARIOS_PATH.read_text(encoding='utf-8'))
     for case in cases:
         result = recommend(**case['input'])['recommendations'][0]
         assert result['stationId'] == case['expectedFirst'], case['id']

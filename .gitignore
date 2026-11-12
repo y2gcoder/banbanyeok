@@ -7,9 +7,16 @@ mise.local.toml
 *.keystore
 *.jks
 *.p12
+*.p8
 *.mobileprovision
+keystore.properties
+local.properties
 google-services.json
 GoogleService-Info.plist
+*.tfstate
+*.tfstate.*
+.terraform/
+gitleaks-report*
 
 # OS / 에디터
 .DS_Store
@@ -22,6 +29,8 @@ __pycache__/
 build/
 .gradle/
 node_modules/
+.pnpm-store/
+.kotlin/
 .next/
 .open-next/
 .wrangler/

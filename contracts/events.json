@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 1,
+  "description": "분석 이벤트 정의 초안(tech-stack 7.3). Kotlin 상수와 TS 타입을 여기서 생성한다(P7). 출발역·별칭·방 ID 원문은 어떤 속성에도 넣지 않는다.",
+  "privacy": {
+    "forbiddenPropertyNames": [
+      "origin",
+      "origins",
+      "origin_code",
+      "origin_codes",
+      "origin_station",
+      "departure_station",
+      "nickname",
+      "nicknames",
+      "alias",
+      "aliases",
+      "room_id",
+      "participant_id",
+      "host_token",
+      "participant_token",
+      "device_token",
+      "lat",
+      "lng",
+      "address"
+    ],
+    "forbiddenNameFragments": [
+      "origin",
+      "nickname",
+      "room_id",
+      "token"
+    ],
+    "rules": [
+      "출발역(코드·이름)은 이벤트 속성에 넣지 않는다. participant_count, max_minutes_bucket 같은 파생·집계 값만 보낸다.",
+      "만날 역은 장소이므로 top1_station_code, meeting_station_code만 허용한다(출발역과 구별되는 이름).",
+      "방 ID 원문과 토큰은 보내지 않는다. 방은 room_hash로만 참조한다.",
+      "autocapture와 세션 리플레이는 끈다(입력창 내용 수집 방지).",
+      "서버가 권위 있는 이벤트(source=server)는 서버에서만 보내 중복을 막는다."
+    ]
+  },
+  "commonProperties": [
+    {
+      "name": "platform",
+      "type": "enum",
+      "required": true,
+      "description": "이벤트를 보낸 플랫폼.",
+      "enum": [
+        "web",
+        "ios",
+        "android",
+        "server"
+      ]
+    },
+    {
+      "name": "app_version",
+      "type": "string",
+      "required": true,
+      "description": "앱/웹 빌드 버전."
+    },
+    {
+      "name": "data_version",
+      "type": "string",
+      "required": false,
+      "description": "manifest의 dataVersion(YYYYMMDD.N). 결과 해석에 필요."
+    },
+    {
+      "name": "anon_user_id",
+      "type": "string",
+      "required": false,
+      "description": "서버가 발급한 익명 사용자 ID. 로그인 전에는 PostHog distinct_id와 별개의 속성으로 조인에 쓴다."
+    }
+  ],
+  "events": [
+    {
+      "name": "input_completed",
+      "source": "client",
+      "description": "출발역 입력을 마쳤다(30초 목표 검증).",
+      "properties": [
+        {
+          "name": "participant_count",
+          "type": "integer",
+          "required": true,
+          "description": "참가자 수(2~4).",
+          "min": 2,
+          "max": 4
+        },
+        {
+          "name": "has_custom_name",
+          "type": "boolean",
+          "required": true,
+          "description": "별칭을 하나라도 입력했는지(별칭 내용은 보내지 않는다)."
+        },
+        {
+          "name": "mode",
+          "type": "enum",
+          "required": true,
+          "description": "선택한 모드.",
+          "enum": [
+            "fair",
+            "fast",
+            "favor"
+          ]
+        },
+        {
+          "name": "input_ms",
+          "type": "integer",
+          "required": true,
+          "description": "첫 진입부터 입력 완료까지 밀리초.",
+          "min": 0
+        }
+      ]
+    },
+    {
+      "name": "result_viewed",
+      "source": "client",
+      "description": "추천 결과를 봤다.",
+      "properties": [
+        {
+          "name": "participant_count",
+          "type": "integer",
+          "required": true,
+          "description": "참가자 수.",
+          "min": 2,
+          "max": 4
+        },
+        {
+          "name": "mode",
+          "type": "enum",
+          "required": true,
+          "description": "결과 모드.",
+          "enum": [
+            "fair",
+            "fast",
+            "favor"
+          ]
+        },
+        {
+          "name": "max_minutes_bucket",
+          "type": "enum",
+          "required": true,
+          "description": "1위 후보의 최장 소요시간 구간(분).",
+          "enum": [
+            "0-15",
+            "15-30",
+            "30-45",
+            "45-60",
+            "60-90",
+            "90+"
+          ]
+        },
+        {
+          "name": "candidate_count",
+          "type": "integer",
+          "required": true,
+          "description": "노출된 후보 수.",
+          "min": 0
+        },
+        {
+          "name": "top1_station_code",
+          "type": "string",
+          "required": false,
+          "description": "1위 만날 역 코드(장소이므로 허용)."
+        },
+        {
+          "name": "room_hash",
+          "type": "string",
+          "required": false,
+          "description": "방 ID 원문 대신 쓰는 해시. 서버가 계산해 응답에 실어 주는 값을 그대로 쓴다. 방 링크가 아니면 생략."
+        }
+      ]
+    },
+    {
+      "name": "mode_switched",
+      "source": "client",
+      "description": "결과 화면에서 모드를 바꿨다.",
+      "properties": [
+        {
+          "name": "from_mode",
+          "type": "enum",
+          "required": true,
+          "description": "이전 모드.",
+          "enum": [
+            "fair",
+            "fast",
+            "favor"
+          ]
+        },
+        {
+          "name": "to_mode",
+          "type": "enum",
+          "required": true,
+          "description": "바뀐 모드.",
+          "enum": [
+            "fair",
+            "fast",
+            "favor"
+          ]
+        },
+        {
+          "name": "favor_used",
+          "type": "boolean",
+          "required": true,
+          "description": "배려 모드(favor)를 썼는지."
+        }
+      ]
+    },
+    {
+      "name": "share_clicked",
+      "source": "client",
+      "description": "공유 버튼을 눌렀다.",
+      "properties": [
+        {
+          "name": "channel",
+          "type": "enum",
+          "required": true,
+          "description": "공유 채널.",
+          "enum": [
+            "kakao",
+            "copy",
+            "system"
+          ]
+        },
+        {
+          "name": "link_type",
+          "type": "enum",
+          "required": true,
+          "description": "공유한 링크 종류.",
+          "enum": [
+            "url_state",
+            "room"
+          ]
+        },
+        {
+          "name": "room_hash",
+          "type": "string",
+          "required": false,
+          "description": "방 ID 원문 대신 쓰는 해시. 서버가 계산해 응답에 실어 주는 값을 그대로 쓴다. 방 링크가 아니면 생략."
+        }
+      ]
+    },
+    {
+      "name": "link_opened",
+      "source": "client_or_server",
+      "description": "공유 링크를 열었다(바이럴 측정). 서버가 방 링크 조회로 보낼 때는 서버만 보낸다.",
+      "properties": [
+        {
+          "name": "link_type",
+          "type": "enum",
+          "required": true,
+          "description": "링크 종류.",
+          "enum": [
+            "url_state",
+            "room"
+          ]
+        },
+        {
+          "name": "is_first_visit",
+          "type": "boolean",
+          "required": true,
+          "description": "이 기기의 첫 방문인지."
+        },
+        {
+          "name": "referrer_kind",
+          "type": "enum",
+          "required": true,
+          "description": "유입 경로 분류.",
+          "enum": [
+            "direct",
+            "kakao",
+            "search",
+            "other"
+          ]
+        },
+        {
+          "name": "room_hash",
+          "type": "string",
+          "required": false,
+          "description": "방 ID 원문 대신 쓰는 해시. 서버가 계산해 응답에 실어 주는 값을 그대로 쓴다. 방 링크가 아니면 생략."
+        }
+      ]
+    },
+    {
+      "name": "room_created",
+      "source": "server",
+      "description": "방이 만들어졌다.",
+      "properties": [
+        {
+          "name": "participant_count_expected",
+          "type": "integer",
+          "required": false,
+          "description": "방장이 예상한 인원(없으면 생략).",
+          "min": 2,
+          "max": 4
+        },
+        {
+          "name": "hidden_used",
+          "type": "boolean",
+          "required": true,
+          "description": "방장이 숨기기를 켰는지."
+        },
+        {
+          "name": "room_hash",
+          "type": "string",
+          "required": false,
+          "description": "방 ID 원문 대신 쓰는 해시. 서버가 계산해 응답에 실어 주는 값을 그대로 쓴다. 방 링크가 아니면 생략."
+        }
+      ]
+    },
+    {
+      "name": "participant_joined",
+      "source": "server",
+      "description": "친구가 방에 참여했다.",
+      "properties": [
+        {
+          "name": "hidden",
+          "type": "boolean",
+          "required": true,
+          "description": "숨기기를 켰는지."
+        },
+        {
+          "name": "seconds_since_room_created",
+          "type": "integer",
+          "required": true,
+          "description": "방 생성 후 경과 초.",
+          "min": 0
+        },
+        {
+          "name": "room_hash",
+          "type": "string",
+          "required": false,
+          "description": "방 ID 원문 대신 쓰는 해시. 서버가 계산해 응답에 실어 주는 값을 그대로 쓴다. 방 링크가 아니면 생략."
+        }
+      ]
+    },
+    {
+      "name": "map_app_opened",
+      "source": "client",
+      "description": "추천 카드에서 지도 앱 길찾기를 열었다.",
+      "properties": [
+        {
+          "name": "app",
+          "type": "enum",
+          "required": true,
+          "description": "열린 지도 앱.",
+          "enum": [
+            "kakao",
+            "naver"
+          ]
+        },
+        {
+          "name": "rank",
+          "type": "integer",
+          "required": true,
+          "description": "누른 카드의 순위.",
+          "min": 1,
+          "max": 3
+        }
+      ]
+    },
+    {
+      "name": "outcome_answered",
+      "source": "client_or_server",
+      "description": "\"실제로 어디서 만났나\" 질문에 답했다(핵심 지표).",
+      "properties": [
+        {
+          "name": "outcome",
+          "type": "enum",
+          "required": true,
+          "description": "답변.",
+          "enum": [
+            "top1",
+            "top3",
+            "other",
+            "none"
+          ]
+        },
+        {
+          "name": "meeting_station_code",
+          "type": "string",
+          "required": false,
+          "description": "실제 만난 역 코드(장소이므로 허용)."
+        },
+        {
+          "name": "days_since_result",
+          "type": "integer",
+          "required": true,
+          "description": "결과를 본 뒤 경과 일수.",
+          "min": 0
+        },
+        {
+          "name": "room_hash",
+          "type": "string",
+          "required": false,
+          "description": "방 ID 원문 대신 쓰는 해시. 서버가 계산해 응답에 실어 주는 값을 그대로 쓴다. 방 링크가 아니면 생략."
+        }
+      ]
+    },
+    {
+      "name": "analytics_consent_changed",
+      "source": "client",
+      "description": "분석 동의 상태가 바뀌었다.",
+      "properties": [
+        {
+          "name": "granted",
+          "type": "boolean",
+          "required": true,
+          "description": "동의 여부."
+        }
+      ]
+    }
+  ]
+}

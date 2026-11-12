@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "registryVersion": 1,
+  "stations": [
+    {
+      "code": "03v",
+      "name": "B1",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.0,
+      "lines": [
+        "blue"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "B1"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "130",
+      "name": "B2",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.01,
+      "lines": [
+        "blue"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "B2"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "225",
+      "name": "B4",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.02,
+      "lines": [
+        "blue"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "B4"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "31a",
+      "name": "B6",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.03,
+      "lines": [
+        "blue"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "B6"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "40f",
+      "name": "B7",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.04,
+      "lines": [
+        "blue"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "B7"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "4zm",
+      "name": "G1",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.05,
+      "lines": [
+        "green"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "G1"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "5ys",
+      "name": "G2",
+      "status": "active",
+      "lat": 37.51,
+      "lng": 127.0,
+      "lines": [
+        "green"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "G2"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "6xy",
+      "name": "G4",
+      "status": "active",
+      "lat": 37.51,
+      "lng": 127.01,
+      "lines": [
+        "green"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "G4"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "7x3",
+      "name": "G6",
+      "status": "active",
+      "lat": 37.51,
+      "lng": 127.02,
+      "lines": [
+        "green"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "G6"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "8w8",
+      "name": "G7",
+      "status": "active",
+      "lat": 37.51,
+      "lng": 127.03,
+      "lines": [
+        "green"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "G7"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "9vd",
+      "name": "R1",
+      "status": "active",
+      "lat": 37.51,
+      "lng": 127.04,
+      "lines": [
+        "red"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "R1"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "atj",
+      "name": "R2",
+      "status": "active",
+      "lat": 37.51,
+      "lng": 127.05,
+      "lines": [
+        "red"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "R2"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "bsq",
+      "name": "R4",
+      "status": "active",
+      "lat": 37.52,
+      "lng": 127.0,
+      "lines": [
+        "red"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "R4"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "crw",
+      "name": "R6",
+      "status": "active",
+      "lat": 37.52,
+      "lng": 127.01,
+      "lines": [
+        "red"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "R6"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "dr1",
+      "name": "R7",
+      "status": "active",
+      "lat": 37.52,
+      "lng": 127.02,
+      "lines": [
+        "red"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "R7"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "eq6",
+      "name": "X",
+      "status": "active",
+      "lat": 37.52,
+      "lng": 127.03,
+      "lines": [
+        "red",
+        "blue"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "X"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "fpb",
+      "name": "Y",
+      "status": "active",
+      "lat": 37.52,
+      "lng": 127.04,
+      "lines": [
+        "red",
+        "green"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "Y"
+      },
+      "addedIn": 1
+    },
+    {
+      "code": "gng",
+      "name": "Z",
+      "status": "active",
+      "lat": 37.52,
+      "lng": 127.05,
+      "lines": [
+        "blue",
+        "green"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "Z"
+      },
+      "addedIn": 1
+    }
+  ]
+}

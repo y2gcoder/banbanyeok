@@ -1,0 +1,458 @@
+{
+  "formatVersion": 1,
+  "description": "공유 URL(/s) 링크 코덱 테스트 벡터. 기준 구현은 prototype/gen_link_vectors.py. 직접 고치지 말고 재생성한다. 규칙: contracts/data-format.md §7",
+  "path": "/s",
+  "encode": [
+    {
+      "id": "fair_two",
+      "input": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null
+      },
+      "expectedQuery": "v=1&o=03v.130&m=f"
+    },
+    {
+      "id": "fast_three",
+      "input": {
+        "origins": [
+          "03v",
+          "130",
+          "225"
+        ],
+        "mode": "fast",
+        "favorIndex": null,
+        "nicknames": null
+      },
+      "expectedQuery": "v=1&o=03v.130.225&m=q"
+    },
+    {
+      "id": "favor_second_of_four",
+      "input": {
+        "origins": [
+          "03v",
+          "130",
+          "225",
+          "31a"
+        ],
+        "mode": "favor",
+        "favorIndex": 1,
+        "nicknames": null
+      },
+      "expectedQuery": "v=1&o=03v.130.225.31a&m=p1"
+    },
+    {
+      "id": "same_origin_twice_is_allowed",
+      "input": {
+        "origins": [
+          "03v",
+          "03v"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null
+      },
+      "expectedQuery": "v=1&o=03v.03v&m=f",
+      "note": "같은 출발역을 두 사람이 입력할 수 있다"
+    },
+    {
+      "id": "nicknames_korean",
+      "input": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "민수",
+          "지연"
+        ]
+      },
+      "expectedQuery": "v=1&o=03v.130&m=f&n=66-87IiY|7KeA7Jew"
+    },
+    {
+      "id": "nicknames_partial",
+      "input": {
+        "origins": [
+          "03v",
+          "130",
+          "225"
+        ],
+        "mode": "fast",
+        "favorIndex": null,
+        "nicknames": [
+          null,
+          "지연",
+          null
+        ]
+      },
+      "expectedQuery": "v=1&o=03v.130.225&m=q&n=|7KeA7Jew|",
+      "note": "비어 있는 별칭은 빈 세그먼트"
+    },
+    {
+      "id": "nickname_ascii_20_max",
+      "input": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "aaaaaaaaaaaaaaaaaaaa",
+          null
+        ]
+      },
+      "expectedQuery": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE|"
+    },
+    {
+      "id": "nickname_emoji_20_code_points",
+      "input": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+          null
+        ]
+      },
+      "expectedQuery": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI|",
+      "note": "길이는 UTF-16 단위가 아니라 코드포인트로 센다(JS의 String.length와 다르다)"
+    },
+    {
+      "id": "nickname_base64_with_url_chars",
+      "input": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "??>>",
+          "ÿÿ"
+        ]
+      },
+      "expectedQuery": "v=1&o=03v.130&m=f&n=Pz8-Pg|w7_Dvw",
+      "note": "base64url의 - 와 _ 가 나오는 입력"
+    }
+  ],
+  "decode": [
+    {
+      "id": "roundtrip_fair_two",
+      "query": "v=1&o=03v.130&m=f",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null
+      }
+    },
+    {
+      "id": "roundtrip_fast_three",
+      "query": "v=1&o=03v.130.225&m=q",
+      "expected": {
+        "origins": [
+          "03v",
+          "130",
+          "225"
+        ],
+        "mode": "fast",
+        "favorIndex": null,
+        "nicknames": null
+      }
+    },
+    {
+      "id": "roundtrip_favor_second_of_four",
+      "query": "v=1&o=03v.130.225.31a&m=p1",
+      "expected": {
+        "origins": [
+          "03v",
+          "130",
+          "225",
+          "31a"
+        ],
+        "mode": "favor",
+        "favorIndex": 1,
+        "nicknames": null
+      }
+    },
+    {
+      "id": "roundtrip_same_origin_twice_is_allowed",
+      "query": "v=1&o=03v.03v&m=f",
+      "expected": {
+        "origins": [
+          "03v",
+          "03v"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null
+      }
+    },
+    {
+      "id": "roundtrip_nicknames_korean",
+      "query": "v=1&o=03v.130&m=f&n=66-87IiY|7KeA7Jew",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "민수",
+          "지연"
+        ]
+      }
+    },
+    {
+      "id": "roundtrip_nicknames_partial",
+      "query": "v=1&o=03v.130.225&m=q&n=|7KeA7Jew|",
+      "expected": {
+        "origins": [
+          "03v",
+          "130",
+          "225"
+        ],
+        "mode": "fast",
+        "favorIndex": null,
+        "nicknames": [
+          null,
+          "지연",
+          null
+        ]
+      }
+    },
+    {
+      "id": "roundtrip_nickname_ascii_20_max",
+      "query": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE|",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "aaaaaaaaaaaaaaaaaaaa",
+          null
+        ]
+      }
+    },
+    {
+      "id": "roundtrip_nickname_emoji_20_code_points",
+      "query": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI|",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+          null
+        ]
+      }
+    },
+    {
+      "id": "roundtrip_nickname_base64_with_url_chars",
+      "query": "v=1&o=03v.130&m=f&n=Pz8-Pg|w7_Dvw",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "??>>",
+          "ÿÿ"
+        ]
+      }
+    },
+    {
+      "id": "param_order_is_free",
+      "query": "m=f&o=03v.130&v=1",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null
+      },
+      "note": "파라미터 순서는 상관없다"
+    },
+    {
+      "id": "unknown_params_ignored",
+      "query": "v=1&o=03v.130&m=q&utm_source=kakao&x=%ED%95%9C",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fast",
+        "favorIndex": null,
+        "nicknames": null
+      },
+      "note": "알 수 없는 키는 무시한다"
+    },
+    {
+      "id": "percent_encoded_separator_accepted",
+      "query": "v=1&o=03v.130&m=f&n=66-87IiY%7C7KeA7Jew",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "민수",
+          "지연"
+        ]
+      },
+      "note": "`|`가 %7C로 와도 값을 먼저 퍼센트 디코딩한다"
+    },
+    {
+      "id": "percent_encoded_dot_accepted",
+      "query": "v=1&o=03v%2E130&m=f",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null
+      }
+    },
+    {
+      "id": "missing_version",
+      "query": "o=03v.130&m=f",
+      "expectedError": "MISSING_PARAM"
+    },
+    {
+      "id": "missing_origins",
+      "query": "v=1&m=f",
+      "expectedError": "MISSING_PARAM"
+    },
+    {
+      "id": "missing_mode",
+      "query": "v=1&o=03v.130",
+      "expectedError": "MISSING_PARAM"
+    },
+    {
+      "id": "unsupported_version",
+      "query": "v=2&o=03v.130&m=f",
+      "expectedError": "UNSUPPORTED_VERSION"
+    },
+    {
+      "id": "one_origin",
+      "query": "v=1&o=03v&m=f",
+      "expectedError": "BAD_ORIGIN_COUNT"
+    },
+    {
+      "id": "five_origins",
+      "query": "v=1&o=03v.130.225.31a.40f&m=f",
+      "expectedError": "BAD_ORIGIN_COUNT"
+    },
+    {
+      "id": "uppercase_code_rejected",
+      "query": "v=1&o=03V.130&m=f",
+      "expectedError": "BAD_STATION_CODE",
+      "note": "대문자·혼동 문자 치환은 허용하지 않는다"
+    },
+    {
+      "id": "confusable_letter_rejected",
+      "query": "v=1&o=oo0.130&m=f",
+      "expectedError": "BAD_STATION_CODE",
+      "note": "알파벳에 없는 o"
+    },
+    {
+      "id": "short_code_rejected",
+      "query": "v=1&o=ab.130&m=f",
+      "expectedError": "BAD_STATION_CODE"
+    },
+    {
+      "id": "empty_origin_segment",
+      "query": "v=1&o=03v..130&m=f",
+      "expectedError": "BAD_STATION_CODE"
+    },
+    {
+      "id": "bad_mode_letter",
+      "query": "v=1&o=03v.130&m=z",
+      "expectedError": "BAD_MODE"
+    },
+    {
+      "id": "favor_without_index",
+      "query": "v=1&o=03v.130&m=p",
+      "expectedError": "BAD_MODE"
+    },
+    {
+      "id": "favor_two_digit_index",
+      "query": "v=1&o=03v.130&m=p10",
+      "expectedError": "BAD_MODE"
+    },
+    {
+      "id": "favor_index_out_of_range",
+      "query": "v=1&o=03v.130&m=p2",
+      "expectedError": "FAVOR_INDEX_OUT_OF_RANGE"
+    },
+    {
+      "id": "duplicate_param",
+      "query": "v=1&v=1&o=03v.130&m=f",
+      "expectedError": "DUPLICATE_PARAM"
+    },
+    {
+      "id": "nickname_count_mismatch",
+      "query": "v=1&o=03v.130&m=f&n=64",
+      "expectedError": "BAD_NICKNAMES"
+    },
+    {
+      "id": "nickname_padding_rejected",
+      "query": "v=1&o=03v.130&m=f&n=7KeA==|7KeA",
+      "expectedError": "BAD_NICKNAMES"
+    },
+    {
+      "id": "nickname_standard_base64_rejected",
+      "query": "v=1&o=03v.130&m=f&n=+/+/|7KeA",
+      "expectedError": "BAD_NICKNAMES"
+    },
+    {
+      "id": "nickname_invalid_utf8",
+      "query": "v=1&o=03v.130&m=f&n=_w|7KeA",
+      "expectedError": "BAD_NICKNAMES",
+      "note": "0xFF 한 바이트"
+    },
+    {
+      "id": "nickname_all_empty_not_canonical",
+      "query": "v=1&o=03v.130&m=f&n=|",
+      "expectedError": "BAD_NICKNAMES"
+    },
+    {
+      "id": "nickname_21_chars_rejected",
+      "query": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWFh|",
+      "expectedError": "BAD_NICKNAMES"
+    },
+    {
+      "id": "malformed_percent_escape",
+      "query": "v=1&o=03v.130&m=%ZZ",
+      "expectedError": "MALFORMED_QUERY"
+    }
+  ]
+}

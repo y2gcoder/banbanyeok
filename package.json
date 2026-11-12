@@ -1,0 +1,11 @@
+{
+  "name": "banbanyeok",
+  "private": true,
+  "description": "반반역 모노레포 루트. web 워크스페이스와 계약 코드 생성 스크립트를 관리한다.",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=12 <13"
+  },
+  "scripts": {}
+}

@@ -1,0 +1,697 @@
+{
+  "formatVersion": 1,
+  "unit": "minutes",
+  "description": "prototype/algorithm.py 오라클의 시나리오별 전체 순위. 직접 고치지 말고 prototype/gen_expected.py로 재생성한다.",
+  "scenarios": [
+    {
+      "id": "brief_70_vs_30_40",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "shorter",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "shorter",
+          "times": [
+            30,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 10,
+          "totalMinutes": 70,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "equal70",
+          "times": [
+            70,
+            70
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 70,
+          "spreadMinutes": 0,
+          "totalMinutes": 140,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "fair_max_before_spread",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "quick",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "quick",
+          "times": [
+            10,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 30,
+          "totalMinutes": 50,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "balanced",
+          "times": [
+            38,
+            45
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 45,
+          "spreadMinutes": 7,
+          "totalMinutes": 83,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "fair_spread_tie",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "balanced",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "balanced",
+          "times": [
+            35,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 5,
+          "totalMinutes": 75,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "uneven",
+          "times": [
+            10,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 30,
+          "totalMinutes": 50,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "fair_total_third",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "low",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "low",
+          "times": [
+            10,
+            20,
+            40
+          ],
+          "transfers": [
+            0,
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 30,
+          "totalMinutes": 70,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "high",
+          "times": [
+            10,
+            35,
+            40
+          ],
+          "transfers": [
+            0,
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 30,
+          "totalMinutes": 85,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "fast_total",
+      "status": "ok",
+      "mode": "fast",
+      "toleranceMinutes": 0,
+      "baselineStationId": "middle",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "one_side",
+          "times": [
+            0,
+            50
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 50,
+          "spreadMinutes": 50,
+          "totalMinutes": 50,
+          "reasonCode": "FAST_TOTAL"
+        },
+        {
+          "rank": 2,
+          "stationId": "middle",
+          "times": [
+            30,
+            30
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 30,
+          "spreadMinutes": 0,
+          "totalMinutes": 60,
+          "reasonCode": "FAST_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "fast_max_tie",
+      "status": "ok",
+      "mode": "fast",
+      "toleranceMinutes": 0,
+      "baselineStationId": "middle",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "middle",
+          "times": [
+            25,
+            25
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 25,
+          "spreadMinutes": 0,
+          "totalMinutes": 50,
+          "reasonCode": "FAST_TOTAL"
+        },
+        {
+          "rank": 2,
+          "stationId": "one_side",
+          "times": [
+            0,
+            50
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 50,
+          "spreadMinutes": 50,
+          "totalMinutes": 50,
+          "reasonCode": "FAST_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "favor_with_cap",
+      "status": "ok",
+      "mode": "favor:A",
+      "toleranceMinutes": 0,
+      "baselineStationId": "baseline",
+      "favorCaps": {
+        "B": 45
+      },
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "near_A",
+          "times": [
+            10,
+            44
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 44,
+          "spreadMinutes": 34,
+          "totalMinutes": 54,
+          "favoredMinutes": 10,
+          "reasonCode": "FAVOR_CAPPED"
+        },
+        {
+          "rank": 2,
+          "stationId": "baseline",
+          "times": [
+            30,
+            30
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 30,
+          "spreadMinutes": 0,
+          "totalMinutes": 60,
+          "favoredMinutes": 30,
+          "reasonCode": "FAVOR_ALTERNATIVE"
+        }
+      ],
+      "excluded": [
+        {
+          "stationId": "extreme",
+          "reasonCode": "FAVOR_CAP_EXCEEDED"
+        }
+      ]
+    },
+    {
+      "id": "favor_relative_cap",
+      "status": "ok",
+      "mode": "favor:A",
+      "toleranceMinutes": 0,
+      "baselineStationId": "baseline",
+      "favorCaps": {
+        "B": 30
+      },
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "baseline",
+          "times": [
+            20,
+            20
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 20,
+          "spreadMinutes": 0,
+          "totalMinutes": 40,
+          "favoredMinutes": 20,
+          "reasonCode": "FAVOR_CAPPED"
+        }
+      ],
+      "excluded": [
+        {
+          "stationId": "over",
+          "reasonCode": "FAVOR_CAP_EXCEEDED"
+        }
+      ]
+    },
+    {
+      "id": "favor_absolute_cap",
+      "status": "ok",
+      "mode": "favor:A",
+      "toleranceMinutes": 0,
+      "baselineStationId": "baseline",
+      "favorCaps": {
+        "B": 55
+      },
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "baseline",
+          "times": [
+            40,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 0,
+          "totalMinutes": 80,
+          "favoredMinutes": 40,
+          "reasonCode": "FAVOR_CAPPED"
+        }
+      ],
+      "excluded": [
+        {
+          "stationId": "over",
+          "reasonCode": "FAVOR_CAP_EXCEEDED"
+        }
+      ]
+    },
+    {
+      "id": "favor_other_person",
+      "status": "ok",
+      "mode": "favor:B",
+      "toleranceMinutes": 0,
+      "baselineStationId": "baseline",
+      "favorCaps": {
+        "A": 45
+      },
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "near_B",
+          "times": [
+            44,
+            10
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 44,
+          "spreadMinutes": 34,
+          "totalMinutes": 54,
+          "favoredMinutes": 10,
+          "reasonCode": "FAVOR_CAPPED"
+        },
+        {
+          "rank": 2,
+          "stationId": "baseline",
+          "times": [
+            30,
+            30
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 30,
+          "spreadMinutes": 0,
+          "totalMinutes": 60,
+          "favoredMinutes": 30,
+          "reasonCode": "FAVOR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "fair_four_people",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "max45",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "max45",
+          "times": [
+            20,
+            30,
+            40,
+            45
+          ],
+          "transfers": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "maxMinutes": 45,
+          "spreadMinutes": 25,
+          "totalMinutes": 135,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "max50",
+          "times": [
+            25,
+            25,
+            25,
+            50
+          ],
+          "transfers": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "maxMinutes": 50,
+          "spreadMinutes": 25,
+          "totalMinutes": 125,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "unreachable",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "reachable",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "reachable",
+          "times": [
+            30,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 10,
+          "totalMinutes": 70,
+          "reasonCode": "FAIR_MINIMAX"
+        }
+      ],
+      "excluded": [
+        {
+          "stationId": "broken",
+          "reasonCode": "UNREACHABLE"
+        }
+      ]
+    },
+    {
+      "id": "stable_station_id",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "a",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "a",
+          "times": [
+            20,
+            20
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 20,
+          "spreadMinutes": 0,
+          "totalMinutes": 40,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "z",
+          "times": [
+            20,
+            20
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 20,
+          "spreadMinutes": 0,
+          "totalMinutes": 40,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "strict_minimax_default",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 0,
+      "baselineStationId": "shorter",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "shorter",
+          "times": [
+            10,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 30,
+          "totalMinutes": 50,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "balanced",
+          "times": [
+            40,
+            42
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 42,
+          "spreadMinutes": 2,
+          "totalMinutes": 82,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "optional_tolerance",
+      "status": "ok",
+      "mode": "fair",
+      "toleranceMinutes": 3,
+      "baselineStationId": "shorter",
+      "favorCaps": null,
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "balanced",
+          "times": [
+            40,
+            42
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 42,
+          "spreadMinutes": 2,
+          "totalMinutes": 82,
+          "reasonCode": "FAIR_MINIMAX"
+        },
+        {
+          "rank": 2,
+          "stationId": "shorter",
+          "times": [
+            10,
+            40
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 40,
+          "spreadMinutes": 30,
+          "totalMinutes": 50,
+          "reasonCode": "FAIR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "favor_cap_inclusive",
+      "status": "ok",
+      "mode": "favor:A",
+      "toleranceMinutes": 0,
+      "baselineStationId": "baseline",
+      "favorCaps": {
+        "B": 45
+      },
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "boundary",
+          "times": [
+            10,
+            45
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 45,
+          "spreadMinutes": 35,
+          "totalMinutes": 55,
+          "favoredMinutes": 10,
+          "reasonCode": "FAVOR_CAPPED"
+        },
+        {
+          "rank": 2,
+          "stationId": "baseline",
+          "times": [
+            30,
+            30
+          ],
+          "transfers": [
+            0,
+            0
+          ],
+          "maxMinutes": 30,
+          "spreadMinutes": 0,
+          "totalMinutes": 60,
+          "favoredMinutes": 30,
+          "reasonCode": "FAVOR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
+    }
+  ]
+}

@@ -1,15 +1,14 @@
 """골든 시나리오 및 실제 그래프 경로 검증. 외부 의존성 없음."""
 import itertools
 import json
-from pathlib import Path
 import unittest
 
-from algorithm import recommend, toy_network, matrices
+from algorithm import SCENARIOS_PATH, recommend, toy_network, matrices
 
 
 class AlgorithmTests(unittest.TestCase):
     def test_golden_scenarios(self):
-        scenarios = json.loads(Path(__file__).with_name('scenarios.json').read_text())
+        scenarios = json.loads(SCENARIOS_PATH.read_text(encoding='utf-8'))
         for case in scenarios:
             with self.subTest(case=case['id']):
                 result = recommend(**case['input'])
