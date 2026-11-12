@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "minClientSchema": 1,
+  "dataVersion": "20261112.6",
+  "previousDataVersion": "20261112.5",
+  "generatedAt": "2026-11-12T14:29:41Z",
+  "registryVersion": 3,
+  "timeModel": "weekday-offpeak-estimated-half-headway",
+  "originCount": 240,
+  "candidateCount": 97,
+  "files": {
+    "registry": {
+      "path": "stations.json",
+      "sha256": "7031795530b375b3dc41f1606afe0a61e26fa8324670533b600eb5e09b7da6aa",
+      "bytes": 373579
+    },
+    "candidates": {
+      "path": "candidates.json",
+      "sha256": "fc1551e84deaa9f2f44e0b3f05f65d0c280a0bdcfc0219fcc28b1454ab2c4d04",
+      "bytes": 1138
+    },
+    "od": {
+      "path": "od.bin",
+      "sha256": "fb0dfa267703029e8da4cd435c06058c469738a7fbfdb8c334e62a1512da0259",
+      "bytes": 70546
+    }
+  }
+}

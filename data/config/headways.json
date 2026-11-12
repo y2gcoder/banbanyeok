@@ -1,0 +1,17 @@
+{
+  "model": "half-headway",
+  "service_day": "weekday-offpeak",
+  "effective_date": null,
+  "estimated": true,
+  "basis": "개발용 평시 가정: 간선 6분, 분기/장거리 8분. 시간표나 실측 출처 없음. 운영 공표값이 아니며 시간표 확보 뒤 노선·방향·시간대별 값으로 교체해야 함.",
+  "lines": {
+    "1": {"seconds": 360},
+    "2": {"seconds": 360},
+    "3": {"seconds": 480},
+    "4": {"seconds": 480},
+    "5": {"seconds": 480},
+    "6": {"seconds": 480},
+    "7": {"seconds": 480},
+    "8": {"seconds": 480}
+  }
+}
