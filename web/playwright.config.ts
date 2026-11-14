@@ -30,7 +30,8 @@ export default defineConfig({
     {
       // rewrite 대상(API_ORIGIN)은 빌드 때 정해지므로 같은 값으로 빌드하고 실행한다.
       command: `pnpm build && pnpm start --port ${webPort}`,
-      env: { API_ORIGIN: apiOrigin },
+      // SITE_URL도 빌드 때 정해진다(canonical·OG 주소가 정적 페이지에 들어간다).
+      env: { API_ORIGIN: apiOrigin, SITE_URL: `http://127.0.0.1:${webPort}` },
       url: `http://127.0.0.1:${webPort}/`,
       timeout: 240_000,
       reuseExistingServer: !process.env.CI,

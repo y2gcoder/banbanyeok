@@ -1,15 +1,10 @@
 import { dataVersionDate } from "@/lib/seo/pairs";
 
 /** 숫자가 어떤 데이터로 나왔는지 밝히는 안내(데이터 기준·출처·한계). SEO 페이지 공통 하단. */
-export function DataBasis({ dataVersion, isSample }: { dataVersion: string; isSample: boolean }) {
+export function DataBasis({ dataVersion }: { dataVersion: string }) {
   const { year, month, day } = dataVersionDate(dataVersion);
   return (
     <footer className="mt-10 flex flex-col gap-3 border-t border-rule pt-6 text-[13px] leading-relaxed text-muted-foreground">
-      {isSample ? (
-        <p role="note" className="rounded-md bg-safety/30 px-3 py-2 font-semibold text-safety-ink">
-          개발용 표본 데이터예요. 실제 추천이 아니에요.
-        </p>
-      ) : null}
       <h2 className="text-sm font-bold text-ink">데이터 기준</h2>
       <p>
         {year}년 {month}월 {day}일 데이터(버전 {dataVersion})로 계산했어요. 역에서 역까지 걸리는 시간이고, 열차 대기와

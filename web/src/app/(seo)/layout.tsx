@@ -12,7 +12,7 @@ export default function SeoLayout({ children }: { children: ReactNode }) {
         <Wordmark />
       </header>
       <main className="flex flex-1 flex-col gap-6 pt-6">{children}</main>
-      <DataBasis dataVersion={site.dataVersion} isSample={site.source === "fixture"} />
+      <DataBasis dataVersion={site.dataVersion} />
     </div>
   );
 }

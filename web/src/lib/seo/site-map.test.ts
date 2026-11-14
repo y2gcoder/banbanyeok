@@ -10,7 +10,7 @@ const site = { dataVersion: "20261112.6", pages };
 
 describe("sitemap.xml", () => {
   it("홈, 허브, 모든 조합 페이지(정규 주소만)를 데이터 날짜로", () => {
-    const entries = sitemapEntries({ ...site, source: "artifact" }, env);
+    const entries = sitemapEntries(site, env);
     expect(entries.map((e) => e.url)).toEqual([
       "https://banban.example/",
       "https://banban.example/meet",
@@ -19,12 +19,8 @@ describe("sitemap.xml", () => {
     for (const entry of entries) expect(entry.lastModified.toISOString()).toBe("2026-11-12T00:00:00.000Z");
   });
 
-  it("개발용 표본이면 비운다", () => {
-    expect(sitemapEntries({ ...site, source: "fixture" }, env)).toEqual([]);
-  });
-
   it("공유 링크(/s)와 결과(/result)는 들어 있지 않다", () => {
-    const urls = sitemapEntries({ ...site, source: "artifact" }, env).map((e) => e.url);
+    const urls = sitemapEntries(site, env).map((e) => e.url);
     expect(urls.some((u) => u.includes("/s?") || u.includes("/result"))).toBe(false);
   });
 });

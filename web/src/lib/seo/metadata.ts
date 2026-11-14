@@ -26,8 +26,9 @@ type Social = {
   images?: string[];
 };
 
-function noindex(env: Env, index: boolean): Metadata["robots"] {
-  return index && isIndexableSite(env) ? undefined : { index: false, follow: false };
+/** 색인해도 되는 사이트(SITE_URL이 localhost가 아님)가 아니면 noindex. */
+function robots(env: Env): Metadata["robots"] {
+  return isIndexableSite(env) ? undefined : { index: false, follow: false };
 }
 
 function social(
@@ -58,7 +59,7 @@ export function siteMetadata(env: Env = process.env): Metadata {
     applicationName: SITE_NAME,
     title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
     description: SITE_DESCRIPTION,
-    robots: noindex(env, true),
+    robots: robots(env),
     ...social({ title: "우리 어디서 만나야 덜 억울할까?", description: SITE_DESCRIPTION, path: "/" }, env),
   };
 }
@@ -80,12 +81,12 @@ export function pairDescription(page: PairPage): string {
   );
 }
 
-/** 조합 페이지. `indexable`은 데이터가 실제 산출물일 때만 true(개발용 표본은 색인하지 않는다). */
-export function pairMetadata(page: PairPage, indexable: boolean, env: Env = process.env): Metadata {
+/** 조합 페이지. */
+export function pairMetadata(page: PairPage, env: Env = process.env): Metadata {
   return {
     title: pairTitle(page),
     description: pairDescription(page),
-    robots: noindex(env, indexable),
+    robots: robots(env),
     ...social({ title: pairTitle(page), description: pairDescription(page), path: page.path }, env),
   };
 }
@@ -94,11 +95,11 @@ const HUB_TITLE = "인기 역 조합별 만날 곳 추천";
 const HUB_DESCRIPTION =
   "강남·홍대입구·잠실처럼 자주 만나는 두 역을 골라, 각자 지하철 시간으로 계산한 공평한 만날 곳 3곳을 비교해 보세요.";
 
-export function hubMetadata(indexable: boolean, env: Env = process.env): Metadata {
+export function hubMetadata(env: Env = process.env): Metadata {
   return {
     title: HUB_TITLE,
     description: HUB_DESCRIPTION,
-    robots: noindex(env, indexable),
+    robots: robots(env),
     ...social({ title: HUB_TITLE, description: HUB_DESCRIPTION, path: HUB_PATH }, env),
   };
 }

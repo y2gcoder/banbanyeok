@@ -2,13 +2,15 @@
  * 사전 계산된 조합 → 페이지 모델. 순위는 파일 순서 그대로이며 웹은 다시 계산하지 않는다.
  *
  * URL: `/meet/<코드>-<코드>`. 두 역 코드를 사전순(작은 쪽이 앞, 파일의 a<b와 같은 규칙)으로 놓아 A-B와 B-A를 한 주소로 모은다.
+ * 반대 순서(B-A) 주소는 만들지 않는다(404). 우리가 만드는 모든 링크·사이트맵·canonical이 정규 주소뿐이고, 리다이렉트 수백 개는
+ * Worker에 규칙으로 실려(요청마다 정규식 검사) 얻는 것이 없다.
  * 역 이름이 아니라 코드를 쓰는 근거는 docs/setup/p5-notes.md 2절(OpenNext/Workers에서 비ASCII 경로의 SSG 페이지가 404로 실측됨,
  * 코드는 개명에도 안 바뀜). 화면에 보이는 역 이름 순서는 가나다 순이다(주소 순서와 다를 수 있다).
  */
-import { stationLabel } from "../display/korean.ts";
-import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "../display/minutes.ts";
-import { type Station, stationByCode } from "../stations/index.ts";
-import { MAX_RESULTS_PER_PAIR, type SeoPair, type SeoPairsFile } from "./pairs.ts";
+import { stationLabel } from "@/lib/display/korean";
+import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "@/lib/display/minutes";
+import { type Station, stationByCode } from "@/lib/stations";
+import { MAX_RESULTS_PER_PAIR, type SeoPair, type SeoPairsFile } from "./pairs";
 
 export const PAIR_PATH_PREFIX = "/meet";
 /** 코드 두 개를 잇는 글자(코드는 [0-9a-z]뿐이라 겹치지 않는다). */
@@ -24,7 +26,7 @@ export const MEANINGFUL = {
   maxTopSeconds: 5400,
 } as const;
 
-type StationRef = { code: string; name: string; label: string; lines: string[] };
+export type StationRef = { code: string; name: string; label: string; lines: string[] };
 
 type PairPerson = { stationName: string; seconds: number; minutes: number; transfers: number };
 
@@ -133,20 +135,30 @@ export function findPairPage(pages: readonly PairPage[], slug: string): PairPage
   return pages.find((page) => page.slug === slug);
 }
 
-/** 반대 순서(B-A) 주소 → 정규 주소로 보내는 영구 리다이렉트. next.config.ts가 쓴다. */
-export function reverseRedirects(
-  pages: readonly PairPage[],
-): { source: string; destination: string; permanent: true }[] {
-  return pages.map((page) => {
-    const [a, b] = page.slug.split(PAIR_SEPARATOR);
-    return { source: `${PAIR_PATH_PREFIX}/${b}${PAIR_SEPARATOR}${a}`, destination: page.path, permanent: true };
-  });
-}
-
 /** 같은 역이 들어간 다른 조합(내부 링크용). 주소순으로 앞에서 `limit`개. */
 export function relatedPages(pages: readonly PairPage[], page: PairPage, limit = 6): PairPage[] {
   const names = new Set([page.first.name, page.second.name]);
   return pages
     .filter((p) => p.slug !== page.slug && (names.has(p.first.name) || names.has(p.second.name)))
     .slice(0, limit);
+}
+
+/** 허브 목록용: 역마다 그 역이 들어간 조합을 상대 역 이름순으로. 한 조합은 두 역 아래에 한 번씩 나온다. */
+export function groupByStation(
+  pages: readonly PairPage[],
+): { station: StationRef; partners: { page: PairPage; partner: StationRef }[] }[] {
+  const groups = new Map<string, { station: StationRef; partners: { page: PairPage; partner: StationRef }[] }>();
+  const add = (station: StationRef, partner: StationRef, page: PairPage) => {
+    const group = groups.get(station.code) ?? { station, partners: [] };
+    group.partners.push({ page, partner });
+    groups.set(station.code, group);
+  };
+  for (const page of pages) {
+    add(page.first, page.second, page);
+    add(page.second, page.first, page);
+  }
+  const byName = (a: StationRef, b: StationRef) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  return [...groups.values()]
+    .map((group) => ({ ...group, partners: group.partners.sort((x, y) => byName(x.partner, y.partner)) }))
+    .sort((x, y) => byName(x.station, y.station));
 }

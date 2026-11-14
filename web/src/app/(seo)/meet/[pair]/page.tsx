@@ -21,7 +21,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const site = loadSeoSite();
   const page = findPairPage(site.pages, (await params).pair);
-  return page ? pairMetadata(page, site.source === "artifact") : {};
+  return page ? pairMetadata(page) : {};
 }
 
 export default async function PairPage({ params }: Props) {

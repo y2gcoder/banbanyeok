@@ -1,13 +1,11 @@
 /**
  * 파이프라인이 사전 계산한 인기 역 조합(`seo-pairs.json`)의 형식·검증. 웹은 순위를 계산하지 않고 이 값을 그대로 보여 준다.
  *
- * 이 모듈과 `pair-pages.ts`·`load.ts`는 next.config.ts(리다이렉트)도 불러서 `@/` 별칭 대신 상대 경로를 쓴다.
- *
  * 형식은 읽는 쪽에 엄격하다(알 수 없는 키 = 오류, contracts/data-format.md §6). 파일이 약속(a<b·중복 없음·파생 값 일치)을
  * 어기면 빌드를 멈춘다. 페이지가 잘못된 숫자를 공개하는 것보다 낫다.
  */
 import { z } from "zod";
-import { isStationCode } from "../link/codec.ts";
+import { isStationCode } from "@/lib/link/codec";
 
 const SEO_PAIRS_SCHEMA_VERSION = 1;
 export const MAX_RESULTS_PER_PAIR = 3;

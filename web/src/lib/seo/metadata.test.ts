@@ -14,7 +14,7 @@ const og = (meta: Metadata) => meta.openGraph as Record<string, unknown>;
 const tw = (meta: Metadata) => meta.twitter as Record<string, unknown>;
 
 describe("조합 페이지 메타데이터", () => {
-  const meta = pairMetadata(page, true, env);
+  const meta = pairMetadata(page, env);
 
   it("제목: 역 이름 두 개와 후보 수", () => {
     expect(pairTitle(page)).toBe("강남역·홍대입구역 중간 만날 곳 추천 3곳");
@@ -51,28 +51,24 @@ describe("조합 페이지 메타데이터", () => {
     });
   });
 
-  it("색인: 실제 산출물 + 색인 가능한 사이트일 때만 허용, 아니면 noindex", () => {
+  it("색인: SITE_URL이 localhost가 아닐 때만 허용, 아니면 noindex", () => {
     expect(meta.robots).toBeUndefined();
-    expect(pairMetadata(page, false, env).robots).toEqual({ index: false, follow: false });
-    expect(pairMetadata(page, true, {}).robots).toEqual({ index: false, follow: false });
-    expect(pairMetadata(page, true, { SITE_URL: "http://localhost:3000" }).robots).toEqual({
-      index: false,
-      follow: false,
-    });
+    expect(pairMetadata(page, {}).robots).toEqual({ index: false, follow: false });
+    expect(pairMetadata(page, { SITE_URL: "http://localhost:3000" }).robots).toEqual({ index: false, follow: false });
   });
 
   it("SITE_URL이 없으면 localhost 주소(하드코딩된 도메인 없음)", () => {
-    expect(pairMetadata(page, true, {}).alternates?.canonical).toBe(`http://localhost:3000${page.path}`);
+    expect(pairMetadata(page, {}).alternates?.canonical).toBe(`http://localhost:3000${page.path}`);
   });
 });
 
 describe("허브·사이트 기본 메타데이터", () => {
   it("허브", () => {
-    const meta = hubMetadata(true, env);
+    const meta = hubMetadata(env);
     expect(meta.title).toBe("인기 역 조합별 만날 곳 추천");
     expect(meta.alternates?.canonical).toBe("https://banban.example/meet");
     expect(og(meta).url).toBe("https://banban.example/meet");
-    expect(hubMetadata(false, env).robots).toEqual({ index: false, follow: false });
+    expect(hubMetadata({}).robots).toEqual({ index: false, follow: false });
   });
 
   it("사이트 기본: metadataBase, title 템플릿, 설명, OG·Twitter", () => {

@@ -51,19 +51,13 @@ describe("조합 후보 카드", () => {
 
 describe("데이터 기준 안내", () => {
   it("날짜·버전·출처·한계를 밝힌다", () => {
-    render(<DataBasis dataVersion="20261112.6" isSample={false} />);
+    render(<DataBasis dataVersion="20261112.6" />);
     const note = screen.getByRole("contentinfo");
     expect(note).toHaveTextContent("2026년 11월 12일 데이터(버전 20261112.6)");
     expect(note).toHaveTextContent("공식 시간표나 실시간 안내가 아니니");
     expect(note).toHaveTextContent("국가철도공단");
     expect(note).toHaveTextContent("서울교통공사");
     expect(note).toHaveTextContent("공공누리 제1유형");
-    expect(screen.queryByRole("note")).not.toBeInTheDocument();
-  });
-
-  it("개발용 표본이면 실제 추천이 아니라고 알린다", () => {
-    render(<DataBasis dataVersion="20261112.6" isSample />);
-    expect(screen.getByRole("note")).toHaveTextContent("개발용 표본");
   });
 });
 
