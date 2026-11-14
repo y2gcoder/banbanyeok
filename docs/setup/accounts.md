@@ -44,3 +44,13 @@
 - 키를 발급하면 1Password에 먼저 넣고, 이 표의 상태를 바꾼다.
 - 클라이언트(웹/앱)에 들어가는 키는 공개되는 값이다. 숨기지 말고 도메인이나 번들 ID로 제한한다.
 - 커밋된 키는 지워도 기록에 남는다. 커밋됐다면 즉시 재발급한다.
+
+## GCP 리소스 (2026-11-14)
+
+| 리소스 | 값 | 메모 |
+|---|---|---|
+| 데이터 산출물 버킷 | `gs://banbanyeok-7eoxn-artifacts` (서울, 비공개, 균일 접근, soft delete 끔) | 해시 이름 산출물 + `manifest.json`. 오래된 버전 정리는 발행기가 "최근 N개 보관"으로 한다(나이 기반 자동 삭제는 쓰지 않음: 데이터가 오래 안 바뀌면 현재 버전이 지워질 수 있음) |
+| OIDC (WIF) | 풀 `github`, 공급자 `banbanyeok-repo`, 저장소 ID 조건 | `gcp-auth-check` 워크플로로 토큰 발급 확인 |
+| 배포 서비스 계정 | `github-deployer` | 아직 프로젝트 권한 없음. P8에서 최소 권한 부여 |
+| GitHub 저장소 변수 | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`, `GCP_ARTIFACT_BUCKET` | 비밀이 아닌 식별자라 secrets가 아닌 variables |
+| main 브랜치 보호 | PR 필수(승인 0), `ci-ok`·`gitleaks` 필수, 서명 커밋, 일직선 이력, squash 병합만 | 관리자는 우회 가능 |
