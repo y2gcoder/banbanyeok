@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import AxeBuilder from "@axe-core/playwright";
 import {
   type APIRequestContext,
   type Browser,
@@ -29,6 +30,21 @@ async function pickStation(page: Page, field: string, query: string, option: Reg
 
 /** 강남역 코드(dev 산출물). API로 직접 참여자를 넣을 때 쓴다. */
 const GANGNAM = "k3a";
+/** WCAG 2.1 AA 위반이 없어야 한다. */
+async function expectNoA11yViolations(page: Page) {
+  const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+}
+
+/** 운영 빌드의 CSP를 어기는 일(인라인 스크립트 차단 등)이 없어야 한다. */
+function watchCsp(page: Page): string[] {
+  const violations: string[] = [];
+  page.on("console", (message) => {
+    if (/content security policy/i.test(message.text())) violations.push(message.text());
+  });
+  return violations;
+}
+
 const ROOM_URL = /\/r\/([0-9a-hjkmnp-tv-z]{10})$/;
 
 async function newFriend(browser: Browser, testInfo: TestInfo) {
@@ -44,6 +60,7 @@ async function newFriend(browser: Browser, testInfo: TestInfo) {
 async function createRoom(page: Page, options: { shot?: boolean } = {}): Promise<string> {
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
   await page.goto("/");
+  if (options.shot) await shot(page, "0-home");
   await page.getByRole("link", { name: /친구가 각자 입력하게 하기/ }).click();
   await expect(page).toHaveURL(/\/r\/new$/);
   await warmUp; // 방 만들기 화면이 열리면 서버를 깨운다.
@@ -79,6 +96,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   browser,
 }, testInfo) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const csp = watchCsp(page);
   const hostRoom = await createRoom(page, { shot: true });
 
   // 방장 화면: 링크 보내기가 먼저, 혼자일 때는 결과가 아직 없다. 토큰은 이 기기 저장소에만 있고 주소에는 없다.
@@ -96,6 +114,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
     expect(page.url()).not.toContain(secret ?? "never");
   }
   expect(await page.evaluate(() => document.cookie)).toBe("");
+  await expectNoA11yViolations(page);
   await shot(page, "2-host-waiting");
 
   await page.getByRole("button", { name: "링크 복사" }).click();
@@ -111,6 +130,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await expect(friendPeople.getByText("민수")).toBeVisible();
   await expect(friendPeople.getByText("강남", { exact: true })).toBeVisible();
   await expect(friendPeople.getByText("(나)")).toHaveCount(0);
+  await expectNoA11yViolations(friend.page);
   await shot(friend.page, "3-friend-join");
   await pickStation(friend.page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
   await friend.page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
@@ -135,6 +155,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await expect(top.getByText("참가자 2", { exact: true })).toBeVisible();
   await expect(top.getByText("출발역 비공개")).toBeVisible(); // 시간·환승은 보이고 역 이름만 가려진다
   await expect(top.getByText("민수(나)")).toBeVisible();
+  await expectNoA11yViolations(page);
   await shot(page, "6-host-with-result");
 
   // 서버 응답에도 숨긴 출발역 코드가 없다(방장·토큰 없는 사람 모두).
@@ -205,6 +226,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await friend.page.goto(link);
   await expect(friend.page.getByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeVisible();
   await friend.context.close();
+  expect(csp).toEqual([]);
 });
 
 test("잠김·정원 초과: 새로 들어올 수 없고, 이미 들어온 사람은 계속 고칠 수 있다", async ({
