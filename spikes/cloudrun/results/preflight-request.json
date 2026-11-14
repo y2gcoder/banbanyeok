@@ -1,0 +1,28 @@
+[
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-b01",
+    "deploy_started_at": "2026-11-12T20:49:49.255868Z",
+    "first_request_started_at": "2026-11-12T20:50:00.862849Z",
+    "cold": {
+      "total_ms": 1899.112,
+      "ttfb_ms": 1898.94,
+      "dns_ms": 50.225,
+      "tls_ms": 77.488,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 93.115,
+      "ttfb_ms": 93.035,
+      "dns_ms": 3.577,
+      "tls_ms": 41.539,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app"
+  }
+]

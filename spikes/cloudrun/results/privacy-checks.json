@@ -1,0 +1,27 @@
+[
+  {
+    "service": "spike-cold-11122046-ktor",
+    "public_iam_binding": false,
+    "unauthenticated_http": 404
+  },
+  {
+    "service": "spike-cold-11122046-ktor-cds",
+    "public_iam_binding": false,
+    "unauthenticated_http": 404
+  },
+  {
+    "service": "spike-cold-11122046-mvc",
+    "public_iam_binding": false,
+    "unauthenticated_http": 404
+  },
+  {
+    "service": "spike-cold-11122046-jdbc",
+    "public_iam_binding": false,
+    "unauthenticated_http": 404
+  },
+  {
+    "service": "spike-cold-11122046-jpa",
+    "public_iam_binding": false,
+    "unauthenticated_http": 404
+  }
+]

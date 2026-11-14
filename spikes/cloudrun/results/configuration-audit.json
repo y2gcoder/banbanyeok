@@ -1,0 +1,92 @@
+[
+  {
+    "service": "spike-cold-11122046-ktor",
+    "latest_revision": "spike-cold-11122046-ktor-u-n10",
+    "revision_annotations": {
+      "autoscaling.knative.dev/maxScale": "1",
+      "run.googleapis.com/startup-cpu-boost": "false",
+      "run.googleapis.com/execution-environment": "gen2",
+      "run.googleapis.com/cpu-throttling": "true"
+    },
+    "limits": {
+      "cpu": "1",
+      "memory": "512Mi"
+    },
+    "container_concurrency": 1,
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/ktor:measured",
+    "tagged_revisions": 20,
+    "traffic_percent_for_measured_tags": 0
+  },
+  {
+    "service": "spike-cold-11122046-ktor-cds",
+    "latest_revision": "spike-cold-11122046-ktor-cds-u-n10",
+    "revision_annotations": {
+      "autoscaling.knative.dev/maxScale": "1",
+      "run.googleapis.com/startup-cpu-boost": "false",
+      "run.googleapis.com/execution-environment": "gen2",
+      "run.googleapis.com/cpu-throttling": "true"
+    },
+    "limits": {
+      "cpu": "1",
+      "memory": "512Mi"
+    },
+    "container_concurrency": 1,
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/ktor-cds:measured",
+    "tagged_revisions": 20,
+    "traffic_percent_for_measured_tags": 0
+  },
+  {
+    "service": "spike-cold-11122046-mvc",
+    "latest_revision": "spike-cold-11122046-mvc-u-n10",
+    "revision_annotations": {
+      "autoscaling.knative.dev/maxScale": "1",
+      "run.googleapis.com/startup-cpu-boost": "false",
+      "run.googleapis.com/execution-environment": "gen2",
+      "run.googleapis.com/cpu-throttling": "true"
+    },
+    "limits": {
+      "cpu": "1",
+      "memory": "512Mi"
+    },
+    "container_concurrency": 1,
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/mvc:measured",
+    "tagged_revisions": 21,
+    "traffic_percent_for_measured_tags": 0
+  },
+  {
+    "service": "spike-cold-11122046-jdbc",
+    "latest_revision": "spike-cold-11122046-jdbc-u-n10",
+    "revision_annotations": {
+      "autoscaling.knative.dev/maxScale": "1",
+      "run.googleapis.com/startup-cpu-boost": "false",
+      "run.googleapis.com/execution-environment": "gen2",
+      "run.googleapis.com/cpu-throttling": "true"
+    },
+    "limits": {
+      "cpu": "1",
+      "memory": "512Mi"
+    },
+    "container_concurrency": 1,
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/jdbc:measured",
+    "tagged_revisions": 21,
+    "traffic_percent_for_measured_tags": 0
+  },
+  {
+    "service": "spike-cold-11122046-jpa",
+    "latest_revision": "spike-cold-11122046-jpa-u-n10",
+    "revision_annotations": {
+      "autoscaling.knative.dev/maxScale": "1",
+      "run.googleapis.com/startup-cpu-boost": "false",
+      "run.googleapis.com/execution-environment": "gen2",
+      "run.googleapis.com/cpu-throttling": "true"
+    },
+    "limits": {
+      "cpu": "1",
+      "memory": "512Mi"
+    },
+    "container_concurrency": 1,
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/jpa:measured",
+    "tagged_revisions": 21,
+    "traffic_percent_for_measured_tags": 0
+  }
+]

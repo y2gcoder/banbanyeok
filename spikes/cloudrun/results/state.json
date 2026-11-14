@@ -1,0 +1,15 @@
+{
+  "project": "banbanyeok-7eoxn",
+  "region": "asia-northeast3",
+  "repository": "spike-cold-11122046",
+  "runtime_sa": "spike-cold-11122046",
+  "services": [
+    "spike-cold-11122046-ktor",
+    "spike-cold-11122046-ktor-cds",
+    "spike-cold-11122046-mvc",
+    "spike-cold-11122046-jdbc",
+    "spike-cold-11122046-jpa"
+  ],
+  "started_at": "2026-11-12T20:46:09.526702Z",
+  "data_bytes": 1048576
+}

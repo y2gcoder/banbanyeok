@@ -1,0 +1,10 @@
+{
+  "sample_start": "2026-11-12T20:54:42.799641+00:00",
+  "sample_end": "2026-11-13T04:05:57.908890+00:00",
+  "largest_gap_seconds": 22021.07739,
+  "interruption": "A long local execution gap and curl timeout were observed; timed-out calls are excluded, successful rows retained, missing rows measured with new u- revision tags and fresh identity tokens",
+  "final_cold_n": 100,
+  "final_warm_n": 100,
+  "monitoring_observed_n": 98,
+  "timeout_message": "curl (28) Operation timed out after 908115 milliseconds with 0 bytes received"
+}

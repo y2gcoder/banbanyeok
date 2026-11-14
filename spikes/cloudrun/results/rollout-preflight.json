@@ -1,0 +1,782 @@
+[
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b01",
+    "deploy_started_at": "2026-11-12T20:51:38.361529Z",
+    "first_request_started_at": "2026-11-12T20:51:45.751244Z",
+    "cold": {
+      "total_ms": 551.087,
+      "ttfb_ms": 550.903,
+      "dns_ms": 1.799,
+      "tls_ms": 29.341,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 90.169,
+      "ttfb_ms": 90.047,
+      "dns_ms": 3.743,
+      "tls_ms": 38.614,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b01",
+    "deploy_started_at": "2026-11-12T20:51:38.361799Z",
+    "first_request_started_at": "2026-11-12T20:51:45.885198Z",
+    "cold": {
+      "total_ms": 1505.278,
+      "ttfb_ms": 1497.368,
+      "dns_ms": 1.941,
+      "tls_ms": 31.146,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 96.873,
+      "ttfb_ms": 96.795,
+      "dns_ms": 4.23,
+      "tls_ms": 43.4,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b01",
+    "deploy_started_at": "2026-11-12T20:51:38.364389Z",
+    "first_request_started_at": "2026-11-12T20:51:44.985454Z",
+    "cold": {
+      "total_ms": 2822.733,
+      "ttfb_ms": 2821.936,
+      "dns_ms": 1.879,
+      "tls_ms": 29.181,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 308.13,
+      "ttfb_ms": 308.051,
+      "dns_ms": 4.28,
+      "tls_ms": 34.741,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b01",
+    "deploy_started_at": "2026-11-12T20:51:38.364646Z",
+    "first_request_started_at": "2026-11-12T20:51:44.901781Z",
+    "cold": {
+      "total_ms": 5240.125,
+      "ttfb_ms": 5239.907,
+      "dns_ms": 2.501,
+      "tls_ms": 36.61,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 221.653,
+      "ttfb_ms": 221.583,
+      "dns_ms": 3.497,
+      "tls_ms": 42.456,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b01",
+    "deploy_started_at": "2026-11-12T20:51:38.364553Z",
+    "first_request_started_at": "2026-11-12T20:51:45.413258Z",
+    "cold": {
+      "total_ms": 4883.065,
+      "ttfb_ms": 4882.861,
+      "dns_ms": 2.75,
+      "tls_ms": 35.049,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 221.114,
+      "ttfb_ms": 221.039,
+      "dns_ms": 4.431,
+      "tls_ms": 39.382,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b02",
+    "deploy_started_at": "2026-11-12T20:51:50.972629Z",
+    "first_request_started_at": "2026-11-12T20:51:57.834002Z",
+    "cold": {
+      "total_ms": 481.208,
+      "ttfb_ms": 480.96,
+      "dns_ms": 2.129,
+      "tls_ms": 34.812,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.459,
+      "ttfb_ms": 85.399,
+      "dns_ms": 4.267,
+      "tls_ms": 34.621,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b02",
+    "deploy_started_at": "2026-11-12T20:51:50.976046Z",
+    "first_request_started_at": "2026-11-12T20:51:57.289490Z",
+    "cold": {
+      "total_ms": 1953.155,
+      "ttfb_ms": 1953.002,
+      "dns_ms": 3.743,
+      "tls_ms": 29.908,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.64,
+      "ttfb_ms": 87.538,
+      "dns_ms": 3.039,
+      "tls_ms": 37.825,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b02",
+    "deploy_started_at": "2026-11-12T20:51:50.972474Z",
+    "first_request_started_at": "2026-11-12T20:51:57.287856Z",
+    "cold": {
+      "total_ms": 1801.315,
+      "ttfb_ms": 1801.005,
+      "dns_ms": 3.53,
+      "tls_ms": 28.413,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 403.303,
+      "ttfb_ms": 403.173,
+      "dns_ms": 3.961,
+      "tls_ms": 38.79,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b02",
+    "deploy_started_at": "2026-11-12T20:51:50.973796Z",
+    "first_request_started_at": "2026-11-12T20:51:57.938938Z",
+    "cold": {
+      "total_ms": 1963.277,
+      "ttfb_ms": 1961.905,
+      "dns_ms": 2.374,
+      "tls_ms": 34.617,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.975,
+      "ttfb_ms": 87.917,
+      "dns_ms": 3.903,
+      "tls_ms": 36.786,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b02",
+    "deploy_started_at": "2026-11-12T20:51:50.977438Z",
+    "first_request_started_at": "2026-11-12T20:51:57.645125Z",
+    "cold": {
+      "total_ms": 4773.04,
+      "ttfb_ms": 4772.855,
+      "dns_ms": 2.555,
+      "tls_ms": 29.005,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.692,
+      "ttfb_ms": 86.622,
+      "dns_ms": 2.665,
+      "tls_ms": 37.214,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b03",
+    "deploy_started_at": "2026-11-12T20:52:02.962336Z",
+    "first_request_started_at": "2026-11-12T20:52:10.216401Z",
+    "cold": {
+      "total_ms": 1209.054,
+      "ttfb_ms": 1208.999,
+      "dns_ms": 2.227,
+      "tls_ms": 29.735,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.894,
+      "ttfb_ms": 85.841,
+      "dns_ms": 2.465,
+      "tls_ms": 34.484,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b03",
+    "deploy_started_at": "2026-11-12T20:52:02.963776Z",
+    "first_request_started_at": "2026-11-12T20:52:10.435094Z",
+    "cold": {
+      "total_ms": 2556.884,
+      "ttfb_ms": 2556.707,
+      "dns_ms": 1.974,
+      "tls_ms": 36.145,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 274.716,
+      "ttfb_ms": 274.642,
+      "dns_ms": 3.844,
+      "tls_ms": 33.398,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b03",
+    "deploy_started_at": "2026-11-12T20:52:02.960860Z",
+    "first_request_started_at": "2026-11-12T20:52:11.268852Z",
+    "cold": {
+      "total_ms": 1901.015,
+      "ttfb_ms": 1900.654,
+      "dns_ms": 2.042,
+      "tls_ms": 29.406,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 266.594,
+      "ttfb_ms": 266.559,
+      "dns_ms": 2.853,
+      "tls_ms": 32.714,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b03",
+    "deploy_started_at": "2026-11-12T20:52:02.965142Z",
+    "first_request_started_at": "2026-11-12T20:52:13.511469Z",
+    "cold": {
+      "total_ms": 1494.862,
+      "ttfb_ms": 1494.782,
+      "dns_ms": 2.337,
+      "tls_ms": 30.026,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 93.5,
+      "ttfb_ms": 93.398,
+      "dns_ms": 3.048,
+      "tls_ms": 34.037,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b03",
+    "deploy_started_at": "2026-11-12T20:52:02.965322Z",
+    "first_request_started_at": "2026-11-12T20:52:11.818335Z",
+    "cold": {
+      "total_ms": 3971.332,
+      "ttfb_ms": 3971.237,
+      "dns_ms": 2.245,
+      "tls_ms": 29.3,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.389,
+      "ttfb_ms": 86.273,
+      "dns_ms": 2.852,
+      "tls_ms": 36.894,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b04",
+    "deploy_started_at": "2026-11-12T20:52:16.297309Z",
+    "first_request_started_at": "2026-11-12T20:52:22.577909Z",
+    "cold": {
+      "total_ms": 119.765,
+      "ttfb_ms": 119.727,
+      "dns_ms": 1.958,
+      "tls_ms": 30.218,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.407,
+      "ttfb_ms": 86.367,
+      "dns_ms": 2.354,
+      "tls_ms": 34.429,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b04",
+    "deploy_started_at": "2026-11-12T20:52:16.299205Z",
+    "first_request_started_at": "2026-11-12T20:52:23.868681Z",
+    "cold": {
+      "total_ms": 820.594,
+      "ttfb_ms": 820.489,
+      "dns_ms": 2.089,
+      "tls_ms": 28.691,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.246,
+      "ttfb_ms": 82.173,
+      "dns_ms": 3.631,
+      "tls_ms": 33.303,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b04",
+    "deploy_started_at": "2026-11-12T20:52:16.300849Z",
+    "first_request_started_at": "2026-11-12T20:52:24.057131Z",
+    "cold": {
+      "total_ms": 882.218,
+      "ttfb_ms": 882.127,
+      "dns_ms": 2.059,
+      "tls_ms": 34.335,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.331,
+      "ttfb_ms": 82.263,
+      "dns_ms": 4.925,
+      "tls_ms": 35.538,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b04",
+    "deploy_started_at": "2026-11-12T20:52:16.296046Z",
+    "first_request_started_at": "2026-11-12T20:52:25.982042Z",
+    "cold": {
+      "total_ms": 142.55,
+      "ttfb_ms": 142.497,
+      "dns_ms": 2.053,
+      "tls_ms": 30.962,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 84.654,
+      "ttfb_ms": 84.594,
+      "dns_ms": 3.522,
+      "tls_ms": 32.641,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b04",
+    "deploy_started_at": "2026-11-12T20:52:16.302267Z",
+    "first_request_started_at": "2026-11-12T20:52:22.591075Z",
+    "cold": {
+      "total_ms": 4531.231,
+      "ttfb_ms": 4531.103,
+      "dns_ms": 1.949,
+      "tls_ms": 30.147,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 345.02,
+      "ttfb_ms": 344.89,
+      "dns_ms": 3.326,
+      "tls_ms": 32.729,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b05",
+    "deploy_started_at": "2026-11-12T20:52:27.900529Z",
+    "first_request_started_at": "2026-11-12T20:52:34.313982Z",
+    "cold": {
+      "total_ms": 155.129,
+      "ttfb_ms": 155.081,
+      "dns_ms": 2.408,
+      "tls_ms": 30.861,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.37,
+      "ttfb_ms": 87.312,
+      "dns_ms": 3.123,
+      "tls_ms": 30.887,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b05",
+    "deploy_started_at": "2026-11-12T20:52:27.901611Z",
+    "first_request_started_at": "2026-11-12T20:52:34.301771Z",
+    "cold": {
+      "total_ms": 1235.578,
+      "ttfb_ms": 1235.462,
+      "dns_ms": 2.87,
+      "tls_ms": 37.871,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 112.615,
+      "ttfb_ms": 112.525,
+      "dns_ms": 2.998,
+      "tls_ms": 33.736,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b05",
+    "deploy_started_at": "2026-11-12T20:52:27.903136Z",
+    "first_request_started_at": "2026-11-12T20:52:34.303597Z",
+    "cold": {
+      "total_ms": 2872.936,
+      "ttfb_ms": 2872.831,
+      "dns_ms": 3.068,
+      "tls_ms": 38.042,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 321.615,
+      "ttfb_ms": 321.372,
+      "dns_ms": 3.802,
+      "tls_ms": 32.18,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b05",
+    "deploy_started_at": "2026-11-12T20:52:27.904525Z",
+    "first_request_started_at": "2026-11-12T20:52:34.056845Z",
+    "cold": {
+      "total_ms": 4361.234,
+      "ttfb_ms": 4361.147,
+      "dns_ms": 2.407,
+      "tls_ms": 34.282,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 186.472,
+      "ttfb_ms": 186.394,
+      "dns_ms": 4.441,
+      "tls_ms": 32.433,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b05",
+    "deploy_started_at": "2026-11-12T20:52:27.905576Z",
+    "first_request_started_at": "2026-11-12T20:52:34.322681Z",
+    "cold": {
+      "total_ms": 4608.06,
+      "ttfb_ms": 4607.917,
+      "dns_ms": 1.995,
+      "tls_ms": 33.151,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 619.598,
+      "ttfb_ms": 619.458,
+      "dns_ms": 4.113,
+      "tls_ms": 39.628,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b06",
+    "deploy_started_at": "2026-11-12T20:52:39.976352Z",
+    "first_request_started_at": "2026-11-12T20:52:47.485461Z",
+    "cold": {
+      "total_ms": 124.317,
+      "ttfb_ms": 124.283,
+      "dns_ms": 2.219,
+      "tls_ms": 28.28,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.979,
+      "ttfb_ms": 86.921,
+      "dns_ms": 2.703,
+      "tls_ms": 32.552,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b06",
+    "deploy_started_at": "2026-11-12T20:52:39.976211Z",
+    "first_request_started_at": "2026-11-12T20:52:46.237689Z",
+    "cold": {
+      "total_ms": 1913.223,
+      "ttfb_ms": 1913.088,
+      "dns_ms": 1.817,
+      "tls_ms": 33.537,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 167.905,
+      "ttfb_ms": 167.679,
+      "dns_ms": 3.822,
+      "tls_ms": 38.139,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b06",
+    "deploy_started_at": "2026-11-12T20:52:39.978561Z",
+    "first_request_started_at": "2026-11-12T20:52:49.469954Z",
+    "cold": {
+      "total_ms": 336.484,
+      "ttfb_ms": 336.352,
+      "dns_ms": 2.236,
+      "tls_ms": 34.774,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 93.073,
+      "ttfb_ms": 93.019,
+      "dns_ms": 3.628,
+      "tls_ms": 35.692,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b06",
+    "deploy_started_at": "2026-11-12T20:52:39.981091Z",
+    "first_request_started_at": "2026-11-12T20:52:46.339218Z",
+    "cold": {
+      "total_ms": 3761.961,
+      "ttfb_ms": 3761.839,
+      "dns_ms": 2.023,
+      "tls_ms": 32.364,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 98.115,
+      "ttfb_ms": 98.056,
+      "dns_ms": 3.278,
+      "tls_ms": 38.924,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b06",
+    "deploy_started_at": "2026-11-12T20:52:39.979896Z",
+    "first_request_started_at": "2026-11-12T20:52:47.407531Z",
+    "cold": {
+      "total_ms": 4911.365,
+      "ttfb_ms": 4911.303,
+      "dns_ms": 2.289,
+      "tls_ms": 34.367,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 200.004,
+      "ttfb_ms": 199.896,
+      "dns_ms": 3.708,
+      "tls_ms": 31.738,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app"
+  }
+]

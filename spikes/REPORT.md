@@ -1,6 +1,22 @@
 # S0b 기술 검증 스파이크
 
-측정일: 2026-11-12. 범위는 `spikes/`뿐이며 루트·contracts·shared·server·pipeline은 수정하지 않았다. 배포·커밋·푸시하지 않았다. 우선순위는 `docs/01-synthesis.md` → `docs/research/tech-stack.md` 3판이다.
+## Cloud Run 실측 결론 (2026-11-13, 5절)
+
+**권고: Ktor + 코루틴, AppCDS + startup CPU boost 켬 + min 0으로 진행한다.** 측정한 Spring 구성은 boost를 켜도 실제 첫 응답 3초 기준을 충족하지 못했다. min 1은 측정하지 않았으며, 상시 가동으로 우회하기보다 정한 결정 규칙에 따라 Ktor를 선택한다.
+
+아래 값은 **CPU boost 켬 / 끔**, 단위 초다. 각 칸은 조건별 콜드 10회·웜 10회에서 계산했다. 판정은 콜드 p90 ≤ 3초이며, 초과 표본 수도 5절에 공개했다.
+
+| 대상 | 콜드 p50 켬 / 끔 | 콜드 p90 켬 / 끔 | 웜 p50 켬 / 끔 | 3초 판정 켬 / 끔 |
+|---|---:|---:|---:|---|
+| Ktor 기본 | 1.973 / 3.014 | 2.192 / 3.300 | 0.087 / 0.090 | 통과 / 미충족 |
+| Ktor AppCDS | 1.110 / 1.896 | 1.392 / 2.608 | 0.087 / 0.090 | 통과 / 통과 |
+| Spring MVC 최소+CDS | 3.312 / 5.490 | 3.675 / 6.134 | 0.089 / 0.091 | 미충족 / 미충족 |
+| Spring Data JDBC+CDS | 4.573 / 8.941 | 5.737 / 10.818 | 0.090 / 0.089 | 미충족 / 미충족 |
+| Spring Data JPA+CDS | 5.606 / 9.819 | 5.996 / 10.928 | 0.086 / 0.101 | 미충족 / 미충족 |
+
+**리소스 정리 완료:** 측정용 Cloud Run 서비스 5개·모든 리비전/태그, Artifact Registry 저장소와 이미지 전부, 전용 실행 계정을 삭제하고 재확인했다. 버킷은 만들지 않았다. Monitoring 지표는 98/100개 리비전에 수집됐고 나머지 2개는 N/A로 명시했다.
+
+1~4절 측정일: 2026-11-12, 5절 Cloud Run 측정: 2026-11-13(JST). 범위는 `spikes/`뿐이며 루트·contracts·shared·server·pipeline은 수정하지 않았다. 5절은 승인된 임시 비공개 배포를 수행하고 삭제했으며 Git 커밋·푸시는 하지 않았다. 우선순위는 `docs/01-synthesis.md` → `docs/research/tech-stack.md` 3판이다.
 
 ## 질문별 결론과 권고
 
@@ -211,6 +227,92 @@ docker stop banbanyeok-spring-pg
 ```
 
 [추정] Cloud Run min 0에서는 최소 MVC·JDBC·JPA의 로컬 차이에 플랫폼 준비·실제 할당 CPU·DB 리전/연결 지연이 추가된다. 계정 확보 후 같은 서울 리전/CPU/메모리에서 Ktor·Boot JDBC·Boot JPA의 기본/CDS를 측정하고, first response와 DB-ready 구간·peak RSS를 분리해야 한다. 현재 수치로 min 1 필요 여부나 3초 보장을 결정하지 않는다. 로컬 후속은 JDBC AOT 바인딩 문제 해결, JDK 25 AOT cache, 실제 추천 SQL/동시 요청 메모리 측정이다. GraalVM native는 요청대로 생략했다.
+
+### 5. Cloud Run 서울 콜드스타트 실측
+
+**권고: Ktor + 코루틴(AppCDS, startup CPU boost 켬, min 0)을 선택한다.** 위 맨 위 표가 클라이언트 콜드 p50/p90·웜 p50 및 3초 판정이다. Ktor AppCDS+boost는 콜드 p90 **1.392초**, 모든 콜드 표본이 3초 이내였다. 반면 MVC+CDS는 p90 **3.675초**로 10회 중 7회, JDBC/JPA+CDS는 각각 **5.737/5.996초**로 10회 모두 3초를 넘었다. DB 연결·migration 비용을 이미 제외한 결과다. min 1을 별도로 측정하지 않았으므로 상시 가동 필요를 증명한 것은 아니지만, 정해진 “min 0에서 3초를 넘는 Spring을 위해 상시 가동하지 않고 Ktor로 간다” 규칙에 따라 Ktor를 권고한다.
+
+#### 환경과 콜드 강제 방법
+
+- GCP 구성 `banbanyeok`, 프로젝트 `banbanyeok-7eoxn`, 리전 `asia-northeast3`만 사용했다. 모든 gcloud 호출 앞에 `export CLOUDSDK_ACTIVE_CONFIG_NAME=banbanyeok`를 실행하고 project도 명시했다.
+- 5개 대상 모두 **linux/amd64, Temurin 25.0.5, 1 vCPU, 512 MiB, gen2, min-instances 0, request-based CPU throttling**, JVM `-Xms32m -Xmx256m`, 1 MiB 파일 preload다. 메모리를 1 Gi로 올리지 않았다. 앱 소스·Ktor/Boot 버전은 기존 스파이크 그대로다. 대상 이미지·ID·플랫폼은 `cloudrun/results/images.json`.
+- startup CPU boost **켬/끔 각각** 새 리비전 10개, 리비전마다 첫 `/v1/recommend` 1회 + 즉시 두 번째 요청 1회. 총 **콜드 100회·웜 100회**다. 다섯 서비스는 라운드별로 병렬 배포했고, 동일 맥에서 호출했다.
+- 매 표본 `SPIKE_SAMPLE` 변경 + 새 revision suffix + **`--no-traffic --tag=<고유 태그> --no-deploy-health-check`**. 일반 서비스 URL 대신 해당 새 태그 URL만 최초 호출했다. min 0, 태그의 일반 트래픽 할당 0%를 readback했다. revision max 1, service max 5로 설정했으나 실제 임시 중첩 기동은 일부 리비전에서 2개까지 관측돼 원시 count를 보존했다.
+- 100개 최종 리비전 전부 시작 로그가 있고, 첫 호출 이전의 기동/DEPLOYMENT_ROLLOUT는 발견되지 않았다(`cold-proof.json`, `startup-logs.json`). 요청/로그 시계의 150 ms 허용 범위를 두고 검사했으며 실제 시작 시각 차이도 저장했다.
+- `gcloud auth print-identity-token`을 라운드 배포 전에 실행했다. 토큰은 메모리/curl stdin으로만 전달하고 결과에 저장하지 않았다. curl `time_total`은 DNS/TLS·네트워크·본문 수신을 포함하고, 토큰 발급·gcloud 배포·프로세스 launch 시간은 제외한다. 첫 응답 직후 동일 태그로 보낸 두 번째 요청을 웜 표본으로 정의했다. 호출마다 새 연결이므로 웜에도 TLS 비용이 포함된다.
+- [공식 SDK](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy)의 `--no-deploy-health-check`만으로는 트래픽 전환에 따른 선기동을 완전히 막지 못했다. 초기 일반 URL rollout 표본 30쌍은 통계에서 제외하고 `rollout-preflight.json`에 별도 보관했다. 최종 고유 태그 프로토콜로 전부 새로 시작했다.
+
+#### DB 없이 남긴 초기화와 끈 기능
+
+| 설정 | 값/동작 | 제외된 비용 / 남은 비용 |
+|---|---|---|
+| DataSource/Hikari 자동 구성 | 활성; `initialization-fail-timeout=-1`, `minimum-idle=0`, `maximum-pool-size=1` | 시작 시 연결 시도/idle pool 사전 채움 없음. DataSource와 프레임워크 구성 유지 |
+| DB URL | 사용하지 않는 로컬 주소, PostgreSQL driver 포함 | 실제 DB는 생성·연결하지 않음 |
+| Spring Data JDBC dialect | `spring.data.jdbc.dialect=postgresql` | dialect 추정을 위한 DB metadata 조회 없음; 저장소 3개 초기화 유지 |
+| Hibernate metadata | `hibernate.boot.allow_jdbc_metadata_access=false` | JDBC metadata 연결 없음 |
+| Hibernate dialect | `org.hibernate.dialect.PostgreSQLDialect` 직접 지정 | 자동 dialect 탐지 없음; ORM/EntityManagerFactory·엔티티 3개·저장소 3개 초기화 유지 |
+| Hibernate schema | `ddl-auto=none`, `open-in-view=false` | DB schema validate/create 없음 |
+| Flyway/SQL init | `spring.flyway.enabled=false`, `spring.sql.init.mode=never` | migration·SQL 스크립트 실행은 서버 시작에서 제외. migration 의존성은 JAR에 남음 |
+| Actuator DB health | `management.health.db.enabled=false` | health probe의 DB 연결도 하지 않음; Actuator 자체는 유지 |
+| MVC 실행 | `spring.threads.virtual.enabled=true` | 가상 스레드 설정 유지 |
+
+설정 원본은 `cloudrun/offline.properties`다. JDBC/JPA auto-configuration을 제외하지 않았다. JPA 로그에서 Hibernate ORM과 EntityManagerFactory 초기화가 실제 수행됨을 확인했다. 따라서 실제 DB를 붙인 4절 수치와 조건이 다르며 이 표는 **DB 없는 프레임워크 초기화 비용** 비교다. [추정] 운영에서는 실제 DB 연결/쿼리·데이터 다운로드가 더해질 수 있다.
+
+#### 클라이언트와 Cloud Monitoring 측정 표
+
+단위 ms. 각 조건의 클라이언트 n은 콜드 10/웜 10이다. `container/startup_latencies`는 **`run.googleapis.com/container/startup_latencies`** 원본 분포에서 리비전별 count 가중 평균을 구한 뒤 그 10개(또는 9개)의 p50/p90을 계산했다. 클라이언트 수치와 동일한 지표가 아니며 둘을 서로 대체하지 않았다.
+
+| 대상 | boost | 클라이언트 콜드 p50 / p90 | 웜 p50 | 3초 초과 / 10 | container startup p50 / p90 | metric 리비전 n |
+|---|---|---:|---:|---:|---:|---:|
+| Ktor 기본 | 켬 | 1973.2 / 2192.3 | 87.4 | 0 | 1455.5 / 1599.0 | 10 |
+| Ktor AppCDS | 켬 | 1109.7 / 1392.1 | 87.5 | 0 | 756.8 / 1000.4 | 10 |
+| Spring MVC 최소+CDS | 켬 | 3312.4 / 3675.0 | 89.1 | 7 | 2746.7 / 3147.4 | 9 |
+| Spring Data JDBC+CDS | 켬 | 4573.2 / 5736.7 | 89.9 | 10 | 4116.7 / 5147.0 | 10 |
+| Spring Data JPA+CDS | 켬 | 5605.8 / 5996.4 | 86.5 | 10 | 5096.2 / 5463.5 | 10 |
+| Ktor 기본 | 끔 | 3013.7 / 3300.1 | 90.3 | 5 | 2295.7 / 2487.2 | 10 |
+| Ktor AppCDS | 끔 | 1895.6 / 2607.8 | 90.3 | 1 | 1295.8 / 1944.1 | 10 |
+| Spring MVC 최소+CDS | 끔 | 5489.8 / 6134.2 | 90.7 | 10 | 4617.3 / 5188.7 | 10 |
+| Spring Data JDBC+CDS | 끔 | 8940.8 / 10817.8 | 88.6 | 10 | 8079.3 / 10196.1 | 9 |
+| Spring Data JPA+CDS | 끔 | 9818.6 / 10928.0 | 100.5 | 10 | 8913.5 / 10003.8 | 10 |
+
+원시 데이터는 `cloudrun/results/requests.json`(각 콜드/웜·시각·revision·DNS/TLS/TTFB), `startup-latencies.json`(Cloud Monitoring 분포), `summary.json`(통계)에 있다. p50은 가운데 두 값 평균, p90은 nearest-rank(10개 중 정렬 9번째)다. n=10은 작은 표본이며 실제 서비스 p90 보장을 의미하지 않는다.
+
+Metric descriptor는 단위 ms, sample period 60 s, ingest delay 120 s, launch stage BETA라고 응답했다(`metric-descriptor.json`). 재조회해도 **MVC boost 켬 한 리비전과 JDBC boost 끔 한 리비전**은 count 없는 빈 분포만 반환했다. 이 2개는 값 0이나 클라이언트 시간으로 채우지 않고 `monitoring_status=no_nonzero_distribution`, 값 null로 남겼다(`monitoring-missing.json`). 그래서 두 metric 통계의 n은 9이고, 전체 Cloud Monitoring 관측은 98/100이다. 해당 리비전의 클라이언트 시간·시작 로그는 정상 수집했다. 일부 리비전의 metric/log start count는 2였으며 per-revision 평균에 반영했다.
+
+#### 문제·중단과 재현
+
+Ktor AppCDS 초기 이미지는 `/app/lib/*`의 JAR 열거 순서가 빌드/Cloud Run에서 달라 shared class paths mismatch로 HTTP 503이 났다. **정렬한 절대 클래스패스 문자열을 이미지의 `/app/classpath.txt`에 저장해 학습/실행에 똑같이 사용**한 뒤 해결했다. 최종 모든 CDS 실행은 `-Xshare:on`으로 강제했고 archive를 macOS에서 복사하지 않았다. Spring은 같은 amd64 이미지에서 Boot `spring.context.exit=onRefresh`로 학습했다.
+
+일반 트래픽 rollout preflight에서 선기동·HTTP 500(원인 미확정)도 관측해 전부 제외했다. 최종 태그 측정 도중에는 로컬 실행의 긴 간격과 curl 타임아웃이 관측됐다. 성공 완료된 82쌍은 보존하고 누락분은 fresh token + 새 `u-` 태그 리비전으로 보충했다. 타임아웃 값을 정상 기동 시간으로 넣거나 이미 호출한 리비전을 콜드로 다시 세지 않았다. 이 때문에 측정은 연속 단일 세션이 아니며 시점별 외부 네트워크/플랫폼 변동이 섞일 수 있다. 전체 시각과 최대 간격은 `session-notes.json`, 제외한 프로토콜/오류는 `protocol-changes.json`이다.
+
+실행 명령은 [cloudrun/README.md](cloudrun/README.md)에 정리했다. 로컬 Docker로 빌드·push했으므로 Cloud Build/API 추가 활성화나 GCS 버킷은 사용하지 않았다. 재실행 시 완료된 `results/`는 먼저 별도 폴더로 보존하고 새 결과 폴더를 만든다.
+
+```sh
+cd spikes/cloudrun
+python3 build.py
+python3 measure.py
+# 마지막 표본의 Monitoring 수집 지연을 고려한 뒤
+python3 monitor.py
+python3 logs.py
+python3 prove-cold.py
+python3 audit.py
+python3 summarize.py
+python3 cleanup.py
+```
+
+#### 비공개 설정·삭제 확인
+
+5개 서비스 모두 `--no-allow-unauthenticated`로 배포했고 public IAM binding이 없었다. 인증 없는 테스트는 5개 모두 HTTP 404로 거절됐다(403이라고 바꾸어 기록하지 않았다). 서비스 설정 readback은 1 CPU/512Mi/gen2/concurrency 1과 태그의 일반 트래픽 0%를 확인했다(`privacy-checks.json`, `configuration-audit.json`). 전용 runtime 서비스 계정에는 데이터 접근 역할을 부여하지 않았다. 토큰·개인 이메일·로컬 절대 경로/사용자 이름은 새 결과에 저장하지 않았다.
+
+| 리소스 | 삭제 및 재확인 |
+|---|---|
+| Cloud Run 서비스 5개 | 각각 delete exit 0, describe에서 NOT_FOUND/찾을 수 없음 확인; 하위 revision/tag 포함 삭제 |
+| Artifact Registry 저장소 1개 및 모든 이미지 | delete exit 0, 저장소 describe NOT_FOUND 확인 |
+| 전용 runtime 서비스 계정 1개 | delete exit 0, active 계정 목록의 정확한 이름 필터가 0건. 삭제 후 describe는 PERMISSION_DENIED/존재하지 않을 수 있음으로 응답해 그것만으로 판단하지 않았음 |
+| GCS 버킷 | 생성하지 않음 |
+| 임시 로컬 credential/log 디렉터리 | `.private/` 삭제 확인 |
+
+삭제와 재확인 시각·리소스별 결과는 `cloudrun/results/cleanup.json`에 있다. 기존 사용자 리소스/다른 GCP 구성·프로젝트는 수정하지 않았으며 Git commit/push도 하지 않았다. 실제 청구액은 이번 측정에서 조회·추정하지 않았다.
 
 ## 문제와 해결
 

@@ -1,0 +1,23 @@
+[
+  {
+    "phase": "initial preflight",
+    "included_in_summary": false,
+    "http": 503,
+    "reason": "Ktor CDS archive rejected: wildcard classpath order differed between image training and Cloud Run runtime",
+    "fix": "Sorted explicit /app/classpath.txt used identically for training and startup"
+  },
+  {
+    "phase": "normal traffic rollout preflight",
+    "included_in_summary": false,
+    "saved_pairs": 30,
+    "reason": "Some instances started before client invocation despite no-deploy-health-check; DEPLOYMENT_ROLLOUT observed; first request was sometimes warm",
+    "fix": "New zero-traffic revision, no-deploy-health-check, unique tag URL, never timed ordinary service URL"
+  },
+  {
+    "phase": "normal traffic rollout preflight",
+    "included_in_summary": false,
+    "http": 500,
+    "reason": "One first-call platform HTML 500; cause unclassified; no successful latency substituted",
+    "fix": "Final tagged cohort starts anew; original preflight retained separately"
+  }
+]

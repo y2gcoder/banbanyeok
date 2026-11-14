@@ -1,0 +1,54 @@
+{
+  "completed_at": "2026-11-13T13:14:16.267568Z",
+  "checks": [
+    {
+      "resource": "cloud_run_service",
+      "name": "spike-cold-11122046-ktor",
+      "delete_exit": 0,
+      "confirmed_not_found": true
+    },
+    {
+      "resource": "cloud_run_service",
+      "name": "spike-cold-11122046-ktor-cds",
+      "delete_exit": 0,
+      "confirmed_not_found": true
+    },
+    {
+      "resource": "cloud_run_service",
+      "name": "spike-cold-11122046-mvc",
+      "delete_exit": 0,
+      "confirmed_not_found": true
+    },
+    {
+      "resource": "cloud_run_service",
+      "name": "spike-cold-11122046-jdbc",
+      "delete_exit": 0,
+      "confirmed_not_found": true
+    },
+    {
+      "resource": "cloud_run_service",
+      "name": "spike-cold-11122046-jpa",
+      "delete_exit": 0,
+      "confirmed_not_found": true
+    },
+    {
+      "resource": "artifact_registry_repository_and_images",
+      "name": "spike-cold-11122046",
+      "delete_exit": 0,
+      "confirmed_not_found": true
+    },
+    {
+      "resource": "runtime_service_account",
+      "name": "spike-cold-11122046",
+      "delete_exit": 0,
+      "confirmed_not_found": true,
+      "confirmation": "describe returned nonzero; active-account list filter returned zero matches"
+    },
+    {
+      "resource": "storage_bucket",
+      "created": false,
+      "reason": "Local Docker build/push; Cloud Build and GCS not used"
+    }
+  ],
+  "reconfirmed_at": "2026-11-13T13:15:01.431408Z"
+}

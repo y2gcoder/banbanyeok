@@ -1,0 +1,2156 @@
+[
+  {
+    "timestamp": "2026-11-12T20:50:00.996847Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:50:01.024660Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:50:01.083657Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:50:01.097556Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:50:01.306703Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:50:01.349095Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-b01",
+    "text": "Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details): unrecoverable error"
+  },
+  {
+    "timestamp": "2026-11-12T20:50:02.481860Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-b01",
+    "text": "20:50:02.479 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:50:03.823530Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-b01",
+    "text": "2026-11-12T20:50:03.823Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.958 seconds (process running for 2.55)"
+  },
+  {
+    "timestamp": "2026-11-12T20:50:05.480387Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-b01",
+    "text": "2026-11-12T20:50:05.478Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:50:05.888538Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-b01",
+    "text": "2026-11-12T20:50:05.887Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.49 seconds (process running for 4.391)"
+  },
+  {
+    "timestamp": "2026-11-12T20:50:07.338158Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-b01",
+    "text": "2026-11-12T20:50:07.336Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.822 seconds (process running for 6.084)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:44.505200Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:44.541713Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:44.544743Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:45.002443Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:45.077980Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:45.506343Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:45.545202Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:45.994321Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:46.008319Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b01",
+    "text": "20:51:46.008 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:46.604220Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b01",
+    "text": "2026-11-12T20:51:46.603Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.553 seconds (process running for 1.964)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:47.099500Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b01",
+    "text": "20:51:47.098 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:47.459261Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b01",
+    "text": "2026-11-12T20:51:47.458Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.715 seconds (process running for 2.197)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:47.901522Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b01",
+    "text": "2026-11-12T20:51:47.899Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:48.493728Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b01",
+    "text": "2026-11-12T20:51:48.492Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:48.579669Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b01",
+    "text": "2026-11-12T20:51:48.579Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.366 seconds (process running for 2.941)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:49.376828Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b01",
+    "text": "2026-11-12T20:51:49.374Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.82 seconds (process running for 4.653)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:49.828580Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b01",
+    "text": "2026-11-12T20:51:49.827Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.798 seconds (process running for 4.636)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:49.984133Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b01",
+    "text": "2026-11-12T20:51:49.983Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.553 seconds (process running for 4.295)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:55.640915Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:57.374669Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:57.474356Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:57.478398Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:57.480913Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:57.490795Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:51:58.161868Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b02",
+    "text": "20:51:58.161 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:58.777449Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b02",
+    "text": "20:51:58.777 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:58.984862Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b02",
+    "text": "2026-11-12T20:51:58.984Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.606 seconds (process running for 3.196)"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:59.153502Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b02",
+    "text": "20:51:59.153 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:51:59.599376Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b02",
+    "text": "2026-11-12T20:51:59.597Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.622 seconds (process running for 2.033)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:00.735968Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b02",
+    "text": "2026-11-12T20:52:00.734Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:02.160803Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b02",
+    "text": "2026-11-12T20:52:02.159Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.757 seconds (process running for 4.517)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:10.302901Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:10.461490Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:10.464747Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:10.465441Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:10.469359Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:10.529446Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:11.173623Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:11.250624Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b03",
+    "text": "20:52:11.249 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:11.353401Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:11.529410Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b03",
+    "text": "20:52:11.528 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:11.880392Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b03",
+    "text": "20:52:11.880 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:12.414196Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b03",
+    "text": "2026-11-12T20:52:12.413Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.417 seconds (process running for 1.821)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:12.706386Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b03",
+    "text": "2026-11-12T20:52:12.706Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.598 seconds (process running for 2.03)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:12.825735Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b03",
+    "text": "20:52:12.825 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:13.970326Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b03",
+    "text": "2026-11-12T20:52:13.970Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:14.734328Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b03",
+    "text": "2026-11-12T20:52:14.732Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.946 seconds (process running for 3.456)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:15.529824Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b03",
+    "text": "2026-11-12T20:52:15.529Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.203 seconds (process running for 4.903)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:19.929534Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b04",
+    "text": "Starting new instance. Reason: DEPLOYMENT_ROLLOUT - Instance started due to traffic shifting between revisions due to deployment, traffic split adjustment, or deployment health check."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:19.936835Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b04",
+    "text": "Starting new instance. Reason: DEPLOYMENT_ROLLOUT - Instance started due to traffic shifting between revisions due to deployment, traffic split adjustment, or deployment health check."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:20.424579Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b04",
+    "text": "20:52:20.424 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:20.923539Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b04",
+    "text": "20:52:20.923 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:21.502733Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:22.450373Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:22.458076Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:22.682413Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:24.401425Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b04",
+    "text": "2026-11-12T20:52:24.400Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.52 seconds (process running for 1.859)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:24.715841Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b04",
+    "text": "2026-11-12T20:52:24.715Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.651 seconds (process running for 3.126)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:25.633868Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b04",
+    "text": "2026-11-12T20:52:25.633Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:25.727439Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b04",
+    "text": "2026-11-12T20:52:25.727Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:26.867741Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b04",
+    "text": "2026-11-12T20:52:26.867Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.328 seconds (process running for 4.028)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:27.081927Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b04",
+    "text": "2026-11-12T20:52:27.080Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.592 seconds (process running for 4.461)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:32.933216Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:33.416419Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:33.834068Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b05",
+    "text": "20:52:33.833 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:34.148869Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:34.394946Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:34.407549Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:34.413450Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:34.492937Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:34.497119Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:34.528908Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:35.007452Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b05",
+    "text": "20:52:35.006 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:35.280289Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b05",
+    "text": "20:52:35.280 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:36.445753Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b05",
+    "text": "2026-11-12T20:52:36.445Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.604 seconds (process running for 2.929)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:36.730499Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b05",
+    "text": "2026-11-12T20:52:36.729Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.593 seconds (process running for 2.034)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:36.839719Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b05",
+    "text": "2026-11-12T20:52:36.839Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.878 seconds (process running for 2.29)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:37.406891Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b05",
+    "text": "2026-11-12T20:52:37.406Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:37.771406Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b05",
+    "text": "2026-11-12T20:52:37.770Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:38.103210Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b05",
+    "text": "2026-11-12T20:52:38.102Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.258 seconds (process running for 3.811)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:38.625556Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b05",
+    "text": "2026-11-12T20:52:38.625Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.296 seconds (process running for 4.044)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:39.267229Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b05",
+    "text": "2026-11-12T20:52:39.265Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.127 seconds (process running for 4.668)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:43.410070Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b06",
+    "text": "Starting new instance. Reason: DEPLOYMENT_ROLLOUT - Instance started due to traffic shifting between revisions due to deployment, traffic split adjustment, or deployment health check."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:43.703282Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b06",
+    "text": "Starting new instance. Reason: DEPLOYMENT_ROLLOUT - Instance started due to traffic shifting between revisions due to deployment, traffic split adjustment, or deployment health check."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:43.990091Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b06",
+    "text": "20:52:43.989 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:45.131552Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:46.336529Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:46.485023Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:46.705839Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b06",
+    "text": "2026-11-12T20:52:46.705Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.405 seconds (process running for 2.89)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:47.358627Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b06",
+    "text": "20:52:47.358 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:47.417885Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:47.497409Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:47.822429Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b06",
+    "text": "20:52:47.821 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:48.478315Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b06",
+    "text": "2026-11-12T20:52:48.477Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:49.854750Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b06",
+    "text": "2026-11-12T20:52:49.854Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.801 seconds (process running for 4.586)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:50.423823Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b06",
+    "text": "2026-11-12T20:52:50.423Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.6 seconds (process running for 2.922)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:51.975723Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b06",
+    "text": "2026-11-12T20:52:51.974Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.752 seconds (process running for 4.32)"
+  },
+  {
+    "timestamp": "2026-11-12T20:52:57.445558Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:58.476060Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:58.476690Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:58.477744Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:58.477828Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:59.113488Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:59.321625Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:59.327188Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:52:59.419997Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:53:00.142319Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b07",
+    "text": "20:53:00.142 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:01.490767Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b07",
+    "text": "2026-11-12T20:53:01.490Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.729 seconds (process running for 2.224)"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:01.823052Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-c-b07",
+    "text": "20:53:01.822 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:02.287543Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b07",
+    "text": "2026-11-12T20:53:02.287Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:02.426338Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-c-b07",
+    "text": "20:53:02.425 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:03.101813Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b07",
+    "text": "2026-11-12T20:53:03.099Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.825 seconds (process running for 3.413)"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:03.381166Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-c-b07",
+    "text": "2026-11-12T20:53:03.380Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.541 seconds (process running for 1.913)"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:03.619470Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b07",
+    "text": "2026-11-12T20:53:03.618Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.516 seconds (process running for 4.148)"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:04.080498Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b07",
+    "text": "2026-11-12T20:53:04.079Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:04.602012Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-c-b07",
+    "text": "2026-11-12T20:53:04.601Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.699 seconds (process running for 3.2)"
+  },
+  {
+    "timestamp": "2026-11-12T20:53:05.267869Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-c-b07",
+    "text": "2026-11-12T20:53:05.267Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.23 seconds (process running for 3.821)"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:42.903434Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:42.939987Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:43.038307Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:43.156697Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:43.388831Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:44.059532Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b01",
+    "text": "20:54:44.059 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:44.487813Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b01",
+    "text": "20:54:44.487 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:46.174697Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b01",
+    "text": "2026-11-12T20:54:46.174Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.112 seconds (process running for 2.614)"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:46.270147Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b01",
+    "text": "2026-11-12T20:54:46.269Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:46.325465Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b01",
+    "text": "2026-11-12T20:54:46.323Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.819 seconds (process running for 3.219)"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:47.548944Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b01",
+    "text": "2026-11-12T20:54:47.547Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.429 seconds (process running for 4.205)"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:54.727842Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:54.744946Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:54.835764Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:54.896232Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:55.137498Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:54:55.548065Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b02",
+    "text": "20:54:55.547 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:56.323856Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b02",
+    "text": "20:54:56.323 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:57.484629Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b02",
+    "text": "2026-11-12T20:54:57.483Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.217 seconds (process running for 2.63)"
+  },
+  {
+    "timestamp": "2026-11-12T20:54:58.936234Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b02",
+    "text": "2026-11-12T20:54:58.935Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:00.123570Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b02",
+    "text": "2026-11-12T20:55:00.122Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.193 seconds (process running for 5.003)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:00.558127Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b02",
+    "text": "2026-11-12T20:55:00.557Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.299 seconds (process running for 5.206)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:08.063769Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:08.074639Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:08.074668Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:08.123246Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:08.179583Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:08.949263Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b03",
+    "text": "20:55:08.948 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:09.810153Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b03",
+    "text": "20:55:09.809 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:11.307949Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b03",
+    "text": "2026-11-12T20:55:11.306Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.281 seconds (process running for 2.917)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:11.632577Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b03",
+    "text": "2026-11-12T20:55:11.631Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:11.884505Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b03",
+    "text": "2026-11-12T20:55:11.884Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.078 seconds (process running for 3.658)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:13.204907Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b03",
+    "text": "2026-11-12T20:55:13.204Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.249 seconds (process running for 5.034)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:20.239205Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:20.270886Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:20.278938Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:20.376282Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:21.136567Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b04",
+    "text": "20:55:21.136 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:21.781274Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:22.043169Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b04",
+    "text": "20:55:22.042 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:23.342122Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b04",
+    "text": "2026-11-12T20:55:23.341Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.214 seconds (process running for 2.888)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:24.359337Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b04",
+    "text": "2026-11-12T20:55:24.356Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.15 seconds (process running for 3.8)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:25.673650Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b04",
+    "text": "2026-11-12T20:55:25.673Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:27.163850Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b04",
+    "text": "2026-11-12T20:55:27.163Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.255 seconds (process running for 5.195)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:34.148036Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:34.224963Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:34.260029Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:34.464257Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:35.398785Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b05",
+    "text": "20:55:35.396 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:35.578117Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b05",
+    "text": "20:55:35.577 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:35.749541Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:37.422633Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b05",
+    "text": "2026-11-12T20:55:37.422Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.399 seconds (process running for 2.934)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:39.403292Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b05",
+    "text": "2026-11-12T20:55:39.402Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:40.040Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b05",
+    "text": "2026-11-12T20:55:40.035Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.447 seconds (process running for 5.354)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:40.936803Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b05",
+    "text": "2026-11-12T20:55:40.936Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.145 seconds (process running for 5.016)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:47.982888Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:48.192229Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:48.371065Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:48.376613Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:48.428142Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:49.328724Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b06",
+    "text": "20:55:49.328 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:49.825678Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b06",
+    "text": "20:55:49.823 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:50.781799Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b06",
+    "text": "2026-11-12T20:55:50.781Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.788 seconds (process running for 2.193)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:51.553811Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b06",
+    "text": "2026-11-12T20:55:51.553Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:52.225071Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b06",
+    "text": "2026-11-12T20:55:52.224Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.471 seconds (process running for 4.062)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:52.891337Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b06",
+    "text": "2026-11-12T20:55:52.890Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.719 seconds (process running for 4.51)"
+  },
+  {
+    "timestamp": "2026-11-12T20:55:59.858238Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:59.940730Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:55:59.960146Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:00.058129Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:00.154994Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:00.716308Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b07",
+    "text": "20:56:00.715 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:01.268315Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b07",
+    "text": "20:56:01.267 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:02.500419Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b07",
+    "text": "2026-11-12T20:56:02.499Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.928 seconds (process running for 2.253)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:03.246357Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b07",
+    "text": "2026-11-12T20:56:03.245Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.592 seconds (process running for 3.151)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:04.008261Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b07",
+    "text": "2026-11-12T20:56:04.006Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:05.716850Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b07",
+    "text": "2026-11-12T20:56:05.715Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.646 seconds (process running for 5.62)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:12.861706Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:12.865285Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:12.866126Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:12.978824Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:13.241052Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:13.651552Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b08",
+    "text": "20:56:13.651 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:14.645705Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b08",
+    "text": "20:56:14.644 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:15.123211Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b08",
+    "text": "2026-11-12T20:56:15.122Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 1.674 seconds (process running for 2.114)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:15.133265Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:16.036792Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b08",
+    "text": "2026-11-12T20:56:16.036Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:16.396722Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b08",
+    "text": "20:56:16.396 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:17.313596Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b08",
+    "text": "2026-11-12T20:56:17.313Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.496 seconds (process running for 3.969)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:17.562041Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b08",
+    "text": "2026-11-12T20:56:17.559Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.925 seconds (process running for 4.553)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:24.570100Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:24.859319Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:25.045999Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:25.050516Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:25.773075Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b09",
+    "text": "20:56:25.771 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:26.284388Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:26.516719Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b09",
+    "text": "20:56:26.516 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:27.271630Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b09",
+    "text": "2026-11-12T20:56:27.271Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.039 seconds (process running for 2.527)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:28.776615Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b09",
+    "text": "2026-11-12T20:56:28.776Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.213 seconds (process running for 3.776)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:30.056700Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b09",
+    "text": "2026-11-12T20:56:30.055Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:31.798099Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b09",
+    "text": "2026-11-12T20:56:31.796Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.453 seconds (process running for 5.344)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:38.756302Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:38.874383Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:38.951595Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:39.060827Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:39.629645Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b10",
+    "text": "20:56:39.627 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:40.431013Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:41.865004Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b10",
+    "text": "2026-11-12T20:56:41.864Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 2.109 seconds (process running for 2.702)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:41.901815Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b10",
+    "text": "20:56:41.901 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:41.923787Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b10",
+    "text": "2026-11-12T20:56:41.923Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:43.138185Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b10",
+    "text": "2026-11-12T20:56:43.137Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.404 seconds (process running for 4.214)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:43.590179Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b10",
+    "text": "2026-11-12T20:56:43.589Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.413 seconds (process running for 4.326)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:50.628576Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:50.675459Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:50.831397Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:50.924329Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:51.795448Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n01",
+    "text": "20:56:51.795 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:51.875565Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n01",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:56:53.414592Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n01",
+    "text": "20:56:53.413 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:56.431592Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n01",
+    "text": "2026-11-12T20:56:56.430Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.9 seconds (process running for 5.625)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:57.423421Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n01",
+    "text": "2026-11-12T20:56:57.423Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:58.099706Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n01",
+    "text": "2026-11-12T20:56:58.099Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 6.521 seconds (process running for 7.309)"
+  },
+  {
+    "timestamp": "2026-11-12T20:56:59.999127Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n01",
+    "text": "2026-11-12T20:56:59.998Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.162 seconds (process running for 7.974)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:07.032396Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:07.035404Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:07.183014Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:07.187908Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:08.454930Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n02",
+    "text": "20:57:08.454 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:08.801482Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n02",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:10.487453Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n02",
+    "text": "20:57:10.486 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:11.747978Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n02",
+    "text": "2026-11-12T20:57:11.747Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.996 seconds (process running for 4.554)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:13.277500Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n02",
+    "text": "2026-11-12T20:57:13.277Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 5.472 seconds (process running for 6.091)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:13.431415Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n02",
+    "text": "2026-11-12T20:57:13.431Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:16.229864Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n02",
+    "text": "2026-11-12T20:57:16.229Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.975 seconds (process running for 8.897)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:23.458601Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:23.607253Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:23.610493Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:23.614811Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:23.630933Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:25.911745Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n03",
+    "text": "20:57:25.910 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:26.151460Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n03",
+    "text": "20:57:26.149 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:27.479778Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n03",
+    "text": "2026-11-12T20:57:27.479Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.477 seconds (process running for 3.926)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:29.802377Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n03",
+    "text": "2026-11-12T20:57:29.801Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:31.774207Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n03",
+    "text": "2026-11-12T20:57:31.773Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.17 seconds (process running for 7.995)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:32.625927Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n03",
+    "text": "2026-11-12T20:57:32.625Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.998 seconds (process running for 8.858)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:40.215363Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:40.352766Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:40.430029Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:40.434879Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:41.404055Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n04",
+    "text": "20:57:41.398 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:42.046237Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n04",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:57:42.638237Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n04",
+    "text": "20:57:42.637 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:44.498653Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n04",
+    "text": "2026-11-12T20:57:44.496Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.502 seconds (process running for 4.121)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:49.066756Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n04",
+    "text": "2026-11-12T20:57:49.064Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:49.193904Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n04",
+    "text": "2026-11-12T20:57:49.191Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 6.279 seconds (process running for 7.007)"
+  },
+  {
+    "timestamp": "2026-11-12T20:57:53.234912Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n04",
+    "text": "2026-11-12T20:57:53.171Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 10.982 seconds (process running for 12.309)"
+  },
+  {
+    "timestamp": "2026-11-12T20:58:00.883319Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:58:00.934318Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:58:01.088449Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:58:01.645828Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:58:02.120755Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n05",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T20:58:03.873893Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n05",
+    "text": "20:58:03.873 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:58:04.085852Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n05",
+    "text": "20:58:04.083 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T20:58:05.399925Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n05",
+    "text": "2026-11-12T20:58:05.397Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.704 seconds (process running for 4.321)"
+  },
+  {
+    "timestamp": "2026-11-12T20:58:05.817014Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n05",
+    "text": "2026-11-12T20:58:05.816Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T20:58:08.601490Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n05",
+    "text": "2026-11-12T20:58:08.601Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 6.886 seconds (process running for 7.578)"
+  },
+  {
+    "timestamp": "2026-11-12T20:58:09.264718Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n05",
+    "text": "2026-11-12T20:58:09.264Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.128 seconds (process running for 7.978)"
+  },
+  {
+    "timestamp": "2026-11-12T21:02:27.892933Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n03",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:02:30.516130Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n03",
+    "text": "21:02:30.515 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T21:26:00.469733Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:26:00.472733Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:26:00.743519Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:26:01.297178Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:26:02.399750Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n06",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:26:02.628048Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n06",
+    "text": "21:26:02.627 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T21:26:02.989274Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n06",
+    "text": "21:26:02.987 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T21:26:06.340425Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n06",
+    "text": "2026-11-12T21:26:06.339Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T21:26:06.742245Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n06",
+    "text": "2026-11-12T21:26:06.741Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.501 seconds (process running for 4.169)"
+  },
+  {
+    "timestamp": "2026-11-12T21:26:09.061853Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n06",
+    "text": "2026-11-12T21:26:09.060Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.182 seconds (process running for 8.149)"
+  },
+  {
+    "timestamp": "2026-11-12T21:26:10.451324Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n06",
+    "text": "2026-11-12T21:26:10.450Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 8.587 seconds (process running for 9.781)"
+  },
+  {
+    "timestamp": "2026-11-12T21:58:04.100966Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:58:04.112446Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:58:04.147715Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:58:04.234291Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:58:04.252366Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-12T21:58:05.503437Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n07",
+    "text": "21:58:05.502 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T21:58:06.754440Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n07",
+    "text": "21:58:06.753 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-12T21:58:09.816181Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n07",
+    "text": "2026-11-12T21:58:09.815Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-12T21:58:10.175507Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n07",
+    "text": "2026-11-12T21:58:10.174Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.849 seconds (process running for 5.881)"
+  },
+  {
+    "timestamp": "2026-11-12T21:58:10.841071Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n07",
+    "text": "2026-11-12T21:58:10.840Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 5.543 seconds (process running for 6.549)"
+  },
+  {
+    "timestamp": "2026-11-12T21:58:12.605527Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n07",
+    "text": "2026-11-12T21:58:12.604Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 6.937 seconds (process running for 8.232)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:05.307651Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:05.417062Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:05.854605Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n07",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:10.499968Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n07",
+    "text": "2026-11-13T04:05:10.499Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.185 seconds (process running for 5.029)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:11.561537Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n07",
+    "text": "2026-11-13T04:05:11.559Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:13.627859Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n07",
+    "text": "2026-11-13T04:05:13.626Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 6.685 seconds (process running for 7.575)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:14.658709Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n07",
+    "text": "2026-11-13T04:05:14.656Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.778 seconds (process running for 9.019)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:21.655484Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:22.301319Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:22.305060Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:22.473573Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:22.593531Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n08",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:23.948904Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n08",
+    "text": "04:05:23.947 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:24.872281Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n08",
+    "text": "04:05:24.871 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:26.258304Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n08",
+    "text": "2026-11-13T04:05:26.257Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 3.627 seconds (process running for 4.408)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:28.317851Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n08",
+    "text": "2026-11-13T04:05:28.316Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:31.401791Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n08",
+    "text": "2026-11-13T04:05:31.400Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.871 seconds (process running for 8.746)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:32.601014Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n08",
+    "text": "2026-11-13T04:05:32.599Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 8.953 seconds (process running for 10.085)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:39.920350Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:40.258247Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:40.290385Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:40.378225Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:40.423912Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n09",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:41.852912Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n09",
+    "text": "04:05:41.851 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:42.608699Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n09",
+    "text": "04:05:42.608 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:45.599366Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n09",
+    "text": "2026-11-13T04:05:45.599Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.378 seconds (process running for 5.044)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:46.684753Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n09",
+    "text": "2026-11-13T04:05:46.684Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:48.953518Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n09",
+    "text": "2026-11-13T04:05:48.953Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.529 seconds (process running for 8.475)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:50.107236Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n09",
+    "text": "2026-11-13T04:05:50.106Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 8.982 seconds (process running for 10.002)"
+  },
+  {
+    "timestamp": "2026-11-13T04:05:57.645307Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:57.731925Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:57.896560Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:57.961808Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:58.012995Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n10",
+    "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+  },
+  {
+    "timestamp": "2026-11-13T04:05:58.991077Z",
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n10",
+    "text": "04:05:58.990 [DefaultDispatcher-worker-2] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-13T04:06:00.231335Z",
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n10",
+    "text": "04:06:00.230 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application -- Responding at http://0.0.0.0:8080"
+  },
+  {
+    "timestamp": "2026-11-13T04:06:03.190551Z",
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n10",
+    "text": "2026-11-13T04:06:03.190Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 4.327 seconds (process running for 4.998)"
+  },
+  {
+    "timestamp": "2026-11-13T04:06:04.422090Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n10",
+    "text": "2026-11-13T04:06:04.422Z  INFO 1 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final"
+  },
+  {
+    "timestamp": "2026-11-13T04:06:05.925438Z",
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n10",
+    "text": "2026-11-13T04:06:05.925Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 7.234 seconds (process running for 8.083)"
+  },
+  {
+    "timestamp": "2026-11-13T04:06:07.722445Z",
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n10",
+    "text": "2026-11-13T04:06:07.722Z  INFO 1 --- [           main] spike.ApplicationKt                      : Started ApplicationKt in 8.818 seconds (process running for 9.839)"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "variant": "ktor",
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/ktor:measured",
+    "architecture": "amd64",
+    "os": "linux",
+    "local_size_bytes": 144122553,
+    "image_id": "sha256:4c717fed2ef5eebe3b926268effe450a2501957cdeebf884fc5768d5c01b6306"
+  },
+  {
+    "variant": "ktor-cds",
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/ktor-cds:measured",
+    "architecture": "amd64",
+    "os": "linux",
+    "local_size_bytes": 149712943,
+    "image_id": "sha256:8883b6cc8d0acbf798ddc99e4715bb0c4b4fc96573d30224ba97d01fb35b3cdc"
+  },
+  {
+    "variant": "mvc",
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/mvc:measured",
+    "architecture": "amd64",
+    "os": "linux",
+    "local_size_bytes": 151504758,
+    "image_id": "sha256:8453930488c78a3f012e4c2a5a4a25f2b67c3433cfea998ddd02da23ec5937b8"
+  },
+  {
+    "variant": "jdbc",
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/jdbc:measured",
+    "architecture": "amd64",
+    "os": "linux",
+    "local_size_bytes": 162245945,
+    "image_id": "sha256:6125ec44f03ced1eb4e1bbf3e7794ef833ec0d27a9686afa0e9766609413b912"
+  },
+  {
+    "variant": "jpa",
+    "image": "asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/spike-cold-11122046/jpa:measured",
+    "architecture": "amd64",
+    "os": "linux",
+    "local_size_bytes": 193900374,
+    "image_id": "sha256:6f19f58e0f789d8496fade6b9f803ff90608a6865469c2aeb410407c65794e0f"
+  }
+]

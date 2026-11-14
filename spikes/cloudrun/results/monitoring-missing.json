@@ -1,0 +1,14 @@
+[
+  {
+    "revision": "spike-cold-11122046-mvc-t-b06",
+    "first_request": "2026-11-12T20:55:48.305246Z",
+    "series_points": 20,
+    "nonzero_examples": []
+  },
+  {
+    "revision": "spike-cold-11122046-jdbc-t-n01",
+    "first_request": "2026-11-12T20:56:50.562488Z",
+    "series_points": 21,
+    "nonzero_examples": []
+  }
+]

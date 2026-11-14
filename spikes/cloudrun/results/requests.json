@@ -1,0 +1,3714 @@
+[
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b01",
+    "deploy_started_at": "2026-11-12T20:54:36.713362Z",
+    "first_request_started_at": "2026-11-12T20:54:42.922389Z",
+    "cold": {
+      "total_ms": 1361.724,
+      "ttfb_ms": 1361.64,
+      "dns_ms": 28.757,
+      "tls_ms": 54.85,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 103.07,
+      "ttfb_ms": 102.956,
+      "dns_ms": 2.992,
+      "tls_ms": 36.784,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b01---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1000.4129999999999,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:43.038307Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b01",
+    "deploy_started_at": "2026-11-12T20:54:36.711775Z",
+    "first_request_started_at": "2026-11-12T20:54:42.826909Z",
+    "cold": {
+      "total_ms": 1981.919,
+      "ttfb_ms": 1981.841,
+      "dns_ms": 23.945,
+      "tls_ms": 57.749,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 89.161,
+      "ttfb_ms": 89.047,
+      "dns_ms": 3.509,
+      "tls_ms": 35.11,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b01---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1530.911,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:42.939987Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b01",
+    "deploy_started_at": "2026-11-12T20:54:36.714701Z",
+    "first_request_started_at": "2026-11-12T20:54:43.212236Z",
+    "cold": {
+      "total_ms": 3315.956,
+      "ttfb_ms": 3315.849,
+      "dns_ms": 48.53,
+      "tls_ms": 81.655,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 80.51,
+      "ttfb_ms": 80.463,
+      "dns_ms": 3.546,
+      "tls_ms": 32.093,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b01---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2746.72,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:43.388831Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b01",
+    "deploy_started_at": "2026-11-12T20:54:36.715981Z",
+    "first_request_started_at": "2026-11-12T20:54:42.799641Z",
+    "cold": {
+      "total_ms": 3767.008,
+      "ttfb_ms": 3766.966,
+      "dns_ms": 25.572,
+      "tls_ms": 54.008,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 137.875,
+      "ttfb_ms": 137.762,
+      "dns_ms": 2.625,
+      "tls_ms": 39.662,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b01---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3381.464,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:42.903434Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 1,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b01",
+    "deploy_started_at": "2026-11-12T20:54:36.717401Z",
+    "first_request_started_at": "2026-11-12T20:54:43.042705Z",
+    "cold": {
+      "total_ms": 4766.647,
+      "ttfb_ms": 4766.485,
+      "dns_ms": 27.383,
+      "tls_ms": 57.44,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 79.235,
+      "ttfb_ms": 79.131,
+      "dns_ms": 3.231,
+      "tls_ms": 29.42,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b01---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4337.763,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:43.156697Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b02",
+    "deploy_started_at": "2026-11-12T20:54:48.375757Z",
+    "first_request_started_at": "2026-11-12T20:54:54.684771Z",
+    "cold": {
+      "total_ms": 1042.656,
+      "ttfb_ms": 1042.487,
+      "dns_ms": 25.491,
+      "tls_ms": 58.784,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.516,
+      "ttfb_ms": 85.421,
+      "dns_ms": 3.34,
+      "tls_ms": 34.826,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b02---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 695.1360000000001,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:54.835764Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b02",
+    "deploy_started_at": "2026-11-12T20:54:48.374456Z",
+    "first_request_started_at": "2026-11-12T20:54:54.606156Z",
+    "cold": {
+      "total_ms": 2045.323,
+      "ttfb_ms": 2045.256,
+      "dns_ms": 32.607,
+      "tls_ms": 65.853,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 98.209,
+      "ttfb_ms": 98.095,
+      "dns_ms": 3.867,
+      "tls_ms": 43.115,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b02---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1559.914,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:54.744946Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b02",
+    "deploy_started_at": "2026-11-12T20:54:48.377219Z",
+    "first_request_started_at": "2026-11-12T20:54:54.604540Z",
+    "cold": {
+      "total_ms": 3264.928,
+      "ttfb_ms": 3264.792,
+      "dns_ms": 33.288,
+      "tls_ms": 65.97,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 88.971,
+      "ttfb_ms": 88.826,
+      "dns_ms": 2.66,
+      "tls_ms": 34.318,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b02---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2707.157,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:54.727842Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b02",
+    "deploy_started_at": "2026-11-12T20:54:48.378241Z",
+    "first_request_started_at": "2026-11-12T20:54:54.782821Z",
+    "cold": {
+      "total_ms": 5736.703,
+      "ttfb_ms": 5736.557,
+      "dns_ms": 25.73,
+      "tls_ms": 56.1,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 88.31,
+      "ttfb_ms": 88.196,
+      "dns_ms": 3.715,
+      "tls_ms": 33.682,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b02---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5146.981,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:54.896232Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 2,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b02",
+    "deploy_started_at": "2026-11-12T20:54:48.379603Z",
+    "first_request_started_at": "2026-11-12T20:54:54.991722Z",
+    "cold": {
+      "total_ms": 5996.407,
+      "ttfb_ms": 5996.281,
+      "dns_ms": 58.769,
+      "tls_ms": 86.507,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.838,
+      "ttfb_ms": 86.773,
+      "dns_ms": 4.342,
+      "tls_ms": 37.532,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b02---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5366.468999999999,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:54:55.137498Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b03",
+    "deploy_started_at": "2026-11-12T20:55:01.633462Z",
+    "first_request_started_at": "2026-11-12T20:55:07.945853Z",
+    "cold": {
+      "total_ms": 1235.693,
+      "ttfb_ms": 1235.382,
+      "dns_ms": 31.468,
+      "tls_ms": 68.178,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.503,
+      "ttfb_ms": 86.385,
+      "dns_ms": 2.833,
+      "tls_ms": 32.037,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b03---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 856.158,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:08.074668Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b03",
+    "deploy_started_at": "2026-11-12T20:55:01.632167Z",
+    "first_request_started_at": "2026-11-12T20:55:07.979111Z",
+    "cold": {
+      "total_ms": 2147.191,
+      "ttfb_ms": 2146.991,
+      "dns_ms": 61.241,
+      "tls_ms": 89.092,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 90.465,
+      "ttfb_ms": 90.311,
+      "dns_ms": 3.388,
+      "tls_ms": 35.249,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b03---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1599.01,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:08.179583Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b03",
+    "deploy_started_at": "2026-11-12T20:55:01.635132Z",
+    "first_request_started_at": "2026-11-12T20:55:08.009176Z",
+    "cold": {
+      "total_ms": 3631.124,
+      "ttfb_ms": 3630.994,
+      "dns_ms": 31.42,
+      "tls_ms": 57.354,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.382,
+      "ttfb_ms": 82.242,
+      "dns_ms": 4.249,
+      "tls_ms": 29.92,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b03---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3147.355,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:08.123246Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b03",
+    "deploy_started_at": "2026-11-12T20:55:01.635265Z",
+    "first_request_started_at": "2026-11-12T20:55:07.956211Z",
+    "cold": {
+      "total_ms": 4191.527,
+      "ttfb_ms": 4191.373,
+      "dns_ms": 26.253,
+      "tls_ms": 58.77,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 89.465,
+      "ttfb_ms": 89.375,
+      "dns_ms": 3.593,
+      "tls_ms": 35.532,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b03---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3753.076,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:08.074639Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 3,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b03",
+    "deploy_started_at": "2026-11-12T20:55:01.637689Z",
+    "first_request_started_at": "2026-11-12T20:55:07.936782Z",
+    "cold": {
+      "total_ms": 5585.335,
+      "ttfb_ms": 5585.2,
+      "dns_ms": 51.203,
+      "tls_ms": 76.529,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 84.111,
+      "ttfb_ms": 83.987,
+      "dns_ms": 3.306,
+      "tls_ms": 33.636,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b03---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5051.758,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:08.063769Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b04",
+    "deploy_started_at": "2026-11-12T20:55:14.023570Z",
+    "first_request_started_at": "2026-11-12T20:55:20.263222Z",
+    "cold": {
+      "total_ms": 1066.297,
+      "ttfb_ms": 1066.132,
+      "dns_ms": 27.239,
+      "tls_ms": 55.193,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 91.053,
+      "ttfb_ms": 91.007,
+      "dns_ms": 3.418,
+      "tls_ms": 35.525,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b04---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 746.8,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:20.376282Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b04",
+    "deploy_started_at": "2026-11-12T20:55:14.022035Z",
+    "first_request_started_at": "2026-11-12T20:55:20.163865Z",
+    "cold": {
+      "total_ms": 2304.347,
+      "ttfb_ms": 2304.154,
+      "dns_ms": 27.926,
+      "tls_ms": 53.316,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.587,
+      "ttfb_ms": 87.47,
+      "dns_ms": 3.204,
+      "tls_ms": 31.488,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b04---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1751.033,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:20.270886Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b04",
+    "deploy_started_at": "2026-11-12T20:55:14.024964Z",
+    "first_request_started_at": "2026-11-12T20:55:20.072615Z",
+    "cold": {
+      "total_ms": 3674.983,
+      "ttfb_ms": 3674.77,
+      "dns_ms": 25.359,
+      "tls_ms": 58.093,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 93.202,
+      "ttfb_ms": 93.048,
+      "dns_ms": 4.046,
+      "tls_ms": 40.116,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b04---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3047.149,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:20.239205Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b04",
+    "deploy_started_at": "2026-11-12T20:55:14.026058Z",
+    "first_request_started_at": "2026-11-12T20:55:20.161589Z",
+    "cold": {
+      "total_ms": 4481.634,
+      "ttfb_ms": 4481.484,
+      "dns_ms": 28.789,
+      "tls_ms": 54.155,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 81.779,
+      "ttfb_ms": 81.657,
+      "dns_ms": 2.929,
+      "tls_ms": 30.424,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b04---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4035.797,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:20.278938Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 4,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b04",
+    "deploy_started_at": "2026-11-12T20:55:14.027269Z",
+    "first_request_started_at": "2026-11-12T20:55:21.629106Z",
+    "cold": {
+      "total_ms": 5846.431,
+      "ttfb_ms": 5846.401,
+      "dns_ms": 51.67,
+      "tls_ms": 88.472,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.584,
+      "ttfb_ms": 85.561,
+      "dns_ms": 2.045,
+      "tls_ms": 31.41,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b04---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5333.698,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:21.781274Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b05",
+    "deploy_started_at": "2026-11-12T20:55:27.946504Z",
+    "first_request_started_at": "2026-11-12T20:55:34.102656Z",
+    "cold": {
+      "total_ms": 1544.862,
+      "ttfb_ms": 1544.826,
+      "dns_ms": 25.977,
+      "tls_ms": 57.507,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 88.631,
+      "ttfb_ms": 88.599,
+      "dns_ms": 2.589,
+      "tls_ms": 34.255,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b05---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1156.123,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:34.224963Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b05",
+    "deploy_started_at": "2026-11-12T20:55:27.945432Z",
+    "first_request_started_at": "2026-11-12T20:55:34.009353Z",
+    "cold": {
+      "total_ms": 1871.305,
+      "ttfb_ms": 1871.129,
+      "dns_ms": 53.207,
+      "tls_ms": 81.104,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.461,
+      "ttfb_ms": 85.318,
+      "dns_ms": 3.897,
+      "tls_ms": 31.204,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b05---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1416.2709999999997,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:34.148036Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b05",
+    "deploy_started_at": "2026-11-12T20:55:27.947923Z",
+    "first_request_started_at": "2026-11-12T20:55:34.144122Z",
+    "cold": {
+      "total_ms": 3688.125,
+      "ttfb_ms": 3687.983,
+      "dns_ms": 23.167,
+      "tls_ms": 51.062,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 220.65,
+      "ttfb_ms": 220.494,
+      "dns_ms": 2.539,
+      "tls_ms": 132.034,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b05---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3122.703,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:34.260029Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b05",
+    "deploy_started_at": "2026-11-12T20:55:27.949202Z",
+    "first_request_started_at": "2026-11-12T20:55:34.308420Z",
+    "cold": {
+      "total_ms": 6130.919,
+      "ttfb_ms": 6130.742,
+      "dns_ms": 31.877,
+      "tls_ms": 59.069,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 102.737,
+      "ttfb_ms": 102.59,
+      "dns_ms": 4.093,
+      "tls_ms": 45.665,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b05---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5507.183,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:34.464257Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 5,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b05",
+    "deploy_started_at": "2026-11-12T20:55:27.950545Z",
+    "first_request_started_at": "2026-11-12T20:55:35.633425Z",
+    "cold": {
+      "total_ms": 5626.269,
+      "ttfb_ms": 5626.194,
+      "dns_ms": 26.448,
+      "tls_ms": 57.303,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 119.38,
+      "ttfb_ms": 119.276,
+      "dns_ms": 3.365,
+      "tls_ms": 50.701,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b05---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5140.646,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:35.749541Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b06",
+    "deploy_started_at": "2026-11-12T20:55:41.955816Z",
+    "first_request_started_at": "2026-11-12T20:55:48.233507Z",
+    "cold": {
+      "total_ms": 1392.13,
+      "ttfb_ms": 1392.011,
+      "dns_ms": 48.029,
+      "tls_ms": 84.486,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 94.116,
+      "ttfb_ms": 94.044,
+      "dns_ms": 3.662,
+      "tls_ms": 33.482,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b06---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 935.5330000000001,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:48.376613Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b06",
+    "deploy_started_at": "2026-11-12T20:55:41.954429Z",
+    "first_request_started_at": "2026-11-12T20:55:48.204676Z",
+    "cold": {
+      "total_ms": 1964.414,
+      "ttfb_ms": 1964.006,
+      "dns_ms": 24.429,
+      "tls_ms": 62.919,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.617,
+      "ttfb_ms": 82.385,
+      "dns_ms": 2.123,
+      "tls_ms": 33.171,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b06---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1438.736,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:48.371065Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b06",
+    "deploy_started_at": "2026-11-12T20:55:41.957243Z",
+    "first_request_started_at": "2026-11-12T20:55:48.305246Z",
+    "cold": {
+      "total_ms": 2806.028,
+      "ttfb_ms": 2805.922,
+      "dns_ms": 25.994,
+      "tls_ms": 61.073,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 92.87,
+      "ttfb_ms": 92.714,
+      "dns_ms": 3.216,
+      "tls_ms": 34.998,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b06---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:48.428142Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_startup_ms": null,
+    "monitoring_startup_count": 0,
+    "monitoring_status": "no_nonzero_distribution"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b06",
+    "deploy_started_at": "2026-11-12T20:55:41.957341Z",
+    "first_request_started_at": "2026-11-12T20:55:47.856548Z",
+    "cold": {
+      "total_ms": 4664.726,
+      "ttfb_ms": 4664.554,
+      "dns_ms": 25.128,
+      "tls_ms": 60.934,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 84.76,
+      "ttfb_ms": 84.649,
+      "dns_ms": 2.749,
+      "tls_ms": 30.938,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b06---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4197.543,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:47.982888Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 6,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b06",
+    "deploy_started_at": "2026-11-12T20:55:41.959495Z",
+    "first_request_started_at": "2026-11-12T20:55:48.084048Z",
+    "cold": {
+      "total_ms": 5089.234,
+      "ttfb_ms": 5089.013,
+      "dns_ms": 24.2,
+      "tls_ms": 49.567,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.262,
+      "ttfb_ms": 85.221,
+      "dns_ms": 2.785,
+      "tls_ms": 32.391,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b06---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4653.168,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:48.192229Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 7,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b07",
+    "deploy_started_at": "2026-11-12T20:55:53.663848Z",
+    "first_request_started_at": "2026-11-12T20:55:59.923428Z",
+    "cold": {
+      "total_ms": 1070.02,
+      "ttfb_ms": 1069.9,
+      "dns_ms": 48.426,
+      "tls_ms": 81.616,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.395,
+      "ttfb_ms": 82.286,
+      "dns_ms": 3.441,
+      "tls_ms": 33.656,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b07---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 640.675,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:00.058129Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 7,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b07",
+    "deploy_started_at": "2026-11-12T20:55:53.663750Z",
+    "first_request_started_at": "2026-11-12T20:55:59.736170Z",
+    "cold": {
+      "total_ms": 1832.285,
+      "ttfb_ms": 1832.077,
+      "dns_ms": 30.839,
+      "tls_ms": 63.236,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.275,
+      "ttfb_ms": 87.143,
+      "dns_ms": 3.524,
+      "tls_ms": 36.114,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b07---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1392.138,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:59.858238Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 7,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b07",
+    "deploy_started_at": "2026-11-12T20:55:53.665011Z",
+    "first_request_started_at": "2026-11-12T20:56:00.008012Z",
+    "cold": {
+      "total_ms": 2819.315,
+      "ttfb_ms": 2819.162,
+      "dns_ms": 31.009,
+      "tls_ms": 64.938,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 90.15,
+      "ttfb_ms": 90.043,
+      "dns_ms": 3.654,
+      "tls_ms": 32.378,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b07---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2314.787,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:00.154994Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 7,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b07",
+    "deploy_started_at": "2026-11-12T20:55:53.667516Z",
+    "first_request_started_at": "2026-11-12T20:55:59.847842Z",
+    "cold": {
+      "total_ms": 3654.235,
+      "ttfb_ms": 3654.151,
+      "dns_ms": 23.823,
+      "tls_ms": 56.212,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 88.498,
+      "ttfb_ms": 88.375,
+      "dns_ms": 3.983,
+      "tls_ms": 37.938,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b07---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3229.1020000000003,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:59.960146Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 7,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b07",
+    "deploy_started_at": "2026-11-12T20:55:53.668630Z",
+    "first_request_started_at": "2026-11-12T20:55:59.807478Z",
+    "cold": {
+      "total_ms": 6206.36,
+      "ttfb_ms": 6206.222,
+      "dns_ms": 32.074,
+      "tls_ms": 64.377,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.045,
+      "ttfb_ms": 86.93,
+      "dns_ms": 3.006,
+      "tls_ms": 34.866,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b07---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5731.711,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:55:59.940730Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 8,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b08",
+    "deploy_started_at": "2026-11-12T20:56:06.539404Z",
+    "first_request_started_at": "2026-11-12T20:56:12.735434Z",
+    "cold": {
+      "total_ms": 1089.24,
+      "ttfb_ms": 1089.075,
+      "dns_ms": 35.908,
+      "tls_ms": 68.198,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 81.844,
+      "ttfb_ms": 81.817,
+      "dns_ms": 3.261,
+      "tls_ms": 31.232,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b08---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 766.9,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:12.865285Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 8,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b08",
+    "deploy_started_at": "2026-11-12T20:56:06.540797Z",
+    "first_request_started_at": "2026-11-12T20:56:12.752089Z",
+    "cold": {
+      "total_ms": 2676.105,
+      "ttfb_ms": 2675.9,
+      "dns_ms": 24.773,
+      "tls_ms": 53.595,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 89.243,
+      "ttfb_ms": 89.129,
+      "dns_ms": 3.86,
+      "tls_ms": 33.209,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b08---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2227.685,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:12.861706Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 8,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b08",
+    "deploy_started_at": "2026-11-12T20:56:06.538017Z",
+    "first_request_started_at": "2026-11-12T20:56:12.829668Z",
+    "cold": {
+      "total_ms": 2192.345,
+      "ttfb_ms": 2192.257,
+      "dns_ms": 60.294,
+      "tls_ms": 93.045,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 1603.43,
+      "ttfb_ms": 1603.275,
+      "dns_ms": 3.619,
+      "tls_ms": 35.411,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b08---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1445.953,
+    "monitoring_startup_count": 2,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:12.978824Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      },
+      {
+        "timestamp": "2026-11-12T20:56:15.133265Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 8,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b08",
+    "deploy_started_at": "2026-11-12T20:56:06.543147Z",
+    "first_request_started_at": "2026-11-12T20:56:13.125481Z",
+    "cold": {
+      "total_ms": 4442.083,
+      "ttfb_ms": 4441.744,
+      "dns_ms": 30.959,
+      "tls_ms": 55.155,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.157,
+      "ttfb_ms": 86.036,
+      "dns_ms": 3.551,
+      "tls_ms": 35.082,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b08---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4024.12,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:13.241052Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 8,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b08",
+    "deploy_started_at": "2026-11-12T20:56:06.541948Z",
+    "first_request_started_at": "2026-11-12T20:56:12.755001Z",
+    "cold": {
+      "total_ms": 5171.705,
+      "ttfb_ms": 5171.443,
+      "dns_ms": 25.9,
+      "tls_ms": 63.408,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 92.25,
+      "ttfb_ms": 92.142,
+      "dns_ms": 3.87,
+      "tls_ms": 32.551,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b08---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4635.083,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:12.866126Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 9,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b09",
+    "deploy_started_at": "2026-11-12T20:56:18.431372Z",
+    "first_request_started_at": "2026-11-12T20:56:24.917034Z",
+    "cold": {
+      "total_ms": 1030.685,
+      "ttfb_ms": 1030.621,
+      "dns_ms": 46.403,
+      "tls_ms": 73.766,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 84.929,
+      "ttfb_ms": 84.894,
+      "dns_ms": 3.099,
+      "tls_ms": 36.255,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b09---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 707.526,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:25.050516Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 9,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b09",
+    "deploy_started_at": "2026-11-12T20:56:18.431276Z",
+    "first_request_started_at": "2026-11-12T20:56:24.928554Z",
+    "cold": {
+      "total_ms": 1896.541,
+      "ttfb_ms": 1896.381,
+      "dns_ms": 30.64,
+      "tls_ms": 56.107,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 84.775,
+      "ttfb_ms": 84.658,
+      "dns_ms": 3.322,
+      "tls_ms": 30.474,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b09---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1456.295,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:25.045999Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 9,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b09",
+    "deploy_started_at": "2026-11-12T20:56:18.432459Z",
+    "first_request_started_at": "2026-11-12T20:56:24.410931Z",
+    "cold": {
+      "total_ms": 3308.861,
+      "ttfb_ms": 3308.758,
+      "dns_ms": 28.78,
+      "tls_ms": 61.132,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.879,
+      "ttfb_ms": 85.747,
+      "dns_ms": 3.065,
+      "tls_ms": 36.659,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b09---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2670.205,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:24.570100Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 9,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b09",
+    "deploy_started_at": "2026-11-12T20:56:18.433605Z",
+    "first_request_started_at": "2026-11-12T20:56:24.685461Z",
+    "cold": {
+      "total_ms": 4403.169,
+      "ttfb_ms": 4403.059,
+      "dns_ms": 54.799,
+      "tls_ms": 88.93,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 117.959,
+      "ttfb_ms": 117.862,
+      "dns_ms": 3.182,
+      "tls_ms": 31.94,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b09---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3869.241,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:24.859319Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 9,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b09",
+    "deploy_started_at": "2026-11-12T20:56:18.436079Z",
+    "first_request_started_at": "2026-11-12T20:56:26.119846Z",
+    "cold": {
+      "total_ms": 5984.754,
+      "ttfb_ms": 5984.642,
+      "dns_ms": 52.518,
+      "tls_ms": 84.32,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 98.87,
+      "ttfb_ms": 98.743,
+      "dns_ms": 3.532,
+      "tls_ms": 43.093,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b09---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5463.546,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:26.284388Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": true,
+    "sample": 10,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-b10",
+    "deploy_started_at": "2026-11-12T20:56:32.652385Z",
+    "first_request_started_at": "2026-11-12T20:56:38.719938Z",
+    "cold": {
+      "total_ms": 1130.175,
+      "ttfb_ms": 1130.092,
+      "dns_ms": 28.548,
+      "tls_ms": 56.478,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 88.469,
+      "ttfb_ms": 88.411,
+      "dns_ms": 3.258,
+      "tls_ms": 35.511,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b10---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 741.576,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:38.874383Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-b10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": true,
+    "sample": 10,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-b10",
+    "deploy_started_at": "2026-11-12T20:56:32.653784Z",
+    "first_request_started_at": "2026-11-12T20:56:38.815679Z",
+    "cold": {
+      "total_ms": 3392.308,
+      "ttfb_ms": 3392.172,
+      "dns_ms": 48.803,
+      "tls_ms": 75.592,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.657,
+      "ttfb_ms": 85.617,
+      "dns_ms": 2.808,
+      "tls_ms": 39.585,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b10---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2882.0309999999995,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:38.951595Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-b10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": true,
+    "sample": 10,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-b10",
+    "deploy_started_at": "2026-11-12T20:56:32.650985Z",
+    "first_request_started_at": "2026-11-12T20:56:40.324687Z",
+    "cold": {
+      "total_ms": 1915.212,
+      "ttfb_ms": 1915.165,
+      "dns_ms": 25.996,
+      "tls_ms": 53.891,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.737,
+      "ttfb_ms": 85.699,
+      "dns_ms": 2.579,
+      "tls_ms": 28.177,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b10---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1454.694,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:40.431013Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-b10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": true,
+    "sample": 10,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-b10",
+    "deploy_started_at": "2026-11-12T20:56:32.656119Z",
+    "first_request_started_at": "2026-11-12T20:56:38.614579Z",
+    "cold": {
+      "total_ms": 4743.366,
+      "ttfb_ms": 4743.18,
+      "dns_ms": 53.518,
+      "tls_ms": 84.672,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 93.92,
+      "ttfb_ms": 93.793,
+      "dns_ms": 2.839,
+      "tls_ms": 38.798,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b10---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4321.37,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:38.756302Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-b10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": true,
+    "sample": 10,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-b10",
+    "deploy_started_at": "2026-11-12T20:56:32.655010Z",
+    "first_request_started_at": "2026-11-12T20:56:38.907312Z",
+    "cold": {
+      "total_ms": 4930.537,
+      "ttfb_ms": 4930.457,
+      "dns_ms": 49.104,
+      "tls_ms": 75.682,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 90.411,
+      "ttfb_ms": 90.327,
+      "dns_ms": 2.649,
+      "tls_ms": 33.381,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-b10---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4480.173,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:39.060827Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-b10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 1,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n01",
+    "deploy_started_at": "2026-11-12T20:56:44.346147Z",
+    "first_request_started_at": "2026-11-12T20:56:50.705569Z",
+    "cold": {
+      "total_ms": 1488.667,
+      "ttfb_ms": 1488.442,
+      "dns_ms": 24.204,
+      "tls_ms": 62.991,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 88.521,
+      "ttfb_ms": 88.39,
+      "dns_ms": 3.779,
+      "tls_ms": 37.725,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n01---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 951.808,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:50.831397Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-n01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 1,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n01",
+    "deploy_started_at": "2026-11-12T20:56:44.344893Z",
+    "first_request_started_at": "2026-11-12T20:56:50.803880Z",
+    "cold": {
+      "total_ms": 3300.147,
+      "ttfb_ms": 3299.987,
+      "dns_ms": 46.283,
+      "tls_ms": 71.842,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 99.426,
+      "ttfb_ms": 99.262,
+      "dns_ms": 4.035,
+      "tls_ms": 44.423,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n01---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2472.265,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:50.924329Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 1,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n01",
+    "deploy_started_at": "2026-11-12T20:56:44.347538Z",
+    "first_request_started_at": "2026-11-12T20:56:50.515659Z",
+    "cold": {
+      "total_ms": 6851.339,
+      "ttfb_ms": 6851.234,
+      "dns_ms": 25.579,
+      "tls_ms": 55.139,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.928,
+      "ttfb_ms": 87.793,
+      "dns_ms": 3.355,
+      "tls_ms": 35.661,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n01---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5710.019,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:50.628576Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-n01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 1,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n01",
+    "deploy_started_at": "2026-11-12T20:56:44.348923Z",
+    "first_request_started_at": "2026-11-12T20:56:50.562488Z",
+    "cold": {
+      "total_ms": 8158.373,
+      "ttfb_ms": 8158.278,
+      "dns_ms": 26.975,
+      "tls_ms": 61.44,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.842,
+      "ttfb_ms": 82.713,
+      "dns_ms": 3.924,
+      "tls_ms": 31.408,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n01---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:50.675459Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-n01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_startup_ms": null,
+    "monitoring_startup_count": 0,
+    "monitoring_status": "no_nonzero_distribution"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 1,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n01",
+    "deploy_started_at": "2026-11-12T20:56:44.349971Z",
+    "first_request_started_at": "2026-11-12T20:56:51.765353Z",
+    "cold": {
+      "total_ms": 8688.292,
+      "ttfb_ms": 8688.194,
+      "dns_ms": 25.531,
+      "tls_ms": 56.985,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.397,
+      "ttfb_ms": 82.283,
+      "dns_ms": 4.022,
+      "tls_ms": 35.019,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n01---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8035.883999999999,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:56:51.875565Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-n01",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 2,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n02",
+    "deploy_started_at": "2026-11-12T20:57:00.952973Z",
+    "first_request_started_at": "2026-11-12T20:57:07.021003Z",
+    "cold": {
+      "total_ms": 1850.736,
+      "ttfb_ms": 1850.603,
+      "dns_ms": 48.978,
+      "tls_ms": 79.081,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 89.517,
+      "ttfb_ms": 89.387,
+      "dns_ms": 3.897,
+      "tls_ms": 32.769,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n02---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1250.531,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:07.187908Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-n02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 2,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n02",
+    "deploy_started_at": "2026-11-12T20:57:00.951734Z",
+    "first_request_started_at": "2026-11-12T20:57:08.666930Z",
+    "cold": {
+      "total_ms": 2343.298,
+      "ttfb_ms": 2343.109,
+      "dns_ms": 49.898,
+      "tls_ms": 83.732,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 99.06,
+      "ttfb_ms": 98.951,
+      "dns_ms": 3.392,
+      "tls_ms": 36.764,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n02---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1669.3,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:08.801482Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 2,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n02",
+    "deploy_started_at": "2026-11-12T20:57:00.954213Z",
+    "first_request_started_at": "2026-11-12T20:57:06.887642Z",
+    "cold": {
+      "total_ms": 5610.094,
+      "ttfb_ms": 5609.982,
+      "dns_ms": 53.753,
+      "tls_ms": 84.338,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.528,
+      "ttfb_ms": 87.45,
+      "dns_ms": 3.792,
+      "tls_ms": 35.647,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n02---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4677.668,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:07.032396Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-n02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 2,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n02",
+    "deploy_started_at": "2026-11-12T20:57:00.955526Z",
+    "first_request_started_at": "2026-11-12T20:57:06.906105Z",
+    "cold": {
+      "total_ms": 6895.898,
+      "ttfb_ms": 6895.729,
+      "dns_ms": 45.335,
+      "tls_ms": 71.06,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 81.495,
+      "ttfb_ms": 81.4,
+      "dns_ms": 4.052,
+      "tls_ms": 34.448,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n02---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 6186.734,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:07.035404Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-n02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 2,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n02",
+    "deploy_started_at": "2026-11-12T20:57:00.956873Z",
+    "first_request_started_at": "2026-11-12T20:57:07.081535Z",
+    "cold": {
+      "total_ms": 9721.734,
+      "ttfb_ms": 9721.541,
+      "dns_ms": 25.88,
+      "tls_ms": 51.693,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 113.082,
+      "ttfb_ms": 112.971,
+      "dns_ms": 3.577,
+      "tls_ms": 33.485,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n02---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8928.405,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:07.183014Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-n02",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 3,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n03",
+    "deploy_started_at": "2026-11-12T20:57:17.329586Z",
+    "first_request_started_at": "2026-11-12T20:57:23.472897Z",
+    "cold": {
+      "total_ms": 2967.668,
+      "ttfb_ms": 2967.608,
+      "dns_ms": 45.533,
+      "tls_ms": 77.199,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 89.738,
+      "ttfb_ms": 89.684,
+      "dns_ms": 5.045,
+      "tls_ms": 33.258,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n03---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2433.83,
+    "monitoring_startup_count": 2,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:23.607253Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      },
+      {
+        "timestamp": "2026-11-12T21:02:27.892933Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 3,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n03",
+    "deploy_started_at": "2026-11-12T20:57:17.329678Z",
+    "first_request_started_at": "2026-11-12T20:57:23.493110Z",
+    "cold": {
+      "total_ms": 3306.99,
+      "ttfb_ms": 3306.848,
+      "dns_ms": 24.778,
+      "tls_ms": 58.199,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 96.096,
+      "ttfb_ms": 95.948,
+      "dns_ms": 4.544,
+      "tls_ms": 35.563,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n03---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2510.093,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:23.610493Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-n03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 3,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n03",
+    "deploy_started_at": "2026-11-12T20:57:17.331998Z",
+    "first_request_started_at": "2026-11-12T20:57:23.351788Z",
+    "cold": {
+      "total_ms": 4723.599,
+      "ttfb_ms": 4723.462,
+      "dns_ms": 25.365,
+      "tls_ms": 55.311,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 87.371,
+      "ttfb_ms": 87.244,
+      "dns_ms": 3.678,
+      "tls_ms": 38.381,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n03---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 3989.451,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:23.458601Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-n03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 3,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n03",
+    "deploy_started_at": "2026-11-12T20:57:17.333215Z",
+    "first_request_started_at": "2026-11-12T20:57:23.463354Z",
+    "cold": {
+      "total_ms": 8855.317,
+      "ttfb_ms": 8855.255,
+      "dns_ms": 24.952,
+      "tls_ms": 57.181,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 95.958,
+      "ttfb_ms": 95.905,
+      "dns_ms": 2.905,
+      "tls_ms": 37.829,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n03---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8043.945,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:23.614811Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-n03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 3,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n03",
+    "deploy_started_at": "2026-11-12T20:57:17.334271Z",
+    "first_request_started_at": "2026-11-12T20:57:23.509431Z",
+    "cold": {
+      "total_ms": 9741.061,
+      "ttfb_ms": 9740.81,
+      "dns_ms": 31.8,
+      "tls_ms": 64.485,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 139.201,
+      "ttfb_ms": 139.076,
+      "dns_ms": 4.063,
+      "tls_ms": 69.677,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n03---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8898.692,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:23.630933Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-n03",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 4,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n04",
+    "deploy_started_at": "2026-11-12T20:57:33.930517Z",
+    "first_request_started_at": "2026-11-12T20:57:40.267323Z",
+    "cold": {
+      "total_ms": 1499.621,
+      "ttfb_ms": 1499.566,
+      "dns_ms": 67.203,
+      "tls_ms": 101.549,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 99.844,
+      "ttfb_ms": 99.809,
+      "dns_ms": 2.637,
+      "tls_ms": 40.477,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n04---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 953.782,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:40.430029Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-n04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 4,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n04",
+    "deploy_started_at": "2026-11-12T20:57:33.930413Z",
+    "first_request_started_at": "2026-11-12T20:57:40.194554Z",
+    "cold": {
+      "total_ms": 3113.21,
+      "ttfb_ms": 3112.96,
+      "dns_ms": 57.016,
+      "tls_ms": 97.455,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 112.703,
+      "ttfb_ms": 112.66,
+      "dns_ms": 3.992,
+      "tls_ms": 50.703,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n04---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2270.948,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:40.352766Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 4,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n04",
+    "deploy_started_at": "2026-11-12T20:57:33.930585Z",
+    "first_request_started_at": "2026-11-12T20:57:40.052005Z",
+    "cold": {
+      "total_ms": 5008.716,
+      "ttfb_ms": 5008.574,
+      "dns_ms": 32.685,
+      "tls_ms": 69.286,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 114.2,
+      "ttfb_ms": 114.147,
+      "dns_ms": 3.846,
+      "tls_ms": 50.912,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n04---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4193.8,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:40.215363Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-n04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 4,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n04",
+    "deploy_started_at": "2026-11-12T20:57:33.931855Z",
+    "first_request_started_at": "2026-11-12T20:57:41.855435Z",
+    "cold": {
+      "total_ms": 7862.454,
+      "ttfb_ms": 7862.329,
+      "dns_ms": 35.801,
+      "tls_ms": 89.466,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 90.286,
+      "ttfb_ms": 90.166,
+      "dns_ms": 2.453,
+      "tls_ms": 33.312,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n04---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 7051.727,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:42.046237Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-n04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 4,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n04",
+    "deploy_started_at": "2026-11-12T20:57:33.935683Z",
+    "first_request_started_at": "2026-11-12T20:57:40.267452Z",
+    "cold": {
+      "total_ms": 13775.14,
+      "ttfb_ms": 13774.999,
+      "dns_ms": 67.179,
+      "tls_ms": 101.366,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 101.451,
+      "ttfb_ms": 101.337,
+      "dns_ms": 4.177,
+      "tls_ms": 35.65,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n04---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 12622.248,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:57:40.434879Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-n04",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 5,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n05",
+    "deploy_started_at": "2026-11-12T20:57:54.548492Z",
+    "first_request_started_at": "2026-11-12T20:58:01.493911Z",
+    "cold": {
+      "total_ms": 2962.525,
+      "ttfb_ms": 2962.394,
+      "dns_ms": 50.841,
+      "tls_ms": 77.306,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 90.851,
+      "ttfb_ms": 90.767,
+      "dns_ms": 4.045,
+      "tls_ms": 32.688,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n05---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2215.655,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:58:01.645828Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 5,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n05",
+    "deploy_started_at": "2026-11-12T20:57:54.549744Z",
+    "first_request_started_at": "2026-11-12T20:58:02.003435Z",
+    "cold": {
+      "total_ms": 2607.766,
+      "ttfb_ms": 2607.683,
+      "dns_ms": 26.142,
+      "tls_ms": 53.471,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 91.073,
+      "ttfb_ms": 90.987,
+      "dns_ms": 3.222,
+      "tls_ms": 30.996,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n05---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1944.087,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:58:02.120755Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-n05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 5,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n05",
+    "deploy_started_at": "2026-11-12T20:57:54.551228Z",
+    "first_request_started_at": "2026-11-12T20:58:00.818922Z",
+    "cold": {
+      "total_ms": 5311.617,
+      "ttfb_ms": 5311.506,
+      "dns_ms": 28.91,
+      "tls_ms": 62.255,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 84.397,
+      "ttfb_ms": 84.316,
+      "dns_ms": 4.029,
+      "tls_ms": 37.156,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n05---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4382.545,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:58:00.934318Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-n05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 5,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n05",
+    "deploy_started_at": "2026-11-12T20:57:54.553529Z",
+    "first_request_started_at": "2026-11-12T20:58:00.773843Z",
+    "cold": {
+      "total_ms": 8322.615,
+      "ttfb_ms": 8322.488,
+      "dns_ms": 24.057,
+      "tls_ms": 56.825,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.519,
+      "ttfb_ms": 85.422,
+      "dns_ms": 3.844,
+      "tls_ms": 33.882,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n05---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 7619.683,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:58:00.883319Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-n05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 5,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n05",
+    "deploy_started_at": "2026-11-12T20:57:54.552306Z",
+    "first_request_started_at": "2026-11-12T20:58:00.964249Z",
+    "cold": {
+      "total_ms": 9026.33,
+      "ttfb_ms": 9026.206,
+      "dns_ms": 25.781,
+      "tls_ms": 57.924,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.855,
+      "ttfb_ms": 85.759,
+      "dns_ms": 3.898,
+      "tls_ms": 36.365,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n05---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8079.257,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T20:58:01.088449Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-n05",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 6,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n06",
+    "deploy_started_at": "2026-11-12T20:58:10.484093Z",
+    "first_request_started_at": "2026-11-12T21:26:00.357175Z",
+    "cold": {
+      "total_ms": 2808.194,
+      "ttfb_ms": 2808.068,
+      "dns_ms": 29.027,
+      "tls_ms": 56.036,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 80.475,
+      "ttfb_ms": 80.425,
+      "dns_ms": 3.904,
+      "tls_ms": 30.687,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n06---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2137.977,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T21:26:00.472733Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 6,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n06",
+    "deploy_started_at": "2026-11-12T20:58:10.485422Z",
+    "first_request_started_at": "2026-11-12T21:26:01.183258Z",
+    "cold": {
+      "total_ms": 2227.529,
+      "ttfb_ms": 2227.396,
+      "dns_ms": 27.173,
+      "tls_ms": 55.957,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.03,
+      "ttfb_ms": 85.926,
+      "dns_ms": 3.527,
+      "tls_ms": 29.251,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n06---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1673.109,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T21:26:01.297178Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-n06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 6,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-t-n06",
+    "deploy_started_at": "2026-11-12T20:58:10.486908Z",
+    "first_request_started_at": "2026-11-12T21:26:02.290047Z",
+    "cold": {
+      "total_ms": 5175.753,
+      "ttfb_ms": 5175.706,
+      "dns_ms": 25.124,
+      "tls_ms": 55.877,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 501.509,
+      "ttfb_ms": 501.456,
+      "dns_ms": 2.879,
+      "tls_ms": 317.143,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n06---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4248.208,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T21:26:02.399750Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-t-n06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 6,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-t-n06",
+    "deploy_started_at": "2026-11-12T20:58:10.488300Z",
+    "first_request_started_at": "2026-11-12T21:26:00.616996Z",
+    "cold": {
+      "total_ms": 9070.153,
+      "ttfb_ms": 9070.067,
+      "dns_ms": 32.169,
+      "tls_ms": 64.572,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 305.023,
+      "ttfb_ms": 304.88,
+      "dns_ms": 4.083,
+      "tls_ms": 151.722,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n06---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8210.275,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T21:26:00.743519Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-t-n06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 6,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-t-n06",
+    "deploy_started_at": "2026-11-12T20:58:10.488199Z",
+    "first_request_started_at": "2026-11-12T21:26:00.330879Z",
+    "cold": {
+      "total_ms": 10817.767,
+      "ttfb_ms": 10817.67,
+      "dns_ms": 54.755,
+      "tls_ms": 83.575,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 171.031,
+      "ttfb_ms": 170.928,
+      "dns_ms": 4.034,
+      "tls_ms": 72.685,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n06---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 9880.078,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T21:26:00.469733Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-t-n06",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 7,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-t-n07",
+    "deploy_started_at": "2026-11-12T21:26:13.489089Z",
+    "first_request_started_at": "2026-11-12T21:58:04.095644Z",
+    "cold": {
+      "total_ms": 1883.413,
+      "ttfb_ms": 1883.288,
+      "dns_ms": 38.788,
+      "tls_ms": 83.676,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 100.678,
+      "ttfb_ms": 100.573,
+      "dns_ms": 4.163,
+      "tls_ms": 34.489,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n07---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1252.427,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T21:58:04.234291Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-t-n07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 7,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-t-n07",
+    "deploy_started_at": "2026-11-12T21:26:13.488911Z",
+    "first_request_started_at": "2026-11-12T21:58:04.117766Z",
+    "cold": {
+      "total_ms": 3266.333,
+      "ttfb_ms": 3266.257,
+      "dns_ms": 32.181,
+      "tls_ms": 85.013,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 83.173,
+      "ttfb_ms": 83.109,
+      "dns_ms": 4.33,
+      "tls_ms": 30.786,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://t-n07---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2487.249,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-12T21:58:04.252366Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-t-n07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 7,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n07",
+    "deploy_started_at": "2026-11-13T04:04:58.858243Z",
+    "first_request_started_at": "2026-11-13T04:05:05.195156Z",
+    "cold": {
+      "total_ms": 5924.454,
+      "ttfb_ms": 5924.304,
+      "dns_ms": 25.694,
+      "tls_ms": 56.629,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.619,
+      "ttfb_ms": 86.52,
+      "dns_ms": 2.232,
+      "tls_ms": 34.994,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n07---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5152.697,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:05.307651Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-u-n07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 7,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n07",
+    "deploy_started_at": "2026-11-13T04:04:58.858451Z",
+    "first_request_started_at": "2026-11-13T04:05:05.547439Z",
+    "cold": {
+      "total_ms": 8691.113,
+      "ttfb_ms": 8690.397,
+      "dns_ms": 26.2,
+      "tls_ms": 54.133,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 310.471,
+      "ttfb_ms": 310.317,
+      "dns_ms": 2.688,
+      "tls_ms": 33.011,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n07---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 7681.161,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:05.854605Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-u-n07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 7,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n07",
+    "deploy_started_at": "2026-11-13T04:04:58.859546Z",
+    "first_request_started_at": "2026-11-13T04:05:05.275385Z",
+    "cold": {
+      "total_ms": 9896.223,
+      "ttfb_ms": 9896.081,
+      "dns_ms": 51.728,
+      "tls_ms": 80.174,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.161,
+      "ttfb_ms": 85.062,
+      "dns_ms": 2.142,
+      "tls_ms": 29.839,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n07---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 9135.647,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:05.417062Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-u-n07",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 8,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n08",
+    "deploy_started_at": "2026-11-13T04:05:15.664406Z",
+    "first_request_started_at": "2026-11-13T04:05:22.482289Z",
+    "cold": {
+      "total_ms": 1907.744,
+      "ttfb_ms": 1907.645,
+      "dns_ms": 24.18,
+      "tls_ms": 56.136,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 88.426,
+      "ttfb_ms": 88.334,
+      "dns_ms": 2.326,
+      "tls_ms": 34.736,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n08---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1339.129,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:22.593531Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-u-n08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 8,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n08",
+    "deploy_started_at": "2026-11-13T04:05:15.664327Z",
+    "first_request_started_at": "2026-11-13T04:05:22.169406Z",
+    "cold": {
+      "total_ms": 3355.88,
+      "ttfb_ms": 3355.736,
+      "dns_ms": 53.799,
+      "tls_ms": 82.289,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 109.996,
+      "ttfb_ms": 109.893,
+      "dns_ms": 2.321,
+      "tls_ms": 33.235,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n08---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2552.278,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:22.305060Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-u-n08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 8,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n08",
+    "deploy_started_at": "2026-11-13T04:05:15.664451Z",
+    "first_request_started_at": "2026-11-13T04:05:21.535202Z",
+    "cold": {
+      "total_ms": 5369.554,
+      "ttfb_ms": 5369.462,
+      "dns_ms": 24.699,
+      "tls_ms": 57.917,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 109.062,
+      "ttfb_ms": 108.982,
+      "dns_ms": 2.343,
+      "tls_ms": 33.653,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n08---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 4556.96,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:21.655484Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-u-n08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 8,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n08",
+    "deploy_started_at": "2026-11-13T04:05:15.664606Z",
+    "first_request_started_at": "2026-11-13T04:05:22.136936Z",
+    "cold": {
+      "total_ms": 9938.288,
+      "ttfb_ms": 9938.17,
+      "dns_ms": 49.274,
+      "tls_ms": 76.776,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.15,
+      "ttfb_ms": 85.05,
+      "dns_ms": 2.033,
+      "tls_ms": 30.414,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n08---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8816.673,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:22.473573Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-u-n08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 8,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n08",
+    "deploy_started_at": "2026-11-13T04:05:15.664518Z",
+    "first_request_started_at": "2026-11-13T04:05:22.117535Z",
+    "cold": {
+      "total_ms": 11216.55,
+      "ttfb_ms": 11216.414,
+      "dns_ms": 54.593,
+      "tls_ms": 89.602,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.875,
+      "ttfb_ms": 86.77,
+      "dns_ms": 2.197,
+      "tls_ms": 30.601,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n08---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 10196.117,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:22.301319Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-u-n08",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 9,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n09",
+    "deploy_started_at": "2026-11-13T04:05:33.824678Z",
+    "first_request_started_at": "2026-11-13T04:05:40.139295Z",
+    "cold": {
+      "total_ms": 2278.141,
+      "ttfb_ms": 2277.989,
+      "dns_ms": 26.107,
+      "tls_ms": 60.252,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 82.355,
+      "ttfb_ms": 82.247,
+      "dns_ms": 2.066,
+      "tls_ms": 31.135,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n09---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1581.3500000000001,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:40.258247Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-u-n09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 9,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n09",
+    "deploy_started_at": "2026-11-13T04:05:33.824598Z",
+    "first_request_started_at": "2026-11-13T04:05:40.271043Z",
+    "cold": {
+      "total_ms": 2967.801,
+      "ttfb_ms": 2967.669,
+      "dns_ms": 61.901,
+      "tls_ms": 92.685,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 85.785,
+      "ttfb_ms": 85.411,
+      "dns_ms": 2.161,
+      "tls_ms": 30.76,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n09---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2128.833,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:40.423912Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-u-n09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 9,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n09",
+    "deploy_started_at": "2026-11-13T04:05:33.824756Z",
+    "first_request_started_at": "2026-11-13T04:05:40.257144Z",
+    "cold": {
+      "total_ms": 6134.164,
+      "ttfb_ms": 6134.02,
+      "dns_ms": 25.401,
+      "tls_ms": 54.567,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 93.408,
+      "ttfb_ms": 93.304,
+      "dns_ms": 3.717,
+      "tls_ms": 40.993,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n09---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5188.708,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:40.378225Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-u-n09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 9,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n09",
+    "deploy_started_at": "2026-11-13T04:05:33.828507Z",
+    "first_request_started_at": "2026-11-13T04:05:40.165892Z",
+    "cold": {
+      "total_ms": 9335.443,
+      "ttfb_ms": 9335.321,
+      "dns_ms": 24.431,
+      "tls_ms": 55.534,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 84.905,
+      "ttfb_ms": 84.801,
+      "dns_ms": 2.317,
+      "tls_ms": 35.075,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n09---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8558.219,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:40.290385Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-u-n09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 9,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n09",
+    "deploy_started_at": "2026-11-13T04:05:33.829994Z",
+    "first_request_started_at": "2026-11-13T04:05:39.806815Z",
+    "cold": {
+      "total_ms": 10927.988,
+      "ttfb_ms": 10927.825,
+      "dns_ms": 25.484,
+      "tls_ms": 59.552,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 282.435,
+      "ttfb_ms": 282.321,
+      "dns_ms": 2.349,
+      "tls_ms": 32.084,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n09---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 10003.819,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:39.920350Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-u-n09",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor-cds",
+    "cpu_boost": false,
+    "sample": 10,
+    "service": "spike-cold-11122046-ktor-cds",
+    "revision": "spike-cold-11122046-ktor-cds-u-n10",
+    "deploy_started_at": "2026-11-13T04:05:51.428146Z",
+    "first_request_started_at": "2026-11-13T04:05:57.819727Z",
+    "cold": {
+      "total_ms": 1567.179,
+      "ttfb_ms": 1567.075,
+      "dns_ms": 62.502,
+      "tls_ms": 90.662,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 191.752,
+      "ttfb_ms": 191.645,
+      "dns_ms": 3.265,
+      "tls_ms": 32.361,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n10---spike-cold-11122046-ktor-cds-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 1009.3579999999998,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:57.961808Z",
+        "service": "spike-cold-11122046-ktor-cds",
+        "revision": "spike-cold-11122046-ktor-cds-u-n10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "ktor",
+    "cpu_boost": false,
+    "sample": 10,
+    "service": "spike-cold-11122046-ktor",
+    "revision": "spike-cold-11122046-ktor-u-n10",
+    "deploy_started_at": "2026-11-13T04:05:51.428070Z",
+    "first_request_started_at": "2026-11-13T04:05:57.743590Z",
+    "cold": {
+      "total_ms": 3059.527,
+      "ttfb_ms": 3059.418,
+      "dns_ms": 55.414,
+      "tls_ms": 89.498,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 86.357,
+      "ttfb_ms": 86.236,
+      "dns_ms": 3.963,
+      "tls_ms": 34.739,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n10---spike-cold-11122046-ktor-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 2320.478,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:57.896560Z",
+        "service": "spike-cold-11122046-ktor",
+        "revision": "spike-cold-11122046-ktor-u-n10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "mvc",
+    "cpu_boost": false,
+    "sample": 10,
+    "service": "spike-cold-11122046-mvc",
+    "revision": "spike-cold-11122046-mvc-u-n10",
+    "deploy_started_at": "2026-11-13T04:05:51.430611Z",
+    "first_request_started_at": "2026-11-13T04:05:57.908890Z",
+    "cold": {
+      "total_ms": 6001.705,
+      "ttfb_ms": 6001.574,
+      "dns_ms": 24.253,
+      "tls_ms": 50.644,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 100.551,
+      "ttfb_ms": 100.463,
+      "dns_ms": 3.989,
+      "tls_ms": 33.95,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n10---spike-cold-11122046-mvc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 5143.864,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:58.012995Z",
+        "service": "spike-cold-11122046-mvc",
+        "revision": "spike-cold-11122046-mvc-u-n10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jdbc",
+    "cpu_boost": false,
+    "sample": 10,
+    "service": "spike-cold-11122046-jdbc",
+    "revision": "spike-cold-11122046-jdbc-u-n10",
+    "deploy_started_at": "2026-11-13T04:05:51.430702Z",
+    "first_request_started_at": "2026-11-13T04:05:57.491735Z",
+    "cold": {
+      "total_ms": 9129.571,
+      "ttfb_ms": 9129.414,
+      "dns_ms": 49.88,
+      "tls_ms": 83.028,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 286.854,
+      "ttfb_ms": 286.733,
+      "dns_ms": 3.865,
+      "tls_ms": 32.391,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n10---spike-cold-11122046-jdbc-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 8224.985,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:57.645307Z",
+        "service": "spike-cold-11122046-jdbc",
+        "revision": "spike-cold-11122046-jdbc-u-n10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  },
+  {
+    "variant": "jpa",
+    "cpu_boost": false,
+    "sample": 10,
+    "service": "spike-cold-11122046-jpa",
+    "revision": "spike-cold-11122046-jpa-u-n10",
+    "deploy_started_at": "2026-11-13T04:05:51.431718Z",
+    "first_request_started_at": "2026-11-13T04:05:57.596501Z",
+    "cold": {
+      "total_ms": 10846.747,
+      "ttfb_ms": 10846.587,
+      "dns_ms": 50.377,
+      "tls_ms": 78.317,
+      "http": 200
+    },
+    "warm": {
+      "total_ms": 99.619,
+      "ttfb_ms": 99.502,
+      "dns_ms": 4.142,
+      "tls_ms": 41.288,
+      "http": 200
+    },
+    "memory": "512Mi",
+    "vcpus": 1,
+    "url": "https://u-n10---spike-cold-11122046-jpa-b3z6eb4wma-du.a.run.app",
+    "monitoring_startup_ms": 9887.388,
+    "monitoring_startup_count": 1,
+    "instance_start_events": [
+      {
+        "timestamp": "2026-11-13T04:05:57.731925Z",
+        "service": "spike-cold-11122046-jpa",
+        "revision": "spike-cold-11122046-jpa-u-n10",
+        "text": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+      }
+    ],
+    "monitoring_status": "observed"
+  }
+]

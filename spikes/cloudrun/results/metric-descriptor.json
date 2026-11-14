@@ -1,0 +1,15 @@
+{
+  "type": "run.googleapis.com/container/startup_latencies",
+  "metricKind": "DELTA",
+  "valueType": "DISTRIBUTION",
+  "unit": "ms",
+  "description": "Distribution of time spent starting a new container instance in milliseconds.",
+  "metadata": {
+    "launchStage": "BETA",
+    "samplePeriod": "60s",
+    "ingestDelay": "120s",
+    "timeSeriesResourceHierarchyLevel": [
+      "PROJECT"
+    ]
+  }
+}

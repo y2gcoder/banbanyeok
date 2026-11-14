@@ -1,0 +1,13 @@
+FROM eclipse-temurin:25-jre AS extract
+WORKDIR /builder
+ARG CONFIG=minimal
+COPY spring/${CONFIG}/build/libs/app.jar app.jar
+RUN java -Djarmode=tools -jar app.jar extract --destination /runtime
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+COPY --from=extract /runtime/ ./
+COPY spring/data/1048576.bin /app/data.bin
+COPY cloudrun/offline.properties /app/offline.properties
+ENV DATA_FILE=/app/data.bin SERVER_PORT=8080 SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/offline.properties
+RUN java -Xms32m -Xmx256m -XX:ArchiveClassesAtExit=app.jsa -Dspring.context.exit=onRefresh -jar app.jar
+ENTRYPOINT ["java","-Xms32m","-Xmx256m","-Xshare:on","-XX:SharedArchiveFile=app.jsa","-jar","app.jar"]

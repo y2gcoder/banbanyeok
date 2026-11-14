@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-11-13T14:46:37.212399Z",
+  "inventory": {
+    "cloud_run_services": {
+      "remaining_count": 0,
+      "query_exit": 0
+    },
+    "artifact_repositories": {
+      "remaining_count": 0,
+      "query_exit": 0
+    },
+    "active_runtime_accounts": {
+      "remaining_count": 0,
+      "query_exit": 0
+    }
+  }
+}
