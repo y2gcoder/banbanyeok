@@ -83,6 +83,24 @@ internal class MetroLines(
     val groupWalkSeconds: Map<String, Int> =
         transfers.getValue("groupWalkSeconds").jsonObject.mapValues { it.value.jsonPrimitive.int }
 
+    /** (station name, line groups) → sourced walk seconds that replace the rule-based default. */
+    val transferOverrides: Map<Pair<String, Set<String>>, Int> =
+        transfers["overrides"]
+            ?.jsonArray
+            .orEmpty()
+            .flatMap { entry ->
+                val rule = entry.jsonObject
+                val groups =
+                    rule
+                        .getValue("groups")
+                        .jsonArray
+                        .map { it.jsonPrimitive.content }
+                        .toSet()
+                rule.getValue("stations").jsonArray.map {
+                    (it.jsonPrimitive.content to groups) to rule.getValue("walkSeconds").jsonPrimitive.int
+                }
+            }.toMap()
+
     val groups: Map<String, String> = services.associate { it.id to it.group }
 
     /** Every TAGO id whose timetable the graph reads. */

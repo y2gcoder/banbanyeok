@@ -158,11 +158,16 @@ internal fun tagoVersusS3(
                 (row[it] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toIntOrNull()
             }
         }
+    val dwell = rules.s3DwellSeconds
     return obj(
-        "basis" to "S3(서울교통공사 역간 소요시간)와 같은 구간의 TAGO 시간표 추정값 비교. Δ = TAGO − S3 (초)",
+        "basis" to
+            "S3(서울교통공사 역간 소요시간)와 같은 구간의 TAGO 시간표 추정값 비교. Δ = TAGO − S3 원값(초), " +
+            "deltaAfterDwell = TAGO − (S3 + 그래프가 더하는 정차 ${dwell}초)",
         "pairs" to rows.size,
         "deltaSeconds" to distribution(deltas),
         "absDeltaSeconds" to distribution(deltas.map { kotlin.math.abs(it) }),
+        "deltaAfterDwellSeconds" to distribution(deltas.map { it - dwell }),
+        "absDeltaAfterDwellSeconds" to distribution(deltas.map { kotlin.math.abs(it - dwell) }),
         "rows" to rows,
     )
 }

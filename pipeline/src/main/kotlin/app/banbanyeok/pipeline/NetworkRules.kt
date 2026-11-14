@@ -39,6 +39,15 @@ internal class NetworkRules(
             check.jsonArray.map { it.jsonPrimitive.content }
         }
 
+    /** Dwell added to every S3 ride so S3 and TAGO edges share one convention (run + stop at arrival). */
+    val s3DwellSeconds: Int get() =
+        data["s3Dwell"]
+            ?.jsonObject
+            ?.get("seconds")
+            ?.jsonPrimitive
+            ?.content
+            ?.toInt() ?: 0
+
     fun canonical(name: String): String {
         val base = name.substringBefore('(').trim().removeSuffix("역")
         return data

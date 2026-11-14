@@ -275,3 +275,42 @@ class TagoGraphTest :
             }
         }
     })
+
+class TagoAlignmentTest :
+    DescribeSpec({
+        describe("S3 dwell and sourced transfer overrides") {
+            it("adds the configured dwell to every S3 ride edge, both directions") {
+                val rules =
+                    NetworkRules(
+                        parseObject(
+                            """{"aliases":{},"predecessors":{},"oneWay":{},"services":{},"sourceLineOverrides":{},
+                            "s3Dwell":{"seconds":30,"basis":"test"}}""",
+                        ),
+                    )
+                val next = (1..10).iterator()
+                val input =
+                    PipelineInput(
+                        app.banbanyeok.schema.Registry(1, 1, emptyList()),
+                        listOf(seoul("A", 37.0), seoul("B", 37.02)),
+                        listOf(listOf("0", "1", "A", "00:00"), listOf("1", "1", "B", "02:00")),
+                        emptyList(),
+                        rules,
+                        mapOf("1" to 120),
+                    )
+                val net = network(input, CodeSource { next.next() })
+                assertEquals(listOf(listOf(Edge(1, 150, 0)), listOf(Edge(0, 150, 0))), net.graph)
+            }
+            it("reads sourced overrides per station and group pair") {
+                val lines =
+                    MetroLines(
+                        parseObject(
+                            """{"services":{},"nameAliases":{},"explicitStations":{},"lineNames":{},"newStations":{},
+                            "transfers":{"s4LineGroups":{},"defaultWalkSeconds":89,"groupWalkSeconds":{},
+                            "overrides":[{"stations":["금정"],"groups":["1","4"],"walkSeconds":0,"source":"x"}]}}""",
+                        ),
+                    )
+                assertEquals(0, lines.transferOverrides["금정" to setOf("4", "1")])
+                assertNull(lines.transferOverrides["금정" to setOf("1", "수인분당")])
+            }
+        }
+    })

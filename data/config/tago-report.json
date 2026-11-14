@@ -12168,6 +12168,13 @@
     }
   ],
   "s3Comparison": {
+    "absDeltaAfterDwellSeconds": {
+      "count": 68,
+      "max": 60,
+      "min": 0,
+      "p50": 0,
+      "p95": 30
+    },
     "absDeltaSeconds": {
       "count": 68,
       "max": 90,
@@ -12175,7 +12182,14 @@
       "p50": 30,
       "p95": 60
     },
-    "basis": "S3(서울교통공사 역간 소요시간)와 같은 구간의 TAGO 시간표 추정값 비교. Δ = TAGO − S3 (초)",
+    "basis": "S3(서울교통공사 역간 소요시간)와 같은 구간의 TAGO 시간표 추정값 비교. Δ = TAGO − S3 원값(초), deltaAfterDwell = TAGO − (S3 + 그래프가 더하는 정차 30초)",
+    "deltaAfterDwellSeconds": {
+      "count": 68,
+      "max": 60,
+      "min": -30,
+      "p50": 0,
+      "p95": 30
+    },
     "deltaSeconds": {
       "count": 68,
       "max": 90,
@@ -12582,9 +12596,9 @@
     {
       "from": "9",
       "station": "김포공항",
-      "status": "default",
+      "status": "sourced",
       "to": "공항",
-      "walkSeconds": 89
+      "walkSeconds": 60
     },
     {
       "from": "9",
@@ -12708,9 +12722,9 @@
     {
       "from": "1",
       "station": "금정",
-      "status": "default",
+      "status": "sourced",
       "to": "4",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "1",
@@ -12764,23 +12778,23 @@
     {
       "from": "4",
       "station": "한대앞",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "4",
       "station": "중앙",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "4",
       "station": "고잔",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "4",
@@ -12792,9 +12806,9 @@
     {
       "from": "4",
       "station": "초지",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "서해",
@@ -12806,30 +12820,30 @@
     {
       "from": "4",
       "station": "안산",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "4",
       "station": "능길",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "4",
       "station": "정왕",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "4",
       "station": "오이도",
-      "status": "default",
+      "status": "sourced",
       "to": "수인분당",
-      "walkSeconds": 89
+      "walkSeconds": 0
     },
     {
       "from": "7",

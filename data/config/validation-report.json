@@ -8,27 +8,27 @@
     "dataIssues": [],
     "physicalTriangleBoundViolations": 0,
     "physicalTriangleExcessSeconds": {
-      "count": 1228076,
+      "count": 1100190,
       "max": 296,
       "min": 1,
-      "p50": 84,
-      "p95": 230
+      "p50": 89,
+      "p95": 232
     },
     "stateTriangleViolations": 0,
-    "symmetryNonzero": 124965,
+    "symmetryNonzero": 127705,
     "symmetrySeconds": {
       "count": 212878,
-      "max": 2300,
+      "max": 2303,
       "min": 0,
-      "p50": 14,
-      "p95": 180
+      "p50": 16,
+      "p95": 190
     },
     "triangleExamples": [
-      "신내 -> 오금 via 태릉입구: excess=38, bound=95",
+      "신내 -> 오금 via 상봉: excess=83, bound=603",
+      "신내 -> 오금 via 태릉입구: excess=10, bound=95",
       "신내 -> 오금 via 군자: excess=63, bound=77",
-      "신내 -> 광화문 via 청구: excess=87, bound=130",
-      "신내 -> 성균관대 via 금정: excess=89, bound=131",
-      "신내 -> 성균관대 via 총신대입구(이수): excess=22, bound=153"
+      "신내 -> 광화문 via 종로3가: excess=39, bound=426",
+      "신내 -> 광화문 via 청구: excess=87, bound=130"
     ]
   },
   "origins": 653,

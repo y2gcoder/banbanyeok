@@ -161,7 +161,7 @@ internal class NetworkBuilder(
     private fun rideEdges() {
         var previousRow: List<String>? = null
         runtime.forEach { row ->
-            val seconds = duration(row[3])
+            val seconds = duration(row[3]).let { if (it > 0) it + rules.s3DwellSeconds else 0 }
             if (seconds > 0) {
                 val prev = requireNotNull(previousRow)
                 require(prev[1] == row[1]) { "Unexpected line boundary" }
@@ -388,52 +388,49 @@ internal class NetworkBuilder(
         }
     }
 
-    /** Rule-based walk for line groups that meet at one physical station without any S4 record. */
+    /** Rule-based (or sourced override) walk for line groups that meet at one physical station without S4. */
+    private val usedOverrides = mutableSetOf<Pair<String, Set<String>>>()
+
     private fun defaultTransfers(tago: TagoInput) {
         nodesByCode.forEach { (code, indexes) ->
             val groups = indexes.map { group(distinctNodes[it].second) }.distinct().sorted()
             groups.forEachIndexed { i, a ->
-                groups.drop(i + 1).forEach { b ->
-                    val left = groupNodes(code, a)
-                    val right = groupNodes(code, b)
-                    val linked =
-                        left.any { x -> graph[x].any { it.changes > 0 && it.to in right } } ||
-                            right.any { y -> graph[y].any { it.changes > 0 && it.to in left } }
-                    if (!linked && (left + right).any(::isTago)) {
-                        val walk = tago.lines.walkSeconds(a, b)
-                        left.forEach { x ->
-                            right.forEach { y ->
-                                edge(
-                                    x,
-                                    y,
-                                    walk + waits.getValue(distinctNodes[y].second),
-                                    1,
-                                )
-                            }
-                        }
-                        right.forEach { y ->
-                            left.forEach { x ->
-                                edge(
-                                    y,
-                                    x,
-                                    walk + waits.getValue(distinctNodes[x].second),
-                                    1,
-                                )
-                            }
-                        }
-                        tagoTransfers.add(
-                            obj(
-                                "station" to stationName(code),
-                                "from" to a,
-                                "to" to b,
-                                "walkSeconds" to walk,
-                                "status" to "default",
-                            ),
-                        )
-                    }
-                }
+                groups.drop(i + 1).forEach { b -> defaultTransfer(tago, code, a, b) }
             }
         }
+        // A sourced override that never applies is a stale config entry (renamed station, S4 now covers it, ...).
+        (tago.lines.transferOverrides.keys - usedOverrides).forEach { issues.add("Unused transfer override: $it") }
+    }
+
+    private fun defaultTransfer(
+        tago: TagoInput,
+        code: String,
+        a: String,
+        b: String,
+    ) {
+        val left = groupNodes(code, a)
+        val right = groupNodes(code, b)
+        val linked =
+            left.any { x -> graph[x].any { it.changes > 0 && it.to in right } } ||
+                right.any { y -> graph[y].any { it.changes > 0 && it.to in left } }
+        if (linked || (left + right).none(::isTago)) return
+        val override = tago.lines.transferOverrides[stationName(code) to setOf(a, b)]
+        if (override != null) usedOverrides.add(stationName(code) to setOf(a, b))
+        val walk = override ?: tago.lines.walkSeconds(a, b)
+        val pairs = left.flatMap { x -> right.map { y -> x to y } }
+        pairs.forEach { (x, y) ->
+            edge(x, y, walk + waits.getValue(distinctNodes[y].second), 1)
+            edge(y, x, walk + waits.getValue(distinctNodes[x].second), 1)
+        }
+        tagoTransfers.add(
+            obj(
+                "station" to stationName(code),
+                "from" to a,
+                "to" to b,
+                "walkSeconds" to walk,
+                "status" to if (override == null) "default" else "sourced",
+            ),
+        )
     }
 
     private fun hasStation(
