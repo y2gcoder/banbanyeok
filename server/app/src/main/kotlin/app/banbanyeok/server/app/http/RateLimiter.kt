@@ -6,6 +6,7 @@ import app.banbanyeok.server.app.config.LimitSpec
 import app.banbanyeok.server.app.config.RateLimitConfig
 import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.header
+import java.security.MessageDigest
 import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
@@ -57,11 +58,39 @@ class TokenBucketLimiter(
     }
 }
 
-/** 요청의 클라이언트 키(IP). 프록시 뒤에서는 어느 헤더를 믿을지 설정으로 정한다. */
+/** 웹 프록시(Cloudflare Worker)가 붙이는 헤더. 비밀은 Secret Manager의 `proxy-shared-secret`과 같은 값이다. */
+const val PROXY_SECRET_HEADER = "X-Banbanyeok-Proxy-Secret"
+const val PROXY_CLIENT_IP_HEADER = "X-Banbanyeok-Client-IP"
+private const val MAX_CLIENT_IP_LENGTH = 64
+
+/**
+ * 프록시가 공유 비밀(상수 시간 비교)과 함께 넘긴 클라이언트 IP. 비밀이 설정에 없거나 틀리거나 IP 헤더가 비었으면 null이라서,
+ * 서버 주소(run.app)를 직접 부르는 쪽이 헤더를 위조해도 효과가 없다(자기 연결 IP의 한도에 걸린다).
+ */
+private fun trustedProxyClient(
+    request: ApplicationRequest,
+    source: ClientIpSource,
+): String? {
+    val expected = source.proxySecret ?: return null
+    val presented = request.header(PROXY_SECRET_HEADER) ?: return null
+    val sha256 = { text: String -> MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)) }
+    // 해시로 길이를 맞춘 뒤 비교한다(MessageDigest.isEqual은 상수 시간).
+    if (!MessageDigest.isEqual(sha256(presented), sha256(expected))) return null
+    return request
+        .header(PROXY_CLIENT_IP_HEADER)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() && it.length <= MAX_CLIENT_IP_LENGTH }
+}
+
+/**
+ * 요청의 클라이언트 키(IP). 신뢰된 프록시의 헤더(공유 비밀이 맞을 때)가 있으면 그것을, 아니면 설정에 따라 직접 연결 또는
+ * 앞단 프록시 체인에서 읽은 값을 쓴다. 헤더 이름만 믿지 않는다: 누구나 보낼 수 있기 때문이다.
+ */
 fun clientKey(
     request: ApplicationRequest,
     source: ClientIpSource,
 ): String {
+    trustedProxyClient(request, source)?.let { return it }
     val fromHeader =
         when (source.kind) {
             ClientIpSourceKind.PEER -> null

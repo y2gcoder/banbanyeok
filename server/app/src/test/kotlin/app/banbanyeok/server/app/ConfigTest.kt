@@ -106,9 +106,31 @@ class ConfigTest :
             }
 
             it("never prints secrets in toString") {
-                val text = AppConfig.load(prodEnv).toString()
+                val text = AppConfig.load(prodEnv + ("PROXY_SHARED_SECRET" to "q".repeat(40))).toString()
                 text shouldNotContain "very-secret-database-password"
                 text shouldNotContain "pppppppppp"
+                text shouldNotContain "qqqqqqqqqq"
+            }
+
+            it("treats the proxy shared secret as optional but refuses a short one without printing it") {
+                AppConfig
+                    .load(prodEnv)
+                    .rateLimit.clientIp.proxySecret shouldBe null
+                AppConfig
+                    .load(
+                        prodEnv + ("PROXY_SHARED_SECRET" to "z".repeat(40)),
+                    ).rateLimit.clientIp.proxySecret shouldBe
+                    "z".repeat(40)
+                val e =
+                    shouldThrow<ConfigException> { AppConfig.load(prodEnv + ("PROXY_SHARED_SECRET" to "short-zzz")) }
+                e.message shouldContain "PROXY_SHARED_SECRET"
+                e.message shouldNotContain "short-zzz"
+                AppConfig
+                    .load(
+                        prodEnv + ("PROXY_SHARED_SECRET" to "z".repeat(40)),
+                    ).rateLimit.clientIp
+                    .toString() shouldNotContain
+                    "zzzz"
             }
         }
 

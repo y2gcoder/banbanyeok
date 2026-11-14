@@ -6,7 +6,8 @@
 #
 # 성질
 #  - 멱등: 이미 있으면 건너뛰고(없으면 만들고), 권한 바인딩은 add-iam-policy-binding(이미 있으면 변화 없음)으로 건다.
-#  - 비밀값은 다루지 않는다: Secret Manager의 `database-password`, `token-pepper`는 이미 있어야 하며 존재만 확인하고 접근 권한만 준다.
+#  - 비밀값은 다루지 않는다: Secret Manager의 `database-password`, `token-pepper`, `proxy-shared-secret`은 이미 있어야 하며
+#    존재만 확인하고 접근 권한만 준다.
 #  - 서비스 계정 키(JSON)를 만들지 않는다. 프로젝트 전체 owner/editor 역할을 주지 않는다. 가능한 한 리소스 단위로 바인딩한다.
 #  - 상시 유료 리소스(Cloud SQL, min instances ≥ 1 등)를 만들지 않는다.
 # 권한 표와 근거: docs/setup/p8a-notes.md
@@ -72,7 +73,7 @@ exists gcloud projects describe "$PROJECT" || { echo "프로젝트 $PROJECT 에 
 export CLOUDSDK_CORE_PROJECT="$PROJECT"
 note "프로젝트 $PROJECT, 리전 $REGION, DRY_RUN=$DRY_RUN"
 
-for secret in database-password token-pepper; do
+for secret in database-password token-pepper proxy-shared-secret; do
   exists gcloud secrets describe "$secret" || { echo "비밀 $secret 이(가) 없습니다. 값은 사람이 먼저 만들어야 합니다(이 스크립트는 값을 다루지 않음)" >&2; exit 1; }
   [[ -n "$(gcloud secrets versions list "$secret" --filter='state=ENABLED' --limit=1 --format='value(name)')" ]] \
     || { echo "비밀 $secret 에 활성 버전이 없습니다" >&2; exit 1; }
@@ -174,10 +175,13 @@ else
 fi
 
 # ---------------------------------------------------------------- IAM: 런타임 계정
-step "IAM: $SA_RUNTIME (비밀 2개 읽기, 산출물 버킷 읽기)"
+step "IAM: $SA_RUNTIME (비밀 3개 읽기, 산출물 버킷 읽기)"
 gr secrets add-iam-policy-binding database-password --member="serviceAccount:$(email "$SA_RUNTIME")" \
   --role=roles/secretmanager.secretAccessor
 gr secrets add-iam-policy-binding token-pepper --member="serviceAccount:$(email "$SA_RUNTIME")" \
+  --role=roles/secretmanager.secretAccessor
+# 웹 프록시(Cloudflare Worker)와 공유하는 비밀: 맞을 때만 프록시가 넘긴 클라이언트 IP를 속도 제한 키로 쓴다.
+gr secrets add-iam-policy-binding proxy-shared-secret --member="serviceAccount:$(email "$SA_RUNTIME")" \
   --role=roles/secretmanager.secretAccessor
 gr storage buckets add-iam-policy-binding "gs://$ARTIFACT_BUCKET" --member="serviceAccount:$(email "$SA_RUNTIME")" \
   --role=roles/storage.objectViewer

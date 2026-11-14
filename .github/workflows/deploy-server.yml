@@ -139,7 +139,7 @@ jobs:
             --min-instances 0 --max-instances 2 --cpu 1 --memory 512Mi --concurrency 40 --timeout 30s \
             --cpu-boost --execution-environment gen2 --ingress all \
             --env-vars-file build/server-env.json \
-            --set-secrets "DATABASE_PASSWORD=database-password:latest,TOKEN_PEPPER=token-pepper:latest" \
+            --set-secrets "DATABASE_PASSWORD=database-password:latest,TOKEN_PEPPER=token-pepper:latest,PROXY_SHARED_SECRET=proxy-shared-secret:latest" \
             --no-traffic --tag candidate --quiet
           candidate="$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json \
             | jq -r '.status.traffic[] | select(.tag == "candidate") | .url')"

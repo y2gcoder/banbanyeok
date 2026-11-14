@@ -127,6 +127,63 @@ class PluginsHttpTest :
             }
         }
 
+        describe("proxy shared secret") {
+            val secret = "s".repeat(40)
+            val proxyConfig =
+                mapOf(
+                    "RATE_LIMIT_GENERAL_BURST" to "1",
+                    "RATE_LIMIT_GENERAL_PER_MINUTE" to "1",
+                    "PROXY_SHARED_SECRET" to secret,
+                )
+
+            it("keys clients by the proxy-provided IP only when the secret matches") {
+                withMockedApi(testConfig(proxyConfig)) {
+                    suspend fun hit(
+                        ip: String,
+                        proxySecret: String? = secret,
+                    ) = client
+                        .json(HttpMethod.Get, "/v1/manifest") {
+                            proxySecret?.let { headers.append("X-Banbanyeok-Proxy-Secret", it) }
+                            headers.append("X-Banbanyeok-Client-IP", ip)
+                        }.status
+                    hit("203.0.113.1") shouldBe HttpStatusCode.OK
+                    hit("203.0.113.1") shouldBe HttpStatusCode.TooManyRequests
+                    hit("203.0.113.2") shouldBe HttpStatusCode.OK
+                }
+            }
+
+            it("ignores a forged IP header when the secret is wrong or missing") {
+                withMockedApi(testConfig(proxyConfig)) {
+                    suspend fun hit(
+                        ip: String,
+                        proxySecret: String?,
+                    ) = client
+                        .json(HttpMethod.Get, "/v1/manifest") {
+                            proxySecret?.let { headers.append("X-Banbanyeok-Proxy-Secret", it) }
+                            headers.append("X-Banbanyeok-Client-IP", ip)
+                        }.status
+                    // 같은 연결(테스트 호스트의 같은 주소)에서 IP만 바꿔 한도를 피하려는 시도는 모두 같은 버킷에 걸린다.
+                    hit("203.0.113.1", null) shouldBe HttpStatusCode.OK
+                    hit("203.0.113.2", null) shouldBe HttpStatusCode.TooManyRequests
+                    hit("203.0.113.3", "x".repeat(40)) shouldBe HttpStatusCode.TooManyRequests
+                }
+            }
+
+            it("ignores the proxy headers entirely when no secret is configured") {
+                val config = testConfig(proxyConfig - "PROXY_SHARED_SECRET")
+                withMockedApi(config) {
+                    suspend fun hit(ip: String) =
+                        client
+                            .json(HttpMethod.Get, "/v1/manifest") {
+                                headers.append("X-Banbanyeok-Proxy-Secret", secret)
+                                headers.append("X-Banbanyeok-Client-IP", ip)
+                            }.status
+                    hit("203.0.113.1") shouldBe HttpStatusCode.OK
+                    hit("203.0.113.2") shouldBe HttpStatusCode.TooManyRequests
+                }
+            }
+        }
+
         describe("response headers") {
             it("never caches room and recommendation responses but lets the manifest be cached") {
                 withMockedApi { services ->
