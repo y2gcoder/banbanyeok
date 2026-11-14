@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { policyMarkdown } from "./markdown";
-import { POLICY, REQUIRED_PLACEHOLDERS } from "./policy";
+import { CONTACT_EMAIL, POLICY, REQUIRED_PLACEHOLDERS } from "./policy";
 
 const mdPath = resolve(import.meta.dirname, "../../../../docs/legal/privacy-policy.md");
 const markdown = policyMarkdown(POLICY);
@@ -39,9 +39,10 @@ describe("개인정보 처리방침", () => {
     }
   });
 
-  it("운영자 이름·연락처·시행일은 자리표시로 남는다(실제 개인정보를 넣지 않는다)", () => {
+  it("운영자 이름·시행일은 자리표시로 남고, 이메일은 전용 연락 주소만 쓴다(개인 메일을 넣지 않는다)", () => {
     for (const placeholder of REQUIRED_PLACEHOLDERS) expect(markdown).toContain(placeholder);
-    expect(markdown).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);
+    expect(markdown).toContain(CONTACT_EMAIL);
+    expect(markdown.replaceAll(CONTACT_EMAIL, "")).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);
   });
 
   it("목차 앵커가 겹치지 않는다", () => {
