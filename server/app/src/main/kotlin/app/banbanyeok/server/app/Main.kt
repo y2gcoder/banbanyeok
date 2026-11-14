@@ -10,6 +10,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
 
 private val logger = LoggerFactory.getLogger("main")
@@ -32,29 +33,52 @@ fun main(args: Array<String>) {
             fail(e.message.orEmpty())
         }
     timeline.mark("config-loaded")
-    val components =
-        try {
-            runBlocking { CompositionRoot.create(config, timeline = timeline) }
-        } catch (e: ArtifactLoadException) {
-            fail("산출물을 불러오지 못해 시작하지 않습니다: ${e.message}")
-        }
     when (command) {
-        "serve" -> serve(components, timeline)
-        "cleanup" -> components.use { runBlocking { println("cleanup: ${it.cleanup.run()}") } }
-        else -> components.use { runBlocking { Seeder(it).run() } }
+        "serve" -> serve(config, timeline)
+        "cleanup" -> loadOrFail(config, timeline).use { runBlocking { println("cleanup: ${it.cleanup.run()}") } }
+        else -> loadOrFail(config, timeline).use { runBlocking { Seeder(it).run() } }
     }
 }
 
+private fun loadOrFail(
+    config: AppConfig,
+    timeline: StartupTimeline,
+): Components =
+    try {
+        runBlocking { CompositionRoot.create(config, timeline = timeline) }
+    } catch (e: ArtifactLoadException) {
+        fail("산출물을 불러오지 못해 시작하지 않습니다: ${e.message}")
+    }
+
+/**
+ * 서버를 먼저 띄우고 산출물·DB 준비는 뒤에서 한다(콜드스타트 단축, [warmStartModule]). 산출물 검증이 실패하면
+ * 요청을 받기 전에 죽던 이전과 같이, 준비가 실패하는 즉시 프로세스를 종료한다.
+ */
 private fun serve(
-    components: Components,
+    config: AppConfig,
     timeline: StartupTimeline,
 ) {
-    val config = components.config
     logger.info("서버 시작: {}", config)
+    val components = AtomicReference<Components?>()
     val server =
         embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
-            apiModule(config, components.services, components.clock)
-            monitor.subscribe(ApplicationStopped) { components.close() }
+            warmStartModule(config) {
+                val assembled =
+                    runCatching { CompositionRoot.create(config, timeline = timeline) }.getOrElse { e ->
+                        // 준비 실패를 숨긴 채 떠 있지 않는다(Cloud Run이 새 인스턴스로 다시 시도한다).
+                        fail(
+                            if (e is ArtifactLoadException) {
+                                "산출물을 불러오지 못해 시작하지 않습니다: ${e.message}"
+                            } else {
+                                "서버 준비에 실패했습니다: ${e::class.simpleName}"
+                            },
+                        )
+                    }
+                components.set(assembled)
+                timeline.mark("ready")
+                assembled.services
+            }
+            monitor.subscribe(ApplicationStopped) { components.get()?.close() }
             monitor.subscribe(ApplicationStarted) { timeline.mark("ktor-started") }
         }
     server.start(wait = true)

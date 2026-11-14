@@ -1,7 +1,6 @@
 package app.banbanyeok.server.app
 
 import org.slf4j.LoggerFactory
-import java.lang.management.ManagementFactory
 
 /**
  * 콜드스타트 단계별 경과 시간(ms)을 로그로 남긴다. 값은 시간 숫자와 단계 이름뿐이고 설정·비밀은 싣지 않는다.
@@ -10,7 +9,7 @@ import java.lang.management.ManagementFactory
  */
 class StartupTimeline(
     private val nowMillis: () -> Long = System::currentTimeMillis,
-    private val jvmStartMillis: Long = ManagementFactory.getRuntimeMXBean().startTime,
+    private val jvmStartMillis: Long = processStartMillis(),
 ) {
     private val log = LoggerFactory.getLogger("startup")
     private var last = jvmStartMillis
@@ -23,3 +22,12 @@ class StartupTimeline(
         last = now
     }
 }
+
+/** JVM(프로세스) 시작 시각(epoch ms). JMX(ManagementFactory)는 클래스 로딩이 무거워 쓰지 않는다. 알 수 없으면 지금. */
+private fun processStartMillis(): Long =
+    ProcessHandle
+        .current()
+        .info()
+        .startInstant()
+        .map { it.toEpochMilli() }
+        .orElseGet { System.currentTimeMillis() }
