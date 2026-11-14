@@ -3,6 +3,7 @@
 import { isServer, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import type { ReactNode } from "react";
+import { ConsentBanner } from "@/components/consent/consent-banner";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -25,7 +26,10 @@ export function Providers({ children }: { children: ReactNode }) {
   const queryClient = getQueryClient();
   return (
     <NuqsAdapter>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <ConsentBanner />
+      </QueryClientProvider>
     </NuqsAdapter>
   );
 }

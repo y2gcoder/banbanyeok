@@ -1,7 +1,9 @@
 /**
  * 추적 함수의 본체. 의존성(설정, PostHog 로더, 브라우저 판단)을 받아 만들어 테스트에서 가짜로 바꿀 수 있다.
  *
- * - 설정(키)이 없거나 브라우저가 추적을 거부하면 **아무것도 하지 않는다**: PostHog 코드를 내려받지도 않고 요청도 없다.
+ * - 설정(키)이 없거나, **이용자가 통계에 동의하지 않았거나**, 브라우저가 추적을 거부하면 **아무것도 하지 않는다**:
+ *   PostHog 코드를 내려받지도, 초기화하지도 않고 요청도 없다(이벤트는 대기열에도 쌓지 않고 버린다).
+ * - 동의를 철회하면(`revoke`) 즉시 PostHog를 끄고(opt-out) 이 기기의 통계 식별자를 지운다.
  * - PostHog는 첫 이벤트를 보낼 때 그때 불러온다(동적 import). 그 전에 쌓인 이벤트는 대기열에 두었다가 보낸다.
  * - 속성은 계약(events.gen.ts)으로 검증한다. 어기면 보내지 않는다(테스트에서는 던진다).
  */
@@ -15,6 +17,9 @@ import { redactCapture } from "./redact";
 export type PostHogClient = {
   init(token: string, config: Partial<PostHogConfig>): unknown;
   capture(event: string, properties?: Record<string, unknown>): unknown;
+  opt_in_capturing(options?: { captureEventName?: string | null | false }): unknown;
+  opt_out_capturing(): unknown;
+  reset(resetDeviceId?: boolean): unknown;
 };
 
 export type TrackerDeps = {
@@ -22,7 +27,13 @@ export type TrackerDeps = {
   appVersion: string;
   /** 추적 거부 신호(DNT·GPC)가 있으면 true. */
   declined: () => boolean;
+  /** 이용자가 통계에 동의했으면 true. 선택하지 않았거나 거부했으면 false. */
+  consented: () => boolean;
   loadPostHog: () => Promise<PostHogClient>;
+  /** 철회할 때 이 기기에 저장된 통계 식별자를 지운다. */
+  clearStorage: () => void;
+  /** PostHog를 초기화한 직후(식별자가 생긴 뒤)에 알린다. 화면이 식별자를 다시 읽는 데 쓴다. */
+  onReady?: () => void;
 };
 
 const MAX_QUEUE = 50;
@@ -70,8 +81,10 @@ export type Tracker = {
   track<N extends EventName>(name: N, properties: EventProperties[N]): void;
   /** 결과 데이터 버전(manifest dataVersion). 알게 된 뒤의 모든 이벤트에 공통 속성으로 붙는다. */
   setDataVersion(version: string): void;
-  /** 분석이 켜져 있는지(키가 있고 추적 거부가 없음). */
+  /** 분석이 켜져 있는지(키가 있고, 동의했고, 추적 거부가 없음). */
   enabled(): boolean;
+  /** 동의 철회: 대기 중인 이벤트를 버리고, PostHog를 끄고, 저장된 식별자를 지운다. 이후 동의하면 새로 시작한다. */
+  revoke(): void;
 };
 
 /** 계약 위반은 테스트에서는 던지고(실패), 개발 중에는 콘솔에 알리고, 운영에서는 조용히 버린다. */
@@ -85,9 +98,11 @@ export function createTracker(deps: TrackerDeps): Tracker {
   let client: PostHogClient | undefined;
   let loading: Promise<void> | undefined;
   let failed = false;
+  // 철회·재동의 사이에 늦게 끝난 불러오기가 초기화하지 않도록 세대를 센다.
+  let generation = 0;
   const queue: Queued[] = [];
 
-  const enabled = () => deps.config !== null && !failed && !deps.declined();
+  const enabled = () => deps.config !== null && !failed && !deps.declined() && deps.consented();
 
   const flush = () => {
     if (!client) return;
@@ -97,12 +112,17 @@ export function createTracker(deps: TrackerDeps): Tracker {
   const ensureLoaded = () => {
     const config = deps.config;
     if (!config || loading) return;
+    const mine = generation;
     loading = deps
       .loadPostHog()
       .then((posthog) => {
+        if (mine !== generation || !enabled()) return; // 그 사이 철회됐다.
         posthog.init(config.key, posthogOptions(config));
+        // 이전에 철회해 PostHog가 옵트아웃 표시를 남겼을 수 있다: 이번에는 동의했으므로 풀어 준다(옵트인 이벤트는 보내지 않는다).
+        posthog.opt_in_capturing({ captureEventName: false });
         client = posthog;
         flush();
+        deps.onReady?.();
       })
       .catch(() => {
         // 광고 차단기 등으로 불러오지 못해도 화면은 영향이 없다. 이 페이지에서는 더 시도하지 않는다.
@@ -115,6 +135,18 @@ export function createTracker(deps: TrackerDeps): Tracker {
     enabled,
     setDataVersion(version) {
       dataVersion = version;
+    },
+    revoke() {
+      generation += 1;
+      queue.length = 0;
+      if (client) {
+        client.opt_out_capturing();
+        client.reset();
+      }
+      client = undefined;
+      loading = undefined;
+      failed = false;
+      deps.clearStorage();
     },
     track(name, properties) {
       const common: CommonProperties = {

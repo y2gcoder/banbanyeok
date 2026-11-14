@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Wordmark } from "@/components/common/wordmark";
+import { ConsentSettings } from "@/components/consent/consent-settings";
 import { type Block, POLICY } from "./policy";
 
 // 초안이라 검색 색인에서 뺀다. 운영자 검토 후 공개할 때 robots를 지운다(docs/setup/l1-notes.md).
@@ -115,6 +116,17 @@ export default function PrivacyPage() {
             <li key={line}>{line}</li>
           ))}
         </ul>
+      </section>
+
+      <section
+        aria-labelledby="analytics-settings-title"
+        id="analytics-settings"
+        className="flex scroll-mt-4 flex-col gap-3 rounded-2xl bg-surface p-5"
+      >
+        <h2 id="analytics-settings-title" className="text-[18px] font-bold text-ink">
+          통계 설정
+        </h2>
+        <ConsentSettings />
       </section>
 
       <nav aria-labelledby="privacy-toc" className="flex flex-col gap-3">

@@ -7,17 +7,55 @@
 
 import { maxMinutesBucket, responseTimeBucket } from "./buckets";
 import { appVersion, publicAnalyticsConfig } from "./config";
+import { type ConsentState, consentState, readChoice, subscribeConsent, writeChoice } from "./consent";
 import type { EventProperties } from "./events.gen";
 import { createTracker, type PostHogClient } from "./tracker";
-import { isFirstVisit, referrerKind, trackingDeclined } from "./visit";
+import { clearAnalyticsStorage, isFirstVisit, readAnalyticsId, referrerKind, trackingDeclined } from "./visit";
+
+const READY = "bby:analytics-ready";
+
+const config = publicAnalyticsConfig();
 
 const tracker = createTracker({
-  config: publicAnalyticsConfig(),
+  config,
   appVersion: appVersion(),
   declined: trackingDeclined,
+  consented: () => readChoice() === "granted",
+  clearStorage: clearAnalyticsStorage,
+  onReady: () => window.dispatchEvent(new Event(READY)),
   // `no-external`: 녹화·설문·원격 스크립트를 내려받지 않는 빌드. 첫 이벤트 때 따로 불러온다.
   loadPostHog: async () => (await import("posthog-js/no-external")).default as PostHogClient,
 });
+
+// 동의 상태가 바뀌면(이 탭의 버튼·다른 탭) 철회를 즉시 반영한다. 동의로 바뀌는 쪽은 다음 이벤트에서 알아서 켜진다.
+if (typeof window !== "undefined") {
+  subscribeConsent(() => {
+    if (readChoice() !== "granted") tracker.revoke();
+  });
+}
+
+/** 이 빌드가 통계를 모으는 설정인지(키·호스트가 있음). 아니면 동의를 묻지 않는다. */
+const analyticsAvailable = config !== null;
+
+/** 화면용 동의 상태. 브라우저에서만 의미가 있다(서버 렌더링에서는 부르지 않는다). */
+export function currentConsentState(): ConsentState {
+  return consentState(analyticsAvailable, trackingDeclined());
+}
+
+export { subscribeConsent };
+
+/** 이 브라우저의 통계 식별자(화면 표시 전용, 어디에도 보내지 않는다). 없으면 null. */
+export const currentAnalyticsId = readAnalyticsId;
+
+/** 동의 상태나 식별자가 바뀔 때 알린다(식별자는 PostHog 초기화 직후에 생긴다). */
+export function subscribeAnalytics(onChange: () => void): () => void {
+  const off = subscribeConsent(onChange);
+  window.addEventListener(READY, onChange);
+  return () => {
+    off();
+    window.removeEventListener(READY, onChange);
+  };
+}
 
 /**
  * 이벤트를 보낸다(꺼져 있으면 아무것도 하지 않는다). 켜져 있으면 이 기기의 "첫 방문" 표시를 이 페이지의 첫 이벤트에서 정해 둔다:
@@ -27,6 +65,15 @@ export const track: typeof tracker.track = (name, properties) => {
   if (tracker.enabled()) isFirstVisit();
   tracker.track(name, properties);
 };
+
+/**
+ * 동의하거나(true) 거부·철회한다(false). 거부·철회는 저장 즉시 PostHog를 끄고 저장된 식별자를 지운다.
+ * 동의하면 `analytics_consent_changed`를 한 번 보낸다(동의한 사실의 기록). 철회는 보내지 않는다: 철회한 뒤에는 수집하지 않는다.
+ */
+export function setAnalyticsConsent(granted: boolean): void {
+  writeChoice(granted ? "granted" : "denied");
+  if (granted) track("analytics_consent_changed", { granted: true });
+}
 
 type Mode = EventProperties["mode_switched"]["from_mode"];
 

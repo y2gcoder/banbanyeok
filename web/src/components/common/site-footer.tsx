@@ -17,6 +17,14 @@ export function SiteFooter() {
             개인정보 처리방침
           </Link>
         </li>
+        <li>
+          <Link
+            href="/privacy#analytics-settings"
+            className="inline-flex min-h-11 items-center rounded-md font-semibold text-ink-soft underline underline-offset-4"
+          >
+            통계 설정
+          </Link>
+        </li>
       </ul>
     </nav>
   );

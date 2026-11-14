@@ -10,15 +10,27 @@ const config = { key: `phc_${"a".repeat(30)}`, host: POSTHOG_HOSTS.eu };
 function fakePostHog() {
   const init = vi.fn<(token: string, options: Partial<PostHogConfig>) => void>();
   const capture = vi.fn<(event: string, properties?: Record<string, unknown>) => void>();
-  const client: PostHogClient = { init, capture };
-  return { client, init, capture };
+  const optIn = vi.fn();
+  const optOut = vi.fn();
+  const reset = vi.fn();
+  const client: PostHogClient = { init, capture, opt_in_capturing: optIn, opt_out_capturing: optOut, reset };
+  return { client, init, capture, optIn, optOut, reset };
 }
 
 function setup(overrides: Partial<TrackerDeps> = {}) {
   const posthog = fakePostHog();
   const loadPostHog = vi.fn(() => Promise.resolve(posthog.client));
-  const tracker = createTracker({ config, appVersion: "abc1234", declined: () => false, loadPostHog, ...overrides });
-  return { tracker, loadPostHog, ...posthog };
+  const clearStorage = vi.fn();
+  const tracker = createTracker({
+    config,
+    appVersion: "abc1234",
+    declined: () => false,
+    consented: () => true,
+    clearStorage,
+    loadPostHog,
+    ...overrides,
+  });
+  return { tracker, loadPostHog, clearStorage, ...posthog };
 }
 
 const inputCompleted = { participant_count: 3, has_custom_name: true, mode: "fair", input_ms: 4200 } as const;
@@ -49,6 +61,77 @@ describe("키가 없으면 완전히 꺼진다", () => {
     expect(() => tracker.track("input_completed", { ...inputCompleted, origin_codes: "ABC" })).toThrow(
       AnalyticsContractError,
     );
+  });
+});
+
+describe("동의 전에는 켜지지 않는다(옵트인)", () => {
+  it("동의하지 않았으면 불러오지도 초기화하지도 보내지도 않고, 대기열에도 쌓지 않는다", async () => {
+    let consented = false;
+    const { tracker, loadPostHog, init, capture } = setup({ consented: () => consented });
+    tracker.track("input_completed", inputCompleted);
+    await Promise.resolve();
+    expect(tracker.enabled()).toBe(false);
+    expect(loadPostHog).not.toHaveBeenCalled();
+    expect(init).not.toHaveBeenCalled();
+
+    consented = true; // 동의 이후의 이벤트부터 보낸다. 동의 전 이벤트는 되살아나지 않는다.
+    tracker.track("mode_switched", { from_mode: "fair", to_mode: "fast", favor_used: false });
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
+    expect(capture.mock.calls[0]?.[0]).toBe("mode_switched");
+    expect(loadPostHog).toHaveBeenCalledTimes(1);
+  });
+
+  it("초기화한 뒤 옵트인을 호출해 이전 철회의 옵트아웃 표시를 푼다(옵트인 이벤트는 보내지 않는다)", async () => {
+    const { tracker, optIn, capture } = setup();
+    tracker.track("input_completed", inputCompleted);
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
+    expect(optIn).toHaveBeenCalledWith({ captureEventName: false });
+  });
+
+  it("철회하면 즉시 끄고(opt-out·reset) 저장된 식별자를 지우며, 이후 이벤트는 보내지 않는다", async () => {
+    let consented = true;
+    const { tracker, capture, optOut, reset, clearStorage } = setup({ consented: () => consented });
+    tracker.track("input_completed", inputCompleted);
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
+
+    consented = false;
+    tracker.revoke();
+    expect(optOut).toHaveBeenCalledTimes(1);
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(clearStorage).toHaveBeenCalledTimes(1);
+    expect(optOut.mock.invocationCallOrder[0]).toBeLessThan(clearStorage.mock.invocationCallOrder[0] ?? 0);
+
+    tracker.track("input_completed", inputCompleted);
+    await Promise.resolve();
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
+
+  it("불러오는 중에 철회하면 늦게 끝나도 초기화하지 않는다", async () => {
+    let consented = true;
+    let release: (client: PostHogClient) => void = () => {};
+    const loadPostHog = vi.fn(() => new Promise<PostHogClient>((resolve) => (release = resolve)));
+    const { tracker, init, capture, client } = setup({ loadPostHog, consented: () => consented });
+    tracker.track("input_completed", inputCompleted);
+    consented = false;
+    tracker.revoke();
+    release(client);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(init).not.toHaveBeenCalled();
+    expect(capture).not.toHaveBeenCalled();
+  });
+
+  it("철회한 뒤 다시 동의하면 새로 불러와 시작한다", async () => {
+    let consented = true;
+    const { tracker, loadPostHog, init, capture } = setup({ consented: () => consented });
+    tracker.track("input_completed", inputCompleted);
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
+    consented = false;
+    tracker.revoke();
+    consented = true;
+    tracker.track("input_completed", inputCompleted);
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
+    expect(loadPostHog).toHaveBeenCalledTimes(2);
+    expect(init).toHaveBeenCalledTimes(2);
   });
 });
 

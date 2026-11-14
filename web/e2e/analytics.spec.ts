@@ -24,6 +24,9 @@ test("키가 없으면 어떤 화면에서도 외부 네트워크 요청이 0건
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
   await page.goto("/");
+  // 통계 키가 없는 빌드는 동의를 묻지도 않는다(수집이 없으니 동의할 것도 없다).
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("region", { name: /이용 통계/ })).toHaveCount(0);
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { referrerKind, trackingDeclined } from "./visit";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readAnalyticsId, referrerKind, trackingDeclined } from "./visit";
 
 const OWN = "banbanyeok.example";
 const CHROME = "Mozilla/5.0 (Linux; Android 14) Chrome/130";
@@ -42,5 +42,22 @@ describe("trackingDeclined", () => {
     Object.defineProperty(window.navigator, "globalPrivacyControl", { value: true, configurable: true });
     expect(trackingDeclined()).toBe(true);
     Reflect.deleteProperty(window.navigator, "globalPrivacyControl");
+  });
+});
+
+describe("readAnalyticsId", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("PostHog가 저장한 distinct_id를 읽고, 없거나 깨졌으면 null", () => {
+    expect(readAnalyticsId()).toBeNull();
+    window.localStorage.setItem("banbanyeok:me", JSON.stringify({ distinct_id: "nope" }));
+    expect(readAnalyticsId()).toBeNull();
+    window.localStorage.setItem("ph_phc_x_posthog", "not json");
+    expect(readAnalyticsId()).toBeNull();
+    window.localStorage.setItem(
+      "ph_phc_x_posthog",
+      JSON.stringify({ distinct_id: "abc-123", $user_state: "anonymous" }),
+    );
+    expect(readAnalyticsId()).toBe("abc-123");
   });
 });
