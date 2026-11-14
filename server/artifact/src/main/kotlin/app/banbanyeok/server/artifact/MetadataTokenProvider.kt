@@ -12,10 +12,10 @@ import java.time.Clock
 
 /**
  * Cloud Run(·GCE) 실행 계정의 액세스 토큰을 메타데이터 서버에서 받아 만료 1분 전까지 재사용한다.
- * 토큰은 로그·예외 메시지에 넣지 않는다. 메타데이터 서버 주소는 표준 환경 변수 `GCE_METADATA_HOST`로 바꿀 수 있다(시험용).
+ * 토큰은 로그·예외 메시지에 넣지 않는다. 메타데이터 서버는 고정 주소(169.254.169.254)로 부르고, 표준 환경 변수 `GCE_METADATA_HOST`로 바꿀 수 있다(시험용).
  */
 public class MetadataTokenProvider(
-    private val host: String = System.getenv("GCE_METADATA_HOST") ?: "metadata.google.internal",
+    private val host: String = System.getenv("GCE_METADATA_HOST") ?: METADATA_IP,
     private val clock: Clock = Clock.systemUTC(),
 ) {
     private var cached: String? = null
@@ -46,6 +46,8 @@ public class MetadataTokenProvider(
     }
 
     private companion object {
+        // 이름(metadata.google.internal) 대신 고정 주소: DNS 조회를 건너뛴다(콜드스타트). 표준 환경 변수로 바꿀 수 있다.
+        const val METADATA_IP = "169.254.169.254"
         const val HTTP_OK = 200
         const val TIMEOUT_MS = 5_000
         const val DEFAULT_LIFETIME_SECONDS = 300L
