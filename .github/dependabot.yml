@@ -7,6 +7,9 @@ updates:
       interval: weekly
       day: monday
       timezone: Asia/Seoul
+    # 게시 후 7일 이상 지난 버전만 쓴다는 저장소 규칙에 맞춘다.
+    cooldown:
+      default-days: 7
     groups:
       gradle-minor-patch:
         update-types: [minor, patch]
@@ -17,6 +20,8 @@ updates:
       interval: weekly
       day: monday
       timezone: Asia/Seoul
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
