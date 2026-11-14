@@ -15,6 +15,12 @@ fun main(args: Array<String>) {
         generateSequence(Path.of("").toAbsolutePath()) {
             it.parent
         }.first { it.resolve("contracts/data-format.md").exists() }
+    if (args.firstOrNull() == "stage-release") {
+        // 발행 디렉터리(기본 build/release). 업로드는 scripts/publish-artifacts.sh.
+        require(args.size <= 2) { "Usage: stage-release [outDir]" }
+        stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
+        return
+    }
     when (args.singleOrNull()) {
         "fetch" -> {
             fetch(root)
@@ -55,7 +61,7 @@ fun main(args: Array<String>) {
         }
 
         else -> {
-            error("Usage: fetch|headways|build|validate|all|spotcheck|refresh")
+            error("Usage: fetch|headways|build|validate|all|spotcheck|refresh|stage-release [outDir]")
         }
     }
 }

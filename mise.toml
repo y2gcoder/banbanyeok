@@ -89,5 +89,22 @@ description = "웹 + openapi 기반 가짜 서버(web/mock). 서버 없이 모�
 run = "bash scripts/dev.sh web:mock"
 
 [tasks."data:refresh"]
-description = "파이프라인 all → 웹 역 인덱스 재생성 (배차 API 갱신은 별도)"
+description = "파이프라인 all → 웹 역 인덱스 재생성 (키가 필요한 배차 API 갱신은 data:refresh-headways)"
 run = ["./gradlew :pipeline:run --args=all", "pnpm --filter web gen:stations"]
+
+[tasks."data:refresh-headways"]
+description = "배차 간격 실제 값 갱신(키 필요: op) → pipeline refresh → 웹 생성물(pnpm --filter web gen). data/raw가 없으면 fetch로 먼저 받는다"
+run = "bash scripts/refresh-headways.sh"
+
+# --- P8a 배포 보조 (docs/setup/p8a-notes.md) ---
+[tasks."release:stage"]
+description = "dev 산출물을 발행 형식(versions/<버전>/<종류>.<해시16>.<확장자> + manifest)으로 build/release에 만든다. 업로드는 scripts/publish-artifacts.sh"
+run = "./gradlew :pipeline:run --args=\"stage-release build/release\" --console=plain -q"
+
+[tasks."db:restore-check"]
+description = "백업 덤프를 임시 로컬 Postgres 17에 복원해 확인한다 (사용: mise run db:restore-check -- <덤프 파일>)"
+run = 'bash scripts/db-restore-check.sh "$@"'
+
+[tasks."server:image"]
+description = "서버 배포 이미지(linux/amd64, AppCDS 학습 포함) 로컬 빌드"
+run = "bash scripts/build-server-image.sh"

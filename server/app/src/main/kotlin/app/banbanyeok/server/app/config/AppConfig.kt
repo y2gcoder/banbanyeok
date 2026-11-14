@@ -22,10 +22,19 @@ data class LimitSpec(
 
 enum class ClientIpSourceKind { PEER, XFF_LAST, HEADER }
 
+/**
+ * 속도 제한 키로 쓸 클라이언트 IP의 출처. [kind]는 직접 연결(peer) 또는 신뢰할 프록시 체인에서 읽는 방법이고,
+ * [proxySecret]이 있으면 웹 프록시(Cloudflare Worker)가 공유 비밀과 함께 넘긴 클라이언트 IP 헤더를 우선한다(비밀이 맞을 때만).
+ */
 data class ClientIpSource(
     val kind: ClientIpSourceKind,
     val header: String? = null,
-)
+    val proxySecret: String? = null,
+) {
+    // 공유 비밀이 로그에 찍히지 않게 한다.
+    override fun toString(): String =
+        "ClientIpSource(kind=$kind, header=$header, proxySecret=${if (proxySecret == null) "none" else "***"})"
+}
 
 data class RateLimitConfig(
     val enabled: Boolean,
@@ -211,24 +220,34 @@ internal class ConfigLoader(
 
     private fun clientIpSource(): ClientIpSource {
         val raw = env["RATE_LIMIT_CLIENT_IP_SOURCE"]?.trim().orEmpty().ifEmpty { "peer" }
+        val secret = proxySecret()
         return when {
             raw == "peer" -> {
-                ClientIpSource(ClientIpSourceKind.PEER)
+                ClientIpSource(ClientIpSourceKind.PEER, proxySecret = secret)
             }
 
             raw == "xff-last" -> {
-                ClientIpSource(ClientIpSourceKind.XFF_LAST)
+                ClientIpSource(ClientIpSourceKind.XFF_LAST, proxySecret = secret)
             }
 
             raw.startsWith("header:") && raw.length > "header:".length -> {
-                ClientIpSource(ClientIpSourceKind.HEADER, raw.removePrefix("header:"))
+                ClientIpSource(ClientIpSourceKind.HEADER, raw.removePrefix("header:"), secret)
             }
 
             else -> {
                 problems += "RATE_LIMIT_CLIENT_IP_SOURCE는 peer, xff-last, header:<이름> 중 하나여야 합니다"
-                ClientIpSource(ClientIpSourceKind.PEER)
+                ClientIpSource(ClientIpSourceKind.PEER, proxySecret = secret)
             }
         }
+    }
+
+    /** 선택. 없으면 프록시 헤더를 무시한다(로컬). 있으면 추측되지 않을 만큼 길어야 한다. */
+    private fun proxySecret(): String? {
+        val secret = env["PROXY_SHARED_SECRET"]?.takeIf { it.isNotBlank() } ?: return null
+        if (secret.length < MIN_PROXY_SECRET_LENGTH) {
+            problems += "PROXY_SHARED_SECRET는 $MIN_PROXY_SECRET_LENGTH 자 이상이어야 합니다"
+        }
+        return secret
     }
 
     /** 분당(또는 [perMinutes]분당) 횟수를 초당 보충량으로 바꾼다. */
@@ -293,6 +312,7 @@ internal class ConfigLoader(
         const val MAX_POOL_SIZE = 50
         const val MAX_BURST = 10_000
         const val MIN_PEPPER_LENGTH = 32
+        const val MIN_PROXY_SECRET_LENGTH = 32
         const val MINUTES_PER_DAY = 1440
         const val SECONDS_PER_MINUTE = 60
         const val DEFAULT_MAX_REQUEST_BYTES = 16L * 1024
