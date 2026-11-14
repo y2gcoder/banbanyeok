@@ -22,6 +22,11 @@ describe("canonicalRedirect", () => {
     );
     expect(post?.status).toBe(308);
   });
+  it("정식 호스트라도 http면 https로 올린다", () => {
+    const response = canonicalRedirect(new Request("http://banban.example/meet?x=1"), "banban.example");
+    expect(response?.status).toBe(301);
+    expect(response?.headers.get("location")).toBe("https://banban.example/meet?x=1");
+  });
   it("정식 호스트이면 그대로 둔다", () => {
     expect(canonicalRedirect(new Request("https://banban.example/meet"), "banban.example")).toBeNull();
   });

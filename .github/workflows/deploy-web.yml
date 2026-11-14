@@ -10,6 +10,11 @@ name: deploy-web
 
 on:
   workflow_dispatch:
+    inputs:
+      measure:
+        description: '배포 뒤 경로별 Worker CPU 시간을 실측해 요약에 남긴다(wrangler tail)'
+        type: boolean
+        default: false
   push:
     branches: [main, y2gcoder/p8b-web-deploy] # TEMP: 브랜치 검증용, PR 병합 전 제거
     paths:
@@ -110,7 +115,7 @@ jobs:
       - name: 스모크 테스트
         run: |
           if [ -n "$SITE_DOMAIN" ]; then
-            export BASE_URL="https://$SITE_DOMAIN" REDIRECT_FROM="https://www.$SITE_DOMAIN $WORKERS_DEV_URL"
+            export BASE_URL="https://$SITE_DOMAIN" REDIRECT_FROM="http://$SITE_DOMAIN https://www.$SITE_DOMAIN $WORKERS_DEV_URL"
           else
             export BASE_URL="$WORKERS_DEV_URL"
           fi
@@ -119,3 +124,13 @@ jobs:
           if [ -n "$SITE_URL" ] && [ -z "$SITE_NOINDEX" ]; then SITE_INDEXABLE=1; fi
           export SERVER_CONNECTED SITE_INDEXABLE
           bash scripts/smoke-deploy.sh
+
+      # 무료 플랜 한도(요청당 CPU 10ms) 대비 여유를 보려는 수동 측정. 수동 실행에서 measure를 켜거나 커밋 메시지에 [measure]를 넣는다.
+      - name: Worker CPU 실측 (tail)
+        if: ${{ inputs.measure || contains(github.event.head_commit.message, '[measure]') }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$SITE_DOMAIN" ]; then export BASE_URL="https://$SITE_DOMAIN"; else export BASE_URL="$WORKERS_DEV_URL"; fi
+          node scripts/measure-cpu.ts | tee "$RUNNER_TEMP/cpu.md"
+          { echo '### Worker CPU 실측 (ms)'; cat "$RUNNER_TEMP/cpu.md"; } >> "$GITHUB_STEP_SUMMARY"

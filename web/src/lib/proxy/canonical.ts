@@ -6,7 +6,7 @@ export function canonicalRedirect(request: Request, canonicalHost: string | unde
   const host = canonicalHost?.trim().toLowerCase();
   if (!host) return null;
   const url = new URL(request.url);
-  if (url.hostname === host) return null;
+  if (url.hostname === host && url.protocol === "https:") return null;
   return new Response(null, {
     status: request.method === "GET" || request.method === "HEAD" ? 301 : 308,
     headers: { location: `https://${host}${url.pathname}${url.search}`, "cache-control": "public, max-age=3600" },
