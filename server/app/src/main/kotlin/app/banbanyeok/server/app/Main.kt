@@ -35,8 +35,10 @@ fun main(args: Array<String>) {
     // 산출물 읽기·DB 풀 준비(GCS 클라이언트·인증·네트워크 왕복)를 별도 스레드에서 바로 시작하고, 그동안 이 스레드는 로깅 초기화를 한다
     // (콜드스타트 단축: 두 일이 겹친다). 결과는 아래에서 기다린다.
     val assembly = startAssembly(config, timeline)
-    timeline.mark("main")
+    logger.info("시작 중: 명령 {}", command) // 로깅 초기화를 여기서 한다(시작 작업과 겹친다)
+    timeline.mark("logging-ready")
     val components = awaitAssembly(assembly)
+    timeline.flush()
     when (command) {
         "serve" -> serve(components, timeline)
         "cleanup" -> components.use { runBlocking { println("cleanup: ${it.cleanup.run()}") } }
@@ -50,7 +52,6 @@ private fun startAssembly(
 ): CompletableFuture<Result<Components>> {
     val future = CompletableFuture<Result<Components>>()
     thread(name = "assemble") {
-        timeline.mark("assembly-thread-started")
         future.complete(runCatching { runBlocking { CompositionRoot.create(config, timeline = timeline) } })
     }
     return future
