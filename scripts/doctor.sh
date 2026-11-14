@@ -17,7 +17,7 @@ check_tool() { # 이름, 실제 버전, 고정 버전 앞부분
   else bad "$name $actual (mise.toml 고정: $want...). 'mise install' 후 새 셸에서 다시 실행하세요"; fi
 }
 
-want() { mise current "$1" 2>/dev/null | sed 's/^temurin-//; s/+.*//'; }
+want() { mise current "$1" 2>/dev/null | awk '{print $1}' | sed 's/^temurin-//; s/+.*//'; }
 
 echo "도구 버전"
 java_actual=$(java -version 2>&1 | sed -n '1s/.*"\([0-9][0-9.]*\)[^"]*".*/\1/p')
@@ -38,17 +38,20 @@ else
 fi
 [[ -f .gitleaks.toml ]] && ok ".gitleaks.toml 있음" || bad ".gitleaks.toml이 없습니다"
 
-echo "1Password (개인 계정이어야 합니다)"
+echo "Docker"
+if docker info >/dev/null 2>&1; then ok "Docker 실행 중"; else bad "Docker를 실행하세요"; fi
+
+echo "1Password (선택; 비밀값이 필요한 작업에서만 사용)"
 if [[ -n ${OP_SERVICE_ACCOUNT_TOKEN:-} ]]; then
-  bad "OP_SERVICE_ACCOUNT_TOKEN이 설정돼 있습니다. CLI가 개인 로그인이 아니라 그 서비스 계정으로 동작합니다(회사 토큰일 수 있음). mise.local.toml에서 해제하세요"
+  warn "OP_SERVICE_ACCOUNT_TOKEN이 설정돼 있습니다. CLI가 개인 로그인이 아니라 그 서비스 계정으로 동작합니다(회사 토큰일 수 있음). mise.local.toml에서 해제하세요"
 else
   ok "OP_SERVICE_ACCOUNT_TOKEN 없음"
 fi
 
 if ! command -v op >/dev/null 2>&1; then
-  bad "op(1Password CLI)가 없습니다"
+  warn "op(1Password CLI)가 없습니다"
 elif [[ -z ${OP_ACCOUNT:-} ]]; then
-  bad "OP_ACCOUNT가 비어 있습니다. mise.local.toml.example을 mise.local.toml로 복사해 개인 계정을 지정하세요. (회사 계정과 섞이는 것을 막습니다)"
+  warn "OP_ACCOUNT가 비어 있습니다. mise.local.toml.example을 mise.local.toml로 복사해 개인 계정을 지정하세요. (회사 계정과 섞이는 것을 막습니다)"
 else
   ok "OP_ACCOUNT 지정됨 (값은 출력하지 않음)"
   if who=$(op whoami --format json 2>&1); then
@@ -57,15 +60,15 @@ else
     if [[ $OP_ACCOUNT == "$url" || $OP_ACCOUNT == "$uuid" ]]; then
       ok "op whoami: 로그인 계정이 OP_ACCOUNT와 같습니다 ($url)"
     else
-      bad "op whoami의 계정($url)이 OP_ACCOUNT와 다릅니다. 다른 계정으로 로그인돼 있을 수 있습니다"
+      warn "op whoami의 계정($url)이 OP_ACCOUNT와 다릅니다. 다른 계정으로 로그인돼 있을 수 있습니다"
     fi
     if op vault get banbanyeok >/dev/null 2>&1; then
       ok "vault 'banbanyeok' 접근 가능"
     else
-      bad "vault 'banbanyeok'에 접근할 수 없습니다(개인 계정이 아니거나 앱 연동이 꺼져 있음)"
+      warn "vault 'banbanyeok'에 접근할 수 없습니다(개인 계정이 아니거나 앱 연동이 꺼져 있음)"
     fi
   else
-    bad "op whoami 실패: 1Password 데스크톱 앱을 잠금 해제하고 CLI 연동을 켜세요 (op의 응답: $(printf '%s' "$who" | tr '\n' ' ' | cut -c1-120))"
+    warn "op whoami 실패: 1Password 데스크톱 앱을 잠금 해제하고 CLI 연동을 켜세요 (op의 응답: $(printf '%s' "$who" | tr '\n' ' ' | cut -c1-120))"
   fi
 fi
 

@@ -22,6 +22,7 @@ keywords = ["op_service_account_token", "op_connect_token"]
 [[allowlists]]
 description = "빌드 산출물·의존성 폴더(git에는 포함되지 않음)"
 paths = [
+  '''(^|/)spikes/web/out/''',
   '''(^|/)(node_modules|build|\.gradle|\.kotlin|\.next|\.open-next|\.wrangler|\.pnpm-store)/''',
 ]
 

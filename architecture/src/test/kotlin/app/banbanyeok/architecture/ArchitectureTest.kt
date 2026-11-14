@@ -1,0 +1,67 @@
+package app.banbanyeok.architecture
+
+import com.lemonappdev.konsist.api.Konsist
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import java.io.File
+
+class ArchitectureTest :
+    DescribeSpec({
+        describe("module boundaries") {
+            it("shared sources do not import platform, persistence or server APIs") {
+                Konsist
+                    .scopeFromDirectory("shared")
+                    .files
+                    .filter { it.path.contains("Main/") }
+                    .flatMap { it.imports }
+                    .filter {
+                        listOf("java.", "javax.", "io.ktor.", "org.jetbrains.exposed.", "kotlin.io.", "kotlinx.io.")
+                            .any { prefix -> it.name.startsWith(prefix) }
+                    }.shouldBeEmpty()
+            }
+            it("pipeline only depends on schema and core among shared modules") {
+                val dependencies =
+                    Regex("""project\("(:shared:[^"]+)"\)""")
+                        .findAll(File("pipeline/build.gradle.kts").readText())
+                        .map { it.groupValues[1] }
+                        .toList()
+                Konsist
+                    .scopeFromDirectory("pipeline/src")
+                    .files
+                    .flatMap { it.imports }
+                    .filter { it.name.startsWith("app.banbanyeok.") }
+                    .filterNot {
+                        listOf("app.banbanyeok.pipeline.", "app.banbanyeok.schema.", "app.banbanyeok.core.")
+                            .any { prefix -> it.name.startsWith(prefix) }
+                    }.shouldBeEmpty()
+                dependencies.filterNot { it in setOf(":shared:schema", ":shared:core") }.shouldBeEmpty()
+            }
+            it("server feature modules do not depend on each other") {
+                val features =
+                    File("server")
+                        .listFiles()
+                        .orEmpty()
+                        .filter { it.isDirectory && it.name !in setOf("app", "src", "build", "db") }
+                features
+                    .filter { File(it, "src").exists() }
+                    .flatMap { module ->
+                        Konsist
+                            .scopeFromDirectory("server/${module.name}/src")
+                            .files
+                            .flatMap { it.imports }
+                            .filter { imported ->
+                                features.any { other ->
+                                    other != module && imported.name.startsWith("app.banbanyeok.server.${other.name}.")
+                                }
+                            }
+                    }.shouldBeEmpty()
+                features
+                    .flatMap { module ->
+                        val build = File(module, "build.gradle.kts")
+                        features.filter { other ->
+                            other != module && build.exists() && build.readText().contains(":server:${other.name}")
+                        }
+                    }.shouldBeEmpty()
+            }
+        }
+    })

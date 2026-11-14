@@ -30,6 +30,9 @@ jobs:
         with:
           filters: |
             kotlin:
+              - 'architecture/**'
+              - 'config/**'
+              - '.editorconfig'
               - 'shared/**'
               - 'server/**'
               - 'pipeline/**'
@@ -51,7 +54,7 @@ jobs:
               - '.github/workflows/ci.yml'
 
   # Kotlin: ./gradlew build = 컴파일 + jvm 테스트(shared 모듈은 commonTest를 jvm으로 실행) + commonMain 순수성 검사
-  kotlin:
+  unit:
     needs: changes
     if: needs.changes.outputs.kotlin == 'true'
     runs-on: ubuntu-latest
@@ -63,7 +66,35 @@ jobs:
         with:
           install_args: java
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-      - run: ./gradlew build --console=plain
+      - run: ./gradlew test jvmTest --console=plain
+
+  lint:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # JDK는 mise.toml이 단일 출처다(로컬과 CI가 같은 버전).
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: java
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: ./gradlew ktlintCheck ktlintBuildScripts detekt detektBuildLogic --console=plain
+
+  integration:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # JDK는 mise.toml이 단일 출처다(로컬과 CI가 같은 버전).
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: java
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: ./gradlew integrationTest --console=plain
 
   # 오라클 일치: Python 프로토타입이 스냅샷·픽스처·링크 벡터를 그대로 재생산하는지 확인한다.
   # Kotlin 쪽이 같은 스냅샷을 통과하는지는 위 kotlin 잡의 shared 테스트가 확인한다(P1 이후 shared:core 포함).
@@ -83,11 +114,11 @@ jobs:
   # 브랜치 보호에서 필수로 지정할 단일 체크. 경로 필터로 건너뛴 잡은 통과로 본다.
   ci-ok:
     if: always()
-    needs: [changes, kotlin, oracle]
+    needs: [changes, unit, lint, integration, oracle]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "changes=${{ needs.changes.result }} kotlin=${{ needs.kotlin.result }} oracle=${{ needs.oracle.result }}"
+          echo "changes=${{ needs.changes.result }} unit=${{ needs.unit.result }} lint=${{ needs.lint.result }} integration=${{ needs.integration.result }} oracle=${{ needs.oracle.result }}"
           if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
             exit 1
           fi

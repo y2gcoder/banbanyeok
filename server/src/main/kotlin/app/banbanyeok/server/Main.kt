@@ -8,7 +8,7 @@ import java.net.InetSocketAddress
  * Cloud Run은 PORT 환경 변수로 포트를 알려 준다.
  */
 fun main() {
-    val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
+    val port = System.getenv("SERVER_PORT")?.toIntOrNull() ?: System.getenv("PORT")?.toIntOrNull() ?: 8080
     val server = createServer(port)
     server.start()
     println("server placeholder listening on :${server.address.port} (GET /healthz)")

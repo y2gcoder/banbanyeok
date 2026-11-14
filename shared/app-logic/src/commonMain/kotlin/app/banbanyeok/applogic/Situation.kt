@@ -36,7 +36,10 @@ public data class Notice(
  *
  * @property timesSeconds 사람별 시간(초), 입력 순서는 [SituationInput.people]와 같다.
  */
-public data class CandidateTimes(val stationName: String, val timesSeconds: List<Int>)
+public data class CandidateTimes(
+    val stationName: String,
+    val timesSeconds: List<Int>,
+)
 
 /** 극단 상황 판단 입력. 후보가 비어 있으면 "공통 후보 없음"이다. 후보는 최대 [ReasonInput.MAX_RANK]개. */
 public data class SituationInput(
@@ -64,16 +67,21 @@ public object SituationAdvisor {
      * 입력이 규칙을 어기면 [ReasonInputException].
      */
     public fun evaluate(input: SituationInput): List<Notice> {
-        ReasonInputValidator.validatePeople(input.people)?.let { throw ReasonInputException(it) }
-        if (input.candidates.size > ReasonInput.MAX_RANK) throw ReasonInputException(InputErrorCode.RANK_OUT_OF_RANGE)
+        ReasonInputValidator.validatePeople(input.people)?.let { failInput(it) }
+        if (input.candidates.size > ReasonInput.MAX_RANK) failInput(InputErrorCode.RANK_OUT_OF_RANGE)
         for (candidate in input.candidates) {
-            if (candidate.stationName.isBlank()) throw ReasonInputException(InputErrorCode.EMPTY_STATION_NAME)
-            if (candidate.timesSeconds.size != input.people.size) throw ReasonInputException(InputErrorCode.COMPARISON_MISMATCH)
-            if (candidate.timesSeconds.any { it < 0 }) throw ReasonInputException(InputErrorCode.NEGATIVE_VALUE)
+            if (candidate.stationName.isBlank()) failInput(InputErrorCode.EMPTY_STATION_NAME)
+            if (candidate.timesSeconds.size !=
+                input.people.size
+            ) {
+                failInput(InputErrorCode.COMPARISON_MISMATCH)
+            }
+            if (candidate.timesSeconds.any { it < 0 }) failInput(InputErrorCode.NEGATIVE_VALUE)
         }
 
-        val top = input.candidates.firstOrNull()
-            ?: return listOf(Notice(NoticeKind.NO_COMMON_CANDIDATE, "모두가 갈 수 있는 역을 찾지 못했어요. 출발역을 바꿔 보세요."))
+        val top =
+            input.candidates.firstOrNull()
+                ?: return listOf(Notice(NoticeKind.NO_COMMON_CANDIDATE, "모두가 갈 수 있는 역을 찾지 못했어요. 출발역을 바꿔 보세요."))
 
         val names = DisplayNames.resolve(input.people)
         val topMax = top.timesSeconds.max()
@@ -97,15 +105,22 @@ public object SituationAdvisor {
         return notices
     }
 
-    /** 역 이름 뒤에 "역"을 붙인다. 이미 "역"으로 끝나면(서울역) 그대로 둔다. */
-    public fun stationLabel(stationName: String): String = if (stationName.endsWith("역")) stationName else "${stationName}역"
+    private fun failInput(code: InputErrorCode): Nothing = throw ReasonInputException(code)
 
-    private fun similarNotice(mode: ReasonMode, candidates: List<CandidateTimes>): Notice? {
+    /** 역 이름 뒤에 "역"을 붙인다. 이미 "역"으로 끝나면(서울역) 그대로 둔다. */
+    public fun stationLabel(stationName: String): String =
+        if (stationName.endsWith("역")) stationName else "${stationName}역"
+
+    private fun similarNotice(
+        mode: ReasonMode,
+        candidates: List<CandidateTimes>,
+    ): Notice? {
         if (candidates.size < 2 || mode == ReasonMode.FAVOR) return null
-        val metric = candidates.map { candidate ->
-            val minutes = candidate.timesSeconds.map { DisplayMinutes.fromSeconds(it) }
-            if (mode == ReasonMode.FAIR) minutes.max() else minutes.sum()
-        }
+        val metric =
+            candidates.map { candidate ->
+                val minutes = candidate.timesSeconds.map { DisplayMinutes.fromSeconds(it) }
+                if (mode == ReasonMode.FAIR) minutes.max() else minutes.sum()
+            }
         if (metric.any { abs(it - metric.first()) > SIMILAR_WITHIN_MINUTES }) return null
         val count = if (candidates.size == 2) "두" else "세"
         return Notice(NoticeKind.SIMILAR_CANDIDATES, "$count 곳 다 비슷해요. 가고 싶은 동네로 고르세요.")

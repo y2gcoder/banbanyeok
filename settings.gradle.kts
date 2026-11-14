@@ -32,3 +32,5 @@ include(":server", ":pipeline")
 
 // 후속 단계에서 활성화:
 //   include(":android:app")   // A1. android/ 디렉토리와 함께 추가
+
+include(":architecture")

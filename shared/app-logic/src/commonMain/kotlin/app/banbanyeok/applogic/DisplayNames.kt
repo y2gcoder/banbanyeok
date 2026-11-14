@@ -8,5 +8,8 @@ public object DisplayNames {
     public val DEFAULTS: List<String> = listOf("나", "친구1", "친구2", "친구3")
 
     public fun resolve(people: List<PersonRef>): List<String> =
-        people.mapIndexed { index, person -> person.name?.takeIf { it.isNotBlank() } ?: DEFAULTS.getOrElse(index) { "친구$index" } }
+        people.mapIndexed { index, person ->
+            person.name?.takeIf { it.isNotBlank() }
+                ?: DEFAULTS.getOrElse(index) { "친구$index" }
+        }
 }

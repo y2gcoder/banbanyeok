@@ -4,7 +4,10 @@ package app.banbanyeok.applogic
 public enum class ReasonMode { FAIR, FAST, FAVOR }
 
 /** 서버 응답의 `reasonCode`와 같은 이름. 순위 1이면 1위 코드, 2위 이하면 대안 코드다. */
-public enum class ReasonCode(public val mode: ReasonMode, public val isAlternative: Boolean) {
+public enum class ReasonCode(
+    public val mode: ReasonMode,
+    public val isAlternative: Boolean,
+) {
     FAIR_MINIMAX(ReasonMode.FAIR, false),
     FAIR_ALTERNATIVE(ReasonMode.FAIR, true),
     FAST_TOTAL(ReasonMode.FAST, false),
@@ -21,10 +24,18 @@ public enum class ReasonCode(public val mode: ReasonMode, public val isAlternati
  *   A/B 같은 이름을 쓰고 싶으면 호출하는 쪽이 이름으로 넣는다.
  * @property originCode 출발역 코드(3자 정규형). 숨긴 참가자는 null.
  */
-public data class PersonRef(val id: String, val name: String? = null, val originCode: String? = null)
+public data class PersonRef(
+    val id: String,
+    val name: String? = null,
+    val originCode: String? = null,
+)
 
 /** 만날 역에서의 사람별 소요 시간(정수 초)과 환승 횟수. 입력 순서 = 사람 순서(A, B, C, D). */
-public data class PersonTime(val person: PersonRef, val seconds: Int, val transfers: Int)
+public data class PersonTime(
+    val person: PersonRef,
+    val seconds: Int,
+    val transfers: Int,
+)
 
 /**
  * 비교 대상 후보. 1위의 문장은 **2위**와, 2위 이하의 문장은 **1위**와 비교한다.
@@ -132,4 +143,6 @@ public enum class InputErrorCode {
 }
 
 /** 입력이 규칙을 어겼다. [code]로 구별한다. */
-public class ReasonInputException(public val code: InputErrorCode) : IllegalArgumentException("추천 이유 입력 오류: $code")
+public class ReasonInputException(
+    public val code: InputErrorCode,
+) : IllegalArgumentException("추천 이유 입력 오류: $code")

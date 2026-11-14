@@ -1,17 +1,36 @@
 package app.banbanyeok.pipeline
 
-import app.banbanyeok.schema.*
+import app.banbanyeok.schema.CandidateList
+import app.banbanyeok.schema.DataSetLoader
+import app.banbanyeok.schema.Manifest
+import app.banbanyeok.schema.ManifestCodec
+import app.banbanyeok.schema.ManifestFile
+import app.banbanyeok.schema.ManifestFiles
+import app.banbanyeok.schema.OdBinCodec
+import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.Registry
+import app.banbanyeok.schema.RegistryCodec
+import app.banbanyeok.schema.RegistryCompatibility
+import app.banbanyeok.schema.Sha256
+import app.banbanyeok.schema.StationCode
+import app.banbanyeok.schema.StationStatus
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Path
-import java.time.Instant
 import java.time.Duration
+import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import kotlin.io.path.*
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
+import kotlin.io.path.name
+import kotlin.io.path.readBytes
+import kotlin.io.path.readText
+import kotlin.io.path.writeBytes
+import kotlin.io.path.writeText
 
 fun main(args: Array<String>) {
     val root = generateSequence(Path.of("").toAbsolutePath()) { it.parent }.first { it.resolve("contracts/data-format.md").exists() }
@@ -19,20 +38,34 @@ fun main(args: Array<String>) {
         "fetch" -> fetch(root)
         "build" -> build(root)
         "validate" -> validate(root)
-        "all" -> { fetch(root); build(root); validate(root) }
+        "all" -> {
+            fetch(root)
+            build(root)
+            validate(root)
+        }
         else -> error("Usage: fetch|build|validate|all")
     }
 }
 
-
-
-internal fun matrixCosts(network: Network): List<List<Cost>> = network.origins.map { origin ->
-    val seeds = network.nodes.withIndex().filter { it.value.first == origin.code }.associate { it.index to network.waits.getValue(it.value.second) }
-    val distances = shortest(network.graph, seeds)
-    network.origins.map { destination ->
-        if (origin.code == destination.code) Cost(0, 0) else network.nodes.withIndex().filter { it.value.first == destination.code }.minOf { distances[it.index] }
+internal fun matrixCosts(network: Network): List<List<Cost>> =
+    network.origins.map { origin ->
+        val seeds =
+            network.nodes
+                .withIndex()
+                .filter { it.value.first == origin.code }
+                .associate { it.index to network.waits.getValue(it.value.second) }
+        val distances = shortest(network.graph, seeds)
+        network.origins.map { destination ->
+            if (origin.code == destination.code) {
+                Cost(0, 0)
+            } else {
+                network.nodes
+                    .withIndex()
+                    .filter { it.value.first == destination.code }
+                    .minOf { distances[it.index] }
+            }
+        }
     }
-}
 
 private fun build(root: Path) {
     val net = network(root)
@@ -53,31 +86,39 @@ private fun build(root: Path) {
     val report = root.resolve("data/config/validation-report.json")
     val reach = 1.0 - unreachable.toDouble() / times.size
     val passed = unreachable == 0 && gate.passed && appendOnly.isEmpty() && spots.all { it.success }
-    report.writeText("""{
-      "passed":$passed,"registryStations":${net.registry.stations.size},"origins":${net.origins.size},"candidates":${candidates.size},
-      "reachability":$reach,"appendOnlyViolations":${strings(appendOnly)},
-      ${gate.json},
-      "excludedSeoulRecords":${strings(net.excluded)},
-      "spotchecks":[${spots.joinToString(",") { it.json }}]
-    }
-    """.trimIndent())
+    report.writeText(
+        """
+        {
+          "passed":$passed,"registryStations":${net.registry.stations.size},"origins":${net.origins.size},"candidates":${candidates.size},
+          "reachability":$reach,"appendOnlyViolations":${strings(appendOnly)},
+          ${gate.json},
+          "excludedSeoulRecords":${strings(net.excluded)},
+          "spotchecks":[${spots.joinToString(",") { it.json }}]
+        }
+        """.trimIndent(),
+    )
     val excluded = net.registry.stations.filter { it.status == StationStatus.ACTIVE && it.code !in net.origins.map { origin -> origin.code }.toSet() }
-    root.resolve("data/config/coverage-report.json").writeText("""{
-      "scope":"서울교통공사 1~8호선 S3 운영 구간",
-      "includedPhysicalStations":${net.origins.size},"stateNodes":${net.nodes.size},
-      "rideEdges":${net.graph.sumOf { edges -> edges.count { it.changes == 0 } }},
-      "transferEdges":${net.graph.sumOf { edges -> edges.count { it.changes > 0 } }},
-      "excludedActiveStationCodes":${strings(excluded.map { it.code })},
-      "excludedSourceLineNames":${strings(excluded.flatMap { it.lines }.distinct().sorted())},
-      "missingFromS1":["GTX-A"],"timetableAvailable":false
-    }
-""".trimIndent())
+    root.resolve("data/config/coverage-report.json").writeText(
+        """
+        {
+          "scope":"서울교통공사 1~8호선 S3 운영 구간",
+          "includedPhysicalStations":${net.origins.size},"stateNodes":${net.nodes.size},
+          "rideEdges":${net.graph.sumOf { edges -> edges.count { it.changes == 0 } }},
+          "transferEdges":${net.graph.sumOf { edges -> edges.count { it.changes > 0 } }},
+          "excludedActiveStationCodes":${strings(excluded.map { it.code })},
+          "excludedSourceLineNames":${strings(excluded.flatMap { it.lines }.distinct().sorted())},
+          "missingFromS1":["GTX-A"],"timetableAvailable":false
+        }
+        """.trimIndent(),
+    )
     // Registry and review draft are control-plane inputs, not published travel artifacts.
     root.resolve("data/registry/stations.json").writeText(RegistryCodec.encode(net.registry))
     root.resolve("data/registry/candidates.json").writeText(RegistryCodec.encodeCandidates(candidateList))
-    root.resolve("data/registry/candidate-review.json").writeText(candidates.joinToString(",\n", "[\n", "\n]\n") { station ->
-        """{"code":${quote(station.code)},"name":${quote(station.name)},"reason":${quote(candidateReasons.getValue(station.name))},"reviewed":false}"""
-    })
+    root.resolve("data/registry/candidate-review.json").writeText(
+        candidates.joinToString(",\n", "[\n", "\n]\n") { station ->
+            """{"code":${quote(station.code)},"name":${quote(station.name)},"reason":${quote(candidateReasons.getValue(station.name))},"reviewed":false}"""
+        },
+    )
     println("Registry ${net.registry.stations.size}; origins ${net.origins.size}; candidates ${candidates.size}; reachability $reach; graph gate ${gate.passed}")
     require(passed) { "Validation gate failed; no travel artifacts written. See data/config/validation-report.json" }
     val output = root.resolve("data/artifacts/dev").createDirectories()
@@ -86,36 +127,65 @@ private fun build(root: Path) {
     val od = OdMatrix(net.registry.registryVersion, net.origins.map { StationCode.parse(it.code).value }.toIntArray(), candidates.map { StationCode.parse(it.code).value }.toIntArray(), times, transfers)
     val odBytes = OdBinCodec.encode(od)
     val files = linkedMapOf("stations.json" to registryBytes, "candidates.json" to candidateBytes, "od.bin" to odBytes)
+
     fun file(name: String): ManifestFile = ManifestFile(name, Sha256.hex(files.getValue(name)), files.getValue(name).size.toLong())
     val now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
     val date = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC).format(now)
     val previousManifest = output.resolve("manifest.json").takeIf { it.exists() }?.let { ManifestCodec.parse(it.readText()) }
-    val revision = previousManifest?.dataVersion?.takeIf { it.startsWith("$date.") }?.substringAfter('.')?.toInt()?.plus(1) ?: 1
+    val revision =
+        previousManifest
+            ?.dataVersion
+            ?.takeIf { it.startsWith("$date.") }
+            ?.substringAfter('.')
+            ?.toInt()
+            ?.plus(1) ?: 1
     require(revision <= 999) { "Daily dataVersion revision exhausted" }
     val version = "$date.$revision"
     val manifest = Manifest(1, 1, version, previousDataVersion = previousManifest?.dataVersion, generatedAt = now.toString(), registryVersion = net.registry.registryVersion, timeModel = "weekday-offpeak-estimated-half-headway", originCount = net.origins.size, candidateCount = candidates.size, files = ManifestFiles(file("stations.json"), file("candidates.json"), file("od.bin")))
     val manifestText = ManifestCodec.encode(manifest)
     DataSetLoader.load(manifestText, registryBytes, candidateBytes, odBytes)
     files.forEach { (name, bytes) -> output.resolve(name).writeBytes(bytes) }
-    val glyphs = (net.registry.stations.joinToString("") { it.name } + root.resolve("data/config/og-copy.txt").readText()).filter { !it.isISOControl() }.toSet().sorted().joinToString("")
+    val glyphs =
+        (net.registry.stations.joinToString("") { it.name } + root.resolve("data/config/og-copy.txt").readText())
+            .filter { !it.isISOControl() }
+            .toSet()
+            .sorted()
+            .joinToString("")
     output.resolve("og-glyphs.txt").writeText(glyphs + "\n")
     output.resolve("manifest.json").writeText(manifestText)
     println("Published dev artifacts: ${files.values.sumOf { it.size }} bytes (+ manifest/glyphs)")
 }
 
-private data class Spot(val success: Boolean, val json: String)
-private fun spotchecks(net: Network, costs: List<List<Cost>>): List<Spot> {
+private data class Spot(
+    val success: Boolean,
+    val json: String,
+)
+
+private fun spotchecks(
+    net: Network,
+    costs: List<List<Cost>>,
+): List<Spot> {
     val pairs = listOf("서울역" to "청량리", "강남" to "홍대입구", "성수" to "신설동", "신도림" to "까치산", "강동" to "마천", "강동" to "하남검단산", "응암" to "연신내", "사당" to "잠실", "광화문" to "왕십리", "답십리" to "역삼")
     val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
     return pairs.map { (from, to) ->
-        val i = net.origins.indexOfFirst { it.name == from }; val j = net.origins.indexOfFirst { it.name == to }
+        val i = net.origins.indexOfFirst { it.name == from }
+        val j = net.origins.indexOfFirst { it.name == to }
         val own = costs[i][j].seconds
         try {
             fun encode(s: String): String = URLEncoder.encode(s, Charsets.UTF_8).replace("+", "%20")
             val url = "http://openapi.seoul.go.kr:8088/sample/json/getShtrmPath/1/5/${encode(from)}/${encode(to)}/${encode("2026-11-12 10:00:00")}"
-            val response = client.send(HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(20)).GET().build(), HttpResponse.BodyHandlers.ofString())
+            val response =
+                client.send(
+                    HttpRequest
+                        .newBuilder(URI(url))
+                        .timeout(Duration.ofSeconds(20))
+                        .GET()
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString(),
+                )
             val body = response.body()
             require(response.statusCode() == 200 && Regex("\"resultCode\"\\s*:\\s*\"00\"").containsMatchIn(body)) { "API status/schema failure" }
+
             fun numbers(field: String) = Regex("\"$field\"\\s*:\\s*\"?([0-9]+)").findAll(body).map { it.groupValues[1].toInt() }.toList()
             val total = numbers("totalReqHr").single()
             val segment = numbers("reqHr").sum()

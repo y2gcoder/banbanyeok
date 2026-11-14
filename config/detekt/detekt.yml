@@ -1,0 +1,18 @@
+# Formatting belongs to ktlint. Test DSL blocks describe scenarios rather than production functions.
+complexity:
+  LongMethod:
+    excludes: ['**/test/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**']
+  LongParameterList:
+    ignoreDataClasses: true
+    excludes: ['**/test/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**']
+  TooManyFunctions:
+    ignorePrivate: true
+    ignoreOverridden: true
+style:
+  MagicNumber:
+    active: false # domain algorithms use seconds, bit masks and binary format constants
+  MaxLineLength:
+    active: false # ktlint owns line length
+  ReturnCount:
+    max: 4
+    excludeGuardClauses: true

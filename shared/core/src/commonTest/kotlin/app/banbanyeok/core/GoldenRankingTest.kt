@@ -15,30 +15,32 @@ class GoldenRankingTest {
         assertEquals(scenarios.map { it.id }, expected.scenarios.map { it.id })
         for ((scenario, snapshot) in scenarios.zip(expected.scenarios)) {
             val input = scenario.input
-            val actual = rank(
-                RankInput(
-                    input.participants,
-                    input.candidates,
-                    input.times.map { row -> row.map { it?.let { (it * 60).toInt() } } },
-                    input.transfers,
-                    input.mode,
-                    (input.tolerance * 60).toInt(),
-                ),
-            )
-            val expectedRows = snapshot.ranking.map { row ->
-                Candidate(
-                    row.rank,
-                    row.stationId,
-                    input.participants.mapIndexed { i, id ->
-                        PersonalTime(id, (row.times[i] * 60).toInt(), row.transfers[i])
-                    },
-                    (row.maxMinutes * 60).toInt(),
-                    (row.spreadMinutes * 60).toInt(),
-                    (row.totalMinutes * 60).toLong(),
-                    row.favoredMinutes?.let { (it * 60).toInt() },
-                    row.reasonCode,
+            val actual =
+                rank(
+                    RankInput(
+                        input.participants,
+                        input.candidates,
+                        input.times.map { row -> row.map { it?.let { (it * 60).toInt() } } },
+                        input.transfers,
+                        input.mode,
+                        (input.tolerance * 60).toInt(),
+                    ),
                 )
-            }
+            val expectedRows =
+                snapshot.ranking.map { row ->
+                    Candidate(
+                        row.rank,
+                        row.stationId,
+                        input.participants.mapIndexed { i, id ->
+                            PersonalTime(id, (row.times[i] * 60).toInt(), row.transfers[i])
+                        },
+                        (row.maxMinutes * 60).toInt(),
+                        (row.spreadMinutes * 60).toInt(),
+                        (row.totalMinutes * 60).toLong(),
+                        row.favoredMinutes?.let { (it * 60).toInt() },
+                        row.reasonCode,
+                    )
+                }
             assertEquals(
                 RankResult(
                     snapshot.status,

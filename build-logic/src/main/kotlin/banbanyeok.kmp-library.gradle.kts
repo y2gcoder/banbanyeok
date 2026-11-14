@@ -7,6 +7,7 @@
  * (주의: KDoc 안에 '슬래시+별표'를 쓰면 중첩 주석이 열려 plugins 블록이 주석 안으로 들어간다.)
  */
 plugins {
+    id("banbanyeok.quality")
     id("org.jetbrains.kotlin.multiplatform")
 }
 
@@ -23,7 +24,7 @@ kotlin {
     // A1: Android. libs.versions.toml에 AGP를 추가하고 settings의 repositories에 google()을 넣은 뒤
     //       plugins { id("com.android.kotlin.multiplatform.library") } 와
     //       kotlin { androidLibrary { namespace = "app.banbanyeok.<module>"; compileSdk = 36; minSdk = 26 } }
-    // I1: iOS. 
+    // I1: iOS.
     //       listOf(iosArm64(), iosSimulatorArm64()).forEach { it.binaries.framework { baseName = "Shared" } }
     //     (direct integration으로 Xcode에서 링크. macOS 러너 필요)
 
@@ -36,7 +37,17 @@ kotlin {
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
 
-val checkCommonMainPurity = tasks.register<CommonMainPurityTask>("checkCommonMainPurity") {
-    sources.from(layout.projectDirectory.dir("src/commonMain"))
-}
+val checkCommonMainPurity =
+    tasks.register<CommonMainPurityTask>("checkCommonMainPurity") {
+        sources.from(layout.projectDirectory.dir("src/commonMain"))
+    }
 tasks.named("check") { dependsOn(checkCommonMainPurity) }
+
+val testLibs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+kotlin.sourceSets.named("commonTest") {
+    dependencies {
+        implementation(testLibs.findLibrary("kotest-assertions").get())
+        implementation(testLibs.findLibrary("kotest-property").get())
+        implementation(testLibs.findLibrary("kotlinx-coroutines-test").get())
+    }
+}

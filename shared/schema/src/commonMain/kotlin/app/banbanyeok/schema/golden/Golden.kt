@@ -41,7 +41,10 @@ public data class ExpectedRow(
 )
 
 @Serializable
-public data class ExpectedExcluded(val stationId: String, val reasonCode: String)
+public data class ExpectedExcluded(
+    val stationId: String,
+    val reasonCode: String,
+)
 
 @Serializable
 public data class ExpectedScenario(

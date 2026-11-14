@@ -6,7 +6,7 @@
 #    그래서 25 툴체인으로 컴파일·테스트하고, shared 라이브러리의 바이트코드는 17로 낮춘다(Android 소비용).
 #  - Ktor 3.6의 JDK 요구사항은 공식 문서에서 찾지 못했다. 대신 :server:test가 JDK 25에서 통과하는 것을 확인했다.
 #  - 서버 이미지(Cloud Run)는 같은 25를 쓴다. 비-LTS(26, 27)는 쓰지 않는다.
-java = "temurin-25.0.5"
+java = ["temurin-25.0.5", "temurin-21.0.9+10.0.LTS"]
 node = "24.22.2"
 pnpm = "12.16.1"
 gitleaks = "8.30.1"
@@ -16,7 +16,7 @@ lefthook = "2.2.2"
 # 예시는 mise.local.toml.example.
 
 [tasks.doctor]
-description = "개발 환경 점검: JDK·node·pnpm 버전, 1Password 개인 계정(op whoami), 비밀값 보호 장치"
+description = "개발 환경 점검: JDK·node·pnpm 버전, Docker 및 선택 1Password 계정, 비밀값 보호 장치"
 run = "bash scripts/doctor.sh"
 
 [tasks."hooks:install"]
@@ -58,10 +58,30 @@ run = [
 description = "파이프라인 CLI 실행 (인자: mise run dev:pipeline -- build)"
 run = "op run --env-file=.env.tpl -- ./gradlew :pipeline:run --args=\"$@\""
 
+[tasks.setup]
+description = "최초 도구·의존성·훅 설치 (비밀값 불필요)"
+run = ["mise install", "pnpm install --frozen-lockfile", "lefthook install"]
+
+[tasks.dev]
+description = "DB → migrate → seed → server + web"
+run = "bash scripts/dev.sh all"
+
+[tasks."dev:db"]
+description = "로컬 Postgres 시작; 정리: mise run dev:db -- down"
+run = 'bash scripts/dev.sh db "$@"'
+
+[tasks."dev:migrate"]
+description = "공식 Liquibase 컨테이너로 별도 마이그레이션"
+run = "bash scripts/dev.sh migrate"
+
+[tasks."dev:seed"]
+run = "bash scripts/dev.sh seed"
+
 [tasks."dev:server"]
-description = "Ktor 서버 로컬 실행 (http://localhost:8080/healthz)"
-run = "op run --env-file=.env.tpl -- ./gradlew :server:run"
+run = "bash scripts/dev.sh server"
 
 [tasks."dev:web"]
-description = "Next.js 개발 서버 (web/은 P4가 만든 뒤에 동작)"
-run = "op run --env-file=.env.tpl -- pnpm --filter web dev"
+run = "bash scripts/dev.sh web"
+
+[tasks."dev:web:mock"]
+run = "bash scripts/dev.sh web:mock"

@@ -36,9 +36,11 @@ abstract class GenerateContractTestData : DefaultTask() {
     @TaskAction
     fun generate() {
         val root = contractsDir.get().asFile
-        val entries = files.files.filter { it.isFile }
-            .map { it to it.relativeTo(root).invariantSeparatorsPath }
-            .sortedBy { it.second }
+        val entries =
+            files.files
+                .filter { it.isFile }
+                .map { it to it.relativeTo(root).invariantSeparatorsPath }
+                .sortedBy { it.second }
 
         val out = StringBuilder()
         out.appendLine("// 자동 생성 파일: banbanyeok.contract-test-data (generateGoldenTests). 수정하지 마라.")
@@ -54,7 +56,12 @@ abstract class GenerateContractTestData : DefaultTask() {
         out.appendLine("    val paths: List<String> = listOf(${entries.joinToString { quote(it.second) }})")
         out.appendLine()
         out.appendLine("    fun text(path: String): String = when (path) {")
-        entries.forEachIndexed { i, (_, rel) -> if (!isBinary(rel)) out.appendLine("        ${quote(rel)} -> file$i()") }
+        entries.forEachIndexed {
+            i,
+            (_, rel),
+            ->
+            if (!isBinary(rel)) out.appendLine("        ${quote(rel)} -> file$i()")
+        }
         out.appendLine("        else -> error(\"텍스트 계약 파일이 없습니다: \$path\")")
         out.appendLine("    }")
         out.appendLine()
@@ -65,8 +72,12 @@ abstract class GenerateContractTestData : DefaultTask() {
         out.appendLine("        else -> text(path).encodeToByteArray()")
         out.appendLine("    }")
         entries.forEachIndexed { i, (file, rel) ->
-            val content = if (isBinary(rel)) Base64.getEncoder().encodeToString(file.readBytes())
-            else file.readText(Charsets.UTF_8).replace("\r\n", "\n")
+            val content =
+                if (isBinary(rel)) {
+                    Base64.getEncoder().encodeToString(file.readBytes())
+                } else {
+                    file.readText(Charsets.UTF_8).replace("\r\n", "\n")
+                }
             val chunks = content.chunked(12_000)
             out.appendLine()
             out.appendLine("    // $rel")
