@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { SiteFooter } from "@/components/common/site-footer";
 import { siteMetadata } from "@/lib/seo/metadata";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ko">
       <body>
         <Providers>{children}</Providers>
+        <SiteFooter />
       </body>
     </html>
   );
