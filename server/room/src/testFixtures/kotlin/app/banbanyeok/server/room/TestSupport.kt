@@ -21,7 +21,7 @@ class MutableClock(
         now = instant
     }
 
-    override fun getZone() = ZoneOffset.UTC
+    override fun getZone(): java.time.ZoneId = ZoneOffset.UTC
 
     override fun withZone(zone: java.time.ZoneId?): Clock = this
 

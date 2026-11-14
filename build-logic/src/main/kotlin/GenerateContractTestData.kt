@@ -12,6 +12,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.util.Base64
+import java.util.Locale
 
 /**
  * contracts/ 파일을 Kotlin 소스로 만든다. 텍스트는 문자열 조각 목록(JVM 상수 한도 65535바이트 회피),
@@ -106,7 +107,7 @@ abstract class GenerateContractTestData : DefaultTask() {
                 ch == '\n' -> sb.append("\\n")
                 ch == '\r' -> sb.append("\\r")
                 ch == '\t' -> sb.append("\\t")
-                ch.code < 0x20 || ch.code > 0x7e -> sb.append("\\u%04x".format(ch.code))
+                ch.code < 0x20 || ch.code > 0x7e -> sb.append("\\u%04x".format(Locale.ROOT, ch.code))
                 else -> sb.append(ch)
             }
         }

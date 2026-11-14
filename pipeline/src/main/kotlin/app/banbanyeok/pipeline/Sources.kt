@@ -23,7 +23,7 @@ internal fun duration(value: String): Int {
 
 internal fun csv(text: String): List<List<String>> {
     val rows = mutableListOf<List<String>>()
-    var row = mutableListOf<String>()
+    val row = mutableListOf<String>()
     val cell = StringBuilder()
     var quoted = false
     var i = 0
@@ -35,18 +35,26 @@ internal fun csv(text: String): List<List<String>> {
                 cell.append('"')
                 i++
             }
-            c == '"' -> quoted = !quoted
+
+            c == '"' -> {
+                quoted = !quoted
+            }
+
             c == ',' && !quoted -> {
                 row.add(cell.toString().trim())
                 cell.setLength(0)
             }
+
             c == '\n' && !quoted -> {
                 row.add(cell.toString().trim())
                 cell.setLength(0)
-                if (row.any { it.isNotEmpty() }) rows.add(row)
-                row = mutableListOf()
+                if (row.any { it.isNotEmpty() }) rows.add(row.toList())
+                row.clear()
             }
-            c != '\r' -> cell.append(c)
+
+            c != '\r' -> {
+                cell.append(c)
+            }
         }
     }
     require(!quoted) { "Unterminated CSV quote" }
@@ -244,19 +252,24 @@ internal fun normalizedSourceDate(value: String): String? =
     try {
         val text = value.trim()
         when {
-            Regex("[0-9]{8}").matches(text) ->
+            Regex("[0-9]{8}").matches(text) -> {
                 java.time.LocalDate
                     .parse(text, java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
                     .toString()
-            Regex("[0-9]{5}").matches(text) ->
+            }
+
+            Regex("[0-9]{5}").matches(text) -> {
                 java.time.LocalDate
                     .of(1899, 12, 30)
                     .plusDays(text.toLong())
                     .toString()
-            else ->
+            }
+
+            else -> {
                 java.time.LocalDate
                     .parse(text)
                     .toString()
+            }
         }
     } catch (_: java.time.DateTimeException) {
         null

@@ -34,7 +34,7 @@ public object ShareLinkCodec {
                 append("&n=").append(
                     nicknames.joinToString(
                         NICKNAME_SEPARATOR.toString(),
-                    ) { Base64Url.encode((it ?: "").encodeToByteArray()) },
+                    ) { Base64Url.encode(it.orEmpty().encodeToByteArray()) },
                 )
             }
         }

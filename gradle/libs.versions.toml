@@ -6,16 +6,16 @@ kotlinx-serialization = "1.12.0"   # 1.13.0은 2026-11-11 게시라 제외
 kotlinx-coroutines = "1.11.0"
 # 서버는 Ktor로 확정. 실제 프레임워크 연결은 P3에서 구현한다.
 ktor = "3.6.1"                     # 2026-10-29 게시
-logback = "1.5.38"
+logback = "1.6.6"
 
-kotest = "6.0.4"
-mockk = "1.14.6"
-testcontainers = "1.21.3"
-konsist = "0.17.3"
+kotest = "6.2.6"
+mockk = "1.14.11"
+testcontainers = "1.21.4"
+konsist = "0.18.1"
 ktlint-plugin = "14.1.0"
-ktlint = "1.7.1"
-detekt = "1.23.8"
-postgres-jdbc = "42.7.8"
+ktlint = "1.8.0"
+detekt = "2.0.0-alpha.6"
+postgres-jdbc = "42.7.14"
 
 # --- P3 서버 (게시일은 Maven Central 디렉토리 목록, 확인일 2026-11-14) ---
 exposed = "1.6.1"                  # 2026-11-04
@@ -27,7 +27,8 @@ openapi-request-validator = "3.0.0" # 2026-05-13. OpenAPI 3.1 지원
 [libraries]
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-plugin" }
-detekt-cli = { module = "io.gitlab.arturbosch.detekt:detekt-cli", version.ref = "detekt" }
+# --- T1 tooling ---
+detekt-gradle = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
@@ -63,3 +64,7 @@ hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
 google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version.ref = "google-cloud-storage" }
 openapi-request-validator = { module = "com.atlassian.oai:openapi-request-validator-core", version.ref = "openapi-request-validator" }
+
+[plugins]
+# --- T1 tooling ---
+detekt = { id = "dev.detekt", version.ref = "detekt" }

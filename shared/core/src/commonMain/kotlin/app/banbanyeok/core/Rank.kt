@@ -24,13 +24,20 @@ public fun rank(input: RankInput): RankResult {
     val eligible = eligibleCandidates(reachable, caps, target, excluded)
     val keys =
         when {
-            target >= 0 -> listOf<(Candidate) -> Long>({ requireNotNull(it.favoredSeconds).toLong() }) + fairKeys
-            input.mode == "fast" ->
+            target >= 0 -> {
+                listOf<(Candidate) -> Long>({ requireNotNull(it.favoredSeconds).toLong() }) + fairKeys
+            }
+
+            input.mode == "fast" -> {
                 listOf(
                     { row: Candidate -> row.totalSeconds },
                     { row: Candidate -> row.maxSeconds.toLong() },
                 )
-            else -> fairKeys
+            }
+
+            else -> {
+                fairKeys
+            }
         }
     val recommendations =
         order(eligible, keys, input.toleranceSeconds).mapIndexed { index, row ->

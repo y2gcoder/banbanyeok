@@ -87,8 +87,14 @@ internal class ConfigLoader(
 
     private fun profileOf(): Profile =
         when (env["APP_PROFILE"]?.lowercase()) {
-            null, "", "local" -> Profile.LOCAL
-            "prod", "production" -> Profile.PROD
+            null, "", "local" -> {
+                Profile.LOCAL
+            }
+
+            "prod", "production" -> {
+                Profile.PROD
+            }
+
             else -> {
                 problems += "APP_PROFILE은 local 또는 prod여야 합니다"
                 Profile.LOCAL
@@ -123,9 +129,18 @@ internal class ConfigLoader(
     private fun artifacts(): ArtifactConfig {
         val kind =
             when (env["ARTIFACT_STORE"]?.lowercase()) {
-                null, "" -> if (prod) ArtifactStoreKind.GCS else ArtifactStoreKind.LOCAL
-                "local" -> ArtifactStoreKind.LOCAL
-                "gcs" -> ArtifactStoreKind.GCS
+                null, "" -> {
+                    if (prod) ArtifactStoreKind.GCS else ArtifactStoreKind.LOCAL
+                }
+
+                "local" -> {
+                    ArtifactStoreKind.LOCAL
+                }
+
+                "gcs" -> {
+                    ArtifactStoreKind.GCS
+                }
+
                 else -> {
                     problems += "ARTIFACT_STORE는 local 또는 gcs여야 합니다"
                     ArtifactStoreKind.LOCAL
@@ -165,8 +180,8 @@ internal class ConfigLoader(
         origins.forEach { origin ->
             val uri = runCatching { URI(origin) }.getOrNull()
             val valid =
-                uri?.scheme in setOf("http", "https") && uri?.host != null && (uri?.path.isNullOrEmpty()) &&
-                    uri?.query == null
+                uri?.scheme in setOf("http", "https") && uri?.host != null && (uri.path.isNullOrEmpty()) &&
+                    uri.query == null
             if (!valid) problems += "CORS_ALLOWED_ORIGINS에 올바르지 않은 오리진이 있습니다(스킴://호스트[:포트]만)"
             if (prod && uri?.scheme != "https") problems += "CORS_ALLOWED_ORIGINS는 운영에서 https여야 합니다"
         }
@@ -197,10 +212,18 @@ internal class ConfigLoader(
     private fun clientIpSource(): ClientIpSource {
         val raw = env["RATE_LIMIT_CLIENT_IP_SOURCE"]?.trim().orEmpty().ifEmpty { "peer" }
         return when {
-            raw == "peer" -> ClientIpSource(ClientIpSourceKind.PEER)
-            raw == "xff-last" -> ClientIpSource(ClientIpSourceKind.XFF_LAST)
-            raw.startsWith("header:") && raw.length > "header:".length ->
+            raw == "peer" -> {
+                ClientIpSource(ClientIpSourceKind.PEER)
+            }
+
+            raw == "xff-last" -> {
+                ClientIpSource(ClientIpSourceKind.XFF_LAST)
+            }
+
+            raw.startsWith("header:") && raw.length > "header:".length -> {
                 ClientIpSource(ClientIpSourceKind.HEADER, raw.removePrefix("header:"))
+            }
+
             else -> {
                 problems += "RATE_LIMIT_CLIENT_IP_SOURCE는 peer, xff-last, header:<이름> 중 하나여야 합니다"
                 ClientIpSource(ClientIpSourceKind.PEER)

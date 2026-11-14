@@ -27,12 +27,19 @@ private fun numbers(
     key: String,
 ): List<Int> =
     when (element) {
-        is JsonObject ->
+        is JsonObject -> {
             element.flatMap { (name, value) ->
                 if (name == key) listOf(value.jsonPrimitive.content.toInt()) else numbers(value, key)
             }
-        is JsonArray -> element.flatMap { numbers(it, key) }
-        else -> emptyList()
+        }
+
+        is JsonArray -> {
+            element.flatMap { numbers(it, key) }
+        }
+
+        else -> {
+            emptyList()
+        }
     }
 
 internal fun spotcheck(

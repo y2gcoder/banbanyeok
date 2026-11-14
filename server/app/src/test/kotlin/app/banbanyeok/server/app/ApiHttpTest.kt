@@ -539,8 +539,8 @@ class ApiHttpTest :
 
             it("answers /healthz and /v1/healthz without touching any service") {
                 withMockedApi {
-                    listOf("/healthz", "/v1/healthz").forEach {
-                        val response = client.json(HttpMethod.Get, it)
+                    listOf("/healthz", "/v1/healthz").forEach { route ->
+                        val response = client.json(HttpMethod.Get, route)
                         response.status shouldBe HttpStatusCode.OK
                         response.bodyAsText() shouldBe "ok"
                     }

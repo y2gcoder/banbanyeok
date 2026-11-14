@@ -6,7 +6,7 @@
 #    그래서 25 툴체인으로 컴파일·테스트하고, shared 라이브러리의 바이트코드는 17로 낮춘다(Android 소비용).
 #  - Ktor 3.6의 JDK 요구사항은 공식 문서에서 찾지 못했다. 대신 :server:test가 JDK 25에서 통과하는 것을 확인했다.
 #  - 서버 이미지(Cloud Run)는 같은 25를 쓴다. 비-LTS(26, 27)는 쓰지 않는다.
-java = ["temurin-25.0.5", "temurin-21.0.9+10.0.LTS"]
+java = "temurin-25.0.5"
 node = "24.22.2"
 pnpm = "12.16.1"
 gitleaks = "8.30.1"

@@ -46,14 +46,21 @@ public class GcsArtifactStore(
             try {
                 val blob =
                     when (ifMatch) {
-                        null -> storage.create(info, content)
-                        ArtifactVersion.ABSENT -> storage.create(info, content, Storage.BlobTargetOption.doesNotExist())
-                        else ->
+                        null -> {
+                            storage.create(info, content)
+                        }
+
+                        ArtifactVersion.ABSENT -> {
+                            storage.create(info, content, Storage.BlobTargetOption.doesNotExist())
+                        }
+
+                        else -> {
                             storage.create(
                                 info,
                                 content,
                                 Storage.BlobTargetOption.generationMatch(ifMatch.token.toLong()),
                             )
+                        }
                     }
                 ArtifactVersion(blob.generation.toString())
             } catch (e: StorageException) {

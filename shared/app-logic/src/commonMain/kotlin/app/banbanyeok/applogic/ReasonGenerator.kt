@@ -14,13 +14,17 @@ public object ReasonGenerator {
         val view = View(input)
         val body =
             when {
-                view.allZero -> ALREADY_TOGETHER
-                else ->
+                view.allZero -> {
+                    ALREADY_TOGETHER
+                }
+
+                else -> {
                     when (input.mode) {
                         ReasonMode.FAIR -> if (input.rank == 1) fairWinner(view) else fairAlternative(view)
                         ReasonMode.FAST -> if (input.rank == 1) fastWinner(view) else fastAlternative(view)
                         ReasonMode.FAVOR -> if (input.rank == 1) favorWinner(view) else favorAlternative(view)
                     }
+                }
             }
         val tolerance = DisplayMinutes.fromSeconds(input.toleranceSeconds)
         return if (tolerance > 0 && !view.allZero) "$body (${DisplayMinutes.format(tolerance)} 동점 옵션)" else body
@@ -46,8 +50,11 @@ public object ReasonGenerator {
         val dTotal = vs.totalMin - v.totalMin
         val second =
             when {
-                dMax > 0 -> "${label}보다 가장 오래 걸리는 사람이 ${v.dur(dMax)} 덜 걸려요."
-                dMax < 0 ->
+                dMax > 0 -> {
+                    "${label}보다 가장 오래 걸리는 사람이 ${v.dur(dMax)} 덜 걸려요."
+                }
+
+                dMax < 0 -> {
                     "최장 시간은 ${label}보다 ${v.dur(-dMax)} 길지만, " +
                         if (dSpread >
                             0
@@ -56,11 +63,21 @@ public object ReasonGenerator {
                         } else {
                             "동점 옵션 범위 안이에요."
                         }
-                dSpread > 0 -> "${v.withWa(
-                    vs,
-                )} 최장 시간은 같지만, 시간 차이가 더 작아요 (${v.dur(v.spreadMin)} vs ${v.dur(vs.spreadMin)})."
-                dTotal > 0 -> "${v.withWa(vs)} 최장 시간과 차이가 같고, 합계가 ${v.dur(dTotal)} 더 짧아요."
-                else -> "${v.withWa(vs)} 거의 같아요."
+                }
+
+                dSpread > 0 -> {
+                    "${v.withWa(
+                        vs,
+                    )} 최장 시간은 같지만, 시간 차이가 더 작아요 (${v.dur(v.spreadMin)} vs ${v.dur(vs.spreadMin)})."
+                }
+
+                dTotal > 0 -> {
+                    "${v.withWa(vs)} 최장 시간과 차이가 같고, 합계가 ${v.dur(dTotal)} 더 짧아요."
+                }
+
+                else -> {
+                    "${v.withWa(vs)} 거의 같아요."
+                }
             }
         return "$first $second"
     }
@@ -73,13 +90,19 @@ public object ReasonGenerator {
         val dSpread = vs.spreadMin - v.spreadMin
         val second =
             when {
-                dMax > 0 ->
+                dMax > 0 -> {
                     "${label}보다 가장 오래 걸리는 사람이 ${v.dur(dMax)} 더 걸려요." +
                         if (dSpread > 0) " 대신 시간 차이는 ${v.dur(dSpread)} 더 작아요." else ""
-                dMax < 0 -> "${label}보다 가장 오래 걸리는 사람이 ${v.dur(-dMax)} 덜 걸려요."
-                else ->
+                }
+
+                dMax < 0 -> {
+                    "${label}보다 가장 오래 걸리는 사람이 ${v.dur(-dMax)} 덜 걸려요."
+                }
+
+                else -> {
                     "${v.withWa(vs)} 최장 시간은 같아요." +
                         if (dSpread > 0) " 시간 차이는 ${v.dur(dSpread)} 더 작아요." else ""
+                }
             }
         return "$first $second"
     }
@@ -92,14 +115,24 @@ public object ReasonGenerator {
         val first = "$together ${v.dur(v.totalMin)}, $claim"
         val second =
             when {
-                v.input.isFairBaseline -> "가장 빠르면서 공평하기도 한 역이에요."
-                v.n == 2 && v.maxMin > v.minMin ->
+                v.input.isFairBaseline -> {
+                    "가장 빠르면서 공평하기도 한 역이에요."
+                }
+
+                v.n == 2 && v.maxMin > v.minMin -> {
                     "대신 ${Korean.attach(
                         v.longestNames,
                         Josa.I_GA,
                     )} ${v.shortestNames}보다 ${v.dur(v.maxMin - v.minMin)} 더 걸려요."
-                v.n == 2 -> "둘 다 ${v.dur(v.maxMin)}이에요."
-                else -> "가장 오래 걸리는 ${Korean.attach(v.longestNames, Josa.EUN_NEUN)} ${v.dur(v.maxMin)}이에요."
+                }
+
+                v.n == 2 -> {
+                    "둘 다 ${v.dur(v.maxMin)}이에요."
+                }
+
+                else -> {
+                    "가장 오래 걸리는 ${Korean.attach(v.longestNames, Josa.EUN_NEUN)} ${v.dur(v.maxMin)}이에요."
+                }
             }
         return "$first $second"
     }
@@ -112,13 +145,19 @@ public object ReasonGenerator {
         val dMax = vs.maxMin - v.maxMin
         val second =
             when {
-                dTotal > 0 ->
+                dTotal > 0 -> {
                     "${label}보다 합쳐서 ${v.dur(dTotal)} 더 걸려요." +
                         if (dMax > 0) " 대신 가장 오래 걸리는 사람은 ${v.dur(dMax)} 덜 걸려요." else ""
-                dTotal < 0 -> "${label}보다 합쳐서 ${v.dur(-dTotal)} 덜 걸려요."
-                else ->
+                }
+
+                dTotal < 0 -> {
+                    "${label}보다 합쳐서 ${v.dur(-dTotal)} 덜 걸려요."
+                }
+
+                else -> {
                     "합계는 ${v.withWa(vs)} 같아요." +
                         if (dMax > 0) " 가장 오래 걸리는 사람은 ${v.dur(dMax)} 덜 걸려요." else ""
+                }
             }
         return "$first $second"
     }
@@ -159,11 +198,17 @@ public object ReasonGenerator {
                     "${Korean.attach(subject, Josa.EUN_NEUN)} 공평하게보다 ${v.dur(increase)} 더 걸려요 ($note)." +
                         if (others.size > 1) " 나머지도 상한 안이에요." else ""
                 }
-                others.size == 1 -> "${Korean.attach(
-                    giverName,
-                    Josa.EUN_NEUN,
-                )} 공평하게 골랐을 때와 같은 ${v.dur(v.minutes[giver])}이에요."
-                else -> "다른 ${others.size}명은 공평하게보다 더 걸리지 않아요."
+
+                others.size == 1 -> {
+                    "${Korean.attach(
+                        giverName,
+                        Josa.EUN_NEUN,
+                    )} 공평하게 골랐을 때와 같은 ${v.dur(v.minutes[giver])}이에요."
+                }
+
+                else -> {
+                    "다른 ${others.size}명은 공평하게보다 더 걸리지 않아요."
+                }
             }
         val excluded = if (favor.closerStationsExcluded) " $fav 쪽에 더 가까운 역은 다른 사람 상한을 넘어서 뺐어요." else ""
         return "$first $second$excluded"
@@ -183,10 +228,12 @@ public object ReasonGenerator {
                     fav,
                     Josa.EUN_NEUN,
                 )} ${v.dur(mine - theirs)} 더 걸려요 (${v.dur(mine)})."
+
                 mine < theirs -> "${label}보다 ${Korean.attach(
                     fav,
                     Josa.EUN_NEUN,
                 )} ${v.dur(theirs - mine)} 덜 걸려요 (${v.dur(mine)})."
+
                 else -> "${Korean.attach(fav, Josa.EUN_NEUN)} ${v.withWa(vs)} 같은 ${v.dur(mine)}이에요."
             }
         return "$first $second"

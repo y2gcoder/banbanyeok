@@ -88,8 +88,14 @@ public class ExposedRoomRepository(
                     .toInt()
             val capacity = minOf(MAX_PARTICIPANTS, room[RoomsTable.expectedCount]?.toInt() ?: MAX_PARTICIPANTS)
             when {
-                room[RoomsTable.status] == LOCKED -> AddResult.Locked
-                count >= capacity -> AddResult.Full
+                room[RoomsTable.status] == LOCKED -> {
+                    AddResult.Locked
+                }
+
+                count >= capacity -> {
+                    AddResult.Full
+                }
+
                 else -> {
                     insertParticipant(roomId, participant)
                     touch(roomId, activity)
