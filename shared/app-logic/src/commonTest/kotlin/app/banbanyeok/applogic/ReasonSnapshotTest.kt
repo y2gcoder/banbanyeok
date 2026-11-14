@@ -16,6 +16,13 @@ class ReasonSnapshotTest {
         input: ReasonInput,
     ) = assertEquals(expected, ReasonGenerator.generate(input))
 
+    @Test
+    fun fair1SameNamesAreNumbered() =
+        check(
+            "가장 오래 걸리는 민수 2도 38분이에요.",
+            reason(ReasonMode.FAIR, 1, listOf("민수", " 민수 "), listOf(34, 38)),
+        )
+
     // ---- 공평, 1위 ----
 
     @Test

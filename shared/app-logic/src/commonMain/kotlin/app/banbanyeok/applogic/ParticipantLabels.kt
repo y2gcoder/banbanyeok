@@ -13,7 +13,7 @@ public data class ParticipantLabel(
  * 참가자 표시 이름 규칙(contracts/data-format.md §8, 벡터는 contracts/golden/display-labels.json). 서버가 이 규칙으로 만들어 응답에
  * 넣고 웹·앱은 그대로 쓴다. 추천 이유 문장([ReasonGenerator])과 극단 상황 문구([SituationAdvisor])도 같은 이름을 쓴다.
  *
- * 1. 사람이 이름(별칭)을 넣었으면 앞뒤 공백을 뺀 그 이름([LabelKind.NAME]).
+ * 1. 사람이 이름(별칭)을 넣었으면 앞뒤 공백을 뺀 그 이름([LabelKind.NAME]). 같은 이름은 입력 순서대로 번호를 붙인다.
  * 2. 없으면 "{출발역 이름}에서 오는 분"([LabelKind.ORIGIN]). 같은 출발역 이름이 이 규칙을 쓰는 사람 중에 여럿이면 입력 순서대로
  *    " 1", " 2"를 붙인다. 이름을 넣은 사람과 숨긴 사람은 세지 않는다(숨긴 사람의 출발역이 번호로 드러나지 않게).
  * 3. 출발역을 숨긴 참가자(또는 출발역 이름을 모르는 참가자)는 "참가자 {목록 안 순번}"([LabelKind.ORDINAL]). 순번은 1부터다.
@@ -31,11 +31,14 @@ public object ParticipantLabels {
                 names,
             ) { person, name -> person.originName?.takeIf { name == null && it.isNotBlank() } }
         val seen = HashMap<String, Int>()
+        val seenNames = HashMap<String, Int>()
         return people.indices.map { i ->
             val name = names[i]
             val origin = origins[i]
             if (name != null) {
-                ParticipantLabel(name, LabelKind.NAME)
+                val nth = if (names.count { it == name } > 1) seenNames.getOrElse(name) { 0 } + 1 else null
+                nth?.let { seenNames[name] = it }
+                ParticipantLabel(listOfNotNull(name, nth).joinToString(" "), LabelKind.NAME)
             } else if (origin == null) {
                 ParticipantLabel("참가자 ${i + 1}", LabelKind.ORDINAL)
             } else {

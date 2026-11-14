@@ -70,7 +70,7 @@ class RecommendationServiceTest :
                 }
             }
 
-            it("numbers people from the same origin and keeps identical nicknames as they are") {
+            it("numbers people from the same origin and identical nicknames") {
                 val same = service().recommend(RecommendRequest(people("03v", "03v", "130"), RecommendMode.FAIR))
                 same.labels.map { it.text } shouldContainExactly
                     listOf("03v역에서 오는 분 1", "03v역에서 오는 분 2", "130역에서 오는 분")
@@ -81,7 +81,7 @@ class RecommendationServiceTest :
                             RecommendMode.FAIR,
                         ),
                     )
-                twins.labels.map { it.text } shouldContainExactly listOf("민수", "민수")
+                twins.labels.map { it.text } shouldContainExactly listOf("민수 1", "민수 2")
             }
 
             it("never puts a hidden participant's origin into labels or sentences") {

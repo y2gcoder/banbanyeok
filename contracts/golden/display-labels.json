@@ -450,7 +450,7 @@
       "note": "공백만 있는 이름은 없는 것으로 본다"
     },
     {
-      "id": "same_nickname_kept_as_is",
+      "id": "same_nickname_numbered_in_input_order",
       "people": [
         {
           "name": "민수",
@@ -465,15 +465,58 @@
       ],
       "expected": [
         {
-          "label": "민수",
+          "label": "민수 1",
           "kind": "name"
         },
         {
-          "label": "민수",
+          "label": "민수 2",
           "kind": "name"
         }
       ],
-      "note": "같은 이름에 구별 글자를 붙이지 않는다"
+      "note": "같은 이름은 입력 순서대로 번호를 붙인다"
+    },
+    {
+      "id": "trimmed_names_numbered_including_hidden",
+      "people": [
+        {
+          "name": " 민수 ",
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "민수",
+          "hidden": false
+        },
+        {
+          "name": "지연",
+          "originName": null,
+          "hidden": true
+        },
+        {
+          "name": "민수",
+          "originName": "잠실",
+          "hidden": true
+        }
+      ],
+      "expected": [
+        {
+          "label": "민수 1",
+          "kind": "name"
+        },
+        {
+          "label": "민수에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "지연",
+          "kind": "name"
+        },
+        {
+          "label": "민수 2",
+          "kind": "name"
+        }
+      ]
     }
   ]
 }
