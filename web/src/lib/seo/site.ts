@@ -9,6 +9,15 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "0.0.0.0"]);
 
 type Env = Record<string, string | undefined>;
 
+function isTruthy(value: string | undefined): boolean {
+  return ["1", "true", "yes", "on"].includes(value?.trim().toLowerCase() ?? "");
+}
+
+/** HTTPS 정식 주소가 있는가(HSTS를 켜도 되는 배포). `SITE_NOINDEX` 배포(workers.dev 단계)에서는 켜지 않는다. */
+export function isHttpsCanonicalSite(env: Env = process.env): boolean {
+  return isIndexableSite(env) && new URL(siteUrl(env)).protocol === "https:";
+}
+
 /** 끝의 `/`를 뗀 출처(origin). 경로·쿼리가 들어 있거나 http(s)가 아니면 오류(오타를 빌드에서 잡는다). */
 export function siteUrl(env: Env = process.env): string {
   const raw = env.SITE_URL?.trim();
@@ -26,9 +35,13 @@ export function siteUrl(env: Env = process.env): string {
   return url.origin;
 }
 
-/** 색인해도 되는 배포인가: `SITE_URL`이 명시되어 있고 localhost류가 아닐 때만 true. */
+/**
+ * 색인해도 되는 배포인가: `SITE_URL`이 명시되어 있고 localhost류가 아니며 `SITE_NOINDEX`가 켜져 있지 않을 때만 true.
+ * `SITE_NOINDEX=1`은 workers.dev 단계처럼 주소(canonical·OG)는 실제 값이어야 하지만 검색에는 노출하지 않을 때 쓴다.
+ */
 export function isIndexableSite(env: Env = process.env): boolean {
   if (!env.SITE_URL?.trim()) return false;
+  if (isTruthy(env.SITE_NOINDEX)) return false;
   return !LOCAL_HOSTS.has(new URL(siteUrl(env)).hostname);
 }
 

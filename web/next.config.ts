@@ -1,8 +1,15 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
+import { analyticsConfig } from "./src/lib/analytics/config";
 import { apiOrigin } from "./src/lib/api/config";
+import { securityHeaders } from "./src/lib/security/headers";
+import { isHttpsCanonicalSite } from "./src/lib/seo/site";
 
 const origin = apiOrigin();
+const analytics = analyticsConfig({
+  key: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+  host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -18,10 +25,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        ],
+        headers: securityHeaders({
+          production: process.env.NODE_ENV === "production",
+          posthogHost: analytics?.host,
+          hsts: isHttpsCanonicalSite(),
+        }),
       },
     ];
   },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { absoluteUrl, isIndexableSite, siteUrl } from "./site";
+import { absoluteUrl, isHttpsCanonicalSite, isIndexableSite, siteUrl } from "./site";
 
 describe("사이트 주소(SITE_URL)", () => {
   it("없으면 localhost 기본값, 있으면 끝의 /를 뗀 출처", () => {
@@ -21,6 +21,16 @@ describe("사이트 주소(SITE_URL)", () => {
     expect(isIndexableSite({ SITE_URL: "http://localhost:3000" })).toBe(false);
     expect(isIndexableSite({ SITE_URL: "http://127.0.0.1:3100" })).toBe(false);
     expect(isIndexableSite({ SITE_URL: "https://banban.example" })).toBe(true);
+  });
+
+  it("SITE_NOINDEX가 켜져 있으면 실제 주소여도 색인하지 않고 HSTS도 켜지 않는다", () => {
+    const env = { SITE_URL: "https://web.workers.example", SITE_NOINDEX: "1" };
+    expect(siteUrl(env)).toBe("https://web.workers.example");
+    expect(isIndexableSite(env)).toBe(false);
+    expect(isHttpsCanonicalSite(env)).toBe(false);
+    expect(isIndexableSite({ ...env, SITE_NOINDEX: "" })).toBe(true);
+    expect(isHttpsCanonicalSite({ SITE_URL: "https://banban.example" })).toBe(true);
+    expect(isHttpsCanonicalSite({ SITE_URL: "http://banban.example" })).toBe(false);
   });
 
   it("절대 주소를 만든다(한글 경로는 퍼센트 인코딩)", () => {
