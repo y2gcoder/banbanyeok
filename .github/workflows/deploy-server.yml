@@ -137,7 +137,7 @@ jobs:
           echo "previous=${previous}" >> "$GITHUB_OUTPUT"
           gcloud run deploy "$SERVICE" \
             --image "$SERVER_IMAGE" --region "$REGION" --service-account "$RUNTIME_SA" \
-            --min-instances 0 --max-instances 2 --cpu 1 --memory 512Mi --concurrency 40 --timeout 30s \
+            --min-instances 0 --max-instances 2 --cpu 2 --memory 512Mi --concurrency 40 --timeout 30s \
             --cpu-boost --execution-environment gen2 --ingress all \
             --env-vars-file build/server-env.json \
             --set-secrets "DATABASE_PASSWORD=database-password:latest,TOKEN_PEPPER=token-pepper:latest,PROXY_SHARED_SECRET=proxy-shared-secret:latest" \
