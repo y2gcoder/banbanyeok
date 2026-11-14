@@ -7,7 +7,15 @@
 
 import { maxMinutesBucket, responseTimeBucket } from "./buckets";
 import { appVersion, publicAnalyticsConfig } from "./config";
-import { type ConsentState, consentState, readChoice, subscribeConsent, writeChoice } from "./consent";
+import {
+  type ConsentScopes,
+  type ConsentState,
+  consentState,
+  readChoice,
+  readScopes,
+  subscribeConsent,
+  writeChoice,
+} from "./consent";
 import type { EventProperties } from "./events.gen";
 import { createTracker, type PostHogClient } from "./tracker";
 import { clearAnalyticsStorage, isFirstVisit, readAnalyticsId, referrerKind, trackingDeclined } from "./visit";
@@ -66,13 +74,21 @@ export const track: typeof tracker.track = (name, properties) => {
   tracker.track(name, properties);
 };
 
+/** 항목별 동의를 화면 구독용 문자열("00"~"11": 수집·이용, 국외 이전)로 돌려준다. 값이 같으면 같은 문자열이라 구독이 안정적이다. */
+export function currentConsentScopes(): string {
+  const { collect, transfer } = readScopes();
+  return `${collect ? 1 : 0}${transfer ? 1 : 0}`;
+}
+
 /**
- * 동의하거나(true) 거부·철회한다(false). 거부·철회는 저장 즉시 PostHog를 끄고 저장된 식별자를 지운다.
- * 동의하면 `analytics_consent_changed`를 한 번 보낸다(동의한 사실의 기록). 철회는 보내지 않는다: 철회한 뒤에는 수집하지 않는다.
+ * 항목별 동의를 저장한다. **두 항목 모두 동의해야** 통계가 켜진다. 하나라도 해제하면(철회·거부 포함) 저장 즉시 PostHog를 끄고
+ * 저장된 식별자를 지운다. 두 항목 모두 동의한 상태로 바뀌는 순간 `analytics_consent_changed`를 한 번 보낸다(동의한 사실의 기록).
+ * 거부·철회는 보내지 않는다: 동의하지 않은 사람에게서는 아무것도 보내지 않는다.
  */
-export function setAnalyticsConsent(granted: boolean): void {
-  writeChoice(granted ? "granted" : "denied");
-  if (granted) track("analytics_consent_changed", { granted: true });
+export function setAnalyticsConsent(scopes: ConsentScopes): void {
+  const wasGranted = readChoice() === "granted";
+  writeChoice(scopes);
+  if (!wasGranted && readChoice() === "granted") track("analytics_consent_changed", { granted: true });
 }
 
 type Mode = EventProperties["mode_switched"]["from_mode"];

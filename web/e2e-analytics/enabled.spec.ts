@@ -52,6 +52,18 @@ async function disableBotSignals(context: BrowserContext) {
 }
 
 const banner = (page: Page) => page.getByRole("region", { name: /이용 통계를 모아도 될까요/ });
+const collectBox = (page: Page) => banner(page).getByRole("checkbox", { name: /이용 통계 수집·이용에 동의/ });
+const transferBox = (page: Page) => banner(page).getByRole("checkbox", { name: /PostHog, Inc.로 보내는 데 동의/ });
+const saveButton = (page: Page) => banner(page).getByRole("button", { name: "선택한 대로 저장" });
+const collectSwitch = (page: Page) => page.getByRole("switch", { name: "이용 통계 수집·이용 동의" });
+const transferSwitch = (page: Page) => page.getByRole("switch", { name: /국외 이전 동의/ });
+
+/** 배너에서 두 항목을 모두 체크하고 저장한다(둘 다 동의해야 통계가 켜진다). */
+async function acceptAll(page: Page) {
+  await collectBox(page).check();
+  await transferBox(page).check();
+  await saveButton(page).click();
+}
 
 async function pickStation(page: Page, field: string, query: string, option: RegExp) {
   await page.getByRole("combobox", { name: field }).fill(query);
@@ -106,7 +118,7 @@ test("동의 전(아무것도 누르지 않음): 배너만 뜨고 요청 0건·�
 test("거부: 배너가 사라지고 요청 0건, 새로 고쳐도 다시 묻지 않는다", async ({ page, context, baseURL }) => {
   const probe = await attachProbe(context, baseURL ?? "");
   await page.goto("/");
-  await banner(page).getByRole("button", { name: "거부" }).click();
+  await banner(page).getByRole("button", { name: "모두 거부" }).click();
   await expect(banner(page)).toHaveCount(0);
   await useApp(page);
   await page.reload();
@@ -117,8 +129,9 @@ test("거부: 배너가 사라지고 요청 0건, 새로 고쳐도 다시 묻지
   expect(probe.outside).toEqual([]);
   expect(await analyticsKeys(page)).toEqual([]);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("bby.analytics.consent") ?? "{}"))).toMatchObject({
-    v: 1,
-    status: "denied",
+    v: 2,
+    collect: false,
+    transfer: false,
   });
 });
 
@@ -130,7 +143,7 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
   const probe = await attachProbe(context, baseURL ?? "");
   await page.goto("/");
   expect(probe.outside).toEqual([]); // 배너가 떠 있는 동안
-  await banner(page).getByRole("button", { name: "동의" }).click();
+  await acceptAll(page);
   await expect(banner(page)).toHaveCount(0);
   // 동의 이벤트가 나간 뒤에 페이지를 옮긴다(전체 새로 불러오기 직전의 마지막 이벤트는 배치 전송이 못 나갈 수 있다).
   await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
@@ -207,20 +220,20 @@ test("철회: /privacy에서 끄면 바로 멈추고 저장된 식별자를 지�
 }) => {
   const probe = await attachProbe(context, baseURL ?? "");
   await page.goto("/");
-  await banner(page).getByRole("button", { name: "동의" }).click();
+  await acceptAll(page);
   await expect.poll(() => probe.events.length, { timeout: 15_000 }).toBeGreaterThan(0);
   expect(await analyticsKeys(page)).not.toEqual([]); // 동의한 뒤에는 식별자가 있다
 
   // 하단 "통계 설정" 링크로 간다(클라이언트 이동이 아니므로 새로 불러온다).
   await page.getByRole("link", { name: "통계 설정" }).click();
   await expect(page).toHaveURL(/\/privacy#analytics-settings$/);
-  const toggle = page.getByRole("switch", { name: "이용 통계 수집 동의" });
-  await expect(toggle).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByText("동의함 — 이용 통계를 모으고 있어요.")).toBeVisible();
+  await expect(collectSwitch(page)).toHaveAttribute("aria-checked", "true");
+  await expect(transferSwitch(page)).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("모두 동의함 — 이용 통계를 모으고 있어요.")).toBeVisible();
 
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-checked", "false");
-  await expect(page.getByText("동의하지 않음")).toBeVisible();
+  await transferSwitch(page).click(); // 어느 항목이든 하나만 꺼도 즉시 멈춘다
+  await expect(transferSwitch(page)).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByText(/일부만 동의함/)).toBeVisible();
   expect(await analyticsKeys(page)).toEqual([]); // 즉시 지워진다(옵트아웃 표시 __ph_opt_in_out_*는 식별자가 아니라 둔다)
   const settled = probe.outside.length;
 
@@ -236,7 +249,7 @@ test("철회: /privacy에서 끄면 바로 멈추고 저장된 식별자를 지�
 
   // 다시 동의하면 그때부터 다시 보낸다.
   await page.goto("/privacy");
-  await page.getByRole("switch", { name: "이용 통계 수집 동의" }).click();
+  await transferSwitch(page).click(); // 수집·이용은 그대로 켜져 있으므로 국외 이전을 다시 켜면 둘 다 동의다
   await expect.poll(() => probe.outside.length, { timeout: 15_000 }).toBeGreaterThan(settled);
   expect(probe.events.at(-1)?.event).toBe("analytics_consent_changed");
 });
@@ -244,12 +257,12 @@ test("철회: /privacy에서 끄면 바로 멈추고 저장된 식별자를 지�
 test("다른 탭에서 철회해도 이 탭의 수집이 멈춘다", async ({ page, context, baseURL }) => {
   const probe = await attachProbe(context, baseURL ?? "");
   await page.goto("/");
-  await banner(page).getByRole("button", { name: "동의" }).click();
+  await acceptAll(page);
   await expect.poll(() => probe.events.length, { timeout: 15_000 }).toBeGreaterThan(0);
 
   const other = await context.newPage();
   await other.goto("/privacy");
-  await other.getByRole("switch", { name: "이용 통계 수집 동의" }).click();
+  await other.getByRole("switch", { name: "이용 통계 수집·이용 동의" }).click();
   await expect.poll(() => analyticsKeys(page)).toEqual([]); // storage 이벤트로 이 탭도 지운다
   const settled = probe.outside.length;
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
@@ -267,7 +280,7 @@ for (const signal of ["doNotTrack", "globalPrivacyControl"] as const) {
       Object.defineProperty(navigator, name, { get: () => (name === "doNotTrack" ? "1" : true) });
       localStorage.setItem(
         "bby.analytics.consent",
-        JSON.stringify({ v: 1, status: "granted", at: "2026-11-14T00:00:00Z" }),
+        JSON.stringify({ v: 2, collect: true, transfer: true, at: "2026-11-14T00:00:00Z" }),
       );
     }, signal);
     const probe = await attachProbe(context, baseURL ?? "");
@@ -279,37 +292,74 @@ for (const signal of ["doNotTrack", "globalPrivacyControl"] as const) {
 
     await page.goto("/privacy");
     await expect(page.getByText(/추적 거부 신호/).first()).toBeVisible();
-    await expect(page.getByRole("switch", { name: "이용 통계 수집 동의" })).toBeDisabled();
+    await expect(collectSwitch(page)).toBeDisabled();
+    await expect(transferSwitch(page)).toBeDisabled();
   });
 }
 
-test("배너 접근성: axe 위반 0, 키보드로 고를 수 있고 모바일에서 작다", async ({ page }) => {
+test("배너 접근성: axe 위반 0, 기본 해제, 키보드로 고를 수 있고 모바일에서 과하게 크지 않다", async ({ page }) => {
   await page.goto("/");
   const region = banner(page);
   await expect(region).toBeVisible();
+  await expect(collectBox(page)).not.toBeChecked();
+  await expect(transferBox(page)).not.toBeChecked();
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 
   const box = await region.boundingBox();
   const viewport = page.viewportSize();
-  expect(box && viewport && box.height < viewport.height * 0.3).toBe(true);
+  expect(box && viewport && box.height < viewport.height * 0.45).toBe(true);
   expect(box && viewport && box.y + box.height <= viewport.height + 1).toBe(true); // 화면 아래에 붙어 있다
 
-  // 거부·동의 버튼 크기가 같다(같은 무게).
-  const reject = await region.getByRole("button", { name: "거부" }).boundingBox();
-  const accept = await region.getByRole("button", { name: "동의" }).boundingBox();
-  expect(reject?.width).toBeCloseTo(accept?.width ?? -1, 0);
-  expect(reject?.height).toBeCloseTo(accept?.height ?? -1, 0);
+  // 거부·저장 버튼 크기가 같다(같은 무게).
+  const reject = await region.getByRole("button", { name: "모두 거부" }).boundingBox();
+  const save = await saveButton(page).boundingBox();
+  expect(reject?.width).toBeCloseTo(save?.width ?? -1, 0);
+  expect(reject?.height).toBeCloseTo(save?.height ?? -1, 0);
 
-  // 키보드: 버튼에 초점을 두고 Enter로 선택한다.
-  await region.getByRole("button", { name: "거부" }).focus();
+  // 키보드: 체크박스에서 Space로 체크하고, Tab으로 옮겨 Enter로 저장한다.
+  await collectBox(page).focus();
+  await page.keyboard.press("Space");
   await page.keyboard.press("Tab");
-  await expect(region.getByRole("button", { name: "동의" })).toBeFocused();
+  await expect(transferBox(page)).toBeFocused();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Tab");
+  await expect(region.getByRole("button", { name: "모두 거부" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(saveButton(page)).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(banner(page)).toHaveCount(0);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("bby.analytics.consent") ?? "{}").status)).toBe(
-    "granted",
-  );
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("bby.analytics.consent") ?? "{}"))).toMatchObject({
+    collect: true,
+    transfer: true,
+  });
+});
+
+test("분리 동의: 한 항목만 동의하면(수집·이용만, 국외 이전만) 요청 0건이고 다시 묻지 않는다", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const probe = await attachProbe(context, baseURL ?? "");
+  await page.goto("/");
+  await collectBox(page).check();
+  await saveButton(page).click(); // 국외 이전은 해제 → 통계는 켜지지 않는다
+  await expect(banner(page)).toHaveCount(0);
+  await useApp(page);
+  await page.waitForTimeout(BATCH_WAIT_MS);
+  expect(probe.outside).toEqual([]);
+  expect(await analyticsKeys(page)).toEqual([]);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("bby.analytics.consent") ?? "{}"))).toMatchObject({
+    collect: true,
+    transfer: false,
+  });
+
+  // /privacy에서 나머지 항목을 켜면 그때부터 수집한다.
+  await page.goto("/privacy");
+  await expect(page.getByText(/일부만 동의함/)).toBeVisible();
+  await transferSwitch(page).click();
+  await expect(page.getByText("모두 동의함 — 이용 통계를 모으고 있어요.")).toBeVisible();
+  await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
 });
 
 test("/privacy의 통계 설정: axe 위반 0", async ({ page }) => {
@@ -327,7 +377,7 @@ test("삭제 요청용 식별자: /privacy에 이 브라우저의 식별자를 �
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const probe = await attachProbe(context, baseURL ?? "");
   await page.goto("/");
-  await banner(page).getByRole("button", { name: "동의" }).click();
+  await acceptAll(page);
   await expect.poll(() => probe.events.length, { timeout: 15_000 }).toBeGreaterThan(0);
   const sentId = probe.events[0]?.properties.distinct_id;
   expect(typeof sentId).toBe("string");
@@ -341,7 +391,7 @@ test("삭제 요청용 식별자: /privacy에 이 브라우저의 식별자를 �
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 
   const requestsBefore = probe.allUrls.length;
-  await page.getByRole("switch", { name: "이용 통계 수집 동의" }).click();
+  await collectSwitch(page).click();
   const cleared = page.getByRole("textbox", { name: "방금 지운 통계 식별자" });
   await expect(cleared).toHaveValue(String(sentId)); // 삭제 요청에 쓰도록 이 화면에는 남는다
   expect(await analyticsKeys(page)).toEqual([]); // 기기에서는 지워졌다
