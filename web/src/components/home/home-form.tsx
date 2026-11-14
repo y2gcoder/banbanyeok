@@ -9,6 +9,7 @@ import { track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
 import { DEFAULT_NAMES } from "@/lib/display/names";
 import { toShareState } from "@/lib/form/input";
+import { parsePrefill } from "@/lib/form/prefill";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/codec";
 import { resultPath } from "@/lib/result/share-url";
@@ -19,6 +20,12 @@ type Row = { key: number; nickname: string; station: Station | null };
 
 const emptyRow = (key: number): Row => ({ key, nickname: "", station: null });
 // 줄 키는 서버·클라이언트 렌더에서 같아야 한다(수화 일치). 새 줄은 지금 가장 큰 키 + 1.
+/** 미리 채울 역으로 줄을 만든다(최소 인원까지는 빈 줄로 채운다). */
+function rowsFor(stations: readonly Station[]): Row[] {
+  const rows: Row[] = stations.map((station, key) => ({ ...emptyRow(key), station }));
+  while (rows.length < MIN_PEOPLE) rows.push(emptyRow(rows.length));
+  return rows;
+}
 const withNewRow = (rows: Row[]): Row[] => [...rows, emptyRow(Math.max(-1, ...rows.map((r) => r.key)) + 1)];
 
 export function HomeForm() {
@@ -33,6 +40,12 @@ export function HomeForm() {
     startedAt.current = performance.now();
     // 서버(Cloud Run min 0)를 미리 깨운다. 입력하는 동안 콜드스타트가 끝난다.
     void warmUpServer();
+    // SEO 페이지가 보낸 `/?o=<코드>.<코드>`가 있으면 그 역으로 채운다(기억해 둔 "나"보다 우선).
+    const prefilled = parsePrefill(window.location.search);
+    if (prefilled.length > 0) {
+      setRows(rowsFor(prefilled));
+      return;
+    }
     const me = loadRememberedMe();
     const station = me ? stationByCode(me.code) : undefined;
     if (me && station?.supported) {

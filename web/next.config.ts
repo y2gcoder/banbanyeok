@@ -1,6 +1,8 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 import { apiOrigin } from "./src/lib/api/config";
+import { loadSeoSite } from "./src/lib/seo/load";
+import { reverseRedirects } from "./src/lib/seo/pair-pages";
 
 const origin = apiOrigin();
 
@@ -13,6 +15,10 @@ const nextConfig: NextConfig = {
       { source: "/api/healthz", destination: `${origin}/healthz` },
       { source: "/api/v1/:path*", destination: `${origin}/v1/:path*` },
     ];
+  },
+  // 조합 주소는 가나다 순 한 가지만 정규 주소다. 반대 순서(B-A)는 영구 리다이렉트(docs/setup/p5-notes.md 2절).
+  async redirects() {
+    return reverseRedirects(loadSeoSite().pages);
   },
   async headers() {
     return [

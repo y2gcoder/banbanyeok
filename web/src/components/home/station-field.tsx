@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LineBadges } from "@/components/common/line-badge";
 import {
   Combobox,
@@ -30,6 +30,10 @@ type Props = {
 /** 역 자동완성. 초성("ㅎㄷ")·생략형("홍대")·"역" 접미사를 받는다. 수도권 밖 역은 보이되 고를 수 없다. */
 export function StationField({ id, value, onChange, describedBy }: Props) {
   const [query, setQuery] = useState(value?.name ?? "");
+  // 부모가 역을 채워 넣은 경우(기억해 둔 "나", SEO 페이지의 미리 채우기)에도 입력 칸에 이름이 보이게 한다.
+  useEffect(() => {
+    if (value) setQuery(value.name);
+  }, [value]);
   const items = useMemo(() => {
     const found = searchStations(query);
     // 고른 역은 목록에 항상 있어야 Combobox가 값을 표시한다.

@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { siteMetadata } from "@/lib/seo/metadata";
 import { Providers } from "./providers";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: { default: "반반역", template: "%s | 반반역" },
-  description: "각자 지하철 시간으로 계산해서 공평하게 만날 역을 찾아요. 가입 없이 링크로 공유해요.",
-  applicationName: "반반역",
-};
+// 사이트 기본 메타(title 템플릿, 설명, metadataBase, Open Graph, Twitter). 주소는 SITE_URL에서 읽는다(src/lib/seo/site.ts).
+export function generateMetadata(): Metadata {
+  return siteMetadata();
+}
 
 export const viewport: Viewport = {
   width: "device-width",

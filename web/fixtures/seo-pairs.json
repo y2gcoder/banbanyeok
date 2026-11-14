@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "dataVersion": "20261112.6",
+  "pairs": [
+    {
+      "a": "1qs",
+      "b": "70x",
+      "results": [
+        {
+          "stationCode": "bcc",
+          "times": [960, 840],
+          "transfers": [0, 0],
+          "maxSeconds": 960,
+          "spreadSeconds": 120,
+          "totalSeconds": 1800,
+          "reason": "가장 오래 걸리는 신촌에서 오는 사람도 16분이에요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요."
+        },
+        {
+          "stationCode": "ep2",
+          "times": [864, 990],
+          "transfers": [1, 0],
+          "maxSeconds": 990,
+          "spreadSeconds": 126,
+          "totalSeconds": 1854,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 1분 더 걸려요."
+        },
+        {
+          "stationCode": "eza",
+          "times": [810, 990],
+          "transfers": [0, 0],
+          "maxSeconds": 990,
+          "spreadSeconds": 180,
+          "totalSeconds": 1800,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 1분 더 걸려요."
+        }
+      ]
+    },
+    {
+      "a": "1qs",
+      "b": "dxy",
+      "results": [
+        {
+          "stationCode": "ct5",
+          "times": [990, 900],
+          "transfers": [0, 0],
+          "maxSeconds": 990,
+          "spreadSeconds": 90,
+          "totalSeconds": 1890,
+          "reason": "가장 오래 걸리는 신촌에서 오는 사람도 17분이에요. 2위 신당과 거의 같아요."
+        },
+        {
+          "stationCode": "7gf",
+          "times": [870, 1020],
+          "transfers": [0, 0],
+          "maxSeconds": 1020,
+          "spreadSeconds": 150,
+          "totalSeconds": 1890,
+          "reason": "공평 모드 대안이에요. 1위 왕십리와 최장 시간은 같아요."
+        },
+        {
+          "stationCode": "3mp",
+          "times": [1080, 810],
+          "transfers": [0, 0],
+          "maxSeconds": 1080,
+          "spreadSeconds": 270,
+          "totalSeconds": 1890,
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 1분 더 걸려요."
+        }
+      ]
+    },
+    {
+      "a": "3g2",
+      "b": "70x",
+      "results": [
+        {
+          "stationCode": "9k5",
+          "times": [840, 840],
+          "transfers": [0, 0],
+          "maxSeconds": 840,
+          "spreadSeconds": 0,
+          "totalSeconds": 1680,
+          "reason": "가장 오래 걸리는 건대입구에서 오는 사람도 14분이에요. 2위 선릉보다 가장 오래 걸리는 사람이 2분 덜 걸려요."
+        },
+        {
+          "stationCode": "cbf",
+          "times": [930, 750],
+          "transfers": [0, 0],
+          "maxSeconds": 930,
+          "spreadSeconds": 180,
+          "totalSeconds": 1680,
+          "reason": "공평 모드 대안이에요. 1위 삼성보다 가장 오래 걸리는 사람이 2분 더 걸려요."
+        },
+        {
+          "stationCode": "j4w",
+          "times": [750, 930],
+          "transfers": [0, 0],
+          "maxSeconds": 930,
+          "spreadSeconds": 180,
+          "totalSeconds": 1680,
+          "reason": "공평 모드 대안이에요. 1위 삼성보다 가장 오래 걸리는 사람이 2분 더 걸려요."
+        }
+      ]
+    },
+    {
+      "a": "dxy",
+      "b": "k3a",
+      "results": [
+        {
+          "stationCode": "9k5",
+          "times": [450, 420],
+          "transfers": [0, 0],
+          "maxSeconds": 450,
+          "spreadSeconds": 30,
+          "totalSeconds": 870,
+          "reason": "가장 오래 걸리는 잠실에서 오는 사람도 8분이에요. 2위 종합운동장보다 가장 오래 걸리는 사람이 1분 덜 걸려요."
+        },
+        {
+          "stationCode": "j4w",
+          "times": [360, 510],
+          "transfers": [0, 0],
+          "maxSeconds": 510,
+          "spreadSeconds": 150,
+          "totalSeconds": 870,
+          "reason": "공평 모드 대안이에요. 1위 삼성보다 가장 오래 걸리는 사람이 1분 더 걸려요."
+        },
+        {
+          "stationCode": "cbf",
+          "times": [540, 330],
+          "transfers": [0, 0],
+          "maxSeconds": 540,
+          "spreadSeconds": 210,
+          "totalSeconds": 870,
+          "reason": "공평 모드 대안이에요. 1위 삼성보다 가장 오래 걸리는 사람이 1분 더 걸려요."
+        }
+      ]
+    },
+    {
+      "a": "dxy",
+      "b": "ryf",
+      "results": [
+        {
+          "stationCode": "7gf",
+          "times": [1020, 990],
+          "transfers": [0, 0],
+          "maxSeconds": 1020,
+          "spreadSeconds": 30,
+          "totalSeconds": 2010,
+          "reason": "가장 오래 걸리는 잠실에서 오는 사람도 17분이에요. 2위 왕십리보다 가장 오래 걸리는 사람이 2분 덜 걸려요."
+        },
+        {
+          "stationCode": "ct5",
+          "times": [900, 1110],
+          "transfers": [0, 0],
+          "maxSeconds": 1110,
+          "spreadSeconds": 210,
+          "totalSeconds": 2010,
+          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요."
+        },
+        {
+          "stationCode": "s1q",
+          "times": [1110, 900],
+          "transfers": [0, 0],
+          "maxSeconds": 1110,
+          "spreadSeconds": 210,
+          "totalSeconds": 2010,
+          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요."
+        }
+      ]
+    },
+    {
+      "a": "ep2",
+      "b": "k3a",
+      "results": [
+        {
+          "stationCode": "70x",
+          "times": [990, 600],
+          "transfers": [0, 0],
+          "maxSeconds": 990,
+          "spreadSeconds": 390,
+          "totalSeconds": 1590,
+          "reason": "가장 오래 걸리는 서울역에서 오는 사람도 17분이에요. 2위 압구정보다 가장 오래 걸리는 사람이 1분 덜 걸려요."
+        },
+        {
+          "stationCode": "s5v",
+          "times": [1094, 993],
+          "transfers": [1, 1],
+          "maxSeconds": 1094,
+          "spreadSeconds": 101,
+          "totalSeconds": 2087,
+          "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 1분 더 걸려요."
+        },
+        {
+          "stationCode": "b4d",
+          "times": [1214, 873],
+          "transfers": [1, 1],
+          "maxSeconds": 1214,
+          "spreadSeconds": 341,
+          "totalSeconds": 2087,
+          "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 3분 더 걸려요."
+        }
+      ]
+    },
+    {
+      "a": "k3a",
+      "b": "ryf",
+      "results": [
+        {
+          "stationCode": "dka",
+          "times": [960, 1140],
+          "transfers": [0, 0],
+          "maxSeconds": 1140,
+          "spreadSeconds": 180,
+          "totalSeconds": 2100,
+          "reason": "가장 오래 걸리는 홍대입구에서 오는 사람도 19분이에요. 2위 구로디지털단지보다 가장 오래 걸리는 사람이 1분 덜 걸려요."
+        },
+        {
+          "stationCode": "kez",
+          "times": [1170, 930],
+          "transfers": [0, 0],
+          "maxSeconds": 1170,
+          "spreadSeconds": 240,
+          "totalSeconds": 2100,
+          "reason": "공평 모드 대안이에요. 1위 신림보다 가장 오래 걸리는 사람이 1분 더 걸려요."
+        },
+        {
+          "stationCode": "bcc",
+          "times": [1260, 840],
+          "transfers": [0, 0],
+          "maxSeconds": 1260,
+          "spreadSeconds": 420,
+          "totalSeconds": 2100,
+          "reason": "공평 모드 대안이에요. 1위 신림보다 가장 오래 걸리는 사람이 2분 더 걸려요."
+        }
+      ]
+    }
+  ]
+}
