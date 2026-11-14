@@ -42,17 +42,26 @@ public class GcsArtifactStore(
     private val apiBase: String = (endpoint ?: DEFAULT_ENDPOINT).trimEnd('/')
 
     /**
-     * 첫 읽기 전에 토큰 발급과 TLS 연결(JSSE 초기화 포함)을 별도 스레드에서 미리 해 둔다. 첫 요청이 이 비용을 뒤따라 치르지 않게
-     * 하는 최선 노력이라 실패해도 무시한다(실제 읽기가 다시 시도한다). 연결은 JDK의 keep-alive 캐시가 다음 요청에 재사용한다.
-     * 에뮬레이터 주소가 있으면 하지 않는다.
+     * 첫 읽기 전에 TLS 연결(DNS·JSSE 초기화·핸드셰이크)을 별도 스레드에서 미리 맺어 둔다. 토큰 발급(메타데이터 서버)과 겹쳐 돌아서
+     * 첫 읽기가 둘을 차례로 치르지 않는다. 인증 없는 요청이라 응답은 오류(4xx)지만 본문을 끝까지 읽으면 JDK의 keep-alive 캐시가
+     * 연결을 다음 요청에 재사용한다. 최선 노력이라 실패해도 무시한다. 에뮬레이터 주소가 있으면 하지 않는다.
      */
     public fun warmUp() {
         if (endpoint != null) return
         thread(name = "gcs-warmup", isDaemon = true) {
             runCatching {
-                val connection = open("$apiBase/storage/v1/b/$bucket/o?maxResults=1&fields=kind", "GET")
-                connection.responseCode
-                connection.drain()
+                val connection = URI.create("$apiBase/").toURL().openConnection() as HttpURLConnection
+                connection.connectTimeout = TIMEOUT_MS
+                connection.readTimeout = TIMEOUT_MS
+                val stream =
+                    if (connection.responseCode >=
+                        HTTP_ERROR_FLOOR
+                    ) {
+                        connection.errorStream
+                    } else {
+                        connection.inputStream
+                    }
+                stream?.use { it.readBytes() }
             }
         }
     }
@@ -225,6 +234,7 @@ public class GcsArtifactStore(
         const val HTTP_NOT_FOUND = 404
         const val HTTP_PRECONDITION_FAILED = 412
         const val HTTP_SERVER_ERROR = 500
+        const val HTTP_ERROR_FLOOR = 400
         const val TIMEOUT_MS = 15_000
         const val ATTEMPTS = 3
         const val RETRY_DELAY_MS = 200L
