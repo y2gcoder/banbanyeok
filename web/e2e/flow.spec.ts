@@ -67,10 +67,13 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   const friend = await context.newPage();
   await friend.goto(shared);
   await expect(friend.getByRole("heading", { name: "민수가 고른 만날 역 후보" })).toBeVisible();
-  await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "친구1" }).click();
-  await expect(friend).toHaveURL(/me=1/);
+  // 이름은 서버 label이다(가짜 서버는 이름이 없으면 "참가자 N"). "(나)"는 고른 사람에게만 붙는다.
   const card = friend.getByRole("article").first();
-  await expect(card.getByText("친구1(나)")).toBeVisible();
+  await expect(card.getByText("(나)")).toHaveCount(0);
+  await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "참가자 2" }).click();
+  await expect(friend).toHaveURL(/me=1/);
+  await expect(card.getByText("참가자 2(나)")).toBeVisible();
+  await expect(card.getByText("민수(나)")).toHaveCount(0);
   await expect(card.getByRole("link", { name: "내 길찾기" })).toHaveAttribute(
     "href",
     /^https:\/\/map\.kakao\.com\/link\/by\/traffic\//,

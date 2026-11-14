@@ -7,7 +7,6 @@ import { personColor } from "@/components/common/person-color";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
-import { DEFAULT_NAMES } from "@/lib/display/names";
 import { toShareState } from "@/lib/form/input";
 import { parsePrefill } from "@/lib/form/prefill";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
@@ -15,6 +14,12 @@ import { MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/cod
 import { resultPath } from "@/lib/result/share-url";
 import { type Station, stationByCode } from "@/lib/stations";
 import { StationField } from "./station-field";
+
+/**
+ * 이름 칸의 안내 문구(placeholder)와 칸 이름. **표시 이름이 아니다**: 결과·공유 화면의 이름은 서버가 만든 label이다
+ * (contracts/data-format.md §8). 이름을 비워 두면 서버로 보내지 않는다.
+ */
+const INPUT_PLACEHOLDERS = ["나", "친구1", "친구2", "친구3"] as const;
 
 type Row = { key: number; nickname: string; station: Station | null };
 
@@ -84,7 +89,7 @@ export function HomeForm() {
     <form onSubmit={submit} noValidate aria-describedby={`${formId}-scope`} className="flex flex-col gap-5">
       <ol className="relative flex flex-col gap-4">
         {rows.map((row, index) => {
-          const placeholder = DEFAULT_NAMES[index] ?? `친구${index}`;
+          const placeholder = INPUT_PLACEHOLDERS[index] ?? `친구${index}`;
           const nameId = `${formId}-name-${row.key}`;
           const stationId = `${formId}-station-${row.key}`;
           return (

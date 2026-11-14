@@ -145,7 +145,8 @@ function activeCode(start: RegistryStation): string {
   let station = start;
   for (let step = 0; station.status !== "active"; step++) {
     const next = station.replacedBy === undefined ? undefined : byCode.get(station.replacedBy);
-    if (!next || step > registry.stations.length) throw new Error(`replacedBy 사슬이 active 역에 닿지 않음: ${start.code}`);
+    if (!next || step > registry.stations.length)
+      throw new Error(`replacedBy 사슬이 active 역에 닿지 않음: ${start.code}`);
     station = next;
   }
   return station.code;

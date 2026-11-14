@@ -16,8 +16,15 @@ function result(overrides: Partial<RecommendResult> = {}): RecommendResult {
     mode: "fair",
     dataVersion: "20261112.6",
     participants: [
-      { index: 0, originCode: "1qs", originName: "신촌", hidden: false },
-      { index: 1, originCode: "70x", originName: "잠실", hidden: false },
+      { participantId: "0", originCode: "1qs", originName: "신촌", hidden: false, label: "지훈🎂", labelKind: "name" },
+      {
+        participantId: "1",
+        originCode: "70x",
+        originName: "잠실",
+        hidden: false,
+        label: "잠실에서 오는 분",
+        labelKind: "origin",
+      },
     ],
     candidates: [
       {
@@ -29,7 +36,7 @@ function result(overrides: Partial<RecommendResult> = {}): RecommendResult {
         spreadSeconds: 240,
         totalSeconds: 3840,
         reasonCode: "FAIR_MINIMAX",
-        reason: "가장 오래 걸리는 나도 34분이에요.",
+        reason: "가장 오래 걸리는 지훈🎂도 34분이에요.",
       },
     ],
     ...overrides,
@@ -41,12 +48,12 @@ beforeEach(() => {
 });
 
 describe("공유 링크 미리보기 문구", () => {
-  const view = toResultView(result(), state.nicknames);
+  const view = toResultView(result());
 
   it("제목은 제안하는 말투, 설명은 각자 시간과 모드", () => {
     expect(sharedPreview(view, state)).toEqual({
       title: "왕십리에서 볼까?",
-      description: "지훈🎂 34분 · 친구1 30분 · 공평하게 고름",
+      description: "지훈🎂 34분 · 잠실에서 오는 분 30분 · 공평하게 고름",
     });
   });
 
@@ -57,17 +64,23 @@ describe("공유 링크 미리보기 문구", () => {
   });
 
   it("후보가 없으면 미리보기를 만들지 않는다", () => {
-    const empty = toResultView(result({ candidates: [], status: "no_common_candidate" }), null);
+    const empty = toResultView(result({ candidates: [], status: "no_common_candidate" }));
     expect(sharedPreview(empty, state)).toBeNull();
     expect(sharedCardData(empty, state)).toBeNull();
   });
 });
 
 describe("이미지에 그릴 값", () => {
-  it("글꼴에 없는 글자는 거르고, 비면 기본 이름을 쓴다", () => {
-    const withEmoji = toResultView(result(), ["지훈🎂", "🎉"]);
+  it("글꼴에 없는 글자는 거르고, 비면 순번 이름을 쓴다", () => {
+    const base = result();
+    const emojiOnly = {
+      ...base.participants[1],
+      label: "🎉",
+      labelKind: "name",
+    } as RecommendResult["participants"][number];
+    const withEmoji = toResultView({ ...base, participants: [base.participants[0], emojiOnly] } as RecommendResult);
     const data = sharedCardData(withEmoji, { ...state, nicknames: ["지훈🎂", "🎉"] });
-    expect(data?.people.map((p) => p.name)).toEqual(["지훈", "친구1"]);
+    expect(data?.people.map((p) => p.name)).toEqual(["지훈", "참가자 2"]);
     expect(data?.people.map((p) => p.minutes)).toEqual([34, 30]);
     expect(data?.stationName).toBe("왕십리");
     expect(data?.modeLine).toBe("공평하게 고름");
@@ -75,7 +88,7 @@ describe("이미지에 그릴 값", () => {
 
   it("배려 모드는 우대 대상 이름(걸러진 이름)을 문장에 쓴다", () => {
     const favorState: ShareState = { ...state, mode: "favor", favorIndex: 0, nicknames: ["지훈🎂", null] };
-    const view = toResultView(result({ mode: "favor" }), favorState.nicknames);
+    const view = toResultView(result({ mode: "favor" }));
     expect(sharedCardData(view, favorState)?.modeLine).toBe("지훈 쪽으로 고름");
     expect(sharedPreview(view, favorState)?.description).toContain("지훈🎂 쪽으로 고름");
   });
@@ -100,7 +113,7 @@ describe("결과 불러오기(서버 호출)", () => {
     const view = await loadSharedView(state);
     expect(view?.candidates[0]?.stationName).toBe("왕십리");
     expect(recommend).toHaveBeenCalledWith(
-      { origins: ["1qs", "70x"], mode: "fair", favorIndex: null },
+      { origins: ["1qs", "70x"], mode: "fair", favorIndex: null, nicknames: ["지훈🎂", null] },
       expect.any(AbortSignal),
     );
   });

@@ -13,8 +13,24 @@ const result: RecommendResult = {
   mode: "fair",
   dataVersion: "20261112.6",
   participants: [
-    { participantId: "0", hidden: false, originCode: code("강남"), originName: "강남", nickname: null },
-    { participantId: "1", hidden: false, originCode: code("홍대입구"), originName: "홍대입구", nickname: null },
+    {
+      participantId: "0",
+      hidden: false,
+      originCode: code("강남"),
+      originName: "강남",
+      nickname: "민지",
+      label: "민지",
+      labelKind: "name",
+    },
+    {
+      participantId: "1",
+      hidden: false,
+      originCode: code("홍대입구"),
+      originName: "홍대입구",
+      nickname: null,
+      label: "홍대입구에서 오는 분",
+      labelKind: "origin",
+    },
   ],
   candidates: [
     {
@@ -30,7 +46,7 @@ const result: RecommendResult = {
       spreadSeconds: 1,
       totalSeconds: 4499,
       reasonCode: "FAIR_MINIMAX",
-      reason: "가장 오래 걸리는 지훈도 38분이에요.",
+      reason: "가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요.",
     },
     {
       rank: 2,
@@ -50,7 +66,7 @@ const result: RecommendResult = {
 };
 
 describe("결과 카드", () => {
-  const view = toResultView(result, ["민지", "지훈"]);
+  const view = toResultView(result);
 
   it("1위 카드는 사람별 표시 분·환승과 반올림한 분에서 계산한 최장·차이·합계를 보인다", () => {
     const [top] = view.candidates;
@@ -58,12 +74,16 @@ describe("결과 카드", () => {
     render(<TopCandidateCard candidate={top} />);
     const card = screen.getByRole("article", { name: "신촌" });
     expect(within(card).getByText("37분")).toBeInTheDocument();
-    expect(within(card).getAllByText("38분").length).toBeGreaterThanOrEqual(2); // 지훈 + 최장
+    expect(within(card).getAllByText("38분").length).toBeGreaterThanOrEqual(2); // 홍대입구에서 오는 분 + 최장
+    // 이름은 서버 label 그대로이고, "{역}에서 오는 분"이면 아래 줄에 출발역을 되풀이하지 않는다.
+    expect(within(card).getByText("민지")).toBeInTheDocument();
+    expect(within(card).getByText("강남에서")).toBeInTheDocument();
+    expect(within(card).queryByText("홍대입구에서")).toBeNull();
     expect(within(card).getByText("환승 1번")).toBeInTheDocument();
     expect(within(card).getByText("환승 없음")).toBeInTheDocument();
     expect(within(card).getByText("1분")).toBeInTheDocument(); // 차이
     expect(within(card).getByText("1시간 15분")).toBeInTheDocument(); // 합계 37 + 38
-    expect(within(card).getByText("가장 오래 걸리는 지훈도 38분이에요.")).toBeInTheDocument();
+    expect(within(card).getByText("가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요.")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: /지도에서 보기/ })).toHaveAttribute(
       "href",
       expect.stringMatching(/^https:\/\/map\.kakao\.com\/link\/map\//),
@@ -77,12 +97,20 @@ describe("결과 카드", () => {
     expect(screen.getByText("최장 42분, 차이 27분")).toBeInTheDocument();
   });
 
+  it("고른 사람이 없으면 (나)를 붙이지 않는다", () => {
+    const [top] = view.candidates;
+    if (!top) throw new Error("후보 없음");
+    render(<TopCandidateCard candidate={top} />);
+    expect(screen.queryByText("(나)")).toBeNull();
+  });
+
   it("나는 누구?를 고르면 내 줄이 맨 위로 오고 내 길찾기 링크가 생긴다", () => {
     const [top] = view.candidates;
     if (!top) throw new Error("후보 없음");
     render(<TopCandidateCard candidate={top} meIndex={1} />);
     const rows = screen.getAllByRole("listitem");
-    expect(rows[0]).toHaveTextContent("지훈(나)");
+    expect(rows[0]).toHaveTextContent("홍대입구에서 오는 분(나)");
+    expect(rows[1]).not.toHaveTextContent("(나)");
     expect(screen.getByRole("link", { name: "내 길찾기" })).toHaveAttribute(
       "href",
       expect.stringMatching(/^https:\/\/map\.kakao\.com\/link\/by\/traffic\//),
