@@ -1,0 +1,369 @@
+"use client";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { modeLabel } from "@/components/result/mode-tabs";
+import { ShareActions } from "@/components/share/share-actions";
+import { track } from "@/lib/analytics";
+import { warmUpServer } from "@/lib/api/client";
+import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
+import type { ParticipantInput, Room } from "@/lib/api/types";
+import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
+import { MAX_PEOPLE } from "@/lib/link/codec";
+import { formatMeetingDate, isMeetingDayReached, todayInSeoul } from "@/lib/room/dates";
+import { errorCode, isRoomGone, isTokenRejected, roomErrorMessage } from "@/lib/room/errors";
+import { normalizeRoomId, roomPath } from "@/lib/room/id";
+import type { ParticipantFormValue } from "@/lib/room/input";
+import { roomQueryOptions } from "@/lib/room/queries";
+import {
+  canStoreRoomTokens,
+  dropParticipantToken,
+  loadRoomRecord,
+  patchRoomRecord,
+  type RoomRecord,
+  removeRoomRecord,
+  saveRoomRecord,
+} from "@/lib/room/tokens";
+import { hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
+import { stationByCode } from "@/lib/stations";
+import { HostControls } from "./host-controls";
+import { JoinForm } from "./join-form";
+import { OutcomeCard } from "./outcome-card";
+import { PeopleList } from "./people-list";
+import { RoomResult } from "./room-result";
+import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell } from "./room-states";
+import { useIdempotencyKey } from "./use-idempotency-key";
+
+const SHARE_TITLE = "같이 만날 역 정해요";
+const SHARE_TEXT = "각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요. 출발역은 숨길 수도 있어요.";
+
+const emptyValue = (): ParticipantFormValue => ({ nickname: "", station: null, hidden: false });
+
+/** 기억해 둔 "나"로 참여 폼의 처음 값을 만든다(역을 숨기는 설정까지 기억하지는 않는다). */
+function rememberedValue(): ParticipantFormValue {
+  const me = loadRememberedMe();
+  const station = me ? stationByCode(me.code) : undefined;
+  return me && station?.supported ? { nickname: me.nickname, station, hidden: false } : emptyValue();
+}
+
+function summary(room: Room): string {
+  const parts = [
+    modeLabel(room.mode, room.participants.find((p) => p.participantId === room.favorTarget)?.label ?? null),
+  ];
+  if (room.meetingDate) parts.push(`약속 ${formatMeetingDate(room.meetingDate)}`);
+  return parts.join(" · ");
+}
+
+/**
+ * 방 화면: 링크로 들어온 사람의 첫 화면이자 만든 사람이 돌아오는 화면. 열리자마자 서버를 깨우고(콜드스타트),
+ * 이 기기에 저장된 토큰(방별 localStorage)으로 "내 항목"을 찾는다. 토큰은 헤더로만 보내고 화면·주소·통계에 두지 않는다.
+ */
+export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
+  const roomId = normalizeRoomId(rawRoomId);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const keyFor = useIdempotencyKey();
+  // undefined = 아직 기기 저장소를 읽지 않음(서버 렌더링·수화 직후), null = 기록 없음
+  const [record, setRecord] = useState<RoomRecord | null | undefined>(undefined);
+  const [editing, setEditing] = useState(false);
+  const [joinValue, setJoinValue] = useState<ParticipantFormValue>(emptyValue);
+  const [storable, setStorable] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 열리자마자 서버를 깨운다(Cloud Run min 0 콜드스타트 첫 요청 p50 3.7초).
+    void warmUpServer();
+    setRecord(loadRoomRecord(roomId));
+    setJoinValue(rememberedValue());
+    setStorable(canStoreRoomTokens());
+  }, [roomId]);
+
+  const token = record?.participantToken ?? null;
+  const participantId = record?.participantId ?? null;
+  const query = useQuery({ ...roomQueryOptions(roomId, token, participantId), enabled: record !== undefined });
+  const room = query.data;
+
+  // 방 응답으로 기기 기록을 맞춘다: 만료 시각 갱신, 없어진 방이면 기록 삭제, 내보내졌으면 참여자 토큰 정리.
+  useEffect(() => {
+    if (record === undefined) return;
+    if (query.isError && isRoomGone(query.error)) {
+      removeRoomRecord(roomId);
+      return;
+    }
+    if (!room || query.isPlaceholderData || !record) return;
+    if (hasStaleParticipantToken(room, record)) {
+      setRecord(dropParticipantToken(roomId));
+      return;
+    }
+    if (record.expiresAt !== room.expiresAt) setRecord(patchRoomRecord(roomId, { expiresAt: room.expiresAt }));
+  }, [record, room, query.isError, query.error, query.isPlaceholderData, roomId]);
+
+  const refresh = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+    void queryClient.invalidateQueries({ queryKey: ["room-result", roomId] });
+  }, [queryClient, roomId]);
+
+  const reportMutationError = (error: unknown) => {
+    setActionError(roomErrorMessage(error));
+    if (isRoomGone(error)) refresh();
+  };
+
+  const join = useMutation({
+    mutationFn: (input: ParticipantInput) => joinRoom(roomId, input, keyFor(input)),
+    onSuccess: (joined, input) => {
+      const expiresAt = room?.expiresAt ?? new Date(Date.now() + 7 * 86_400_000).toISOString();
+      saveRoomRecord(roomId, {
+        ...(record?.hostToken ? { hostToken: record.hostToken } : {}),
+        participantToken: joined.participantToken,
+        participantId: joined.participantId,
+        expiresAt,
+      });
+      setRecord(loadRoomRecord(roomId));
+      track("participant_joined", { hidden: input.hidden === true });
+      refresh();
+    },
+    onError: (error) => {
+      // 잠김·정원 초과·사라진 방이면 화면의 방 상태가 오래된 것이다. 다시 불러 안내를 바꾼다.
+      const code = errorCode(error);
+      if (code === "ROOM_FULL" || code === "ROOM_LOCKED" || code === "ROOM_NOT_FOUND") refresh();
+    },
+  });
+
+  const edit = useMutation({
+    mutationFn: (input: ParticipantInput) => {
+      if (!token || !participantId) throw new Error("no participant");
+      return updateParticipant(roomId, participantId, token, input);
+    },
+    onSuccess: () => {
+      setEditing(false);
+      refresh();
+    },
+    onError: (error) => {
+      if (isTokenRejected(error)) refresh();
+    },
+  });
+
+  const leave = useMutation({
+    mutationFn: () => {
+      if (!token || !participantId) throw new Error("no participant");
+      return removeParticipant(roomId, participantId, token);
+    },
+    onSuccess: () => {
+      setRecord(dropParticipantToken(roomId));
+      setEditing(false);
+      refresh();
+    },
+    onError: reportMutationError,
+  });
+
+  const kick = useMutation({
+    mutationFn: (id: string) => {
+      if (!record?.hostToken) throw new Error("no host token");
+      return removeParticipant(roomId, id, record.hostToken);
+    },
+    onSuccess: refresh,
+    onError: reportMutationError,
+  });
+
+  const lock = useMutation({
+    mutationFn: (locked: boolean) => {
+      if (!record?.hostToken) throw new Error("no host token");
+      return updateRoom(roomId, record.hostToken, { locked });
+    },
+    // 방장 토큰으로 받은 방 응답에는 "내 항목" 표시(isSelf)가 없다. 캐시에 넣지 않고 내 토큰으로 다시 불러온다.
+    onSuccess: refresh,
+    onError: reportMutationError,
+  });
+
+  const remove = useMutation({
+    mutationFn: () => {
+      if (!record?.hostToken) throw new Error("no host token");
+      return deleteRoom(roomId, record.hostToken);
+    },
+    onSuccess: () => {
+      removeRoomRecord(roomId);
+      router.push("/");
+    },
+    onError: reportMutationError,
+  });
+
+  const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
+
+  if (record === undefined || (query.isPending && !room)) return <RoomLoading />;
+  if (query.isError && !room) {
+    if (isRoomGone(query.error)) return <RoomGone />;
+    return <RoomLoadError message={roomErrorMessage(query.error)} onRetry={() => void query.refetch()} />;
+  }
+  if (!room) return <RoomLoading />;
+
+  const state = joinState(room);
+  const joined = state === "joined";
+  const isHost = Boolean(record?.hostToken);
+  const selfIndex = people.findIndex((p) => p.isSelf);
+  const myValue = (): ParticipantFormValue => {
+    const self = room.participants.find((p) => p.isSelf === true);
+    const station = self?.originCode ? stationByCode(self.originCode) : undefined;
+    return {
+      // 이름은 사람이 넣은 원문(nickname)만 채운다. label("참가자 N" 등)을 이름 칸에 넣지 않는다.
+      nickname: self?.nickname ?? "",
+      station: station ?? null,
+      hidden: self?.hidden ?? false,
+    };
+  };
+  const today = todayInSeoul();
+  const meetingDay = isMeetingDayReached(room.meetingDate, today) || !room.meetingDate;
+  const enough = room.participants.length >= 2;
+  const busy = leave.isPending || kick.isPending || lock.isPending || remove.isPending;
+
+  return (
+    <RoomShell>
+      <RoomIntro title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"} />
+      <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
+
+      {/* 첫 사람(방장)이 방금 만든 방이거나 아직 혼자일 때: 링크 보내기가 가장 먼저 할 일이다. */}
+      {joined && !enough ? (
+        <section
+          aria-labelledby="share-title"
+          className="flex flex-col gap-3 rounded-2xl border-2 border-ink bg-surface p-5"
+        >
+          <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
+            친구에게 링크를 보내 주세요
+          </h2>
+          <p className="text-[14px] text-ink-soft">
+            친구가 링크로 들어와 자기 출발역을 넣으면 여기에 나타나요. 두 명 이상 모이면 결과를 볼 수 있어요.
+          </p>
+          <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
+        </section>
+      ) : null}
+
+      <PeopleList
+        people={people}
+        maxPeople={MAX_PEOPLE}
+        canKick={isHost}
+        editing={editing}
+        busy={busy}
+        onEditSelf={() => {
+          setActionError(null);
+          edit.reset();
+          setEditing(true);
+        }}
+        onRemoveSelf={() => {
+          setActionError(null);
+          leave.mutate();
+        }}
+        onKick={(id) => {
+          setActionError(null);
+          kick.mutate(id);
+        }}
+      />
+      {actionError && !isHost ? (
+        <p role="alert" className="-mt-2 text-sm font-semibold text-destructive">
+          {actionError}
+        </p>
+      ) : null}
+
+      {joined && editing ? (
+        <JoinForm
+          key="edit"
+          mode="edit"
+          initial={myValue()}
+          personIndex={Math.max(0, selfIndex)}
+          pending={edit.isPending}
+          error={edit.isError ? roomErrorMessage(edit.error) : null}
+          onSubmit={(input, value) => {
+            if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
+            edit.mutate(input);
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      ) : null}
+
+      {!joined && state === "can-join" ? (
+        <>
+          <JoinForm
+            key="join"
+            mode="join"
+            initial={joinValue}
+            personIndex={room.participants.length}
+            pending={join.isPending}
+            error={join.isError ? roomErrorMessage(join.error) : null}
+            onSubmit={(input, value) => {
+              if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
+              join.mutate(input);
+            }}
+          />
+          {storable ? null : (
+            <p role="status" className="-mt-2 text-[13px] text-destructive">
+              이 브라우저는 저장 공간을 막아 두어서, 참여한 뒤 이 기기에서 내 항목을 고칠 수 없어요.
+            </p>
+          )}
+        </>
+      ) : null}
+      {!joined && (state === "full" || state === "locked") ? <CannotJoin reason={state} /> : null}
+
+      {joined && enough ? (
+        <section
+          aria-labelledby="share-title"
+          className="flex flex-col gap-3 rounded-2xl border border-rule bg-surface p-5"
+        >
+          <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
+            링크 다시 보내기
+          </h2>
+          <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
+        </section>
+      ) : null}
+
+      {enough ? (
+        <RoomResult
+          roomId={roomId}
+          room={room}
+          participantToken={token}
+          participantId={participantId}
+          isHost={isHost}
+          onResultSeen={() => {
+            if (record && !record.resultSeenAt)
+              setRecord(patchRoomRecord(roomId, { resultSeenAt: new Date().toISOString() }));
+          }}
+          renderAfter={(view) =>
+            joined && token && meetingDay ? (
+              <OutcomeCard
+                roomId={roomId}
+                participantToken={token}
+                topStationCode={view.candidates[0]?.stationCode ?? ""}
+                resultSeenAt={record?.resultSeenAt}
+                answered={Boolean(record?.outcomeAnswered)}
+                collapsed={!room.meetingDate}
+                onAnswered={() => setRecord(patchRoomRecord(roomId, { outcomeAnswered: true }))}
+              />
+            ) : null
+          }
+        />
+      ) : (
+        <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
+          두 명 이상 들어오면 결과를 볼 수 있어요.
+        </section>
+      )}
+
+      {isHost ? (
+        <HostControls
+          locked={room.locked}
+          busy={busy}
+          error={actionError}
+          onToggleLock={(locked) => {
+            setActionError(null);
+            lock.mutate(locked);
+          }}
+          onDeleteRoom={() => {
+            setActionError(null);
+            remove.mutate();
+          }}
+        />
+      ) : null}
+
+      <p className="text-center text-xs text-muted-foreground">
+        방은 마지막 변경 후 7일이 지나거나 만든 지 30일이 지나면 사라져요.
+      </p>
+    </RoomShell>
+  );
+}

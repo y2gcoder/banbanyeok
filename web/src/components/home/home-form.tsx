@@ -1,6 +1,7 @@
 "use client";
 
 import { PlusIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { personColor } from "@/components/common/person-color";
@@ -12,6 +13,7 @@ import { parsePrefill } from "@/lib/form/prefill";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/codec";
 import { resultPath } from "@/lib/result/share-url";
+import { NEW_ROOM_PATH } from "@/lib/room/id";
 import { type Station, stationByCode } from "@/lib/stations";
 import { StationField } from "./station-field";
 
@@ -161,6 +163,15 @@ export function HomeForm() {
       <p id={`${formId}-scope`} className="text-center text-sm text-muted-foreground">
         수도권 지하철역만 돼요. 가입은 필요 없어요.
       </p>
+      <Link
+        href={NEW_ROOM_PATH}
+        className="flex flex-col gap-0.5 rounded-xl border border-rule-strong bg-surface px-4 py-3.5 hover:border-ink"
+      >
+        <span className="text-[16px] font-bold text-ink">친구가 각자 입력하게 하기 →</span>
+        <span className="text-[13px] leading-snug text-muted-foreground">
+          방을 만들어 링크를 보내면 친구가 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요.
+        </span>
+      </Link>
     </form>
   );
 }

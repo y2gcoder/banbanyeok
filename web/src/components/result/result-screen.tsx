@@ -49,7 +49,15 @@ export function LoadingCard() {
   );
 }
 
-function Candidates({ view, meIndex, choice }: { view: ResultView; meIndex: number | null; choice: ChoiceContext }) {
+export function Candidates({
+  view,
+  meIndex,
+  choice,
+}: {
+  view: ResultView;
+  meIndex: number | null;
+  choice: ChoiceContext;
+}) {
   const [top, ...rest] = view.candidates;
   if (!top) return null;
   return (

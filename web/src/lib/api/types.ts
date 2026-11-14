@@ -7,3 +7,15 @@ export type Mode = Schemas["Mode"];
 export type RecommendResult = Schemas["Result"];
 export type RecommendBody = paths["/recommend"]["post"]["requestBody"]["content"]["application/json"];
 export type ApiError = Schemas["Error"];
+
+export type Room = Schemas["Room"];
+export type RoomParticipant = Schemas["Participant"];
+export type RoomCreated = Schemas["RoomCreated"];
+export type RoomCreateRequest = Schemas["RoomCreateRequest"];
+export type RoomPatch = Schemas["RoomPatch"];
+export type ParticipantInput = Schemas["ParticipantInput"];
+export type OutcomeAnswer = NonNullable<
+  paths["/rooms/{roomId}/outcome"]["post"]["requestBody"]
+>["content"]["application/json"];
+export type JoinedRoom =
+  paths["/rooms/{roomId}/participants"]["post"]["responses"]["201"]["content"]["application/json"];

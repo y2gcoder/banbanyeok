@@ -20,7 +20,8 @@ export class ApiRequestError extends Error {
   }
 }
 
-function client(headers?: Headers) {
+/** openapi-fetch 클라이언트(이 폴더 안에서만 쓴다). */
+export function client(headers?: Headers) {
   return createClient<paths>({ baseUrl: apiBaseUrl(), ...(headers ? { headers } : {}) });
 }
 
@@ -65,10 +66,14 @@ export async function recommend(query: RecommendQuery, signal?: AbortSignal): Pr
     cache: "no-store",
     ...(signal ? { signal } : {}),
   });
-  const { status } = result.response;
   if (result.data !== undefined) return result.data;
-  const detail: ApiError = result.error ?? { code: "UNKNOWN", message: `HTTP ${status}` };
-  throw new ApiRequestError(status, detail.code, detail.message);
+  throw failure(result.response.status, result.error);
+}
+
+/** 응답이 오류이면 계약의 오류 모양(`{code, message}`)을 [ApiRequestError]로 던진다. 오류 본문이 없으면 HTTP 상태로 만든다. */
+export function failure(status: number, error: ApiError | undefined): ApiRequestError {
+  const detail: ApiError = error ?? { code: "UNKNOWN", message: `HTTP ${status}` };
+  return new ApiRequestError(status, detail.code, detail.message);
 }
 
 /** 입력 화면을 열 때 서버를 미리 깨운다(Cloud Run min 0 콜드스타트를 입력 시간 뒤로 숨긴다). 실패해도 무시한다. */

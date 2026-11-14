@@ -315,8 +315,8 @@
     },
     {
       "name": "room_created",
-      "source": "server",
-      "description": "방이 만들어졌다.",
+      "source": "client_or_server",
+      "description": "방이 만들어졌다. 서버가 통계를 보내기 전까지는 웹이 방 만들기에 성공한 직후 보낸다(동의한 경우만).",
       "properties": [
         {
           "name": "participant_count_expected",
@@ -342,8 +342,8 @@
     },
     {
       "name": "participant_joined",
-      "source": "server",
-      "description": "친구가 방에 참여했다.",
+      "source": "client_or_server",
+      "description": "친구가 방에 참여했다. 서버가 통계를 보내기 전까지는 웹이 참여에 성공한 직후 보낸다(동의한 경우만).",
       "properties": [
         {
           "name": "hidden",
@@ -354,8 +354,8 @@
         {
           "name": "seconds_since_room_created",
           "type": "integer",
-          "required": true,
-          "description": "방 생성 후 경과 초.",
+          "required": false,
+          "description": "방 생성 후 경과 초. 방 조회 응답에 생성 시각이 없어 웹은 알 수 없으므로 생략한다(서버가 보낼 때는 채운다).",
           "min": 0
         },
         {

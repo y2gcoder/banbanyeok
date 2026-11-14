@@ -1,0 +1,44 @@
+/** 방 API 오류를 화면 문구·상태로 바꾼다. 분기는 항상 `code`로 한다(계약 Error 표). */
+import { ApiRequestError } from "@/lib/api/client";
+
+const MESSAGES: Readonly<Record<string, string>> = {
+  ROOM_NOT_FOUND: "없거나 만료된 방이에요.",
+  ROOM_FULL: "방이 가득 찼어요. 한 방에는 최대 4명까지 들어올 수 있어요.",
+  ROOM_LOCKED: "이 방은 지금 새로 들어올 수 없어요. 방장이 잠갔거나 정해 둔 인원이 다 찼어요.",
+  INVALID_STATION: "계산할 수 없는 역이에요. 다른 역을 골라 주세요.",
+  INVALID_NICKNAME: "이름을 확인해 주세요. 20자 이하로 쓸 수 있어요.",
+  INVALID_MEETING_DATE: "약속일이 이미 지났어요. 오늘 이후 날짜를 골라 주세요.",
+  INVALID_EXPECTED_COUNT: "예상 인원은 2~4명으로 정해 주세요.",
+  INVALID_OUTCOME: "답을 보내지 못했어요. 역을 다시 골라 주세요.",
+  PARTICIPANT_NOT_FOUND: "이 방에서 빠진 항목이에요. 다시 참여해 주세요.",
+  UNAUTHORIZED: "이 기기에서는 고칠 수 없어요. 처음 참여한 기기에서만 고칠 수 있어요.",
+  FORBIDDEN: "이 기기에서는 할 수 없는 일이에요.",
+  RATE_LIMITED: "요청이 너무 많아요. 잠시 뒤에 다시 해 주세요.",
+  STATION_UNAVAILABLE: "방을 만든 뒤 데이터가 바뀌어 계산할 수 없는 출발역이 있어요. 출발역을 다시 골라 주세요.",
+  NOT_ENOUGH_PARTICIPANTS: "두 명 이상 들어와야 결과를 볼 수 있어요.",
+};
+
+export const CONNECTION_MESSAGE = "서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.";
+
+/** 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 그 밖의 4xx는 서버 message, 5xx·네트워크 오류는 연결 안내. */
+export function roomErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiRequestError)) return CONNECTION_MESSAGE;
+  const known = MESSAGES[error.code];
+  if (known) return known;
+  return error.status >= 400 && error.status < 500 ? error.message : CONNECTION_MESSAGE;
+}
+
+export const errorCode = (error: unknown): string | null => (error instanceof ApiRequestError ? error.code : null);
+
+/** 방이 없다(만료·삭제·없는 ID 모두 같은 404). */
+export const isRoomGone = (error: unknown): boolean =>
+  error instanceof ApiRequestError && error.code === "ROOM_NOT_FOUND";
+
+/** 토큰이 더는 통하지 않는다(내보내졌거나 항목이 지워짐). 다시 참여하게 안내한다. */
+export const isTokenRejected = (error: unknown): boolean =>
+  error instanceof ApiRequestError &&
+  (error.code === "UNAUTHORIZED" || error.code === "PARTICIPANT_NOT_FOUND" || error.code === "FORBIDDEN");
+
+/** 다시 시도해도 같은 결과일 오류인지(4xx). 5xx·네트워크 오류만 자동 재시도한다. */
+export const isClientError = (error: unknown): boolean =>
+  error instanceof ApiRequestError && error.status >= 400 && error.status < 500;

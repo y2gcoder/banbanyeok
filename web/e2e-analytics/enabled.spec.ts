@@ -409,3 +409,177 @@ test("삭제 요청용 식별자: /privacy에 이 브라우저의 식별자를 �
   await page.reload(); // 화면을 떠나면 사라진다
   await expect(page.getByRole("textbox", { name: "방금 지운 통계 식별자" })).toHaveCount(0);
 });
+
+// 방 흐름의 통계. 방 API는 같은 출처 요청을 가로채 흉내 낸다(가짜 서버는 방을 구현하지 않는다). 방 ID·토큰은 이벤트 속성과
+// URL 속성 어디에도 없어야 하고, 방 이벤트 3종(room_created·participant_joined·outcome_answered)은 동의한 뒤에만 나간다.
+const FAKE_ROOM = "qt7yvmsht3";
+const FAKE_TOKENS = {
+  host: "ptok-host-secret-value",
+  friend: "ptok-friend-secret-value",
+  hostRoom: "htok-host-secret-value",
+};
+
+async function fakeRoomApi(page: Page) {
+  let friendJoined = false;
+  const json = (status: number, body: unknown) => ({
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  });
+  const expiresAt = "2999-01-01T00:00:00Z";
+  const people = (bearer: string | null) => [
+    {
+      participantId: "h1",
+      hidden: false,
+      originCode: "k3a",
+      originName: "강남",
+      label: "민수",
+      labelKind: "name",
+      nickname: "민수",
+      isHost: true,
+      isSelf: bearer === `Bearer ${FAKE_TOKENS.host}`,
+    },
+    ...(friendJoined
+      ? [
+          {
+            participantId: "f1",
+            hidden: true,
+            originCode: bearer === `Bearer ${FAKE_TOKENS.friend}` ? "ryf" : null,
+            originName: bearer === `Bearer ${FAKE_TOKENS.friend}` ? "홍대입구" : null,
+            label: "참가자 2",
+            labelKind: "ordinal",
+            isHost: false,
+            isSelf: bearer === `Bearer ${FAKE_TOKENS.friend}`,
+          },
+        ]
+      : []),
+  ];
+  await page.route("**/api/v1/rooms**", async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname.replace("/api/v1", "");
+    const bearer = request.headers().authorization ?? null;
+    if (request.method() === "POST" && path === "/rooms") {
+      return route.fulfill(
+        json(201, {
+          roomId: FAKE_ROOM,
+          hostToken: FAKE_TOKENS.hostRoom,
+          participantId: "h1",
+          participantToken: FAKE_TOKENS.host,
+          expiresAt,
+        }),
+      );
+    }
+    if (request.method() === "POST" && path.endsWith("/participants")) {
+      friendJoined = true;
+      return route.fulfill(json(201, { participantId: "f1", participantToken: FAKE_TOKENS.friend }));
+    }
+    if (request.method() === "POST" && path.endsWith("/outcome")) return route.fulfill({ status: 204 });
+    if (request.method() === "GET" && path.endsWith("/result")) {
+      return route.fulfill(
+        json(200, {
+          status: "ok",
+          mode: "fair",
+          dataVersion: "20261114.5",
+          participants: people(bearer),
+          baselineStationCode: "1qs",
+          candidates: [
+            {
+              rank: 1,
+              stationCode: "1qs",
+              stationName: "신촌",
+              times: [
+                { participantId: "h1", seconds: 1000, transfers: 0 },
+                ...(friendJoined ? [{ participantId: "f1", seconds: 1100, transfers: 1 }] : []),
+              ],
+              maxSeconds: 1100,
+              spreadSeconds: 100,
+              totalSeconds: 2100,
+              reasonCode: "FAIR_MINIMAX",
+              reason: "가장 오래 걸리는 참가자 2도 18분이에요.",
+            },
+          ],
+        }),
+      );
+    }
+    if (request.method() === "GET" && path === `/rooms/${FAKE_ROOM}`) {
+      return route.fulfill(
+        json(200, {
+          roomId: FAKE_ROOM,
+          mode: "fair",
+          locked: false,
+          expiresAt,
+          dataVersion: "20261114.5",
+          participants: people(bearer),
+        }),
+      );
+    }
+    return route.fulfill(json(404, { code: "NOT_FOUND", message: "없음" }));
+  });
+}
+
+test("방: 만들기·참여·만났나 이벤트는 동의한 뒤에만, 방 ID·토큰·출발역 없이 나간다", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const probe = await attachProbe(context, baseURL ?? "");
+  await fakeRoomApi(page);
+
+  // 동의 전에 방을 만들고 참여해도 요청 0건
+  await page.goto("/r/new");
+  await page.getByRole("textbox", { name: "내 이름(선택)" }).fill("민수");
+  await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
+  await page.getByRole("button", { name: "방 만들기" }).click();
+  await expect(page).toHaveURL(new RegExp(`/r/${FAKE_ROOM}$`));
+  await page.waitForTimeout(BATCH_WAIT_MS);
+  expect(probe.outside).toEqual([]);
+  expect(await analyticsKeys(page)).toEqual([]);
+
+  // 동의한 뒤: 내 기록을 지워 새 참여자처럼 열어 참여(숨기기)하고, 결과를 보고, 만났나에 답한다.
+  await acceptAll(page);
+  await page.waitForTimeout(BATCH_WAIT_MS); // 전체 페이지 이동 전에 배치를 비운다
+  await page.evaluate((id) => localStorage.removeItem(`bby.room.${id}`), FAKE_ROOM);
+  await page.goto("/r/new"); // 기억해 둔 "나"(민수·강남)가 미리 채워진다
+  await expect(page.getByRole("combobox", { name: "내 출발역" })).toHaveValue("강남");
+  await page.getByRole("button", { name: "방 만들기" }).click(); // room_created
+  await expect(page).toHaveURL(new RegExp(`/r/${FAKE_ROOM}$`));
+  await page.getByRole("button", { name: "링크 복사" }).click(); // share_clicked(room)
+  await page.waitForTimeout(BATCH_WAIT_MS);
+  await page.evaluate((id) => localStorage.removeItem(`bby.room.${id}`), FAKE_ROOM);
+  await page.reload();
+  await pickStation(page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
+  await page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
+  await page.getByRole("button", { name: "참여하기" }).click(); // participant_joined
+  await expect(page.getByRole("region", { name: "만날 역 후보" }).getByRole("article")).toBeVisible();
+  const outcome = page.getByRole("region", { name: "실제로 어디서 만났어요?" });
+  await outcome.getByText("약속이 끝났다면, 어디서 만났는지 알려 주기").click();
+  await outcome.getByText("1위 역에서 만났어요").click();
+  await outcome.getByRole("button", { name: "알려 주기" }).click(); // outcome_answered
+  await expect(page.getByText("알려 줘서 고마워요")).toBeVisible();
+  await expect.poll(() => probe.events.map((e) => e.event), { timeout: 20_000 }).toContain("outcome_answered");
+  await page.waitForTimeout(BATCH_WAIT_MS);
+
+  const byName = (name: string) => probe.events.filter((e) => e.event === name);
+  expect(probe.events.map((e) => e.event)).toContain("room_created");
+  expect(byName("room_created")).toHaveLength(1);
+  expect(byName("room_created")[0]?.properties).toMatchObject({ hidden_used: false });
+  expect(byName("participant_joined")[0]?.properties).toMatchObject({ hidden: true });
+  expect(byName("outcome_answered")[0]?.properties).toMatchObject({ outcome: "top1", meeting_station_code: "1qs" });
+  expect(byName("share_clicked")[0]?.properties).toMatchObject({ link_type: "room" });
+  expect(byName("outcome_answered")[0]?.properties.days_since_result).toBe(0);
+
+  // 방 ID·토큰·출발역·이름은 어떤 이벤트 어디에도 없다(속성 이름, 값, URL 속성 모두).
+  const all = JSON.stringify(probe.events);
+  expect(all).not.toContain(FAKE_ROOM);
+  for (const secret of Object.values(FAKE_TOKENS)) expect(all).not.toContain(secret);
+  expect(all).not.toMatch(/홍대입구|강남|민수/);
+  for (const event of probe.events) {
+    for (const key of Object.keys(event.properties)) expect(key).not.toMatch(FORBIDDEN_KEY);
+    for (const value of Object.values(event.properties)) {
+      if (typeof value === "string" && /^https?:\/\//.test(value)) expect(value).not.toMatch(/[?#]|\/r\/[0-9a-z]{10}/i);
+    }
+  }
+  // 같은 출처 밖으로 나간 요청은 수집 주소 하나뿐
+  expect([...new Set(probe.outside)]).toEqual([`POST ${COLLECT}`]);
+});
