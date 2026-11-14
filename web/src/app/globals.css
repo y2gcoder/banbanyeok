@@ -1,0 +1,116 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+/* Pretendard 동적 서브셋: 화면에 나온 글자 범위의 woff2만 내려받는다(전체 폰트 16MB를 피한다. spikes/REPORT.md 2절). */
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+
+/*
+ * 디자인 토큰. 지하철 승강장(타일 회색·안전선 노랑)과 노선도 어휘(색으로 구분한 사람, 환승역 고리)를 쓴다.
+ * 사람 색 p1~p4는 막대·점에만 쓰고 글자에는 쓰지 않는다(대비). 글자는 ink/muted만 쓴다.
+ */
+:root {
+  color-scheme: light;
+  --platform: #eef1f0; /* 바탕: 승강장 타일 */
+  --surface: #ffffff;
+  --ink: #16201b;
+  --ink-soft: #3a4640;
+  --muted-ink: #56625c; /* platform 위 대비 5.4:1, surface 위 6.2:1 */
+  --rule: #d3dad7;
+  --rule-strong: #aeb8b3;
+  --safety: #f5c518; /* 승강장 안전선. 1위 표시와 강조에만 */
+  --safety-ink: #5c4500;
+  --alert: #b3261e;
+  --p1: #1f5bd0;
+  --p2: #e0531c;
+  --p3: #12936a;
+  --p4: #8b4fc4;
+  --kakao: #fee500;
+  --kakao-ink: #191600;
+
+  /* shadcn/ui 토큰을 위 값에 연결한다. */
+  --background: var(--platform);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: #ffffff;
+  --secondary: #e2e7e5;
+  --secondary-foreground: var(--ink);
+  --muted: #e2e7e5;
+  --muted-foreground: var(--muted-ink);
+  --accent: #e8ecea;
+  --accent-foreground: var(--ink);
+  --destructive: var(--alert);
+  --border: var(--rule);
+  --input: var(--rule-strong);
+  --ring: var(--ink);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-platform: var(--platform);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-safety: var(--safety);
+  --color-safety-ink: var(--safety-ink);
+  --color-kakao: var(--kakao);
+  --color-kakao-ink: var(--kakao-ink);
+  --color-p1: var(--p1);
+  --color-p2: var(--p2);
+  --color-p3: var(--p3);
+  --color-p4: var(--p4);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-feature-settings: "ss06";
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

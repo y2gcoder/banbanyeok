@@ -20,4 +20,17 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-  # web/ 이 생기면 npm(pnpm) 항목을 추가한다.
+  # web/(pnpm 워크스페이스). 잠금 파일이 루트에 있어 루트 디렉토리를 본다. pnpm-workspace.yaml의 7일 숙성 규칙과
+  # 맞추려고 cooldown을 7일로 둔다.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    cooldown:
+      default-days: 7
+    groups:
+      web-minor-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
