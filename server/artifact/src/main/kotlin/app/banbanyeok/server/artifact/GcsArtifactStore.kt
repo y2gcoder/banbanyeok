@@ -12,6 +12,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLEncoder
+import kotlin.concurrent.thread
 
 /**
  * Google Cloud Storage 버킷을 저장소로 쓴다(JSON API, JDK의 HttpURLConnection). 버전은 객체의 generation이고,
@@ -33,6 +34,22 @@ public class GcsArtifactStore(
 ) : ArtifactStore {
     private val prefix: String = prefix.trim('/').let { if (it.isEmpty()) "" else "$it/" }
     private val apiBase: String = (endpoint ?: DEFAULT_ENDPOINT).trimEnd('/')
+
+    /**
+     * 첫 읽기 전에 토큰 발급과 TLS 연결(JSSE 초기화 포함)을 별도 스레드에서 미리 해 둔다. 첫 요청이 이 비용을 뒤따라 치르지 않게
+     * 하는 최선 노력이라 실패해도 무시한다(실제 읽기가 다시 시도한다). 연결은 JDK의 keep-alive 캐시가 다음 요청에 재사용한다.
+     * 에뮬레이터 주소가 있으면 하지 않는다.
+     */
+    public fun warmUp() {
+        if (endpoint != null) return
+        thread(name = "gcs-warmup", isDaemon = true) {
+            runCatching {
+                val connection = open("$apiBase/storage/v1/b/$bucket/o?maxResults=1&fields=kind", "GET")
+                connection.responseCode
+                connection.drain()
+            }
+        }
+    }
 
     override suspend fun get(key: ArtifactKey): StoredArtifact? =
         withContext(ioDispatcher) {

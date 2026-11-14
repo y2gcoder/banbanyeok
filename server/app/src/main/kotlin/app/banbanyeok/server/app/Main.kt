@@ -50,6 +50,7 @@ private fun startAssembly(
 ): CompletableFuture<Result<Components>> {
     val future = CompletableFuture<Result<Components>>()
     thread(name = "assemble") {
+        timeline.mark("assembly-thread-started")
         future.complete(runCatching { runBlocking { CompositionRoot.create(config, timeline = timeline) } })
     }
     return future

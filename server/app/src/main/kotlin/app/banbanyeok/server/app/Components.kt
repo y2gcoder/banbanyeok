@@ -55,6 +55,7 @@ object CompositionRoot {
             artifactStore(config, ioDispatcher).also { timeline?.mark("artifact-store-created") },
         database: ConnectedDatabase? = null,
     ): Components {
+        timeline?.mark("assembly-started")
         val loaded = ArtifactLoader(store) { timeline?.mark(it) }.load()
         val directory = StationDirectory(loaded.dataSet)
         val owned = if (database == null) DatabaseFactory.connect(config.database) else null
@@ -98,7 +99,7 @@ object CompositionRoot {
                     ioDispatcher = ioDispatcher,
                     prefix = config.artifacts.gcsPrefix,
                     endpoint = config.artifacts.gcsEndpoint,
-                )
+                ).also { it.warmUp() }
             }
         }
 }

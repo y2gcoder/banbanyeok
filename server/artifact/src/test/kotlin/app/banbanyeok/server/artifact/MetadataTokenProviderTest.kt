@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
 private class SteppingClock(
     var now: Instant = Instant.parse("2026-11-14T00:00:00Z"),
 ) : Clock() {
-    override fun getZone() = ZoneOffset.UTC
+    override fun getZone(): java.time.ZoneId = ZoneOffset.UTC
 
     override fun withZone(zone: java.time.ZoneId?): Clock = this
 
