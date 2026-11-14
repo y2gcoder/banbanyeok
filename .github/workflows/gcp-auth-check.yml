@@ -1,0 +1,24 @@
+# GitHub Actions → GCP 키 없는 인증(OIDC, Workload Identity Federation) 점검.
+# 서비스 계정에는 아직 프로젝트 권한이 없다(P8에서 최소 권한 부여). 이 워크플로는 토큰 교환만 확인한다.
+name: gcp-auth-check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        id: auth
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+          token_format: access_token
+      - name: 토큰 발급 확인
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          test -n "$TOKEN"
+          curl -fsS "https://oauth2.googleapis.com/tokeninfo?access_token=${TOKEN}" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("expires_in:", d.get("expires_in")); assert int(d["expires_in"]) > 0'

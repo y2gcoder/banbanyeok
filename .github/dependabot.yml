@@ -1,0 +1,23 @@
+# 의존성 버전 업데이트. spikes/는 실험 코드라 대상에서 뺀다(나열한 디렉토리만 검사).
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    groups:
+      gradle-minor-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Seoul
+    groups:
+      actions:
+        patterns: ["*"]
+  # web/ 이 생기면 npm(pnpm) 항목을 추가한다.
