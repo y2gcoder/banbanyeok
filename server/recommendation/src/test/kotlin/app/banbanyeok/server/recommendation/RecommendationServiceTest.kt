@@ -10,6 +10,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeBlank
+import io.kotest.matchers.string.shouldNotContain
 
 private fun service(od: app.banbanyeok.schema.OdMatrix = sampleOd) =
     RecommendationService(OdTravelTimeProvider(od, "20261112.1"), codeNames)
@@ -47,7 +48,7 @@ class RecommendationServiceTest :
                 result.candidates.size shouldBeLessThanOrEqual 3
             }
 
-            it("uses nicknames in the sentence and the default names when there are none") {
+            it("uses nicknames in the sentence and A/B/C/D, never a first-person word, when there are none") {
                 val named =
                     service().recommend(
                         RecommendRequest(
@@ -57,7 +58,46 @@ class RecommendationServiceTest :
                     )
                 named.candidates.first().reason shouldContain "민수"
                 val anonymous = service().recommend(RecommendRequest(people("03v", "130"), RecommendMode.FAIR))
-                anonymous.candidates.first().reason shouldContain "나"
+                anonymous.candidates.first().reason shouldContain "A"
+                anonymous.candidates.map { it.reason }.forEach {
+                    it shouldNotContain "나는"
+                    it shouldNotContain "나가"
+                    it shouldNotContain "친구"
+                }
+            }
+
+            it("tells identical nicknames apart with the input-order letter") {
+                val twins =
+                    service().recommend(
+                        RecommendRequest(
+                            listOf(RecommendParticipant("a", "민수", "03v"), RecommendParticipant("b", "민수", "130")),
+                            RecommendMode.FAIR,
+                        ),
+                    )
+                twins.candidates.first().reason shouldContain "민수(A)"
+                twins.candidates.first().reason shouldNotContain "민수도"
+            }
+
+            it("treats a blank nickname as none and rejects an invalid one") {
+                val blank =
+                    service().recommend(
+                        RecommendRequest(
+                            listOf(RecommendParticipant("a", "  ", "03v"), RecommendParticipant("b", "지연", "130")),
+                            RecommendMode.FAIR,
+                        ),
+                    )
+                blank.candidates.first().reason shouldContain "A"
+                shouldThrow<RecommendationException> {
+                    service().recommend(
+                        RecommendRequest(
+                            listOf(
+                                RecommendParticipant("a", "가".repeat(21), "03v"),
+                                RecommendParticipant("b", null, "130"),
+                            ),
+                            RecommendMode.FAIR,
+                        ),
+                    )
+                }.error shouldBe RecommendationError.INVALID_NICKNAME
             }
         }
 

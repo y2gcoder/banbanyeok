@@ -5,4 +5,5 @@ dependencies {
     api(project(":shared:core"))
     api(project(":shared:schema"))
     implementation(project(":shared:app-logic"))
+    implementation(project(":shared:links")) // 별칭 규칙(코드포인트 20자)
 }

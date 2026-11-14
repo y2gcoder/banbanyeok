@@ -59,6 +59,7 @@ public data class Recommendation(
 
 public enum class RecommendationError {
     PEOPLE_COUNT,
+    INVALID_NICKNAME,
     UNKNOWN_STATION,
     FAVOR_TARGET_REQUIRED,
     FAVOR_TARGET_UNKNOWN,
@@ -97,7 +98,7 @@ public class RecommendationService(
                 ),
             )
         val top = result.recommendations.take(MAX_CARDS)
-        val refs = people.map { PersonRef(it.id, it.nickname, originCode = null) }
+        val refs = SentenceNames.of(people).mapIndexed { i, name -> PersonRef(people[i].id, name, originCode = null) }
         val favor = if (favorIndex >= 0) favorContext(result, matrix, favorIndex) else null
         return Recommendation(
             status = result.status,
@@ -126,6 +127,9 @@ public class RecommendationService(
     private fun validate(request: RecommendRequest) {
         val people = request.participants
         if (people.size !in MIN_PEOPLE..MAX_PEOPLE) reject(RecommendationError.PEOPLE_COUNT, "참가자는 2~4명이어야 합니다")
+        if (people.any { it.nickname != null && !SentenceNames.isValid(it.nickname) }) {
+            reject(RecommendationError.INVALID_NICKNAME, "별칭이 올바르지 않습니다")
+        }
         if (people.any { !travelTimes.isOrigin(it.originCode) }) {
             reject(RecommendationError.UNKNOWN_STATION, "알 수 없는 출발역이 있습니다")
         }

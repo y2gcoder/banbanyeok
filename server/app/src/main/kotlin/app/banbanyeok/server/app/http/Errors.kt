@@ -86,6 +86,7 @@ fun Application.installErrorHandling() {
 private fun RecommendationError.code(): String =
     when (this) {
         RecommendationError.PEOPLE_COUNT -> "INVALID_PEOPLE_COUNT"
+        RecommendationError.INVALID_NICKNAME -> "INVALID_NICKNAME"
         RecommendationError.UNKNOWN_STATION -> "INVALID_STATION"
         RecommendationError.FAVOR_TARGET_REQUIRED -> "FAVOR_TARGET_REQUIRED"
         RecommendationError.FAVOR_TARGET_UNKNOWN -> "FAVOR_TARGET_UNKNOWN"

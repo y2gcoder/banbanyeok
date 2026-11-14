@@ -94,13 +94,14 @@ fun RoomResult.toDto(directory: StationDirectory): ResultDto =
 /** 무상태 추천: 참가자는 입력 순서의 인덱스 문자열("0", "1", …)로 구분한다. */
 fun Recommendation.toStatelessDto(
     origins: List<String>,
+    nicknames: List<String?>,
     directory: StationDirectory,
 ): ResultDto =
     toDto(
         origins.mapIndexed { index, code ->
             ParticipantDto(
                 participantId = index.toString(),
-                nickname = null,
+                nickname = nicknames[index]?.trim()?.takeIf { it.isNotEmpty() },
                 hidden = false,
                 originCode = code,
                 originName = directory.displayName(code),

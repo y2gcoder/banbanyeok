@@ -235,11 +235,16 @@ class ApiIntegrationTest :
                                 .call(
                                     HttpMethod.Post,
                                     "/v1/recommend",
-                                    """{"origins":["${origins[1]}","${origins[2]}","${origins[3]}"],"mode":"favor","favorIndex":2}""",
+                                    """{"origins":["${origins[1]}","${origins[2]}","${origins[3]}"],""" +
+                                        """"mode":"favor","favorIndex":2,"nicknames":["민수","지연",null]}""",
                                     expected = HttpStatusCode.OK,
                                 ).bodyAsText(),
                         )
                     recommend.str("mode") shouldBe "favor"
+                    recommend.jsonObject.getValue("participants").jsonArray.map {
+                        it.jsonObject["nickname"]?.jsonPrimitive?.contentOrNull
+                    } shouldContainExactly
+                        listOf("민수", "지연", null)
                     val manifest = api.call(HttpMethod.Get, "/v1/manifest", expected = HttpStatusCode.OK).bodyAsText()
                     val version = parse(manifest).str("dataVersion")
                     api.call(HttpMethod.Get, "/v1/data/$version/stations.json", expected = HttpStatusCode.OK)

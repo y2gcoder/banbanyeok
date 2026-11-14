@@ -72,6 +72,8 @@ class RoomResultService(
                     AppException(ErrorKind.CONFLICT, "STATION_UNAVAILABLE", "참가자의 출발역이 현재 데이터에 없습니다", e)
                 RecommendationError.PEOPLE_COUNT ->
                     AppException(ErrorKind.CONFLICT, "NOT_ENOUGH_PARTICIPANTS", "참가자가 2명 이상이어야 합니다", e)
+                RecommendationError.INVALID_NICKNAME ->
+                    AppException(ErrorKind.INVALID, "INVALID_NICKNAME", "별칭이 올바르지 않습니다", e)
                 RecommendationError.FAVOR_TARGET_REQUIRED ->
                     AppException(ErrorKind.INVALID, "FAVOR_TARGET_REQUIRED", "우대 대상이 필요합니다", e)
                 RecommendationError.FAVOR_TARGET_UNKNOWN ->

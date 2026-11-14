@@ -401,6 +401,72 @@ class ApiHttpTest :
                 }
             }
 
+            it("reads participant names and uses them, or A/B/C/D, in the sentences instead of first-person words") {
+                val real =
+                    app.banbanyeok.server.recommendation.RecommendationService(
+                        DevArtifacts.directory.travel,
+                        DevArtifacts.directory,
+                    )
+                val mocks = MockedServices()
+                val api =
+                    app.banbanyeok.server.app.http.ApiServices(
+                        mocks.anon,
+                        mocks.rooms,
+                        mocks.results,
+                        real,
+                        DevArtifacts.directory,
+                        DevArtifacts.published,
+                    )
+                io.ktor.server.testing.testApplication {
+                    application { apiModule(testConfig(), api) }
+                    val named =
+                        client.json(
+                            HttpMethod.Post,
+                            "/v1/recommend",
+                            """{"origins":["$origin1","$origin2"],"mode":"fair","nicknames":["민수",null]}""",
+                        )
+                    named.status shouldBe HttpStatusCode.OK
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", named)
+                    val namedText = named.bodyAsText()
+                    namedText shouldContain "\"nickname\":\"민수\""
+                    namedText shouldContain "\"nickname\":null"
+                    val reasons = Json.parseToJsonElement(namedText).jsonObject["candidates"].toString()
+                    reasons shouldNotContain "나는"
+                    reasons shouldNotContain "친구1"
+
+                    val anonymous =
+                        client.json(
+                            HttpMethod.Post,
+                            "/v1/recommend",
+                            """{"origins":["$origin1","$origin2"],"mode":"fair"}""",
+                        )
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", anonymous)
+                    anonymous.bodyAsText() shouldNotContain "친구1"
+
+                    val mismatched =
+                        client.json(
+                            HttpMethod.Post,
+                            "/v1/recommend",
+                            """{"origins":["$origin1","$origin2"],"mode":"fair","nicknames":["a"]}""",
+                        )
+                    mismatched.status shouldBe HttpStatusCode.BadRequest
+                    errorCode(mismatched.bodyAsText()) shouldBe "INVALID_REQUEST"
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", mismatched)
+
+                    val tooLong =
+                        client.json(
+                            HttpMethod.Post,
+                            "/v1/recommend",
+                            """{"origins":["$origin1","$origin2"],"mode":"fair","nicknames":["${"가".repeat(
+                                21,
+                            )}",null]}""",
+                        )
+                    tooLong.status shouldBe HttpStatusCode.BadRequest
+                    errorCode(tooLong.bodyAsText()) shouldBe "INVALID_NICKNAME"
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", tooLong)
+                }
+            }
+
             it("maps recommendation validation errors to 400") {
                 withMockedApi { services ->
                     every { services.recommendation.recommend(any()) } throws

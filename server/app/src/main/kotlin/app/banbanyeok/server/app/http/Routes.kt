@@ -137,9 +137,15 @@ private fun Route.resultRoutes(services: ApiServices) {
     }
     post("/recommend") {
         val body = call.receive<RecommendRequestDto>()
-        val people = body.origins.mapIndexed { index, code -> RecommendParticipant(index.toString(), null, code) }
+        val nicknames = body.nicknames ?: List(body.origins.size) { null }
+        if (nicknames.size != body.origins.size) {
+            throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "nicknames는 origins와 같은 길이여야 합니다")
+        }
+        val people =
+            body.origins.mapIndexed { index, code -> RecommendParticipant(index.toString(), nicknames[index], code) }
         val request = RecommendRequest(people, requireRecommendMode(body.mode), body.favorIndex?.toString())
-        call.respond(services.recommendation.recommend(request).toStatelessDto(body.origins, services.directory))
+        val result = services.recommendation.recommend(request)
+        call.respond(result.toStatelessDto(body.origins, nicknames, services.directory))
     }
 }
 

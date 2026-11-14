@@ -16,6 +16,8 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlinx.coroutines.test.runTest
 
 private fun resultTest(body: suspend (RoomFixture, RoomResultService) -> Unit) =
@@ -59,6 +61,48 @@ class RoomResultServiceTest :
                     val result = results.result(created.roomId, created.participantToken, null, null)
                     result.participants.map { it.originCode } shouldContainExactly listOf("03v", "130")
                     result.participants.map { it.isSelf } shouldContainExactly listOf(true, false)
+                }
+            }
+
+            it("names participants by nickname or by A/B/C/D in room order, never with first-person words") {
+                resultTest { fixture, results ->
+                    val anonymous =
+                        fixture.service.create(
+                            CreateRoomCommand(
+                                RoomMode.FAIR,
+                                null,
+                                null,
+                                ParticipantInput(null, "03v", false),
+                                null,
+                                null,
+                            ),
+                        )
+                    fixture.service.join(anonymous.roomId, ParticipantInput(null, "130", false), null)
+                    val reasons =
+                        results
+                            .result(
+                                anonymous.roomId,
+                                null,
+                                null,
+                                null,
+                            ).recommendation.candidates
+                            .joinToString { it.reason }
+                    reasons shouldContain "A"
+                    reasons shouldNotContain "나는"
+                    reasons shouldNotContain "친구"
+
+                    val named = fixture.service.create(create())
+                    fixture.service.join(named.roomId, ParticipantInput("지연", "130", false), null)
+                    results
+                        .result(
+                            named.roomId,
+                            null,
+                            null,
+                            null,
+                        ).recommendation.candidates
+                        .first()
+                        .reason shouldContain
+                        "민수"
                 }
             }
 

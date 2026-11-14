@@ -76,6 +76,7 @@ data class RecommendRequestDto(
     val origins: List<String>,
     val mode: String,
     val favorIndex: Int? = null,
+    val nicknames: List<String?>? = null,
 )
 
 @Serializable

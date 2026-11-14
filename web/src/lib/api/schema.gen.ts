@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/healthz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 서버 상태 확인. 웹이 입력 화면에서 서버를 미리 깨울 때도 쓴다
+         * @description 본문은 `ok`이고 저장소·DB를 건드리지 않는다(DB가 깨어나는 중이어도 응답한다). 서버 루트의 `/healthz`(Cloud Run 점검,
+         *     웹의 `/api/healthz` rewrite 대상)와 `/v1/healthz`는 같은 응답이다.
+         */
+        get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/anon": {
         parameters: {
             query?: never;
@@ -210,6 +231,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description 모든 오류 응답의 형식. `message`는 사람이 읽는 설명이고 `code`로 분기한다. 서버가 내는 코드:
+         *
+         *     | 상태 | code | 뜻 |
+         *     |---|---|---|
+         *     | 400 | `INVALID_REQUEST` | 본문이 JSON이 아니거나 필드가 없거나 형식이 다르다 |
+         *     | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정) |
+         *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
+         *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
+         *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
+         *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
+         *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
+         *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
+         *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
+         *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과를 계산할 수 없다 |
+         *     | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
+         *     | 429 | `RATE_LIMITED` | 속도 제한. `Retry-After`(초)를 따른다 |
+         *     | 500 | `INTERNAL_ERROR` | 서버 오류. 내용은 응답에 싣지 않는다 |
+         *
+         *     출발역에서 갈 수 없는 후보가 있어 공통 후보가 없는 경우는 오류가 아니라 `Result.status = no_common_candidate`다.
+         */
         Error: {
             /** @example ROOM_FULL */
             code: string;
@@ -310,12 +352,20 @@ export interface components {
              * @description 추천 이유 문장(한국어). **서버가 만들어 넣는다**(웹·앱이 같은 문장을 쓰게 하려는 결정). 클라이언트는 문장을 다시
              *     만들지 않고 그대로 보여 준다. 생성 규칙은 `shared/app-logic`(docs/setup/p6-notes.md). `reasonCode`는 문구와 별개로
              *     표현(아이콘·강조 등)에 쓰므로 유지한다.
+             *
+             *     **시점 표현을 쓰지 않는다**: 같은 결과를 링크를 받은 사람과 만든 사람이 서로 다른 시점에서 읽으므로 "나/너/친구1" 같은
+             *     말 없이 이름으로만 쓴다. 이름은 별칭(`nickname`)이고, 없으면 참가자 순서대로 A, B, C, D다(`/recommend`는 입력 순서, 방은
+             *     참여 순서). 같은 별칭이 둘 이상이면 "민수(A)"처럼 글자를 붙여 구별한다. 보는 사람 표시("(나)")는 클라이언트가 한다.
              * @example 둘 다 38분 안쪽이에요. 2위 합정보다 가장 오래 걸리는 사람이 4분 덜 걸려요.
              */
             reason: string;
         };
         Result: {
-            /** @enum {string} */
+            /**
+             * @description `no_common_candidate`는 모든 참가자가 도달할 수 있는 후보역이 없다는 뜻이다(출발역에서 갈 수 없는 후보가 있는 경우를
+             *     포함). 오류가 아니라 정상 응답이고 `candidates`는 비어 있다.
+             * @enum {string}
+             */
             status: "ok" | "no_common_candidate";
             mode: components["schemas"]["Mode"];
             /** @description 계산에 쓴 manifest dataVersion */
@@ -349,6 +399,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 정상 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
     createAnonymousUser: {
         parameters: {
             query?: never;
@@ -446,7 +516,9 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            429: components["responses"]["Error"];
         };
     };
     updateRoom: {
@@ -474,8 +546,11 @@ export interface operations {
                     "application/json": components["schemas"]["Room"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            429: components["responses"]["Error"];
         };
     };
     joinRoom: {
@@ -519,6 +594,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            429: components["responses"]["Error"];
         };
     };
     updateParticipant: {
@@ -547,6 +623,7 @@ export interface operations {
                     "application/json": components["schemas"]["Participant"];
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
@@ -604,7 +681,10 @@ export interface operations {
             };
             400: components["responses"]["Error"];
             404: components["responses"]["Error"];
-            /** @description 참가자가 2명 미만 (`NOT_ENOUGH_PARTICIPANTS`) */
+            /**
+             * @description 참가자가 2명 미만(`NOT_ENOUGH_PARTICIPANTS`), 또는 참가자의 출발역이 지금 서버가 쓰는 데이터에 없다(`STATION_UNAVAILABLE`,
+             *     방을 만든 뒤 데이터가 바뀐 경우)
+             */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -642,7 +722,10 @@ export interface operations {
                 };
                 content?: never;
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
         };
     };
     recommend: {
@@ -659,6 +742,12 @@ export interface operations {
                     mode: components["schemas"]["Mode"];
                     /** @description `mode=favor`일 때 origins 안의 우대 대상 위치 */
                     favorIndex?: number;
+                    /**
+                     * @description 참가자별 선택 이름(별칭). 있으면 `origins`와 같은 길이이고(다르면 400 `INVALID_REQUEST`) 별칭이 없는 사람은 `null`.
+                     *     코드포인트 20자 이하(초과·짝 없는 서로게이트·제어 문자는 400 `INVALID_NICKNAME`). `reason` 문장이 이 이름을 쓰고
+                     *     응답의 `participants[].nickname`에도 그대로 실린다. 없으면 문장은 A, B, C, D(입력 순서)를 쓴다.
+                     */
+                    nicknames?: (string | null)[];
                 };
             };
         };
@@ -673,6 +762,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            429: components["responses"]["Error"];
         };
     };
     getManifest: {
