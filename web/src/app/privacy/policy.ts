@@ -24,7 +24,9 @@ export type Policy = {
 };
 
 /** 운영자가 공개 전에 채울 값. 저장소에는 실제 값을 넣지 않는다. */
-export const REQUIRED_PLACEHOLDERS = ["{운영자}", "privacy@banbanyeok.app", "{시행일}"] as const;
+export const REQUIRED_PLACEHOLDERS = ["{운영자}", "{시행일}"] as const;
+/** 방침에 실을 수 있는 유일한 이메일. 운영자 개인 메일이 아닌 전용 주소(Cloudflare Email Routing으로 전달). */
+export const CONTACT_EMAIL = "privacy@banbanyeok.app";
 
 const p = (text: string): Block => ({ kind: "p", text });
 const list = (...items: string[]): Block => ({ kind: "list", items });
