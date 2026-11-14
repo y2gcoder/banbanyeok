@@ -24,7 +24,7 @@ export type Policy = {
 };
 
 /** 운영자가 공개 전에 채울 값. 저장소에는 실제 값을 넣지 않는다. */
-export const REQUIRED_PLACEHOLDERS = ["{운영자}", "{연락처 이메일}", "{시행일}"] as const;
+export const REQUIRED_PLACEHOLDERS = ["{운영자}", "privacy@banbanyeok.app", "{시행일}"] as const;
 
 const p = (text: string): Block => ({ kind: "p", text });
 const list = (...items: string[]): Block => ({ kind: "list", items });
@@ -316,7 +316,7 @@ export const POLICY: Policy = {
             ],
             [
               "그 밖의 요청(토큰을 잃어 고칠 수 없을 때 등)",
-              "{연락처 이메일}로 방 링크와 원하는 내용을 보내 주세요. 요청을 받은 날부터 10일 이내에 처리 결과를 알려 드립니다.",
+              "privacy@banbanyeok.app로 방 링크와 원하는 내용을 보내 주세요. 요청을 받은 날부터 10일 이내에 처리 결과를 알려 드립니다.",
             ],
           ],
         ),
@@ -427,7 +427,7 @@ export const POLICY: Policy = {
           ["구분", "내용"],
           [
             ["성명", "{운영자}"],
-            ["연락처", "{연락처 이메일}"],
+            ["연락처", "privacy@banbanyeok.app"],
           ],
         ),
         p("문의에는 지체 없이 답변하고 처리합니다."),
