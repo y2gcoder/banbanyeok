@@ -1,17 +1,5004 @@
 {
-  "model": "half-headway",
-  "service_day": "weekday-offpeak",
+  "basis": "Mean adjacent departure gaps per station/direction/branch; median station-pattern mean per line/direction; mean of directions for boarding wait. Regular trains only; <2 departures or missing direction keeps fallback; actual arrival times may differ.",
+  "directions": [
+    {
+      "direction": "1",
+      "line": "5",
+      "seconds": 383,
+      "stationPatternCount": 55
+    },
+    {
+      "direction": "2",
+      "line": "5",
+      "seconds": 390,
+      "stationPatternCount": 54
+    },
+    {
+      "direction": "1",
+      "line": "6",
+      "seconds": 477,
+      "stationPatternCount": 34
+    },
+    {
+      "direction": "2",
+      "line": "6",
+      "seconds": 466,
+      "stationPatternCount": 38
+    },
+    {
+      "direction": "1",
+      "line": "4",
+      "seconds": 334,
+      "stationPatternCount": 26
+    },
+    {
+      "direction": "2",
+      "line": "4",
+      "seconds": 344,
+      "stationPatternCount": 26
+    },
+    {
+      "direction": "1",
+      "line": "3",
+      "seconds": 425,
+      "stationPatternCount": 34
+    },
+    {
+      "direction": "1",
+      "line": "2",
+      "seconds": 339,
+      "stationPatternCount": 50
+    },
+    {
+      "direction": "2",
+      "line": "2",
+      "seconds": 304,
+      "stationPatternCount": 50
+    },
+    {
+      "direction": "2",
+      "line": "7",
+      "seconds": 360,
+      "stationPatternCount": 42
+    },
+    {
+      "direction": "1",
+      "line": "7",
+      "seconds": 355,
+      "stationPatternCount": 41
+    },
+    {
+      "direction": "1",
+      "line": "8",
+      "seconds": 480,
+      "stationPatternCount": 19
+    },
+    {
+      "direction": "2",
+      "line": "8",
+      "seconds": 461,
+      "stationPatternCount": 18
+    },
+    {
+      "direction": "2",
+      "line": "3",
+      "seconds": 419,
+      "stationPatternCount": 33
+    },
+    {
+      "direction": "1",
+      "line": "1",
+      "seconds": 364,
+      "stationPatternCount": 10
+    },
+    {
+      "direction": "2",
+      "line": "1",
+      "seconds": 388,
+      "stationPatternCount": 10
+    }
+  ],
   "effective_date": null,
-  "estimated": true,
-  "basis": "개발용 평시 가정: 간선 6분, 분기/장거리 8분. 시간표나 실측 출처 없음. 운영 공표값이 아니며 시간표 확보 뒤 노선·방향·시간대별 값으로 교체해야 함.",
+  "estimated": false,
+  "fetched_at": "2026-11-14T14:01:42.830043Z",
   "lines": {
-    "1": {"seconds": 360},
-    "2": {"seconds": 360},
-    "3": {"seconds": 480},
-    "4": {"seconds": 480},
-    "5": {"seconds": 480},
-    "6": {"seconds": 480},
-    "7": {"seconds": 480},
-    "8": {"seconds": 480}
-  }
+    "1": {
+      "estimated": false,
+      "seconds": 376
+    },
+    "2": {
+      "estimated": false,
+      "seconds": 322
+    },
+    "3": {
+      "estimated": false,
+      "seconds": 422
+    },
+    "4": {
+      "estimated": false,
+      "seconds": 339
+    },
+    "5": {
+      "estimated": false,
+      "seconds": 387
+    },
+    "6": {
+      "estimated": false,
+      "seconds": 472
+    },
+    "7": {
+      "estimated": false,
+      "seconds": 358
+    },
+    "8": {
+      "estimated": false,
+      "seconds": 471
+    }
+  },
+  "model": "half-headway",
+  "observations": [
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 376,
+      "station": "2524"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 390,
+      "station": "2524"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 376,
+      "station": "2525"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 389,
+      "station": "2525"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2611"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "2",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 476,
+      "station": "2611"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 336,
+      "station": "0433"
+    },
+    {
+      "branch": "",
+      "departures": 34,
+      "direction": "2",
+      "intervalCount": 33,
+      "line": "4",
+      "seconds": 632,
+      "station": "0433"
+    },
+    {
+      "branch": "",
+      "departures": 35,
+      "direction": "1",
+      "intervalCount": 34,
+      "line": "4",
+      "seconds": 624,
+      "station": "0434"
+    },
+    {
+      "branch": "",
+      "departures": 34,
+      "direction": "2",
+      "intervalCount": 33,
+      "line": "4",
+      "seconds": 632,
+      "station": "0434"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2623"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 469,
+      "station": "2623"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "1",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 433,
+      "station": "0342"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "2",
+      "seconds": 331,
+      "station": "0205"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 304,
+      "station": "0205"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 332,
+      "station": "0206"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 307,
+      "station": "0206"
+    },
+    {
+      "branch": "",
+      "departures": 18,
+      "direction": "1",
+      "intervalCount": 17,
+      "line": "4",
+      "seconds": 1196,
+      "station": "0409"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "4",
+      "seconds": 348,
+      "station": "0409"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "2",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2613"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "2",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2614"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2617"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 475,
+      "station": "2617"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2618"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 475,
+      "station": "2618"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2619"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "2",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 474,
+      "station": "2619"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2620"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 472,
+      "station": "2620"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2622"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 472,
+      "station": "2622"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2624"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 469,
+      "station": "2624"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2625"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 469,
+      "station": "2625"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2628"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 466,
+      "station": "2628"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2629"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 466,
+      "station": "2629"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2630"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 466,
+      "station": "2630"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2631"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 466,
+      "station": "2631"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2632"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 465,
+      "station": "2632"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2633"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 465,
+      "station": "2633"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 377,
+      "station": "2527"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 388,
+      "station": "2527"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 379,
+      "station": "2529"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 386,
+      "station": "2529"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2645"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "6",
+      "seconds": 446,
+      "station": "2645"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2646"
+    },
+    {
+      "branch": "",
+      "departures": 49,
+      "direction": "2",
+      "intervalCount": 48,
+      "line": "6",
+      "seconds": 441,
+      "station": "2646"
+    },
+    {
+      "branch": "",
+      "departures": 15,
+      "direction": "1",
+      "intervalCount": 14,
+      "line": "6",
+      "seconds": 1431,
+      "station": "2649"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "7",
+      "seconds": 732,
+      "station": "2711"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 353,
+      "station": "2727"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2727"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 332,
+      "station": "0207"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 307,
+      "station": "0207"
+    },
+    {
+      "branch": "",
+      "departures": 68,
+      "direction": "1",
+      "intervalCount": 67,
+      "line": "4",
+      "seconds": 320,
+      "station": "0410"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "4",
+      "seconds": 348,
+      "station": "0410"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 379,
+      "station": "2530"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 384,
+      "station": "2530"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 380,
+      "station": "2531"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 384,
+      "station": "2531"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 380,
+      "station": "2532"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 384,
+      "station": "2532"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 380,
+      "station": "2533"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 382,
+      "station": "2533"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 380,
+      "station": "2534"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 382,
+      "station": "2534"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 383,
+      "station": "2537"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 381,
+      "station": "2537"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 383,
+      "station": "2538"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 379,
+      "station": "2538"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "2",
+      "seconds": 330,
+      "station": "0208"
+    },
+    {
+      "branch": "",
+      "departures": 70,
+      "direction": "2",
+      "intervalCount": 69,
+      "line": "2",
+      "seconds": 308,
+      "station": "0208"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "2",
+      "seconds": 329,
+      "station": "0209"
+    },
+    {
+      "branch": "",
+      "departures": 70,
+      "direction": "2",
+      "intervalCount": 69,
+      "line": "2",
+      "seconds": 308,
+      "station": "0209"
+    },
+    {
+      "branch": "",
+      "departures": 67,
+      "direction": "1",
+      "intervalCount": 66,
+      "line": "4",
+      "seconds": 321,
+      "station": "0411"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "4",
+      "seconds": 348,
+      "station": "0411"
+    },
+    {
+      "branch": "",
+      "departures": 68,
+      "direction": "1",
+      "intervalCount": 67,
+      "line": "4",
+      "seconds": 322,
+      "station": "0412"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "4",
+      "seconds": 348,
+      "station": "0412"
+    },
+    {
+      "branch": "",
+      "departures": 67,
+      "direction": "1",
+      "intervalCount": 66,
+      "line": "4",
+      "seconds": 324,
+      "station": "0413"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "4",
+      "seconds": 347,
+      "station": "0413"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "4",
+      "seconds": 325,
+      "station": "0414"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "4",
+      "seconds": 347,
+      "station": "0414"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "2",
+      "seconds": 329,
+      "station": "0210"
+    },
+    {
+      "branch": "",
+      "departures": 70,
+      "direction": "2",
+      "intervalCount": 69,
+      "line": "2",
+      "seconds": 308,
+      "station": "0210"
+    },
+    {
+      "branch": "",
+      "departures": 67,
+      "direction": "1",
+      "intervalCount": 66,
+      "line": "4",
+      "seconds": 325,
+      "station": "0415"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 346,
+      "station": "0415"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "4",
+      "seconds": 328,
+      "station": "0416"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "4",
+      "seconds": 345,
+      "station": "0416"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "4",
+      "seconds": 330,
+      "station": "0417"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 345,
+      "station": "0417"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 383,
+      "station": "2539"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 379,
+      "station": "2539"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 385,
+      "station": "2542"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 376,
+      "station": "2542"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 385,
+      "station": "2543"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "2",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 374,
+      "station": "2543"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "1",
+      "intervalCount": 29,
+      "line": "7",
+      "seconds": 726,
+      "station": "2712"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2712"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "1",
+      "intervalCount": 61,
+      "line": "7",
+      "seconds": 350,
+      "station": "2723"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2723"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "1",
+      "intervalCount": 61,
+      "line": "7",
+      "seconds": 350,
+      "station": "2724"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2724"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 351,
+      "station": "2725"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2725"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "1",
+      "intervalCount": 61,
+      "line": "7",
+      "seconds": 352,
+      "station": "2726"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2726"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 353,
+      "station": "2728"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2728"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 385,
+      "station": "2544"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "2",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 371,
+      "station": "2544"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 354,
+      "station": "2729"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2729"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 354,
+      "station": "2730"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2730"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "1",
+      "intervalCount": 61,
+      "line": "7",
+      "seconds": 354,
+      "station": "2731"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2731"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 355,
+      "station": "2732"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2732"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 355,
+      "station": "2733"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2733"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 356,
+      "station": "2734"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2734"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 359,
+      "station": "2739"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2739"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2750"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "2",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 354,
+      "station": "2750"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2751"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "2",
+      "intervalCount": 61,
+      "line": "7",
+      "seconds": 352,
+      "station": "2751"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2752"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "7",
+      "seconds": 728,
+      "station": "2752"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 337,
+      "station": "0428"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 339,
+      "station": "0428"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 386,
+      "station": "2545"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "2",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 371,
+      "station": "2545"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 387,
+      "station": "2546"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "2",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 368,
+      "station": "2546"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2817"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 461,
+      "station": "2817"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2819"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 458,
+      "station": "2819"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2828"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "8",
+      "seconds": 456,
+      "station": "2828"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 342,
+      "station": "0211"
+    },
+    {
+      "branch": "",
+      "departures": 98,
+      "direction": "2",
+      "intervalCount": 97,
+      "line": "2",
+      "seconds": 219,
+      "station": "0211"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "4",
+      "seconds": 330,
+      "station": "0418"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 345,
+      "station": "0418"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "4",
+      "seconds": 331,
+      "station": "0419"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 344,
+      "station": "0419"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 333,
+      "station": "0420"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 344,
+      "station": "0420"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 333,
+      "station": "0421"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 342,
+      "station": "0421"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 334,
+      "station": "0422"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 342,
+      "station": "0422"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 334,
+      "station": "0423"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 340,
+      "station": "0423"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 336,
+      "station": "0424"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 340,
+      "station": "0424"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 336,
+      "station": "0425"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "2",
+      "intervalCount": 62,
+      "line": "4",
+      "seconds": 340,
+      "station": "0425"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 337,
+      "station": "0426"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 339,
+      "station": "0426"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 336,
+      "station": "0427"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 339,
+      "station": "0427"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 342,
+      "station": "0212"
+    },
+    {
+      "branch": "",
+      "departures": 75,
+      "direction": "2",
+      "intervalCount": 74,
+      "line": "2",
+      "seconds": 291,
+      "station": "0212"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "1",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 411,
+      "station": "0312"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 430,
+      "station": "0312"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "1",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 412,
+      "station": "0313"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "2",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 427,
+      "station": "0313"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "1",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 416,
+      "station": "0317"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 421,
+      "station": "0317"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 421,
+      "station": "0319"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 421,
+      "station": "0319"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "1",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 421,
+      "station": "0320"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 421,
+      "station": "0320"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0321"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "2",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 419,
+      "station": "0321"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0322"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "2",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 419,
+      "station": "0322"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 337,
+      "station": "0223"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 306,
+      "station": "0223"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 337,
+      "station": "0224"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 308,
+      "station": "0224"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 337,
+      "station": "0225"
+    },
+    {
+      "branch": "",
+      "departures": 70,
+      "direction": "2",
+      "intervalCount": 69,
+      "line": "2",
+      "seconds": 310,
+      "station": "0225"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 337,
+      "station": "0226"
+    },
+    {
+      "branch": "",
+      "departures": 70,
+      "direction": "2",
+      "intervalCount": 69,
+      "line": "2",
+      "seconds": 310,
+      "station": "0226"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 335,
+      "station": "0227"
+    },
+    {
+      "branch": "",
+      "departures": 69,
+      "direction": "2",
+      "intervalCount": 68,
+      "line": "2",
+      "seconds": 311,
+      "station": "0227"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 332,
+      "station": "0228"
+    },
+    {
+      "branch": "",
+      "departures": 70,
+      "direction": "2",
+      "intervalCount": 69,
+      "line": "2",
+      "seconds": 312,
+      "station": "0228"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 332,
+      "station": "0229"
+    },
+    {
+      "branch": "",
+      "departures": 69,
+      "direction": "2",
+      "intervalCount": 68,
+      "line": "2",
+      "seconds": 312,
+      "station": "0229"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "2",
+      "seconds": 330,
+      "station": "0230"
+    },
+    {
+      "branch": "",
+      "departures": 69,
+      "direction": "2",
+      "intervalCount": 68,
+      "line": "2",
+      "seconds": 312,
+      "station": "0230"
+    },
+    {
+      "branch": "",
+      "departures": 66,
+      "direction": "1",
+      "intervalCount": 65,
+      "line": "2",
+      "seconds": 327,
+      "station": "0231"
+    },
+    {
+      "branch": "",
+      "departures": 69,
+      "direction": "2",
+      "intervalCount": 68,
+      "line": "2",
+      "seconds": 315,
+      "station": "0231"
+    },
+    {
+      "branch": "",
+      "departures": 67,
+      "direction": "1",
+      "intervalCount": 66,
+      "line": "2",
+      "seconds": 325,
+      "station": "0232"
+    },
+    {
+      "branch": "",
+      "departures": 69,
+      "direction": "2",
+      "intervalCount": 68,
+      "line": "2",
+      "seconds": 315,
+      "station": "0232"
+    },
+    {
+      "branch": "",
+      "departures": 67,
+      "direction": "1",
+      "intervalCount": 66,
+      "line": "2",
+      "seconds": 325,
+      "station": "0233"
+    },
+    {
+      "branch": "",
+      "departures": 69,
+      "direction": "2",
+      "intervalCount": 68,
+      "line": "2",
+      "seconds": 314,
+      "station": "0233"
+    },
+    {
+      "branch": "",
+      "departures": 97,
+      "direction": "1",
+      "intervalCount": 96,
+      "line": "2",
+      "seconds": 224,
+      "station": "0234"
+    },
+    {
+      "branch": "",
+      "departures": 69,
+      "direction": "2",
+      "intervalCount": 68,
+      "line": "2",
+      "seconds": 314,
+      "station": "0234"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 346,
+      "station": "0235"
+    },
+    {
+      "branch": "",
+      "departures": 74,
+      "direction": "2",
+      "intervalCount": 73,
+      "line": "2",
+      "seconds": 295,
+      "station": "0235"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "1",
+      "intervalCount": 61,
+      "line": "2",
+      "seconds": 347,
+      "station": "0236"
+    },
+    {
+      "branch": "",
+      "departures": 73,
+      "direction": "2",
+      "intervalCount": 72,
+      "line": "2",
+      "seconds": 297,
+      "station": "0236"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 345,
+      "station": "0237"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 298,
+      "station": "0237"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 342,
+      "station": "0238"
+    },
+    {
+      "branch": "",
+      "departures": 73,
+      "direction": "2",
+      "intervalCount": 72,
+      "line": "2",
+      "seconds": 298,
+      "station": "0238"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 335,
+      "station": "0202"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 304,
+      "station": "0202"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 333,
+      "station": "0203"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 304,
+      "station": "0203"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 333,
+      "station": "0204"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 304,
+      "station": "0204"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 340,
+      "station": "0213"
+    },
+    {
+      "branch": "",
+      "departures": 74,
+      "direction": "2",
+      "intervalCount": 73,
+      "line": "2",
+      "seconds": 291,
+      "station": "0213"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 340,
+      "station": "0214"
+    },
+    {
+      "branch": "",
+      "departures": 74,
+      "direction": "2",
+      "intervalCount": 73,
+      "line": "2",
+      "seconds": 291,
+      "station": "0214"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 340,
+      "station": "0215"
+    },
+    {
+      "branch": "",
+      "departures": 74,
+      "direction": "2",
+      "intervalCount": 73,
+      "line": "2",
+      "seconds": 293,
+      "station": "0215"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 340,
+      "station": "0216"
+    },
+    {
+      "branch": "",
+      "departures": 75,
+      "direction": "2",
+      "intervalCount": 74,
+      "line": "2",
+      "seconds": 292,
+      "station": "0216"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 340,
+      "station": "0217"
+    },
+    {
+      "branch": "",
+      "departures": 74,
+      "direction": "2",
+      "intervalCount": 73,
+      "line": "2",
+      "seconds": 294,
+      "station": "0217"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 340,
+      "station": "0218"
+    },
+    {
+      "branch": "",
+      "departures": 73,
+      "direction": "2",
+      "intervalCount": 72,
+      "line": "2",
+      "seconds": 296,
+      "station": "0218"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 341,
+      "station": "0219"
+    },
+    {
+      "branch": "",
+      "departures": 73,
+      "direction": "2",
+      "intervalCount": 72,
+      "line": "2",
+      "seconds": 299,
+      "station": "0219"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "2",
+      "seconds": 341,
+      "station": "0220"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 301,
+      "station": "0220"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 339,
+      "station": "0221"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 303,
+      "station": "0221"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 339,
+      "station": "0222"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 303,
+      "station": "0222"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 387,
+      "station": "2547"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "2",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 368,
+      "station": "2547"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 388,
+      "station": "2548"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "2",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 366,
+      "station": "2548"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 777,
+      "station": "2550"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 731,
+      "station": "2550"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 777,
+      "station": "2551"
+    },
+    {
+      "branch": "",
+      "departures": 29,
+      "direction": "2",
+      "intervalCount": 28,
+      "line": "5",
+      "seconds": 730,
+      "station": "2551"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 777,
+      "station": "2552"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 720,
+      "station": "2552"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 777,
+      "station": "2553"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 720,
+      "station": "2553"
+    },
+    {
+      "branch": "",
+      "departures": 27,
+      "direction": "1",
+      "intervalCount": 26,
+      "line": "5",
+      "seconds": 779,
+      "station": "2554"
+    },
+    {
+      "branch": "",
+      "departures": 29,
+      "direction": "2",
+      "intervalCount": 28,
+      "line": "5",
+      "seconds": 746,
+      "station": "2554"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 374,
+      "station": "2521"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 390,
+      "station": "2521"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 374,
+      "station": "2522"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 390,
+      "station": "2522"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 374,
+      "station": "2523"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 390,
+      "station": "2523"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2641"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "6",
+      "seconds": 450,
+      "station": "2641"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2642"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "6",
+      "seconds": 450,
+      "station": "2642"
+    },
+    {
+      "branch": "",
+      "departures": 27,
+      "direction": "1",
+      "intervalCount": 26,
+      "line": "5",
+      "seconds": 778,
+      "station": "2555"
+    },
+    {
+      "branch": "",
+      "departures": 34,
+      "direction": "2",
+      "intervalCount": 33,
+      "line": "5",
+      "seconds": 638,
+      "station": "2555"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 778,
+      "station": "2556"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 726,
+      "station": "2556"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 778,
+      "station": "2557"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 726,
+      "station": "2557"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 779,
+      "station": "2563"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 737,
+      "station": "2563"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 779,
+      "station": "2564"
+    },
+    {
+      "branch": "",
+      "departures": 29,
+      "direction": "2",
+      "intervalCount": 28,
+      "line": "5",
+      "seconds": 735,
+      "station": "2564"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 779,
+      "station": "2565"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 724,
+      "station": "2565"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2818"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 461,
+      "station": "2818"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2820"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 458,
+      "station": "2820"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2821"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 458,
+      "station": "2821"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 377,
+      "station": "2528"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 386,
+      "station": "2528"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 778,
+      "station": "2558"
+    },
+    {
+      "branch": "",
+      "departures": 31,
+      "direction": "2",
+      "intervalCount": 30,
+      "line": "5",
+      "seconds": 717,
+      "station": "2558"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 778,
+      "station": "2559"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 715,
+      "station": "2559"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2647"
+    },
+    {
+      "branch": "",
+      "departures": 49,
+      "direction": "2",
+      "intervalCount": 48,
+      "line": "6",
+      "seconds": 441,
+      "station": "2647"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2648"
+    },
+    {
+      "branch": "",
+      "departures": 15,
+      "direction": "2",
+      "intervalCount": 14,
+      "line": "6",
+      "seconds": 1427,
+      "station": "2648"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "1",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 426,
+      "station": "0323"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 418,
+      "station": "0323"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0324"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "2",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 415,
+      "station": "0324"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0325"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "2",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 415,
+      "station": "0325"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 370,
+      "station": "2518"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 391,
+      "station": "2518"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 385,
+      "station": "2540"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "2",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 377,
+      "station": "2540"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 385,
+      "station": "2541"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "2",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 377,
+      "station": "2541"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 778,
+      "station": "2560"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "2",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 715,
+      "station": "2560"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0326"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "2",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 413,
+      "station": "0326"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0327"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "2",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 412,
+      "station": "0327"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 476,
+      "station": "2615"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "2",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 476,
+      "station": "2616"
+    },
+    {
+      "branch": "",
+      "departures": 31,
+      "direction": "1",
+      "intervalCount": 30,
+      "line": "5",
+      "seconds": 700,
+      "station": "2561"
+    },
+    {
+      "branch": "",
+      "departures": 28,
+      "direction": "1",
+      "intervalCount": 27,
+      "line": "5",
+      "seconds": 779,
+      "station": "2562"
+    },
+    {
+      "branch": "",
+      "departures": 29,
+      "direction": "2",
+      "intervalCount": 28,
+      "line": "5",
+      "seconds": 746,
+      "station": "2562"
+    },
+    {
+      "branch": "",
+      "departures": 30,
+      "direction": "1",
+      "intervalCount": 29,
+      "line": "5",
+      "seconds": 699,
+      "station": "2566"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0328"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "2",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 412,
+      "station": "0328"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 425,
+      "station": "0329"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "2",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 410,
+      "station": "0329"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 368,
+      "station": "2515"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 391,
+      "station": "2515"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 368,
+      "station": "2516"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 391,
+      "station": "2516"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 369,
+      "station": "2517"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 391,
+      "station": "2517"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 372,
+      "station": "2519"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 391,
+      "station": "2519"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "5",
+      "seconds": 372,
+      "station": "2520"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 390,
+      "station": "2520"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 426,
+      "station": "0330"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "2",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 410,
+      "station": "0330"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 426,
+      "station": "0331"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "2",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 408,
+      "station": "0331"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 377,
+      "station": "2526"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 388,
+      "station": "2526"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 382,
+      "station": "2536"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 381,
+      "station": "2536"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "7",
+      "seconds": 340,
+      "station": "2713"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2713"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "7",
+      "seconds": 342,
+      "station": "2714"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2714"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "7",
+      "seconds": 344,
+      "station": "2717"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2717"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "1",
+      "intervalCount": 61,
+      "line": "7",
+      "seconds": 345,
+      "station": "2718"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2718"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "7",
+      "seconds": 345,
+      "station": "2719"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2719"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "7",
+      "seconds": 346,
+      "station": "2720"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2720"
+    },
+    {
+      "branch": "",
+      "departures": 62,
+      "direction": "1",
+      "intervalCount": 61,
+      "line": "7",
+      "seconds": 347,
+      "station": "2721"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2721"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "7",
+      "seconds": 348,
+      "station": "2722"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2722"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 428,
+      "station": "0332"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "2",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 408,
+      "station": "0332"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 428,
+      "station": "0333"
+    },
+    {
+      "branch": "",
+      "departures": 54,
+      "direction": "2",
+      "intervalCount": 53,
+      "line": "3",
+      "seconds": 405,
+      "station": "0333"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "1",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 431,
+      "station": "0334"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "2",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 406,
+      "station": "0334"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 430,
+      "station": "0335"
+    },
+    {
+      "branch": "",
+      "departures": 54,
+      "direction": "2",
+      "intervalCount": 53,
+      "line": "3",
+      "seconds": 404,
+      "station": "0335"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2634"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 463,
+      "station": "2634"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2635"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 463,
+      "station": "2635"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2636"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "6",
+      "seconds": 459,
+      "station": "2636"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2637"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 458,
+      "station": "2637"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 477,
+      "station": "2638"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 458,
+      "station": "2638"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2639"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "6",
+      "seconds": 454,
+      "station": "2639"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2640"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "6",
+      "seconds": 454,
+      "station": "2640"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 359,
+      "station": "2740"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "2",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 360,
+      "station": "2740"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 359,
+      "station": "2741"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 359,
+      "station": "2741"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 359,
+      "station": "2742"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 359,
+      "station": "2742"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2749"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "2",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 356,
+      "station": "2749"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 430,
+      "station": "0336"
+    },
+    {
+      "branch": "",
+      "departures": 54,
+      "direction": "2",
+      "intervalCount": 53,
+      "line": "3",
+      "seconds": 404,
+      "station": "0336"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 357,
+      "station": "2735"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2735"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2747"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 357,
+      "station": "2747"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2748"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "2",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 356,
+      "station": "2748"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2816"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 461,
+      "station": "2816"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2822"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 455,
+      "station": "2822"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2823"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "8",
+      "seconds": 453,
+      "station": "2823"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2824"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "8",
+      "seconds": 453,
+      "station": "2824"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2825"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "8",
+      "seconds": 453,
+      "station": "2825"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2826"
+    },
+    {
+      "branch": "",
+      "departures": 48,
+      "direction": "2",
+      "intervalCount": 47,
+      "line": "8",
+      "seconds": 453,
+      "station": "2826"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2827"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "1",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 432,
+      "station": "0337"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "3",
+      "seconds": 400,
+      "station": "0337"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 431,
+      "station": "0338"
+    },
+    {
+      "branch": "",
+      "departures": 54,
+      "direction": "2",
+      "intervalCount": 53,
+      "line": "3",
+      "seconds": 399,
+      "station": "0338"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "1",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 433,
+      "station": "0339"
+    },
+    {
+      "branch": "",
+      "departures": 49,
+      "direction": "2",
+      "intervalCount": 48,
+      "line": "3",
+      "seconds": 441,
+      "station": "0339"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "1",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 433,
+      "station": "0340"
+    },
+    {
+      "branch": "",
+      "departures": 49,
+      "direction": "2",
+      "intervalCount": 48,
+      "line": "3",
+      "seconds": 441,
+      "station": "0340"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "1",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 431,
+      "station": "0341"
+    },
+    {
+      "branch": "",
+      "departures": 49,
+      "direction": "2",
+      "intervalCount": 48,
+      "line": "3",
+      "seconds": 443,
+      "station": "0341"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 340,
+      "station": "0239"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 299,
+      "station": "0239"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 340,
+      "station": "0240"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 300,
+      "station": "0240"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 339,
+      "station": "0241"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 300,
+      "station": "0241"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 339,
+      "station": "0242"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 300,
+      "station": "0242"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "2",
+      "seconds": 338,
+      "station": "0243"
+    },
+    {
+      "branch": "",
+      "departures": 72,
+      "direction": "2",
+      "intervalCount": 71,
+      "line": "2",
+      "seconds": 302,
+      "station": "0243"
+    },
+    {
+      "branch": "",
+      "departures": 35,
+      "direction": "1",
+      "intervalCount": 34,
+      "line": "2",
+      "seconds": 614,
+      "station": "0244"
+    },
+    {
+      "branch": "",
+      "departures": 35,
+      "direction": "2",
+      "intervalCount": 34,
+      "line": "2",
+      "seconds": 614,
+      "station": "0244"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "1",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 615,
+      "station": "0245"
+    },
+    {
+      "branch": "",
+      "departures": 35,
+      "direction": "2",
+      "intervalCount": 34,
+      "line": "2",
+      "seconds": 614,
+      "station": "0245"
+    },
+    {
+      "branch": "",
+      "departures": 35,
+      "direction": "1",
+      "intervalCount": 34,
+      "line": "2",
+      "seconds": 616,
+      "station": "0246"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "1",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 603,
+      "station": "0247"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "2",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 600,
+      "station": "0247"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "1",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 603,
+      "station": "0248"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "2",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 600,
+      "station": "0248"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "1",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 603,
+      "station": "0249"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "2",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 598,
+      "station": "0249"
+    },
+    {
+      "branch": "",
+      "departures": 35,
+      "direction": "1",
+      "intervalCount": 34,
+      "line": "2",
+      "seconds": 616,
+      "station": "0250"
+    },
+    {
+      "branch": "",
+      "departures": 35,
+      "direction": "2",
+      "intervalCount": 34,
+      "line": "2",
+      "seconds": 614,
+      "station": "0250"
+    },
+    {
+      "branch": "",
+      "departures": 38,
+      "direction": "1",
+      "intervalCount": 37,
+      "line": "3",
+      "seconds": 569,
+      "station": "0309"
+    },
+    {
+      "branch": "",
+      "departures": 38,
+      "direction": "2",
+      "intervalCount": 37,
+      "line": "3",
+      "seconds": 577,
+      "station": "0309"
+    },
+    {
+      "branch": "",
+      "departures": 38,
+      "direction": "1",
+      "intervalCount": 37,
+      "line": "3",
+      "seconds": 575,
+      "station": "0310"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "2",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 432,
+      "station": "0310"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "1",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 409,
+      "station": "0311"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "2",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 432,
+      "station": "0311"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "1",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 413,
+      "station": "0314"
+    },
+    {
+      "branch": "",
+      "departures": 50,
+      "direction": "2",
+      "intervalCount": 49,
+      "line": "3",
+      "seconds": 427,
+      "station": "0314"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "1",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 413,
+      "station": "0315"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 426,
+      "station": "0315"
+    },
+    {
+      "branch": "",
+      "departures": 53,
+      "direction": "1",
+      "intervalCount": 52,
+      "line": "3",
+      "seconds": 414,
+      "station": "0316"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 426,
+      "station": "0316"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "1",
+      "intervalCount": 51,
+      "line": "3",
+      "seconds": 416,
+      "station": "0318"
+    },
+    {
+      "branch": "",
+      "departures": 51,
+      "direction": "2",
+      "intervalCount": 50,
+      "line": "3",
+      "seconds": 421,
+      "station": "0318"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 337,
+      "station": "0429"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 339,
+      "station": "0429"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 337,
+      "station": "0430"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 339,
+      "station": "0430"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 336,
+      "station": "0431"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "2",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 337,
+      "station": "0431"
+    },
+    {
+      "branch": "",
+      "departures": 64,
+      "direction": "1",
+      "intervalCount": 63,
+      "line": "4",
+      "seconds": 337,
+      "station": "0432"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "2",
+      "intervalCount": 64,
+      "line": "4",
+      "seconds": 336,
+      "station": "0432"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 391,
+      "station": "2511"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2643"
+    },
+    {
+      "branch": "",
+      "departures": 49,
+      "direction": "2",
+      "intervalCount": 48,
+      "line": "6",
+      "seconds": 446,
+      "station": "2643"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2644"
+    },
+    {
+      "branch": "",
+      "departures": 49,
+      "direction": "2",
+      "intervalCount": 48,
+      "line": "6",
+      "seconds": 446,
+      "station": "2644"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 357,
+      "station": "2736"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2736"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 358,
+      "station": "2737"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2737"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 358,
+      "station": "2738"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2738"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 359,
+      "station": "2743"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "2",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 358,
+      "station": "2743"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2744"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 358,
+      "station": "2744"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2745"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "2",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 357,
+      "station": "2745"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2746"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "2",
+      "intervalCount": 60,
+      "line": "7",
+      "seconds": 357,
+      "station": "2746"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "5",
+      "seconds": 363,
+      "station": "2512"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 391,
+      "station": "2512"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 365,
+      "station": "2513"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 391,
+      "station": "2513"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 365,
+      "station": "2514"
+    },
+    {
+      "branch": "",
+      "departures": 55,
+      "direction": "2",
+      "intervalCount": 54,
+      "line": "5",
+      "seconds": 391,
+      "station": "2514"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "1",
+      "intervalCount": 45,
+      "line": "8",
+      "seconds": 479,
+      "station": "2810"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "8",
+      "seconds": 469,
+      "station": "2810"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 479,
+      "station": "2811"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "8",
+      "seconds": 467,
+      "station": "2811"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 479,
+      "station": "2812"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "8",
+      "seconds": 467,
+      "station": "2812"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 479,
+      "station": "2813"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 464,
+      "station": "2813"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2814"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "8",
+      "seconds": 464,
+      "station": "2814"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "8",
+      "seconds": 480,
+      "station": "2815"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "8",
+      "seconds": 464,
+      "station": "2815"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2621"
+    },
+    {
+      "branch": "",
+      "departures": 46,
+      "direction": "2",
+      "intervalCount": 45,
+      "line": "6",
+      "seconds": 472,
+      "station": "2621"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "1",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 388,
+      "station": "2549"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "2",
+      "intervalCount": 58,
+      "line": "5",
+      "seconds": 366,
+      "station": "2549"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "1",
+      "intervalCount": 56,
+      "line": "5",
+      "seconds": 382,
+      "station": "2535"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "5",
+      "seconds": 382,
+      "station": "2535"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2626"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 466,
+      "station": "2626"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "1",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2627"
+    },
+    {
+      "branch": "",
+      "departures": 47,
+      "direction": "2",
+      "intervalCount": 46,
+      "line": "6",
+      "seconds": 466,
+      "station": "2627"
+    },
+    {
+      "branch": "",
+      "departures": 45,
+      "direction": "2",
+      "intervalCount": 44,
+      "line": "6",
+      "seconds": 477,
+      "station": "2612"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "7",
+      "seconds": 342,
+      "station": "2715"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2715"
+    },
+    {
+      "branch": "",
+      "departures": 63,
+      "direction": "1",
+      "intervalCount": 62,
+      "line": "7",
+      "seconds": 344,
+      "station": "2716"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "2",
+      "intervalCount": 59,
+      "line": "7",
+      "seconds": 360,
+      "station": "2716"
+    },
+    {
+      "branch": "",
+      "departures": 61,
+      "direction": "1",
+      "intervalCount": 60,
+      "line": "1",
+      "seconds": 356,
+      "station": "0150"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 393,
+      "station": "0150"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "1",
+      "seconds": 357,
+      "station": "0151"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 387,
+      "station": "0151"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "1",
+      "seconds": 360,
+      "station": "0152"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 387,
+      "station": "0152"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "1",
+      "seconds": 364,
+      "station": "0153"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 388,
+      "station": "0153"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "1",
+      "seconds": 366,
+      "station": "0154"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 388,
+      "station": "0154"
+    },
+    {
+      "branch": "",
+      "departures": 60,
+      "direction": "1",
+      "intervalCount": 59,
+      "line": "1",
+      "seconds": 364,
+      "station": "0155"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 388,
+      "station": "0155"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "1",
+      "seconds": 363,
+      "station": "0156"
+    },
+    {
+      "branch": "",
+      "departures": 57,
+      "direction": "2",
+      "intervalCount": 56,
+      "line": "1",
+      "seconds": 385,
+      "station": "0156"
+    },
+    {
+      "branch": "",
+      "departures": 59,
+      "direction": "1",
+      "intervalCount": 58,
+      "line": "1",
+      "seconds": 363,
+      "station": "0157"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 387,
+      "station": "0157"
+    },
+    {
+      "branch": "",
+      "departures": 52,
+      "direction": "1",
+      "intervalCount": 51,
+      "line": "1",
+      "seconds": 418,
+      "station": "0158"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 387,
+      "station": "0158"
+    },
+    {
+      "branch": "",
+      "departures": 58,
+      "direction": "1",
+      "intervalCount": 57,
+      "line": "1",
+      "seconds": 364,
+      "station": "0159"
+    },
+    {
+      "branch": "",
+      "departures": 56,
+      "direction": "2",
+      "intervalCount": 55,
+      "line": "1",
+      "seconds": 388,
+      "station": "0159"
+    },
+    {
+      "branch": "",
+      "departures": 36,
+      "direction": "2",
+      "intervalCount": 35,
+      "line": "2",
+      "seconds": 598,
+      "station": "0200"
+    },
+    {
+      "branch": "",
+      "departures": 65,
+      "direction": "1",
+      "intervalCount": 64,
+      "line": "2",
+      "seconds": 335,
+      "station": "0201"
+    },
+    {
+      "branch": "",
+      "departures": 71,
+      "direction": "2",
+      "intervalCount": 70,
+      "line": "2",
+      "seconds": 304,
+      "station": "0201"
+    }
+  ],
+  "period": "weekday 10:00:00–16:00:00 inclusive; timetable revision date not supplied",
+  "service_day": "weekday-offpeak",
+  "source_url": "https://data.seoul.go.kr/dataList/OA-101/A/1/datasetView.do"
 }
