@@ -1,6 +1,6 @@
 # P8a 서버·DB 배포 작업 노트 (Cloud Run + Supabase + GCS)
 
-작성 2026-11-14. 우선순위 문서: [01-synthesis](../01-synthesis.md) → [S1 노트](s1-notes.md) → [P3 노트](p3-notes.md)(7·8·9절). 웹(Cloudflare)은 P8b 범위다.
+작성 2026-11-14, P8a-2 개정 2026-11-15(콜드스타트 개선 3.10절, 백업을 Cloud Run Job으로 3.6절, WIF를 main으로 한정). 우선순위 문서: [01-synthesis](../01-synthesis.md) → [S1 노트](s1-notes.md) → [P3 노트](p3-notes.md)(7·8·9절). 웹(Cloudflare)은 P8b 범위다.
 
 ## 1. 구성
 
@@ -10,16 +10,17 @@ GitHub Actions ──(OIDC/WIF, 키 없음)──▶ github-deployer ─┬─�
                                                           ├─▶ GCS 산출물 버킷  versions/<버전>/<종류>.<해시16>.<확장자> + manifest.json
                                                           └─▶ Cloud Run 서비스 server (server-runtime 계정, min 0)
 Cloud Scheduler cleanup-daily (04:00 KST) ─▶ Cloud Run Job cleanup (서버 이미지 + 인자 cleanup) ─▶ Supabase(세션 풀러)
-GitHub Actions db-backup.yml (주 1회+수동, db-backup 계정) ─▶ pg_dump 17 ─▶ gs://…-backups/db/ (비공개, 30일 후 삭제)
+Cloud Scheduler db-backup-weekly (월 03:17 KST) ─▶ Cloud Run Job db-backup (backup 이미지, db-backup 계정) ─▶ pg_dump 17 ─▶ gs://…-backups/db/ (비공개, 30일 후 삭제)
+  (수동: gh workflow run db-backup.yml 은 이 Job을 실행하고 기다리기만 한다 — GitHub 러너는 DB 비밀번호·덤프를 만지지 않는다)
 ```
 
 | 리소스 | 이름 | 비고 |
 |---|---|---|
 | 프로젝트·리전 | `banbanyeok-7eoxn` · `asia-northeast3` | |
-| Artifact Registry | `server` (docker) | 이미지 `server`, `migrate`. 정리 정책: 이미지별 최근 3개 유지, 나머지 삭제 |
+| Artifact Registry | `server` (docker) | 이미지 `server`, `migrate`, `backup`. 정리 정책: 이미지별 최근 3개 유지, 나머지 삭제 |
 | Cloud Run 서비스 | `server` | 1 vCPU · 512Mi · 동시성 40 · max 2 · min 0 · startup CPU boost · gen2 · 공개 호출 |
-| Cloud Run Job | `migrate`, `cleanup` | `migrate`: 1 vCPU·1Gi·재시도 0. `cleanup`: 서버 이미지, 재시도 1 |
-| Cloud Scheduler | `cleanup-daily` | `0 4 * * *` Asia/Seoul → `cleanup:run` |
+| Cloud Run Job | `migrate`, `cleanup`, `db-backup` | `migrate`: 1 vCPU·1Gi·재시도 0. `cleanup`: 서버 이미지, 재시도 1. `db-backup`: backup 이미지(postgres:17.6-alpine), 512Mi, 재시도 1, 15분 |
+| Cloud Scheduler | `cleanup-daily`, `db-backup-weekly` | `0 4 * * *`·`17 3 * * 1` Asia/Seoul → 각 Job `:run`. 무료 3개 한도 중 2개 |
 | 서비스 계정 | `server-runtime`, `db-migrator`, `db-backup`, `scheduler-invoker`, `github-deployer`(기존) | 아래 권한 표 |
 | 버킷 | `…-artifacts`(기존), `…-backups`(신규) | 둘 다 비공개(공개 접근 차단 강제), 균일 접근 |
 
@@ -32,19 +33,19 @@ GitHub Actions db-backup.yml (주 1회+수동, db-backup 계정) ─▶ pg_dump 
 | `server-runtime` | `secretmanager.secretAccessor` | 비밀 `database-password`, `token-pepper`, `proxy-shared-secret` | 서비스·cleanup Job이 시작할 때 DB 비밀번호와 토큰 pepper를, 서비스가 웹 프록시 공유 비밀을 읽는다 |
 | `server-runtime` | `storage.objectViewer` | 버킷 `…-artifacts` | 서버가 시작할 때 manifest와 산출물을 읽는다(쓰기 없음) |
 | `db-migrator` | `secretmanager.secretAccessor` | 비밀 `database-password` | migrate Job이 Liquibase 비밀번호만 읽는다(pepper 접근 없음) |
-| `db-backup` | `secretmanager.secretAccessor` | 비밀 `database-password` | 백업 워크플로가 pg_dump 비밀번호를 읽는다 |
+| `db-backup` | `secretmanager.secretAccessor` | 비밀 `database-password` | db-backup Job이 pg_dump 비밀번호를 읽는다 |
 | `db-backup` | `storage.objectCreator`, `storage.objectViewer` | 버킷 `…-backups` | 덤프를 올리고 크기를 확인한다. **삭제·덮어쓰기 권한 없음**(삭제는 수명 주기 규칙만) |
-| `db-backup` ← GitHub OIDC | `iam.workloadIdentityUser` | 계정 `db-backup` | 배포 계정과 **분리**: 배포 워크플로가 DB 비밀번호를 읽을 수 없고, 백업 워크플로가 배포할 수 없다. 주체 집합은 `github-deployer`와 같은 저장소 ID 조건 |
-| `github-deployer` | `run.developer` | 서비스 `server`, Job `migrate`, Job `cleanup` | 리비전·Job 배포, Job 실행·대기, 트래픽 전환. 서비스 IAM 정책 변경(`setIamPolicy`)은 불가 |
+| `scheduler-invoker` | `run.invoker` | Job `db-backup` | Cloud Scheduler가 이 Job만 실행(위 `cleanup`과 같은 계정) |
+| `github-deployer` | `run.developer` | 서비스 `server`, Job `migrate`·`cleanup`·`db-backup` | 리비전·Job 배포, Job 실행·대기, 트래픽 전환. 서비스 IAM 정책 변경(`setIamPolicy`)은 불가 |
 | `github-deployer` | `artifactregistry.writer` | 저장소 `server` | 이미지 푸시 |
 | `github-deployer` | `storage.objectUser` | 버킷 `…-artifacts` | 산출물 발행(생성·덮어쓰기)과 오래된 버전 정리(삭제) |
-| `github-deployer` | `iam.serviceAccountUser` | 계정 `server-runtime`, `db-migrator` | 리비전·Job에 실행 계정을 지정(actAs) |
+| `github-deployer` | `iam.serviceAccountUser` | 계정 `server-runtime`, `db-migrator`, `db-backup` | 리비전·Job에 실행 계정을 지정(actAs) |
 | `github-deployer` | `serviceusage.serviceUsageConsumer` | 프로젝트 | gcloud/클라이언트가 프로젝트 API를 호출 |
 | `scheduler-invoker` | `run.invoker` | Job `cleanup` | Cloud Scheduler가 이 Job만 실행 |
 | `allUsers` | `run.invoker` | 서비스 `server`만 | 비회원 공개 API(인증은 앱의 익명 토큰) |
 
 알아 둘 점
-- **WIF 조건은 저장소 ID뿐**이라 이 저장소의 모든 워크플로·브랜치가 `github-deployer`와 `db-backup`을 가장할 수 있다(퍼블릭 저장소이지만 쓰기 권한이 있는 사람만 워크플로를 바꿀 수 있고, 포크의 PR은 OIDC 토큰을 받지 못한다). 더 좁히려면 공급자 속성 조건에 `assertion.ref == 'refs/heads/main'`이나 GitHub Environment(필수 승인자)를 추가한다. 이번 검증은 브랜치에서 배포해야 해서 넣지 않았다 → 결정 필요 1.
+- **WIF는 main 브랜치로 한정**했다(P8a-2): 공급자 `banbanyeok-repo`의 속성 조건이 `assertion.repository_id=='<저장소 ID>' && assertion.ref=='refs/heads/main'`이라 main(푸시·예약·main에서 실행한 수동 실행)만 `github-deployer`를 가장할 수 있다. 다른 브랜치·PR·포크의 워크플로는 토큰을 받지 못한다. `db-backup` 계정은 이제 GitHub가 가장하지 않는다(Cloud Run Job 실행 계정이라 WIF 권한을 회수했다). main 밖에서 GCP를 쓰는 워크플로: `deploy-server.yml`(main 푸시는 해당 없음, **브랜치에서 `workflow_dispatch`나 임시 push 트리거로 돌리면 실패**), `db-backup.yml`·`gcp-auth-check.yml`(수동 실행은 main에서만). 브랜치에서 배포 실험이 필요하면 `WIF_REF=any bash infra/gcp/bootstrap.sh`로 풀었다가 끝나면 기본값으로 다시 실행한다.
 - 프로젝트 기본 Compute 서비스 계정에는 GCP 기본값으로 `roles/editor`가 붙어 있다. 우리 서비스·Job은 모두 `server-runtime`/`db-migrator`를 명시해서 쓰므로 영향이 없지만, 다른 리소스를 만들 때 기본 계정을 쓰지 않도록 주의한다(필요하면 editor를 회수).
 - 자리표시 서비스·Job을 부트스트랩이 먼저 만드는 이유: 리소스 단위 IAM은 리소스가 있어야 걸 수 있고, 배포 계정에는 프로젝트 전체 `run.admin`을 주지 않기 위해서다.
 
@@ -101,21 +102,31 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
 
 개인정보 방침 4항의 "만료 후 5일 이내 삭제"와 맞다(매일 1회).
 
-### 3.6 백업: GitHub Actions 예약 워크플로를 택함 (Cloud Run Job 대신)
+### 3.6 백업: 서울 Cloud Run Job + Cloud Scheduler (P8a-2에서 GitHub Actions에서 옮김)
 
-`db-backup.yml`(월요일 03:17 KST + 수동) → `scripts/db-backup.sh`: Postgres 17.6 클라이언트(`postgres:17.6` 이미지)로 `pg_dump --format=custom --no-owner --no-privileges --schema=public` → 목차 검증(서비스 테이블 3개 + `databasechangelog`) → `gs://…-backups/db/banbanyeok-<UTC시각>.dump`. 비밀번호는 Secret Manager에서 읽어 한 스텝의 셸 변수에만 두고 `::add-mask::`로 가리며 환경 변수 이름만 docker에 넘긴다(명령행·로그에 없음). Supabase의 다른 스키마(auth, storage 등)는 우리 데이터가 아니라서 `public`만 받는다.
+`db-backup` Job(이미지 `…/server/backup`, 계정 `db-backup`)이 `infra/backup/job.sh`를 실행한다: `scripts/db-backup.sh`(`PG_LOCAL=1`)로 `pg_dump --format=custom --no-owner --no-privileges --schema=public` → 목차 검증(서비스 테이블 3개 + `databasechangelog`) → 메타데이터 서버 토큰으로 GCS JSON API에 올림(`ifGenerationMatch=0`, 덮어쓰기 없음) → 올라간 크기를 다시 읽어 대조 → `gs://…-backups/db/banbanyeok-<UTC시각>.dump`. 비밀번호는 Secret Manager 참조(`PGPASSWORD`)로만 주입되고 토큰·비밀번호는 출력하지 않는다. 주 1회 Cloud Scheduler `db-backup-weekly`(월요일 03:17 KST, `17 3 * * 1`)가 실행한다. Scheduler는 `cleanup-daily`와 합쳐 2개라 무료 3개 한도 안이다.
 
-Actions를 택한 이유: 이미지를 따로 만들거나 Docker Hub 이미지를 AR로 미러링할 필요가 없고, `pg_dump -Fc`는 되감기(seek)가 필요해 Cloud Storage FUSE에 바로 쓸 수 없어 Job 쪽이 더 복잡하다. 대가는 **공개 저장소는 60일간 활동이 없으면 예약 워크플로가 자동 비활성화**된다는 점이다(조용히 멈춤). 저장소에 커밋이 계속 있으면 문제없고, 백업 최신 파일 시각을 가끔 확인하거나 이후 Cloud Scheduler로 옮길 수 있다 → 결정 필요 3.
+**바뀐 사실(개인정보 방침의 수탁자·보유 서술용)**
+- 실행 위치: GitHub Actions 러너 → **Google Cloud Run Job(서울, asia-northeast3)**. 백업 중 DB 비밀번호와 덤프(개인정보)는 GitHub 러너에 오지 않는다. GitHub는 백업과 관련해 개인정보를 처리하지 않는다(수동 실행 워크플로 `db-backup.yml`은 Job을 실행하고 끝나길 기다리기만 한다).
+- 이미지: `postgres:17.6-alpine`(다이제스트 고정, 2025-08-14 릴리스 계열) + `curl` + 우리 스크립트 두 개. Postgres 17 클라이언트(`pg_dump`, `pg_restore`).
+- 저장: `gs://banbanyeok-7eoxn-backups`(서울, 비공개·공개 접근 차단 강제·균일 접근·soft delete 끔), 보존 30일(버킷 수명 주기로 자동 삭제). 변경 없음.
+- 권한: 쓰기·읽기만(`objectCreator`+`objectViewer`), 삭제·덮어쓰기 불가. 실행 계정은 `db-backup` 하나.
+- 스케줄 변경: 주 1회 월요일 03:17 KST(이전과 같음), 실행 주체만 Scheduler.
 
-보존: 버킷 수명 주기로 30일 후 삭제, soft delete 끔(삭제한 백업이 7일 더 남지 않게). 백업에는 개인정보(출발역, 이름, 토큰 해시)가 있으므로 비공개 버킷(공개 접근 차단 강제)에만 두고 `db-backup` 계정에만 쓰기·읽기를 준다.
+옮긴 이유: (1) GitHub가 개인정보 수탁자에서 빠진다, (2) 공개 저장소의 60일 비활동 예약 정지 문제가 사라진다. 대가: backup 이미지를 AR에 하나 더 둔다(작음, `curl` 때문에 `apk add`를 빌드 때 한다). `pg_dump -Fc`를 Cloud Storage FUSE에 직접 쓰지 않고 Job 안의 임시 파일(메모리 파일시스템)에 쓴 뒤 올리므로 덤프 크기가 Job 메모리(512Mi)를 넘지 않는 동안만 된다(무료 DB 500MB 한도에서 압축 덤프는 그보다 훨씬 작다. 커지면 메모리를 올린다).
+
+이미지와 Job 갱신은 `deploy-server.yml`이 한다(실행은 하지 않음). 로컬 검증: backup 이미지를 빌드하고 compose Postgres + fake-gcs-server 에뮬레이터로 `job.sh`를 실행해 덤프→업로드→크기 대조까지 통과(`GCS_API_HOST`, `GCS_NO_AUTH=1` 시험 훅).
+
+**운영 점검(코드 없음)**: 가장 최근 백업이 8일보다 오래됐는지 가끔 확인한다: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/ | sort -k2 | tail -3`. Scheduler가 실패하면 `gcloud run jobs executions list --job=db-backup --region=asia-northeast3`의 실패 실행으로 보인다(실행 알림은 아직 없음).
 
 **복원 절차**
 1. 백업 고르기: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/`, 받기: `gcloud storage cp gs://banbanyeok-7eoxn-backups/db/<파일> .`
 2. 로컬 검증(운영 DB를 건드리지 않음): `mise run db:restore-check -- <파일>` — 임시 Postgres 17 컨테이너에 복원하고 테이블·행 수(값은 출력하지 않음)·Liquibase 이력·트리거를 확인한 뒤 컨테이너를 지운다.
 3. 실제 복구(새 DB 또는 비운 DB에): `pg_restore --no-owner --no-privileges --exit-on-error -d "<연결>" <파일>`. 대상에 이미 `public` 스키마가 있으면 `CREATE SCHEMA public` 한 건만 실패하므로 `--exit-on-error`를 빼거나 빈 `public`을 먼저 `DROP SCHEMA public`한다. 복구 뒤 서버의 `DATABASE_URL`·`DATABASE_USER`(저장소 변수)와 비밀번호(Secret Manager)를 새 DB로 바꾸고 재배포한다. Liquibase 이력 테이블이 같이 복원되므로 `migrate`는 변경 없이 끝난다.
-4. 부분 복구(방 하나 등)는 로컬에 복원한 뒤 필요한 행을 `COPY`/`INSERT`로 옮긴다.
+4. **복원한 뒤 반드시**: (a) `gcloud run jobs execute cleanup --region asia-northeast3 --wait`로 만료된 방·익명 사용자를 다시 지운다(백업 시점에는 살아 있던 방이 이미 만료됐을 수 있다). (b) **백업 시점 이후에 들어온 삭제 요청(privacy@ 메일)을 다시 처리한다**: 복원은 그 사이의 삭제를 되돌리므로, 백업 시점 이후 접수·처리한 삭제 요청 목록을 확인해 같은 방·참여자를 다시 삭제한다(방침의 "요청하면 지체 없이 삭제" 약속 유지). 처리 전에는 서비스를 열지 않는다.
+5. 부분 복구(방 하나 등)는 로컬에 복원한 뒤 필요한 행을 `COPY`/`INSERT`로 옮긴다(이때도 4의 (b)를 확인한다).
 
-**개인정보 방침과의 관계(결정 필요 2)**: main의 방침(#25)은 4항에 "데이터베이스 백업: 백업한 날부터 30일. 백업에 남은 정보는 보존 기간이 지나면 차례로 지워집니다"로 이미 30일을 적었고 이 구현(수명 주기 30일)과 맞는다. 남은 점은 같은 항의 "요청하면 지체 없이 삭제" 약속과의 관계다: DB에서 지운(만료·삭제 요청) 정보가 백업에는 최대 30일 남고, 방은 최대 30일 + 정리 5일 이내 삭제이므로 DB 밖 보관은 가장 긴 경우 약 65일이다. 방침이 "백업에서는 보존 기간이 지나면 지워진다"로 한정해 두었으므로 큰 충돌은 아니지만, 백업에 즉시 삭제를 적용하지 않는다는 점을 삭제 요청 절에 명시할지는 정해야 한다. 방침은 직접 고치지 않았다.
+**개인정보 방침과의 관계**: main의 방침은 4항에 "데이터베이스 백업: 백업한 날부터 30일. 백업에 남은 정보는 보존 기간이 지나면 차례로 지워집니다"를 적었고 구현(수명 주기 30일)과 맞는다. DB에서 지운(만료·삭제 요청) 정보가 백업에는 최대 30일 남고, 방은 최대 30일 + 정리 5일 이내 삭제이므로 DB 밖 보관은 가장 긴 경우 약 65일이다. 방침의 GitHub 행(백업 수탁)은 위 "바뀐 사실"대로 지울 수 있다(별도 방침 작업에서 처리).
 
 ### 3.7 배차 갱신 태스크 (7번)
 
@@ -178,8 +189,9 @@ bash scripts/smoke-server.sh "$(gcloud run services describe server --region asi
 # cleanup Job 수동 실행 / 마이그레이션 수동 실행
 gcloud run jobs execute cleanup --region asia-northeast3 --wait
 gcloud run jobs execute migrate --region asia-northeast3 --wait
-# 백업 수동 실행 / 목록
-gh workflow run db-backup.yml; gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/
+# 백업 수동 실행(Job 실행) / 목록
+gcloud run jobs execute db-backup --region asia-northeast3 --wait   # 또는 gh workflow run db-backup.yml
+gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/
 # 이전 리비전으로 즉시 롤백
 gcloud run revisions list --service server --region asia-northeast3
 gcloud run services update-traffic server --region asia-northeast3 --to-revisions <리비전>=100
