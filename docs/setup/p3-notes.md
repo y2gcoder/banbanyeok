@@ -159,7 +159,7 @@ $ 방 삭제(방장) 후 조회
 `bash scripts/build-server-image.sh`: `installDist` 후 `docker build --platform linux/amd64 -f server/Dockerfile .`(빌드 컨텍스트는 `Dockerfile.dockerignore`로 필요한 파일만). **배포는 하지 않았다(P8).**
 
 - 멀티스테이지: `base`(Temurin 25 JRE + lib + 정렬된 `classpath.txt`) → `cds`(로컬 프로필로 서버를 띄워 `/healthz`·`/v1/manifest`·`/v1/recommend`·오류 응답·DB 연결 실패 경로를 한 번씩 지나가게 하고 `-XX:ArchiveClassesAtExit`로 아카이브를 쓴 뒤 정상 종료) → 최종(아카이브만 복사, 비루트 사용자 10001, 산출물·학습 데이터 없음). 스파이크의 교훈대로 **학습과 실행이 같은 정렬된 클래스패스 문자열**을 쓴다.
-- 실측(로컬 macOS arm64 위 Docker, linux/amd64 에뮬레이션): 이미지 299,921,614 B(286 MiB), 아카이브 29.4 MB. 컨테이너를 띄워 `-Xshare:on`으로 아카이브가 실제로 매핑됨(`Mapped dynamic region`)을 확인했고 `/healthz` 200과 `/v1/recommend` 응답을 확인했다. 에뮬레이션 위의 기동 시간(약 3초)은 Cloud Run 수치가 아니다. **콜드스타트 재측정은 P8 몫**이다.
+- 실측(로컬 macOS arm64 위 Docker, linux/amd64 에뮬레이션): 이미지 299,980,423 B(286 MiB), 아카이브 29.4 MB. 컨테이너를 띄워 `-Xshare:on`으로 아카이브가 실제로 매핑됨(`Mapped dynamic region`)을 확인했고 `/healthz` 200과 `/v1/recommend` 응답을 확인했다. 에뮬레이션 위의 기동 시간(약 3초)은 Cloud Run 수치가 아니다. **콜드스타트 재측정은 P8 몫**이다.
 - `APP_PROFILE=prod`가 이미지 기본값이다: 필수 설정 없이 띄우면 누락을 모두 출력하고 종료 코드 1로 끝난다(확인함).
 - 이 이미지의 아카이브 훈련은 로컬 파일 저장소로 했다. GCS 클라이언트 클래스는 아카이브에 들어 있지 않아 운영 첫 기동에서 읽는 비용이 더 든다. P8에서 콜드스타트를 재면서 필요하면 학습 시 GCS 에뮬레이터를 붙이는 방안을 검토한다.
 

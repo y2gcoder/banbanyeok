@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-# 서버 이미지(linux/amd64). 빌드는 scripts/build-server-image.sh: ./gradlew :server:app:installDist 후 저장소 루트를 컨텍스트로 docker build.
+# 서버 이미지. 플랫폼은 빌드 명령이 정한다(linux/amd64, Cloud Run). 빌드는 scripts/build-server-image.sh: ./gradlew :server:app:installDist 후 저장소 루트를 컨텍스트로 docker build.
 # Cloud Run(서울, min 0) 콜드스타트를 줄이려고 AppCDS 아카이브를 이미지 안에서 학습한다(spikes/REPORT.md 3·5절).
 # 아카이브는 같은 JDK·OS·CPU 구조·클래스패스에서만 쓸 수 있어서 호스트에서 만들어 복사하지 않고 이 이미지에서 만든다.
 ARG JRE_IMAGE=eclipse-temurin:25.0.5_8-jre-noble
 
-FROM --platform=linux/amd64 ${JRE_IMAGE} AS base
+FROM ${JRE_IMAGE} AS base
 WORKDIR /app
 COPY server/app/build/install/app/lib/ /app/lib/
 COPY server/app/build/install/app/classpath.txt /app/classpath.txt
