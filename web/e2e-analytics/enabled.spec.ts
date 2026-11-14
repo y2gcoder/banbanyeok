@@ -141,6 +141,11 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
   baseURL,
 }) => {
   const probe = await attachProbe(context, baseURL ?? "");
+  // CSP(connect-src에 통계 호스트만 허용)가 동의 뒤의 전송을 막지 않는지: 위반 메시지가 없어야 한다.
+  const cspViolations: string[] = [];
+  page.on("console", (message) => {
+    if (/content security policy/i.test(message.text())) cspViolations.push(message.text());
+  });
   await page.goto("/");
   expect(probe.outside).toEqual([]); // 배너가 떠 있는 동안
   await acceptAll(page);
@@ -163,6 +168,7 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
   await friend.getByRole("link", { name: "다른 역으로 다시 찾기" }).click();
   await friend.waitForTimeout(BATCH_WAIT_MS);
 
+  expect(cspViolations).toEqual([]);
   // 나간 요청은 수집 주소 하나뿐(/flags·원격 설정·녹화·설문 스크립트 없음).
   expect([...new Set(probe.outside)]).toEqual([`POST ${COLLECT}`]);
   expect(new Set(probe.events.map((e) => e.event))).toEqual(

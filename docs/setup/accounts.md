@@ -20,9 +20,9 @@
 |---|---|---|---|---|---|
 | ✅ | GCP 프로젝트 `banbanyeok-7eoxn` + 전용 결제 계정 `banbanyeok` | Cloud Run(서버), GCS(데이터 산출물), Secret Manager, WIF(키 없는 배포) | `gcp-project` (프로젝트 ID만) | 무료 구간 내 0원 목표 | 2026-11-13 완료. 예산 알림 월 5천 원(50·90·100%, 예측 100%). gcloud 구성 `banbanyeok`(서울 리전), 저장소 폴더에서는 `mise.local.toml`로 자동 선택. API: run, artifactregistry, secretmanager, storage, iamcredentials, sts, billingbudgets |
 | ⬜ | Postgres (Neon 또는 서울 리전 후보) | 방, 참여자, 익명 사용자 | `db-url-prod`, `db-url-dev` | 무료 | **리전은 S0에서 결정** (서버가 서울이라 서울 리전 선호) |
-| ⬜ | Cloudflare 계정 (Workers) | 웹 호스팅 (Next.js + OpenNext). 상업 이용 가능 | `cloudflare-api-token` (CI 배포용, 권한 최소화) | 무료, 필요 시 월 5달러 | 동적 OG의 CPU 한도는 S0b에서 실측 |
+| ✅ | Cloudflare 계정 (Workers) | 웹 호스팅 (Next.js + OpenNext). 상업 이용 가능 | `cloudflare-api-token` (CI 배포용, Edit Cloudflare Workers 템플릿·All zones) | 무료, 필요 시 월 5달러 | 2026-11-14 `banbanyeok-web` 배포 완료(deploy-web 워크플로, 저장소 secret `CLOUDFLARE_API_TOKEN`·`PROXY_SHARED_SECRET`, 변수 `CLOUDFLARE_ACCOUNT_ID`). **무료 플랜 CPU 한도(10ms)를 동적 OG·서버 렌더 페이지가 넘는다 → 유료($5/월) 권고**, 근거는 [p8b-notes](p8b-notes.md) 3절 |
 | ⬜ | PostHog | 사용 통계 | `posthog-project-key` (공개되는 `phc_` 키), `posthog-personal-api-key` (필요할 때만) | 무료 (월 100만 이벤트) | US/EU 리전은 S0에서 결정 |
-| ⬜ | 도메인 | 공유 링크 신뢰감, 앱 링크(유니버설 링크) 연결 | — | 연 1~2만 원 | Cloudflare Registrar를 쓰면 DNS까지 한 곳에서 관리. 앱 계획이 있으므로 일찍 정하는 게 좋음 |
+| ✅ | 도메인 `banbanyeok.app` | 공유 링크 신뢰감, 앱 링크(유니버설 링크) 연결 | — | 연 1~2만 원 | 2026-11-14 Cloudflare Registrar에서 구매(zone active, Free). Workers Custom Domain(apex + www)으로 연결, www·workers.dev는 301로 정식 주소 이동. `.app`은 HSTS 내장(https 전용). 저장소 변수 `SITE_DOMAIN` |
 | ⬜ | 1Password 서비스 계정 (`banbanyeok-ci`) | CI가 비밀값을 1Password에서 바로 읽기 | 토큰은 GitHub Environment secret으로만 | 0 | **개인 플랜에서 생성 가능한지 확인 필요.** 안 되면 Environment secrets에 수동 동기화 |
 
 ## 선택
@@ -52,5 +52,6 @@
 | 데이터 산출물 버킷 | `gs://banbanyeok-7eoxn-artifacts` (서울, 비공개, 균일 접근, soft delete 끔) | 해시 이름 산출물 + `manifest.json`. 오래된 버전 정리는 발행기가 "최근 N개 보관"으로 한다(나이 기반 자동 삭제는 쓰지 않음: 데이터가 오래 안 바뀌면 현재 버전이 지워질 수 있음) |
 | OIDC (WIF) | 풀 `github`, 공급자 `banbanyeok-repo`, 저장소 ID 조건 | `gcp-auth-check` 워크플로로 토큰 발급 확인 |
 | 배포 서비스 계정 | `github-deployer` | 아직 프로젝트 권한 없음. P8에서 최소 권한 부여 |
+| 웹 배포 저장소 설정 | secrets `CLOUDFLARE_API_TOKEN`, `PROXY_SHARED_SECRET`. 변수 `CLOUDFLARE_ACCOUNT_ID`, `POSTHOG_PROJECT_KEY`, `POSTHOG_HOST`, `SERVER_ORIGIN`, `SITE_DOMAIN`, `SITE_INDEX`(출시 스위치, 비어 있으면 noindex) | 값은 문서에 적지 않는다. [p8b-notes](p8b-notes.md) |
 | GitHub 저장소 변수 | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`, `GCP_ARTIFACT_BUCKET` | 비밀이 아닌 식별자라 secrets가 아닌 variables |
 | main 브랜치 보호 | PR 필수(승인 0), `ci-ok`·`gitleaks` 필수, 서명 커밋, 일직선 이력, squash 병합만 | 관리자는 우회 가능 |

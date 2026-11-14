@@ -1,8 +1,15 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
+import { analyticsConfig } from "./src/lib/analytics/config";
 import { apiOrigin } from "./src/lib/api/config";
+import { securityHeaders } from "./src/lib/security/headers";
+import { isHttpsCanonicalSite } from "./src/lib/seo/site";
 
 const origin = apiOrigin();
+const analytics = analyticsConfig({
+  key: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+  host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -10,7 +17,8 @@ const nextConfig: NextConfig = {
   // 같은 출처 rewrite: 브라우저는 /api/* 로 부르고 서버(Ktor 또는 mock)로 넘긴다(contracts/openapi.yaml servers).
   async rewrites() {
     return [
-      { source: "/api/healthz", destination: `${origin}/healthz` },
+      // Cloud Run 앞단이 루트 `/healthz`를 예약해 앱에 닿기 전에 404를 주므로 `/v1/healthz`를 쓴다(계약상 같은 응답).
+      { source: "/api/healthz", destination: `${origin}/v1/healthz` },
       { source: "/api/v1/:path*", destination: `${origin}/v1/:path*` },
     ];
   },
@@ -18,10 +26,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        ],
+        headers: securityHeaders({
+          production: process.env.NODE_ENV === "production",
+          posthogHost: analytics?.host,
+          hsts: isHttpsCanonicalSite(),
+        }),
       },
     ];
   },

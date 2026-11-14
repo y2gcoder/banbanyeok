@@ -4,6 +4,7 @@
  */
 import createClient from "openapi-fetch";
 import type { ShareState } from "@/lib/link/codec";
+import { withTrustHeaders } from "@/lib/proxy/headers";
 import { apiBaseUrl, HEALTHZ_PATH } from "./config";
 import type { paths } from "./schema.gen";
 import type { ApiError, RecommendBody, RecommendResult } from "./types";
@@ -19,8 +20,25 @@ export class ApiRequestError extends Error {
   }
 }
 
-function client() {
-  return createClient<paths>({ baseUrl: apiBaseUrl() });
+function client(headers?: Headers) {
+  return createClient<paths>({ baseUrl: apiBaseUrl(), ...(headers ? { headers } : {}) });
+}
+
+/**
+ * 서버 컴포넌트·라우트가 서버(Cloud Run)를 직접 부를 때 붙이는 신뢰 헤더(비밀 + 방문자 IP). 브라우저의 `/api/*` 호출은
+ * Worker 프록시(worker.ts)가 같은 규칙으로 붙이므로 여기서는 하지 않는다. 비밀이 없거나(로컬) 요청 문맥이 없으면 붙이지 않는다.
+ */
+async function trustedServerHeaders(): Promise<Headers | undefined> {
+  if (typeof window !== "undefined") return undefined;
+  const secret = process.env.PROXY_SHARED_SECRET;
+  if (!secret) return undefined;
+  try {
+    const { headers } = await import("next/headers");
+    const incoming = await headers();
+    return withTrustHeaders(new Headers(), { secret, clientIp: incoming.get("cf-connecting-ip") });
+  } catch {
+    return undefined; // 요청 문맥 밖(빌드 등)
+  }
 }
 
 /** 추천에 필요한 상태. 별칭은 서버가 표시 이름(label)과 문장에 쓴다. */
@@ -42,7 +60,7 @@ export function recommendBody(query: RecommendQuery): RecommendBody {
 
 export async function recommend(query: RecommendQuery, signal?: AbortSignal): Promise<RecommendResult> {
   const body = recommendBody(query);
-  const result = await client().POST("/recommend", {
+  const result = await client(await trustedServerHeaders()).POST("/recommend", {
     body,
     cache: "no-store",
     ...(signal ? { signal } : {}),
