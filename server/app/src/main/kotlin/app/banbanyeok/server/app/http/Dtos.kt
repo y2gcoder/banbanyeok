@@ -57,6 +57,10 @@ data class ParticipantDto(
     val originName: String?,
     val isHost: Boolean,
     val isSelf: Boolean,
+    /** 표시 이름(contracts/data-format.md §8). 클라이언트는 그대로 쓴다. */
+    val label: String,
+    /** `name` / `origin` / `ordinal`. */
+    val labelKind: String,
 )
 
 @Serializable

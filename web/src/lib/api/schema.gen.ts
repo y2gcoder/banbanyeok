@@ -278,7 +278,24 @@ export interface components {
         };
         Participant: {
             participantId: string;
+            /** @description 사람이 넣은 이름(별칭) 원문. 화면에는 `label`을 쓴다 */
             nickname?: string | null;
+            /**
+             * @description 화면에 쓰는 표시 이름. **서버가 만들고 클라이언트는 그대로 쓴다**(contracts/data-format.md §8). 이름이 있으면 그 이름,
+             *     없으면 "{출발역 이름}에서 오는 분"(같은 출발역이 여럿이면 입력 순서대로 " 1", " 2"), 출발역을 숨긴 참가자는
+             *     "참가자 {방 안 순번}"이다. 보는 사람과 관계없이 같은 값이며(본인이 숨겼어도 "참가자 N"), 시점 표현("나")과 내부
+             *     식별자를 쓰지 않는다. 보는 사람 표시("(나)")는 클라이언트가 붙인다.
+             * @example 민수
+             * @example 강남에서 오는 분
+             * @example 강남에서 오는 분 2
+             * @example 참가자 3
+             */
+            label: string;
+            /**
+             * @description `label`을 무엇으로 만들었는가: 사람이 넣은 이름 / 출발역 / 방 안 순번
+             * @enum {string}
+             */
+            labelKind: "name" | "origin" | "ordinal";
             hidden: boolean;
             /** @description 숨긴 참가자는 요청자 본인이 아니면 `null` */
             originCode: components["schemas"]["StationCode"] | null;
@@ -354,9 +371,9 @@ export interface components {
              *     표현(아이콘·강조 등)에 쓰므로 유지한다.
              *
              *     **시점 표현을 쓰지 않는다**: 같은 결과를 링크를 받은 사람과 만든 사람이 서로 다른 시점에서 읽으므로 "나/너/친구1" 같은
-             *     말 없이 이름으로만 쓴다. 이름은 별칭(`nickname`)이고, 없으면 참가자 순서대로 A, B, C, D다(`/recommend`는 입력 순서, 방은
-             *     참여 순서). 같은 별칭이 둘 이상이면 "민수(A)"처럼 글자를 붙여 구별한다. 보는 사람 표시("(나)")는 클라이언트가 한다.
-             * @example 둘 다 38분 안쪽이에요. 2위 합정보다 가장 오래 걸리는 사람이 4분 덜 걸려요.
+             *     말 없이 이름으로만 쓴다. 사람을 부르는 이름은 응답의 `participants[].label`과 같다(data-format §8). 보는 사람
+             *     표시("(나)")는 클라이언트가 한다.
+             * @example 가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요. 2위 합정보다 가장 오래 걸리는 사람이 4분 덜 걸려요.
              */
             reason: string;
         };
@@ -744,8 +761,9 @@ export interface operations {
                     favorIndex?: number;
                     /**
                      * @description 참가자별 선택 이름(별칭). 있으면 `origins`와 같은 길이이고(다르면 400 `INVALID_REQUEST`) 별칭이 없는 사람은 `null`.
-                     *     코드포인트 20자 이하(초과·짝 없는 서로게이트·제어 문자는 400 `INVALID_NICKNAME`). `reason` 문장이 이 이름을 쓰고
-                     *     응답의 `participants[].nickname`에도 그대로 실린다. 없으면 문장은 A, B, C, D(입력 순서)를 쓴다.
+                     *     코드포인트 20자 이하(초과·짝 없는 서로게이트·제어 문자는 400 `INVALID_NICKNAME`). 사람이 이름을 넣지 않았으면
+                     *     `null`로 보내고, 아무도 넣지 않았으면 필드를 생략한다. 응답의 `participants[].nickname`에 그대로 실리고, 표시
+                     *     이름(`participants[].label`)과 `reason` 문장은 이 이름을 쓴다. 없는 사람은 "{출발역}에서 오는 분"이다(data-format §8).
                      */
                     nicknames?: (string | null)[];
                 };

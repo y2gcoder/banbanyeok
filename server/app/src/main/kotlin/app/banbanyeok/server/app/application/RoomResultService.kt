@@ -51,11 +51,7 @@ class RoomResultService(
             RecommendRequest(
                 participants =
                     context.computeParticipants.map {
-                        RecommendParticipant(
-                            it.id,
-                            it.nickname,
-                            it.originCode,
-                        )
+                        RecommendParticipant(it.id, it.nickname, it.originCode, it.hidden)
                     },
                 mode = resolvedMode,
                 favorId = favor,

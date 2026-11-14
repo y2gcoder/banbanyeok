@@ -67,8 +67,19 @@ class DisplayRulesTest {
     }
 
     @Test
-    fun defaultNamesFollowInputOrder() {
-        val people = Fixtures.people(listOf(null, " ", "지훈", ""))
-        assertEquals(listOf("나", "친구1", "지훈", "친구3"), DisplayNames.resolve(people))
+    fun labelsFallBackToOriginThenOrdinal() {
+        val people = Fixtures.people(listOf(null, " ", "지훈", null), originNames = listOf("강남", "강남", "합정", null))
+        assertEquals(
+            listOf("강남에서 오는 분 1", "강남에서 오는 분 2", "지훈", "참가자 4"),
+            ParticipantLabels.of(people).map { it.text },
+        )
+    }
+
+    @Test
+    fun postpositionForGeneratedLabels() {
+        assertEquals("강남에서 오는 분은", Korean.attach("강남에서 오는 분", Josa.EUN_NEUN))
+        assertEquals("강남에서 오는 분 1은", Korean.attach("강남에서 오는 분 1", Josa.EUN_NEUN)) // 일
+        assertEquals("참가자 2는", Korean.attach("참가자 2", Josa.EUN_NEUN)) // 이
+        assertEquals("참가자 3이", Korean.attach("참가자 3", Josa.I_GA)) // 삼
     }
 }

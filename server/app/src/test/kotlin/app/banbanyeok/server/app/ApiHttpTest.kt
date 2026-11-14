@@ -31,6 +31,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.slot
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.time.Instant
@@ -59,7 +60,8 @@ private fun person(
     hidden: Boolean = false,
     host: Boolean = true,
     self: Boolean = false,
-) = ParticipantView(id, "민수", hidden, origin, host, self)
+    nickname: String? = "민수",
+) = ParticipantView(id, nickname, hidden, origin, host, self)
 
 private fun errorCode(body: String) =
     Json
@@ -184,6 +186,34 @@ class ApiHttpTest :
                 }
             }
 
+            it("labels participants by name, origin station or room order, the same for every viewer") {
+                withMockedApi { services ->
+                    coEvery { services.rooms.get(ROOM_ID, any()) } returns
+                        view(
+                            person(nickname = null),
+                            person("p00002", origin = origin1, host = false, nickname = null),
+                            person(
+                                "p00003",
+                                origin = origin2,
+                                hidden = true,
+                                host = false,
+                                self = true,
+                                nickname = null,
+                            ),
+                            person("p00004", origin = origin2, host = false, nickname = "  지연 "),
+                        )
+                    val response = client.json(HttpMethod.Get, "/v1/rooms/$ROOM_ID", token = "part-tok")
+                    OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/$ROOM_ID", response)
+                    val participants =
+                        Json.parseToJsonElement(response.bodyAsText()).jsonObject["participants"]!!.jsonArray
+                    val originName = DevArtifacts.directory.displayName(origin1)
+                    participants.map { it.jsonObject["label"]!!.jsonPrimitive.content } shouldBe
+                        listOf("${originName}에서 오는 분 1", "${originName}에서 오는 분 2", "참가자 3", "지연")
+                    participants.map { it.jsonObject["labelKind"]!!.jsonPrimitive.content } shouldBe
+                        listOf("origin", "origin", "ordinal", "name")
+                }
+            }
+
             it("treats a missing or non-Bearer Authorization header as anonymous") {
                 withMockedApi { services ->
                     val seen = mutableListOf<String?>()
@@ -287,8 +317,11 @@ class ApiHttpTest :
 
             it("updates a participant and removes one with no content") {
                 withMockedApi { services ->
+                    val updatedPerson =
+                        person("p00002", origin2, hidden = true, host = false, self = true, nickname = null)
                     coEvery { services.rooms.updateParticipant(ROOM_ID, "p00002", "part-tok", any()) } returns
-                        person("p00002", origin2, hidden = true, host = false, self = true)
+                        updatedPerson
+                    coEvery { services.rooms.get(ROOM_ID, "part-tok") } returns view(person(), updatedPerson)
                     val path = "/v1/rooms/$ROOM_ID/participants/p00002"
                     val updated =
                         client.json(
@@ -299,6 +332,9 @@ class ApiHttpTest :
                         )
                     updated.status shouldBe HttpStatusCode.OK
                     OpenApiContract.assertValid(HttpMethod.Put, path, updated)
+                    // 본인이 숨겼으면 본인에게도 "참가자 N"(순번은 방 안 순서)
+                    updated.bodyAsText() shouldContain "\"label\":\"참가자 2\""
+                    updated.bodyAsText() shouldContain "\"labelKind\":\"ordinal\""
 
                     coEvery { services.rooms.removeParticipant(ROOM_ID, "p00002", "part-tok") } returns Unit
                     val removed = client.json(HttpMethod.Delete, path, token = "part-tok")
@@ -401,7 +437,9 @@ class ApiHttpTest :
                 }
             }
 
-            it("reads participant names and uses them, or A/B/C/D, in the sentences instead of first-person words") {
+            it(
+                "reads participant names and uses them, or origin labels, in the sentences instead of first-person words",
+            ) {
                 val real =
                     app.banbanyeok.server.recommendation.RecommendationService(
                         DevArtifacts.directory.travel,
@@ -442,6 +480,38 @@ class ApiHttpTest :
                         )
                     OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", anonymous)
                     anonymous.bodyAsText() shouldNotContain "친구1"
+                    val anonymousJson = Json.parseToJsonElement(anonymous.bodyAsText()).jsonObject
+                    val labels =
+                        anonymousJson["participants"]!!.jsonArray.map { it.jsonObject["label"]!!.jsonPrimitive.content }
+                    labels shouldBe
+                        listOf(origin1, origin2).map { "${DevArtifacts.directory.displayName(it)}에서 오는 분" }
+                    // 문장은 응답의 label과 같은 이름으로 사람을 부른다(배려 1위 문장은 항상 우대 대상을 부른다)
+                    val favored =
+                        client.json(
+                            HttpMethod.Post,
+                            "/v1/recommend",
+                            """{"origins":["$origin1","$origin2"],"mode":"favor","favorIndex":1}""",
+                        )
+                    val topReason =
+                        Json
+                            .parseToJsonElement(favored.bodyAsText())
+                            .jsonObject["candidates"]!!
+                            .jsonArray
+                            .first()
+                            .jsonObject["reason"]!!
+                            .jsonPrimitive.content
+                    topReason shouldContain labels[1]
+
+                    // 폐기된 코드(옛 공유 링크의 공덕 194, 홍대입구 ve5)는 replacedBy의 정식 코드로 계산하고 응답한다
+                    val deprecated =
+                        client.json(HttpMethod.Post, "/v1/recommend", """{"origins":["194","ve5"],"mode":"fair"}""")
+                    deprecated.status shouldBe HttpStatusCode.OK
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", deprecated)
+                    Json
+                        .parseToJsonElement(deprecated.bodyAsText())
+                        .jsonObject["participants"]!!
+                        .jsonArray
+                        .map { it.jsonObject["originCode"]!!.jsonPrimitive.content } shouldBe listOf("nn9", "ryf")
 
                     val mismatched =
                         client.json(

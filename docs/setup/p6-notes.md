@@ -40,7 +40,7 @@
 | `InputErrorCode` | 14개(아래 표) |
 | `SituationAdvisor.evaluate(SituationInput): List<Notice>` | 극단 상황 안내(`NoticeKind`: `NO_COMMON_CANDIDATE`, `SAME_NEIGHBORHOOD`, `LONG_TRAVEL`, `SIMILAR_CANDIDATES`). 버튼 제안(`favorIndex`, `ctaLabel`) 포함 |
 | `DisplayMinutes` | `fromSeconds`(반올림), `format`(분→"1시간 4분"), `transferLabel`. **웹·앱도 같은 함수 규칙을 쓸 것** |
-| `DisplayNames.resolve(people)` | 별칭 없으면 "나/친구1/친구2/친구3" |
+| `ParticipantLabels.of(people)` | 참가자 표시 이름(W2에서 `DisplayNames`를 대체). 규칙은 contracts/data-format.md §8 |
 
 서버(P3)가 코어 결과를 `ReasonInput`으로 옮기는 어댑터를 붙인다. 코어가 내는 `favorCaps`·`baselineStationId`·`excluded(FAVOR_CAP_EXCEEDED)`가 `FavorContext`의 `capSeconds`·`baselineTimesSeconds`·`closerStationsExcluded`로 대응한다.
 
@@ -86,7 +86,7 @@ iOS에서 `canOpenURL`을 쓰려면 `LSApplicationQueriesSchemes`에 `kakaomap`,
 | 순위 | 반올림 전 초로 정하고 표시만 반올림한다 |
 | 60분 이상 | "1시간 4분", 정확히 60의 배수면 "2시간" |
 | 환승 | 0 → "환승 없음", n → "환승 n번" |
-| 이름 | 별칭이 있으면 그대로, 없으면 입력 순서대로 "나/친구1/친구2/친구3". A/B가 필요하면 호출하는 쪽이 이름으로 넣는다 |
+| 이름 | `ParticipantLabels`: 별칭 → "{출발역}에서 오는 분"(같은 역은 " 1", " 2") → 숨긴 사람은 "참가자 N"(W2, data-format §8) |
 | 조사 | 마지막으로 읽히는 글자의 받침으로 은/는·이/가·와/과를 고른다(한글, 영문 글자 이름 L·M·N·R, 숫자 0·1·3·6·7·8은 받침 있음. 끝의 기호·이모지는 건너뜀) |
 | 허용오차 | 양수(반올림 후 1분 이상)이면 문장 끝에 ` (N분 동점 옵션)`. 빨리 만나기 1위의 "가장 짧아요"는 "가장 짧은 편이에요"로 누그러뜨린다 |
 | 모두 0분 | 어느 모드든 "이미 같은 동네예요." |
@@ -136,7 +136,7 @@ iOS에서 `canOpenURL`을 쓰려면 `LSApplicationQueriesSchemes`에 `kakaomap`,
 1. **카카오맵 앱 스킴(`kakaomap://route…`)을 공식 문서로 확인하지 못했다.** 앱 개발(A1/I1)에서 실기기로 확인하거나 앱 스킴을 빼고 웹 링크만 쓸지 정해 달라. 웹 링크는 공식이다.
 2. **네이버지도 길찾기용 웹 URL은 공식 문서에 없다.** 지금은 도착지 검색 URL(비공식)로 대신한다. 브라우저에서 확인한 뒤 길찾기 URL로 바꿀지(좌표계 등을 확인해야 함) 결정이 필요하다. 네이버 앱 스킴의 `appname` 값(웹은 페이지 URL, 앱은 번들 ID)도 정해야 한다.
 3. **반올림 규칙(30초는 올림, 파생 값은 반올림한 분에서 재계산)** 을 웹·앱의 카드 숫자(막대 옆 분, 접힌 카드의 "최장·차이")가 똑같이 따라야 한다. 웹/앱 작업(P4 등)에 `DisplayMinutes`와 같은 규칙을 지시할 것.
-4. **기본 이름이 "나/친구1…"이다**(data-format §7의 표시 규칙). 서버가 방 참가자에게 A/B를 쓰고 싶으면 이름을 직접 넣어야 한다. 같은 별칭이 둘 이상이면(링크 규칙상 허용) 문장이 모호해질 수 있다. 막지는 않았다.
+4. ~~기본 이름이 "나/친구1…"이다~~ W2에서 `ParticipantLabels`(data-format §8)로 바뀌었다. 같은 별칭이 둘 이상이면 문장이 모호해질 수 있다는 점은 그대로다(docs/setup/w2-notes.md 결정 필요).
 5. **"같은 동네" 임계값 5분, "비슷하다" 임계값 2분은 제안값이다.** product-ux에는 "아주 가까운 역", "1~2분"이라고만 돼 있다. 빨리 모드의 "비슷하다"는 합계(사람·분)가 2분 이내라 인원이 많을수록 엄격하다.
 6. **공통 후보 없음 문구는 내가 정했다**(product-ux에 문구가 없음). 환승이 갈린 경우 문구("합정과 시간은 같고, 둘 다 환승 1번 이하예요")와 막차 문구는 순위가 환승·막차를 쓰지 않으므로(알고리즘 규칙) 넣지 않았다.
 7. **`reason`을 `required`로 넣었다.** 서버 구현(P3)이 모든 후보에 문장을 넣어야 한다. 선택 필드로 두려면 openapi를 고치면 된다.

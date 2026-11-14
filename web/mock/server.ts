@@ -60,7 +60,7 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
 export function validateRecommend(data: MockData, input: unknown): RecommendBody | { code: string; message: string } {
   if (typeof input !== "object" || input === null)
     return { code: "BAD_REQUEST", message: "본문이 JSON 객체가 아니에요." };
-  const { origins, mode, favorIndex } = input as Record<string, unknown>;
+  const { origins, mode, favorIndex, nicknames } = input as Record<string, unknown>;
   if (!Array.isArray(origins) || origins.length < 2 || origins.length > 4) {
     return { code: "BAD_ORIGIN_COUNT", message: "출발역은 2~4개여야 해요." };
   }
@@ -78,9 +78,22 @@ export function validateRecommend(data: MockData, input: unknown): RecommendBody
   if (mode === "favor" && (favorIndex === undefined || favorIndex >= origins.length)) {
     return { code: "BAD_FAVOR_INDEX", message: "배려 대상 위치가 올바르지 않아요." };
   }
+  if (
+    nicknames !== undefined &&
+    (!Array.isArray(nicknames) ||
+      nicknames.length !== origins.length ||
+      !nicknames.every((n) => n === null || typeof n === "string"))
+  ) {
+    return { code: "INVALID_REQUEST", message: "nicknames는 origins와 같은 길이여야 해요." };
+  }
   const unknown = origins.find((o) => !data.origins.has(o));
   if (unknown) return { code: "UNSUPPORTED_ORIGIN", message: "아직 수도권 지하철역만 계산할 수 있어요." };
-  return favorIndex === undefined ? { origins, mode } : { origins, mode, favorIndex };
+  return {
+    origins,
+    mode,
+    ...(favorIndex === undefined ? {} : { favorIndex }),
+    ...(nicknames === undefined ? {} : { nicknames: nicknames as (string | null)[] }),
+  };
 }
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));

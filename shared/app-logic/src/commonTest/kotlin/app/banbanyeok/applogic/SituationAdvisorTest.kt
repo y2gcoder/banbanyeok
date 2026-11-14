@@ -78,9 +78,9 @@ class SituationAdvisorTest {
     }
 
     @Test
-    fun longTravelWithDefaultNamesUsesDefaultLabel() {
+    fun longTravelWithoutNicknamesUsesParticipantLabel() {
         val people = Fixtures.people(listOf(null, null))
-        assertEquals("친구1 쪽으로 보기", evaluate(listOf(candidate("신촌", 40, 95)), people = people).single().ctaLabel)
+        assertEquals("홍대입구에서 오는 분 쪽으로 보기", evaluate(listOf(candidate("신촌", 40, 95)), people = people).single().ctaLabel)
     }
 
     @Test

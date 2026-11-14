@@ -4,6 +4,6 @@ plugins { id("banbanyeok.server-lib") }
 dependencies {
     api(project(":shared:core"))
     api(project(":shared:schema"))
-    implementation(project(":shared:app-logic"))
+    api(project(":shared:app-logic")) // Recommendation.labels가 ParticipantLabel을 쓴다
     implementation(project(":shared:links")) // 별칭 규칙(코드포인트 20자)
 }

@@ -101,7 +101,9 @@ private fun Route.participantRoutes(
                 val input = call.receive<ParticipantInputDto>().toInput()
                 val updated =
                     services.rooms.updateParticipant(call.roomId(), call.participantId(), call.bearerToken(), input)
-                call.respond(updated.toDto(services.directory))
+                // 표시 이름은 방 전체(순번·같은 역 번호)로 정해지므로 방을 다시 읽어 그 사람의 항목을 돌려준다.
+                val room = services.rooms.get(call.roomId(), call.bearerToken())
+                call.respond(room.participantDtos(services.directory).first { it.participantId == updated.id })
             }
             delete {
                 services.rooms.removeParticipant(call.roomId(), call.participantId(), call.bearerToken())
@@ -141,11 +143,18 @@ private fun Route.resultRoutes(services: ApiServices) {
         if (nicknames.size != body.origins.size) {
             throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "nicknames는 origins와 같은 길이여야 합니다")
         }
+        // 폐기된 코드(옛 공유 링크)는 정식 코드로 바꿔 계산하고 응답에도 정식 코드를 싣는다.
+        val origins = body.origins.map(services.directory::canonical)
         val people =
-            body.origins.mapIndexed { index, code -> RecommendParticipant(index.toString(), nicknames[index], code) }
+            origins.mapIndexed {
+                index,
+                code,
+                ->
+                RecommendParticipant(index.toString(), nicknames[index], code)
+            }
         val request = RecommendRequest(people, requireRecommendMode(body.mode), body.favorIndex?.toString())
         val result = services.recommendation.recommend(request)
-        call.respond(result.toStatelessDto(body.origins, nicknames, services.directory))
+        call.respond(result.toStatelessDto(origins, nicknames, services.directory))
     }
 }
 

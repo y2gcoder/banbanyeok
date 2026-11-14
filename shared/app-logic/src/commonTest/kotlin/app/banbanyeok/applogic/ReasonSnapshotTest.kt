@@ -26,10 +26,38 @@ class ReasonSnapshotTest {
         )
 
     @Test
-    fun fair1DefaultNamesWhenNoNicknames() =
+    fun fair1OriginLabelsWhenNoNicknames() =
         check(
-            "가장 오래 걸리는 친구1도 38분이에요. 2위 합정보다 가장 오래 걸리는 사람이 4분 덜 걸려요.",
+            "가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요. 2위 합정보다 가장 오래 걸리는 사람이 4분 덜 걸려요.",
             reason(ReasonMode.FAIR, 1, listOf(null, null), listOf(34, 38), versus = versus(2, "합정", listOf(36, 42))),
+        )
+
+    @Test
+    fun fair1SameOriginLabelsAreNumbered() =
+        check(
+            "가장 오래 걸리는 강남에서 오는 분 2도 38분이에요. 2위 합정보다 가장 오래 걸리는 사람이 4분 덜 걸려요.",
+            reason(
+                ReasonMode.FAIR,
+                1,
+                listOf(null, null),
+                listOf(34, 38),
+                originNames = listOf("강남", "강남"),
+                versus = versus(2, "합정", listOf(36, 42)),
+            ),
+        )
+
+    @Test
+    fun favor1HiddenParticipantUsesOrdinal() =
+        check(
+            "참가자 2는 15분, 환승 없이 와요. 강남에서 오는 분은 공평하게보다 9분 더 걸려요 (47분, 상한 +15분).",
+            reason(
+                ReasonMode.FAVOR,
+                1,
+                listOf(null, null),
+                listOf(47, 15),
+                originNames = listOf("강남", null),
+                favor = favor(1, listOf(38, 30), listOf(53, null)),
+            ),
         )
 
     @Test
@@ -82,7 +110,7 @@ class ReasonSnapshotTest {
     @Test
     fun fair1FourPeopleOverAnHourUsesHours() =
         check(
-            "가장 오래 걸리는 친구3도 1시간 5분, 4명 모두 50분~1시간 5분 사이예요.",
+            "가장 오래 걸리는 사당에서 오는 분도 1시간 5분, 4명 모두 50분~1시간 5분 사이예요.",
             reason(ReasonMode.FAIR, 1, listOf(null, null, null, null), listOf(50, 55, 60, 65)),
         )
 
@@ -177,7 +205,7 @@ class ReasonSnapshotTest {
     @Test
     fun fast1FourPeopleSaysAllAndLongest() =
         check(
-            "4명 모두 합쳐 2시간 40분, 후보 중 가장 짧아요. 가장 오래 걸리는 친구2는 45분이에요.",
+            "4명 모두 합쳐 2시간 40분, 후보 중 가장 짧아요. 가장 오래 걸리는 잠실에서 오는 분은 45분이에요.",
             reason(ReasonMode.FAST, 1, listOf(null, null, null, null), listOf(35, 40, 45, 40)),
         )
 

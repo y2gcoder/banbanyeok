@@ -20,14 +20,15 @@ public enum class ReasonCode(
  * 사람 한 명.
  *
  * @property id 사람을 구별하는 값(참가자 ID나 입력 순서 인덱스). 같은 출발역을 두 명이 넣을 수 있으므로 역 코드로 구별하지 않는다.
- * @property name 표시 이름(별칭). null이거나 비어 있으면 입력 순서대로 "나/친구1/친구2/친구3"으로 쓴다.
- *   A/B 같은 이름을 쓰고 싶으면 호출하는 쪽이 이름으로 넣는다.
+ * @property name 사람이 넣은 이름(별칭). null이거나 비어 있으면 [ParticipantLabels] 규칙으로 표시 이름을 만든다.
  * @property originCode 출발역 코드(3자 정규형). 숨긴 참가자는 null.
+ * @property originName 출발역 표시 이름. 숨긴 참가자는 **반드시** null이다(표시 이름에 출발역이 드러나지 않게).
  */
 public data class PersonRef(
     val id: String,
     val name: String? = null,
     val originCode: String? = null,
+    val originName: String? = null,
 )
 
 /** 만날 역에서의 사람별 소요 시간(정수 초)과 환승 횟수. 입력 순서 = 사람 순서(A, B, C, D). */

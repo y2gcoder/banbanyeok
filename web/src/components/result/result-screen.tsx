@@ -13,7 +13,6 @@ import { ApiRequestError } from "@/lib/api/client";
 import { recommendQueryOptions } from "@/lib/api/queries";
 import type { Mode } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
-import { displayNames } from "@/lib/display/names";
 import { modeFromParam, modeToParam, type ShareState } from "@/lib/link/codec";
 import { shareMessage } from "@/lib/result/share-message";
 import { sharePath } from "@/lib/result/share-url";
@@ -97,7 +96,10 @@ function WhoAmI({
   );
 }
 
-/** 결과(화면 2)와 받은 링크(화면 4). 모드·"나는 누구?"는 URL 상태(nuqs)이고 결과는 서버가 계산한다. */
+/**
+ * 결과(화면 2)와 받은 링크(화면 4). 모드·"나는 누구?"는 URL 상태(nuqs)이고 결과는 서버가 계산한다.
+ * 사람 이름은 서버 label만 쓴다. "(나)"는 받은 링크에서 고른 사람에게만 붙인다(만든 사람 화면에는 없다).
+ */
 export function ResultScreen({ initial, variant }: { initial: ShareState; variant: ResultVariant }) {
   const panelId = useId();
   const [search, setSearch] = useQueryStates(searchParsers, { history: "replace", shallow: true, scroll: false });
@@ -109,11 +111,11 @@ export function ResultScreen({ initial, variant }: { initial: ShareState; varian
   const state: ShareState = { ...initial, ...current };
   const meIndex =
     variant === "received" && search.me !== null && search.me >= 0 && search.me < count ? search.me : null;
-  const names = displayNames(state.nicknames, count);
-  const people = names.map((name, index) => ({ index, name }));
-
   const query = useQuery({ ...recommendQueryOptions(state), placeholderData: (previous) => previous });
-  const view = query.data ? toResultView(query.data, state.nicknames) : null;
+  const view = query.data ? toResultView(query.data) : null;
+  // 표시 이름은 모드와 무관하므로 모드를 바꾸는 동안 보이는 이전 결과의 이름을 그대로 써도 같다.
+  // 첫 결과가 오기 전에는 이름을 모르니 "나는 누구?"와 배려 대상 고르기를 그리지 않는다.
+  const people = view?.people.map(({ index, name }) => ({ index, name })) ?? [];
 
   const changeMode = (mode: Mode, favorIndex: number | null) => {
     track("mode_switched", { from_mode: state.mode, to_mode: mode, favor_used: mode === "favor" });
@@ -121,8 +123,9 @@ export function ResultScreen({ initial, variant }: { initial: ShareState; varian
   };
   const top = view?.candidates[0];
   const longest = top ? top.people.reduce((a, b) => (b.seconds > a.seconds ? b : a)).index : Math.min(1, count - 1);
-  const favorName = state.favorIndex === null ? null : (names[state.favorIndex] ?? null);
-  const sender = state.nicknames?.[0];
+  const favorName = state.favorIndex === null ? null : (people[state.favorIndex]?.name ?? null);
+  const first = view?.people[0];
+  const sender = first?.labelKind === "name" ? first.name : null;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-5 pt-4 pb-10">
@@ -142,7 +145,9 @@ export function ResultScreen({ initial, variant }: { initial: ShareState; varian
           <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.02em] text-ink">
             {sender ? `${withJosa(sender, "이/가")} 고른 만날 역 후보` : "친구가 보낸 만날 역 후보"}
           </h1>
-          <WhoAmI people={people} meIndex={meIndex} onChange={(me) => void setSearch({ me })} />
+          {people.length > 0 ? (
+            <WhoAmI people={people} meIndex={meIndex} onChange={(me) => void setSearch({ me })} />
+          ) : null}
         </header>
       )}
 

@@ -6,11 +6,12 @@
  * - 환승 = 노선을 공유하면 0, 아니면 1(18km 넘으면 2).
  * - 공평: (최장, 차이, 합계, 코드) / 빨리: (합계, 최장, 코드) / 배려: 공평 1위 대비 다른 사람 +min(15분, 50%) 상한 안에서
  *   우대 대상 시간이 짧은 순. 문장은 p6-notes 4.2 템플릿의 일부만 흉내 낸다.
+ * - 표시 이름(label)은 실제 규칙(contracts/data-format.md §8, shared/app-logic)을 흉내 내지 않는다. 받은 이름이 있으면 그 이름,
+ *   없으면 "참가자 N"이다. 웹은 label을 그대로 쓰므로 규칙이 어떻든 화면 동작은 같다.
  */
 import type { components } from "../src/lib/api/schema.gen.ts";
 import { withJosa } from "../src/lib/display/korean.ts";
 import { formatMinutes, minutesFromSeconds } from "../src/lib/display/minutes.ts";
-import { DEFAULT_NAMES } from "../src/lib/display/names.ts";
 
 type Result = components["schemas"]["Result"];
 type Candidate = components["schemas"]["Candidate"];
@@ -18,7 +19,7 @@ type Mode = components["schemas"]["Mode"];
 
 export type MockStation = { code: string; name: string; lines: string[]; lat: number; lng: number };
 export type MockData = { origins: Map<string, MockStation>; candidates: MockStation[]; dataVersion: string };
-export type RecommendBody = { origins: string[]; mode: Mode; favorIndex?: number };
+export type RecommendBody = { origins: string[]; mode: Mode; favorIndex?: number; nicknames?: (string | null)[] };
 
 const WAIT = 240;
 const TRANSFER = 240;
@@ -127,8 +128,8 @@ const REASON_CODES: Record<Mode, [Candidate["reasonCode"], Candidate["reasonCode
 export function mockRecommend(data: MockData, body: RecommendBody): Result {
   const people = body.origins.map((code) => data.origins.get(code)).filter((s): s is MockStation => s !== undefined);
   const favorIndex = body.mode === "favor" ? (body.favorIndex ?? 0) : -1;
-  // 서버는 /recommend에서 별칭을 모른다. 문장은 기본 이름("나/친구1…")으로 만든다.
-  const names = people.map((_, i) => DEFAULT_NAMES[i] ?? `친구${i}`);
+  const nicknames = people.map((_, i) => body.nicknames?.[i]?.trim() || null);
+  const names = nicknames.map((name, i) => name ?? `참가자 ${i + 1}`);
   const rows = data.candidates.map((c) => row(c, people)).filter((r) => r.max <= 4 * 3600);
   const { ranked, baseline } = rank(rows, body.mode, favorIndex);
   const top = ranked.slice(0, 3);
@@ -139,10 +140,12 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
     dataVersion: data.dataVersion,
     participants: people.map((p, i) => ({
       participantId: String(i),
-      nickname: null,
+      nickname: nicknames[i] ?? null,
       hidden: false,
       originCode: p.code,
       originName: p.name,
+      label: names[i] ?? "",
+      labelKind: nicknames[i] ? ("name" as const) : ("ordinal" as const),
     })),
     baselineStationCode: baseline?.station.code ?? null,
     candidates: top.map((r, i) => ({

@@ -64,7 +64,7 @@ class RoomResultServiceTest :
                 }
             }
 
-            it("names participants by nickname or by A/B/C/D in room order, never with first-person words") {
+            it("names participants by nickname, origin station or room order, never with first-person words") {
                 resultTest { fixture, results ->
                     val anonymous =
                         fixture.service.create(
@@ -87,7 +87,7 @@ class RoomResultServiceTest :
                                 null,
                             ).recommendation.candidates
                             .joinToString { it.reason }
-                    reasons shouldContain "A"
+                    reasons shouldContain "03v역에서 오는 분"
                     reasons shouldNotContain "나는"
                     reasons shouldNotContain "친구"
 

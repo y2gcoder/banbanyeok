@@ -71,10 +71,11 @@ private fun seoResults(
                     people =
                         candidate.times.map { time ->
                             PersonTime(
+                                // 이름 없이 출발역만 넘겨 웹·서버와 같은 표시 이름("{역}에서 오는 분")을 쓴다.
                                 PersonRef(
-                                    time.participantId,
-                                    stations.getValue(time.participantId).name + " 출발",
-                                    time.participantId,
+                                    id = time.participantId,
+                                    originCode = time.participantId,
+                                    originName = stations.getValue(time.participantId).name,
                                 ),
                                 time.seconds,
                                 time.transfers,

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "minClientSchema": 1,
-  "dataVersion": "20261114.2",
-  "previousDataVersion": "20261114.1",
-  "generatedAt": "2026-11-14T05:10:20Z",
+  "dataVersion": "20261114.3",
+  "previousDataVersion": "20261114.2",
+  "generatedAt": "2026-11-14T05:37:15Z",
   "registryVersion": 4,
   "timeModel": "weekday-offpeak-half-headway",
   "originCount": 240,
@@ -26,8 +26,8 @@
     },
     "seoPages": {
       "path": "seo-pairs.json",
-      "sha256": "00fc4b20e3fdf2fa8b7c4e02572b00aa34275969cc3ae705a822287ab132831a",
-      "bytes": 330303
+      "sha256": "7f4e5768fc5bd68b5937034662a1aa64b034f22b98371fc85e38a2a1ea5ec247",
+      "bytes": 333673
     }
   }
 }

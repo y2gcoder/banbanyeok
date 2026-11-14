@@ -84,12 +84,19 @@ describe("가짜 서버가 계약을 지킨다", () => {
 
 describe("웹이 보내는 요청이 계약을 지킨다", () => {
   it.each([
-    [{ origins: ["03v", "130"], mode: "fair" as const, favorIndex: null }],
-    [{ origins: ["03v", "130", "225"], mode: "fast" as const, favorIndex: null }],
-    [{ origins: ["03v", "130"], mode: "favor" as const, favorIndex: 1 }],
+    [{ origins: ["03v", "130"], mode: "fair" as const, favorIndex: null, nicknames: null }],
+    [{ origins: ["03v", "130", "225"], mode: "fast" as const, favorIndex: null, nicknames: null }],
+    [{ origins: ["03v", "130"], mode: "favor" as const, favorIndex: 1, nicknames: ["민수", null] }],
   ])("%o", (query) => {
     const body = recommendBody(query);
     expect(requestSchema(body), JSON.stringify(requestSchema.errors)).toBe(true);
     expect("favorIndex" in body).toBe(query.mode === "favor");
+  });
+
+  it("사람이 넣은 이름만 보낸다: 없는 사람은 null, 아무도 없으면 필드 생략", () => {
+    const base = { origins: ["03v", "130", "225"], mode: "fair" as const, favorIndex: null };
+    expect(recommendBody({ ...base, nicknames: null })).not.toHaveProperty("nicknames");
+    expect(recommendBody({ ...base, nicknames: [null, " ", null] })).not.toHaveProperty("nicknames");
+    expect(recommendBody({ ...base, nicknames: [" 민수 ", null, ""] }).nicknames).toEqual(["민수", null, null]);
   });
 });

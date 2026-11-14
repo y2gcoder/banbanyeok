@@ -152,14 +152,66 @@ jobs:
           retention-days: 7
       - run: pnpm cf:build
 
+  # 실제 서버 대상 e2e: compose Postgres → Liquibase → Ktor(dev 산출물) + 웹 프로덕션 빌드. 가짜 서버 없이
+  # 입력 → 결과(서버가 만든 표시 이름) → 공유 링크 → 받은 링크에서 사람 고르기와 폐기된 역 코드 링크를 확인한다.
+  e2e-real:
+    needs: changes
+    if: needs.changes.outputs.kotlin == 'true' || needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DB_PORT: '5432'
+      SERVER_PORT: '8080'
+      WEB_PORT: '3000'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: java node pnpm
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: pnpm install --frozen-lockfile
+      - run: bash scripts/dev.sh db && bash scripts/dev.sh migrate
+      - run: ./gradlew :server:app:classes --console=plain
+      - name: 서버 시작
+        run: nohup bash scripts/dev.sh server > server.log 2>&1 &
+      - name: 웹 빌드·시작
+        working-directory: web
+        env:
+          API_ORIGIN: http://127.0.0.1:8080
+          SITE_URL: http://127.0.0.1:3000
+        run: |
+          pnpm build
+          nohup pnpm start --port 3000 > ../web.log 2>&1 &
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: web
+      - name: 서버·웹 대기
+        run: |
+          for _ in $(seq 1 90); do
+            curl -sf http://127.0.0.1:8080/healthz >/dev/null && curl -sf -o /dev/null http://127.0.0.1:3000/ && exit 0
+            sleep 2
+          done
+          tail -50 server.log web.log; exit 1
+      - run: pnpm e2e:real
+        working-directory: web
+        env:
+          REAL_WEB_URL: http://127.0.0.1:3000
+      - if: failure()
+        run: tail -100 server.log web.log
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report-real
+          path: web/playwright-report/
+          retention-days: 7
+
   # 브랜치 보호에서 필수로 지정할 단일 체크. 경로 필터로 건너뛴 잡은 통과로 본다.
   ci-ok:
     if: always()
-    needs: [changes, unit, lint, integration, oracle, web]
+    needs: [changes, unit, lint, integration, oracle, web, e2e-real]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "changes=${{ needs.changes.result }} unit=${{ needs.unit.result }} lint=${{ needs.lint.result }} integration=${{ needs.integration.result }} oracle=${{ needs.oracle.result }} web=${{ needs.web.result }}"
+          echo "changes=${{ needs.changes.result }} unit=${{ needs.unit.result }} lint=${{ needs.lint.result }} integration=${{ needs.integration.result }} oracle=${{ needs.oracle.result }} web=${{ needs.web.result }} e2e-real=${{ needs.e2e-real.result }}"
           if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
             exit 1
           fi

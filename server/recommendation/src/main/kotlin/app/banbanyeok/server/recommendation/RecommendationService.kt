@@ -2,6 +2,8 @@ package app.banbanyeok.server.recommendation
 
 import app.banbanyeok.applogic.Comparison
 import app.banbanyeok.applogic.FavorContext
+import app.banbanyeok.applogic.ParticipantLabel
+import app.banbanyeok.applogic.ParticipantLabels
 import app.banbanyeok.applogic.PersonRef
 import app.banbanyeok.applogic.PersonTime
 import app.banbanyeok.applogic.ReasonCode
@@ -15,11 +17,15 @@ import app.banbanyeok.core.Candidate as CoreCandidate
 
 public enum class RecommendMode { FAIR, FAST, FAVOR }
 
-/** 계산에 들어가는 사람 한 명. [id]는 방에서는 participantId, 무상태 추천에서는 입력 순서의 인덱스 문자열이다. */
+/**
+ * 계산에 들어가는 사람 한 명. [id]는 방에서는 participantId, 무상태 추천에서는 입력 순서의 인덱스 문자열이다.
+ * [hidden]이면 [originCode]는 계산에만 쓰고 표시 이름·문장에는 출발역을 쓰지 않는다.
+ */
 public class RecommendParticipant(
     public val id: String,
     public val nickname: String?,
     public val originCode: String,
+    public val hidden: Boolean = false,
 )
 
 public class RecommendRequest(
@@ -55,6 +61,8 @@ public data class Recommendation(
     public val dataVersion: String,
     public val baselineStationCode: String?,
     public val candidates: List<RecommendedStation>,
+    /** 요청 참가자 순서의 표시 이름(contracts/data-format.md §8). 문장도 이 이름을 쓴다. */
+    public val labels: List<ParticipantLabel>,
 )
 
 public enum class RecommendationError {
@@ -98,13 +106,14 @@ public class RecommendationService(
                 ),
             )
         val top = result.recommendations.take(MAX_CARDS)
-        val refs = SentenceNames.of(people).mapIndexed { i, name -> PersonRef(people[i].id, name, originCode = null) }
+        val refs = personRefs(people)
         val favor = if (favorIndex >= 0) favorContext(result, matrix, favorIndex) else null
         return Recommendation(
             status = result.status,
             mode = request.mode,
             dataVersion = travelTimes.dataVersion,
             baselineStationCode = result.baselineStationCode,
+            labels = ParticipantLabels.of(refs),
             candidates =
                 top.mapIndexed { index, card ->
                     val input = reasonInput(CardContext(request.mode, result, top, refs, favor), index)
@@ -127,7 +136,7 @@ public class RecommendationService(
     private fun validate(request: RecommendRequest) {
         val people = request.participants
         if (people.size !in MIN_PEOPLE..MAX_PEOPLE) reject(RecommendationError.PEOPLE_COUNT, "참가자는 2~4명이어야 합니다")
-        if (people.any { it.nickname != null && !SentenceNames.isValid(it.nickname) }) {
+        if (people.any { it.nickname != null && !Nicknames.isValid(it.nickname) }) {
             reject(RecommendationError.INVALID_NICKNAME, "별칭이 올바르지 않습니다")
         }
         if (people.any { !travelTimes.isOrigin(it.originCode) }) {
@@ -138,6 +147,17 @@ public class RecommendationService(
             if (people.none { it.id == target }) reject(RecommendationError.FAVOR_TARGET_UNKNOWN, "우대 대상이 참가자에 없습니다")
         }
     }
+
+    /** 표시 이름과 문장의 입력. 숨긴 사람은 출발역 코드·이름을 넘기지 않는다(data-format §8). */
+    private fun personRefs(people: List<RecommendParticipant>): List<PersonRef> =
+        people.map {
+            PersonRef(
+                id = it.id,
+                name = it.nickname?.trim()?.takeIf(String::isNotEmpty),
+                originCode = if (it.hidden) null else it.originCode,
+                originName = if (it.hidden) null else stationNames.nameOf(it.originCode),
+            )
+        }
 
     private fun reject(
         error: RecommendationError,
