@@ -25,32 +25,23 @@ public object ParticipantLabels {
     /** [people]의 순서 = 입력(참여) 순서. [PersonRef.originName]이 null이면 숨긴 참가자로 본다. */
     public fun of(people: List<PersonRef>): List<ParticipantLabel> {
         val names = people.map { it.name?.trim()?.takeIf(String::isNotEmpty) }
+        // 이름이 없는 사람만 출발역 이름을 쓴다. 숨긴 사람은 originName이 null이다.
         val origins =
-            people.mapIndexed {
-                i,
-                person,
-                ->
-                person.originName?.takeIf { names[i] == null && it.isNotBlank() }
-            }
+            people.zip(
+                names,
+            ) { person, name -> person.originName?.takeIf { name == null && it.isNotBlank() } }
         val seen = HashMap<String, Int>()
         return people.indices.map { i ->
             val name = names[i]
             val origin = origins[i]
-            when {
-                name != null -> ParticipantLabel(name, LabelKind.NAME)
-                origin != null -> {
-                    val base = "${origin}에서 오는 분"
-                    val text =
-                        if (origins.count { it == origin } > 1) {
-                            val nth = seen.getOrElse(origin) { 0 } + 1
-                            seen[origin] = nth
-                            "$base $nth"
-                        } else {
-                            base
-                        }
-                    ParticipantLabel(text, LabelKind.ORIGIN)
-                }
-                else -> ParticipantLabel("참가자 ${i + 1}", LabelKind.ORDINAL)
+            if (name != null) {
+                ParticipantLabel(name, LabelKind.NAME)
+            } else if (origin == null) {
+                ParticipantLabel("참가자 ${i + 1}", LabelKind.ORDINAL)
+            } else {
+                val nth = if (origins.count { it == origin } > 1) seen.getOrElse(origin) { 0 } + 1 else null
+                nth?.let { seen[origin] = it }
+                ParticipantLabel(listOfNotNull("${origin}에서 오는 분", nth).joinToString(" "), LabelKind.ORIGIN)
             }
         }
     }
