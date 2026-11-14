@@ -35,8 +35,8 @@ export function ConfirmAction({
         onClick={() => setAsking(true)}
         className={
           tone === "danger"
-            ? "h-9 px-3 text-[14px] font-semibold text-destructive"
-            : "h-9 px-3 text-[14px] font-semibold"
+            ? "h-11 px-3 text-[14px] font-semibold text-destructive"
+            : "h-11 px-3 text-[14px] font-semibold"
         }
       >
         {label}
@@ -57,11 +57,11 @@ export function ConfirmAction({
           onConfirm();
           setAsking(false);
         }}
-        className="h-9 px-3 text-[14px] font-bold"
+        className="h-11 px-3 text-[14px] font-bold"
       >
         {confirmLabel}
       </Button>
-      <Button type="button" variant="ghost" onClick={() => setAsking(false)} className="h-9 px-3 text-[14px]">
+      <Button type="button" variant="ghost" onClick={() => setAsking(false)} className="h-11 px-3 text-[14px]">
         취소
       </Button>
     </fieldset>

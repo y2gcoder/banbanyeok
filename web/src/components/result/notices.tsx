@@ -25,7 +25,7 @@ export function Notices({ notices, onFavor }: { notices: readonly Notice[]; onFa
                 <button
                   type="button"
                   onClick={() => notice.cta && onFavor(notice.cta.favorIndex)}
-                  className="rounded-md text-[15px] font-bold text-ink underline underline-offset-4"
+                  className="inline-flex min-h-11 items-center rounded-md text-[15px] font-bold text-ink underline underline-offset-4"
                 >
                   {notice.cta.label}
                 </button>

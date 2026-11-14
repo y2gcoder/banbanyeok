@@ -17,8 +17,8 @@ function ComboboxInput({
       <ComboboxPrimitive.Input
         data-slot="combobox-input"
         className={cn(
-          "h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-3.5 text-[17px] font-semibold text-ink outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground focus-visible:border-ink focus-visible:outline-none aria-invalid:border-destructive",
-          showClear && "pr-11",
+          "h-12 w-full min-w-0 rounded-lg border border-input bg-surface px-3.5 text-[17px] font-semibold text-ink transition-colors placeholder:font-normal placeholder:text-muted-foreground focus-visible:border-ink aria-invalid:border-destructive",
+          showClear && "pr-12",
           className,
         )}
         {...props}
@@ -26,7 +26,7 @@ function ComboboxInput({
       {showClear ? (
         <ComboboxPrimitive.Clear
           data-slot="combobox-clear"
-          className="absolute right-1.5 inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-ink"
+          className="absolute right-0.5 inline-flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-ink"
         >
           <XIcon className="size-4" aria-hidden="true" />
         </ComboboxPrimitive.Clear>

@@ -13,6 +13,8 @@ export function generateMetadata(): Metadata {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // 노치·펀치홀·둥근 모서리 밖까지 그린다. 대신 본문 여백(px-gutter)과 맨 아래(pb-safe)가 안전 영역(env(safe-area-inset-*))을 띄운다.
+  viewportFit: "cover",
   themeColor: "#eef1f0",
 };
 

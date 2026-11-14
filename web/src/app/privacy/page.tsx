@@ -91,45 +91,52 @@ function blockKey(block: Block): string {
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-5 pt-5 pb-10 text-[15px] leading-relaxed text-ink-soft">
-      <header>
+    // 폰·태블릿은 한 칸(읽기 폭 최대 42rem). 넓은 화면(lg)에서는 목차가 왼쪽 칸에 붙어 있고 본문이 오른쪽 칸에 온다.
+    // 문서 순서는 그대로(요약·설정 → 목차 → 본문)이고 칸만 정한다.
+    <main className="mx-auto grid w-full max-w-2xl gap-8 px-gutter pt-5 pb-10 text-[15px] leading-relaxed text-ink-soft lg:max-w-6xl lg:grid-cols-[minmax(0,16rem)_minmax(0,42rem)] lg:grid-rows-[auto_auto_1fr] lg:justify-center lg:gap-x-12">
+      <header className="lg:col-span-2">
         <Wordmark />
       </header>
-      <section aria-labelledby="privacy-title" className="flex flex-col gap-4">
-        <h1 id="privacy-title" className="text-[28px] leading-tight font-extrabold tracking-[-0.02em] text-ink">
-          {POLICY.title}
-        </h1>
-        <p role="note" className="rounded-xl border-2 border-safety bg-surface p-4 font-semibold text-ink">
-          {POLICY.draftWarning}
-        </p>
-        {POLICY.intro.map((text) => (
-          <p key={text}>{text}</p>
-        ))}
-      </section>
-
-      <section aria-labelledby="privacy-summary" className="flex flex-col gap-3 rounded-2xl bg-surface p-5">
-        <h2 id="privacy-summary" className="text-[18px] font-bold text-ink">
-          한눈에 보기
-        </h2>
-        <ul className="flex list-disc flex-col gap-1.5 pl-5">
-          {POLICY.summary.map((line) => (
-            <li key={line}>{line}</li>
+      <div className="flex min-w-0 flex-col gap-8 lg:col-start-2">
+        <section aria-labelledby="privacy-title" className="flex flex-col gap-4">
+          <h1 id="privacy-title" className="text-[28px] leading-tight font-extrabold tracking-[-0.02em] text-ink">
+            {POLICY.title}
+          </h1>
+          <p role="note" className="rounded-xl border-2 border-safety bg-surface p-4 font-semibold text-ink">
+            {POLICY.draftWarning}
+          </p>
+          {POLICY.intro.map((text) => (
+            <p key={text}>{text}</p>
           ))}
-        </ul>
-      </section>
+        </section>
 
-      <section
-        aria-labelledby="analytics-settings-title"
-        id="analytics-settings"
-        className="flex scroll-mt-4 flex-col gap-3 rounded-2xl bg-surface p-5"
+        <section aria-labelledby="privacy-summary" className="flex flex-col gap-3 rounded-2xl bg-surface p-5">
+          <h2 id="privacy-summary" className="text-[18px] font-bold text-ink">
+            한눈에 보기
+          </h2>
+          <ul className="flex list-disc flex-col gap-1.5 pl-5">
+            {POLICY.summary.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section
+          aria-labelledby="analytics-settings-title"
+          id="analytics-settings"
+          className="flex scroll-mt-4 flex-col gap-3 rounded-2xl bg-surface p-5"
+        >
+          <h2 id="analytics-settings-title" className="text-[18px] font-bold text-ink">
+            통계 설정
+          </h2>
+          <ConsentSettings />
+        </section>
+      </div>
+
+      <nav
+        aria-labelledby="privacy-toc"
+        className="flex flex-col gap-3 lg:col-start-1 lg:row-span-2 lg:row-start-2 tall:lg:sticky tall:lg:top-4 tall:lg:max-h-[calc(100dvh-2rem)] tall:lg:self-start tall:lg:overflow-y-auto"
       >
-        <h2 id="analytics-settings-title" className="text-[18px] font-bold text-ink">
-          통계 설정
-        </h2>
-        <ConsentSettings />
-      </section>
-
-      <nav aria-labelledby="privacy-toc" className="flex flex-col gap-3">
         <h2 id="privacy-toc" className="text-[18px] font-bold text-ink">
           목차
         </h2>
@@ -138,7 +145,7 @@ export default function PrivacyPage() {
             <li key={s.id}>
               <a
                 href={`#${s.id}`}
-                className="inline-flex min-h-8 items-center rounded-md font-semibold text-ink underline underline-offset-4"
+                className="inline-flex min-h-11 items-center rounded-md font-semibold text-ink underline underline-offset-4"
               >
                 {s.title}
               </a>
@@ -147,16 +154,18 @@ export default function PrivacyPage() {
         </ol>
       </nav>
 
-      {POLICY.sections.map((s) => (
-        <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="flex scroll-mt-4 flex-col gap-3">
-          <h2 id={`${s.id}-title`} className="text-[20px] leading-snug font-extrabold text-ink">
-            {s.title}
-          </h2>
-          {s.blocks.map((b) => (
-            <PolicyBlock key={blockKey(b)} block={b} />
-          ))}
-        </section>
-      ))}
+      <div className="flex min-w-0 flex-col gap-8 lg:col-start-2">
+        {POLICY.sections.map((s) => (
+          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="flex scroll-mt-4 flex-col gap-3">
+            <h2 id={`${s.id}-title`} className="text-[20px] leading-snug font-extrabold text-ink">
+              {s.title}
+            </h2>
+            {s.blocks.map((b) => (
+              <PolicyBlock key={blockKey(b)} block={b} />
+            ))}
+          </section>
+        ))}
+      </div>
     </main>
   );
 }

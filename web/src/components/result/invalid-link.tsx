@@ -17,7 +17,7 @@ const MESSAGES: Record<LinkErrorCode, string> = {
 /** 링크를 해석하지 못했을 때. 무엇이 틀렸는지 말하고 새로 찾기로 보낸다. */
 export function InvalidLink({ error }: { error: LinkErrorCode }) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-5 pt-5 pb-10">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-gutter pt-5 pb-10">
       <Wordmark />
       <div role="alert" className="flex flex-col gap-2">
         <h1 className="text-[24px] font-extrabold tracking-[-0.02em] text-ink">링크를 열 수 없어요</h1>

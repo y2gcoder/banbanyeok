@@ -3,7 +3,7 @@ import { decodeShareQuery } from "@/lib/link/codec";
 import { toQueryString } from "@/lib/result/share-url";
 import { InvalidLink } from "./invalid-link";
 import { ResultLoader } from "./result-loader";
-import { LoadingCard, type ResultVariant } from "./result-screen";
+import { LoadingCard, PANEL, RESULT_GRID, type ResultVariant, SIDE } from "./result-screen";
 
 export type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -16,9 +16,11 @@ export async function ResultPage({ searchParams, variant }: { searchParams: Sear
     // 대기 화면은 쿼리 캐시를 건드리지 않아야 한다(같은 키를 먼저 만들면 HydrationBoundary가 수화를 effect로 미뤄 불일치가 난다).
     <Suspense
       fallback={
-        <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-5 pt-4 pb-10">
-          <div className="h-11 w-full rounded-xl bg-muted" />
-          <LoadingCard />
+        <main className={RESULT_GRID}>
+          <div className={`${SIDE} h-13 w-full rounded-xl bg-muted`} />
+          <div className={PANEL}>
+            <LoadingCard />
+          </div>
         </main>
       }
     >

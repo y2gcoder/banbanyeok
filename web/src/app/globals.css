@@ -46,7 +46,35 @@
   --input: var(--rule-strong);
   --ring: var(--ink);
   --radius: 0.75rem;
+
+  /* 본문 좌우 여백. 노치·펀치홀·둥근 모서리(가로로 눕힌 폰)에서는 안전 영역만큼 더 띄운다(viewport-fit=cover, px-gutter). */
+  --gutter: 1.25rem;
 }
+
+/* 두 칸이 되는 폭(wide)부터 여백 1.5rem. 두 칸이 각각 가장 좁은 폰(320px)의 본문 폭 280px 이상을 지킨다(docs/setup/u1-notes.md 3절). */
+@media (min-width: 40rem) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+@media (min-width: 64rem) {
+  :root {
+    --gutter: 2rem;
+  }
+}
+
+/*
+ * 반응형 확장(U1). 기본 스타일은 폰이고, 넓어질 때만 바꾼다(min-width).
+ * - wide(40rem = 640px): 두 칸 배치가 시작되는 폭. 2 × 280(320px 폰의 본문 폭) + 칸 사이 24 + 좌우 여백 48 = 632 ≤ 640.
+ *   펼친 폴더블(690~990)·가로로 눕힌 폰(667~930)·태블릿이 여기 들고, 접힌 커버 화면(344~484)은 한 칸으로 남는다.
+ *   rem이라 브라우저 기본 글자 크기를 키우면 두 칸이 되는 폭도 같이 커진다(큰 글자에서 칸이 좁아지지 않는다).
+ * - tall(높이 40rem 이상): 화면에 붙는(sticky) 칸은 높이가 충분할 때만. 가로로 눕힌 폰(높이 320~430)에서는 붙이지 않는다.
+ * - hinge-split(아래): 화면이 경첩으로 두 개로 나뉜 상태(Viewport Segments API). 지원 브라우저(Chromium 138+)에서만 맞는다.
+ */
+@theme {
+  --breakpoint-wide: 40rem;
+}
+@custom-variant tall (@media (min-height: 40rem));
 
 @theme inline {
   --font-sans:
@@ -111,6 +139,49 @@
   }
 }
 
+@utility px-gutter {
+  padding-left: max(var(--gutter), env(safe-area-inset-left));
+  padding-right: max(var(--gutter), env(safe-area-inset-right));
+}
+
+/* 화면 맨 아래 요소: 홈 인디케이터(안전 영역 아래)만큼 더 띄운다. */
+@utility pb-safe {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+}
+
+/*
+ * 스크롤 그림자: 칸 안에서 스크롤할 내용이 위·아래에 더 있으면 그쪽 가장자리에 옅은 그림자가 생긴다(끝까지 내리면 사라진다).
+ * 높이가 짧은 화면에서 동의 배너의 체크박스가 스크롤 아래에 있다는 것을 알려 준다. 배경 local/scroll 겹치기만 쓴다(JS 없음).
+ */
+@utility scroll-shadow-y {
+  background:
+    linear-gradient(var(--surface) 30%, transparent) center top / 100% 2rem no-repeat local,
+    linear-gradient(transparent, var(--surface) 70%) center bottom / 100% 2rem no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgb(22 32 27 / 0.22), transparent) center top / 100% 0.75rem no-repeat
+    scroll,
+    radial-gradient(farthest-side at 50% 100%, rgb(22 32 27 / 0.22), transparent) center bottom / 100% 0.75rem no-repeat
+    scroll;
+  background-color: var(--surface);
+}
+
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * 경첩 피하기(점진적 향상, Viewport Segments API). 화면이 좌우 두 조각으로 나뉘면(접다 만 폴더블, 두 화면 기기) 두 칸 배치의
+ * 칸 경계를 경첩에 맞춘다: 왼쪽 칸은 왼쪽 조각, 오른쪽 칸은 오른쪽 조각 안에 들어가고 경첩(두 조각 사이)에는 아무것도 놓지 않는다.
+ * 미디어 기능을 모르는 브라우저(사파리·파이어폭스)와 조각이 하나인 화면에서는 이 규칙이 통째로 무시된다.
+ * 레이어 밖(unlayered) 규칙이라 Tailwind 유틸리티(wide:grid-cols-* 등)보다 우선한다.
+ * 근거: https://developer.mozilla.org/en-US/docs/Web/API/Viewport_segments_API ·
+ * https://developer.chrome.com/blog/viewport-segments-api-shipped (docs/setup/u1-notes.md 6절)
+ */
+@media (horizontal-viewport-segments: 2) {
+  .hinge-split {
+    max-width: none;
+    column-gap: calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0) + 2 * var(--gutter));
+    grid-template-columns:
+      calc(env(viewport-segment-width 0 0) - 2 * var(--gutter))
+      calc(env(viewport-segment-width 1 0) - 2 * var(--gutter));
+  }
 }

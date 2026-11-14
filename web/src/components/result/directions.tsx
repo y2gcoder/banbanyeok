@@ -31,7 +31,7 @@ function RouteLinks({ routes, candidate, onOpen }: { routes: Route[]; candidate:
             target="_blank"
             rel="noopener noreferrer"
             onClick={onOpen}
-            className="flex flex-col rounded-md px-2 py-2 hover:bg-accent"
+            className="flex min-h-11 flex-col justify-center rounded-md px-2 py-2 hover:bg-accent"
           >
             <span className="text-[15px] font-semibold text-ink">{p.name}</span>
             <span className="text-[13px] text-muted-foreground">

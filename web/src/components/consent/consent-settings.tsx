@@ -49,18 +49,23 @@ function ScopeSwitch({
         aria-describedby={detailId}
         disabled={disabled}
         onClick={onToggle}
-        className={cn(
-          "relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border-2 border-ink transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40",
-          checked ? "bg-ink" : "bg-surface",
-        )}
+        // 누르는 영역은 44×44 이상(바깥 버튼), 보이는 스위치는 그 안의 트랙이다.
+        className="inline-flex h-11 w-16 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40"
       >
         <span
           aria-hidden="true"
           className={cn(
-            "inline-block size-5 rounded-full transition-transform motion-reduce:transition-none",
-            checked ? "translate-x-7 bg-surface" : "translate-x-1 bg-ink",
+            "inline-flex h-8 w-14 items-center rounded-full border-2 border-ink transition-colors",
+            checked ? "bg-ink" : "bg-surface",
           )}
-        />
+        >
+          <span
+            className={cn(
+              "inline-block size-5 rounded-full transition-transform motion-reduce:transition-none",
+              checked ? "translate-x-7 bg-surface" : "translate-x-1 bg-ink",
+            )}
+          />
+        </span>
       </button>
     </div>
   );

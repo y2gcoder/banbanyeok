@@ -25,7 +25,7 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex, name
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-3">
-        <span aria-hidden="true" className="relative flex w-5 shrink-0 justify-center pt-[13px]">
+        <span aria-hidden="true" className="relative flex w-5 shrink-0 justify-center pt-3">
           <span
             className="size-5 rounded-full border-[5px] bg-surface"
             style={{ borderColor: personColor(personIndex) }}
@@ -42,7 +42,7 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex, name
             placeholder={namePlaceholder}
             maxLength={MAX_NICKNAME_CODE_POINTS * 2}
             autoComplete="off"
-            className="h-8 w-full min-w-0 rounded-md bg-transparent px-1 text-[15px] font-bold text-ink outline-none placeholder:text-ink-soft focus-visible:bg-surface"
+            className="h-11 w-full min-w-0 rounded-md bg-transparent px-1 text-[16px] font-bold text-ink placeholder:text-ink-soft focus-visible:bg-surface"
           />
           <label htmlFor={stationId} className="sr-only">
             내 출발역

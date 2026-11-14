@@ -44,10 +44,11 @@ export function PairCandidateCard({ candidate }: { candidate: PairCandidate }) {
   const { max, spread, total } = candidate.aggregate;
   const top = candidate.rank === 1;
   return (
-    <li>
+    // 넓은 화면(두 칸)에서는 1위가 한 줄을 다 쓰고 2·3위가 나란히 온다. 세 칸 폭(lg)에서는 셋이 나란히.
+    <li className={top ? "wide:col-span-2 lg:col-span-1" : undefined}>
       <article
         aria-labelledby={`pair-cand-${candidate.rank}`}
-        className="flex flex-col gap-4 rounded-2xl border border-rule bg-surface p-5 shadow-[0_1px_0_var(--rule)]"
+        className="flex h-full flex-col gap-4 rounded-2xl border border-rule bg-surface p-5 shadow-[0_1px_0_var(--rule)]"
       >
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <span

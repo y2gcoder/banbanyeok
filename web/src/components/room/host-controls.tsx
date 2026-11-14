@@ -36,7 +36,7 @@ export function HostControls({ locked, lockedByCount, busy, error, onToggleLock,
             disabled={busy}
             onClick={() => onToggleLock(!locked)}
             aria-pressed={locked}
-            className="h-10 shrink-0 text-[14px] font-semibold"
+            className="h-11 shrink-0 text-[14px] font-semibold"
           >
             {locked ? <LockOpenIcon aria-hidden="true" /> : <LockIcon aria-hidden="true" />}
             {locked ? "잠금 풀기" : "참여 잠그기"}

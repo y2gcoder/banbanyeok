@@ -144,7 +144,7 @@ export function OutcomeCard({
     return (
       <section aria-label="실제로 어디서 만났어요?" className="rounded-2xl border border-rule bg-surface p-5">
         <details>
-          <summary className="cursor-pointer text-[16px] font-bold text-ink">
+          <summary className="-my-3 cursor-pointer py-3 text-[16px] font-bold text-ink">
             약속이 끝났다면, 어디서 만났는지 알려 주기
           </summary>
           <div className="mt-3 flex flex-col gap-3">{form}</div>
