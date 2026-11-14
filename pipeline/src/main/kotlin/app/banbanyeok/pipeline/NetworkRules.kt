@@ -8,6 +8,8 @@ import kotlinx.serialization.json.jsonPrimitive
 internal class NetworkRules(
     private val data: JsonObject,
 ) {
+    val physical: PhysicalStations? = data["physicalStations"]?.jsonObject?.let(::PhysicalStations)
+
     private val services = data.getValue("services").jsonObject
     val trunkService: String get() =
         services.entries

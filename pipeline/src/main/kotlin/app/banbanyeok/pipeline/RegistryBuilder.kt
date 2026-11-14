@@ -80,29 +80,42 @@ internal class RegistryBuilder(
     }
 
     private fun retireDuplicates() {
-        // Consolidate older draft records when source transfer IDs, names and coordinates agree.
-        // Retire the other code instead of reusing/deleting it, preserving links from earlier drafts.
-        for (i in stations.indices) {
-            if (stations[i].status != StationStatus.ACTIVE) continue
-            for (j in i + 1 until stations.size) {
-                val a = stations[i]
-                val b = stations[j]
-                if (!canMerge(a, b)) continue
-                stations[i] =
-                    a.copy(
-                        lines = (a.lines + b.lines).distinct().sorted(),
-                        aliases =
-                            (a.aliases + b.aliases + b.name)
-                                .filter {
-                                    it !=
-                                        a.name
-                                }.distinct()
-                                .sorted(),
-                        sources = a.sources + b.sources,
-                    )
-                stations[j] = b.copy(status = StationStatus.DEPRECATED, deprecatedIn = newVersion, replacedBy = a.code)
+        // Prefer the configured source anchor, then oldest addedIn/code. Never allocate a replacement code.
+        val order =
+            stations.indices.sortedWith(
+                compareBy(
+                    { index: Int -> rules.physical?.preferred(stations[index]) == false },
+                    { index -> stations[index].addedIn },
+                    { index -> stations[index].code },
+                ),
+            )
+        order.forEachIndexed { position, i ->
+            if (stations[i].status == StationStatus.ACTIVE) {
+                order.drop(position + 1).filter { canMerge(stations[i], stations[it]) }.forEach { j -> merge(i, j) }
             }
         }
+    }
+
+    private fun merge(
+        survivor: Int,
+        retired: Int,
+    ) {
+        val a = stations[survivor]
+        val b = stations[retired]
+        require(
+            a.sources.keys
+                .intersect(b.sources.keys)
+                .all { a.sources[it] == b.sources[it] },
+        ) {
+            "Conflicting source identities in physical station ${a.name}"
+        }
+        stations[survivor] =
+            a.copy(
+                lines = (a.lines + b.lines).distinct().sorted(),
+                aliases = (a.aliases + b.aliases + b.name).filter { it != a.name }.distinct().sorted(),
+                sources = a.sources + b.sources,
+            )
+        stations[retired] = b.copy(status = StationStatus.DEPRECATED, deprecatedIn = newVersion, replacedBy = a.code)
     }
 
     private fun supplement() {
@@ -129,6 +142,8 @@ internal class RegistryBuilder(
         val sorted = stations.sortedBy { it.code }
         val registry = Registry(1, if (sorted == previous.stations) previous.registryVersion else newVersion, sorted)
         RegistryCodec.validate(registry)
+        val issues = registryGate(registry, rules.physical, rules::canonical)
+        require(issues.isEmpty()) { issues.joinToString("; ") }
         require(
             RegistryCompatibility.checkAppendOnly(previous, registry).isEmpty(),
         ) { "Registry append-only violation" }
@@ -154,6 +169,8 @@ internal class RegistryBuilder(
         a: Station,
         b: Station,
     ): Boolean {
+        if (b.status != StationStatus.ACTIVE || rules.physical?.separate(a, b) == true) return false
+        if (rules.physical?.same(a, b, rules::canonical) == true) return true
         val ar = records.filter { it.id in a.sources.values }
         val br = records.filter { it.id in b.sources.values }
         val linked = ar.any { x -> br.any { y -> related(x, y) } }

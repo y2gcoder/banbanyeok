@@ -65,5 +65,36 @@
       "마천",
       "하남검단산"
     ]
-  ]
+  ],
+  "physicalStations": {
+    "scope": {
+      "minLat": 36.7,
+      "maxLat": 38.3,
+      "minLng": 126.3,
+      "maxLng": 128.0
+    },
+    "scopeBasis": "수도권 및 연결 광역철도 보수적 좌표 창. 전국 동명이역은 이 근접 게이트 범위 밖이며 기존 원본 환승 ID 결합만 유지한다.",
+    "nearKm": 0.85,
+    "distinctPairs": [
+      {
+        "codes": [
+          "1qs",
+          "pxn"
+        ],
+        "basis": "신촌 2호선과 경의중앙선은 별도 역. 서울시 공식 수도권 노선도에 별도 표시; S1 좌표 약700m 분리.",
+        "source": "https://japanese.seoul.go.kr/wp-content/uploads/2025/08/cliamte-card-service-availability.pdf"
+      }
+    ],
+    "samePairs": [
+      {
+        "codes": [
+          "gsp",
+          "xnc"
+        ],
+        "basis": "S4 이촌 4호선→경의중앙선 환승 78m/65초를 명시. S1 좌표 약905m 불일치는 환승역 분할 근거로 사용하지 않는다.",
+        "source": "https://data.seoul.go.kr/dataList/OA-13290/S/1/datasetView.do"
+      }
+    ],
+    "preferredSourcePrefix": "kric:서울교통공사:"
+  }
 }
