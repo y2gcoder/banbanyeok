@@ -1,6 +1,6 @@
 # L1 개인정보 처리방침 작업 노트
 
-작성 2026-11-14. 결과물:
+작성 2026-11-14. P7(PR #17) 병합 후 통계 항목을 다시 대조했다. 결과물:
 
 | 파일 | 내용 |
 |---|---|
@@ -41,12 +41,12 @@ web 잡이 돌지 않는다(md를 직접 고치면 다음 web 변경 때 테스�
 | `{Cloud Logging 저장 위치}` `{Google 처리 국가}` `{Cloudflare 처리 국가}` `{Supabase 처리 국가}` `{PostHog 저장 국가: …}` | DPA·재수탁자 목록·설정 확인 결과 |
 | `{재수탁자 목록 링크}` | 각 사 재수탁자(sub-processor) 공개 페이지 |
 | `{통계 동의 철회 경로}` | P7이 만드는 통계 설정 위치 |
-| `{기기 토큰 쿠키 기간}` `{통계 쿠키 기간}` | 방 기능 웹 구현·P7 설정 값 |
+| `{기기 토큰 쿠키 기간}` | 방 기능 웹 구현 값 |
 | `{내부 관리계획 수립 여부}` `{접속기록 보관 기간}` | 안전성 확보조치 고시 확인 후(검토 의견 2-6) |
 
 ## 3. 실제 수집 항목과 방침 대조표
 
-코드·계약에서 확인한 실제 처리와 방침의 대응이다(2026-11-14 main 기준, 커밋 3288f24).
+코드·계약에서 확인한 실제 처리와 방침의 대응이다(2026-11-14 main 기준, 커밋 86ea6ea, P7 포함).
 
 | 실제 처리 | 근거(코드·계약) | 저장 | 방침 절 |
 |---|---|---|---|
@@ -65,14 +65,20 @@ web 잡이 돌지 않는다(md를 직접 고치면 다음 web 변경 때 테스�
 | 멱등성 캐시 10분(응답 재생) | `contracts/openapi.yaml` 공통 규칙 | 메모리 | 4 |
 | 로컬 저장소 `banbanyeok:me = {code, nickname}` | `web/src/lib/form/remember.ts` | 기기 | 2, 11 |
 | 방 토큰 localStorage, deviceToken HttpOnly 쿠키 | tech-stack 5.5(계획). **웹에 방 기능 아직 없음** | 기기 | 11('방 기능을 쓸 때') |
-| 통계 이벤트 10종과 속성, 공통 속성 4개, 금지 속성 | `contracts/events.json` | PostHog | 2(통계 표), 11 |
-| 통계 SDK 자동 속성(무작위 distinct_id, 브라우저·OS·기기·화면, `$current_url`, `$referrer`, GeoIP) | posthog-js 기본 동작. **P7 구현 전이라 미확인** | PostHog | 2(동의 항목) |
+| 통계 이벤트 13종과 속성, 공통 속성 4개(`platform`·`app_version`·`data_version`·`anon_user_id`), 금지 속성 | `contracts/events.json`. 웹이 보내는 것은 `input_completed`·`result_viewed`(`response_time_bucket` 포함)·`mode_switched`·`share_clicked`·`link_opened`·`link_person_selected`·`map_app_opened`·`station_chosen`·`seo_to_input_clicked` 9종. `room_created`·`participant_joined`(서버), `outcome_answered`(UI 없음), `analytics_consent_changed`(동의 UI 없음)는 아직 안 보냄 | PostHog | 2(통계 표) |
+| SDK 자동 속성: 무작위 `distinct_id`, `$browser`·`$os`·`$device_type`·화면 크기, 쿼리·해시를 지운 `$current_url`·`$pathname`·`$referrer`(조합 경로는 `/meet/[pair]`), `$process_person_profile: false`, `$geoip_disable: true`. `$raw_user_agent`는 제외 | `web/src/lib/analytics/tracker.ts`(`posthogOptions`), `redact.ts` | PostHog | 2(동의 항목) |
+| 꺼 둔 기능: autocapture, 페이지뷰·이탈, 세션 녹화, heatmap, 설문, 플래그 요청, 외부 스크립트 | `tracker.ts` | — | 2 |
+| 클라이언트 IP: 수집 서버가 요청에서 받음. 비저장은 프로젝트 설정 'Discard client IP data'(운영자가 켜야 함) | `docs/setup/p7-notes.md` | PostHog(설정 전에는 저장됨) | 2, 7 |
+| 추적 거부: DNT·GPC가 있으면 SDK를 불러오지도 않음. 키가 없으면 완전히 꺼짐(요청 0건) | `visit.ts`, `tracker.ts`, `config.ts` | — | 2, 11 |
+| 로컬 저장소 `ph_<토큰>_posthog`(익명 ID·SDK 상태·쿼리 포함 첫 진입 URL), `bby.analytics.seen`(첫 방문 표시). 쿠키 없음 | `persistence: "localStorage"`, `visit.ts` | 기기 | 11 |
+| 리전: US/EU 중 환경 변수로 지정, 미정 | `config.ts` | — | 7(자리표시) |
 | 카카오맵 길찾기 링크에 출발역·후보역 이름·좌표 | `web/src/lib/map/kakao.ts`, `components/result/directions.tsx` | 카카오로 이동(사용자 클릭) | 6 |
 | 서버가 IP·User-Agent를 DB에 저장하지 않음 | tech-stack 5.4, changelog(열 없음) | — | 9 |
 | GCS 산출물(역·시간 데이터) | accounts.md | 개인정보 아님 | 해당 없음 |
 
-**방침에 없는 실제 처리: 없음.** 방침에 있으나 아직 구현이 없는 것: 방 기능 웹 화면(토큰 저장·쿠키), 통계(P7),
-통계 동의 화면, 매일 정리 작업(P8). 이들이 구현될 때 위 표와 방침을 다시 맞춘다.
+**방침에 없는 실제 처리: 없음.** 방침에 있으나 아직 구현이 없는 것: 방 기능 웹 화면(토큰 저장·쿠키), **통계 동의
+UI**, 매일 정리 작업(P8). 통계는 P7(PR #17)로 구현됐지만 운영 키가 없어 아직 아무것도 수집하지 않는다. 방침은
+"동의한 경우에만 수집"이라고 쓰므로 **운영 키를 넣기 전에 동의 UI가 있어야** 방침과 실제가 맞는다(검토 의견 2-7).
 
 ## 4. 확인 필요 (사실관계)
 
@@ -86,7 +92,7 @@ web 잡이 돌지 않는다(md를 직접 고치면 다음 web 변경 때 테스�
    이름이 담긴다). 봇 관리 쿠키(`__cf_bm` 등)가 붙는지. DPA, 재수탁자, 데이터 처리 국가.
 3. **Supabase**: DB 공급자 확정 여부, 서울 리전(AWS ap-northeast-2), 자동 백업 보존 기간과 PITR, 저장 데이터
    암호화, 지원 인력의 국외 접근, 재수탁자(AWS 등), 무료 플랜 일시정지 조건.
-4. **PostHog**: US/EU 리전, 데이터 보존 기간(플랜별), IP 저장 끄기 설정, `ph_` 쿠키 이름과 기간, DPA(수탁자 지위,
+4. **PostHog**: US/EU 리전, 데이터 보존 기간(플랜별), 'Discard client IP data'를 켰는지, DPA(수탁자 지위,
    자기 목적 이용 여부), 재수탁자.
 5. 각 사 공식 개인정보 문의처(국외 이전 표의 '연락처').
 6. 카카오맵 링크: 카카오가 받는 정보는 주소의 이름·좌표뿐인지(현재 구현 기준 그렇다).
@@ -101,10 +107,10 @@ web 잡이 돌지 않는다(md를 직접 고치면 다음 web 변경 때 테스�
 
 ## 5. 다른 작업에 넘길 요구 사항
 
-- **P7(통계)**: 옵트인 동의 화면(수집·이용 동의와 국외 이전 동의를 구분, 만 14세 이상 확인, 동의·거부 같은 강조),
-  동의 전 SDK 미초기화, `$current_url`·`$referrer`·`$pathname`의 **쿼리 제거**(공유 링크에 출발역·이름이 있다),
-  autocapture·세션 리플레이 끄기, IP 저장 최소화, 하단 링크 영역에 '통계 설정' 추가(`site-footer.tsx`). 상세는
-  검토 의견 2-1, 2-7.
+- **통계 후속(P7 다음)**: P7이 쿼리 제거·자동 수집 끔·GeoIP 끔·쿠키 없음을 이미 반영했다. 남은 것은 옵트인 동의
+  화면(수집·이용 동의와 국외 이전 동의 구분, 만 14세 이상 확인, 동의·거부 같은 강조, `opt_out_capturing_by_default`,
+  `analytics_consent_changed`)과 하단 링크 영역의 '통계 설정'(`site-footer.tsx`), 그리고 운영자의 PostHog
+  'Discard client IP data' 켜기. 둘 다 운영 키를 넣기 전에 끝내야 한다. 상세는 검토 의견 2-1, 2-7.
 - **P8(인프라)**: `server cleanup`을 **매일** 실행(방침 5절 '만료 후 5일 이내'), Cloud Logging 버킷을 서울로,
   로그 보존 기간 확정.
 - **방 기능 웹 화면**: 토큰 저장 위치와 기기 토큰 쿠키 기간을 정하면 방침 11절 자리표시를 채운다.
