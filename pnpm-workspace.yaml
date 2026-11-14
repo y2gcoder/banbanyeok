@@ -10,3 +10,5 @@ minimumReleaseAge: 10080
 allowBuilds:
   esbuild: true
   workerd: true
+  # core-js: posthog-js의 전이 의존성. 설치 스크립트는 후원 안내 문구만 출력하므로 막는다(P7).
+  core-js: false

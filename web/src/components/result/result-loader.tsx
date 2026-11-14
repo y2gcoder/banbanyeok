@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
-import { recommendQueryOptions } from "@/lib/api/queries";
+import { recommendQueryOptions, takeResponseMillis } from "@/lib/api/queries";
 import type { ShareState } from "@/lib/link/codec";
 import { ResultScreen, type ResultVariant } from "./result-screen";
 
@@ -9,10 +9,14 @@ import { ResultScreen, type ResultVariant } from "./result-screen";
  */
 export async function ResultLoader({ state, variant }: { state: ShareState; variant: ResultVariant }) {
   const queryClient = new QueryClient();
-  await queryClient.prefetchQuery(recommendQueryOptions(state));
+  const options = recommendQueryOptions(state);
+  await queryClient.prefetchQuery(options);
+  // 서버가 미리 받은 경우의 응답 시간. 통계(응답 시간 구간)에 쓰도록 화면에 넘긴다.
+  const prefetched = queryClient.getQueryData(options.queryKey);
+  const responseMs = prefetched ? takeResponseMillis(prefetched) : undefined;
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ResultScreen initial={state} variant={variant} />
+      <ResultScreen initial={state} variant={variant} initialResponseMs={responseMs} />
     </HydrationBoundary>
   );
 }

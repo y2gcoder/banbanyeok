@@ -4,13 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeftIcon, RotateCwIcon } from "lucide-react";
 import Link from "next/link";
 import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Wordmark } from "@/components/common/wordmark";
 import { ShareActions } from "@/components/share/share-actions";
 import { Button } from "@/components/ui/button";
-import { track } from "@/lib/analytics";
+import { track, trackLinkOpened, trackResultViewed } from "@/lib/analytics";
 import { ApiRequestError } from "@/lib/api/client";
-import { recommendQueryOptions } from "@/lib/api/queries";
+import { recommendQueryOptions, takeResponseMillis } from "@/lib/api/queries";
 import type { Mode } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import { modeFromParam, modeToParam, type ShareState } from "@/lib/link/codec";
@@ -18,6 +18,7 @@ import { shareMessage } from "@/lib/result/share-message";
 import { sharePath } from "@/lib/result/share-url";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
 import { OtherCandidateRow, TopCandidateCard } from "./candidate-card";
+import type { ChoiceContext } from "./directions";
 import { ModeTabs, modeLabel } from "./mode-tabs";
 import { Notices } from "./notices";
 
@@ -48,16 +49,16 @@ export function LoadingCard() {
   );
 }
 
-function Candidates({ view, meIndex }: { view: ResultView; meIndex: number | null }) {
+function Candidates({ view, meIndex, choice }: { view: ResultView; meIndex: number | null; choice: ChoiceContext }) {
   const [top, ...rest] = view.candidates;
   if (!top) return null;
   return (
     <>
-      <TopCandidateCard candidate={top} meIndex={meIndex} />
+      <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} />
       {rest.length > 0 ? (
         <section aria-label="다른 후보" className="overflow-hidden rounded-2xl border border-rule bg-surface">
           {rest.map((candidate) => (
-            <OtherCandidateRow key={candidate.stationCode} candidate={candidate} meIndex={meIndex} />
+            <OtherCandidateRow key={candidate.stationCode} candidate={candidate} choice={choice} meIndex={meIndex} />
           ))}
         </section>
       ) : null}
@@ -100,7 +101,16 @@ function WhoAmI({
  * 결과(화면 2)와 받은 링크(화면 4). 모드·"나는 누구?"는 URL 상태(nuqs)이고 결과는 서버가 계산한다.
  * 사람 이름은 서버 label만 쓴다. "(나)"는 받은 링크에서 고른 사람에게만 붙인다(만든 사람 화면에는 없다).
  */
-export function ResultScreen({ initial, variant }: { initial: ShareState; variant: ResultVariant }) {
+export function ResultScreen({
+  initial,
+  variant,
+  initialResponseMs,
+}: {
+  initial: ShareState;
+  variant: ResultVariant;
+  /** 서버 컴포넌트가 첫 결과를 미리 받는 데 걸린 시간(밀리초). 통계용. */
+  initialResponseMs?: number | undefined;
+}) {
   const panelId = useId();
   const [search, setSearch] = useQueryStates(searchParsers, { history: "replace", shallow: true, scroll: false });
   const count = initial.origins.length;
@@ -112,13 +122,46 @@ export function ResultScreen({ initial, variant }: { initial: ShareState; varian
   const meIndex =
     variant === "received" && search.me !== null && search.me >= 0 && search.me < count ? search.me : null;
   const query = useQuery({ ...recommendQueryOptions(state), placeholderData: (previous) => previous });
-  const view = query.data ? toResultView(query.data) : null;
+  const data = query.data;
+  const view = useMemo(() => (data ? toResultView(data) : null), [data]);
   // 표시 이름은 모드와 무관하므로 모드를 바꾸는 동안 보이는 이전 결과의 이름을 그대로 써도 같다.
   // 첫 결과가 오기 전에는 이름을 모르니 "나는 누구?"와 배려 대상 고르기를 그리지 않는다.
   const people = view?.people.map(({ index, name }) => ({ index, name })) ?? [];
 
+  // 통계: 새 결과가 화면에 나올 때마다(모드를 바꿔 다시 받은 결과 포함) 한 번. 이전 결과를 자리표시로 보여 주는 동안은 세지 않는다.
+  const viewedData = useRef<unknown>(null);
+  const prefetchedMs = useRef(initialResponseMs);
+  const isPlaceholder = query.isPlaceholderData;
+  useEffect(() => {
+    if (!data || !view || isPlaceholder || viewedData.current === data) return;
+    viewedData.current = data;
+    const fetchedMs = takeResponseMillis(data) ?? prefetchedMs.current;
+    prefetchedMs.current = undefined; // 서버가 미리 받은 시간은 첫 결과에만 해당한다.
+    trackResultViewed({
+      participantCount: count,
+      mode: state.mode,
+      topMaxMinutes: view.candidates[0]?.aggregate.max,
+      candidateCount: view.candidates.length,
+      topStationCode: view.candidates[0]?.stationCode,
+      dataVersion: view.dataVersion,
+      responseMs: fetchedMs,
+    });
+  }, [data, view, isPlaceholder, count, state.mode]);
+
+  // 통계: 받은 링크가 열렸다(한 번).
+  const linkReported = useRef(false);
+  useEffect(() => {
+    if (variant !== "received" || linkReported.current) return;
+    linkReported.current = true;
+    trackLinkOpened("url_state");
+  }, [variant]);
+
+  const choice: ChoiceContext = { mode: state.mode, participantCount: count, variant };
+
   const changeMode = (mode: Mode, favorIndex: number | null) => {
-    track("mode_switched", { from_mode: state.mode, to_mode: mode, favor_used: mode === "favor" });
+    // 배려 대상을 바꾸는 것(같은 favor 모드 안)은 모드 전환이 아니다.
+    if (mode !== state.mode)
+      track("mode_switched", { from_mode: state.mode, to_mode: mode, favor_used: mode === "favor" });
     void setSearch({ m: modeToParam(mode, favorIndex, count) });
   };
   const top = view?.candidates[0];
@@ -146,7 +189,14 @@ export function ResultScreen({ initial, variant }: { initial: ShareState; varian
             {sender ? `${withJosa(sender, "이/가")} 고른 만날 역 후보` : "친구가 보낸 만날 역 후보"}
           </h1>
           {people.length > 0 ? (
-            <WhoAmI people={people} meIndex={meIndex} onChange={(me) => void setSearch({ me })} />
+            <WhoAmI
+              people={people}
+              meIndex={meIndex}
+              onChange={(me) => {
+                if (me !== null) track("link_person_selected", { participant_count: count, person_position: me });
+                void setSearch({ me });
+              }}
+            />
           ) : null}
         </header>
       )}
@@ -167,7 +217,7 @@ export function ResultScreen({ initial, variant }: { initial: ShareState; varian
         {view ? (
           <>
             <Notices notices={view.notices} onFavor={(index) => changeMode("favor", index)} />
-            <Candidates view={view} meIndex={meIndex} />
+            <Candidates view={view} meIndex={meIndex} choice={choice} />
           </>
         ) : query.isError ? (
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">

@@ -5,6 +5,7 @@ import type { RecommendResult } from "@/lib/api/types";
 import { toResultView } from "@/lib/result/view-model";
 import { searchStations } from "@/lib/stations";
 import { OtherCandidateRow, TopCandidateCard } from "./candidate-card";
+import type { ChoiceContext } from "./directions";
 
 const code = (name: string) => searchStations(name)[0]?.code ?? "000";
 
@@ -67,11 +68,12 @@ const result: RecommendResult = {
 
 describe("결과 카드", () => {
   const view = toResultView(result);
+  const choice: ChoiceContext = { mode: "fair", participantCount: 2, variant: "creator" };
 
   it("1위 카드는 사람별 표시 분·환승과 반올림한 분에서 계산한 최장·차이·합계를 보인다", () => {
     const [top] = view.candidates;
     if (!top) throw new Error("후보 없음");
-    render(<TopCandidateCard candidate={top} />);
+    render(<TopCandidateCard candidate={top} choice={choice} />);
     const card = screen.getByRole("article", { name: "신촌" });
     expect(within(card).getByText("37분")).toBeInTheDocument();
     expect(within(card).getAllByText("38분").length).toBeGreaterThanOrEqual(2); // 홍대입구에서 오는 분 + 최장
@@ -93,21 +95,21 @@ describe("결과 카드", () => {
   it("2위 줄은 접힌 상태에서 최장·차이를 보인다", () => {
     const [, second] = view.candidates;
     if (!second) throw new Error("후보 없음");
-    render(<OtherCandidateRow candidate={second} />);
+    render(<OtherCandidateRow candidate={second} choice={choice} />);
     expect(screen.getByText("최장 42분, 차이 27분")).toBeInTheDocument();
   });
 
   it("고른 사람이 없으면 (나)를 붙이지 않는다", () => {
     const [top] = view.candidates;
     if (!top) throw new Error("후보 없음");
-    render(<TopCandidateCard candidate={top} />);
+    render(<TopCandidateCard candidate={top} choice={choice} />);
     expect(screen.queryByText("(나)")).toBeNull();
   });
 
   it("나는 누구?를 고르면 내 줄이 맨 위로 오고 내 길찾기 링크가 생긴다", () => {
     const [top] = view.candidates;
     if (!top) throw new Error("후보 없음");
-    render(<TopCandidateCard candidate={top} meIndex={1} />);
+    render(<TopCandidateCard candidate={top} choice={choice} meIndex={1} />);
     const rows = screen.getAllByRole("listitem");
     expect(rows[0]).toHaveTextContent("홍대입구에서 오는 분(나)");
     expect(rows[1]).not.toHaveTextContent("(나)");

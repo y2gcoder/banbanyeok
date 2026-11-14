@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PairCandidateCard } from "@/components/seo/pair-candidate";
+import { StartLink } from "@/components/seo/start-link";
 import { prefillHref } from "@/lib/form/prefill";
 import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { loadSeoSite } from "@/lib/seo/load";
@@ -72,12 +73,13 @@ export default async function PairPage({ params }: Props) {
           <PairCandidateCard key={candidate.rank} candidate={candidate} />
         ))}
       </ol>
-      <Link
+      <StartLink
+        pageKind="pair"
         href={prefillHref([page.first.code, page.second.code])}
         className="inline-flex h-14 items-center justify-center rounded-xl border-2 border-ink text-[17px] font-bold text-ink"
       >
         다른 역으로 다시 찾기
-      </Link>
+      </StartLink>
       {related.length > 0 ? (
         <section aria-labelledby="related-title" className="flex flex-col gap-3">
           <h2 id="related-title" className="text-lg font-bold text-ink">
