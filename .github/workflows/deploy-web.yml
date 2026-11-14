@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
   push:
-    branches: [main, y2gcoder/p8b-web-deploy] # TEMP: 브랜치 검증용, PR 병합 전 제거
+    branches: [main]
     paths:
       - 'web/**'
       - 'contracts/**'
@@ -127,9 +127,9 @@ jobs:
           export SERVER_CONNECTED SITE_INDEXABLE
           bash scripts/smoke-deploy.sh
 
-      # 무료 플랜 한도(요청당 CPU 10ms) 대비 여유를 보려는 수동 측정. 수동 실행에서 measure를 켜거나 커밋 메시지에 [measure]를 넣는다.
+      # 무료 플랜 한도(요청당 CPU 10ms) 대비 여유를 보려는 수동 측정. 수동 실행에서 measure를 켠다.
       - name: Worker CPU 실측 (tail)
-        if: ${{ inputs.measure || contains(github.event.head_commit.message, '[measure]') }}
+        if: ${{ inputs.measure }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
