@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 배포된 서버(또는 태그 붙은 후보 리비전)의 스모크 테스트. 사용: bash scripts/smoke-server.sh <base-url> [expected-dataVersion]
-# 확인: /healthz → /v1/manifest(데이터 버전) → 추천 1건 → DB 읽기(없는 방 404) → 방 생성·조회·삭제 한 번(DB 쓰기·pepper 경로).
+# 확인: /v1/healthz → /v1/manifest(데이터 버전) → 추천 1건 → DB 읽기(없는 방 404) → 방 생성·조회·삭제 한 번(DB 쓰기·pepper 경로).
 # 방 토큰은 출력하지 않는다. 만든 방은 방장 토큰으로 바로 지운다. 콜드스타트 때문에 첫 /healthz는 재시도한다.
 set -euo pipefail
 
@@ -16,15 +16,16 @@ http() { # http <out-file> <curl args...> → 상태 코드
   curl -sS --max-time 30 -o "$out" -w '%{http_code}' "$@"
 }
 
-echo "1) /healthz (콜드스타트면 시간이 걸린다)"
+# 주의: Cloud Run 앞단(GFE)은 /healthz 경로를 예약해서 앱에 닿기 전에 404를 준다. 배포된 서버는 /v1/healthz로 확인한다.
+echo "1) /v1/healthz (콜드스타트면 시간이 걸린다)"
 ok=0
 for _ in $(seq 1 20); do
-  code="$(http "$tmp/h" "$base/healthz" || true)"
+  code="$(http "$tmp/h" "$base/v1/healthz" || true)"
   [[ "$code" == 200 ]] && { ok=1; break; }
   sleep 3
 done
-[[ "$ok" == 1 ]] || fail "/healthz가 200을 주지 않음(마지막 상태 $code)"
-grep -qx 'ok' "$tmp/h" || fail "/healthz 본문이 ok가 아님"
+[[ "$ok" == 1 ]] || fail "/v1/healthz가 200을 주지 않음(마지막 상태 $code)"
+grep -qx 'ok' "$tmp/h" || fail "/v1/healthz 본문이 ok가 아님"
 
 echo "2) /v1/manifest"
 code="$(http "$tmp/m" "$base/v1/manifest")"
