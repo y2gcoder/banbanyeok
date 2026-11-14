@@ -72,7 +72,7 @@ $ (CI와 같은 순서: db·migrate → server → next build/start) REAL_WEB_UR
 
 주의: `next dev`는 127.0.0.1로 열면 개발용 자원을 막아 수화되지 않는다(입력이 반응하지 않음). dev 대상은 `localhost`로 연다. 프로덕션 빌드(`next start`)는 둘 다 된다.
 
-**CI 잡 `e2e-real`** 을 추가했다(Kotlin 또는 웹 변경 시, 다른 잡과 병렬). compose Postgres → Liquibase → `:server:app:run` → 웹 프로덕션 빌드·시작 → Playwright. 로컬 재현 기준 db·migrate·빌드·테스트가 1분 안쪽이고, CI에서는 Gradle 컴파일·Chromium 설치가 더해져 기존 잡(2~3분)과 비슷한 수준으로 예상했다. 실제 시간은 PR의 CI 결과로 확인한다(5분을 크게 넘으면 잡을 빼고 로컬 검증만 남기는 쪽으로 되돌린다).
+**CI 잡 `e2e-real`** 을 추가했다(Kotlin 또는 웹 변경 시, 다른 잡과 병렬). compose Postgres → Liquibase → `:server:app:run` → 웹 프로덕션 빌드·시작 → Playwright. PR #15 CI 실측 **2분 39초**(같은 실행의 lint 2분 1초, web 1분 29초와 병렬)로 5분 기준 안이라 유지했다.
 
 ## 6. 검증 명령
 
@@ -98,4 +98,4 @@ $ (CI와 같은 순서: db·migrate → server → next build/start) REAL_WEB_UR
 
 1. **같은 별칭이 둘 이상일 때.** 확정 규칙대로 그대로 둔다("민수", "민수"). 전에는 서버가 "민수(A)"로 구별했다. 문장이 모호해질 수 있다("가장 오래 걸리는 민수도"). 구별이 필요하면 규칙 4번째 줄(예: " 1", " 2")을 추가할지 정해야 한다.
 2. **이름과 label이 우연히 겹칠 때**(누군가 별칭을 "참가자 2"나 "강남에서 오는 분"으로 넣음). 막지 않았다.
-3. **`e2e-real` CI 잡 유지 여부.** 실제 CI 시간을 보고 유지/제거를 정한다.
+3. **`e2e-real` CI 잡**: 실측 2분 39초로 유지했다. 브랜치 보호의 `ci-ok`가 이 잡을 포함한다.
