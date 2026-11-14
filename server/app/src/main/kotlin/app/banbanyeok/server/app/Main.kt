@@ -12,7 +12,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
 
-private val logger = LoggerFactory.getLogger("main")
+private val logger by lazy { LoggerFactory.getLogger("main") }
 
 private const val USAGE = "usage: server [serve|cleanup|seed]"
 
@@ -21,7 +21,7 @@ private const val USAGE = "usage: server [serve|cleanup|seed]"
  * 설정이 잘못되었거나 산출물 검증에 실패하면 시작하지 않는다.
  */
 fun main(args: Array<String>) {
-    val timeline = StartupTimeline()
+    val timeline = StartupTimeline(System.currentTimeMillis())
     timeline.mark("main")
     val command = args.firstOrNull() ?: "serve"
     if (command !in setOf("serve", "cleanup", "seed")) fail("알 수 없는 명령: $command\n$USAGE")

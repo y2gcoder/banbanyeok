@@ -230,6 +230,24 @@ wif_member="$(gcloud iam service-accounts get-iam-policy "$(email "$SA_DEPLOYER"
 gr iam service-accounts add-iam-policy-binding "$(email "$SA_BACKUP")" --member="$wif_member" \
   --role=roles/iam.workloadIdentityUser
 
+# ---------------------------------------------------------------- WIF: main 브랜치로 한정
+# 공급자 조건이 저장소 ID뿐이면 이 저장소의 모든 브랜치·PR·워크플로가 github-deployer와 db-backup을 가장할 수 있다.
+# 공급자의 속성 조건에 ref를 더해 main(푸시·예약·main에서 실행한 수동 실행)만 토큰을 받게 한다. 풀을 쓰는 것은 이 저장소뿐이라
+# 공급자 조건 하나로 두 계정에 모두 적용된다. WIF_REF=any로 실행하면 이전(저장소 ID만) 조건으로 되돌린다(브랜치에서 배포 실험할 때).
+WIF_POOL="github"
+WIF_PROVIDER_ID="banbanyeok-repo"
+WIF_REF="${WIF_REF:-refs/heads/main}"
+repo_id="${wif_member##*/}"
+[[ "$repo_id" =~ ^[0-9]+$ ]] || { echo "저장소 ID를 주체 집합에서 읽지 못했습니다" >&2; exit 1; }
+if [[ "$WIF_REF" == any ]]; then
+  wif_condition="assertion.repository_id=='${repo_id}'"
+else
+  wif_condition="assertion.repository_id=='${repo_id}' && assertion.ref=='${WIF_REF}'"
+fi
+step "WIF 공급자 $WIF_PROVIDER_ID 조건: $wif_condition"
+g iam workload-identity-pools providers update-oidc "$WIF_PROVIDER_ID" --workload-identity-pool="$WIF_POOL" \
+  --location=global --attribute-condition="$wif_condition"
+
 # ---------------------------------------------------------------- IAM: 배포 계정(github-deployer)
 step "IAM: $SA_DEPLOYER (리소스 단위. owner/editor 없음)"
 deployer="serviceAccount:$(email "$SA_DEPLOYER")"
@@ -281,5 +299,6 @@ cat <<EOF
         gcloud run services describe $SERVICE --region=$REGION --format='value(status.url)'
         gcloud scheduler jobs describe $SCHEDULER_JOB --location=$REGION --format='value(schedule,timeZone,state)'
         gcloud logging sinks describe _Default --format='value(destination)'
+        gcloud iam workload-identity-pools providers describe banbanyeok-repo --workload-identity-pool=github --location=global --format='value(attributeCondition)'
         gcloud artifacts repositories describe $AR_REPO --location=$REGION --format='value(cleanupPolicyDryRun)'
 EOF

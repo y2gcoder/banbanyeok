@@ -9,10 +9,11 @@ import org.slf4j.LoggerFactory
  * (JVM 시작 시각은 JMX가 클래스 로딩을 늘리고 샌드박스의 프로세스 시작 시각이 부정확해 쓰지 않는다.)
  */
 class StartupTimeline(
+    private val startMillis: Long = System.currentTimeMillis(),
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) {
+    // 로거를 처음 만드는 비용(로깅 설정 읽기)이 첫 단계(`main`)의 phaseMs에 들어가도록 시작 시각을 먼저 받는다.
     private val log = LoggerFactory.getLogger("startup")
-    private val startMillis = nowMillis()
     private var last = startMillis
 
     @Synchronized
