@@ -154,7 +154,7 @@ g storage buckets update "gs://$ARTIFACT_BUCKET" --public-access-prevention
 # ---------------------------------------------------------------- Cloud Logging 서울 버킷
 # 개인정보 처리방침의 "로그 저장 위치"를 서울로 쓰려고 _Default 싱크(일반 로그)를 서울 버킷으로 돌린다.
 # _Required(감사 로그, 400일 고정, 잠김)는 바꿀 수 없고 location=global로 남는다(docs/setup/p8a-notes.md).
-# 이미 global _Default 버킷에 쌓인 로그는 그 버킷의 보존 기간(기본 30일)이 지나야 사라진다.
+# 이미 global _Default 버킷에 쌓인 로그는 보존 기간을 1일로 줄여 빨리 사라지게 한다.
 LOG_BUCKET="default-seoul"
 LOG_RETENTION_DAYS="30"
 step "Cloud Logging: 서울 로그 버킷 $LOG_BUCKET (보존 ${LOG_RETENTION_DAYS}일)와 _Default 싱크 대상 변경"
@@ -166,6 +166,8 @@ else
 fi
 g logging sinks update _Default \
   "logging.googleapis.com/projects/${PROJECT}/locations/${REGION}/buckets/${LOG_BUCKET}"
+# 싱크를 돌렸으므로 global _Default에는 새 로그가 들어오지 않는다. 옛 로그가 빨리 사라지게 보존을 1일로 줄인다(멱등).
+g logging buckets update _Default --location=global --retention-days=1
 # 이후 새로 만드는 로그 버킷의 기본 저장 위치. 프로젝트 수준에서 지원되지 않으면(조직·폴더 전용일 수 있음) 건너뛴다.
 if [[ "$DRY_RUN" == 1 ]]; then
   printf '   + gcloud logging settings update --storage-location=%s (실패해도 계속)\n' "$REGION"

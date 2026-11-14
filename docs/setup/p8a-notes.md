@@ -124,7 +124,7 @@ Actions를 택한 이유: 이미지를 따로 만들거나 Docker Hub 이미지�
 ### 3.8 로그 저장 위치 (서울)
 
 기본 Cloud Logging 버킷 `_Default`·`_Required`는 `location=global`이라 개인정보 처리방침의 "로그 저장 위치"를 서울로 쓸 수 없다. `bootstrap.sh`가 (1) 서울 버킷 `default-seoul`(보존 30일)을 만들고, (2) `_Default` 싱크의 대상을 그 버킷으로 바꾸며, (3) `gcloud logging settings update --storage-location=asia-northeast3`(이후 만드는 버킷의 기본 위치, 프로젝트 수준에서 지원되지 않으면 경고만)를 멱등하게 시도한다.
-- 일반 로그(Cloud Run 요청·앱 로그)는 이후 서울 버킷에 저장된다. 이미 global `_Default`에 쌓인 로그는 그 버킷의 보존 기간(기본 30일)이 지나면 사라진다.
+- 일반 로그(Cloud Run 요청·앱 로그)는 이후 서울 버킷에 저장된다. 이미 global `_Default`에 쌓인 로그는, 새 로그가 더 이상 들어오지 않으므로 그 버킷의 보존을 **1일로 줄여**(`gcloud logging buckets update _Default --location=global --retention-days=1`, 부트스트랩에 멱등 단계로 포함, 코디네이터가 실행) 빨리 사라지게 했다. `settings update --storage-location`은 프로젝트 수준에서 지원되지 않아(조직·폴더 전용) 건너뛰었다.
 - **`_Required`(감사 로그: 관리자 활동·시스템 이벤트)는 보존 400일, 잠김이라 위치도 보존도 바꿀 수 없고 `global`에 저장된다.** 감사 로그에는 리소스 변경 기록과 호출한 계정이 들어 있고 서비스 이용자(방·출발역) 정보는 없다. 방침에는 "일반 로그: 서울, 감사 로그: Google 관리 global"로 구분해 쓰는 것을 권한다 → 결정 필요 6.
 - 서버 로그는 요청 방식·방 ID를 가린 경로·응답 코드만 남긴다(방침 2항과 같음). Cloud Run이 요청 로그에 붙이는 접속 IP·User-Agent는 `run.googleapis.com/requests` 로그에 들어간다.
 
