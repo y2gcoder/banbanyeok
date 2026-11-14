@@ -11,7 +11,7 @@ name: deploy-web
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, y2gcoder/p8b-web-deploy] # TEMP: 브랜치 검증용, PR 병합 전 제거
     paths:
       - 'web/**'
       - 'contracts/**'
