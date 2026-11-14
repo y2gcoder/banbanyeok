@@ -151,6 +151,29 @@ g storage buckets update "gs://$BACKUP_BUCKET" --lifecycle-file="$lifecycle_file
 step "산출물 버킷 공개 차단 확인·적용"
 g storage buckets update "gs://$ARTIFACT_BUCKET" --public-access-prevention
 
+# ---------------------------------------------------------------- Cloud Logging 서울 버킷
+# 개인정보 처리방침의 "로그 저장 위치"를 서울로 쓰려고 _Default 싱크(일반 로그)를 서울 버킷으로 돌린다.
+# _Required(감사 로그, 400일 고정, 잠김)는 바꿀 수 없고 location=global로 남는다(docs/setup/p8a-notes.md).
+# 이미 global _Default 버킷에 쌓인 로그는 그 버킷의 보존 기간(기본 30일)이 지나야 사라진다.
+LOG_BUCKET="default-seoul"
+LOG_RETENTION_DAYS="30"
+step "Cloud Logging: 서울 로그 버킷 $LOG_BUCKET (보존 ${LOG_RETENTION_DAYS}일)와 _Default 싱크 대상 변경"
+if exists gcloud logging buckets describe "$LOG_BUCKET" --location="$REGION"; then
+  note "버킷 $LOG_BUCKET: 이미 있음"
+else
+  g logging buckets create "$LOG_BUCKET" --location="$REGION" --retention-days="$LOG_RETENTION_DAYS" \
+    --description="일반 로그 서울 저장(_Default 싱크 대상)"
+fi
+g logging sinks update _Default \
+  "logging.googleapis.com/projects/${PROJECT}/locations/${REGION}/buckets/${LOG_BUCKET}"
+# 이후 새로 만드는 로그 버킷의 기본 저장 위치. 프로젝트 수준에서 지원되지 않으면(조직·폴더 전용일 수 있음) 건너뛴다.
+if [[ "$DRY_RUN" == 1 ]]; then
+  printf '   + gcloud logging settings update --storage-location=%s (실패해도 계속)\n' "$REGION"
+else
+  gcloud logging settings update --project="$PROJECT" --storage-location="$REGION" \
+    || note "settings update --storage-location을 적용하지 못했습니다(조직·폴더 수준 전용일 수 있음). 위 싱크 변경만으로 일반 로그는 서울에 저장됩니다."
+fi
+
 # ---------------------------------------------------------------- Cloud Run 자리 표시 리소스
 # 리소스 단위 IAM(서비스·Job에 바인딩)을 걸려면 리소스가 먼저 있어야 한다. 자리 표시 이미지로 만들고 첫 배포 워크플로가 교체한다.
 # 비용은 0이다(min 0, 요청 없음).
@@ -255,5 +278,6 @@ cat <<EOF
         gcloud run services get-iam-policy $SERVICE --region=$REGION
         gcloud run services describe $SERVICE --region=$REGION --format='value(status.url)'
         gcloud scheduler jobs describe $SCHEDULER_JOB --location=$REGION --format='value(schedule,timeZone,state)'
+        gcloud logging sinks describe _Default --format='value(destination)'
         gcloud artifacts repositories describe $AR_REPO --location=$REGION --format='value(cleanupPolicyDryRun)'
 EOF
