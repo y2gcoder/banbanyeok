@@ -14,7 +14,6 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
-import kotlin.io.path.writeText
 
 internal fun duration(value: String): Int {
     require(Regex("[0-9]{2}:[0-5][0-9]").matches(value)) { "Invalid mm:ss: $value" }
@@ -206,7 +205,7 @@ internal fun fetch(
                             "dateQuarantined" to (normalized == null),
                         )
                     }
-                root.resolve("data/config/source-dates.json").writeText(jsonValue(dates).toString())
+                root.resolve("data/config/source-dates.json").writeJson(jsonValue(dates).toString())
             }
             obj(
                 "id" to source.id,
@@ -228,7 +227,7 @@ internal fun fetch(
                 "estimated" to false,
             )
         }
-    root.resolve("data/config/source-manifest.json").writeText(jsonValue(manifests).toString())
+    root.resolve("data/config/source-manifest.json").writeJson(jsonValue(manifests).toString())
     println("Fetched and validated S1/S3/S4")
 }
 

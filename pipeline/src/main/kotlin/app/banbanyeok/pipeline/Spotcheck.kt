@@ -6,7 +6,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.net.URLEncoder
 import java.nio.file.Path
-import kotlin.io.path.writeText
 
 internal val representativePairs =
     listOf(
@@ -73,6 +72,6 @@ internal fun spotcheck(
                 obj("from" to from, "to" to to, "success" to false, "status" to "HTTP/schema/timeout")
             }
         }
-    root.resolve("data/config/spotcheck-report.json").writeText(jsonValue(results).toString())
+    root.resolve("data/config/spotcheck-report.json").writeJson(jsonValue(results).toString())
     require(results.all { it.text("success") == "true" }) { "Spotcheck unavailable; see spotcheck-report.json" }
 }

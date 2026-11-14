@@ -34,7 +34,7 @@ internal fun writeHeadwayComparison(
                 "deltaSeconds" to new.seconds - old.seconds,
             )
         }
-    root.resolve("data/config/headway-comparison.json").writeText(jsonValue(comparison).toString())
+    root.resolve("data/config/headway-comparison.json").writeJson(jsonValue(comparison).toString())
     val notes = root.resolve("docs/setup/p2b-notes.md")
     val heading = "## 배차 갱신 비교 (자동 생성)"
     val table =

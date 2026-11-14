@@ -7,7 +7,6 @@ import java.time.Clock
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 internal class SeoulApi(
     private val key: String,
@@ -30,7 +29,7 @@ internal class SeoulApi(
                     val url = "http://openapi.seoul.go.kr:8088/$key/json/$service/$start/${start + 999}/$parameters"
                     val downloaded = http.request(url, null).bytes.toString(Charsets.UTF_8)
                     timetablePage(downloaded, service)
-                    file.writeText(downloaded)
+                    file.writeJson(downloaded)
                     downloaded
                 }
             val page = timetablePage(text, service)
@@ -82,6 +81,6 @@ internal fun refreshHeadways(
     val config = root.resolve("data/config/headways.json")
     val updated = updatedHeadways(parseObject(config.readText()), rows, clock.instant().toString())
     require(updated.getValue("observations").toString() != "[]") { "No offpeak timetable observations" }
-    config.writeText(updated.toString())
+    config.writeJson(updated.toString())
     println("Updated timetable headways from ${stations.size} stations / ${rows.size} rows; raw responses in data/raw")
 }

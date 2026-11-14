@@ -4,7 +4,6 @@ import app.banbanyeok.schema.Registry
 import app.banbanyeok.schema.StationStatus
 import java.nio.file.Path
 import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 /** Human-review inventory of every metropolitan active station, line list and source count. */
 internal fun writeRegistryAudit(
@@ -37,7 +36,7 @@ internal fun writeRegistryAudit(
                     },
             )
         }
-    root.resolve("data/config/physical-station-audit.json").writeText(
+    root.resolve("data/config/physical-station-audit.json").writeJson(
         obj(
             "registryVersion" to registry.registryVersion,
             "scopedActiveStations" to scoped.size,
