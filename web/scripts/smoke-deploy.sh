@@ -86,6 +86,20 @@ else
   [ "$status" = "503" ] && grep -q "UPSTREAM_NOT_CONFIGURED" <<<"$body" && pass "/api/healthz → 503(서버 미연결, 예상)" || bad "/api/healthz status=$status (서버 미연결이면 503이어야 함)"
 fi
 
+# 서버가 연결된 배포: 추천 API와 공유 링크의 동적 OG 이미지(서버 결과로 그린다)
+if [ "${SERVER_CONNECTED:-0}" = "1" ] && [ -n "${pair_path:-}" ]; then
+  codes="${pair_path#/meet/}"
+  a="${codes%%-*}"; b="${codes##*-}"
+  rec="$(curl -sS --max-time 40 -o /tmp/smoke-rec.$$ -w '%{http_code}' -X POST -H 'content-type: application/json' \
+    -d "{\"origins\":[\"$a\",\"$b\"],\"mode\":\"fair\"}" "$BASE_URL/api/v1/recommend" 2>/dev/null || echo 000)"
+  if [ "$rec" = "200" ] && grep -q '"candidates"' /tmp/smoke-rec.$$; then pass "/api/v1/recommend → 후보 응답"; else bad "/api/v1/recommend status=$rec"; fi
+  rm -f /tmp/smoke-rec.$$
+  fetch "$BASE_URL/s/og?v=1&o=$a.$b&m=f"
+  if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "동적 OG /s/og"; else bad "동적 OG /s/og status=$status"; fi
+  fetch "$BASE_URL/s?v=1&o=$a.$b&m=f"
+  if [ "$status" = "200" ] && grep -q 'og:image' <<<"$body" && grep -q '/s/og?' <<<"$body"; then pass "/s 미리보기 메타(og:image → /s/og)"; else bad "/s 미리보기 메타 status=$status"; fi
+fi
+
 # 정식 주소로의 리디렉트
 for from in ${REDIRECT_FROM:-}; do
   [ -z "$from" ] && continue

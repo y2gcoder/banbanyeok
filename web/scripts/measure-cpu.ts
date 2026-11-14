@@ -29,21 +29,23 @@ function startTail(): ChildProcess {
   const child = spawn("pnpm", ["exec", "wrangler", "tail", worker, "--format", "json"], {
     stdio: ["ignore", "pipe", "pipe"],
   });
+  // wrangler는 이벤트를 들여쓴 여러 줄 JSON으로 낸다: 줄이 "}"로 끝나는 곳이 한 이벤트의 끝이다.
   let buffer = "";
   child.stdout?.on("data", (chunk: Buffer) => {
     rawBytes += chunk.length;
-    if (rawHead.length < 600) rawHead += chunk.toString("utf8").slice(0, 600);
+    if (rawHead.length < 300) rawHead += chunk.toString("utf8").slice(0, 300);
     buffer += chunk.toString("utf8");
-    let newline = buffer.indexOf("\n");
-    while (newline >= 0) {
-      const line = buffer.slice(0, newline).trim();
-      buffer = buffer.slice(newline + 1);
-      newline = buffer.indexOf("\n");
-      if (!line.startsWith("{")) continue;
+    let end = buffer.search(/^\}$/m);
+    while (end >= 0) {
+      const text = buffer.slice(0, end + 1);
+      buffer = buffer.slice(end + 1);
+      end = buffer.search(/^\}$/m);
+      const start = text.indexOf("{");
+      if (start < 0) continue;
       try {
-        events.push(JSON.parse(line) as TailEvent);
+        events.push(JSON.parse(text.slice(start)) as TailEvent);
       } catch {
-        // 잘린 줄은 무시
+        // 잘린 조각은 무시
       }
     }
   });
@@ -103,7 +105,7 @@ async function main() {
       `| \`${path.length > 40 ? `${path.slice(0, 37)}...` : path}\` | ${mine.length} | ${statuses || "-"} | ${fmt(cpu[0] ?? Number.NaN)} | ${fmt(percentile(sortedCpu, 50))} | ${fmt(percentile(sortedCpu, 90))} | ${fmt(sortedCpu.at(-1) ?? Number.NaN)} | ${fmt(percentile(sortedWall, 50))} |`,
     );
   }
-  out(`\ntail 원본 ${rawBytes}바이트, 앞부분: ${rawHead.slice(0, 600).replace(/\n/g, " ⏎ ")}`);
+  out(`\ntail 원본 ${rawBytes}바이트, 앞부분: ${rawHead.slice(0, 300).replace(/\n/g, " ⏎ ")}`);
   out(`\n수신한 tail 이벤트 ${events.length}건(요청 ${paths.length * repeats}건). 단위: ms.`);
   if (events.length > 0) out(`이벤트 키: ${Object.keys(events[0] ?? {}).join(", ")}`);
 }

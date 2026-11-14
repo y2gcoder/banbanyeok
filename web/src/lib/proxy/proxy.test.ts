@@ -15,7 +15,7 @@ function capture() {
 
 describe("upstreamPath", () => {
   it("healthz와 v1 아래만 서버 경로로 바꾼다", () => {
-    expect(upstreamPath("/api/healthz")).toBe("/healthz");
+    expect(upstreamPath("/api/healthz")).toBe("/v1/healthz");
     expect(upstreamPath("/api/v1/recommend")).toBe("/v1/recommend");
     expect(upstreamPath("/api/v1/rooms/abc/result")).toBe("/v1/rooms/abc/result");
   });
@@ -115,14 +115,14 @@ describe("proxyApiRequest", () => {
     expect(sent?.headers.get(CLIENT_IP_HEADER)).toBe("203.0.113.7");
   });
 
-  it("healthz GET은 /healthz로 간다", async () => {
+  it("healthz GET은 /v1/healthz로 간다", async () => {
     const { seen, fetchImpl } = capture();
     await proxyApiRequest(new Request("https://web.test/api/healthz"), {
       origin: ORIGIN,
       secret: undefined,
       fetchImpl,
     });
-    expect(seen[0]?.url).toBe(`${ORIGIN}/healthz`);
+    expect(seen[0]?.url).toBe(`${ORIGIN}/v1/healthz`);
   });
 
   it("서버 응답의 set-cookie는 걸러 내고 나머지는 그대로 돌려준다", async () => {

@@ -1,5 +1,5 @@
 /**
- * contracts/openapi.yaml 기반 가짜 서버(개발·e2e 전용). 화면이 쓰는 `GET /healthz`, `POST /v1/recommend`를 구현하고
+ * contracts/openapi.yaml 기반 가짜 서버(개발·e2e 전용). 화면이 쓰는 `GET /healthz`·`GET /v1/healthz`, `POST /v1/recommend`를 구현하고
  * 나머지 경로는 계약의 오류 모양 `{code, message}`로 501을 준다. 응답이 계약 스키마를 지키는지는
  * src/lib/api/contract.test.ts가 ajv로 검사한다. 도구 선택 근거는 docs/setup/p4-notes.md.
  *
@@ -107,7 +107,7 @@ export function createMockServer(data: MockData = loadMockData()): Server {
       const wait = delay + coldStart;
       coldStart = 0;
       if (wait > 0) await sleep(wait);
-      if (req.method === "GET" && url.pathname === "/healthz") {
+      if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/v1/healthz")) {
         res.writeHead(200, { "content-type": "text/plain" });
         res.end("ok");
         return;

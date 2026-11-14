@@ -1,5 +1,5 @@
 /**
- * `/api/*` 같은 출처 프록시(Worker 진입점이 부른다). `/api/healthz` → `<origin>/healthz`, `/api/v1/*` → `<origin>/v1/*`.
+ * `/api/*` 같은 출처 프록시(Worker 진입점이 부른다). `/api/healthz` → `<origin>/v1/healthz`(Cloud Run 앞단이 루트 `/healthz`를 예약해 404를 준다), `/api/v1/*` → `<origin>/v1/*`.
  * 그 밖의 경로는 `null`(Next가 처리). 서버 오류·시간 초과는 계약의 오류 형식 `{code, message}`로 돌려준다.
  */
 import { CLIENT_IP_HEADER, PROXY_SECRET_HEADER, upstreamHeaders } from "./headers";
@@ -22,9 +22,9 @@ function errorResponse(status: number, code: string, message: string): Response 
   });
 }
 
-/** 프록시할 경로면 서버 쪽 경로(`/healthz`, `/v1/...`)를, 아니면 null. `..`·인코딩된 슬래시로 다른 경로를 만들 수 없다. */
+/** 프록시할 경로면 서버 쪽 경로(`/v1/healthz`, `/v1/...`)를, 아니면 null. `..`·인코딩된 슬래시로 다른 경로를 만들 수 없다. */
 export function upstreamPath(pathname: string): string | null {
-  if (pathname === "/api/healthz") return "/healthz";
+  if (pathname === "/api/healthz") return "/v1/healthz";
   if (pathname === "/api/v1" || pathname.startsWith("/api/v1/")) {
     const rest = pathname.slice("/api".length);
     if (rest.split("/").some((segment) => segment === ".." || segment === ".")) return null;

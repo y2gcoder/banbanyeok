@@ -17,7 +17,8 @@ const nextConfig: NextConfig = {
   // 같은 출처 rewrite: 브라우저는 /api/* 로 부르고 서버(Ktor 또는 mock)로 넘긴다(contracts/openapi.yaml servers).
   async rewrites() {
     return [
-      { source: "/api/healthz", destination: `${origin}/healthz` },
+      // Cloud Run 앞단이 루트 `/healthz`를 예약해 앱에 닿기 전에 404를 주므로 `/v1/healthz`를 쓴다(계약상 같은 응답).
+      { source: "/api/healthz", destination: `${origin}/v1/healthz` },
       { source: "/api/v1/:path*", destination: `${origin}/v1/:path*` },
     ];
   },
