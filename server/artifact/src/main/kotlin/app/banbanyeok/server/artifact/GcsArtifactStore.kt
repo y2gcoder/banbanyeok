@@ -6,7 +6,7 @@ import com.google.cloud.storage.BlobInfo
 import com.google.cloud.storage.Storage
 import com.google.cloud.storage.StorageException
 import com.google.cloud.storage.StorageOptions
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 /**
@@ -17,12 +17,13 @@ import kotlinx.coroutines.withContext
 public class GcsArtifactStore(
     private val storage: Storage,
     private val bucket: String,
+    private val ioDispatcher: CoroutineDispatcher,
     prefix: String = "",
 ) : ArtifactStore {
     private val prefix: String = prefix.trim('/').let { if (it.isEmpty()) "" else "$it/" }
 
     override suspend fun get(key: ArtifactKey): StoredArtifact? =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             repeat(READ_ATTEMPTS) {
                 val blob = storage.get(blobId(key)) ?: return@withContext null
                 try {
@@ -41,7 +42,7 @@ public class GcsArtifactStore(
         content: ByteArray,
         ifMatch: ArtifactVersion?,
     ): ArtifactVersion =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             val info = BlobInfo.newBuilder(blobId(key)).build()
             try {
                 val blob =
@@ -70,7 +71,7 @@ public class GcsArtifactStore(
         }
 
     override suspend fun list(prefix: String): List<ArtifactKey> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             storage
                 .list(bucket, Storage.BlobListOption.prefix(this@GcsArtifactStore.prefix + prefix))
                 .iterateAll()
@@ -90,7 +91,9 @@ public class GcsArtifactStore(
         /** Application Default Credentials로 연결한다. */
         public fun withDefaultCredentials(
             bucket: String,
+            ioDispatcher: CoroutineDispatcher,
             prefix: String = "",
-        ): GcsArtifactStore = GcsArtifactStore(StorageOptions.getDefaultInstance().service, bucket, prefix)
+        ): GcsArtifactStore =
+            GcsArtifactStore(StorageOptions.getDefaultInstance().service, bucket, ioDispatcher, prefix)
     }
 }

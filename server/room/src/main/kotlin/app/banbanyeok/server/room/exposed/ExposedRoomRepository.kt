@@ -13,7 +13,7 @@ import app.banbanyeok.server.room.RoomMode
 import app.banbanyeok.server.room.RoomRepository
 import app.banbanyeok.server.room.StoredRoom
 import app.banbanyeok.server.room.TokenHash
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
@@ -30,6 +30,7 @@ import java.time.Instant
 /** Postgres(Exposed) 구현. 블로킹 JDBC이므로 IO 디스패처에서 트랜잭션 하나로 실행한다. */
 public class ExposedRoomRepository(
     private val database: Database,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : RoomRepository {
     override suspend fun create(
         room: Room,
@@ -190,7 +191,7 @@ public class ExposedRoomRepository(
         }
 
     private suspend fun <T> inTransaction(block: () -> T): T =
-        withContext(Dispatchers.IO) { transaction(database) { block() } }
+        withContext(ioDispatcher) { transaction(database) { block() } }
 
     private fun insertParticipant(
         roomId: String,

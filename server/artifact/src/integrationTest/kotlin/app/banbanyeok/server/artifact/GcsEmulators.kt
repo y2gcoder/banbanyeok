@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package app.banbanyeok.server.artifact
 
 import com.google.cloud.NoCredentials
@@ -5,6 +7,7 @@ import com.google.cloud.storage.BucketInfo
 import com.google.cloud.storage.Storage
 import com.google.cloud.storage.StorageOptions
 import io.kotest.core.config.AbstractProjectConfig
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
@@ -46,7 +49,7 @@ class RunningEmulator(
     fun newBucketStore(): ArtifactStore {
         val bucket = "bucket-${java.util.UUID.randomUUID()}"
         storage.create(BucketInfo.of(bucket))
-        return GcsArtifactStore(storage, bucket)
+        return GcsArtifactStore(storage, bucket, UnconfinedTestDispatcher())
     }
 
     fun stop() = container.stop()

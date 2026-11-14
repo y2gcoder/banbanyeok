@@ -78,7 +78,7 @@ Gradle이 생성한 plugin adapter는 분석 입력에 넣지 않는다(초기 C
 
 | 규칙 | 초기 위반 | 처리 |
 |---|---:|---|
-| InjectDispatcher | 8 | 비활성. artifact store와 Exposed repository의 dispatcher 생성자·조립부 API 변경은 이번 동작 불변 도구 정비 범위를 넘는다. 후속 서버 설계에서 재검토 |
+| InjectDispatcher | 8 | F1에서 해결. 생성자 주입으로 변경하고 조립부는 Dispatchers.IO, 테스트는 테스트 dispatcher를 전달. 규칙 활성화 |
 | UnreachableCode | 3 | 비활성. serialization 생성 함수 미해석으로 정상 Manifest parse/encode 뒤를 도달 불가로 판정. Kotlin 컴파일러의 도달 불가 경고는 Werror로 계속 검사 |
 | UnsafeCallOnNullableType | 11 | production 활성 유지. 기존 테스트 제외에 integrationTest/testFixtures도 포함해 모든 테스트 종류에 같은 기준 적용 |
 | NoNameShadowing | 11 | 활성 유지. 중첩 람다의 바깥 iteration/분/route 이름을 명시 |
@@ -136,4 +136,4 @@ mise.toml(JDK 21 제거), .github/workflows/ci.yml(lint 주석),
 승인받은 루트 build.gradle.kts(detekt bridge)와 README.md(JDK 안내 한 구절).
 wrapper와 .editorconfig는 변경하지 않았다. scripts/doctor.sh에는 JDK 21 검사가 없어 변경하지 않았다.
 
-결정 필요: 즉시 사용자 결정 없음. dispatcher 주입과 serialization 분석 한계는 후속 검토 사항이다.
+결정 필요: 즉시 사용자 결정 없음. dispatcher 주입은 F1에서 해결했으며 serialization 분석 한계는 후속 검토 사항이다.

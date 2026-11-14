@@ -1,9 +1,12 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package app.banbanyeok.server.room
 
 import app.banbanyeok.server.room.exposed.ExposedAnonUserRepository
 import app.banbanyeok.server.room.exposed.ExposedRoomRepository
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.DescribeSpec
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 class ProjectConfig : AbstractProjectConfig() {
     override suspend fun afterProject() = TestDatabase.stop()
@@ -16,8 +19,8 @@ class ExposedRoomRepositoryTest :
             "Exposed on Postgres",
             roomRepositoryContract {
                 RepositoryPair(
-                    ExposedRoomRepository(TestDatabase.database),
-                    ExposedAnonUserRepository(TestDatabase.database),
+                    ExposedRoomRepository(TestDatabase.database, UnconfinedTestDispatcher()),
+                    ExposedAnonUserRepository(TestDatabase.database, UnconfinedTestDispatcher()),
                 )
             },
         )

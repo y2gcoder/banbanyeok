@@ -3,7 +3,7 @@ package app.banbanyeok.server.room.exposed
 import app.banbanyeok.server.room.AnonUser
 import app.banbanyeok.server.room.AnonUserRepository
 import app.banbanyeok.server.room.TokenHash
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -21,6 +21,7 @@ import java.time.Instant
 
 public class ExposedAnonUserRepository(
     private val database: Database,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : AnonUserRepository {
     override suspend fun create(user: AnonUser) =
         inTransaction {
@@ -71,5 +72,5 @@ public class ExposedAnonUserRepository(
         }
 
     private suspend fun <T> inTransaction(block: () -> T): T =
-        withContext(Dispatchers.IO) { transaction(database) { block() } }
+        withContext(ioDispatcher) { transaction(database) { block() } }
 }
