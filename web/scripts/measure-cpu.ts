@@ -22,6 +22,8 @@ type TailEvent = {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const events: TailEvent[] = [];
 const out = (text: string) => process.stdout.write(`${text}\n`);
+let rawBytes = 0;
+let rawHead = "";
 
 function startTail(): ChildProcess {
   const child = spawn("pnpm", ["exec", "wrangler", "tail", worker, "--format", "json"], {
@@ -29,6 +31,8 @@ function startTail(): ChildProcess {
   });
   let buffer = "";
   child.stdout?.on("data", (chunk: Buffer) => {
+    rawBytes += chunk.length;
+    if (rawHead.length < 600) rawHead += chunk.toString("utf8").slice(0, 600);
     buffer += chunk.toString("utf8");
     let newline = buffer.indexOf("\n");
     while (newline >= 0) {
@@ -99,6 +103,7 @@ async function main() {
       `| \`${path.length > 40 ? `${path.slice(0, 37)}...` : path}\` | ${mine.length} | ${statuses || "-"} | ${fmt(cpu[0] ?? Number.NaN)} | ${fmt(percentile(sortedCpu, 50))} | ${fmt(percentile(sortedCpu, 90))} | ${fmt(sortedCpu.at(-1) ?? Number.NaN)} | ${fmt(percentile(sortedWall, 50))} |`,
     );
   }
+  out(`\ntail 원본 ${rawBytes}바이트, 앞부분: ${rawHead.slice(0, 600).replace(/\n/g, " ⏎ ")}`);
   out(`\n수신한 tail 이벤트 ${events.length}건(요청 ${paths.length * repeats}건). 단위: ms.`);
   if (events.length > 0) out(`이벤트 키: ${Object.keys(events[0] ?? {}).join(", ")}`);
 }
