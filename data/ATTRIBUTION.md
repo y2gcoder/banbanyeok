@@ -28,3 +28,12 @@
 `headways.json`의 6/8분 배차는 개발용 가정이며 외부 시간표에서 가져온 값이 아닙니다.
 당고개→불암산 개명은 S1의 서울교통공사 역번호 0409와 S3의 4호선 위치 및
 [서울시 역명 개정 고시를 인용한 조달 문서](https://www.g2b.go.kr/fs/fsc/fsca/fileUpload.do?k00=a2MMYzianzwExorC2swMQwxC2swNQwwC2syNgwvZGF0YS9BdHRhY2hmaWxlcy9wbnBlLzIwMjUvMDQvMTUvNzQzZjlkN2UwMDZmNDAzMGIwYjFkMmQ2OTAwYmYyNTAucGRmC2szMQwxLuqzvOyXheyngOyLnOyEnCjqs7XthrUpLnBkZgtrMjEMNWVhYzA2ZTktZTk2OC00N2M3LTk3MDYtN2I1ZmM3MTA4NzgwLDE%3D)를 함께 확인했습니다.
+
+## D1 수도권 전 노선 (TAGO)
+
+| 파생 산출물 | 출처·가공 | 이용 조건 |
+|---|---|---|
+| `od.bin`의 서울교통공사 S3 밖 주행·배차, `data/config/tago-report.json` | 국토교통부 TAGO 지하철정보 S6 (https://www.data.go.kr/data/15098554/openapi.do) `GetKwrdFndSubwaySttnList`·`GetSubwaySttnAcctoSchdulList` 평일 역별 시간표. 열차 ID 없이 인접역 출발·도착 시각을 맞춰 소요시간을 추정하고, 평시 출발 간격의 절반을 대기로 더함 | 공공데이터포털 표기 이용허락범위 제한 없음. 원 응답은 `data/raw/tago/`(git 제외)에만 두고 영수증(S6 다이제스트)은 `source-manifest.json`에 둔다. 가공된 평시 추정치이며 공식 시간표가 아니다 |
+| `stations.json`의 `tago:*` 출처 ID·별칭(서해구청) | 같은 S6 역 목록 | 같은 조건 |
+| 운정중앙·킨텍스·동탄(GTX-A), 양원(경의중앙선) 좌표 | Wikidata P625 (Q125895818, Q125695849, Q23954759, Q482940), https://www.wikidata.org | CC0 1.0 |
+| `data/config/official-times.csv`, `official-comparison.json` | 신분당선 공식 소요 시각표 (https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp), 2026-11-15 손으로 옮겨 적음 | 대조용 사실값(분·초)만 기록. 그래프 간선의 원천으로 쓰지 않는다 |
