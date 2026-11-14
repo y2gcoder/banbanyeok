@@ -51,7 +51,12 @@ object CompositionRoot {
         config: AppConfig,
         ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
         timeline: StartupTimeline? = null,
-        store: ArtifactStore = artifactStore(config, ioDispatcher).also { timeline?.mark("artifact-store-created") },
+        store: ArtifactStore =
+            artifactStore(
+                config,
+                ioDispatcher,
+                timeline,
+            ).also { timeline?.mark("artifact-store-created") },
         database: ConnectedDatabase? = null,
     ): Components {
         val loaded = ArtifactLoader(store) { timeline?.mark(it) }.load()
@@ -85,6 +90,7 @@ object CompositionRoot {
     private fun artifactStore(
         config: AppConfig,
         ioDispatcher: CoroutineDispatcher,
+        timeline: StartupTimeline?,
     ): ArtifactStore =
         when (config.artifacts.kind) {
             ArtifactStoreKind.LOCAL -> {
@@ -96,6 +102,7 @@ object CompositionRoot {
                     requireNotNull(config.artifacts.gcsBucket) { "GCS 버킷 이름이 없습니다" },
                     prefix = config.artifacts.gcsPrefix,
                     endpoint = config.artifacts.gcsEndpoint,
+                    onPhase = { timeline?.mark(it) },
                     ioDispatcher = ioDispatcher,
                 )
             }

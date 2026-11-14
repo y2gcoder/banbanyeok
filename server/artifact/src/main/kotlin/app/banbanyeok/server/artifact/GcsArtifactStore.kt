@@ -97,9 +97,13 @@ public class GcsArtifactStore(
             ioDispatcher: CoroutineDispatcher,
             prefix: String = "",
             endpoint: String? = null,
+            onPhase: (String) -> Unit = {},
         ): GcsArtifactStore {
             val options = StorageOptions.newBuilder().also { builder -> endpoint?.let { builder.setHost(it) } }.build()
-            return GcsArtifactStore(options.service, bucket, ioDispatcher, prefix)
+            onPhase("gcs-options-built")
+            val service = options.service
+            onPhase("gcs-client-created")
+            return GcsArtifactStore(service, bucket, ioDispatcher, prefix)
         }
     }
 }
