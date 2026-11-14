@@ -29,7 +29,7 @@ GitHub Actions db-backup.yml (주 1회+수동, db-backup 계정) ─▶ pg_dump 
 
 | 주체 | 역할 | 대상(리소스) | 왜 |
 |---|---|---|---|
-| `server-runtime` | `secretmanager.secretAccessor` | 비밀 `database-password`, `token-pepper` | 서비스·cleanup Job이 시작할 때 DB 비밀번호와 토큰 pepper를 읽는다 |
+| `server-runtime` | `secretmanager.secretAccessor` | 비밀 `database-password`, `token-pepper`, `proxy-shared-secret` | 서비스·cleanup Job이 시작할 때 DB 비밀번호와 토큰 pepper를, 서비스가 웹 프록시 공유 비밀을 읽는다 |
 | `server-runtime` | `storage.objectViewer` | 버킷 `…-artifacts` | 서버가 시작할 때 manifest와 산출물을 읽는다(쓰기 없음) |
 | `db-migrator` | `secretmanager.secretAccessor` | 비밀 `database-password` | migrate Job이 Liquibase 비밀번호만 읽는다(pepper 접근 없음) |
 | `db-backup` | `secretmanager.secretAccessor` | 비밀 `database-password` | 백업 워크플로가 pg_dump 비밀번호를 읽는다 |
@@ -130,13 +130,14 @@ Actions를 택한 이유: 이미지를 따로 만들거나 Docker Hub 이미지�
 - Ktor의 `request.local.remoteAddress`는 GFE 내부 주소라 `peer`(기본값)로 두면 **모든 사용자가 한 버킷**을 공유한다. 그래서 배포 워크플로는 기본값을 `xff-last`로 설정한다(`RATE_LIMIT_CLIENT_IP_SOURCE` 저장소 변수로 덮어쓸 수 있음).
 - Cloudflare: `CF-Connecting-IP`는 Cloudflare가 원 사용자 IP로 설정한다([공식](https://developers.cloudflare.com/fundamentals/reference/http-headers/)). Workers의 외부(비 Cloudflare 고객) 서브요청에서는 **Worker 스크립트가 클라이언트 IP 헤더를 통제**하고, 원 요청 헤더를 그대로 넘기면 같은 값이 간다.
 
-권고 (P8b에서 구현, 서버 코드는 작음)
-1. **키 = 신뢰된 에지가 넘긴 클라이언트 IP, 신뢰 근거 = 공유 비밀 헤더.** rewrite를 하는 Worker/OpenNext가 요청마다 `X-Edge-Secret: <비밀>`(Wrangler secret)과 `X-Client-IP: <CF-Connecting-IP>`를 붙인다. 서버는 비밀이 일치할 때만 `X-Client-IP`를 키로 쓰고, 아니면 `xff-last`로 되돌아간다. 비밀이 틀리거나 없으면 값을 무시하므로 Cloud Run URL을 직접 부르는 공격자가 헤더를 위조해 한도를 우회할 수 없다(자기 IP 한도에 걸림).
-2. 헤더 이름만 믿는 `header:CF-Connecting-IP` 설정은 **쓰지 않는다**: Cloud Run은 공개 호출이 가능해서 누구나 그 헤더를 보낼 수 있다.
-3. 대안: Cloud Run ingress를 막고(내부+LB) Cloudflare만 통과시키는 방법은 외부 HTTPS LB가 상시 비용(월 약 $18)이라 0원 목표에 어긋난다. 비밀 헤더 방식이 비용 0이다.
-4. 한계: 속도 제한은 인스턴스 메모리라 인스턴스당 따로 센다(최대 2대). 사용자 IP 대신 Cloudflare 에이전트 IP를 쓰는 폴백(`xff-last`)에서는 같은 Cloudflare 출구 IP를 쓰는 사용자들이 버킷을 공유할 수 있다.
+**결정·구현(코디네이터 지시, 이 PR에 포함)**
+1. 웹(P8b)의 Worker 프록시가 `/v1/*` 요청마다 `X-Banbanyeok-Proxy-Secret`(값 = Secret Manager `proxy-shared-secret`)과 `X-Banbanyeok-Client-IP`(= `CF-Connecting-IP`)를 붙인다.
+2. 서버는 **`PROXY_SHARED_SECRET`이 설정되어 있고 헤더의 비밀이 상수 시간 비교로 맞을 때만** `X-Banbanyeok-Client-IP`(공백 제거, 최대 64자)를 속도 제한 키로 쓴다. 그 외에는 연결 IP를 쓴다: 배포 기본값 `RATE_LIMIT_CLIENT_IP_SOURCE=xff-last`(Cloud Run 앞단이 붙인 마지막 `X-Forwarded-For`). 비밀이 설정에 없으면(로컬) 두 헤더를 완전히 무시한다. 설정된 비밀이 32자 미만이면 시작하지 않는다(값은 메시지에 싣지 않음).
+3. 그래서 Cloud Run URL(`*.run.app`)을 직접 부르는 쪽이 `X-Banbanyeok-Client-IP`를 위조해도 효과가 없다(비밀을 모르면 자기 연결 IP의 한도에 걸린다). `header:CF-Connecting-IP`처럼 **헤더 이름만 믿는 설정은 쓰지 않는다**(Cloud Run은 공개 호출이라 누구나 보낼 수 있다).
+4. 대안과 기각 이유: Cloud Run ingress를 막고 Cloudflare만 통과시키는 방법(내부+외부 HTTPS LB)은 LB 상시 비용(월 약 $18)이 0원 목표에 어긋난다. 공유 비밀 방식은 비용 0이다.
+5. 한계: 속도 제한은 인스턴스 메모리라 인스턴스당 따로 센다(최대 2대). 폴백(`xff-last`)에서는 같은 Cloudflare 출구 IP를 쓰는 사용자들이 한 버킷을 공유할 수 있다(정상 경로는 프록시 헤더라 해당 없음). 비밀을 회전하려면 Secret Manager에 새 버전을 넣고 서버·Worker를 함께 재배포한다(`:latest`는 리비전 시작 때 읽는다).
 
-이번 PR의 서버 코드는 바꾸지 않았다. 배포는 `xff-last`로 안전하게 시작한다.
+구현: `config/AppConfig.kt`(`ClientIpSource.proxySecret`), `http/RateLimiter.kt`(`trustedProxyClient`, 헤더 이름 상수), 테스트 `PluginsHttpTest`("proxy shared secret" 3개)·`ConfigTest`.
 
 CORS: 같은 출처 rewrite는 서버 간 호출이라 브라우저 CORS가 필요 없다. prod 프로필은 값이 비면 시작하지 않으므로 워크플로는 `CORS_ALLOWED_ORIGINS` 저장소 변수(없으면 예약 TLD `https://web.banbanyeok.invalid` = 허용 오리진 없음)를 쓴다. P8b가 실제 도메인이 정해지면 변수를 설정한다.
 
