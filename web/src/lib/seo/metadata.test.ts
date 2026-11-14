@@ -87,6 +87,7 @@ describe("허브·사이트 기본 메타데이터", () => {
     expect(og(meta)).toMatchObject({ siteName: "반반역", locale: "ko_KR", url: "https://banban.example/" });
     expect(tw(meta)).toMatchObject({ card: "summary_large_image" });
     expect(meta.robots).toBeUndefined();
+    expect(meta.appleWebApp).toEqual({ capable: true, title: "반반역", statusBarStyle: "default" });
     expect(siteMetadata({}).robots).toEqual({ index: false, follow: false });
   });
 });

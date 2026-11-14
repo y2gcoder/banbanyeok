@@ -69,6 +69,28 @@ else
   grep -q 'name="robots" content="noindex' <<<"$body" && pass "noindex 메타" || bad "noindex 메타가 없습니다"
 fi
 
+# 앱 아이콘·홈 화면 추가(U1): 브라우저가 직접 찾는 /favicon.ico, 웹 앱 매니페스트, 매니페스트가 가리키는 아이콘, iOS 홈 화면 아이콘
+fetch "$BASE_URL/favicon.ico"
+if [ "$status" = "200" ] && grep -qiE "content-type: image/(x-icon|vnd.microsoft.icon)" <<<"$headers"; then pass "/favicon.ico"; else bad "/favicon.ico status=$status"; fi
+fetch "$BASE_URL/manifest.webmanifest"
+if [ "$status" = "200" ] && grep -q '"display":"standalone"' <<<"$body" && grep -q '"start_url":"/"' <<<"$body"; then
+  pass "/manifest.webmanifest"
+  for icon in $(grep -oE '"src":"[^"]+"' <<<"$body" | sed -E 's/"src":"([^"]+)"/\1/'); do
+    fetch "$BASE_URL$icon"
+    if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "매니페스트 아이콘 $icon"; else bad "매니페스트 아이콘 $icon status=$status"; fi
+  done
+else
+  bad "/manifest.webmanifest status=$status"
+fi
+fetch "$BASE_URL/"
+apple="$(grep -oE '<link rel="apple-touch-icon" href="[^"]+"' <<<"$body" | head -1 | sed -E 's/.*href="([^"]+)"/\1/')"
+if [ -n "$apple" ]; then
+  fetch "$BASE_URL$apple"
+  if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "apple-touch-icon $apple"; else bad "apple-touch-icon status=$status"; fi
+else
+  bad "apple-touch-icon 링크가 없습니다"
+fi
+
 # 보안 헤더
 fetch "$BASE_URL/"
 for name in "content-security-policy" "x-content-type-options: nosniff" "referrer-policy" "x-frame-options"; do

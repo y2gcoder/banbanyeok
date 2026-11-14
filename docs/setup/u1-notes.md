@@ -12,6 +12,7 @@
 - **넓은 화면(lg, 1024px~)**: 왼쪽 칸 폭을 고정(22~30rem)하고 본문 최대 폭 72rem(`max-w-6xl`). SEO 조합 페이지는 후보 3장이 나란히,
   허브는 역 묶음이 3칸, 처리방침은 목차가 왼쪽에 붙고 본문은 읽기 폭(42rem)을 지킨다.
 - **경첩으로 나뉜 화면**(Viewport Segments, 크로미움 138+): 두 칸의 경계를 경첩에 맞춘다. 다른 브라우저에는 영향 없음.
+- **앱 아이콘·매니페스트**: 탭 아이콘(ICO·SVG), iOS 홈 화면 아이콘, 웹 앱 매니페스트(standalone, 192·512 + maskable), 테마 색·iOS 상태 표시줄(12절).
 - 검사: 28개 기기 크기 × 11개 화면 행렬 + 전환·키보드·큰 글자·경첩·hover. **바꾸기 전 361건 중 24건 통과 → 지금 모두 통과**(이후 hover 검사 1건 추가, 362건).
 
 ## 2. 뷰포트 행렬과 근거
@@ -135,8 +136,9 @@ Galaxy Z Fold7 사양표(https://news.samsung.com/us/samsung-galaxy-z-fold7-rais
 결과(로컬, 2026-11-15):
 
 ```text
-$ pnpm typecheck && pnpm lint && pnpm test       # 통과 (Vitest 48 파일 377 테스트)
-$ CI=1 pnpm e2e                                  # 기본 380 passed, 통계 빌드 20 passed (--repeat-each=2로 760건도 통과)
+$ pnpm typecheck && pnpm lint && pnpm test       # 통과 (Vitest 49 파일 383 테스트, 아이콘·매니페스트 포함)
+$ pnpm check:contracts                           # 통과
+$ CI=1 pnpm e2e                                  # 기본 382 passed(아이콘 2 포함), 통계 빌드 20 passed (반응형만일 때 --repeat-each=2로 760건도 통과)
 $ pnpm e2e:real                                  # 7 passed, 1 skipped(라이브 PostHog) — 로컬 compose DB + Ktor + next start
 바꾸기 전(main a903640) 같은 행렬: 361건 중 24건 통과
   (44px 미만 터치 목표 905건, 16px 미만 입력 5종, 두 칸 아님 11건, 경첩 걸침 17건, 포커스 표시 없음 4건)
@@ -161,11 +163,53 @@ UPDATE_SCREENSHOTS=1 pnpm e2e:analytics -- e2e-analytics/banner-layout.spec.ts
 | | raw | gzip |
 |---|---|---|
 | main(a903640) | 12,443.02 KiB | 2,727.27 KiB |
-| 이 브랜치 | 12,449.65 KiB | **2,728.98 KiB** (+1.71 KiB) |
+| 반응형만(0537cb6) | 12,449.65 KiB | 2,728.98 KiB (+1.71 KiB) |
+| 이 브랜치(아이콘·매니페스트 포함) | 12,525.96 KiB | **2,744.23 KiB** (+16.96 KiB) |
 
-증가분은 키보드 감지 훅과 클래스 문자열이다. 무료 한도 3 MiB(3,072 KiB)까지 여유 약 343 KiB.
+반응형 증가분(+1.71)은 키보드 감지 훅과 클래스 문자열, 아이콘 증가분(+15.25)은 `app/`의 `favicon.ico`·`icon.svg`·`apple-icon.png`·`manifest.ts`가
+Next 메타데이터 라우트(이미지를 품은 라우트 처리기)로 Worker에 들어가기 때문이다. `public/icons/*`(매니페스트 아이콘)는 정적 자산이라 번들에 들지 않는다.
+무료 한도 3 MiB(3,072 KiB)까지 여유 약 328 KiB(결정 필요 8).
 
-## 12. 결정 필요 / 한계
+## 12. 앱 아이콘·매니페스트·테마 색 (공개 전 점검 추가분)
+
+이전에는 `/favicon.ico`·`/icon.png`·`/apple-icon.png`·`/manifest.webmanifest`가 모두 404였다(탭·홈 화면 아이콘 없음).
+Next 16 app 디렉터리 규약(`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/01-metadata/{app-icons,manifest}.md`)으로 넣었다.
+
+| 경로 | 파일 | 내용 |
+|---|---|---|
+| `/favicon.ico` | `src/app/favicon.ico` | 16·32·48 PNG를 담은 ICO(`<link rel="icon" sizes="48x48">`, 경로를 직접 찾는 클라이언트용) |
+| `/icon.svg` | `src/app/icon.svg` | 탭 아이콘 SVG(`sizes="any"`, 최신 브라우저는 이것을 쓴다) |
+| `/apple-icon.png` | `src/app/apple-icon.png` | 180×180 꽉 찬 사각형(iOS가 모서리를 자른다) |
+| `/manifest.webmanifest` | `src/app/manifest.ts` → `src/lib/seo/app-manifest.ts` | 이름·짧은 이름 "반반역", `id`·`start_url`·`scope` "/", `display: standalone`(서비스 워커 없음), `lang: ko`, 바탕·테마 색 `#eef1f0`(= `--platform`), 아이콘 192·512 `any` + 192·512 `maskable` |
+| `/icons/*.png` | `public/icons/` | 매니페스트 아이콘(정적 자산) |
+
+**아이콘 디자인**: 워드마크의 "반반 나뉜 원"(두 사람의 시간이 반반)을 그대로 쓰고 바탕만 다른 시안 3개를 만들었다. 모두 토큰 색만 쓴다.
+
+| 시안 | 비교 이미지 | 판단 |
+|---|---|---|
+| A 승강장 회색 바탕 | [icon-a.png](u1-screens/icon-a.png) | 밝은 탭 막대에서 바탕이 사라지고 마크만 남는다. 홈 화면에서 다른 앱 사이에 묻힌다 |
+| B 잉크 바탕 + 안전선 노랑 반 | [icon-b.png](u1-screens/icon-b.png) | 어두운 탭 막대에서 바탕이 막대와 섞인다. 노랑 반쪽이 "1위 표시" 색과 같은 의미로 읽힐 수 있다 |
+| **C 안전선 노랑 바탕 (적용)** | [icon-c.png](u1-screens/icon-c.png) | 밝은·어두운 탭 막대 모두에서 또렷하고, 16px에서도 반반 원이 보인다. 승강장 안전선 = 서비스 첫인상 |
+
+- 원본: `web/assets/icons/mark-{a,b,c}-*.svg`(바탕 `<rect id="bg">` + 마크 `<g id="mark">`). PNG·ICO는 `pnpm gen:icons`(`scripts/build-icons.ts`)가
+  Playwright 크로미움(기존 개발 의존성)으로 그린다. 시안 바꾸기: `ICON_VARIANT=a pnpm gen:icons`. 비교 이미지: `pnpm gen:icons --preview`.
+- 렌더러·OS마다 픽셀이 조금 달라 CI의 재생성 diff(`check:contracts`)에는 넣지 않았다. 대신 단위 테스트(`app-manifest.test.ts`)가 파일 크기(16·32·48,
+  180, 192, 512)·ICO 구조·SVG 색(토큰만)·매니페스트 값·테마 색 = `--platform`을 확인한다.
+- 탭 아이콘은 마크를 지름 75%로 크게, 홈 화면은 90%, maskable은 76%(바깥 반지름 146 < 안전 영역 반지름 204.8, 512 기준)로 그린다.
+
+**테마 색(밝은/어두운 모드)**: 화면은 밝은 모드 하나(`color-scheme: light`)다. 그래서 `theme-color`도 하나(`#eef1f0`)로 두고
+`<meta name="color-scheme" content="light">`를 붙였다. 기기가 어두운 모드일 때 어두운 테마 색을 주면 밝은 화면 위에 어두운 주소창·상태 표시줄이 얹혀
+화면과 따로 논다(e2e가 어두운 모드 기기에서도 바탕·테마 색이 그대로인지 확인한다). 어두운 화면을 만들 때 함께 `media`별 값으로 나눈다.
+
+**iOS 상태 표시줄**: 홈 화면에 추가한 웹 앱은 `apple-mobile-web-app-capable`(Next가 `mobile-web-app-capable`로 출력)·제목 "반반역"·
+`apple-mobile-web-app-status-bar-style: default`. `black-translucent`는 내용이 상태 표시줄 밑으로 들어가고 시계·배터리 글자가 흰색이라
+밝은 화면에서 보이지 않는다. `default`면 내용이 상태 표시줄 아래에서 시작하므로 위쪽 안전 영역 여백이 따로 필요 없다(좌우·아래는 5절).
+
+**검사**: `e2e/app-icons.spec.ts`(링크 태그, 각 경로 200·형식, 매니페스트 값·아이콘, 테마 색·상태 표시줄 메타, 어두운 모드 기기),
+배포 스모크 `scripts/smoke-deploy.sh`에 `/favicon.ico`·`/manifest.webmanifest`·매니페스트 아이콘 전부·apple-touch-icon 200 검사를 추가했다.
+로컬 `wrangler dev`(OpenNext Worker)에서 6개 경로가 모두 200·올바른 형식으로 나오는 것을 확인했다.
+
+## 13. 결정 필요 / 한계
 
 1. **글자 크기 단위**: 화면 글자는 대부분 px다. 브라우저 "기본 글자 크기" 설정(데스크톱 크롬·파이어폭스)을 키워도 글자는 그대로이고 간격만 커진다.
    모바일 글자 키우기·확대는 페이지 확대라 문제없다(8절). 글자도 기본 크기를 따르게 하려면 `text-[15px]` 류를 rem으로 일괄 바꾸는 작업이 필요하다
@@ -178,3 +222,7 @@ UPDATE_SCREENSHOTS=1 pnpm e2e:analytics -- e2e-analytics/banner-layout.spec.ts
 5. **CI는 크로미움만** 돌린다(기존과 같음). WebKit은 로컬에서 한 번 돌렸다(9절). 사파리 행렬을 CI에 넣으면 브라우저 설치·시간이 늘어난다(약 +1~2분).
 6. **실제 기기 확인은 안 했다**: 노치·홈 인디케이터(`env(safe-area-inset-*)`)와 실제 화면 키보드는 자동화 브라우저에 없어 값이 0이거나 흉내다.
    실제 iPhone(가로)·Galaxy Fold에서 한 번 열어 보는 것을 권한다.
+7. **앱 아이콘 시안 최종 선택(사용자 확인)**: C(안전선 노랑 바탕)를 적용했다. A·B와 비교 이미지는 12절. 바꾸려면 `ICON_VARIANT=a|b pnpm gen:icons` 한 번이면 된다.
+   안전선 노랑은 토큰 주석상 "1위 표시와 강조에만" 쓰는 색인데, 아이콘은 서비스 자체의 강조로 보고 썼다(화면 안 쓰임은 바뀌지 않는다).
+8. **아이콘 라우트의 번들 비용(+15.25 KiB gzip)**: app 디렉터리 규약을 지키느라 아이콘이 Worker 번들에 들어간다. 줄이려면 `favicon.ico`·`apple-icon.png`를
+   `public/`으로 옮기고 `metadata.icons`로 연결하면 된다(번들 0, 대신 규약에서 벗어남). 여유가 줄면 그때 옮긴다.

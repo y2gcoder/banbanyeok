@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import { withJosa } from "@/lib/display/korean";
 import { formatMinutes } from "@/lib/display/minutes";
+import { APP_NAME } from "./app-manifest";
 import { OG_HEIGHT, OG_WIDTH } from "./og-text";
 import { PAIR_PATH_PREFIX, type PairPage } from "./pair-pages";
 import { absoluteUrl, isIndexableSite, siteUrl } from "./site";
@@ -60,6 +61,9 @@ export function siteMetadata(env: Env = process.env): Metadata {
     title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
     description: SITE_DESCRIPTION,
     robots: robots(env),
+    // 홈 화면에 추가한 iOS 웹 앱: 이름, 전체 화면 실행, 상태 표시줄은 기본(밝은 바탕·검은 글자, 내용은 그 아래에서 시작).
+    // black-translucent는 내용이 상태 표시줄 밑으로 들어가고 글자가 흰색이라 밝은 화면에서 시계·배터리가 보이지 않는다.
+    appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
     ...social({ title: "우리 어디서 만나야 덜 억울할까?", description: SITE_DESCRIPTION, path: "/" }, env),
   };
 }
