@@ -38,9 +38,8 @@ web 잡이 돌지 않는다(md를 직접 고치면 다음 web 변경 때 테스�
 | `{서비스 주소}` | 운영 도메인 |
 | `{접속 기록 보존 기간}` `{통계 보존 기간}` `{백업 보존 기간}` | 각 사 설정에서 확인(4절) |
 | `{Google·Cloudflare·Supabase·PostHog 개인정보 문의처}` | 각 사 공식 개인정보 문의처(법 제28조의8②3호 '연락처') |
-| `{Cloud Logging 저장 위치}` `{Google 처리 국가}` `{Cloudflare 처리 국가}` `{Supabase 처리 국가}` `{PostHog 저장 국가: …}` | DPA·재수탁자 목록·설정 확인 결과 |
+| `{Cloud Logging 저장 위치}` `{Google 처리 국가}` `{Cloudflare 처리 국가}` `{Supabase 처리 국가}` | DPA·재수탁자 목록·설정 확인 결과 |
 | `{재수탁자 목록 링크}` | 각 사 재수탁자(sub-processor) 공개 페이지 |
-| `{통계 동의 철회 경로}` | P7이 만드는 통계 설정 위치 |
 | `{기기 토큰 쿠키 기간}` | 방 기능 웹 구현 값 |
 | `{내부 관리계획 수립 여부}` `{접속기록 보관 기간}` | 안전성 확보조치 고시 확인 후(검토 의견 2-6) |
 
@@ -71,7 +70,7 @@ web 잡이 돌지 않는다(md를 직접 고치면 다음 web 변경 때 테스�
 | 클라이언트 IP: 수집 서버가 요청에서 받음. 비저장은 프로젝트 설정 'Discard client IP data'(운영자가 켜야 함) | `docs/setup/p7-notes.md` | PostHog(설정 전에는 저장됨) | 2, 7 |
 | 추적 거부: DNT·GPC가 있으면 SDK를 불러오지도 않음. 키가 없으면 완전히 꺼짐(요청 0건) | `visit.ts`, `tracker.ts`, `config.ts` | — | 2, 11 |
 | 로컬 저장소 `ph_<토큰>_posthog`(익명 ID·SDK 상태·쿼리 포함 첫 진입 URL), `bby.analytics.seen`(첫 방문 표시). 쿠키 없음 | `persistence: "localStorage"`, `visit.ts` | 기기 | 11 |
-| 리전: US/EU 중 환경 변수로 지정, 미정 | `config.ts` | — | 7(자리표시) |
+| 리전: **US로 결정**(2026-11-14). 배포 환경 변수 `NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com` | `config.ts` | PostHog 미국 | 7 |
 | 카카오맵 길찾기 링크에 출발역·후보역 이름·좌표 | `web/src/lib/map/kakao.ts`, `components/result/directions.tsx` | 카카오로 이동(사용자 클릭) | 6 |
 | 서버가 IP·User-Agent를 DB에 저장하지 않음 | tech-stack 5.4, changelog(열 없음) | — | 9 |
 | GCS 산출물(역·시간 데이터) | accounts.md | 개인정보 아님 | 해당 없음 |
@@ -90,9 +89,9 @@ UI**, 매일 정리 작업(P8). 통계는 P7(PR #17)로 구현됐지만 운영 �
    주체(국내 고객의 계약 상대 법인).
 2. **Cloudflare**: Workers 요청 로그·Workers Logs(observability) 사용 여부와 보존 기간(공유 링크 쿼리에 출발역·
    이름이 담긴다). 봇 관리 쿠키(`__cf_bm` 등)가 붙는지. DPA, 재수탁자, 데이터 처리 국가.
-3. **Supabase**: DB 공급자 확정 여부, 서울 리전(AWS ap-northeast-2), 자동 백업 보존 기간과 PITR, 저장 데이터
+3. **Supabase**(서울 AWS ap-northeast-2로 확정): 프로젝트가 실제로 그 리전에 만들어졌는지, 자동 백업 보존 기간과 PITR, 저장 데이터
    암호화, 지원 인력의 국외 접근, 재수탁자(AWS 등), 무료 플랜 일시정지 조건.
-4. **PostHog**: US/EU 리전, 데이터 보존 기간(플랜별), 'Discard client IP data'를 켰는지, DPA(수탁자 지위,
+4. **PostHog**(미국 리전으로 확정): 프로젝트가 US Cloud인지, 데이터 보존 기간(플랜별), 'Discard client IP data'를 켰는지, DPA(수탁자 지위,
    자기 목적 이용 여부), 재수탁자.
 5. 각 사 공식 개인정보 문의처(국외 이전 표의 '연락처').
 6. 카카오맵 링크: 카카오가 받는 정보는 주소의 이름·좌표뿐인지(현재 구현 기준 그렇다).
@@ -108,10 +107,12 @@ UI**, 매일 정리 작업(P8). 통계는 P7(PR #17)로 구현됐지만 운영 �
 ## 5. 다른 작업에 넘길 요구 사항
 
 - **통계 후속(P7 다음)**: P7이 쿼리 제거·자동 수집 끔·GeoIP 끔·쿠키 없음을 이미 반영했다. 남은 것은 옵트인 동의
-  화면(수집·이용 동의와 국외 이전 동의 구분, 만 14세 이상 확인, 동의·거부 같은 강조, `opt_out_capturing_by_default`,
-  `analytics_consent_changed`)과 하단 링크 영역의 '통계 설정'(`site-footer.tsx`), 그리고 운영자의 PostHog
+  화면(처음 방문 시 질문, 수집·이용 동의와 국외 이전 동의 구분, 만 14세 이상 확인, 동의·거부 같은 강조,
+  `opt_out_capturing_by_default`, `analytics_consent_changed`)과 **이 처리방침 페이지(`/privacy`)의 '통계 설정'**
+  (방침 2·8·11절이 철회 위치로 이 페이지를 가리킨다. 철회 후 '요청 시 삭제'를 위해 이 기기의 통계 식별자를 보여 주거나
+  삭제 요청을 보낼 수 있게 한다), 그리고 운영자의 PostHog
   'Discard client IP data' 켜기. 둘 다 운영 키를 넣기 전에 끝내야 한다. 상세는 검토 의견 2-1, 2-7.
-- **P8(인프라)**: `server cleanup`을 **매일** 실행(방침 5절 '만료 후 5일 이내'), Cloud Logging 버킷을 서울로,
+- **P8(인프라)**: `server cleanup`을 **매일 1회** 실행(사용자 결정 2026-11-14)(방침 5절 '만료 후 5일 이내'), Cloud Logging 버킷을 서울로,
   로그 보존 기간 확정.
 - **방 기능 웹 화면**: 토큰 저장 위치와 기기 토큰 쿠키 기간을 정하면 방침 11절 자리표시를 채운다.
 - **앱(A1/I1)**: 앱 설정 화면에 같은 방침 링크, 스토어 개인정보 라벨과 방침 일치.
