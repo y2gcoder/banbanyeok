@@ -106,6 +106,7 @@ private fun build(root: Path) {
         ).toString(),
     )
     writeCoverage(root, net)
+    writeOfficialComparison(root, net)
     writeRegistryAudit(root, net.registry)
     // Registry and review draft are control-plane inputs, not published travel artifacts.
     root.resolve("data/registry/stations.json").writeJson(RegistryCodec.encode(net.registry))

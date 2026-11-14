@@ -26,6 +26,7 @@ const LINE_COLORS: Record<string, string> = {
   우이신설선: "#b0ce18",
   신림선: "#6789ca",
   김포골드라인: "#a17800",
+  "GTX-A": "#9a6292",
 };
 
 const NEUTRAL_LINE_COLOR = "#8a9099";

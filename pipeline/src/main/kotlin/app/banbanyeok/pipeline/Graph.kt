@@ -270,6 +270,7 @@ internal class NetworkBuilder(
                     "serviceHeadways" to JsonObject(tagoHeadways.mapValues { (_, v) -> jsonValue(v) }),
                     "edges" to tagoEdges,
                     "transfers" to tagoTransfers,
+                    "s3Comparison" to tagoVersusS3(it, runtime, rules),
                 )
             }
         return Network(
