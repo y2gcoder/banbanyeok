@@ -6,7 +6,7 @@ kotlinx-serialization = "1.12.0"   # 1.13.0은 2026-11-11 게시라 제외
 kotlinx-coroutines = "1.11.0"
 # 서버 프레임워크(Ktor vs Spring Boot)는 미정이다. 아래 ktor 항목은 후보로 고정해 둔 값이며 지금은 어떤 모듈도 쓰지 않는다.
 ktor = "3.6.1"                     # 2026-10-29 게시
-logback = "1.5.38"
+logback = "1.6.6"
 
 [libraries]
 # build-logic(컨벤션 플러그인)의 클래스패스로 들어간다. 모듈 빌드 파일은 id("banbanyeok.*")만 쓰고 플러그인 버전을 직접 적지 않는다.
