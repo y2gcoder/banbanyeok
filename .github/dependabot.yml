@@ -33,4 +33,11 @@ updates:
     groups:
       web-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # 실행 환경이 Node 24(mise)라 타입도 24에 맞춘다. Node를 올릴 때 함께 올린다.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7(네이티브 컴파일러)은 Next.js·typescript-eslint 지원이 확인될 때 별도 작업으로 올린다.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
