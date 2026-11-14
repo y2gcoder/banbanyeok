@@ -1,0 +1,17 @@
+// Cloudflare Workers 설정(배포 준비만. 실제 배포·계정 연결은 P8). `pnpm cf:build`가 .open-next/를 만든다.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "banbanyeok-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  "vars": {
+    // 서버(Cloud Run) 출처. 배포 시 P8이 실제 값으로 바꾼다.
+    "API_ORIGIN": "http://localhost:8080"
+  }
+}

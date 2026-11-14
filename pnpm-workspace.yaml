@@ -1,3 +1,12 @@
-# web은 P4가 만든다(지금은 디렉토리가 없다). 패키지를 더 늘릴 때만 이 목록을 고친다.
+# 패키지를 더 늘릴 때만 이 목록을 고친다.
 packages:
   - web
+
+# 게시 후 7일(분 단위) 이상 지난 버전만 해석한다(전이 의존성 포함). 저장소 버전 정책과 같다.
+minimumReleaseAge: 10080
+
+# 설치 스크립트를 허용하는 패키지(나머지는 pnpm 기본값대로 막는다).
+# esbuild: vitest/wrangler의 번들러 바이너리, workerd: wrangler 로컬 Workers 런타임.
+allowBuilds:
+  esbuild: true
+  workerd: true

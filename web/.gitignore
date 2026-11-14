@@ -1,0 +1,8 @@
+# 루트 .gitignore(.next, .open-next, .wrangler, node_modules 등)에 더해 web 전용 산출물
+next-env.d.ts
+*.tsbuildinfo
+playwright-report/
+test-results/
+blob-report/
+.dev.vars
+cloudflare-env.d.ts
