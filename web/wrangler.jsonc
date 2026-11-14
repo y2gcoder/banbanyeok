@@ -1,17 +1,22 @@
-// Cloudflare Workers 설정(배포 준비만. 실제 배포·계정 연결은 P8). `pnpm cf:build`가 .open-next/를 만든다.
+// Cloudflare Workers 설정. 배포는 .github/workflows/deploy-web.yml(build → populateCache → deploy)이 한다.
+// `main`은 /api/*를 서버로 프록시하고 정식 도메인으로 리디렉트하는 진입점(worker.ts)이며, 나머지는 OpenNext 산출물(.open-next/worker.js)로 넘긴다.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "banbanyeok-web",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "workers_dev": true,
   "observability": { "enabled": true },
+  // 값은 배포 때 `--var`로 넣는다(저장소 변수 SERVER_ORIGIN, SITE_DOMAIN). 비밀 PROXY_SHARED_SECRET은 `--secrets-file`로 넣고 여기에 적지 않는다.
   "vars": {
-    // 서버(Cloud Run) 출처. 배포 시 P8이 실제 값으로 바꾼다.
-    "API_ORIGIN": "http://localhost:8080"
+    // 서버(Cloud Run) 출처. 비어 있으면 프록시가 503(UPSTREAM_NOT_CONFIGURED)을 돌려준다.
+    "API_ORIGIN": "",
+    // 정식 도메인(호스트만). 비어 있으면 리디렉트하지 않는다(workers.dev 단계).
+    "CANONICAL_HOST": ""
   }
 }

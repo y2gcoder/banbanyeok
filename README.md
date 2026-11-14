@@ -89,7 +89,38 @@ Postgres 기본값은 17 메이저의 고정 안정판 17.6이며 `POSTGRES_VERS
 외부 데이터 API나 운영 서비스 연결처럼 비밀값이 필요한 경우에만 개인 1Password를 설정하고
 `op run --env-file=.env.tpl -- <명령>`을 사용합니다.
 
-## 배포 (서버·DB)
+## 배포
+
+### 웹 (Cloudflare Workers + OpenNext)
+
+`.github/workflows/deploy-web.yml`이 배포합니다: 빌드(`pnpm cf:build`) → 정적 캐시 채우기(`populateCache`) → `wrangler deploy` → 배포 주소 스모크 테스트.
+main에서 `web/`·`contracts/`·`data/artifacts/`가 바뀌면 자동으로, 그 밖에는 Actions 탭의 **Run workflow**(수동)로 돕니다. 동시 배포는 막습니다(`concurrency`).
+공개 주소는 https://banbanyeok.app 입니다(`www`와 `*.workers.dev`는 이 주소로 301 이동).
+
+저장소에 있어야 하는 설정(값은 문서에 적지 않습니다):
+
+| 종류 | 이름 | 용도 |
+|---|---|---|
+| secret | `CLOUDFLARE_API_TOKEN` | Workers 배포(Edit Cloudflare Workers 템플릿, 도메인 연결을 위해 All zones) |
+| secret | `PROXY_SHARED_SECRET` | 서버와 같은 값. Worker secret으로 주입돼 `/api/*` 프록시가 서버에 `X-Banbanyeok-Proxy-Secret`로 보냄 |
+| variable | `CLOUDFLARE_ACCOUNT_ID` | 배포 계정 |
+| variable | `POSTHOG_PROJECT_KEY`, `POSTHOG_HOST` | 빌드 때 번들에 박히는 공개 통계 키·수집 호스트(동의 전에는 로드하지 않음) |
+| variable | `SERVER_ORIGIN` | 서버(Cloud Run) 출처. 비어 있으면 API 없이 배포하고 사이트 전체를 noindex로 둠 |
+| variable | `SITE_DOMAIN` | 정식 도메인(호스트만). 있으면 Workers Custom Domain(apex + www)으로 붙고 `SITE_URL`(OG·sitemap·canonical)이 여기서 나옴 |
+
+로컬에서 배포 빌드를 확인하려면(배포는 하지 않음):
+
+```sh
+cd web
+SITE_URL=https://example.com pnpm cf:build
+pnpm exec opennextjs-cloudflare populateCache local
+printf 'API_ORIGIN=http://127.0.0.1:8080\nPROXY_SHARED_SECRET=local\n' > .dev.vars   # gitignore됨
+pnpm exec wrangler dev
+```
+
+세부(프록시 규칙, 보안 헤더, 크기·CPU 실측, 결정 필요)는 [docs/setup/p8b-notes.md](docs/setup/p8b-notes.md).
+
+### 서버·DB (Cloud Run + Supabase)
 
 서버는 Cloud Run(서울, min 0), DB는 Supabase 무료(세션 풀러), 데이터 산출물은 GCS 버킷에 발행합니다. 자세한 구성·권한 표·결정은 [docs/setup/p8a-notes.md](docs/setup/p8a-notes.md).
 
