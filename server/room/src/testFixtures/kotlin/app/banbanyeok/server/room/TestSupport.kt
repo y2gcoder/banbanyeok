@@ -67,6 +67,7 @@ class RoomFixture(
     val tokens = TokenService(testPepper, ids)
     val service = RoomService(rooms, anonUsers, tokens, ids, stations, clock)
     val anonService = AnonUserService(anonUsers, tokens, ids, clock)
+    val cleanup = RoomCleanup(rooms, anonUsers, clock)
 }
 
 fun hashOf(text: String) = TokenHash(text.toByteArray())

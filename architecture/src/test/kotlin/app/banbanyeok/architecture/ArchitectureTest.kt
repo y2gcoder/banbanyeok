@@ -63,5 +63,48 @@ class ArchitectureTest :
                         }
                     }.shouldBeEmpty()
             }
+            it("server feature modules do not depend on the app module or know the HTTP framework") {
+                val featureImports =
+                    listOf("room", "recommendation", "artifact").flatMap { module ->
+                        Konsist
+                            .scopeFromDirectory("server/$module/src/main")
+                            .files
+                            .flatMap { it.imports }
+                    }
+                featureImports
+                    .filter { it.name.startsWith("app.banbanyeok.server.app.") || it.name.startsWith("io.ktor.") }
+                    .shouldBeEmpty()
+            }
+            it("only the room exposed package knows Exposed and only the GCS store knows the GCS client") {
+                val serverMain = Konsist.scopeFromDirectory("server").files.filter { it.path.contains("/src/main/") }
+                serverMain
+                    .filterNot { it.path.contains("/server/room/src/main/") && it.path.contains("/exposed/") }
+                    .flatMap { it.imports }
+                    .filter { it.name.startsWith("org.jetbrains.exposed.") }
+                    .shouldBeEmpty()
+                serverMain
+                    .filterNot { it.path.endsWith("/GcsArtifactStore.kt") }
+                    .flatMap { it.imports }
+                    .filter { it.name.startsWith("com.google.cloud.") }
+                    .shouldBeEmpty()
+            }
+            it("server services and application classes do not know Ktor") {
+                Konsist
+                    .scopeFromDirectory("server/app/src/main/kotlin/app/banbanyeok/server/app/application")
+                    .files
+                    .flatMap { it.imports }
+                    .filter { it.name.startsWith("io.ktor.") }
+                    .shouldBeEmpty()
+            }
+            it("server tests use the real database instead of H2 or an Exposed mock") {
+                Konsist
+                    .scopeFromDirectory("server")
+                    .files
+                    .flatMap { it.imports }
+                    .filter {
+                        it.name.startsWith("org.h2.") ||
+                            it.name.contains("exposed") && it.name.startsWith("io.mockk")
+                    }.shouldBeEmpty()
+            }
         }
     })

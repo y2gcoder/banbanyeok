@@ -20,8 +20,8 @@ info:
 
     **데이터 버전**: 방은 생성 시점의 `dataVersion`(manifest의 값)을 기록하고, 결과 응답은 계산에 쓴 버전을 돌려준다.
 
-    **공통 규칙**: 요청 크기 제한, IP·기기 단위 속도 제한, 변경 요청에 선택적 `Idempotency-Key` 헤더,
-    오류는 항상 `{code, message}`.
+    **공통 규칙**: 요청 크기 제한(16 KiB, 초과 시 413), IP·기기 단위 속도 제한(초과 시 429와 `Retry-After`), 방 생성과
+    참여에 선택적 `Idempotency-Key` 헤더(서버 인스턴스 메모리에서 10분간 같은 응답 재생), 오류는 항상 `{code, message}`.
 servers:
   - url: /v1
     description: 같은 출처 rewrite(웹 `/api/*` -> 서버). 로컬 개발은 http://localhost:8080/v1
@@ -32,6 +32,18 @@ tags:
   - name: data
 
 paths:
+  /healthz:
+    get:
+      tags: [data]
+      operationId: getHealth
+      summary: 서버 상태 확인. 웹이 입력 화면에서 서버를 미리 깨울 때도 쓴다 (본문은 `ok`, 저장소·DB를 건드리지 않는다)
+      responses:
+        '200':
+          description: 정상
+          content:
+            text/plain:
+              schema: {type: string, examples: [ok]}
+
   /anon:
     post:
       tags: [anon]
@@ -104,8 +116,11 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Room'}
+        '400': {$ref: '#/components/responses/Error'}
         '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
     delete:
       tags: [rooms]
       operationId: deleteRoom
@@ -114,7 +129,9 @@ paths:
       responses:
         '204': {description: 삭제됨}
         '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
 
   /rooms/{roomId}/participants:
     parameters:
@@ -144,6 +161,7 @@ paths:
                   participantToken: {type: string}
         '400': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
         '409':
           description: 방이 가득 찼거나 잠겼다 (`ROOM_FULL`, `ROOM_LOCKED`)
           content:
@@ -170,6 +188,7 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Participant'}
+        '400': {$ref: '#/components/responses/Error'}
         '401': {$ref: '#/components/responses/Error'}
         '403': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
@@ -237,7 +256,10 @@ paths:
                 stationCode: {$ref: '#/components/schemas/StationCode'}
       responses:
         '204': {description: 기록됨}
+        '400': {$ref: '#/components/responses/Error'}
         '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
 
   /recommend:
     post:
@@ -270,6 +292,7 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/Result'}
         '400': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
 
   /manifest:
     get:

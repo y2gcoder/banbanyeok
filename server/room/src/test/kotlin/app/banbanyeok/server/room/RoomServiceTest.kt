@@ -197,7 +197,7 @@ class RoomServiceTest :
                     val old = service.create(command())
                     clock.advance(Duration.ofDays(8))
                     val fresh = service.create(command())
-                    service.cleanup() shouldBe CleanupReport(rooms = 1, anonUsers = 0)
+                    cleanup.run() shouldBe CleanupReport(rooms = 1, anonUsers = 0)
                     rooms.find(old.roomId).shouldBeNull()
                     (rooms.find(fresh.roomId) != null) shouldBe true
                 }
@@ -207,7 +207,7 @@ class RoomServiceTest :
                 roomTest {
                     anonService.issue()
                     clock.advance(Duration.ofDays(91))
-                    service.cleanup().anonUsers shouldBe 1
+                    cleanup.run().anonUsers shouldBe 1
                 }
             }
         }

@@ -31,7 +31,7 @@ mise run test                      # 위 둘을 함께
 |---|---|
 | `contracts/` | 언어 중립 계약: 골든 시나리오·순위 스냅샷·링크 벡터, `openapi.yaml`(웹-서버 계약의 원본), `events.json`, `data-format.md`, `fixtures/` |
 | `shared/` | KMP 공유 모듈(`schema`, `core`, `links`, `api-client`, `app-logic`, `analytics`). 타깃은 지금 jvm만 |
-| `server/`, `pipeline/` | JVM 앱. 서버는 Ktor로 구현 예정(현재 자리표시), 파이프라인은 Kotlin CLI |
+| `server/`, `pipeline/` | JVM 앱. 서버는 Ktor 모듈러 모놀리스(`server/{app,room,recommendation,artifact}`, [P3 노트](docs/setup/p3-notes.md)), 파이프라인은 Kotlin CLI |
 | `build-logic/` | Gradle 컨벤션 플러그인(`banbanyeok.kotlin-jvm`, `kmp-library`, `server-app`, `cli-app`, …). 버전은 `gradle/libs.versions.toml` |
 | `prototype/` | Python 참조 오라클과 계약 파일 생성기 |
 | `data/registry/` | 역 코드 레지스트리(append-only). 실제 데이터는 파이프라인이 만든다 |
@@ -60,15 +60,16 @@ mise run dev                   # db → migrate → seed → server + web
 # 각각 실행하려면:
 mise run dev:db
 mise run dev:migrate
-mise run dev:seed               # 현재 자리표시
-mise run dev:server             # :server:run, 현재 healthz 자리표시
+mise run dev:seed               # 예시 방 하나(참가자 3명, 한 명은 출발역 숨김)와 curl 예시를 출력
+mise run dev:server             # :server:app:run. compose DB + data/artifacts/dev로 실제 동작(/healthz, /v1/...)
 mise run dev:web                # web/이 없으면 안내 후 종료
 mise run dev:web:mock           # web/이 없으면 안내 후 종료
 mise run dev:db -- down         # 컨테이너/네트워크 정리 (볼륨 보존)
 mise run dev:db -- down -v      # 로컬 DB 데이터까지 삭제
 
 ./gradlew check                 # 단위 테스트 + ktlint + detekt + Konsist
-./gradlew integrationTest       # Docker를 사용하는 실제 Postgres 통합 테스트
+./gradlew integrationTest       # Docker를 사용하는 통합 테스트(실제 Postgres, GCS 에뮬레이터, API 흐름)
+bash scripts/build-server-image.sh   # 서버 배포 이미지(linux/amd64, AppCDS 학습 포함) 로컬 빌드
 ./gradlew ktlintFormat          # 포맷 수정
 ```
 

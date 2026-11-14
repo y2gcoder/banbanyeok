@@ -3,7 +3,6 @@ package app.banbanyeok.server.room
 import app.banbanyeok.links.NicknameRules
 import app.banbanyeok.schema.StationCode
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 
@@ -184,12 +183,6 @@ public class RoomService(
         rooms.recordOutcome(roomId, outcome, activityOf(stored.room, stored.room.meetingDate, now))
     }
 
-    /** 만료된 방과 오래 쓰지 않은 익명 사용자를 지운다. 스케줄러가 아니라 운영 명령으로 실행한다. */
-    public suspend fun cleanup(): CleanupReport {
-        val now = clock.instant()
-        return CleanupReport(rooms.deleteExpired(now), anonUsers.deleteInactive(now.minus(ANON_RETENTION)))
-    }
-
     // ---- 내부 ----
 
     private sealed interface Caller {
@@ -352,6 +345,5 @@ public class RoomService(
     private companion object {
         const val MIN_PEOPLE = 2
         const val MAX_PEOPLE = 4
-        val ANON_RETENTION: Duration = Duration.ofDays(90)
     }
 }

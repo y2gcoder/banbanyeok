@@ -25,6 +25,7 @@ dependencies {
 
     testImplementation(testFixtures(project(":server:room")))
     testImplementation(testFixtures(project(":server:artifact")))
+    testImplementation(testFixtures(project(":server:recommendation")))
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.openapi.request.validator)
     "integrationTestImplementation"(libs.ktor.server.test.host)
@@ -65,3 +66,6 @@ tasks.named<Test>("test") {
             .asFile.path,
     )
 }
+
+// 로컬 실행은 저장소 루트를 작업 디렉토리로 써서 data/artifacts/dev 상대 경로가 맞는다.
+tasks.named<JavaExec>("run") { workingDir = rootProject.projectDir }
