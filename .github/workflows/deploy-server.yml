@@ -1,0 +1,194 @@
+# 서버 배포(Cloud Run, 서울). 순서:
+#   WIF 인증 → 서버·마이그레이션 이미지 빌드(AppCDS 포함)·푸시 → migrate Job 실행·대기 → 산출물 GCS 발행(manifest 마지막)
+#   → 후보 리비전 배포(트래픽 0, 태그) → 스모크 → 트래픽 전환 → cleanup Job 갱신 → 공개 URL 확인
+# 비밀은 이 워크플로에 없다: DB 비밀번호와 토큰 pepper는 Secret Manager 참조로 런타임이 직접 읽는다.
+# 사전 조건: infra/gcp/bootstrap.sh 실행, 저장소 변수 DATABASE_URL·DATABASE_USER(docs/setup/p8a-notes.md).
+name: deploy-server
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'          # server/db/changelog 포함
+      - 'contracts/**'
+      - 'shared/**'
+      - 'build-logic/**'
+      - 'gradle/**'
+      - 'data/artifacts/dev/**'   # 새 데이터 발행 = 새 리비전(docs/setup/p3-notes.md 8절 1번)
+      - 'pipeline/src/main/kotlin/app/banbanyeok/pipeline/ReleaseStage.kt'
+      - 'scripts/publish-artifacts.sh'
+      - 'scripts/smoke-server.sh'
+      - 'scripts/build-server-image.sh'
+      - '.github/workflows/deploy-server.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+# 배포는 한 번에 하나만. 진행 중인 배포를 취소하지 않고 기다린다(마이그레이션 도중 중단 방지).
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+env:
+  CLOUDSDK_CORE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+  CLOUDSDK_CORE_DISABLE_PROMPTS: '1'
+  PROJECT: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION }}
+  ARTIFACT_BUCKET: ${{ vars.GCP_ARTIFACT_BUCKET }}
+  DATABASE_URL: ${{ vars.DATABASE_URL }}
+  DATABASE_USER: ${{ vars.DATABASE_USER }}
+  # 웹이 같은 출처 rewrite로 서버를 부르면 브라우저 CORS가 필요 없다. 값이 없으면 예약 TLD(.invalid)로 두어 허용 오리진이 없게 한다.
+  CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS || 'https://web.banbanyeok.invalid' }}
+  # Cloud Run 앞단(GFE)이 붙인 X-Forwarded-For의 마지막 값(직접 연결한 쪽 IP)을 속도 제한 키로 쓴다(docs/setup/p8a-notes.md 8절).
+  RATE_LIMIT_CLIENT_IP_SOURCE: ${{ vars.RATE_LIMIT_CLIENT_IP_SOURCE || 'xff-last' }}
+  SERVICE: server
+  RUNTIME_SA_NAME: server-runtime
+  MIGRATOR_SA_NAME: db-migrator
+  AR_REPO: server
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: 필요한 변수 확인
+        env:
+          WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          DEPLOY_SA: ${{ vars.GCP_DEPLOY_SA }}
+        run: |
+          missing=0
+          for name in PROJECT REGION ARTIFACT_BUCKET DATABASE_URL DATABASE_USER WIF_PROVIDER DEPLOY_SA; do
+            if [ -z "${!name}" ]; then echo "::error::저장소 변수가 없습니다: $name"; missing=1; fi
+          done
+          exit "$missing"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # JDK는 mise.toml이 단일 출처다(로컬과 CI가 같은 버전).
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: java
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # 키 없는 인증(OIDC → 서비스 계정 가장). github-deployer에는 리소스 단위 최소 권한만 있다(bootstrap.sh).
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - name: 이미지 이름과 실행 환경 파일 준비
+        run: |
+          registry="${REGION}-docker.pkg.dev/${PROJECT}/${AR_REPO}"
+          {
+            echo "SERVER_IMAGE=${registry}/server:${GITHUB_SHA}"
+            echo "MIGRATE_IMAGE=${registry}/migrate:${GITHUB_SHA}"
+            echo "RUNTIME_SA=${RUNTIME_SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
+            echo "MIGRATOR_SA=${MIGRATOR_SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
+          } >> "$GITHUB_ENV"
+          mkdir -p build
+          # 비밀이 아닌 설정만 환경 변수로. 비밀번호·pepper는 아래 --set-secrets(Secret Manager 참조).
+          jq -n \
+            --arg bucket "$ARTIFACT_BUCKET" --arg url "$DATABASE_URL" --arg user "$DATABASE_USER" \
+            --arg cors "$CORS_ALLOWED_ORIGINS" --arg ip "$RATE_LIMIT_CLIENT_IP_SOURCE" \
+            '{APP_PROFILE: "prod", ARTIFACT_STORE: "gcs", ARTIFACT_GCS_BUCKET: $bucket,
+              DATABASE_URL: $url, DATABASE_USER: $user, CORS_ALLOWED_ORIGINS: $cors,
+              RATE_LIMIT_CLIENT_IP_SOURCE: $ip}' > build/server-env.json
+          jq -n --arg url "$DATABASE_URL" --arg user "$DATABASE_USER" \
+            '{LIQUIBASE_COMMAND_URL: $url, LIQUIBASE_COMMAND_USERNAME: $user}' > build/migrate-env.json
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: 서버 이미지 빌드(AppCDS 학습 포함)·푸시
+        run: |
+          bash scripts/build-server-image.sh "$SERVER_IMAGE"
+          docker push "$SERVER_IMAGE"
+
+      - name: 마이그레이션 이미지 빌드·푸시
+        run: |
+          docker build -f server/db/Dockerfile -t "$MIGRATE_IMAGE" .
+          docker push "$MIGRATE_IMAGE"
+
+      # 배포 순서: migrate 성공 → 앱 배포. changeset은 이전 리비전과 호환되게(추가 위주) 쓴다(docs/setup/p8a-notes.md).
+      - name: migrate Job 갱신·실행·대기
+        run: |
+          gcloud run jobs deploy migrate \
+            --image "$MIGRATE_IMAGE" --region "$REGION" --service-account "$MIGRATOR_SA" \
+            --env-vars-file build/migrate-env.json \
+            --set-secrets "LIQUIBASE_COMMAND_PASSWORD=database-password:latest" \
+            --cpu 1 --memory 1Gi --max-retries 0 --task-timeout 10m --quiet
+          gcloud run jobs execute migrate --region "$REGION" --wait
+
+      # 산출물: 해시 이름 파일을 먼저, manifest를 마지막에 올린다. 서버는 시작할 때 manifest를 읽는다.
+      - name: 산출물 발행(GCS)
+        run: |
+          ./gradlew :pipeline:run --args="stage-release build/release" --console=plain -q
+          echo "DATA_VERSION=$(jq -r .dataVersion build/release/manifest.json)" >> "$GITHUB_ENV"
+          bash scripts/publish-artifacts.sh "$ARTIFACT_BUCKET" build/release 10
+
+      # 후보 리비전: 트래픽 0, 태그 URL로만 접근. 스모크가 통과해야 전환한다.
+      # 사양 근거(docs/setup/p8a-notes.md): 1 vCPU·512Mi(JVM -Xmx256m + 메타스페이스·CDS·Netty), 동시성 40,
+      # 최대 2대(DB 풀 4×2=8 연결, 무료 Supabase 세션 풀러 한도 안), min 0, startup CPU boost.
+      - name: 후보 리비전 배포(트래픽 0)
+        id: deploy
+        run: |
+          previous="$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json \
+            | jq -r '[.status.traffic[]? | select(.percent == 100) | .revisionName] | first // ""')"
+          echo "previous=${previous}" >> "$GITHUB_OUTPUT"
+          gcloud run deploy "$SERVICE" \
+            --image "$SERVER_IMAGE" --region "$REGION" --service-account "$RUNTIME_SA" \
+            --min-instances 0 --max-instances 2 --cpu 1 --memory 512Mi --concurrency 40 --timeout 30s \
+            --cpu-boost --execution-environment gen2 --ingress all \
+            --env-vars-file build/server-env.json \
+            --set-secrets "DATABASE_PASSWORD=database-password:latest,TOKEN_PEPPER=token-pepper:latest" \
+            --no-traffic --tag candidate --quiet
+          candidate="$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json \
+            | jq -r '.status.traffic[] | select(.tag == "candidate") | .url')"
+          test -n "$candidate"
+          echo "candidate=${candidate}" >> "$GITHUB_OUTPUT"
+
+      - name: 후보 스모크(healthz·manifest·추천·DB 읽기/쓰기)
+        env:
+          CANDIDATE_URL: ${{ steps.deploy.outputs.candidate }}
+        run: bash scripts/smoke-server.sh "$CANDIDATE_URL" "$DATA_VERSION"
+
+      - name: 트래픽 전환
+        id: promote
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-latest
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --remove-tags candidate
+
+      - name: 공개 URL 확인
+        id: public
+        run: |
+          url="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+          bash scripts/smoke-server.sh "$url" "$DATA_VERSION"
+
+      # 전환 뒤 확인이 실패하면 직전 리비전으로 되돌린다.
+      - name: 되돌리기(전환 뒤 실패 시)
+        if: failure() && steps.promote.outcome == 'success' && steps.deploy.outputs.previous != ''
+        env:
+          PREVIOUS_REVISION: ${{ steps.deploy.outputs.previous }}
+        run: |
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-revisions "${PREVIOUS_REVISION}=100"
+
+      # 서버와 같은 이미지에 인자 cleanup. 매일 04:00 KST Cloud Scheduler가 실행하고, DB를 실제로 조회해 무료 DB를 깨운다.
+      - name: cleanup Job 갱신
+        run: |
+          gcloud run jobs deploy cleanup \
+            --image "$SERVER_IMAGE" --args cleanup --region "$REGION" --service-account "$RUNTIME_SA" \
+            --env-vars-file build/server-env.json \
+            --set-secrets "DATABASE_PASSWORD=database-password:latest,TOKEN_PEPPER=token-pepper:latest" \
+            --cpu 1 --memory 512Mi --max-retries 1 --task-timeout 10m --quiet
+
+      - name: 요약
+        if: success()
+        env:
+          SERVICE_URL: ${{ steps.public.outputs.url }}
+        run: |
+          {
+            echo "### 서버 배포 완료"
+            echo "- 서비스 URL: ${SERVICE_URL}"
+            echo "- 이미지: \`${SERVER_IMAGE}\`"
+            echo "- dataVersion: \`${DATA_VERSION}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,64 @@
+# 운영 DB 백업: 주 1회(월요일 03:17 KST) + 수동. pg_dump(Postgres 17 클라이언트) → 비공개 백업 버킷(30일 후 자동 삭제).
+# 비밀번호는 Secret Manager에서 읽어 한 스텝 안의 셸 변수로만 쓰고 출력하지 않는다(Actions 로그는 값을 가린다).
+# 선택 근거와 복원 절차: docs/setup/p8a-notes.md. 사전 조건: infra/gcp/bootstrap.sh(db-backup 계정, 백업 버킷).
+name: db-backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 18 * * 0'   # UTC 일요일 18:17 = KST 월요일 03:17
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+env:
+  CLOUDSDK_CORE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+  CLOUDSDK_CORE_DISABLE_PROMPTS: '1'
+  DATABASE_URL: ${{ vars.DATABASE_URL }}
+  DATABASE_USER: ${{ vars.DATABASE_USER }}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 필요한 변수 확인
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+        run: |
+          missing=0
+          for name in PROJECT WIF_PROVIDER DATABASE_URL DATABASE_USER; do
+            if [ -z "${!name}" ]; then echo "::error::저장소 변수가 없습니다: $name"; missing=1; fi
+          done
+          exit "$missing"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # 배포 계정과 분리한 전용 계정(db-backup): DB 비밀번호 읽기 + 백업 버킷 쓰기·읽기만 가능하다.
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: db-backup@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      - name: 덤프·검증·업로드
+        env:
+          BACKUP_BUCKET: ${{ vars.GCP_PROJECT_ID }}-backups
+        run: |
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          file="build/backup/banbanyeok-${stamp}.dump"
+          mkdir -p build/backup
+          # 비밀번호: 이 스텝의 셸 변수에만 둔다. 환경 변수 이름만 docker에 넘기고 값은 명령행에 나오지 않는다.
+          PGPASSWORD="$(gcloud secrets versions access latest --secret=database-password)"
+          echo "::add-mask::${PGPASSWORD}"
+          export PGPASSWORD
+          bash scripts/db-backup.sh "$file"
+          unset PGPASSWORD
+          gcloud storage cp "$file" "gs://${BACKUP_BUCKET}/db/$(basename "$file")"
+          echo "### DB 백업" >> "$GITHUB_STEP_SUMMARY"
+          gcloud storage ls -l "gs://${BACKUP_BUCKET}/db/$(basename "$file")" | head -n1 | awk '{print "- 업로드: " $1 " bytes, " $2}' >> "$GITHUB_STEP_SUMMARY"
