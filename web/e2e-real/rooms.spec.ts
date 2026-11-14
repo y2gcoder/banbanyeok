@@ -57,7 +57,7 @@ async function newFriend(browser: Browser, testInfo: TestInfo) {
 }
 
 /** 방장이 방을 만든다(이름 "민수", 강남, 숨기지 않음). 방 ID를 돌려준다. */
-async function createRoom(page: Page, options: { shot?: boolean } = {}): Promise<string> {
+async function createRoom(page: Page, options: { shot?: boolean; expectedCount?: number } = {}): Promise<string> {
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
   await page.goto("/");
   if (options.shot) await shot(page, "0-home");
@@ -69,6 +69,10 @@ async function createRoom(page: Page, options: { shot?: boolean } = {}): Promise
   if (options.shot) {
     await page.getByRole("heading", { name: /방 만들기/ }).click(); // 자동완성 목록을 닫고 찍는다
     await shot(page, "1-create");
+  }
+  if (options.expectedCount) {
+    await page.getByText("약속일·인원 정하기 (선택)").click();
+    await page.getByRole("button", { name: `${options.expectedCount}명`, exact: true }).click();
   }
   await page.getByRole("button", { name: "방 만들기" }).click();
   await expect(page).toHaveURL(ROOM_URL);
@@ -217,6 +221,18 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await expect(friendPeople.getByText("(나)")).toHaveCount(0);
   expect(await storedRecord(friend.page, hostRoom)).toBeNull();
 
+  // 같은 입력(처음 참여할 때와 같은 홍대입구·숨김)으로 다시 참여하면 새 토큰을 받는다. 서버는 같은 Idempotency-Key의 성공 응답을
+  // 10분간 재생하므로, 키를 새로 만들지 않으면 이미 지워진 항목의 죽은 토큰을 받아 "(나)"가 나타나지 않는다.
+  await pickStation(friend.page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
+  await friend.page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
+  await friend.page.getByRole("button", { name: "참여하기" }).click();
+  await expect(friendPeople.getByText("(나)")).toBeVisible();
+  await expect(friendPeople.getByText("홍대입구 · 나에게만 보여요")).toBeVisible();
+  await expect(friend.page.getByRole("button", { name: "수정 내 항목" })).toBeVisible();
+  await friend.page.reload();
+  await expect(friendPeople.getByText("(나)")).toBeVisible(); // 새로 받은 토큰이 저장돼 있다
+  expect((await storedRecord(friend.page, hostRoom))?.participantToken?.length).toBeGreaterThan(20);
+
   // 방장: 방 삭제 → 홈으로, 이 기기의 토큰이 지워지고 링크는 "없는 방".
   await page.reload();
   await page.getByRole("button", { name: "방 삭제 방 전체" }).click();
@@ -234,7 +250,7 @@ test("잠김·정원 초과: 새로 들어올 수 없고, 이미 들어온 사�
   request,
   browser,
 }, testInfo) => {
-  const roomId = await createRoom(page);
+  const roomId = await createRoom(page, { expectedCount: 4 });
   const url = new URL(page.url()).pathname;
 
   // 방장이 참여를 잠그면 새 사람은 들어올 수 없다.
@@ -261,12 +277,18 @@ test("잠김·정원 초과: 새로 들어올 수 없고, 이미 들어온 사�
   await page.reload();
   const hostPeople = page.getByRole("region", { name: "들어온 사람" });
   await expect(hostPeople.getByText("4/4명")).toBeVisible();
+  // 정한 예상 인원이 차서 잠긴 방은 잠금 버튼 대신 이유를 보여 준다(버튼을 눌러도 서버는 계속 잠김으로 답한다).
+  await expect(page.getByText("정한 예상 인원이 다 차서 잠겨 있어요")).toBeVisible();
+  await expect(page.getByRole("button", { name: "잠금 풀기" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "참여 잠그기" })).toHaveCount(0);
   await hostPeople
     .getByRole("button", { name: /내보내기/ })
     .first()
     .click();
   await page.getByRole("button", { name: "내보내기", exact: true }).click();
   await expect(hostPeople.getByText("3/4명")).toBeVisible();
+  // 자리가 생기면(정원 미달) 다시 방장이 잠글 수 있다.
+  await expect(page.getByRole("button", { name: "참여 잠그기" })).toBeVisible();
   await page.getByRole("button", { name: "방 삭제 방 전체" }).click();
   await page.getByRole("button", { name: "방 지우기" }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -288,8 +310,8 @@ test("없는 방·형식이 틀린 주소·만료 기록 정리", async ({ page 
 
   // 만료된 방의 토큰은 사이트를 열 때 지워지고, 살아 있는 방의 기록과 다른 키는 그대로다.
   await page.evaluate(() => {
-    const expired = { v: 1, participantToken: "x", expiresAt: "2020-01-01T00:00:00Z" };
-    const alive = { v: 1, participantToken: "y", expiresAt: "2999-01-01T00:00:00Z" };
+    const expired = { v: 1, participantToken: "x", keepUntil: "2020-01-01T00:00:00Z" };
+    const alive = { v: 1, participantToken: "y", keepUntil: "2999-01-01T00:00:00Z" };
     window.localStorage.setItem("bby.room.bbbbbbbbbb", JSON.stringify(expired));
     window.localStorage.setItem("bby.room.cccccccccc", JSON.stringify(alive));
     window.localStorage.setItem("banbanyeok:me", JSON.stringify({ code: "03v", nickname: "" }));
@@ -300,23 +322,17 @@ test("없는 방·형식이 틀린 주소·만료 기록 정리", async ({ page 
   expect(await page.evaluate(() => window.localStorage.getItem("banbanyeok:me"))).not.toBeNull();
 });
 
-test("콜드스타트: 열리자마자 서버를 깨우고, 4초 늦어도 안내 문구가 단계적으로 바뀐다", async ({ page, request }) => {
+test("콜드스타트: 서버가 4초 늦어도 설명이 먼저 보이고 안내 문구가 단계적으로 바뀐다", async ({ page, request }) => {
   const created = await request.post("/api/v1/rooms", {
     data: { mode: "fair", host: { originCode: GANGNAM, hidden: false, nickname: "민수" } },
   });
   const { roomId } = (await created.json()) as { roomId: string };
 
-  const order: string[] = [];
   await page.route("**/api/v1/rooms/**", async (route) => {
     if (route.request().method() === "GET" && route.request().url().endsWith(`/rooms/${roomId}`)) {
-      order.push("room-request");
       await new Promise((done) => setTimeout(done, 4000)); // 콜드스타트 흉내
-      order.push("room-response");
     }
     await route.continue();
-  });
-  page.on("request", (req) => {
-    if (req.url().endsWith("/api/healthz")) order.push("healthz");
   });
 
   await page.goto(`/r/${roomId}`);
@@ -326,8 +342,6 @@ test("콜드스타트: 열리자마자 서버를 깨우고, 4초 늦어도 안�
   await expect(page.getByText(/서버를 깨우는 중이에요/)).toBeVisible({ timeout: 3500 });
   await shot(page, "12-loading-slow");
   await expect(page.getByRole("heading", { name: "나도 출발역 넣기" })).toBeVisible({ timeout: 8000 });
-  expect(order.indexOf("healthz")).toBeGreaterThanOrEqual(0);
-  expect(order.indexOf("healthz")).toBeLessThan(order.indexOf("room-response"));
 
   await request.delete(`/api/v1/rooms/${roomId}`).catch(() => undefined);
 });

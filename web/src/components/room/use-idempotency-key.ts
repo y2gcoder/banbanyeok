@@ -1,17 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { newIdempotencyKey } from "@/lib/api/rooms";
+import { createKeyTracker, type KeyTracker } from "@/lib/room/idempotency";
 
-/**
- * 방 만들기·참여의 `Idempotency-Key`. **같은 내용을 다시 보내는 재시도**(두 번 누름, 네트워크 재시도)에는 같은 키를 써서
- * 서버가 하나만 만들게 하고, 내용이 바뀌면 새 키를 쓴다(고친 입력이 이전 응답으로 재생되지 않게).
- */
-export function useIdempotencyKey(): (body: unknown) => string {
-  const last = useRef<{ fingerprint: string; key: string } | null>(null);
-  return (body) => {
-    const fingerprint = JSON.stringify(body);
-    if (last.current?.fingerprint !== fingerprint) last.current = { fingerprint, key: newIdempotencyKey() };
-    return last.current.key;
-  };
+/** 화면 수명 동안 같은 [KeyTracker]를 쓴다. 규칙은 `lib/room/idempotency.ts`. */
+export function useIdempotencyKey(): KeyTracker {
+  const tracker = useRef<KeyTracker | null>(null);
+  tracker.current ??= createKeyTracker();
+  return tracker.current;
 }

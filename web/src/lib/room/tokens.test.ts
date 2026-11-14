@@ -2,19 +2,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   canStoreRoomTokens,
-  dropParticipantToken,
+  keepUntilFrom,
   loadRoomRecord,
-  patchRoomRecord,
   pruneExpiredRooms,
   ROOM_KEY_PREFIX,
   removeRoomRecord,
   roomKey,
   saveRoomRecord,
+  withoutParticipant,
+  writeRoomRecord,
 } from "./tokens";
 
 const ROOM = "qt7yvmsht3";
+const DAY = 86_400_000;
 const NOW = Date.parse("2026-11-15T00:00:00Z");
-const future = "2026-11-20T00:00:00Z";
+const keepUntil = keepUntilFrom(NOW); // 2026-12-15
 const past = "2026-11-14T00:00:00Z";
 
 beforeEach(() => window.localStorage.clear());
@@ -22,29 +24,41 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("방 토큰 기기 저장", () => {
   it("방 ID별 키 하나에 저장하고 대소문자 구별 없이 같은 기록을 읽는다", () => {
-    saveRoomRecord(ROOM, { hostToken: "h", participantToken: "p", participantId: "pid", expiresAt: future });
+    saveRoomRecord(ROOM, { hostToken: "h", participantToken: "p", participantId: "pid", keepUntil });
     expect(roomKey("QT7YVMSHT3")).toBe(`${ROOM_KEY_PREFIX}${ROOM}`);
     expect(loadRoomRecord("QT7YVMSHT3", NOW)).toMatchObject({ v: 1, hostToken: "h", participantToken: "p" });
     expect(window.localStorage.length).toBe(1);
   });
 
-  it("만료된 기록은 읽을 때 없는 것으로 보이고 그 자리에서 지워진다", () => {
-    saveRoomRecord(ROOM, { participantToken: "p", expiresAt: past });
-    expect(loadRoomRecord(ROOM, NOW)).toBeNull();
+  it("keepUntil은 처음 저장한 시각 + 30일(방 최대 수명)", () => {
+    expect(Date.parse(keepUntil) - NOW).toBe(30 * DAY);
+  });
+
+  it("살아 있는 방의 토큰을 기기가 먼저 지우지 않는다: 서버는 활동마다 만료를 7일씩 미루므로, 8일째·29일째에 열어도 그대로다", () => {
+    saveRoomRecord(ROOM, { hostToken: "h", participantToken: "p", participantId: "pid", keepUntil });
+    for (const days of [8, 15, 29]) {
+      expect(pruneExpiredRooms(NOW + days * DAY)).toBe(0);
+      expect(loadRoomRecord(ROOM, NOW + days * DAY)?.hostToken).toBe("h");
+    }
+  });
+
+  it("최대 수명(30일)이 지난 기록만 읽을 때 없는 것으로 보이고 그 자리에서 지워진다", () => {
+    saveRoomRecord(ROOM, { participantToken: "p", keepUntil });
+    expect(loadRoomRecord(ROOM, NOW + 30 * DAY)).toBeNull();
     expect(window.localStorage.getItem(roomKey(ROOM))).toBeNull();
   });
 
-  it("깨진 기록(JSON 아님·형식 다름)은 null이고 지운다", () => {
+  it("깨진 기록(JSON 아님·형식 다름·옛 expiresAt 형식)은 null이고 지운다", () => {
     window.localStorage.setItem(roomKey(ROOM), "{not json");
     expect(loadRoomRecord(ROOM, NOW)).toBeNull();
     expect(window.localStorage.getItem(roomKey(ROOM))).toBeNull();
-    window.localStorage.setItem(roomKey(ROOM), JSON.stringify({ v: 2, expiresAt: future }));
+    window.localStorage.setItem(roomKey(ROOM), JSON.stringify({ v: 1, participantToken: "p", expiresAt: keepUntil }));
     expect(loadRoomRecord(ROOM, NOW)).toBeNull();
   });
 
-  it("pruneExpiredRooms는 만료·깨진 방 기록만 지우고 다른 키와 살아 있는 방은 둔다", () => {
-    saveRoomRecord("aaaaaaaaaa", { participantToken: "p1", expiresAt: past });
-    saveRoomRecord("bbbbbbbbbb", { participantToken: "p2", expiresAt: future });
+  it("pruneExpiredRooms는 최대 수명이 지난·깨진 방 기록만 지우고 다른 키와 살아 있는 방은 둔다", () => {
+    saveRoomRecord("aaaaaaaaaa", { participantToken: "p1", keepUntil: past });
+    saveRoomRecord("bbbbbbbbbb", { participantToken: "p2", keepUntil });
     window.localStorage.setItem(`${ROOM_KEY_PREFIX}cccccccccc`, "garbage");
     window.localStorage.setItem("banbanyeok:me", '{"code":"03v","nickname":""}');
     window.localStorage.setItem("bby.analytics.consent", "{}");
@@ -56,27 +70,28 @@ describe("방 토큰 기기 저장", () => {
     expect(window.localStorage.getItem("bby.analytics.consent")).not.toBeNull();
   });
 
-  it("patchRoomRecord는 일부만 바꾸고 undefined인 키는 지운다", () => {
-    saveRoomRecord(ROOM, { hostToken: "h", participantToken: "p", participantId: "pid", expiresAt: future });
-    const next = patchRoomRecord(ROOM, { expiresAt: "2026-11-25T00:00:00Z", participantToken: undefined });
-    expect(next).toMatchObject({ hostToken: "h", participantId: "pid", expiresAt: "2026-11-25T00:00:00Z" });
-    expect(next).not.toHaveProperty("participantToken");
-    expect(patchRoomRecord("zzzzzzzzzz", { expiresAt: future })).toBeNull();
+  it("withoutParticipant: 방장이면 방장 기록을 남기고, 방장이 아니면 null", () => {
+    const base = { v: 1 as const, participantToken: "p", participantId: "pid", keepUntil };
+    expect(withoutParticipant({ ...base, hostToken: "h", expectedCount: 3 })).toEqual({
+      v: 1,
+      hostToken: "h",
+      keepUntil,
+      expectedCount: 3,
+    });
+    expect(withoutParticipant(base)).toBeNull();
   });
 
-  it("dropParticipantToken: 방장이면 기록을 남기고, 방장이 아니면 기록 전체를 지운다", () => {
-    saveRoomRecord(ROOM, { hostToken: "h", participantToken: "p", participantId: "pid", expiresAt: future });
-    expect(dropParticipantToken(ROOM)).toMatchObject({ hostToken: "h" });
-    expect(loadRoomRecord(ROOM)?.participantToken).toBeUndefined();
-    saveRoomRecord("bbbbbbbbbb", { participantToken: "p", participantId: "pid", expiresAt: future });
-    expect(dropParticipantToken("bbbbbbbbbb")).toBeNull();
-    expect(window.localStorage.getItem(roomKey("bbbbbbbbbb"))).toBeNull();
+  it("writeRoomRecord: 저장하거나 null이면 지운다", () => {
+    writeRoomRecord(ROOM, { v: 1, participantToken: "p", keepUntil });
+    expect(loadRoomRecord(ROOM, NOW)?.participantToken).toBe("p");
+    writeRoomRecord(ROOM, null);
+    expect(loadRoomRecord(ROOM, NOW)).toBeNull();
   });
 
   it("removeRoomRecord", () => {
-    saveRoomRecord(ROOM, { participantToken: "p", expiresAt: future });
+    saveRoomRecord(ROOM, { participantToken: "p", keepUntil });
     removeRoomRecord(ROOM);
-    expect(loadRoomRecord(ROOM)).toBeNull();
+    expect(loadRoomRecord(ROOM, NOW)).toBeNull();
   });
 
   it("저장소가 막혀 있어도 던지지 않는다(저장·읽기·정리 모두 조용히 실패)", () => {
@@ -86,7 +101,8 @@ describe("방 토큰 기기 저장", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new DOMException("blocked", "SecurityError");
     });
-    expect(() => saveRoomRecord(ROOM, { participantToken: "p", expiresAt: future })).not.toThrow();
+    expect(() => saveRoomRecord(ROOM, { participantToken: "p", keepUntil })).not.toThrow();
+    expect(() => writeRoomRecord(ROOM, { v: 1, participantToken: "p", keepUntil })).not.toThrow();
     expect(loadRoomRecord(ROOM)).toBeNull();
     expect(pruneExpiredRooms()).toBe(0);
     expect(canStoreRoomTokens()).toBe(false);

@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { modeLabel } from "@/components/result/mode-tabs";
 import { ShareActions } from "@/components/share/share-actions";
 import { track } from "@/lib/analytics";
-import { warmUpServer } from "@/lib/api/client";
 import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
@@ -18,12 +17,12 @@ import type { ParticipantFormValue } from "@/lib/room/input";
 import { roomQueryOptions } from "@/lib/room/queries";
 import {
   canStoreRoomTokens,
-  dropParticipantToken,
+  keepUntilFrom,
   loadRoomRecord,
-  patchRoomRecord,
   type RoomRecord,
   removeRoomRecord,
-  saveRoomRecord,
+  withoutParticipant,
+  writeRoomRecord,
 } from "@/lib/room/tokens";
 import { hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
@@ -37,6 +36,8 @@ import { useIdempotencyKey } from "./use-idempotency-key";
 
 const SHARE_TITLE = "같이 만날 역 정해요";
 const SHARE_TEXT = "각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요. 출발역은 숨길 수도 있어요.";
+
+const FULL_LOCK_REASON = "정한 예상 인원이 다 차서 잠겨 있어요. 누가 나가면 자동으로 다시 열려요.";
 
 const emptyValue = (): ParticipantFormValue => ({ nickname: "", station: null, hidden: false });
 
@@ -63,7 +64,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const roomId = normalizeRoomId(rawRoomId);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const keyFor = useIdempotencyKey();
+  const keys = useIdempotencyKey();
   // undefined = 아직 기기 저장소를 읽지 않음(서버 렌더링·수화 직후), null = 기록 없음
   const [record, setRecord] = useState<RoomRecord | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
@@ -71,9 +72,18 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const [storable, setStorable] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  // 화면의 기록(상태)과 기기 저장소를 같이 바꾼다. 저장소가 막혀 있어도 상태에는 남아 이번 방문 동안은 방금 받은 토큰을 쓴다
+  // (참여는 성공했는데 실패처럼 보여 다시 제출하면 중복 참가자가 생기는 일을 막는다).
+  const commit = useCallback(
+    (next: RoomRecord | null) => {
+      setRecord(next);
+      writeRoomRecord(roomId, next);
+    },
+    [roomId],
+  );
+
   useEffect(() => {
-    // 열리자마자 서버를 깨운다(Cloud Run min 0 콜드스타트 첫 요청 p50 3.7초).
-    void warmUpServer();
+    // 방 조회는 이 효과 다음 렌더에서 바로 나간다(그 요청이 서버를 깨운다). 따로 미리 깨우지 않는다.
     setRecord(loadRoomRecord(roomId));
     setJoinValue(rememberedValue());
     setStorable(canStoreRoomTokens());
@@ -84,7 +94,8 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const query = useQuery({ ...roomQueryOptions(roomId, token, participantId), enabled: record !== undefined });
   const room = query.data;
 
-  // 방 응답으로 기기 기록을 맞춘다: 만료 시각 갱신, 없어진 방이면 기록 삭제, 내보내졌으면 참여자 토큰 정리.
+  // 방 응답으로 기기 기록을 맞춘다: 서버가 방이 없다고 하면 기록 삭제, 내보내졌으면 참여자 토큰 정리.
+  // 저장해 둔 시각만 보고 지우지 않는다(서버는 활동마다 만료를 미룬다).
   useEffect(() => {
     if (record === undefined) return;
     if (query.isError && isRoomGone(query.error)) {
@@ -93,11 +104,10 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     }
     if (!room || query.isPlaceholderData || !record) return;
     if (hasStaleParticipantToken(room, record)) {
-      setRecord(dropParticipantToken(roomId));
-      return;
+      commit(withoutParticipant(record));
+      keys.renew(); // 같은 입력으로 다시 참여할 때 지난 응답(죽은 토큰)을 재생받지 않게
     }
-    if (record.expiresAt !== room.expiresAt) setRecord(patchRoomRecord(roomId, { expiresAt: room.expiresAt }));
-  }, [record, room, query.isError, query.error, query.isPlaceholderData, roomId]);
+  }, [record, room, query.isError, query.error, query.isPlaceholderData, roomId, commit, keys]);
 
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["room", roomId] });
@@ -110,16 +120,17 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   };
 
   const join = useMutation({
-    mutationFn: (input: ParticipantInput) => joinRoom(roomId, input, keyFor(input)),
+    mutationFn: (input: ParticipantInput) => joinRoom(roomId, input, keys.keyFor(input)),
     onSuccess: (joined, input) => {
-      const expiresAt = room?.expiresAt ?? new Date(Date.now() + 7 * 86_400_000).toISOString();
-      saveRoomRecord(roomId, {
+      commit({
+        v: 1,
         ...(record?.hostToken ? { hostToken: record.hostToken } : {}),
         participantToken: joined.participantToken,
         participantId: joined.participantId,
-        expiresAt,
+        keepUntil: record?.keepUntil ?? keepUntilFrom(),
+        ...(record?.expectedCount ? { expectedCount: record.expectedCount } : {}),
       });
-      setRecord(loadRoomRecord(roomId));
+      keys.renew();
       track("participant_joined", { hidden: input.hidden === true });
       refresh();
     },
@@ -150,7 +161,8 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       return removeParticipant(roomId, participantId, token);
     },
     onSuccess: () => {
-      setRecord(dropParticipantToken(roomId));
+      if (record) commit(withoutParticipant(record));
+      keys.renew();
       setEditing(false);
       refresh();
     },
@@ -172,7 +184,11 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       return updateRoom(roomId, record.hostToken, { locked });
     },
     // 방장 토큰으로 받은 방 응답에는 "내 항목" 표시(isSelf)가 없다. 캐시에 넣지 않고 내 토큰으로 다시 불러온다.
-    onSuccess: refresh,
+    onSuccess: (updated, locked) => {
+      // 정한 인원이 차서 잠긴 방은 잠금을 풀어도 서버가 계속 잠김으로 답한다(정원 도달도 locked다).
+      if (!locked && updated.locked) setActionError(FULL_LOCK_REASON);
+      refresh();
+    },
     onError: reportMutationError,
   });
 
@@ -214,6 +230,9 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const today = todayInSeoul();
   const meetingDay = isMeetingDayReached(room.meetingDate, today) || !room.meetingDate;
   const enough = room.participants.length >= 2;
+  // 방장이 정한 예상 인원이 찼으면 잠금 버튼으로는 열 수 없다(서버가 정원 도달을 locked로 돌려준다).
+  const fullByCount =
+    room.locked && Boolean(record?.expectedCount) && room.participants.length >= (record?.expectedCount ?? 5);
   const busy = leave.isPending || kick.isPending || lock.isPending || remove.isPending;
 
   return (
@@ -322,8 +341,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           participantId={participantId}
           isHost={isHost}
           onResultSeen={() => {
-            if (record && !record.resultSeenAt)
-              setRecord(patchRoomRecord(roomId, { resultSeenAt: new Date().toISOString() }));
+            if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
           }}
           renderAfter={(view) =>
             joined && token && meetingDay ? (
@@ -334,7 +352,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
                 resultSeenAt={record?.resultSeenAt}
                 answered={Boolean(record?.outcomeAnswered)}
                 collapsed={!room.meetingDate}
-                onAnswered={() => setRecord(patchRoomRecord(roomId, { outcomeAnswered: true }))}
+                onAnswered={() => record && commit({ ...record, outcomeAnswered: true })}
               />
             ) : null
           }
@@ -348,6 +366,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       {isHost ? (
         <HostControls
           locked={room.locked}
+          lockedByCount={fullByCount}
           busy={busy}
           error={actionError}
           onToggleLock={(locked) => {

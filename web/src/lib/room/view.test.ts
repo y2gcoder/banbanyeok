@@ -60,7 +60,7 @@ describe("방 화면 값", () => {
 
   it("기록에 참여자 토큰이 있는데 내 항목이 방에 없으면 낡은 토큰", () => {
     const a = person({ participantId: "a" });
-    const record = { v: 1 as const, participantToken: "t", expiresAt: "2026-11-22T00:00:00Z" };
+    const record = { v: 1 as const, participantToken: "t", keepUntil: "2026-12-15T00:00:00Z" };
     expect(hasStaleParticipantToken(room([a]), record)).toBe(true);
     expect(hasStaleParticipantToken(room([person({ participantId: "m", isSelf: true })]), record)).toBe(false);
     expect(hasStaleParticipantToken(room([a]), { ...record, participantToken: undefined })).toBe(false);

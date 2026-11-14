@@ -15,7 +15,7 @@ import { dayAfter, MAX_MEETING_DAYS, todayInSeoul } from "@/lib/room/dates";
 import { roomErrorMessage } from "@/lib/room/errors";
 import { roomPath } from "@/lib/room/id";
 import { type ParticipantFormValue, toCreateRoomRequest } from "@/lib/room/input";
-import { canStoreRoomTokens, saveRoomRecord } from "@/lib/room/tokens";
+import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
 import { stationByCode } from "@/lib/stations";
 import { cn } from "@/lib/utils";
 import { ParticipantFields } from "./participant-fields";
@@ -35,7 +35,7 @@ const COUNTS = [2, 3, 4] as const;
 export function CreateRoomForm() {
   const router = useRouter();
   const id = useId();
-  const keyFor = useIdempotencyKey();
+  const keys = useIdempotencyKey();
   const [host, setHost] = useState<ParticipantFormValue>({ nickname: "", station: null, hidden: false });
   const [mode, setMode] = useState<Mode>("fair");
   const [meetingDate, setMeetingDate] = useState("");
@@ -56,14 +56,16 @@ export function CreateRoomForm() {
   }, []);
 
   const create = useMutation({
-    mutationFn: (body: RoomCreateRequest) => createRoom(body, keyFor(body)),
+    mutationFn: (body: RoomCreateRequest) => createRoom(body, keys.keyFor(body)),
     onSuccess: (created, body) => {
       saveRoomRecord(created.roomId, {
         hostToken: created.hostToken,
         participantToken: created.participantToken,
         participantId: created.participantId,
-        expiresAt: created.expiresAt,
+        keepUntil: keepUntilFrom(),
+        ...(body.expectedCount ? { expectedCount: body.expectedCount } : {}),
       });
+      keys.renew();
       if (host.station) saveRememberedMe({ code: host.station.code, nickname: host.nickname.trim() });
       track("room_created", {
         hidden_used: body.host.hidden === true,
