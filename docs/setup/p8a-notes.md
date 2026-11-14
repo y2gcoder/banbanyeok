@@ -143,6 +143,45 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
 
 Cloud Run 앞단(Google Front End)은 `/healthz` 경로를 예약해서 요청이 앱에 닿기 전에 `404 (Not Found)!!1` HTML을 돌려준다(요청 로그도 남지 않는다). 첫 배포의 스모크가 이 때문에 실패했다. 계약(`openapi.yaml`)이 이미 `/v1/healthz`를 같은 응답으로 정의하므로 **배포된 서버는 `/v1/healthz`로 확인**한다(스모크·콜드스타트 측정·웹 프리워밍 모두). 웹의 `/api/healthz` rewrite 대상도 `/v1/healthz`여야 한다(P8b에 전달함). 컨테이너 안(AppCDS 학습, 로컬)에서는 `/healthz`도 그대로 동작한다.
 
+### 3.10 콜드스타트 개선 (P8a-2, 목표: 새 인스턴스 첫 `/v1/healthz` p50 2초 이하)
+
+**결과(실측, 새 인스턴스 6회씩, 같은 방법)**: p50 **3.69초 → 1.87초**, p90 **4.29초 → 2.18초** → 목표 달성. 방법은 8절의 "트래픽 0 리비전 6개를 35분 방치한 뒤 태그 URL 첫 요청"(`scripts/measure-coldstart-revisions.sh`)이고 로그로 매번 새 인스턴스임을 확인했다.
+
+| 측정(초, curl total, 클라이언트 위치 포함) | 개선 전 p50 / p90 | 개선 후 p50 / p90 |
+|---|---|---|
+| **콜드 첫 `/v1/healthz`** | 3.69 / 4.29 (3.09~4.47) | **1.87 / 2.18** (1.66~2.36) |
+| 이어서 첫 DB 읽기(없는 방 404) | 0.67 / 0.70 | **0.24 / 0.27** |
+| 이어서 추천 1건 | 0.22 / 0.23 | **0.15 / 0.16** |
+| 웜 `/v1/healthz`(기준) | 0.09 / 0.16 | 0.09 / 0.09 |
+| 서버 쪽 첫 요청 지연(Cloud Run 요청 로그 `httpRequest.latency`) | 3.29 / 3.87 (2.72~4.10) | **1.61 / 1.89** (1.38~2.09) |
+
+**1단계: 단계별 시간부터 쟀다**(`StartupTimeline` 로그, 값은 단계 이름과 ms뿐). 새 리비전을 배포하면 그 첫 인스턴스의 시작 로그가 바로 나오므로(방치 없이) 실험마다 단계 시간을 얻었다. 인스턴스 시작 → 시작 프로브 성공까지:
+
+| 단계(대표 인스턴스 1대, ms) | 개선 전 | 개선 후 | 한 일 |
+|---|---|---|---|
+| 컨테이너 시작 → `main` 진입 | 460~480 | 460~500 | (바꾸지 못함: 샌드박스·JVM 부팅) |
+| 로깅 초기화(`logback.xml` XML 파싱) | 855 (직렬) | 약 400, **작업과 겹침** | 설정을 코드로(`FastLogbackConfigurator`, ServiceLoader), 시작 작업 스레드와 병렬 |
+| GCS 클라이언트 생성(옵션 + ADC 탐색 + 서비스) | 630~750 | **0** | 공식 클라이언트 제거 → JSON API 직접 호출(`GcsArtifactStore`, 메타데이터 서버 토큰) |
+| manifest 읽기(토큰 + TLS + 요청) | 510~550 | 약 650 (토큰 약 230 + 첫 응답 약 400) | 위에서 옮겨 온 비용(첫 요청의 TLS·토큰은 남는다) |
+| 나머지 산출물 2개 | 105(직렬이면 더) | 90~130, 병렬 | 세 파일을 동시에 읽음 |
+| 산출물 검증(해시·구조) | 150~200 | 90~130 | 학습(AppCDS)에 운영과 같은 경로를 넣음 |
+| DB 풀 생성 | 35 | 병렬 | 산출물 읽기와 겹침. **첫 연결을 뒤에서 미리 맺음**(첫 DB 요청 0.67 → 0.24초) |
+| Ktor 시작 | 170~200 | 120~170 | |
+| 프로브 성공 | 약 100 | 약 60~90 | |
+| **합계(인스턴스 시작 → 준비)** | **약 3.1~3.25초** | **약 1.9~2.0초** | |
+
+**효과가 있었던 것**: 공식 GCS 클라이언트를 JSON API 직접 호출로 바꿈(약 −0.8초, 가장 큼), 로깅 XML 제거와 시작 작업 병렬화(약 −0.45초), 산출물 3개 병렬 읽기, DB 첫 연결 미리 맺기(첫 DB 요청 −0.4초). **효과가 없었거나 해로웠던 것**(결과를 남겨 같은 길을 다시 가지 않게):
+- **서버를 먼저 띄우고 데이터는 뒤에서 로드**(건강 확인은 즉시 응답): 구현·테스트까지 했지만 **Cloud Run 요청 기반 CPU 스로틀 때문에 역효과**였다. 첫 응답 뒤 요청이 없으면 CPU가 거의 0이 돼 뒤에서 하던 로드가 약 1.5초가 아니라 **8.5초**(다음 요청이 올 때까지)로 늘었다. 되돌렸다(코드 없음). `--no-cpu-throttling`(인스턴스 기반 과금)으로 풀 수는 있으나 유휴 인스턴스(최대 15분+)까지 과금돼 0원 목표에 어긋나 채택하지 않았다.
+- JVM 플래그 `-XX:TieredStopAtLevel=1 -XX:+UseSerialGC`: 차이가 잡음 안(3.13 vs 3.25초). 해롭지 않아 남겼다.
+- AppCDS 학습에 GCS 경로(fake-gcs-server `1.56.1`, 2026-08-24)를 넣음: 공식 클라이언트 시절 클라이언트 생성이 1.36 → 1.05초로 줄었지만 전체는 잡음 안. 클라이언트 제거 뒤에도 같은 경로로 학습해서 HTTP·JSON 클래스를 아카이브에 넣는다(아카이브 29 → 39MB는 SDK 클래스 때문이었음).
+- `GOOGLE_CLOUD_PROJECT`로 프로젝트 ID 조회 생략, Cloud Run CPU 2, 메타데이터 서버를 이름 대신 고정 주소(DNS 생략), 첫 읽기 전 TLS 미리 연결(`GcsArtifactStore.warmUp`): 모두 측정 가능한 효과가 없었다. CPU 2는 되돌렸고 `GOOGLE_CLOUD_PROJECT`는 클라이언트 제거로 필요 없어 뺐다. 메타데이터 고정 주소와 `warmUp`은 해롭지 않아 남겼지만 다음에 코드를 줄일 때 **제거 후보**다.
+
+**남은 시간**: 컨테이너 시작 → main(약 0.5초)과 첫 GCS 요청의 토큰·TLS(약 0.65초)가 이제 가장 큰 덩어리다. 더 줄이려면 manifest를 이미지에 넣어 시작 때 GCS를 건너뛰는 방법(데이터 갱신 = 새 이미지)이나 min 1이 있고, 둘 다 현재 정책(산출물은 GCS 발행, 비용 0원)과 맞바꾸는 일이라 하지 않았다.
+
+**코드·설정 변경 요약**: `StartupTimeline`(단계 로그), `FastLogbackConfigurator`(+`logback.xml` 삭제), `GcsArtifactStore`/`MetadataTokenProvider`(JSON API, SDK는 통합 테스트 전용), `ArtifactLoader` 병렬 읽기, `CompositionRoot`/`Main`(조립을 별도 스레드로, DB 연결 미리), `AppConfig.ARTIFACT_GCS_ENDPOINT`(운영에서는 금지, AppCDS 학습·에뮬레이터 전용), Dockerfile(학습에 fake-gcs-server), `run.sh` 플래그. 산출물 형식·API·시작 실패 동작(검증 실패 시 시작 안 함)은 그대로다. **운영 GCS 인증은 Cloud Run 실행 계정의 메타데이터 토큰뿐**이다(이전에도 키 파일은 읽지 않았다). 로컬에서 실제 GCS를 읽으려면 에뮬레이터(`ARTIFACT_GCS_ENDPOINT`)를 쓴다.
+
+**웹 확인(읽기만)**: 홈 입력 화면(`home-form.tsx`)만 `warmUpServer()`를 부른다. **방 참여 화면은 웹에 아직 없다**(R1 작업자가 만들고 거기서 `warmUpServer()`를 넣기로 함). 친구가 공유 링크(`/s?…`)로 처음 들어오는 화면은 서버 컴포넌트가 서버를 바로 부르므로(결과 prefetch와 `generateMetadata`의 3초 제한) 미리 깨울 기회가 없다. 이번 개선으로 새 인스턴스의 첫 요청이 약 1.6~1.9초라 그 3초 제한 안에 들어온다(개선 전 p50 3.3초는 제한을 넘겼다). `web/src`는 고치지 않았다.
+
 ## 4. 레이트 리밋 키 권고 (8번)
 
 문제: 웹은 Cloudflare 뒤에서 서버 API를 **같은 출처 rewrite**로 부른다. Cloud Run이 직접 연결로 보는 상대는 Cloudflare 쪽이고, 그 앞단(GFE)이 붙이는 `X-Forwarded-For`의 **마지막 값**이 그 직접 연결의 IP다.
@@ -212,7 +251,7 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 | 항목 | 값 | 근거 |
 |---|---|---|
 | `liquibase/liquibase` | `4.33.0` @ `sha256:e116c935…` | S1 노트의 Liquibase 4.33.0(2025-07-09, [release](https://github.com/liquibase/liquibase/releases/tag/v4.33.0)). compose와 동일. 5.x는 라이선스가 바뀌어 제외(카탈로그 주석). 다이제스트는 `docker buildx imagetools inspect`로 확인 |
-| `postgres` (pg_dump 클라이언트·복원 검증) | `17.6` | S1 노트(2025-08-14, [릴리스 노트](https://www.postgresql.org/docs/17/release-17-6.html)). compose·통합 테스트와 같은 버전 |
+| `postgres:17.6-alpine`(backup Job 이미지, 다이제스트 고정), `postgres:17.6`(로컬 복원 검증) | `17.6` | S1 노트(2025-08-14, [릴리스 노트](https://www.postgresql.org/docs/17/release-17-6.html)). compose·통합 테스트와 같은 버전 |
 | Cloud Run 기능 | startup CPU boost, `--no-traffic --tag`, `--env-vars-file`, `--set-secrets` | [공식 문서](https://cloud.google.com/run/docs/configuring/services/cpu#startup-boost) / [트래픽 관리](https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration) |
 
 ## 8. 검증 결과
@@ -231,12 +270,12 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 | 산출물 버킷 | `manifest.json`(루트)과 `versions/20261114.5/*`(해시 이름 4개). 서버가 GCS에서 읽고 `Application started`까지 확인 |
 | `cleanup` Job 수동 실행 | 성공(종료 코드 0). 로그 `cleanup: CleanupReport(rooms=0, anonUsers=0)`, DB 연결·질의 약 0.9초 → DB를 실제로 조회한다 |
 | Scheduler 수동 실행 | `gcloud scheduler jobs run cleanup-daily` → Job 실행 성공(Scheduler → Job IAM 확인). 일정 `0 4 * * *` Asia/Seoul |
-| 백업 워크플로 수동 실행 | 성공. 파일 `banbanyeok-<UTC시각>.dump` **14,143 bytes**, 목차 검증 통과(테이블 4개, 항목 31개), 비밀번호가 로그에 없음 |
+| (P8a 당시) 백업 워크플로 수동 실행 | 성공(이후 3.6절대로 Cloud Run Job으로 이전, 병합 후 순서로 재검증 예정). 파일 `banbanyeok-<UTC시각>.dump` **14,143 bytes**, 목차 검증 통과(테이블 4개, 항목 31개), 비밀번호가 로그에 없음 |
 | 복원 검증 | 받은 실제 백업을 `mise run db:restore-check`로 로컬 Postgres 17에 복원 → 테이블 3개 + `databasechangelog`(changeset 2개) + `participants_limit` 트리거 확인(운영 DB는 아직 비어 있어 행 수는 0) |
 | 로컬 사전 검증 | 마이그레이션 이미지(빈 Postgres 17.6, 재실행), 백업→복원(행이 있는 DB), 스모크(로컬 서버), `stage-release` 단위 테스트 4개, 속도 제한 신뢰 헤더 테스트 3개 |
 | 정적 검사 | `ktlintCheck ktlintBuildScripts detekt detektBuildLogic`, 서버·파이프라인 테스트 통과. 새 suppress·baseline 없음. `shellcheck`(모든 새 스크립트), `actionlint` 통과 |
 
-### 콜드스타트 실측 (min 0, Cloud Run 서울, 1 vCPU·512Mi·gen2·boost, 요청은 서울 인근 클라이언트에서 curl)
+### 콜드스타트 실측: 개선 전 기준값(P8a, 개선 후 수치와 비교는 3.10절)
 
 방법과 한계: Cloud Run은 마지막 요청 뒤 **17분이 지나도 인스턴스를 남기는 경우가 많았다**. 17분 간격으로 6번 재는 첫 시도에서는 1번만 진짜 콜드였다(나머지 5번은 웜 0.11~0.14초, 로그의 `Application started`는 1회뿐). 그 1번은 **4.22초**였다. 그래서 같은 이미지로 **리비전 6개**(`COLD_NONCE`만 다른 트래픽 0 리비전, 태그 URL)를 만들고 35분 방치한 뒤 각 태그의 첫 요청을 쟀다. 로그의 `Starting new instance`와 `Application started`가 요청마다 새로 찍혀 6번 모두 새 인스턴스의 첫 요청임을 확인했다(리비전을 새로 만든 첫 요청이라 이미지 레이어가 그 호스트에 없을 수도 있어 실제 콜드와 거의 같거나 약간 불리하다).
 
@@ -255,12 +294,10 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 
 ## 9. 결정 필요
 
-1. **WIF를 더 좁힐지**: 지금은 저장소 ID만 조건이라 모든 브랜치·워크플로가 `github-deployer`/`db-backup`을 가장할 수 있다. `main`만 허용하거나 GitHub Environment(승인자)를 붙이면 안전하지만 브랜치 배포·검증이 막힌다. 권고: 안정되면 `assertion.ref == 'refs/heads/main'`(또는 Environment `production`)으로 좁히기.
-2. **개인정보 방침의 백업 문구**(방침은 직접 고치지 않음): 방침은 이미 "백업 30일"을 적었다(구현과 일치). 삭제 요청 절에 "DB에서는 즉시, 백업에서는 보존 기간(30일)이 지나면 지워진다"를 명시할지(방 최대 30일 + 정리 5일 + 백업 30일 = DB 밖 최대 약 65일). 더 줄이려면 백업 보존을 7~14일로 줄일 수 있다(복구 가능 기간과 맞바꿈). 또 방침 145행의 `{Cloud Logging 저장 위치}`는 아래 6번대로 채울 수 있다.
-3. **백업 실행 주체**: GitHub Actions 예약은 공개 저장소가 60일 활동이 없으면 조용히 멈춘다. 허용할지, 백업 최신 파일 시각 점검을 루틴에 넣을지, Cloud Scheduler + Job으로 옮길지(이미지·미러링 비용 있음).
-4. **Supabase 일시정지 방지의 보장 수준**: 매일 cleanup의 DELETE 질의가 활동으로 잡히는지 공식 기준이 없다(3.5절). 첫 경고 메일이 오면 Scheduler를 하루 2회로 늘릴지(무료 3개 한도 안).
-5. **발행 후 배포 실패 틈**(3.3절): manifest 발행이 스모크보다 먼저라서, 배포가 실패하면 이전 리비전의 새 인스턴스가 새 manifest를 읽는다. 수용(스키마 호환은 서버가 검증)할지, 후보 리비전에 산출물 접두사를 주입하는 방식으로 바꿀지.
-6. **로그 방침 표기**(3.8절): 일반 로그 서울, 감사 로그(`_Required`) global(Google 관리, 이용자 정보 없음)로 구분해 쓸지.
-7. **콜드스타트 p50 3.7초**(8절): 입력 화면의 프리워밍으로 수용할지, AppCDS 학습에 GCS 경로(fake-gcs-server)를 넣거나 산출물 로드를 지연해 줄여 볼지(둘 다 이 PR 밖, 효과는 재측정으로 확인). 웹(P8b)은 `/v1/healthz` 프리워밍이 필수다.
-8. **서버 URL 별칭**: `https://server-b3z6eb4wma-du.a.run.app`(결정적 URL)을 웹의 `SERVER_ORIGIN`으로 쓴다. 커스텀 도메인은 P8b/도메인 결정 뒤.
-9. P3의 남은 결정(산출물 갱신 정책 8절 1번을 이 배포가 채택함: 새 데이터 = 새 리비전). 이의가 없으면 확정으로 본다.
+P8a에서 올린 9건 중 코디네이터가 정한 것(2026-11-14): 1 WIF → 좁힘(아래), 2·6 방침 문구 → 방침 정리 작업자, 3 백업 60일 정지 → **백업을 Cloud Run Job으로 옮겨 해소**(3.6절), 4 Supabase → 경고 메일이 오면 대응, 5 발행-배포 틈 → 수용, 7 콜드스타트 → **해결**(3.10절, p50 1.87초), 8 SERVER_ORIGIN → `https://server-488867894170.asia-northeast3.run.app` 그대로, 9 갱신 정책 → 확정.
+
+이번 작업의 남은 일과 제안:
+1. **병합 후 순서**(이 PR은 라이브를 바꾸는 `bootstrap.sh` 실행이 필요하다): ① PR 병합 → main 배포가 backup 이미지를 AR에 올리고(`db-backup` Job은 아직 없어 "Job 갱신" 단계는 경고 후 건너뜀) 리뷰된 코드로 라이브를 덮는다 → ② `bash infra/gcp/bootstrap.sh` 실행(WIF를 `main` 한정으로 좁힘, `db-backup` Job·Scheduler `db-backup-weekly` 생성, 이전 GitHub 가장 권한 회수) → ③ `gh workflow run deploy-server.yml`(main에서)로 한 번 더 배포해 `db-backup` Job에 backup 이미지를 연결 → ④ `gcloud run jobs execute db-backup --region asia-northeast3 --wait`로 첫 백업을 실행하고 크기·`mise run db:restore-check` 복원을 확인. ②는 처음부터 main 한정이라 이후 브랜치에서 GCP를 쓸 수 없다(배포 검증은 main).
+2. **개인정보 방침(별도 작업)**: 백업 수탁자에서 GitHub 행 삭제(3.6절 "바뀐 사실": 서울 Cloud Run Job, 이미지 `postgres:17.6-alpine`, 보존 30일 불변).
+3. **작업 실패 알림이 없다**: Scheduler가 실행하는 `cleanup`·`db-backup` Job이 실패해도 알림이 가지 않는다(실행 목록에서만 보임). 제안: Cloud Monitoring 로그 기반 알림(Job 실행 실패) 또는 가동 확인처럼 최근 백업 파일 시각 점검. 6.1절의 모니터링과 같은 방식으로 코디네이터가 설정.
+4. 선택 정리: `GcsArtifactStore.warmUp`과 메타데이터 고정 주소(3.10절, 효과 없음)는 다음에 코드를 줄일 때 제거 후보.

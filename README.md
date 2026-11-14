@@ -128,7 +128,7 @@ pnpm exec wrangler dev
 bash infra/gcp/bootstrap.sh                    # 최초 한 번(프로젝트 owner): 저장소·서비스 계정·버킷·최소 권한·Scheduler. 멱등. DRY_RUN=1이면 출력만
 gh workflow run deploy-server.yml              # 배포: 이미지 → migrate Job → 산출물 발행 → 후보 리비전 스모크 → 전환 → cleanup Job
 bash scripts/smoke-server.sh <서비스 URL>      # healthz·manifest·추천·방 생성/조회/삭제 확인 (Cloud Run에서는 /v1/healthz, /healthz는 앞단이 예약)
-gh workflow run db-backup.yml                  # DB 백업(주 1회 자동). 복원 검증: mise run db:restore-check -- <덤프>
+gh workflow run db-backup.yml                  # DB 백업을 지금 실행(서울 Cloud Run Job db-backup 실행·대기. 주 1회는 Scheduler 자동). 복원 검증: mise run db:restore-check -- <덤프>
 mise run release:stage                         # 산출물을 발행 형식(해시 이름 + manifest)으로 build/release에 만든다
 mise run data:refresh-headways                 # 배차 간격 실제 값 갱신(op 필요) → 웹 생성물까지
 ```

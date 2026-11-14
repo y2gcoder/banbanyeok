@@ -27,12 +27,14 @@ SERVICE="server"                                  # Cloud Run 서비스
 JOB_MIGRATE="migrate"                             # Cloud Run Job: Liquibase 마이그레이션
 JOB_CLEANUP="cleanup"                             # Cloud Run Job: 만료 정리 + DB 깨우기
 SCHEDULER_JOB="cleanup-daily"                     # Cloud Scheduler (매일 04:00 KST)
+JOB_BACKUP="db-backup"                            # Cloud Run Job: pg_dump 17 → 백업 버킷 (서버 이미지와 별도의 backup 이미지)
+SCHEDULER_BACKUP="db-backup-weekly"               # Cloud Scheduler (매주 월요일 03:17 KST)
 HELLO_IMAGE="us-docker.pkg.dev/cloudrun/container/hello"   # 자리 표시 서비스 이미지(첫 배포가 교체한다)
 HELLO_JOB_IMAGE="us-docker.pkg.dev/cloudrun/container/job" # 자리 표시 Job 이미지
 
 SA_RUNTIME="server-runtime"                       # 서비스 + cleanup Job의 실행 계정
 SA_MIGRATOR="db-migrator"                         # migrate Job의 실행 계정(DB 비밀번호만)
-SA_BACKUP="db-backup"                             # 백업 워크플로(GitHub OIDC)가 가장하는 계정
+SA_BACKUP="db-backup"                             # db-backup Cloud Run Job의 실행 계정
 SA_SCHEDULER="scheduler-invoker"                  # Cloud Scheduler가 cleanup Job을 실행할 때 쓰는 계정
 SA_DEPLOYER="github-deployer"                     # 배포 워크플로가 가장하는 계정(이미 있음)
 
@@ -121,7 +123,7 @@ sa_desc() {
   case "$1" in
     "$SA_RUNTIME") echo "Cloud Run 서비스 server와 cleanup Job의 실행 계정" ;;
     "$SA_MIGRATOR") echo "Cloud Run Job migrate의 실행 계정(DB 비밀번호만 읽는다)" ;;
-    "$SA_BACKUP") echo "DB 백업 워크플로(GitHub OIDC)가 가장하는 계정" ;;
+    "$SA_BACKUP") echo "Cloud Run Job db-backup의 실행 계정(DB 비밀번호 읽기, 백업 버킷 쓰기)" ;;
     "$SA_SCHEDULER") echo "Cloud Scheduler가 cleanup Job을 실행할 때 쓰는 계정" ;;
   esac
 }
@@ -199,6 +201,13 @@ else
     --service-account="$(email "$SA_RUNTIME")" --max-retries=0
 fi
 
+if exists gcloud run jobs describe "$JOB_BACKUP" --region="$REGION"; then
+  note "Job $JOB_BACKUP: 이미 있음"
+else
+  gr run jobs create "$JOB_BACKUP" --image="$HELLO_JOB_IMAGE" --region="$REGION" \
+    --service-account="$(email "$SA_BACKUP")" --max-retries=0
+fi
+
 # ---------------------------------------------------------------- IAM: 런타임 계정
 step "IAM: $SA_RUNTIME (비밀 3개 읽기, 산출물 버킷 읽기)"
 gr secrets add-iam-policy-binding database-password --member="serviceAccount:$(email "$SA_RUNTIME")" \
@@ -215,20 +224,30 @@ step "IAM: $SA_MIGRATOR (DB 비밀번호만 읽기)"
 gr secrets add-iam-policy-binding database-password --member="serviceAccount:$(email "$SA_MIGRATOR")" \
   --role=roles/secretmanager.secretAccessor
 
-step "IAM: $SA_BACKUP (DB 비밀번호 읽기, 백업 버킷 쓰기·읽기. 삭제 권한 없음)"
+step "IAM: $SA_BACKUP (Job 실행 계정: DB 비밀번호 읽기, 백업 버킷 쓰기·읽기. 삭제 권한 없음)"
 gr secrets add-iam-policy-binding database-password --member="serviceAccount:$(email "$SA_BACKUP")" \
   --role=roles/secretmanager.secretAccessor
 gr storage buckets add-iam-policy-binding "gs://$BACKUP_BUCKET" --member="serviceAccount:$(email "$SA_BACKUP")" \
   --role=roles/storage.objectCreator
 gr storage buckets add-iam-policy-binding "gs://$BACKUP_BUCKET" --member="serviceAccount:$(email "$SA_BACKUP")" \
   --role=roles/storage.objectViewer
-# GitHub OIDC(WIF) 가장 권한: github-deployer와 같은 풀·같은 저장소 ID 조건(주체 집합)을 그대로 쓴다.
+# GitHub OIDC(WIF) 주체 집합: github-deployer와 같은 풀·같은 저장소 ID 조건을 그대로 읽어 둔다(아래 WIF 단계에서 쓴다).
 wif_member="$(gcloud iam service-accounts get-iam-policy "$(email "$SA_DEPLOYER")" --flatten='bindings[].members' \
   --filter='bindings.role=roles/iam.workloadIdentityUser AND bindings.members~^principalSet' \
   --format='value(bindings.members)' | head -n1)"
 [[ -n "$wif_member" ]] || { echo "$SA_DEPLOYER 의 workloadIdentityUser 주체 집합을 찾지 못했습니다" >&2; exit 1; }
-gr iam service-accounts add-iam-policy-binding "$(email "$SA_BACKUP")" --member="$wif_member" \
-  --role=roles/iam.workloadIdentityUser
+# 백업은 이제 서울 Cloud Run Job이 한다(GitHub 러너는 DB 비밀번호·덤프를 만지지 않는다). 이전 P8a가 걸어 둔 GitHub 가장 권한을 회수한다.
+# 없으면 건너뛴다.
+if [[ "$DRY_RUN" == 1 ]]; then
+  printf '   + gcloud iam service-accounts remove-iam-policy-binding %s --member=<WIF 주체 집합> --role=roles/iam.workloadIdentityUser (없으면 건너뜀)\n' "$(email "$SA_BACKUP")"
+else
+  if gcloud iam service-accounts remove-iam-policy-binding "$(email "$SA_BACKUP")" --member="$wif_member" \
+    --role=roles/iam.workloadIdentityUser >/dev/null 2>&1; then
+    note "$SA_BACKUP 의 GitHub 가장 권한을 회수했습니다"
+  else
+    note "$SA_BACKUP 에 GitHub 가장 권한이 없습니다(이미 회수됨)"
+  fi
+fi
 
 # ---------------------------------------------------------------- WIF: main 브랜치로 한정
 # 공급자 조건이 저장소 ID뿐이면 이 저장소의 모든 브랜치·PR·워크플로가 github-deployer와 db-backup을 가장할 수 있다.
@@ -254,6 +273,7 @@ deployer="serviceAccount:$(email "$SA_DEPLOYER")"
 gr run services add-iam-policy-binding "$SERVICE" --region="$REGION" --member="$deployer" --role=roles/run.developer
 gr run jobs add-iam-policy-binding "$JOB_MIGRATE" --region="$REGION" --member="$deployer" --role=roles/run.developer
 gr run jobs add-iam-policy-binding "$JOB_CLEANUP" --region="$REGION" --member="$deployer" --role=roles/run.developer
+gr run jobs add-iam-policy-binding "$JOB_BACKUP" --region="$REGION" --member="$deployer" --role=roles/run.developer
 gr artifacts repositories add-iam-policy-binding "$AR_REPO" --location="$REGION" --member="$deployer" \
   --role=roles/artifactregistry.writer
 gr storage buckets add-iam-policy-binding "gs://$ARTIFACT_BUCKET" --member="$deployer" --role=roles/storage.objectUser
@@ -261,6 +281,8 @@ gr storage buckets add-iam-policy-binding "gs://$ARTIFACT_BUCKET" --member="$dep
 gr iam service-accounts add-iam-policy-binding "$(email "$SA_RUNTIME")" --member="$deployer" \
   --role=roles/iam.serviceAccountUser
 gr iam service-accounts add-iam-policy-binding "$(email "$SA_MIGRATOR")" --member="$deployer" \
+  --role=roles/iam.serviceAccountUser
+gr iam service-accounts add-iam-policy-binding "$(email "$SA_BACKUP")" --member="$deployer" \
   --role=roles/iam.serviceAccountUser
 # gcloud가 프로젝트의 API(Cloud Run 등)를 호출하려면 필요한 최소 역할(API 사용만 허용, 리소스 권한 없음).
 gr projects add-iam-policy-binding "$PROJECT" --member="$deployer" --role=roles/serviceusage.serviceUsageConsumer \
@@ -285,6 +307,20 @@ else
   gr scheduler jobs create http "$SCHEDULER_JOB" "${scheduler_args[@]}" --headers="Content-Type=application/json"
 fi
 
+step "Cloud Scheduler $SCHEDULER_BACKUP: 매주 월요일 03:17 KST에 Job $JOB_BACKUP 실행 (무료 3개 한도 중 2개째)"
+gr run jobs add-iam-policy-binding "$JOB_BACKUP" --region="$REGION" \
+  --member="serviceAccount:$(email "$SA_SCHEDULER")" --role=roles/run.invoker
+backup_uri="https://run.googleapis.com/v2/projects/${PROJECT}/locations/${REGION}/jobs/${JOB_BACKUP}:run"
+backup_args=(--location="$REGION" --schedule="17 3 * * 1" --time-zone="Asia/Seoul" --uri="$backup_uri"
+  --http-method=POST --message-body="{}"
+  --oauth-service-account-email="$(email "$SA_SCHEDULER")" --attempt-deadline=180s --max-retry-attempts=1
+  --description="DB 백업(pg_dump 17 → 비공개 백업 버킷, 30일 보존)")
+if exists gcloud scheduler jobs describe "$SCHEDULER_BACKUP" --location="$REGION"; then
+  gr scheduler jobs update http "$SCHEDULER_BACKUP" "${backup_args[@]}" --update-headers="Content-Type=application/json"
+else
+  gr scheduler jobs create http "$SCHEDULER_BACKUP" "${backup_args[@]}" --headers="Content-Type=application/json"
+fi
+
 # ---------------------------------------------------------------- 마무리
 step "완료. 다음은 사람이 할 일"
 cat <<EOF
@@ -298,6 +334,7 @@ cat <<EOF
         gcloud run services get-iam-policy $SERVICE --region=$REGION
         gcloud run services describe $SERVICE --region=$REGION --format='value(status.url)'
         gcloud scheduler jobs describe $SCHEDULER_JOB --location=$REGION --format='value(schedule,timeZone,state)'
+        gcloud scheduler jobs describe $SCHEDULER_BACKUP --location=$REGION --format='value(schedule,timeZone,state)'
         gcloud logging sinks describe _Default --format='value(destination)'
         gcloud iam workload-identity-pools providers describe banbanyeok-repo --workload-identity-pool=github --location=global --format='value(attributeCondition)'
         gcloud artifacts repositories describe $AR_REPO --location=$REGION --format='value(cleanupPolicyDryRun)'

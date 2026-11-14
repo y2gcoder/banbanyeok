@@ -1,0 +1,3 @@
+*
+!scripts/db-backup.sh
+!infra/backup/job.sh
