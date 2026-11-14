@@ -198,6 +198,13 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 # 데이터 롤백(이전 manifest 재발행): 이전 커밋에서 stage-release 후 FORCE=1 bash scripts/publish-artifacts.sh <버킷>
 ```
 
+### 6.1 모니터링 (Cloud Monitoring, 코디네이터가 콘솔/REST로 설정 — `bootstrap.sh` 밖)
+
+- 알림 채널: 이메일 1개(운영자 메일).
+- 가동 확인(uptime check) 2개: `https://banbanyeok.app/api/healthz`(본문에 `ok` 포함), `https://banbanyeok.app/`(2xx). 5분 주기, 제한 시간 15초, 기본(전 지역).
+- 알림 정책 "반반역 사이트 응답 없음": `check_passed`가 false인 지역이 2곳 이상, 5분 지속이면 알림, 30분 뒤 자동 종료.
+- 부수 효과: `/api/healthz`(웹 프록시 → 서버 `/v1/healthz`)가 5분마다 여러 지역에서 오므로 **라이브 리비전의 인스턴스가 대부분 데워진 채로 유지**된다(콜드스타트 체감이 줄어듦, 비용은 무료 구간 안). 그래서 라이브 서비스의 체감 콜드스타트는 아래 실측(새 인스턴스의 첫 요청)보다 드물다. 측정용 태그 리비전에는 영향이 없다(그 URL로는 가동 확인이 가지 않는다).
+
 ## 7. 버전 근거
 
 새로 도입한 외부 버전은 이미지 둘이며 둘 다 7일 이상 지난 안정판이다. GitHub Actions 액션은 기존 워크플로와 같은 커밋 SHA 고정을 재사용했다(새 액션 없음). `gcloud`와 `jq`는 GitHub 호스트 러너(ubuntu-latest)에 설치된 것을 쓴다.
