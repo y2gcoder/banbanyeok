@@ -23,15 +23,12 @@ val detektJavaHome =
         .map { it.trim() }
 val sourceDirectory = layout.projectDirectory.dir("src").asFile
 val configFile = rootProject.file("config/detekt/detekt.yml")
-val baselineFile = layout.projectDirectory.file("detekt-baseline.xml").asFile
-val pipelineModule = project.path == ":pipeline"
 
 fun JavaExec.configureDetekt(createBaseline: Boolean) {
     setExecutable(detektJavaHome.get() + "/bin/java")
     setClasspath(detektCli)
     mainClass.set("io.gitlab.arturbosch.detekt.cli.Main")
     args("--input", sourceDirectory, "--config", configFile, "--build-upon-default-config", "--jvm-target", "17")
-    if (pipelineModule) args("--baseline", baselineFile)
     if (createBaseline) args("--create-baseline")
     inputs.files(fileTree(sourceDirectory) { include("**/*.kt") })
     inputs.file(configFile)
@@ -40,5 +37,4 @@ tasks.register<JavaExec>("detekt") {
     group = "verification"
     configureDetekt(false)
 }
-if (pipelineModule) tasks.register<JavaExec>("detektBaseline") { configureDetekt(true) }
 tasks.named("check") { dependsOn("detekt", "ktlintCheck", ":ktlintBuildScripts", ":detektBuildLogic") }

@@ -9,6 +9,7 @@ application {
 dependencies {
     // pipeline은 shared:schema에만 의존한다(검증용으로 shared:core를 쓰게 되면 그때 추가).
     implementation(project(":shared:schema"))
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(kotlin("test"))
     "integrationTestRuntimeOnly"(libs.postgres.jdbc)

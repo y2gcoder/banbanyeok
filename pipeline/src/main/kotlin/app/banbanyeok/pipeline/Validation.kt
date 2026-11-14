@@ -1,33 +1,26 @@
 package app.banbanyeok.pipeline
 
-import app.banbanyeok.schema.Registry
-import app.banbanyeok.schema.RegistryCodec
-import app.banbanyeok.schema.RegistryCompatibility
-import java.nio.file.Path
-import kotlin.io.path.readText
 import kotlin.math.abs
 
-internal fun distribution(values: List<Int>): String {
+internal fun distribution(values: List<Int>): kotlinx.serialization.json.JsonObject {
     val sorted = values.sorted()
 
     fun percentile(percent: Int): Int = if (sorted.isEmpty()) 0 else sorted[(sorted.size - 1) * percent / 100]
-    return """{"count":${values.size},"min":${sorted.firstOrNull() ?: 0},"p50":${percentile(50)},"p95":${percentile(95)},"max":${sorted.lastOrNull() ?: 0}}"""
+    return obj(
+        "count" to values.size,
+        "min" to (sorted.firstOrNull() ?: 0),
+        "p50" to percentile(50),
+        "p95" to percentile(95),
+        "max" to (sorted.lastOrNull() ?: 0),
+    )
 }
 
-internal fun stateTriangles(distances: List<List<Cost>>): Int {
-    var violations = 0
-    for (a in distances.indices) {
-        for (b in distances.indices) {
-            for (c in distances.indices) {
-                val ab = distances[a][b]
-                val bc = distances[b][c]
-                val ac = distances[a][c]
-                if (ab != infinity && bc != infinity && ac > Cost(ab.seconds + bc.seconds, ab.changes + bc.changes)) violations++
-            }
+internal fun stateTriangles(distances: List<List<Cost>>): Int =
+    distances.indices.sumOf { a ->
+        distances.indices.sumOf { b ->
+            distances.indices.count { c -> violatesTriangle(distances[a][b], distances[b][c], distances[a][c]) }
         }
     }
-    return violations
-}
 
 /** Largest minimum transfer cost between any two platforms at a physical station.
  * Only within-station walking+waiting edges are allowed; train trips cannot hide missing transfers.
@@ -50,7 +43,7 @@ internal fun physicalTriangleBounds(net: Network): List<Int> =
 
 internal data class Gate(
     val passed: Boolean,
-    val json: String,
+    val json: kotlinx.serialization.json.JsonObject,
 )
 
 internal fun graphGate(
@@ -71,37 +64,56 @@ internal fun graphGate(
             if (a != c && (seconds <= 0 || seconds > 14400)) abnormal++
             if (a == c && costs[a][c] != Cost(0, 0)) abnormal++
             if (a < c) symmetry.add(abs(seconds - costs[c][a].seconds))
-            for (b in costs.indices) {
-                val excess = seconds - costs[a][b].seconds - costs[b][c].seconds
-                if (excess > 0) {
-                    sizes.add(excess)
-                    if (excess > bounds[b]) boundViolations++
-                    if (examples.size < 5) examples.add("${net.origins[a].name} -> ${net.origins[c].name} via ${net.origins[b].name}: excess=$excess, bound=${bounds[b]}")
-                }
+            val excesses = physicalExcesses(costs, bounds, a, c)
+            sizes.addAll(excesses.map { it.second })
+            boundViolations += excesses.count { (b, excess) -> excess > bounds[b] }
+            excesses.take((5 - examples.size).coerceAtLeast(0)).forEach { (b, excess) ->
+                examples.add(
+                    "${net.origins[a].name} -> ${net.origins[c].name} via " +
+                        "${net.origins[b].name}: excess=$excess, bound=${bounds[b]}",
+                )
             }
         }
     }
-    val branchOrigins = listOf("강동", "마천", "하남검단산").map { name -> net.origins.indexOfFirst { it.name == name } }
-    val branchValid =
-        if (branchOrigins.any { it < 0 }) {
-            true
-        } else {
-            val (junction, macheon, hanam) = branchOrigins
-            costs[macheon][hanam].changes >= 1 && costs[hanam][macheon].changes >= 1 && costs[junction][macheon].changes == 0
-        }
+    val branchValid = branchValid(net, costs)
     return Gate(
         stateViolations == 0 && boundViolations == 0 && abnormal == 0 && branchValid,
-        """"branchServiceCheck":$branchValid,"stateTriangleViolations":$stateViolations,"physicalTriangleExcessSeconds":${distribution(sizes)},"physicalTriangleBoundViolations":$boundViolations,"triangleExamples":${strings(examples)},"abnormal":$abnormal,"symmetrySeconds":${distribution(symmetry)},"symmetryNonzero":${symmetry.count { it > 0 }}""",
+        obj(
+            "branchServiceCheck" to branchValid,
+            "stateTriangleViolations" to stateViolations,
+            "physicalTriangleExcessSeconds" to distribution(sizes),
+            "physicalTriangleBoundViolations" to boundViolations,
+            "triangleExamples" to examples,
+            "abnormal" to abnormal,
+            "symmetrySeconds" to distribution(symmetry),
+            "symmetryNonzero" to symmetry.count { it > 0 },
+        ),
     )
 }
 
-/** HEAD is the committed baseline; the local registry is also checked during generation. */
-internal fun baselineViolations(
-    root: Path,
-    next: Registry,
-): List<String> {
-    val process = ProcessBuilder("git", "show", "HEAD:data/registry/stations.json").directory(root.toFile()).redirectError(ProcessBuilder.Redirect.DISCARD).start()
-    val text = process.inputStream.bufferedReader().readText()
-    require(process.waitFor() == 0) { "Cannot read committed registry baseline" }
-    return RegistryCompatibility.checkAppendOnly(RegistryCodec.parse(text), next)
-}
+private fun violatesTriangle(
+    ab: Cost,
+    bc: Cost,
+    ac: Cost,
+): Boolean = ab != infinity && bc != infinity && ac > Cost(ab.seconds + bc.seconds, ab.changes + bc.changes)
+
+private fun branchValid(
+    net: Network,
+    costs: List<List<Cost>>,
+): Boolean =
+    net.branchChecks.all { names ->
+        val indexes = names.map { name -> net.origins.indexOfFirst { it.name == name } }
+        require(indexes.size == 3 && indexes.all { it >= 0 }) { "Missing configured branch check station" }
+        val (junction, branch, main) = indexes
+        costs[branch][main].changes >= 1 && costs[main][branch].changes >= 1 && costs[junction][branch].changes == 0
+    }
+
+private fun physicalExcesses(
+    costs: List<List<Cost>>,
+    bounds: List<Int>,
+    a: Int,
+    c: Int,
+): List<Pair<Int, Int>> =
+    bounds.indices
+        .map { b -> b to costs[a][c].seconds - costs[a][b].seconds - costs[b][c].seconds }
+        .filter { it.second > 0 }
