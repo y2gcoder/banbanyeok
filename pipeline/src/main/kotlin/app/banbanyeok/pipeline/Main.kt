@@ -21,6 +21,14 @@ fun main(args: Array<String>) {
         stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
         return
     }
+    if (args.firstOrNull() == "tago-fetch") {
+        when (args.getOrNull(1)) {
+            null -> kotlin.system.exitProcess(tagoFetch(root))
+            "probe" -> tagoProbe(root)
+            else -> error("Usage: tago-fetch [probe]")
+        }
+        return
+    }
     when (args.singleOrNull()) {
         "fetch" -> {
             fetch(root)
