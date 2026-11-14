@@ -2,7 +2,7 @@ import { ChevronRightIcon } from "lucide-react";
 import { LineBadges } from "@/components/common/line-badge";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { CandidateView } from "@/lib/result/view-model";
-import { Directions } from "./directions";
+import { type ChoiceContext, Directions } from "./directions";
 import { TimeRails } from "./time-rails";
 
 /** 환승역 기호(굵은 고리). 1위 표시. */
@@ -43,7 +43,15 @@ function Reason({ text }: { text: string }) {
 }
 
 /** 1위 카드: 역 이름을 크게, 사람별 시간을 막대와 숫자로. */
-export function TopCandidateCard({ candidate, meIndex = null }: { candidate: CandidateView; meIndex?: number | null }) {
+export function TopCandidateCard({
+  candidate,
+  choice,
+  meIndex = null,
+}: {
+  candidate: CandidateView;
+  choice: ChoiceContext;
+  meIndex?: number | null;
+}) {
   return (
     <article
       aria-labelledby={`cand-${candidate.rank}`}
@@ -67,7 +75,7 @@ export function TopCandidateCard({ candidate, meIndex = null }: { candidate: Can
       <TimeRails people={candidate.people} maxMinutes={candidate.aggregate.max} meIndex={meIndex} />
       <Stats candidate={candidate} />
       <Reason text={candidate.reason} />
-      <Directions candidate={candidate} meIndex={meIndex} />
+      <Directions candidate={candidate} choice={choice} meIndex={meIndex} />
     </article>
   );
 }
@@ -75,9 +83,11 @@ export function TopCandidateCard({ candidate, meIndex = null }: { candidate: Can
 /** 2·3위: 접힌 줄에 최장·차이, 펼치면 사람별 시간과 이유. */
 export function OtherCandidateRow({
   candidate,
+  choice,
   meIndex = null,
 }: {
   candidate: CandidateView;
+  choice: ChoiceContext;
   meIndex?: number | null;
 }) {
   const { max, spread } = candidate.aggregate;
@@ -104,7 +114,7 @@ export function OtherCandidateRow({
       <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
         <TimeRails people={candidate.people} maxMinutes={max} meIndex={meIndex} size="compact" />
         <Reason text={candidate.reason} />
-        <Directions candidate={candidate} meIndex={meIndex} />
+        <Directions candidate={candidate} choice={choice} meIndex={meIndex} />
       </div>
     </details>
   );

@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "description": "분석 이벤트 정의 초안(tech-stack 7.3). Kotlin 상수와 TS 타입을 여기서 생성한다(P7). 출발역·별칭·방 ID 원문은 어떤 속성에도 넣지 않는다.",
+  "schemaVersion": 2,
+  "description": "분석 이벤트 정의(tech-stack 7.3)의 단일 원천. 웹 TS 타입·검증표는 web/scripts/build-analytics-events.ts가 여기서 생성한다(pnpm gen:events). Kotlin 상수는 서버·앱이 이벤트를 보내기 시작할 때 같은 방식으로 생성한다. 출발역·별칭·방 ID 원문은 어떤 속성에도 넣지 않는다.",
   "privacy": {
     "forbiddenPropertyNames": [
       "origin",
@@ -33,7 +33,8 @@
       "만날 역은 장소이므로 top1_station_code, meeting_station_code만 허용한다(출발역과 구별되는 이름).",
       "방 ID 원문과 토큰은 보내지 않는다. 방은 room_hash로만 참조한다.",
       "autocapture와 세션 리플레이는 끈다(입력창 내용 수집 방지).",
-      "서버가 권위 있는 이벤트(source=server)는 서버에서만 보내 중복을 막는다."
+      "서버가 권위 있는 이벤트(source=server)는 서버에서만 보내 중복을 막는다.",
+      "웹은 URL 쿼리(공유 상태)·리퍼러 전체를 보내지 않는다. 자동 속성($current_url 등)도 쿼리·해시를 제거한 뒤 보낸다."
     ]
   },
   "commonProperties": [
@@ -135,8 +136,8 @@
         {
           "name": "max_minutes_bucket",
           "type": "enum",
-          "required": true,
-          "description": "1위 후보의 최장 소요시간 구간(분).",
+          "required": false,
+          "description": "1위 후보의 최장 소요시간 구간(분). 후보가 없으면 생략.",
           "enum": [
             "0-15",
             "15-30",
@@ -152,6 +153,18 @@
           "required": true,
           "description": "노출된 후보 수.",
           "min": 0
+        },
+        {
+          "name": "response_time_bucket",
+          "type": "enum",
+          "required": false,
+          "description": "추천 서버 응답 시간 구간(밀리초). 이 화면을 위해 실제로 서버를 부른 경우만(캐시에서 바로 보인 결과는 생략).",
+          "enum": [
+            "0-300",
+            "300-1000",
+            "1000-3000",
+            "3000+"
+          ]
         },
         {
           "name": "top1_station_code",
@@ -278,6 +291,29 @@
       ]
     },
     {
+      "name": "link_person_selected",
+      "source": "client",
+      "description": "받은 링크에서 \"나는 누구?\"로 사람을 골랐다(받은 사람의 참여 신호). 누구인지(이름·역)는 보내지 않는다.",
+      "properties": [
+        {
+          "name": "participant_count",
+          "type": "integer",
+          "required": true,
+          "description": "참가자 수.",
+          "min": 2,
+          "max": 4
+        },
+        {
+          "name": "person_position",
+          "type": "integer",
+          "required": true,
+          "description": "고른 사람의 순서(0부터, 링크에 담긴 순서).",
+          "min": 0,
+          "max": 3
+        }
+      ]
+    },
+    {
       "name": "room_created",
       "source": "server",
       "description": "방이 만들어졌다.",
@@ -352,6 +388,73 @@
           "description": "누른 카드의 순위.",
           "min": 1,
           "max": 3
+        }
+      ]
+    },
+    {
+      "name": "station_chosen",
+      "source": "client",
+      "description": "결과 카드에서 \"이 역으로 정했어요\"를 눌렀다. \"실제로 만날 역을 정했나\"의 대리 지표.",
+      "properties": [
+        {
+          "name": "rank",
+          "type": "integer",
+          "required": true,
+          "description": "정한 카드의 순위.",
+          "min": 1,
+          "max": 3
+        },
+        {
+          "name": "meeting_station_code",
+          "type": "string",
+          "required": true,
+          "description": "정한 만날 역 코드(장소이므로 허용)."
+        },
+        {
+          "name": "mode",
+          "type": "enum",
+          "required": true,
+          "description": "그때의 모드.",
+          "enum": [
+            "fair",
+            "fast",
+            "favor"
+          ]
+        },
+        {
+          "name": "participant_count",
+          "type": "integer",
+          "required": true,
+          "description": "참가자 수.",
+          "min": 2,
+          "max": 4
+        },
+        {
+          "name": "link_variant",
+          "type": "enum",
+          "required": true,
+          "description": "만든 사람 화면인지 받은 링크 화면인지.",
+          "enum": [
+            "creator",
+            "received"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "seo_to_input_clicked",
+      "source": "client",
+      "description": "SEO 페이지(조합 페이지·허브)에서 입력 화면으로 넘어가는 버튼을 눌렀다. 페이지의 역 조합은 보내지 않는다.",
+      "properties": [
+        {
+          "name": "page_kind",
+          "type": "enum",
+          "required": true,
+          "description": "누른 SEO 페이지 종류.",
+          "enum": [
+            "pair",
+            "hub"
+          ]
         }
       ]
     },

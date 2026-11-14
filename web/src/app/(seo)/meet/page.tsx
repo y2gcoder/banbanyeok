@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { JsonLd } from "@/components/seo/json-ld";
+import { StartLink } from "@/components/seo/start-link";
 import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { loadSeoSite } from "@/lib/seo/load";
 import { HUB_PATH, hubMetadata } from "@/lib/seo/metadata";
@@ -52,12 +53,13 @@ export default function HubPage() {
           </section>
         ))
       )}
-      <Link
+      <StartLink
+        pageKind="hub"
         href="/"
         className="inline-flex h-14 items-center justify-center rounded-xl border-2 border-ink text-[17px] font-bold text-ink"
       >
         다른 역으로 직접 찾아보기
-      </Link>
+      </StartLink>
     </>
   );
 }
