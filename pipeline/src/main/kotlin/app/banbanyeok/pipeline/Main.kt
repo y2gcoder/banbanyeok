@@ -22,11 +22,7 @@ fun main(args: Array<String>) {
         return
     }
     if (args.firstOrNull() == "tago-fetch") {
-        when (args.getOrNull(1)) {
-            null -> kotlin.system.exitProcess(tagoFetch(root))
-            "probe" -> tagoProbe(root)
-            else -> error("Usage: tago-fetch [probe]")
-        }
+        tagoCommand(root, args.drop(1))
         return
     }
     when (args.singleOrNull()) {
@@ -188,4 +184,17 @@ private fun writeCoverage(
             "missingFromS1" to listOf("GTX-A"),
         ).toString(),
     )
+}
+
+/** The only command that needs TAGO_SERVICE_KEY; everything else reads the cache offline. */
+private fun tagoCommand(
+    root: Path,
+    args: List<String>,
+) {
+    require(args.size <= 1) { "Usage: tago-fetch [probe]" }
+    when (args.firstOrNull()) {
+        null -> kotlin.system.exitProcess(tagoFetch(root))
+        "probe" -> tagoProbe(root)
+        else -> error("Usage: tago-fetch [probe]")
+    }
 }

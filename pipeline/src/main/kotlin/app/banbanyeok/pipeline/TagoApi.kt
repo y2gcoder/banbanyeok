@@ -69,7 +69,9 @@ internal class TagoApi(
         private set
 
     fun stations(keyword: String?): List<JsonObject> {
-        val name = keyword?.let { "kw-" + it.toByteArray().joinToString("") { b -> "%02x".format(b) } } ?: "all"
+        val name =
+            keyword?.let { "kw-" + it.toByteArray().joinToString("") { b -> "%02x".format(java.util.Locale.ROOT, b) } }
+                ?: "all"
         val parameters = keyword?.let { "&subwayStationName=" + URLEncoder.encode(it, Charsets.UTF_8) }.orEmpty()
         return pages(cache.resolve("stations"), name, TAGO_STATIONS, parameters)
     }
