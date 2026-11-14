@@ -59,7 +59,8 @@ internal fun tagoFetch(
             api.schedule(id, day, direction)
             if (!wasCached && ++done % 100 == 0) println("cached $done/${jobs.size} (calls ${api.calls})")
         }
-        println("TAGO cache complete: ${jobs.size} timetables; calls this run ${api.calls}")
+        writeTagoReceipt(root)
+        println("TAGO cache complete: ${jobs.size} timetables; calls this run ${api.calls}; S6 receipt updated")
         0
     } catch (_: TagoQuotaExceeded) {
         println("TAGO quota/budget reached after ${api.calls} calls; cached $done/${jobs.size}. Rerun to resume.")
@@ -93,4 +94,114 @@ internal fun tagoProbe(
         }
     }
     println("TAGO calls this run: ${api.calls}; raw pages cached under data/raw/tago")
+}
+
+private val tagoOffline =
+    PipelineHttp { _, _ -> error("TAGO cache incomplete; run tago-fetch with TAGO_SERVICE_KEY") }
+
+/** Scoped cache files in a fixed order; their combined digest is the S6 receipt. */
+private fun tagoFiles(
+    root: Path,
+    ids: List<String>,
+    days: List<String>,
+): List<Path> {
+    val cache = tagoCache(root)
+    val stations =
+        cache
+            .resolve("stations")
+            .toFile()
+            .listFiles()
+            .orEmpty()
+            .map { it.toPath() }
+    val list = stations.filter { it.fileName.toString().startsWith("all-p") }.sorted()
+    val schedules =
+        ids.flatMap { id ->
+            days.flatMap { day ->
+                listOf("u", "d").flatMap { direction ->
+                    cache
+                        .resolve("schedule")
+                        .toFile()
+                        .listFiles { file -> file.name.startsWith("${id.lowercase()}-$day-$direction-p") }
+                        .orEmpty()
+                        .map { it.toPath() }
+                        .sorted()
+                }
+            }
+        }
+    return list + schedules
+}
+
+internal fun tagoDigest(
+    root: Path,
+    files: List<Path>,
+): String =
+    app.banbanyeok.schema.Sha256.hex(
+        files
+            .joinToString("") { file ->
+                "${root.relativize(file)}\t${app.banbanyeok.schema.Sha256.hex(file.toFile().readBytes())}\n"
+            }.toByteArray(),
+    )
+
+/** Writes/keeps the S6 receipt in source-manifest.json; fetched_at changes only when the cache content does. */
+internal fun writeTagoReceipt(
+    root: Path,
+    clock: java.time.Clock = java.time.Clock.systemUTC(),
+) {
+    val scope = parseObject(root.resolve("data/config/tago-scope.json").readText())
+    val api = TagoApi(null, tagoOffline, tagoCache(root))
+    val ids = tagoScope(scope, api.stations(null)).map { it.text("subwayStationId") }
+    val files = tagoFiles(root, ids, tagoDailyTypes(scope))
+    val digest = tagoDigest(root, files)
+    val path = root.resolve("data/config/source-manifest.json")
+    val receipts =
+        kotlinx.serialization.json.Json
+            .parseToJsonElement(path.readText())
+            .jsonArray
+            .map { it.jsonObject }
+    val old = receipts.firstOrNull { it.text("id") == "S6" }
+    if (old?.text("sha256") == digest) return
+    val receipt =
+        obj(
+            "id" to "S6",
+            "file" to "data/raw/tago",
+            "source_url" to "$TAGO_BASE ($TAGO_STATIONS, $TAGO_SCHEDULE)",
+            "request_body" to null,
+            "fetched_at" to clock.instant().toString(),
+            "sha256" to digest,
+            "bytes" to files.sumOf { it.toFile().length() },
+            "content_type" to "application/json",
+            "rows" to files.size,
+            "license" to "이용허락범위 제한 없음 (data.go.kr/15098554)",
+            "effective_date" to "timetable revision date not supplied; weekday (dailyTypeCode 01)",
+            "estimated" to false,
+        )
+    path.writeJson(jsonValue(receipts.filter { it.text("id") != "S6" } + receipt).toString())
+}
+
+/** Offline read of the cached TAGO inputs; verifies the S6 receipt digest like verifyRaw does for S1/S3/S4. */
+internal fun readTago(root: Path): TagoInput {
+    val lines = MetroLines(parseObject(root.resolve("data/config/metro-lines.json").readText()))
+    val scope = parseObject(root.resolve("data/config/tago-scope.json").readText())
+    val api = TagoApi(null, tagoOffline, tagoCache(root))
+    val list = api.stations(null)
+    val scoped = tagoScope(scope, list).map { it.text("subwayStationId") }
+    require(lines.stationIds.all { it in scoped }) { "metro-lines.json uses a TAGO station outside tago-scope.json" }
+    val receipt =
+        kotlinx.serialization.json.Json
+            .parseToJsonElement(root.resolve("data/config/source-manifest.json").readText())
+            .jsonArray
+            .map { it.jsonObject }
+            .firstOrNull { it.text("id") == "S6" }
+    requireNotNull(receipt) { "S6 (TAGO) receipt missing; run tago-fetch" }
+    val files = tagoFiles(root, scoped, tagoDailyTypes(scope))
+    require(receipt.text("sha256") == tagoDigest(root, files)) { "S6: TAGO cache digest mismatch; run tago-fetch" }
+    val timetable =
+        scoped.associateWith { id ->
+            listOf("U", "D").associateWith { direction -> api.schedule(id, "01", direction).map(::tagoTrain) }
+        }
+    return TagoInput(
+        lines,
+        list.associate { it.text("subwayStationId") to (it.text("subwayStationName") to it.text("subwayRouteName")) },
+        timetable,
+    )
 }

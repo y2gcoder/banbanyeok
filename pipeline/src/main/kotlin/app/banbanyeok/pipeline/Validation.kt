@@ -2,7 +2,9 @@ package app.banbanyeok.pipeline
 
 import kotlin.math.abs
 
-internal fun distribution(values: List<Int>): kotlinx.serialization.json.JsonObject {
+internal fun distribution(values: List<Int>): kotlinx.serialization.json.JsonObject = distribution(values.toIntArray())
+
+internal fun distribution(values: IntArray): kotlinx.serialization.json.JsonObject {
     val sorted = values.sorted()
 
     fun percentile(percent: Int): Int = if (sorted.isEmpty()) 0 else sorted[(sorted.size - 1) * percent / 100]
@@ -15,23 +17,50 @@ internal fun distribution(values: List<Int>): kotlinx.serialization.json.JsonObj
     )
 }
 
-internal fun stateTriangles(distances: List<List<Cost>>): Int =
-    distances.indices.sumOf { a ->
-        distances.indices.sumOf { b ->
-            distances.indices.count { c -> violatesTriangle(distances[a][b], distances[b][c], distances[a][c]) }
-        }
+internal fun stateTriangles(distances: List<List<Cost>>): Int {
+    val n = distances.size
+    val seconds = Array(n) { a -> IntArray(n) { distances[a][it].seconds } }
+    val changes = Array(n) { a -> IntArray(n) { distances[a][it].changes } }
+    return (0 until n).sumOf { a ->
+        (0 until n).sumOf { b -> triangleViolationsVia(seconds, changes, a, b) }
     }
+}
+
+/** Lexicographic (seconds, changes) violations of d(a,c) ≤ d(a,b) + d(b,c) for every c. */
+private fun triangleViolationsVia(
+    seconds: Array<IntArray>,
+    changes: Array<IntArray>,
+    a: Int,
+    b: Int,
+): Int {
+    val ab = seconds[a][b]
+    if (ab >= infinity.seconds) return 0
+    val abChanges = changes[a][b]
+    val bc = seconds[b]
+    val bcChanges = changes[b]
+    val ac = seconds[a]
+    val acChanges = changes[a]
+    var violations = 0
+    for (c in bc.indices) {
+        if (bc[c] >= infinity.seconds) continue
+        val via = ab + bc[c]
+        val worse = ac[c] > via || (ac[c] == via && acChanges[c] > abChanges + bcChanges[c])
+        if (worse) violations++
+    }
+    return violations
+}
 
 /** Largest minimum transfer cost between any two platforms at a physical station.
  * Only within-station walking+waiting edges are allowed; train trips cannot hide missing transfers.
  */
-internal fun physicalTriangleBounds(net: Network): List<Int> =
-    net.origins.map { station ->
-        val platforms = net.nodes.indices.filter { net.nodes[it].first == station.code }
-        val transferGraph =
-            net.graph.mapIndexed { from, edges ->
-                edges.filter { it.changes > 0 && net.nodes[it.to].first == net.nodes[from].first }
-            }
+internal fun physicalTriangleBounds(net: Network): List<Int> {
+    val transferGraph =
+        net.graph.mapIndexed { from, edges ->
+            edges.filter { it.changes > 0 && net.nodes[it.to].first == net.nodes[from].first }
+        }
+    val byCode = net.nodes.indices.groupBy { net.nodes[it].first }
+    return net.origins.map { station ->
+        val platforms = byCode.getValue(station.code)
         val maxTransfer =
             platforms.maxOf { from ->
                 val distance = shortest(transferGraph, mapOf(from to 0))
@@ -40,11 +69,54 @@ internal fun physicalTriangleBounds(net: Network): List<Int> =
         require(maxTransfer < infinity.seconds) { "Missing transfer connection within ${station.name}" }
         maxTransfer - platforms.minOf { net.waits.getValue(net.nodes[it].second) }
     }
+}
 
 internal data class Gate(
     val passed: Boolean,
     val json: kotlinx.serialization.json.JsonObject,
 )
+
+/** Physical-OD triangle excesses d(A,C) − d(A,B) − d(B,C) > 0, checked against B's skipped-transfer bound. */
+private class PhysicalExcess(
+    private val net: Network,
+    private val bounds: List<Int>,
+) {
+    private var sizes = IntArray(1024)
+    private var count = 0
+    var violations = 0
+        private set
+    val examples = mutableListOf<String>()
+
+    fun add(
+        a: Int,
+        b: Int,
+        c: Int,
+        excess: Int,
+    ) {
+        if (count == sizes.size) sizes = sizes.copyOf(sizes.size * 2)
+        sizes[count++] = excess
+        if (excess > bounds[b]) violations++
+        if (examples.size < 5) {
+            examples.add(
+                "${net.origins[a].name} -> ${net.origins[c].name} via " +
+                    "${net.origins[b].name}: excess=$excess, bound=${bounds[b]}",
+            )
+        }
+    }
+
+    fun distribution() = distribution(sizes.copyOf(count))
+
+    fun scan(
+        plain: Array<IntArray>,
+        a: Int,
+        c: Int,
+    ) {
+        for (b in plain.indices) {
+            val over = plain[a][c] - plain[a][b] - plain[b][c]
+            if (over > 0) add(a, b, c, over)
+        }
+    }
+}
 
 internal fun graphGate(
     net: Network,
@@ -52,38 +124,27 @@ internal fun graphGate(
 ): Gate {
     val states = net.nodes.indices.map { shortest(net.graph, mapOf(it to 0)) }
     val stateViolations = stateTriangles(states)
-    val bounds = physicalTriangleBounds(net)
-    val sizes = mutableListOf<Int>()
+    val excess = PhysicalExcess(net, physicalTriangleBounds(net))
     val symmetry = mutableListOf<Int>()
-    val examples = mutableListOf<String>()
-    var boundViolations = 0
+    val plain = Array(costs.size) { a -> IntArray(costs.size) { costs[a][it].seconds } }
     var abnormal = 0
     for (a in costs.indices) {
         for (c in costs.indices) {
-            val seconds = costs[a][c].seconds
-            if (a != c && (seconds <= 0 || seconds > 14400)) abnormal++
-            if (a == c && costs[a][c] != Cost(0, 0)) abnormal++
-            if (a < c) symmetry.add(abs(seconds - costs[c][a].seconds))
-            val excesses = physicalExcesses(costs, bounds, a, c)
-            sizes.addAll(excesses.map { it.second })
-            boundViolations += excesses.count { (b, excess) -> excess > bounds[b] }
-            excesses.take((5 - examples.size).coerceAtLeast(0)).forEach { (b, excess) ->
-                examples.add(
-                    "${net.origins[a].name} -> ${net.origins[c].name} via " +
-                        "${net.origins[b].name}: excess=$excess, bound=${bounds[b]}",
-                )
-            }
+            if (!normalCell(costs, a, c)) abnormal++
+            if (a < c) symmetry.add(abs(costs[a][c].seconds - costs[c][a].seconds))
+            excess.scan(plain, a, c)
         }
     }
     val branchValid = branchValid(net, costs)
     return Gate(
-        stateViolations == 0 && boundViolations == 0 && abnormal == 0 && branchValid,
+        stateViolations == 0 && excess.violations == 0 && abnormal == 0 && branchValid && net.issues.isEmpty(),
         obj(
+            "dataIssues" to net.issues,
             "branchServiceCheck" to branchValid,
             "stateTriangleViolations" to stateViolations,
-            "physicalTriangleExcessSeconds" to distribution(sizes),
-            "physicalTriangleBoundViolations" to boundViolations,
-            "triangleExamples" to examples,
+            "physicalTriangleExcessSeconds" to excess.distribution(),
+            "physicalTriangleBoundViolations" to excess.violations,
+            "triangleExamples" to excess.examples,
             "abnormal" to abnormal,
             "symmetrySeconds" to distribution(symmetry),
             "symmetryNonzero" to symmetry.count { it > 0 },
@@ -91,11 +152,11 @@ internal fun graphGate(
     )
 }
 
-private fun violatesTriangle(
-    ab: Cost,
-    bc: Cost,
-    ac: Cost,
-): Boolean = ab != infinity && bc != infinity && ac > Cost(ab.seconds + bc.seconds, ab.changes + bc.changes)
+private fun normalCell(
+    costs: List<List<Cost>>,
+    a: Int,
+    c: Int,
+): Boolean = if (a == c) costs[a][c] == Cost(0, 0) else costs[a][c].seconds in 1..14400
 
 private fun branchValid(
     net: Network,
@@ -107,13 +168,3 @@ private fun branchValid(
         val (junction, branch, main) = indexes
         costs[branch][main].changes >= 1 && costs[main][branch].changes >= 1 && costs[junction][branch].changes == 0
     }
-
-private fun physicalExcesses(
-    costs: List<List<Cost>>,
-    bounds: List<Int>,
-    a: Int,
-    c: Int,
-): List<Pair<Int, Int>> =
-    bounds.indices
-        .map { b -> b to costs[a][c].seconds - costs[a][b].seconds - costs[b][c].seconds }
-        .filter { it.second > 0 }

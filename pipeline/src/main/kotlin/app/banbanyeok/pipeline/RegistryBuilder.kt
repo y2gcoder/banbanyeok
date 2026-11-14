@@ -16,6 +16,7 @@ internal class RegistryBuilder(
     private val records: List<Record>,
     private val rules: NetworkRules,
     private val codes: CodeSource,
+    private val tago: TagoInput? = null,
 ) {
     val stations = previous.stations.toMutableList()
     val used = stations.mapTo(mutableSetOf()) { it.code }
@@ -139,6 +140,7 @@ internal class RegistryBuilder(
         assign()
         retireDuplicates()
         supplement()
+        tago?.let { TagoRegistry(records, rules, it).supplement(stations, used, newVersion, codes) }
         val sorted = stations.sortedBy { it.code }
         val registry = Registry(1, if (sorted == previous.stations) previous.registryVersion else newVersion, sorted)
         RegistryCodec.validate(registry)

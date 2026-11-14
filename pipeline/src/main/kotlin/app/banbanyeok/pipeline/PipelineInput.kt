@@ -16,6 +16,7 @@ internal data class PipelineInput(
     val transfers: List<List<String>>,
     val rules: NetworkRules,
     val headways: Map<String, Int>,
+    val tago: TagoInput? = null,
 )
 
 internal fun parseRecords(
@@ -58,6 +59,7 @@ internal fun readInput(root: Path): PipelineInput {
         csvBytes(raw.resolve("transfer.csv").readBytes()).drop(1),
         rules,
         headways,
+        readTago(root),
     )
 }
 
@@ -65,7 +67,7 @@ internal fun network(
     input: PipelineInput,
     codes: CodeSource,
 ): Network {
-    val registry = RegistryBuilder(input.previous, input.records, input.rules, codes).build()
+    val registry = RegistryBuilder(input.previous, input.records, input.rules, codes, input.tago).build()
     return NetworkBuilder(registry, input).build()
 }
 

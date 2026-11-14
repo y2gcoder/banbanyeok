@@ -2,6 +2,7 @@ package app.banbanyeok.pipeline
 import app.banbanyeok.schema.Registry
 import app.banbanyeok.schema.Station
 import app.banbanyeok.schema.StationStatus
+import kotlinx.serialization.json.JsonObject
 import java.util.PriorityQueue
 
 internal data class Record(
@@ -64,6 +65,10 @@ internal data class Network(
     val waits: Map<String, Int>,
     val excluded: List<String>,
     val branchChecks: List<List<String>> = emptyList(),
+    /** TAGO edge/headway/transfer evidence for data/config/tago-report.json. */
+    val tagoReport: JsonObject? = null,
+    /** Blocking data problems (unmatched TAGO pairs etc.); the validation gate fails when non-empty. */
+    val issues: List<String> = emptyList(),
 )
 
 internal class NetworkBuilder(
@@ -76,6 +81,12 @@ internal class NetworkBuilder(
     private val runtime = input.runtime
     private val transfers = input.transfers
     private val headways = input.headways
+    private val tago = input.tago
+    private val tagoCodes = tago?.let { TagoRegistry(records, rules, it).codes(registry.stations) }.orEmpty()
+    private val tagoHeadways = tago?.let(::tagoServiceHeadways).orEmpty()
+    private val issues = mutableListOf<String>()
+    private val tagoEdges = mutableListOf<JsonObject>()
+    private val tagoTransfers = mutableListOf<JsonObject>()
     val seoulRecords = records.filter { it.operator == "서울교통공사" && it.line in (1..8).map { n -> "${n}호선" } }
 
     private fun canonical(name: String) = rules.canonical(name)
@@ -110,6 +121,7 @@ internal class NetworkBuilder(
         val line5Trunk = runtime.filter { it[1] == rules.trunkLine }.takeWhile { it[2] != rules.trunkEnd }
         // Both train services run on the common trunk, then diverge at 강동.
         line5Trunk.forEach { nodes.add(station(rules.trunkLine, it[2]).code to rules.trunkService) }
+        tago?.let { nodes.addAll(tagoNodes(it, tagoCodes)) }
     }
 
     private val distinctNodes = nodes.distinct()
@@ -137,8 +149,14 @@ internal class NetworkBuilder(
 
     private val waits =
         distinctNodes.map { it.second }.distinct().associateWith {
-            headways.getValue(it.take(1)) / 2
+            (tagoHeadways[it] ?: headways.getValue(it.take(1))) / 2
         }
+
+    private val tagoServices = tago?.lines?.groups.orEmpty()
+
+    private fun group(service: String): String = tagoServices[service] ?: service.take(1)
+
+    private val nodesByCode = distinctNodes.indices.groupBy { distinctNodes[it].first }
 
     private fun rideEdges() {
         var previousRow: List<String>? = null
@@ -230,7 +248,15 @@ internal class NetworkBuilder(
         rideEdges()
         trunkEdges()
         transferEdges()
+        tago?.let {
+            tagoRideEdges(it)
+            groupTransfers(it)
+        }
         completeTransfers()
+        tago?.let {
+            patternSwitches()
+            defaultTransfers(it)
+        }
         val included = distinctNodes.map { it.first }.toSet()
         val origins = registry.stations.filter { it.status == StationStatus.ACTIVE && it.code in included }
         val excluded =
@@ -238,7 +264,174 @@ internal class NetworkBuilder(
                 .filter { rec ->
                     origins.none { rec.id in it.sources.values }
                 }.map { "${it.line}:${it.name}" }
-        return Network(registry, previous, origins, distinctNodes, graph, waits, excluded, rules.branchChecks)
+        val report =
+            tago?.let {
+                obj(
+                    "serviceHeadways" to JsonObject(tagoHeadways.mapValues { (_, v) -> jsonValue(v) }),
+                    "edges" to tagoEdges,
+                    "transfers" to tagoTransfers,
+                )
+            }
+        return Network(
+            registry,
+            previous,
+            origins,
+            distinctNodes,
+            graph,
+            waits,
+            excluded,
+            rules.branchChecks,
+            report,
+            issues,
+        )
+    }
+
+    private fun tagoNode(
+        service: MetroService,
+        id: String,
+    ): Int = distinctNodes.indexOf(tagoCodes.getValue(id) to (service.joins[id] ?: service.id))
+
+    private fun stationName(code: String) = registry.stations.first { it.code == code }.name
+
+    private fun tagoRideEdges(tago: TagoInput) {
+        tago.lines.services.forEach { service ->
+            service.stations.zipWithNext().forEach { (a, b) -> tagoRide(tago, service, a, b) }
+        }
+    }
+
+    private fun tagoRide(
+        tago: TagoInput,
+        service: MetroService,
+        a: String,
+        b: String,
+    ) {
+        val from = tagoNode(service, a)
+        val to = tagoNode(service, b)
+        val copied = service.s3Line?.let { s3Copy(it, tagoCodes.getValue(a), tagoCodes.getValue(b)) }
+        if (copied != null) {
+            edge(from, to, copied.first)
+            edge(to, from, copied.second)
+            return
+        }
+        val (forward, reverse) = tagoRunTimes(tago, a, b)
+        if (forward == null || reverse == null) {
+            issues.add("TAGO run time unmatched: ${service.id} $a→$b")
+        } else {
+            edge(from, to, forward.seconds)
+            edge(to, from, reverse.seconds)
+        }
+        tagoEdges.add(
+            obj(
+                "service" to service.id,
+                "from" to "$a ${stationName(tagoCodes.getValue(a))}",
+                "to" to "$b ${stationName(tagoCodes.getValue(b))}",
+                "forward" to forward?.json,
+                "reverse" to reverse?.json,
+            ),
+        )
+    }
+
+    /** S3 seconds of the existing service between two stations, both directions, if S3 has that ride. */
+    private fun s3Copy(
+        line: String,
+        a: String,
+        b: String,
+    ): Pair<Int, Int>? {
+        val from = distinctNodes.indexOf(a to line)
+        val to = distinctNodes.indexOf(b to line)
+        if (from < 0 || to < 0) return null
+        val forward = graph[from].firstOrNull { it.to == to && it.changes == 0 }?.seconds
+        val reverse = graph[to].firstOrNull { it.to == from && it.changes == 0 }?.seconds
+        return if (forward != null && reverse != null) forward to reverse else null
+    }
+
+    private fun isTago(node: Int) = distinctNodes[node].second in tagoServices
+
+    private fun groupNodes(
+        code: String,
+        group: String,
+    ) = nodesByCode[code].orEmpty().filter { group(distinctNodes[it].second) == group }
+
+    /** S4 walks also apply to every TAGO service node of the same line group at that station. */
+    private fun groupTransfers(tago: TagoInput) {
+        transfers.forEach { row ->
+            val other =
+                tago.lines.s4LineGroups[row[3]] ?: row[3].removeSuffix("호선").takeIf { it in headways }
+            if (other == null || other == row[1] || !hasStation(row[1], row[2])) return@forEach
+            val code = station(row[1], row[2]).code
+            val sources = groupNodes(code, row[1])
+            val targets = groupNodes(code, other)
+            if (sources.isEmpty() || targets.isEmpty()) {
+                tagoTransfers.add(obj("station" to row[2], "from" to row[1], "to" to other, "status" to "no nodes"))
+                return@forEach
+            }
+            sources.forEach { from ->
+                targets.filter { isTago(from) || isTago(it) }.forEach { to ->
+                    edge(from, to, duration(row[5]) + waits.getValue(distinctNodes[to].second), 1)
+                }
+            }
+        }
+    }
+
+    /** Same-group TAGO services stopping at one station share the platform: wait for the other train only. */
+    private fun patternSwitches() {
+        nodesByCode.values.forEach { indexes ->
+            indexes.forEach { from ->
+                indexes
+                    .filter { to ->
+                        to != from && group(distinctNodes[to].second) == group(distinctNodes[from].second) &&
+                            (isTago(from) || isTago(to))
+                    }.forEach { to -> edge(from, to, waits.getValue(distinctNodes[to].second), 1) }
+            }
+        }
+    }
+
+    /** Rule-based walk for line groups that meet at one physical station without any S4 record. */
+    private fun defaultTransfers(tago: TagoInput) {
+        nodesByCode.forEach { (code, indexes) ->
+            val groups = indexes.map { group(distinctNodes[it].second) }.distinct().sorted()
+            groups.forEachIndexed { i, a ->
+                groups.drop(i + 1).forEach { b ->
+                    val left = groupNodes(code, a)
+                    val right = groupNodes(code, b)
+                    val linked =
+                        left.any { x -> graph[x].any { it.changes > 0 && it.to in right } } ||
+                            right.any { y -> graph[y].any { it.changes > 0 && it.to in left } }
+                    if (!linked && (left + right).any(::isTago)) {
+                        val walk = tago.lines.walkSeconds(a, b)
+                        left.forEach { x ->
+                            right.forEach { y ->
+                                edge(
+                                    x,
+                                    y,
+                                    walk + waits.getValue(distinctNodes[y].second),
+                                    1,
+                                )
+                            }
+                        }
+                        right.forEach { y ->
+                            left.forEach { x ->
+                                edge(
+                                    y,
+                                    x,
+                                    walk + waits.getValue(distinctNodes[x].second),
+                                    1,
+                                )
+                            }
+                        }
+                        tagoTransfers.add(
+                            obj(
+                                "station" to stationName(code),
+                                "from" to a,
+                                "to" to b,
+                                "walkSeconds" to walk,
+                                "status" to "default",
+                            ),
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun hasStation(
