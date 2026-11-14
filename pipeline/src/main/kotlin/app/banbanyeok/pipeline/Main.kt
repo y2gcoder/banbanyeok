@@ -2,25 +2,13 @@ package app.banbanyeok.pipeline
 
 import app.banbanyeok.schema.CandidateList
 import app.banbanyeok.schema.DataSetLoader
-import app.banbanyeok.schema.Manifest
-import app.banbanyeok.schema.ManifestCodec
-import app.banbanyeok.schema.ManifestFile
-import app.banbanyeok.schema.ManifestFiles
-import app.banbanyeok.schema.OdBinCodec
-import app.banbanyeok.schema.OdMatrix
 import app.banbanyeok.schema.RegistryCodec
 import app.banbanyeok.schema.RegistryCompatibility
-import app.banbanyeok.schema.Sha256
-import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.StationStatus
 import java.nio.file.Path
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
-import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
 fun main(args: Array<String>) {
@@ -90,6 +78,7 @@ private fun build(root: Path) {
         ).toString(),
     )
     writeCoverage(root, net)
+    writeRegistryAudit(root, net.registry)
     // Registry and review draft are control-plane inputs, not published travel artifacts.
     root.resolve("data/registry/stations.json").writeText(RegistryCodec.encode(net.registry))
     root.resolve("data/registry/candidates.json").writeText(RegistryCodec.encodeCandidates(candidateList))
@@ -112,75 +101,6 @@ private fun build(root: Path) {
     publish(root, net, candidateList, times to transfers)
 }
 
-private fun publish(
-    root: Path,
-    net: Network,
-    candidateList: CandidateList,
-    matrix: Pair<IntArray, IntArray>,
-    clock: java.time.Clock = java.time.Clock.systemUTC(),
-) {
-    val candidates = candidateList.candidates
-    val output = root.resolve("data/artifacts/dev").createDirectories()
-    val registryBytes = RegistryCodec.encode(net.registry).toByteArray()
-    val candidateBytes = RegistryCodec.encodeCandidates(candidateList).toByteArray()
-    val od =
-        OdMatrix(
-            net.registry.registryVersion,
-            net.origins
-                .map {
-                    StationCode.parse(it.code).value
-                }.toIntArray(),
-            candidates.map { StationCode.parse(it).value }.toIntArray(),
-            matrix.first,
-            matrix.second,
-        )
-    val odBytes = OdBinCodec.encode(od)
-    val files = linkedMapOf("stations.json" to registryBytes, "candidates.json" to candidateBytes, "od.bin" to odBytes)
-
-    fun file(name: String): ManifestFile =
-        ManifestFile(name, Sha256.hex(files.getValue(name)), files.getValue(name).size.toLong())
-    val now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
-    val date = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC).format(now)
-    val previousManifest =
-        output
-            .resolve("manifest.json")
-            .takeIf {
-                it.exists()
-            }?.let { ManifestCodec.parse(it.readText()) }
-    val unchanged = artifactsUnchanged(previousManifest, files)
-    writeGlyphs(root, net, output)
-    if (unchanged) {
-        println("Artifacts unchanged")
-        return
-    }
-    val revision =
-        previousManifest
-            ?.dataVersion
-            ?.takeIf { it.startsWith("$date.") }
-            ?.substringAfter('.')
-            ?.toInt()
-            ?.plus(1) ?: 1
-    require(revision <= 999) { "Daily dataVersion revision exhausted" }
-    val manifest =
-        Manifest(
-            1,
-            1,
-            "$date.$revision",
-            previousDataVersion = previousManifest?.dataVersion,
-            generatedAt = now.toString(),
-            registryVersion = net.registry.registryVersion,
-            timeModel = "weekday-offpeak-half-headway",
-            originCount = net.origins.size,
-            candidateCount = candidates.size,
-            files = ManifestFiles(file("stations.json"), file("candidates.json"), file("od.bin")),
-        )
-    val manifestText = ManifestCodec.encode(manifest)
-    DataSetLoader.load(manifestText, registryBytes, candidateBytes, odBytes)
-    files.forEach { (name, bytes) -> output.resolve(name).writeBytes(bytes) }
-    output.resolve("manifest.json").writeText(manifestText)
-    println("Published dev artifacts: ${files.values.sumOf { it.size }} bytes (+ manifest/glyphs)")
-}
-
 private fun validate(root: Path) {
     val output = root.resolve("data/artifacts/dev")
     val dataset =
@@ -190,6 +110,7 @@ private fun validate(root: Path) {
             output.resolve("candidates.json").readBytes(),
             output.resolve("od.bin").readBytes(),
         )
+    validateSeo(root, dataset.registry, dataset.od, dataset.manifest)
     val registry = RegistryCodec.parse(root.resolve("data/registry/stations.json").readText())
     require(RegistryCompatibility.checkAppendOnly(dataset.registry, registry).isEmpty())
     require(registry == dataset.registry) { "Artifact registry differs from control registry; rebuild required" }
@@ -236,26 +157,3 @@ private fun writeCoverage(
         ).toString(),
     )
 }
-
-private fun writeGlyphs(
-    root: Path,
-    net: Network,
-    output: Path,
-) {
-    val glyphs =
-        (net.registry.stations.joinToString("") { it.name } + root.resolve("data/config/og-copy.txt").readText())
-            .filter { !it.isISOControl() }
-            .toSet()
-            .sorted()
-            .joinToString("")
-    output.resolve("og-glyphs.txt").writeText(glyphs + "\n")
-}
-
-private fun artifactsUnchanged(
-    previous: Manifest?,
-    files: Map<String, ByteArray>,
-): Boolean =
-    previous?.files?.let { old ->
-        mapOf("od.bin" to old.od, "stations.json" to old.registry, "candidates.json" to old.candidates)
-            .all { (name, receipt) -> receipt.sha256 == Sha256.hex(files.getValue(name)) }
-    } ?: false

@@ -7,8 +7,10 @@ application {
 }
 
 dependencies {
-    // pipeline은 shared:schema에만 의존한다(검증용으로 shared:core를 쓰게 되면 그때 추가).
+    // SEO 사전계산은 앱/서버와 같은 순위 및 이유 생성 구현을 사용한다.
     implementation(project(":shared:schema"))
+    implementation(project(":shared:core"))
+    implementation(project(":shared:app-logic"))
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(kotlin("test"))
