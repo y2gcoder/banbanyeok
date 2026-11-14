@@ -39,7 +39,7 @@ describe("개인정보 처리방침", () => {
     }
   });
 
-  it("운영자 이름·시행일은 자리표시로 남고, 이메일은 전용 연락 주소만 쓴다(개인 메일을 넣지 않는다)", () => {
+  it("시행일은 자리표시로 남고, 이메일은 전용 연락 주소만 쓴다(개인 메일을 넣지 않는다)", () => {
     for (const placeholder of REQUIRED_PLACEHOLDERS) expect(markdown).toContain(placeholder);
     expect(markdown).toContain(CONTACT_EMAIL);
     expect(markdown.replaceAll(CONTACT_EMAIL, "")).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);
