@@ -27,7 +27,7 @@
 
 registryVersion 3→4, 총 코드 984개 유지, active 952→944 / deprecated 32→40. 퇴역한 코드는 deprecatedIn=4와 replacedBy를 기록했다. 옛 이름 aliases는 정식 코드에 합치며 **코드 별칭의 유일한 원천은 stations.json의 replacedBy**다. 별도 별칭 산출물은 없다. 모든 replacedBy 체인 40개가 순환 없이 active 코드에서 끝나는지도 게이트가 검사한다. 폐역 등 replacement 없는 deprecated 자체는 허용하되 다른 코드의 replacement 체인이 거기서 끝나면 실패한다.
 
-**소비자 후속:** 웹 인덱스·서버는 옛 입력 코드를 replacedBy 체인을 따라 active 코드로 해석해야 한다. 이 작업은 코디네이터가 웹/P3 후속으로 배정한다. 이번 PR은 소비자 파일을 수정하지 않는다.
+**소비자 후속:** 웹 인덱스·서버는 옛 입력 코드를 replacedBy 체인을 따라 active 코드로 해석해야 한다. 이 작업은 코디네이터가 웹/P3 후속으로 배정한다. 이번 PR은 소비자 로직을 수정하지 않는다. 코디네이터 승인으로 기존 생성기를 실행해 `web/src/lib/stations/index.gen.json`만 동기화했다. 데이터 변경 시 이 인덱스 재생성이 필요하며, 파이프라인 build가 이를 자동 수행하게 할지는 결정이 필요하다.
 
 ## SEO 사전계산
 
