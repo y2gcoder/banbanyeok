@@ -27,8 +27,8 @@ include(
     ":shared:analytics",
 )
 
-// JVM 앱: server(프레임워크 미정, 자리표시), pipeline(Kotlin CLI)
-include(":server", ":pipeline")
+// JVM 앱: server(Ktor 모듈러 모놀리스: app이 조립하고 room·recommendation·artifact는 서로 의존하지 않는다), pipeline(Kotlin CLI)
+include(":server:app", ":server:room", ":server:recommendation", ":server:artifact", ":pipeline")
 
 // 후속 단계에서 활성화:
 //   include(":android:app")   // A1. android/ 디렉토리와 함께 추가

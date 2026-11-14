@@ -1,0 +1,6 @@
+# 빌드 컨텍스트는 저장소 루트다. 이미지에 필요한 것만 보낸다.
+*
+!server/app/build/install/app/lib/**
+!server/app/build/install/app/classpath.txt
+!server/app/docker/run.sh
+!data/artifacts/dev/**
