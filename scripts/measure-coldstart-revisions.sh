@@ -19,7 +19,7 @@ for i in $(seq 1 "$count"); do
     --update-env-vars="COLD_NONCE=$(date -u +%s)-$i" --quiet >/dev/null
   urls+=("$(gcloud run services describe "$service" --region="$region" --format=json \
     | python3 -I -c 'import json,sys; t=sys.argv[1]; print([x["url"] for x in json.load(sys.stdin)["status"]["traffic"] if x.get("tag")==t][0])' "cold$i")")
-  echo "[$i/$count] 리비전 준비: ${urls[-1]}" >&2
+  echo "[$i/$count] 리비전 준비: ${urls[${#urls[@]}-1]}" >&2
 done
 echo "${idle}초 방치 ($(date -u +%H:%M:%SZ) 시작)" >&2
 sleep "$idle"
