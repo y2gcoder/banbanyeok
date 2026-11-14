@@ -13,12 +13,20 @@ RUN chmod 0555 /app/run.sh
 
 # 학습: 로컬 프로필로 서버를 띄워 자주 쓰는 경로(health, manifest, 추천, 오류 응답, DB 접근 시도)를 한 번씩 지나가게 한 뒤
 # 정상 종료해서 아카이브를 쓴다. DB는 없다: 연결 실패 경로가 Hikari·Exposed·JDBC 클래스를 읽게 한다. 산출물은 학습에만 쓰고 최종 이미지에 넣지 않는다.
+# 산출물은 운영과 같은 경로(GCS 클라이언트·인증·HTTP 전송)로 읽게 해서 그 클래스도 아카이브에 넣는다: 학습 때만 로컬 GCS 에뮬레이터
+# (fake-gcs-server, 버킷 이름 training)를 띄우고 ARTIFACT_GCS_ENDPOINT로 가리킨다. 에뮬레이터는 최종 이미지에 들어가지 않는다.
+FROM fsouza/fake-gcs-server:1.56.1 AS gcsemu
+
 FROM base AS cds
-COPY data/artifacts/dev/ /training/artifacts/
+COPY --from=gcsemu /bin/fake-gcs-server /usr/local/bin/fake-gcs-server
+COPY data/artifacts/dev/ /training/gcs/training/
 RUN bash -c 'set -eu; \
-  export APP_PROFILE=local SERVER_PORT=8080 ARTIFACT_LOCAL_DIR=/training/artifacts \
+  fake-gcs-server -scheme http -port 4443 -data /training/gcs -backend memory > /tmp/gcs-emulator.log 2>&1 & \
+  for i in $(seq 1 60); do (exec 3<>/dev/tcp/127.0.0.1/4443) 2>/dev/null && break; sleep 1; done; \
+  export APP_PROFILE=local SERVER_PORT=8080 ARTIFACT_STORE=gcs ARTIFACT_GCS_BUCKET=training \
+    ARTIFACT_GCS_ENDPOINT=http://127.0.0.1:4443 \
     DATABASE_URL=jdbc:postgresql://127.0.0.1:1/none RATE_LIMIT_ENABLED=false; \
-  java -Xms32m -Xmx256m -XX:ArchiveClassesAtExit=/app/app.jsa -cp "$(cat /app/classpath.txt)" app.banbanyeok.server.app.MainKt \
+  java -Xms32m -Xmx256m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ArchiveClassesAtExit=/app/app.jsa -cp "$(cat /app/classpath.txt)" app.banbanyeok.server.app.MainKt \
     > /tmp/training.log 2>&1 & pid=$!; \
   ready=0; for i in $(seq 1 120); do \
     if (exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /healthz HTTP/1.0\r\n\r\n" >&3; read -r line <&3; [[ "$line" == *200* ]]) 2>/dev/null; then ready=1; break; fi; sleep 1; done; \

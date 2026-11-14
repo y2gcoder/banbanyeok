@@ -35,11 +35,15 @@ class RunningEmulator(
             .also { if (emulator.command.isNotEmpty()) it.withCommand(emulator.command.joinToString(" ")) }
             .waitingFor(Wait.forListeningPort())
 
-    val storage: Storage by lazy {
+    private val host: String by lazy {
         container.start()
+        "http://${container.host}:${container.getMappedPort(emulator.port)}"
+    }
+
+    private val storage: Storage by lazy {
         StorageOptions
             .newBuilder()
-            .setHost("http://${container.host}:${container.getMappedPort(emulator.port)}")
+            .setHost(host)
             .setProjectId("test-project")
             .setCredentials(NoCredentials.getInstance())
             .build()
@@ -49,7 +53,7 @@ class RunningEmulator(
     fun newBucketStore(): ArtifactStore {
         val bucket = "bucket-${java.util.UUID.randomUUID()}"
         storage.create(BucketInfo.of(bucket))
-        return GcsArtifactStore(storage, bucket, UnconfinedTestDispatcher())
+        return GcsArtifactStore(bucket, UnconfinedTestDispatcher(), endpoint = host)
     }
 
     fun stop() = container.stop()

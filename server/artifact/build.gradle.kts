@@ -4,7 +4,9 @@ plugins { id("banbanyeok.server-lib") }
 dependencies {
     api(project(":shared:schema"))
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.google.cloud.storage)
+    implementation(libs.kotlinx.serialization.json)
+    // 운영 코드는 GCS 클라이언트 라이브러리를 쓰지 않는다(콜드스타트). 통합 테스트가 에뮬레이터에 버킷을 만들 때만 쓴다.
+    "integrationTestImplementation"(libs.google.cloud.storage)
     testFixturesImplementation(libs.kotlinx.coroutines.core)
 }
 

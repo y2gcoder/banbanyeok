@@ -1,6 +1,6 @@
 # P8a 서버·DB 배포 작업 노트 (Cloud Run + Supabase + GCS)
 
-작성 2026-11-14. 우선순위 문서: [01-synthesis](../01-synthesis.md) → [S1 노트](s1-notes.md) → [P3 노트](p3-notes.md)(7·8·9절). 웹(Cloudflare)은 P8b 범위다.
+작성 2026-11-14, P8a-2 개정 2026-11-15(콜드스타트 개선 3.10절, 백업을 Cloud Run Job으로 3.6절, WIF를 main으로 한정). 우선순위 문서: [01-synthesis](../01-synthesis.md) → [S1 노트](s1-notes.md) → [P3 노트](p3-notes.md)(7·8·9절). 웹(Cloudflare)은 P8b 범위다.
 
 ## 1. 구성
 
@@ -10,16 +10,17 @@ GitHub Actions ──(OIDC/WIF, 키 없음)──▶ github-deployer ─┬─�
                                                           ├─▶ GCS 산출물 버킷  versions/<버전>/<종류>.<해시16>.<확장자> + manifest.json
                                                           └─▶ Cloud Run 서비스 server (server-runtime 계정, min 0)
 Cloud Scheduler cleanup-daily (04:00 KST) ─▶ Cloud Run Job cleanup (서버 이미지 + 인자 cleanup) ─▶ Supabase(세션 풀러)
-GitHub Actions db-backup.yml (주 1회+수동, db-backup 계정) ─▶ pg_dump 17 ─▶ gs://…-backups/db/ (비공개, 30일 후 삭제)
+Cloud Scheduler db-backup-weekly (월 03:17 KST) ─▶ Cloud Run Job db-backup (backup 이미지, db-backup 계정) ─▶ pg_dump 17 ─▶ gs://…-backups/db/ (비공개, 30일 후 삭제)
+  (수동: gh workflow run db-backup.yml 은 이 Job을 실행하고 기다리기만 한다 — GitHub 러너는 DB 비밀번호·덤프를 만지지 않는다)
 ```
 
 | 리소스 | 이름 | 비고 |
 |---|---|---|
 | 프로젝트·리전 | `banbanyeok-7eoxn` · `asia-northeast3` | |
-| Artifact Registry | `server` (docker) | 이미지 `server`, `migrate`. 정리 정책: 이미지별 최근 3개 유지, 나머지 삭제 |
+| Artifact Registry | `server` (docker) | 이미지 `server`, `migrate`, `backup`. 정리 정책: 이미지별 최근 3개 유지, 나머지 삭제 |
 | Cloud Run 서비스 | `server` | 1 vCPU · 512Mi · 동시성 40 · max 2 · min 0 · startup CPU boost · gen2 · 공개 호출 |
-| Cloud Run Job | `migrate`, `cleanup` | `migrate`: 1 vCPU·1Gi·재시도 0. `cleanup`: 서버 이미지, 재시도 1 |
-| Cloud Scheduler | `cleanup-daily` | `0 4 * * *` Asia/Seoul → `cleanup:run` |
+| Cloud Run Job | `migrate`, `cleanup`, `db-backup` | `migrate`: 1 vCPU·1Gi·재시도 0. `cleanup`: 서버 이미지, 재시도 1. `db-backup`: backup 이미지(postgres:17.6-alpine), 512Mi, 재시도 1, 15분 |
+| Cloud Scheduler | `cleanup-daily`, `db-backup-weekly` | `0 4 * * *`·`17 3 * * 1` Asia/Seoul → 각 Job `:run`. 무료 3개 한도 중 2개 |
 | 서비스 계정 | `server-runtime`, `db-migrator`, `db-backup`, `scheduler-invoker`, `github-deployer`(기존) | 아래 권한 표 |
 | 버킷 | `…-artifacts`(기존), `…-backups`(신규) | 둘 다 비공개(공개 접근 차단 강제), 균일 접근 |
 
@@ -32,19 +33,19 @@ GitHub Actions db-backup.yml (주 1회+수동, db-backup 계정) ─▶ pg_dump 
 | `server-runtime` | `secretmanager.secretAccessor` | 비밀 `database-password`, `token-pepper`, `proxy-shared-secret` | 서비스·cleanup Job이 시작할 때 DB 비밀번호와 토큰 pepper를, 서비스가 웹 프록시 공유 비밀을 읽는다 |
 | `server-runtime` | `storage.objectViewer` | 버킷 `…-artifacts` | 서버가 시작할 때 manifest와 산출물을 읽는다(쓰기 없음) |
 | `db-migrator` | `secretmanager.secretAccessor` | 비밀 `database-password` | migrate Job이 Liquibase 비밀번호만 읽는다(pepper 접근 없음) |
-| `db-backup` | `secretmanager.secretAccessor` | 비밀 `database-password` | 백업 워크플로가 pg_dump 비밀번호를 읽는다 |
+| `db-backup` | `secretmanager.secretAccessor` | 비밀 `database-password` | db-backup Job이 pg_dump 비밀번호를 읽는다 |
 | `db-backup` | `storage.objectCreator`, `storage.objectViewer` | 버킷 `…-backups` | 덤프를 올리고 크기를 확인한다. **삭제·덮어쓰기 권한 없음**(삭제는 수명 주기 규칙만) |
-| `db-backup` ← GitHub OIDC | `iam.workloadIdentityUser` | 계정 `db-backup` | 배포 계정과 **분리**: 배포 워크플로가 DB 비밀번호를 읽을 수 없고, 백업 워크플로가 배포할 수 없다. 주체 집합은 `github-deployer`와 같은 저장소 ID 조건 |
-| `github-deployer` | `run.developer` | 서비스 `server`, Job `migrate`, Job `cleanup` | 리비전·Job 배포, Job 실행·대기, 트래픽 전환. 서비스 IAM 정책 변경(`setIamPolicy`)은 불가 |
+| `scheduler-invoker` | `run.invoker` | Job `db-backup` | Cloud Scheduler가 이 Job만 실행(위 `cleanup`과 같은 계정) |
+| `github-deployer` | `run.developer` | 서비스 `server`, Job `migrate`·`cleanup`·`db-backup` | 리비전·Job 배포, Job 실행·대기, 트래픽 전환. 서비스 IAM 정책 변경(`setIamPolicy`)은 불가 |
 | `github-deployer` | `artifactregistry.writer` | 저장소 `server` | 이미지 푸시 |
 | `github-deployer` | `storage.objectUser` | 버킷 `…-artifacts` | 산출물 발행(생성·덮어쓰기)과 오래된 버전 정리(삭제) |
-| `github-deployer` | `iam.serviceAccountUser` | 계정 `server-runtime`, `db-migrator` | 리비전·Job에 실행 계정을 지정(actAs) |
+| `github-deployer` | `iam.serviceAccountUser` | 계정 `server-runtime`, `db-migrator`, `db-backup` | 리비전·Job에 실행 계정을 지정(actAs) |
 | `github-deployer` | `serviceusage.serviceUsageConsumer` | 프로젝트 | gcloud/클라이언트가 프로젝트 API를 호출 |
 | `scheduler-invoker` | `run.invoker` | Job `cleanup` | Cloud Scheduler가 이 Job만 실행 |
 | `allUsers` | `run.invoker` | 서비스 `server`만 | 비회원 공개 API(인증은 앱의 익명 토큰) |
 
 알아 둘 점
-- **WIF 조건은 저장소 ID뿐**이라 이 저장소의 모든 워크플로·브랜치가 `github-deployer`와 `db-backup`을 가장할 수 있다(퍼블릭 저장소이지만 쓰기 권한이 있는 사람만 워크플로를 바꿀 수 있고, 포크의 PR은 OIDC 토큰을 받지 못한다). 더 좁히려면 공급자 속성 조건에 `assertion.ref == 'refs/heads/main'`이나 GitHub Environment(필수 승인자)를 추가한다. 이번 검증은 브랜치에서 배포해야 해서 넣지 않았다 → 결정 필요 1.
+- **WIF는 main 브랜치로 한정**했다(P8a-2): 공급자 `banbanyeok-repo`의 속성 조건이 `assertion.repository_id=='<저장소 ID>' && assertion.ref=='refs/heads/main'`이라 main(푸시·예약·main에서 실행한 수동 실행)만 `github-deployer`를 가장할 수 있다. 다른 브랜치·PR·포크의 워크플로는 토큰을 받지 못한다. `db-backup` 계정은 이제 GitHub가 가장하지 않는다(Cloud Run Job 실행 계정이라 WIF 권한을 회수했다). main 밖에서 GCP를 쓰는 워크플로: `deploy-server.yml`(main 푸시는 해당 없음, **브랜치에서 `workflow_dispatch`나 임시 push 트리거로 돌리면 실패**), `db-backup.yml`·`gcp-auth-check.yml`(수동 실행은 main에서만). 브랜치에서 배포 실험이 필요하면 `WIF_REF=any bash infra/gcp/bootstrap.sh`로 풀었다가 끝나면 기본값으로 다시 실행한다.
 - 프로젝트 기본 Compute 서비스 계정에는 GCP 기본값으로 `roles/editor`가 붙어 있다. 우리 서비스·Job은 모두 `server-runtime`/`db-migrator`를 명시해서 쓰므로 영향이 없지만, 다른 리소스를 만들 때 기본 계정을 쓰지 않도록 주의한다(필요하면 editor를 회수).
 - 자리표시 서비스·Job을 부트스트랩이 먼저 만드는 이유: 리소스 단위 IAM은 리소스가 있어야 걸 수 있고, 배포 계정에는 프로젝트 전체 `run.admin`을 주지 않기 위해서다.
 
@@ -101,21 +102,31 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
 
 개인정보 방침 4항의 "만료 후 5일 이내 삭제"와 맞다(매일 1회).
 
-### 3.6 백업: GitHub Actions 예약 워크플로를 택함 (Cloud Run Job 대신)
+### 3.6 백업: 서울 Cloud Run Job + Cloud Scheduler (P8a-2에서 GitHub Actions에서 옮김)
 
-`db-backup.yml`(월요일 03:17 KST + 수동) → `scripts/db-backup.sh`: Postgres 17.6 클라이언트(`postgres:17.6` 이미지)로 `pg_dump --format=custom --no-owner --no-privileges --schema=public` → 목차 검증(서비스 테이블 3개 + `databasechangelog`) → `gs://…-backups/db/banbanyeok-<UTC시각>.dump`. 비밀번호는 Secret Manager에서 읽어 한 스텝의 셸 변수에만 두고 `::add-mask::`로 가리며 환경 변수 이름만 docker에 넘긴다(명령행·로그에 없음). Supabase의 다른 스키마(auth, storage 등)는 우리 데이터가 아니라서 `public`만 받는다.
+`db-backup` Job(이미지 `…/server/backup`, 계정 `db-backup`)이 `infra/backup/job.sh`를 실행한다: `scripts/db-backup.sh`(`PG_LOCAL=1`)로 `pg_dump --format=custom --no-owner --no-privileges --schema=public` → 목차 검증(서비스 테이블 3개 + `databasechangelog`) → 메타데이터 서버 토큰으로 GCS JSON API에 올림(`ifGenerationMatch=0`, 덮어쓰기 없음) → 올라간 크기를 다시 읽어 대조 → `gs://…-backups/db/banbanyeok-<UTC시각>.dump`. 비밀번호는 Secret Manager 참조(`PGPASSWORD`)로만 주입되고 토큰·비밀번호는 출력하지 않는다. 주 1회 Cloud Scheduler `db-backup-weekly`(월요일 03:17 KST, `17 3 * * 1`)가 실행한다. Scheduler는 `cleanup-daily`와 합쳐 2개라 무료 3개 한도 안이다.
 
-Actions를 택한 이유: 이미지를 따로 만들거나 Docker Hub 이미지를 AR로 미러링할 필요가 없고, `pg_dump -Fc`는 되감기(seek)가 필요해 Cloud Storage FUSE에 바로 쓸 수 없어 Job 쪽이 더 복잡하다. 대가는 **공개 저장소는 60일간 활동이 없으면 예약 워크플로가 자동 비활성화**된다는 점이다(조용히 멈춤). 저장소에 커밋이 계속 있으면 문제없고, 백업 최신 파일 시각을 가끔 확인하거나 이후 Cloud Scheduler로 옮길 수 있다 → 결정 필요 3.
+**바뀐 사실(개인정보 방침의 수탁자·보유 서술용)**
+- 실행 위치: GitHub Actions 러너 → **Google Cloud Run Job(서울, asia-northeast3)**. 백업 중 DB 비밀번호와 덤프(개인정보)는 GitHub 러너에 오지 않는다. GitHub는 백업과 관련해 개인정보를 처리하지 않는다(수동 실행 워크플로 `db-backup.yml`은 Job을 실행하고 끝나길 기다리기만 한다).
+- 이미지: `postgres:17.6-alpine`(다이제스트 고정, 2025-08-14 릴리스 계열) + `curl` + 우리 스크립트 두 개. Postgres 17 클라이언트(`pg_dump`, `pg_restore`).
+- 저장: `gs://banbanyeok-7eoxn-backups`(서울, 비공개·공개 접근 차단 강제·균일 접근·soft delete 끔), 보존 30일(버킷 수명 주기로 자동 삭제). 변경 없음.
+- 권한: 쓰기·읽기만(`objectCreator`+`objectViewer`), 삭제·덮어쓰기 불가. 실행 계정은 `db-backup` 하나.
+- 스케줄 변경: 주 1회 월요일 03:17 KST(이전과 같음), 실행 주체만 Scheduler.
 
-보존: 버킷 수명 주기로 30일 후 삭제, soft delete 끔(삭제한 백업이 7일 더 남지 않게). 백업에는 개인정보(출발역, 이름, 토큰 해시)가 있으므로 비공개 버킷(공개 접근 차단 강제)에만 두고 `db-backup` 계정에만 쓰기·읽기를 준다.
+옮긴 이유: (1) GitHub가 개인정보 수탁자에서 빠진다, (2) 공개 저장소의 60일 비활동 예약 정지 문제가 사라진다. 대가: backup 이미지를 AR에 하나 더 둔다(작음, `curl` 때문에 `apk add`를 빌드 때 한다). `pg_dump -Fc`를 Cloud Storage FUSE에 직접 쓰지 않고 Job 안의 임시 파일(메모리 파일시스템)에 쓴 뒤 올리므로 덤프 크기가 Job 메모리(512Mi)를 넘지 않는 동안만 된다(무료 DB 500MB 한도에서 압축 덤프는 그보다 훨씬 작다. 커지면 메모리를 올린다).
+
+이미지와 Job 갱신은 `deploy-server.yml`이 한다(실행은 하지 않음). 로컬 검증: backup 이미지를 빌드하고 compose Postgres + fake-gcs-server 에뮬레이터로 `job.sh`를 실행해 덤프→업로드→크기 대조까지 통과(`GCS_API_HOST`, `GCS_NO_AUTH=1` 시험 훅).
+
+**운영 점검(코드 없음)**: 가장 최근 백업이 8일보다 오래됐는지 가끔 확인한다: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/ | sort -k2 | tail -3`. Scheduler가 실패하면 `gcloud run jobs executions list --job=db-backup --region=asia-northeast3`의 실패 실행으로 보인다(실행 알림은 아직 없음).
 
 **복원 절차**
 1. 백업 고르기: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/`, 받기: `gcloud storage cp gs://banbanyeok-7eoxn-backups/db/<파일> .`
 2. 로컬 검증(운영 DB를 건드리지 않음): `mise run db:restore-check -- <파일>` — 임시 Postgres 17 컨테이너에 복원하고 테이블·행 수(값은 출력하지 않음)·Liquibase 이력·트리거를 확인한 뒤 컨테이너를 지운다.
 3. 실제 복구(새 DB 또는 비운 DB에): `pg_restore --no-owner --no-privileges --exit-on-error -d "<연결>" <파일>`. 대상에 이미 `public` 스키마가 있으면 `CREATE SCHEMA public` 한 건만 실패하므로 `--exit-on-error`를 빼거나 빈 `public`을 먼저 `DROP SCHEMA public`한다. 복구 뒤 서버의 `DATABASE_URL`·`DATABASE_USER`(저장소 변수)와 비밀번호(Secret Manager)를 새 DB로 바꾸고 재배포한다. Liquibase 이력 테이블이 같이 복원되므로 `migrate`는 변경 없이 끝난다.
-4. 부분 복구(방 하나 등)는 로컬에 복원한 뒤 필요한 행을 `COPY`/`INSERT`로 옮긴다.
+4. **복원한 뒤 반드시**: (a) `gcloud run jobs execute cleanup --region asia-northeast3 --wait`로 만료된 방·익명 사용자를 다시 지운다(백업 시점에는 살아 있던 방이 이미 만료됐을 수 있다). (b) **백업 시점 이후에 들어온 삭제 요청(privacy@ 메일)을 다시 처리한다**: 복원은 그 사이의 삭제를 되돌리므로, 백업 시점 이후 접수·처리한 삭제 요청 목록을 확인해 같은 방·참여자를 다시 삭제한다(방침의 "요청하면 지체 없이 삭제" 약속 유지). 처리 전에는 서비스를 열지 않는다.
+5. 부분 복구(방 하나 등)는 로컬에 복원한 뒤 필요한 행을 `COPY`/`INSERT`로 옮긴다(이때도 4의 (b)를 확인한다).
 
-**개인정보 방침과의 관계(결정 필요 2)**: main의 방침(#25)은 4항에 "데이터베이스 백업: 백업한 날부터 30일. 백업에 남은 정보는 보존 기간이 지나면 차례로 지워집니다"로 이미 30일을 적었고 이 구현(수명 주기 30일)과 맞는다. 남은 점은 같은 항의 "요청하면 지체 없이 삭제" 약속과의 관계다: DB에서 지운(만료·삭제 요청) 정보가 백업에는 최대 30일 남고, 방은 최대 30일 + 정리 5일 이내 삭제이므로 DB 밖 보관은 가장 긴 경우 약 65일이다. 방침이 "백업에서는 보존 기간이 지나면 지워진다"로 한정해 두었으므로 큰 충돌은 아니지만, 백업에 즉시 삭제를 적용하지 않는다는 점을 삭제 요청 절에 명시할지는 정해야 한다. 방침은 직접 고치지 않았다.
+**개인정보 방침과의 관계**: main의 방침은 4항에 "데이터베이스 백업: 백업한 날부터 30일. 백업에 남은 정보는 보존 기간이 지나면 차례로 지워집니다"를 적었고 구현(수명 주기 30일)과 맞는다. DB에서 지운(만료·삭제 요청) 정보가 백업에는 최대 30일 남고, 방은 최대 30일 + 정리 5일 이내 삭제이므로 DB 밖 보관은 가장 긴 경우 약 65일이다. 방침의 GitHub 행(백업 수탁)은 위 "바뀐 사실"대로 지울 수 있다(별도 방침 작업에서 처리).
 
 ### 3.7 배차 갱신 태스크 (7번)
 
@@ -131,6 +142,45 @@ Actions를 택한 이유: 이미지를 따로 만들거나 Docker Hub 이미지�
 ### 3.9 Cloud Run `/healthz` 예약 경로 (실측으로 발견)
 
 Cloud Run 앞단(Google Front End)은 `/healthz` 경로를 예약해서 요청이 앱에 닿기 전에 `404 (Not Found)!!1` HTML을 돌려준다(요청 로그도 남지 않는다). 첫 배포의 스모크가 이 때문에 실패했다. 계약(`openapi.yaml`)이 이미 `/v1/healthz`를 같은 응답으로 정의하므로 **배포된 서버는 `/v1/healthz`로 확인**한다(스모크·콜드스타트 측정·웹 프리워밍 모두). 웹의 `/api/healthz` rewrite 대상도 `/v1/healthz`여야 한다(P8b에 전달함). 컨테이너 안(AppCDS 학습, 로컬)에서는 `/healthz`도 그대로 동작한다.
+
+### 3.10 콜드스타트 개선 (P8a-2, 목표: 새 인스턴스 첫 `/v1/healthz` p50 2초 이하)
+
+**결과(실측, 새 인스턴스 6회씩, 같은 방법)**: p50 **3.69초 → 1.87초**, p90 **4.29초 → 2.18초** → 목표 달성. 방법은 8절의 "트래픽 0 리비전 6개를 35분 방치한 뒤 태그 URL 첫 요청"(`scripts/measure-coldstart-revisions.sh`)이고 로그로 매번 새 인스턴스임을 확인했다.
+
+| 측정(초, curl total, 클라이언트 위치 포함) | 개선 전 p50 / p90 | 개선 후 p50 / p90 |
+|---|---|---|
+| **콜드 첫 `/v1/healthz`** | 3.69 / 4.29 (3.09~4.47) | **1.87 / 2.18** (1.66~2.36) |
+| 이어서 첫 DB 읽기(없는 방 404) | 0.67 / 0.70 | **0.24 / 0.27** |
+| 이어서 추천 1건 | 0.22 / 0.23 | **0.15 / 0.16** |
+| 웜 `/v1/healthz`(기준) | 0.09 / 0.16 | 0.09 / 0.09 |
+| 서버 쪽 첫 요청 지연(Cloud Run 요청 로그 `httpRequest.latency`) | 3.29 / 3.87 (2.72~4.10) | **1.61 / 1.89** (1.38~2.09) |
+
+**1단계: 단계별 시간부터 쟀다**(`StartupTimeline` 로그, 값은 단계 이름과 ms뿐). 새 리비전을 배포하면 그 첫 인스턴스의 시작 로그가 바로 나오므로(방치 없이) 실험마다 단계 시간을 얻었다. 인스턴스 시작 → 시작 프로브 성공까지:
+
+| 단계(대표 인스턴스 1대, ms) | 개선 전 | 개선 후 | 한 일 |
+|---|---|---|---|
+| 컨테이너 시작 → `main` 진입 | 460~480 | 460~500 | (바꾸지 못함: 샌드박스·JVM 부팅) |
+| 로깅 초기화(`logback.xml` XML 파싱) | 855 (직렬) | 약 400, **작업과 겹침** | 설정을 코드로(`FastLogbackConfigurator`, ServiceLoader), 시작 작업 스레드와 병렬 |
+| GCS 클라이언트 생성(옵션 + ADC 탐색 + 서비스) | 630~750 | **0** | 공식 클라이언트 제거 → JSON API 직접 호출(`GcsArtifactStore`, 메타데이터 서버 토큰) |
+| manifest 읽기(토큰 + TLS + 요청) | 510~550 | 약 650 (토큰 약 230 + 첫 응답 약 400) | 위에서 옮겨 온 비용(첫 요청의 TLS·토큰은 남는다) |
+| 나머지 산출물 2개 | 105(직렬이면 더) | 90~130, 병렬 | 세 파일을 동시에 읽음 |
+| 산출물 검증(해시·구조) | 150~200 | 90~130 | 학습(AppCDS)에 운영과 같은 경로를 넣음 |
+| DB 풀 생성 | 35 | 병렬 | 산출물 읽기와 겹침. **첫 연결을 뒤에서 미리 맺음**(첫 DB 요청 0.67 → 0.24초) |
+| Ktor 시작 | 170~200 | 120~170 | |
+| 프로브 성공 | 약 100 | 약 60~90 | |
+| **합계(인스턴스 시작 → 준비)** | **약 3.1~3.25초** | **약 1.9~2.0초** | |
+
+**효과가 있었던 것**: 공식 GCS 클라이언트를 JSON API 직접 호출로 바꿈(약 −0.8초, 가장 큼), 로깅 XML 제거와 시작 작업 병렬화(약 −0.45초), 산출물 3개 병렬 읽기, DB 첫 연결 미리 맺기(첫 DB 요청 −0.4초). **효과가 없었거나 해로웠던 것**(결과를 남겨 같은 길을 다시 가지 않게):
+- **서버를 먼저 띄우고 데이터는 뒤에서 로드**(건강 확인은 즉시 응답): 구현·테스트까지 했지만 **Cloud Run 요청 기반 CPU 스로틀 때문에 역효과**였다. 첫 응답 뒤 요청이 없으면 CPU가 거의 0이 돼 뒤에서 하던 로드가 약 1.5초가 아니라 **8.5초**(다음 요청이 올 때까지)로 늘었다. 되돌렸다(코드 없음). `--no-cpu-throttling`(인스턴스 기반 과금)으로 풀 수는 있으나 유휴 인스턴스(최대 15분+)까지 과금돼 0원 목표에 어긋나 채택하지 않았다.
+- JVM 플래그 `-XX:TieredStopAtLevel=1 -XX:+UseSerialGC`: 차이가 잡음 안(3.13 vs 3.25초). 해롭지 않아 남겼다.
+- AppCDS 학습에 GCS 경로(fake-gcs-server `1.56.1`, 2026-08-24)를 넣음: 공식 클라이언트 시절 클라이언트 생성이 1.36 → 1.05초로 줄었지만 전체는 잡음 안. 클라이언트 제거 뒤에도 같은 경로로 학습해서 HTTP·JSON 클래스를 아카이브에 넣는다(아카이브 29 → 39MB는 SDK 클래스 때문이었음).
+- `GOOGLE_CLOUD_PROJECT`로 프로젝트 ID 조회 생략, Cloud Run CPU 2, 메타데이터 서버를 이름 대신 고정 주소(DNS 생략), 첫 읽기 전 TLS 미리 연결(`GcsArtifactStore.warmUp`): 모두 측정 가능한 효과가 없었다. CPU 2는 되돌렸고 `GOOGLE_CLOUD_PROJECT`는 클라이언트 제거로 필요 없어 뺐다. 메타데이터 고정 주소와 `warmUp`은 해롭지 않아 남겼지만 다음에 코드를 줄일 때 **제거 후보**다.
+
+**남은 시간**: 컨테이너 시작 → main(약 0.5초)과 첫 GCS 요청의 토큰·TLS(약 0.65초)가 이제 가장 큰 덩어리다. 더 줄이려면 manifest를 이미지에 넣어 시작 때 GCS를 건너뛰는 방법(데이터 갱신 = 새 이미지)이나 min 1이 있고, 둘 다 현재 정책(산출물은 GCS 발행, 비용 0원)과 맞바꾸는 일이라 하지 않았다.
+
+**코드·설정 변경 요약**: `StartupTimeline`(단계 로그), `FastLogbackConfigurator`(+`logback.xml` 삭제), `GcsArtifactStore`/`MetadataTokenProvider`(JSON API, SDK는 통합 테스트 전용), `ArtifactLoader` 병렬 읽기, `CompositionRoot`/`Main`(조립을 별도 스레드로, DB 연결 미리), `AppConfig.ARTIFACT_GCS_ENDPOINT`(운영에서는 금지, AppCDS 학습·에뮬레이터 전용), Dockerfile(학습에 fake-gcs-server), `run.sh` 플래그. 산출물 형식·API·시작 실패 동작(검증 실패 시 시작 안 함)은 그대로다. **운영 GCS 인증은 Cloud Run 실행 계정의 메타데이터 토큰뿐**이다(이전에도 키 파일은 읽지 않았다). 로컬에서 실제 GCS를 읽으려면 에뮬레이터(`ARTIFACT_GCS_ENDPOINT`)를 쓴다.
+
+**웹 확인(읽기만)**: 홈 입력 화면(`home-form.tsx`)만 `warmUpServer()`를 부른다. **방 참여 화면은 웹에 아직 없다**(R1 작업자가 만들고 거기서 `warmUpServer()`를 넣기로 함). 친구가 공유 링크(`/s?…`)로 처음 들어오는 화면은 서버 컴포넌트가 서버를 바로 부르므로(결과 prefetch와 `generateMetadata`의 3초 제한) 미리 깨울 기회가 없다. 이번 개선으로 새 인스턴스의 첫 요청이 약 1.6~1.9초라 그 3초 제한 안에 들어온다(개선 전 p50 3.3초는 제한을 넘겼다). `web/src`는 고치지 않았다.
 
 ## 4. 레이트 리밋 키 권고 (8번)
 
@@ -178,13 +228,21 @@ bash scripts/smoke-server.sh "$(gcloud run services describe server --region asi
 # cleanup Job 수동 실행 / 마이그레이션 수동 실행
 gcloud run jobs execute cleanup --region asia-northeast3 --wait
 gcloud run jobs execute migrate --region asia-northeast3 --wait
-# 백업 수동 실행 / 목록
-gh workflow run db-backup.yml; gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/
+# 백업 수동 실행(Job 실행) / 목록
+gcloud run jobs execute db-backup --region asia-northeast3 --wait   # 또는 gh workflow run db-backup.yml
+gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/
 # 이전 리비전으로 즉시 롤백
 gcloud run revisions list --service server --region asia-northeast3
 gcloud run services update-traffic server --region asia-northeast3 --to-revisions <리비전>=100
 # 데이터 롤백(이전 manifest 재발행): 이전 커밋에서 stage-release 후 FORCE=1 bash scripts/publish-artifacts.sh <버킷>
 ```
+
+### 6.1 모니터링 (Cloud Monitoring, 코디네이터가 콘솔/REST로 설정 — `bootstrap.sh` 밖)
+
+- 알림 채널: 이메일 1개(운영자 메일).
+- 가동 확인(uptime check) 2개: `https://banbanyeok.app/api/healthz`(본문에 `ok` 포함), `https://banbanyeok.app/`(2xx). 5분 주기, 제한 시간 15초, 기본(전 지역).
+- 알림 정책 "반반역 사이트 응답 없음": `check_passed`가 false인 지역이 2곳 이상, 5분 지속이면 알림, 30분 뒤 자동 종료.
+- 부수 효과: `/api/healthz`(웹 프록시 → 서버 `/v1/healthz`)가 5분마다 여러 지역에서 오므로 **라이브 리비전의 인스턴스가 대부분 데워진 채로 유지**된다(콜드스타트 체감이 줄어듦, 비용은 무료 구간 안). 그래서 라이브 서비스의 체감 콜드스타트는 아래 실측(새 인스턴스의 첫 요청)보다 드물다. 측정용 태그 리비전에는 영향이 없다(그 URL로는 가동 확인이 가지 않는다).
 
 ## 7. 버전 근거
 
@@ -193,7 +251,7 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 | 항목 | 값 | 근거 |
 |---|---|---|
 | `liquibase/liquibase` | `4.33.0` @ `sha256:e116c935…` | S1 노트의 Liquibase 4.33.0(2025-07-09, [release](https://github.com/liquibase/liquibase/releases/tag/v4.33.0)). compose와 동일. 5.x는 라이선스가 바뀌어 제외(카탈로그 주석). 다이제스트는 `docker buildx imagetools inspect`로 확인 |
-| `postgres` (pg_dump 클라이언트·복원 검증) | `17.6` | S1 노트(2025-08-14, [릴리스 노트](https://www.postgresql.org/docs/17/release-17-6.html)). compose·통합 테스트와 같은 버전 |
+| `postgres:17.6-alpine`(backup Job 이미지, 다이제스트 고정), `postgres:17.6`(로컬 복원 검증) | `17.6` | S1 노트(2025-08-14, [릴리스 노트](https://www.postgresql.org/docs/17/release-17-6.html)). compose·통합 테스트와 같은 버전 |
 | Cloud Run 기능 | startup CPU boost, `--no-traffic --tag`, `--env-vars-file`, `--set-secrets` | [공식 문서](https://cloud.google.com/run/docs/configuring/services/cpu#startup-boost) / [트래픽 관리](https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration) |
 
 ## 8. 검증 결과
@@ -212,12 +270,12 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 | 산출물 버킷 | `manifest.json`(루트)과 `versions/20261114.5/*`(해시 이름 4개). 서버가 GCS에서 읽고 `Application started`까지 확인 |
 | `cleanup` Job 수동 실행 | 성공(종료 코드 0). 로그 `cleanup: CleanupReport(rooms=0, anonUsers=0)`, DB 연결·질의 약 0.9초 → DB를 실제로 조회한다 |
 | Scheduler 수동 실행 | `gcloud scheduler jobs run cleanup-daily` → Job 실행 성공(Scheduler → Job IAM 확인). 일정 `0 4 * * *` Asia/Seoul |
-| 백업 워크플로 수동 실행 | 성공. 파일 `banbanyeok-<UTC시각>.dump` **14,143 bytes**, 목차 검증 통과(테이블 4개, 항목 31개), 비밀번호가 로그에 없음 |
+| (P8a 당시) 백업 워크플로 수동 실행 | 성공(이후 3.6절대로 Cloud Run Job으로 이전, 병합 후 순서로 재검증 예정). 파일 `banbanyeok-<UTC시각>.dump` **14,143 bytes**, 목차 검증 통과(테이블 4개, 항목 31개), 비밀번호가 로그에 없음 |
 | 복원 검증 | 받은 실제 백업을 `mise run db:restore-check`로 로컬 Postgres 17에 복원 → 테이블 3개 + `databasechangelog`(changeset 2개) + `participants_limit` 트리거 확인(운영 DB는 아직 비어 있어 행 수는 0) |
 | 로컬 사전 검증 | 마이그레이션 이미지(빈 Postgres 17.6, 재실행), 백업→복원(행이 있는 DB), 스모크(로컬 서버), `stage-release` 단위 테스트 4개, 속도 제한 신뢰 헤더 테스트 3개 |
 | 정적 검사 | `ktlintCheck ktlintBuildScripts detekt detektBuildLogic`, 서버·파이프라인 테스트 통과. 새 suppress·baseline 없음. `shellcheck`(모든 새 스크립트), `actionlint` 통과 |
 
-### 콜드스타트 실측 (min 0, Cloud Run 서울, 1 vCPU·512Mi·gen2·boost, 요청은 서울 인근 클라이언트에서 curl)
+### 콜드스타트 실측: 개선 전 기준값(P8a, 개선 후 수치와 비교는 3.10절)
 
 방법과 한계: Cloud Run은 마지막 요청 뒤 **17분이 지나도 인스턴스를 남기는 경우가 많았다**. 17분 간격으로 6번 재는 첫 시도에서는 1번만 진짜 콜드였다(나머지 5번은 웜 0.11~0.14초, 로그의 `Application started`는 1회뿐). 그 1번은 **4.22초**였다. 그래서 같은 이미지로 **리비전 6개**(`COLD_NONCE`만 다른 트래픽 0 리비전, 태그 URL)를 만들고 35분 방치한 뒤 각 태그의 첫 요청을 쟀다. 로그의 `Starting new instance`와 `Application started`가 요청마다 새로 찍혀 6번 모두 새 인스턴스의 첫 요청임을 확인했다(리비전을 새로 만든 첫 요청이라 이미지 레이어가 그 호스트에 없을 수도 있어 실제 콜드와 거의 같거나 약간 불리하다).
 
@@ -236,12 +294,10 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 
 ## 9. 결정 필요
 
-1. **WIF를 더 좁힐지**: 지금은 저장소 ID만 조건이라 모든 브랜치·워크플로가 `github-deployer`/`db-backup`을 가장할 수 있다. `main`만 허용하거나 GitHub Environment(승인자)를 붙이면 안전하지만 브랜치 배포·검증이 막힌다. 권고: 안정되면 `assertion.ref == 'refs/heads/main'`(또는 Environment `production`)으로 좁히기.
-2. **개인정보 방침의 백업 문구**(방침은 직접 고치지 않음): 방침은 이미 "백업 30일"을 적었다(구현과 일치). 삭제 요청 절에 "DB에서는 즉시, 백업에서는 보존 기간(30일)이 지나면 지워진다"를 명시할지(방 최대 30일 + 정리 5일 + 백업 30일 = DB 밖 최대 약 65일). 더 줄이려면 백업 보존을 7~14일로 줄일 수 있다(복구 가능 기간과 맞바꿈). 또 방침 145행의 `{Cloud Logging 저장 위치}`는 아래 6번대로 채울 수 있다.
-3. **백업 실행 주체**: GitHub Actions 예약은 공개 저장소가 60일 활동이 없으면 조용히 멈춘다. 허용할지, 백업 최신 파일 시각 점검을 루틴에 넣을지, Cloud Scheduler + Job으로 옮길지(이미지·미러링 비용 있음).
-4. **Supabase 일시정지 방지의 보장 수준**: 매일 cleanup의 DELETE 질의가 활동으로 잡히는지 공식 기준이 없다(3.5절). 첫 경고 메일이 오면 Scheduler를 하루 2회로 늘릴지(무료 3개 한도 안).
-5. **발행 후 배포 실패 틈**(3.3절): manifest 발행이 스모크보다 먼저라서, 배포가 실패하면 이전 리비전의 새 인스턴스가 새 manifest를 읽는다. 수용(스키마 호환은 서버가 검증)할지, 후보 리비전에 산출물 접두사를 주입하는 방식으로 바꿀지.
-6. **로그 방침 표기**(3.8절): 일반 로그 서울, 감사 로그(`_Required`) global(Google 관리, 이용자 정보 없음)로 구분해 쓸지.
-7. **콜드스타트 p50 3.7초**(8절): 입력 화면의 프리워밍으로 수용할지, AppCDS 학습에 GCS 경로(fake-gcs-server)를 넣거나 산출물 로드를 지연해 줄여 볼지(둘 다 이 PR 밖, 효과는 재측정으로 확인). 웹(P8b)은 `/v1/healthz` 프리워밍이 필수다.
-8. **서버 URL 별칭**: `https://server-b3z6eb4wma-du.a.run.app`(결정적 URL)을 웹의 `SERVER_ORIGIN`으로 쓴다. 커스텀 도메인은 P8b/도메인 결정 뒤.
-9. P3의 남은 결정(산출물 갱신 정책 8절 1번을 이 배포가 채택함: 새 데이터 = 새 리비전). 이의가 없으면 확정으로 본다.
+P8a에서 올린 9건 중 코디네이터가 정한 것(2026-11-14): 1 WIF → 좁힘(아래), 2·6 방침 문구 → 방침 정리 작업자, 3 백업 60일 정지 → **백업을 Cloud Run Job으로 옮겨 해소**(3.6절), 4 Supabase → 경고 메일이 오면 대응, 5 발행-배포 틈 → 수용, 7 콜드스타트 → **해결**(3.10절, p50 1.87초), 8 SERVER_ORIGIN → `https://server-488867894170.asia-northeast3.run.app` 그대로, 9 갱신 정책 → 확정.
+
+이번 작업의 남은 일과 제안:
+1. **병합 후 순서**(이 PR은 라이브를 바꾸는 `bootstrap.sh` 실행이 필요하다): ① PR 병합 → main 배포가 backup 이미지를 AR에 올리고(`db-backup` Job은 아직 없어 "Job 갱신" 단계는 경고 후 건너뜀) 리뷰된 코드로 라이브를 덮는다 → ② `bash infra/gcp/bootstrap.sh` 실행(WIF를 `main` 한정으로 좁힘, `db-backup` Job·Scheduler `db-backup-weekly` 생성, 이전 GitHub 가장 권한 회수) → ③ `gh workflow run deploy-server.yml`(main에서)로 한 번 더 배포해 `db-backup` Job에 backup 이미지를 연결 → ④ `gcloud run jobs execute db-backup --region asia-northeast3 --wait`로 첫 백업을 실행하고 크기·`mise run db:restore-check` 복원을 확인. ②는 처음부터 main 한정이라 이후 브랜치에서 GCP를 쓸 수 없다(배포 검증은 main).
+2. **개인정보 방침(별도 작업)**: 백업 수탁자에서 GitHub 행 삭제(3.6절 "바뀐 사실": 서울 Cloud Run Job, 이미지 `postgres:17.6-alpine`, 보존 30일 불변).
+3. **작업 실패 알림이 없다**: Scheduler가 실행하는 `cleanup`·`db-backup` Job이 실패해도 알림이 가지 않는다(실행 목록에서만 보임). 제안: Cloud Monitoring 로그 기반 알림(Job 실행 실패) 또는 가동 확인처럼 최근 백업 파일 시각 점검. 6.1절의 모니터링과 같은 방식으로 코디네이터가 설정.
+4. 선택 정리: `GcsArtifactStore.warmUp`과 메타데이터 고정 주소(3.10절, 효과 없음)는 다음에 코드를 줄일 때 제거 후보.

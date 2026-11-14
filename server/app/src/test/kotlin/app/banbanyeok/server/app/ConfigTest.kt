@@ -97,6 +97,22 @@ class ConfigTest :
                 e.message shouldNotContain "short-secret"
             }
 
+            it("refuses the GCS emulator endpoint in prod but allows it locally (AppCDS training)") {
+                val e =
+                    shouldThrow<ConfigException> {
+                        AppConfig.load(prodEnv + ("ARTIFACT_GCS_ENDPOINT" to "http://127.0.0.1:4443"))
+                    }
+                e.message shouldContain "ARTIFACT_GCS_ENDPOINT"
+                AppConfig
+                    .load(
+                        mapOf(
+                            "ARTIFACT_STORE" to "gcs",
+                            "ARTIFACT_GCS_BUCKET" to "training",
+                            "ARTIFACT_GCS_ENDPOINT" to "http://127.0.0.1:4443",
+                        ),
+                    ).artifacts.gcsEndpoint shouldBe "http://127.0.0.1:4443"
+            }
+
             it("does not accept the local pepper default") {
                 val e =
                     shouldThrow<ConfigException> {

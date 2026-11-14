@@ -18,6 +18,8 @@ on:
       - 'data/artifacts/dev/**'   # 새 데이터 발행 = 새 리비전(docs/setup/p3-notes.md 8절 1번)
       - 'pipeline/src/main/kotlin/app/banbanyeok/pipeline/ReleaseStage.kt'
       - 'scripts/publish-artifacts.sh'
+      - 'scripts/db-backup.sh'      # backup 이미지에 들어간다
+      - 'infra/backup/**'
       - 'scripts/smoke-server.sh'
       - 'scripts/build-server-image.sh'
       - '.github/workflows/deploy-server.yml'
@@ -47,6 +49,7 @@ env:
   RUNTIME_SA_NAME: server-runtime
   MIGRATOR_SA_NAME: db-migrator
   AR_REPO: server
+  BACKUP_SA_NAME: db-backup
 
 jobs:
   deploy:
@@ -83,6 +86,8 @@ jobs:
           {
             echo "SERVER_IMAGE=${registry}/server:${GITHUB_SHA}"
             echo "MIGRATE_IMAGE=${registry}/migrate:${GITHUB_SHA}"
+            echo "BACKUP_IMAGE=${registry}/backup:${GITHUB_SHA}"
+            echo "BACKUP_SA=${BACKUP_SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
             echo "RUNTIME_SA=${RUNTIME_SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
             echo "MIGRATOR_SA=${MIGRATOR_SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
           } >> "$GITHUB_ENV"
@@ -96,6 +101,8 @@ jobs:
               RATE_LIMIT_CLIENT_IP_SOURCE: $ip}' > build/server-env.json
           jq -n --arg url "$DATABASE_URL" --arg user "$DATABASE_USER" \
             '{LIQUIBASE_COMMAND_URL: $url, LIQUIBASE_COMMAND_USERNAME: $user}' > build/migrate-env.json
+          jq -n --arg url "$DATABASE_URL" --arg user "$DATABASE_USER" --arg bucket "${PROJECT}-backups" \
+            '{DATABASE_URL: $url, DATABASE_USER: $user, BACKUP_BUCKET: $bucket}' > build/backup-env.json
           gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
       - name: 서버 이미지 빌드(AppCDS 학습 포함)·푸시
@@ -107,6 +114,11 @@ jobs:
         run: |
           docker build -f server/db/Dockerfile -t "$MIGRATE_IMAGE" .
           docker push "$MIGRATE_IMAGE"
+
+      - name: 백업 이미지 빌드·푸시
+        run: |
+          docker build -f infra/backup/Dockerfile -t "$BACKUP_IMAGE" .
+          docker push "$BACKUP_IMAGE"
 
       # 배포 순서: migrate 성공 → 앱 배포. changeset은 이전 리비전과 호환되게(추가 위주) 쓴다(docs/setup/p8a-notes.md).
       - name: migrate Job 갱신·실행·대기
@@ -180,6 +192,20 @@ jobs:
             --env-vars-file build/server-env.json \
             --set-secrets "DATABASE_PASSWORD=database-password:latest,TOKEN_PEPPER=token-pepper:latest" \
             --cpu 1 --memory 512Mi --max-retries 1 --task-timeout 10m --quiet
+
+      # 주 1회 Cloud Scheduler(db-backup-weekly)가 실행한다. 실행은 하지 않고 이미지·설정만 갱신한다.
+      # Job과 그 권한은 infra/gcp/bootstrap.sh가 만든다. 아직 없으면(병합 직후 첫 배포) 건너뛰고, bootstrap 실행 뒤 다시 배포한다.
+      - name: db-backup Job 갱신
+        run: |
+          if gcloud run jobs describe db-backup --region "$REGION" >/dev/null 2>&1; then
+            gcloud run jobs deploy db-backup \
+              --image "$BACKUP_IMAGE" --region "$REGION" --service-account "$BACKUP_SA" \
+              --env-vars-file build/backup-env.json \
+              --set-secrets "PGPASSWORD=database-password:latest" \
+              --cpu 1 --memory 512Mi --max-retries 1 --task-timeout 15m --quiet
+          else
+            echo "::warning::db-backup Job이 아직 없습니다. infra/gcp/bootstrap.sh를 실행한 뒤 다시 배포하세요(이미지는 이미 푸시됨)."
+          fi
 
       - name: 요약
         if: success()

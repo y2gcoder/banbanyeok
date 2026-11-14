@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.v1.jdbc.Database
 import javax.sql.DataSource
+import kotlin.concurrent.thread
 
 public data class DatabaseSettings(
     val url: String,
@@ -24,6 +25,21 @@ public class ConnectedDatabase(
     public val database: Database,
 ) : AutoCloseable {
     override fun close() = dataSource.close()
+
+    /**
+     * 첫 연결(TLS·인증 왕복)을 별도 스레드에서 미리 맺어 둔다. 콜드스타트 때 산출물 읽기와 겹쳐 돌아서, 첫 방 요청이 이 비용
+     * (Supabase 풀러 기준 약 0.5초)을 치르지 않는다. 최선 노력이라 실패해도 무시한다(첫 요청이 다시 시도한다).
+     */
+    public fun warmUp(onDone: () -> Unit = {}) {
+        thread(name = "db-warmup", isDaemon = true) {
+            runCatching { dataSource.connection.use { it.isValid(WARMUP_VALID_SECONDS) } }
+            onDone()
+        }
+    }
+
+    private companion object {
+        const val WARMUP_VALID_SECONDS = 5
+    }
 }
 
 public object DatabaseFactory {

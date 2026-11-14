@@ -43,21 +43,28 @@ class Components(
  */
 object CompositionRoot {
     /**
+     * 시계는 항상 UTC 시스템 시계다(서비스 단위 테스트가 가짜 시계를 쓴다).
      * @param store 테스트가 저장소를 바꿔 끼울 때만 넘긴다. 없으면 설정이 고른다(로컬 파일 또는 GCS).
      * @param database 테스트가 이미 만든 DB를 넘길 때만 쓴다. 없으면 설정으로 연결하고 [Components.close]가 닫는다.
      */
     suspend fun create(
         config: AppConfig,
-        clock: Clock = Clock.systemUTC(),
         ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-        store: ArtifactStore = artifactStore(config, ioDispatcher),
+        timeline: StartupTimeline? = null,
+        store: ArtifactStore =
+            artifactStore(config, ioDispatcher, timeline).also { timeline?.mark("artifact-store-created") },
         database: ConnectedDatabase? = null,
     ): Components {
-        val loaded = ArtifactLoader(store).load()
-        val directory = StationDirectory(loaded.dataSet)
+        timeline?.mark("assembly-started")
+        // DB 풀을 먼저 만들고 첫 연결을 뒤에서 맺기 시작한다(산출물 읽기와 겹침).
         val owned = if (database == null) DatabaseFactory.connect(config.database) else null
+        owned?.warmUp { timeline?.mark("database-connection-warm") }
         val db = (database ?: requireNotNull(owned)).database
+        timeline?.mark("database-pool-created")
+        val loaded = ArtifactLoader(store) { timeline?.mark(it) }.load()
+        val directory = StationDirectory(loaded.dataSet)
 
+        val clock = Clock.systemUTC()
         val ids = SecureRandomIdGenerator()
         val tokens = TokenService(config.tokenPepper.toByteArray(Charsets.UTF_8), ids)
         val roomRepository = ExposedRoomRepository(db, ioDispatcher)
@@ -73,6 +80,7 @@ object CompositionRoot {
                 directory = directory,
                 published = PublishedArtifacts(store, loaded),
             )
+        timeline?.mark("services-assembled")
         return Components(config, clock, services, RoomCleanup(roomRepository, anonRepository, clock)) {
             owned?.close()
         }
@@ -81,6 +89,7 @@ object CompositionRoot {
     private fun artifactStore(
         config: AppConfig,
         ioDispatcher: CoroutineDispatcher,
+        timeline: StartupTimeline?,
     ): ArtifactStore =
         when (config.artifacts.kind) {
             ArtifactStoreKind.LOCAL -> {
@@ -88,11 +97,13 @@ object CompositionRoot {
             }
 
             ArtifactStoreKind.GCS -> {
-                GcsArtifactStore.withDefaultCredentials(
-                    requireNotNull(config.artifacts.gcsBucket) { "GCS 버킷 이름이 없습니다" },
-                    prefix = config.artifacts.gcsPrefix,
+                GcsArtifactStore(
+                    bucket = requireNotNull(config.artifacts.gcsBucket) { "GCS 버킷 이름이 없습니다" },
                     ioDispatcher = ioDispatcher,
-                )
+                    prefix = config.artifacts.gcsPrefix,
+                    endpoint = config.artifacts.gcsEndpoint,
+                    onPhase = { timeline?.mark(it) },
+                ).also { it.warmUp() }
             }
         }
 }

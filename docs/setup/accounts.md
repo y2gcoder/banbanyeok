@@ -62,10 +62,10 @@
 |---|---|---|
 | Artifact Registry | `asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/server` (이미지 `server`, `migrate`) | 이미지별 최근 3개 유지 |
 | Cloud Run 서비스 | `server` (1 vCPU·512Mi·동시성 40·max 2·min 0·boost, 공개 호출) | 앞단이 `/healthz`를 예약하므로 `/v1/healthz` 사용 |
-| Cloud Run Job | `migrate`(Liquibase), `cleanup`(서버 이미지, 인자 `cleanup`) | |
-| Cloud Scheduler | `cleanup-daily` (매일 04:00 KST) | 만료 정리 + DB 깨우기 |
+| Cloud Run Job | `migrate`(Liquibase), `cleanup`(서버 이미지, 인자 `cleanup`), `db-backup`(pg_dump 17) | |
+| Cloud Scheduler | `cleanup-daily`(매일 04:00 KST), `db-backup-weekly`(월 03:17 KST) | 만료 정리 + DB 깨우기 / 주간 백업. 무료 3개 한도 중 2개 |
 | 서비스 계정 | `server-runtime`, `db-migrator`, `db-backup`, `scheduler-invoker` | 권한 표: [p8a-notes](p8a-notes.md) 2절 |
-| 백업 버킷 | `gs://banbanyeok-7eoxn-backups` (비공개, 30일 후 삭제, soft delete 끔) | 주 1회 `db-backup` 워크플로 |
+| 백업 버킷 | `gs://banbanyeok-7eoxn-backups` (비공개, 30일 후 삭제, soft delete 끔) | 주 1회 Cloud Run Job `db-backup`(Scheduler `db-backup-weekly`, 월 03:17 KST). 이미지 `server/backup` |
 | 로그 | 일반 로그 버킷 `default-seoul`(서울, 30일). `_Required`(감사)는 global 고정 | p8a-notes 3.8 |
 | Secret Manager | `database-password`, `token-pepper`, `proxy-shared-secret` | 값은 1Password가 원본, 코드·로그에 없음 |
 | 저장소 변수 추가 | `DATABASE_URL`, `DATABASE_USER` (선택 `CORS_ALLOWED_ORIGINS`, `RATE_LIMIT_CLIENT_IP_SOURCE`) | 비밀 아님 |
