@@ -93,7 +93,8 @@ internal fun tagoVersusS3(
             val line = row[1]
             val from = ids[line to rules.canonical(rules.predecessor(line, row[2], previous[2]))]
             val to = ids[line to rules.canonical(row[2])]
-            if (seconds == 0 || previous[1] != line || from == null || to == null) return@mapNotNull null
+            if (seconds == 0 || previous[1] != line) return@mapNotNull null
+            if (from == null || to == null) return@mapNotNull null
             val (forward, reverse) = tagoRunTimes(tago, from, to)
             obj(
                 "line" to line,
