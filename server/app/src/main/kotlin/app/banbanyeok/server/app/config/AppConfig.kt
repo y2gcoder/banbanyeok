@@ -12,6 +12,8 @@ data class ArtifactConfig(
     val localDir: String,
     val gcsBucket: String?,
     val gcsPrefix: String,
+    /** GCS 에뮬레이터 주소(이미지 AppCDS 학습·로컬 시험 전용). 운영에서는 비운다. */
+    val gcsEndpoint: String? = null,
 )
 
 /** 한 종류의 요청에 대한 토큰 버킷: 버스트 크기와 초당 보충량. */
@@ -164,11 +166,14 @@ internal class ConfigLoader(
             } else {
                 env["ARTIFACT_GCS_BUCKET"]
             }
+        val endpoint = env["ARTIFACT_GCS_ENDPOINT"]?.takeIf { it.isNotBlank() }
+        if (prod && endpoint != null) problems += "ARTIFACT_GCS_ENDPOINT(에뮬레이터)는 운영에서 쓸 수 없습니다"
         return ArtifactConfig(
             kind = kind,
             localDir = env["ARTIFACT_LOCAL_DIR"]?.takeIf { it.isNotBlank() } ?: "data/artifacts/dev",
             gcsBucket = bucket,
             gcsPrefix = env["ARTIFACT_GCS_PREFIX"].orEmpty(),
+            gcsEndpoint = endpoint,
         )
     }
 

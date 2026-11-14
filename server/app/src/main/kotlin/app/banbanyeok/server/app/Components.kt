@@ -95,6 +95,7 @@ object CompositionRoot {
                 GcsArtifactStore.withDefaultCredentials(
                     requireNotNull(config.artifacts.gcsBucket) { "GCS 버킷 이름이 없습니다" },
                     prefix = config.artifacts.gcsPrefix,
+                    endpoint = config.artifacts.gcsEndpoint,
                     ioDispatcher = ioDispatcher,
                 )
             }

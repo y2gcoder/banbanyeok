@@ -88,12 +88,18 @@ public class GcsArtifactStore(
         private const val HTTP_NOT_FOUND = 404
         private const val READ_ATTEMPTS = 3
 
-        /** Application Default Credentials로 연결한다. */
+        /**
+         * Application Default Credentials로 연결한다. [endpoint]는 에뮬레이터(이미지 AppCDS 학습, 로컬 시험)용으로만 쓰고
+         * 운영에서는 비운다. 비우면 실제 GCS다.
+         */
         public fun withDefaultCredentials(
             bucket: String,
             ioDispatcher: CoroutineDispatcher,
             prefix: String = "",
-        ): GcsArtifactStore =
-            GcsArtifactStore(StorageOptions.getDefaultInstance().service, bucket, ioDispatcher, prefix)
+            endpoint: String? = null,
+        ): GcsArtifactStore {
+            val options = StorageOptions.newBuilder().also { builder -> endpoint?.let { builder.setHost(it) } }.build()
+            return GcsArtifactStore(options.service, bucket, ioDispatcher, prefix)
+        }
     }
 }
