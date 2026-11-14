@@ -1,0 +1,2181 @@
+{
+  "absDeltaSeconds": {
+    "count": 240,
+    "max": 108,
+    "min": 1,
+    "p50": 43,
+    "p95": 90
+  },
+  "basis": "rideSeconds = 출발역 대기 없이 그래프 최단 승차시간. Δ = rideSeconds − 운영사 공개 소요시간. 공개표는 출발→도착(중간역 정차 포함)이고 그래프 간선은 도착역 정차를 더하므로 Δ ≈ +정차시간이 정상",
+  "deltaSeconds": {
+    "count": 240,
+    "max": 108,
+    "min": -42,
+    "p50": 43,
+    "p95": 90
+  },
+  "pairs": 240,
+  "results": [
+    {
+      "deltaSeconds": 39,
+      "from": "신사",
+      "officialSeconds": 65,
+      "rideSeconds": 104,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 47,
+      "from": "신사",
+      "officialSeconds": 160,
+      "rideSeconds": 207,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 60,
+      "from": "신사",
+      "officialSeconds": 257,
+      "rideSeconds": 317,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 53,
+      "from": "신사",
+      "officialSeconds": 395,
+      "rideSeconds": 448,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 52,
+      "from": "신사",
+      "officialSeconds": 533,
+      "rideSeconds": 585,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 51,
+      "from": "신사",
+      "officialSeconds": 719,
+      "rideSeconds": 770,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 80,
+      "from": "신사",
+      "officialSeconds": 1126,
+      "rideSeconds": 1206,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 97,
+      "from": "신사",
+      "officialSeconds": 1322,
+      "rideSeconds": 1419,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 92,
+      "from": "신사",
+      "officialSeconds": 1477,
+      "rideSeconds": 1569,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 83,
+      "from": "신사",
+      "officialSeconds": 1644,
+      "rideSeconds": 1727,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 79,
+      "from": "신사",
+      "officialSeconds": 1821,
+      "rideSeconds": 1900,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 66,
+      "from": "신사",
+      "officialSeconds": 1983,
+      "rideSeconds": 2049,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 57,
+      "from": "신사",
+      "officialSeconds": 2173,
+      "rideSeconds": 2230,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 46,
+      "from": "신사",
+      "officialSeconds": 2374,
+      "rideSeconds": 2420,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 25,
+      "from": "신사",
+      "officialSeconds": 2587,
+      "rideSeconds": 2612,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 11,
+      "from": "논현",
+      "officialSeconds": 58,
+      "rideSeconds": 69,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 38,
+      "from": "논현",
+      "officialSeconds": 65,
+      "rideSeconds": 103,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 51,
+      "from": "논현",
+      "officialSeconds": 162,
+      "rideSeconds": 213,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 44,
+      "from": "논현",
+      "officialSeconds": 300,
+      "rideSeconds": 344,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 43,
+      "from": "논현",
+      "officialSeconds": 438,
+      "rideSeconds": 481,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 42,
+      "from": "논현",
+      "officialSeconds": 624,
+      "rideSeconds": 666,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 71,
+      "from": "논현",
+      "officialSeconds": 1031,
+      "rideSeconds": 1102,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 88,
+      "from": "논현",
+      "officialSeconds": 1227,
+      "rideSeconds": 1315,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 83,
+      "from": "논현",
+      "officialSeconds": 1382,
+      "rideSeconds": 1465,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 74,
+      "from": "논현",
+      "officialSeconds": 1549,
+      "rideSeconds": 1623,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 70,
+      "from": "논현",
+      "officialSeconds": 1726,
+      "rideSeconds": 1796,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 57,
+      "from": "논현",
+      "officialSeconds": 1888,
+      "rideSeconds": 1945,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 48,
+      "from": "논현",
+      "officialSeconds": 2078,
+      "rideSeconds": 2126,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 37,
+      "from": "논현",
+      "officialSeconds": 2279,
+      "rideSeconds": 2316,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 16,
+      "from": "논현",
+      "officialSeconds": 2492,
+      "rideSeconds": 2508,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 16,
+      "from": "신논현",
+      "officialSeconds": 158,
+      "rideSeconds": 174,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 35,
+      "from": "신논현",
+      "officialSeconds": 70,
+      "rideSeconds": 105,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 43,
+      "from": "신논현",
+      "officialSeconds": 67,
+      "rideSeconds": 110,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 36,
+      "from": "신논현",
+      "officialSeconds": 205,
+      "rideSeconds": 241,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 35,
+      "from": "신논현",
+      "officialSeconds": 343,
+      "rideSeconds": 378,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 34,
+      "from": "신논현",
+      "officialSeconds": 529,
+      "rideSeconds": 563,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 63,
+      "from": "신논현",
+      "officialSeconds": 936,
+      "rideSeconds": 999,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 80,
+      "from": "신논현",
+      "officialSeconds": 1132,
+      "rideSeconds": 1212,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 75,
+      "from": "신논현",
+      "officialSeconds": 1287,
+      "rideSeconds": 1362,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 66,
+      "from": "신논현",
+      "officialSeconds": 1454,
+      "rideSeconds": 1520,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 62,
+      "from": "신논현",
+      "officialSeconds": 1631,
+      "rideSeconds": 1693,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 49,
+      "from": "신논현",
+      "officialSeconds": 1793,
+      "rideSeconds": 1842,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 40,
+      "from": "신논현",
+      "officialSeconds": 1983,
+      "rideSeconds": 2023,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 29,
+      "from": "신논현",
+      "officialSeconds": 2184,
+      "rideSeconds": 2213,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 8,
+      "from": "신논현",
+      "officialSeconds": 2397,
+      "rideSeconds": 2405,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 22,
+      "from": "강남",
+      "officialSeconds": 256,
+      "rideSeconds": 278,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 41,
+      "from": "강남",
+      "officialSeconds": 168,
+      "rideSeconds": 209,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 36,
+      "from": "강남",
+      "officialSeconds": 68,
+      "rideSeconds": 104,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 23,
+      "from": "강남",
+      "officialSeconds": 108,
+      "rideSeconds": 131,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 22,
+      "from": "강남",
+      "officialSeconds": 246,
+      "rideSeconds": 268,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "강남",
+      "officialSeconds": 432,
+      "rideSeconds": 453,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 50,
+      "from": "강남",
+      "officialSeconds": 839,
+      "rideSeconds": 889,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 67,
+      "from": "강남",
+      "officialSeconds": 1035,
+      "rideSeconds": 1102,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 62,
+      "from": "강남",
+      "officialSeconds": 1190,
+      "rideSeconds": 1252,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 53,
+      "from": "강남",
+      "officialSeconds": 1357,
+      "rideSeconds": 1410,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 49,
+      "from": "강남",
+      "officialSeconds": 1534,
+      "rideSeconds": 1583,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 36,
+      "from": "강남",
+      "officialSeconds": 1696,
+      "rideSeconds": 1732,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 27,
+      "from": "강남",
+      "officialSeconds": 1886,
+      "rideSeconds": 1913,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 16,
+      "from": "강남",
+      "officialSeconds": 2087,
+      "rideSeconds": 2103,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -5,
+      "from": "강남",
+      "officialSeconds": 2300,
+      "rideSeconds": 2295,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 45,
+      "from": "양재",
+      "officialSeconds": 387,
+      "rideSeconds": 432,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 64,
+      "from": "양재",
+      "officialSeconds": 299,
+      "rideSeconds": 363,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 59,
+      "from": "양재",
+      "officialSeconds": 199,
+      "rideSeconds": 258,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 53,
+      "from": "양재",
+      "officialSeconds": 101,
+      "rideSeconds": 154,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 29,
+      "from": "양재",
+      "officialSeconds": 108,
+      "rideSeconds": 137,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 28,
+      "from": "양재",
+      "officialSeconds": 294,
+      "rideSeconds": 322,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 57,
+      "from": "양재",
+      "officialSeconds": 701,
+      "rideSeconds": 758,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 74,
+      "from": "양재",
+      "officialSeconds": 897,
+      "rideSeconds": 971,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 69,
+      "from": "양재",
+      "officialSeconds": 1052,
+      "rideSeconds": 1121,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 60,
+      "from": "양재",
+      "officialSeconds": 1219,
+      "rideSeconds": 1279,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 56,
+      "from": "양재",
+      "officialSeconds": 1396,
+      "rideSeconds": 1452,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 43,
+      "from": "양재",
+      "officialSeconds": 1558,
+      "rideSeconds": 1601,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 34,
+      "from": "양재",
+      "officialSeconds": 1748,
+      "rideSeconds": 1782,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 23,
+      "from": "양재",
+      "officialSeconds": 1949,
+      "rideSeconds": 1972,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 2,
+      "from": "양재",
+      "officialSeconds": 2162,
+      "rideSeconds": 2164,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 52,
+      "from": "양재시민의숲",
+      "officialSeconds": 521,
+      "rideSeconds": 573,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 71,
+      "from": "양재시민의숲",
+      "officialSeconds": 433,
+      "rideSeconds": 504,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 66,
+      "from": "양재시민의숲",
+      "officialSeconds": 333,
+      "rideSeconds": 399,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 60,
+      "from": "양재시민의숲",
+      "officialSeconds": 235,
+      "rideSeconds": 295,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 37,
+      "from": "양재시민의숲",
+      "officialSeconds": 104,
+      "rideSeconds": 141,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 29,
+      "from": "양재시민의숲",
+      "officialSeconds": 156,
+      "rideSeconds": 185,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 58,
+      "from": "양재시민의숲",
+      "officialSeconds": 563,
+      "rideSeconds": 621,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 75,
+      "from": "양재시민의숲",
+      "officialSeconds": 759,
+      "rideSeconds": 834,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 70,
+      "from": "양재시민의숲",
+      "officialSeconds": 914,
+      "rideSeconds": 984,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 61,
+      "from": "양재시민의숲",
+      "officialSeconds": 1081,
+      "rideSeconds": 1142,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 57,
+      "from": "양재시민의숲",
+      "officialSeconds": 1258,
+      "rideSeconds": 1315,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 44,
+      "from": "양재시민의숲",
+      "officialSeconds": 1420,
+      "rideSeconds": 1464,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 35,
+      "from": "양재시민의숲",
+      "officialSeconds": 1610,
+      "rideSeconds": 1645,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 24,
+      "from": "양재시민의숲",
+      "officialSeconds": 1811,
+      "rideSeconds": 1835,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 3,
+      "from": "양재시민의숲",
+      "officialSeconds": 2024,
+      "rideSeconds": 2027,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 57,
+      "from": "청계산입구",
+      "officialSeconds": 706,
+      "rideSeconds": 763,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 76,
+      "from": "청계산입구",
+      "officialSeconds": 618,
+      "rideSeconds": 694,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 71,
+      "from": "청계산입구",
+      "officialSeconds": 518,
+      "rideSeconds": 589,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 65,
+      "from": "청계산입구",
+      "officialSeconds": 420,
+      "rideSeconds": 485,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 42,
+      "from": "청계산입구",
+      "officialSeconds": 289,
+      "rideSeconds": 331,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 35,
+      "from": "청계산입구",
+      "officialSeconds": 155,
+      "rideSeconds": 190,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 59,
+      "from": "청계산입구",
+      "officialSeconds": 377,
+      "rideSeconds": 436,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 76,
+      "from": "청계산입구",
+      "officialSeconds": 573,
+      "rideSeconds": 649,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 71,
+      "from": "청계산입구",
+      "officialSeconds": 728,
+      "rideSeconds": 799,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 62,
+      "from": "청계산입구",
+      "officialSeconds": 895,
+      "rideSeconds": 957,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 58,
+      "from": "청계산입구",
+      "officialSeconds": 1072,
+      "rideSeconds": 1130,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 45,
+      "from": "청계산입구",
+      "officialSeconds": 1234,
+      "rideSeconds": 1279,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 36,
+      "from": "청계산입구",
+      "officialSeconds": 1424,
+      "rideSeconds": 1460,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 25,
+      "from": "청계산입구",
+      "officialSeconds": 1625,
+      "rideSeconds": 1650,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 4,
+      "from": "청계산입구",
+      "officialSeconds": 1838,
+      "rideSeconds": 1842,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 77,
+      "from": "판교",
+      "officialSeconds": 1112,
+      "rideSeconds": 1189,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 96,
+      "from": "판교",
+      "officialSeconds": 1024,
+      "rideSeconds": 1120,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 91,
+      "from": "판교",
+      "officialSeconds": 924,
+      "rideSeconds": 1015,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 85,
+      "from": "판교",
+      "officialSeconds": 826,
+      "rideSeconds": 911,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 62,
+      "from": "판교",
+      "officialSeconds": 695,
+      "rideSeconds": 757,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 55,
+      "from": "판교",
+      "officialSeconds": 561,
+      "rideSeconds": 616,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 50,
+      "from": "판교",
+      "officialSeconds": 376,
+      "rideSeconds": 426,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 47,
+      "from": "판교",
+      "officialSeconds": 166,
+      "rideSeconds": 213,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 42,
+      "from": "판교",
+      "officialSeconds": 321,
+      "rideSeconds": 363,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 33,
+      "from": "판교",
+      "officialSeconds": 488,
+      "rideSeconds": 521,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 29,
+      "from": "판교",
+      "officialSeconds": 665,
+      "rideSeconds": 694,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 16,
+      "from": "판교",
+      "officialSeconds": 827,
+      "rideSeconds": 843,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 7,
+      "from": "판교",
+      "officialSeconds": 1017,
+      "rideSeconds": 1024,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -4,
+      "from": "판교",
+      "officialSeconds": 1218,
+      "rideSeconds": 1214,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -25,
+      "from": "판교",
+      "officialSeconds": 1431,
+      "rideSeconds": 1406,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 89,
+      "from": "정자",
+      "officialSeconds": 1316,
+      "rideSeconds": 1405,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 108,
+      "from": "정자",
+      "officialSeconds": 1228,
+      "rideSeconds": 1336,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 103,
+      "from": "정자",
+      "officialSeconds": 1128,
+      "rideSeconds": 1231,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 97,
+      "from": "정자",
+      "officialSeconds": 1030,
+      "rideSeconds": 1127,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 74,
+      "from": "정자",
+      "officialSeconds": 899,
+      "rideSeconds": 973,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 67,
+      "from": "정자",
+      "officialSeconds": 765,
+      "rideSeconds": 832,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 62,
+      "from": "정자",
+      "officialSeconds": 580,
+      "rideSeconds": 642,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 42,
+      "from": "정자",
+      "officialSeconds": 174,
+      "rideSeconds": 216,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 25,
+      "from": "정자",
+      "officialSeconds": 125,
+      "rideSeconds": 150,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 16,
+      "from": "정자",
+      "officialSeconds": 292,
+      "rideSeconds": 308,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 12,
+      "from": "정자",
+      "officialSeconds": 469,
+      "rideSeconds": 481,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -1,
+      "from": "정자",
+      "officialSeconds": 631,
+      "rideSeconds": 630,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -10,
+      "from": "정자",
+      "officialSeconds": 821,
+      "rideSeconds": 811,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -21,
+      "from": "정자",
+      "officialSeconds": 1022,
+      "rideSeconds": 1001,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -42,
+      "from": "정자",
+      "officialSeconds": 1235,
+      "rideSeconds": 1193,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 80,
+      "from": "미금",
+      "officialSeconds": 1480,
+      "rideSeconds": 1560,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 99,
+      "from": "미금",
+      "officialSeconds": 1392,
+      "rideSeconds": 1491,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 94,
+      "from": "미금",
+      "officialSeconds": 1292,
+      "rideSeconds": 1386,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 88,
+      "from": "미금",
+      "officialSeconds": 1194,
+      "rideSeconds": 1282,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 65,
+      "from": "미금",
+      "officialSeconds": 1063,
+      "rideSeconds": 1128,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 58,
+      "from": "미금",
+      "officialSeconds": 929,
+      "rideSeconds": 987,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 53,
+      "from": "미금",
+      "officialSeconds": 744,
+      "rideSeconds": 797,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 33,
+      "from": "미금",
+      "officialSeconds": 338,
+      "rideSeconds": 371,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 16,
+      "from": "미금",
+      "officialSeconds": 134,
+      "rideSeconds": 150,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "미금",
+      "officialSeconds": 137,
+      "rideSeconds": 158,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 17,
+      "from": "미금",
+      "officialSeconds": 314,
+      "rideSeconds": 331,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 4,
+      "from": "미금",
+      "officialSeconds": 476,
+      "rideSeconds": 480,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -5,
+      "from": "미금",
+      "officialSeconds": 666,
+      "rideSeconds": 661,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -16,
+      "from": "미금",
+      "officialSeconds": 867,
+      "rideSeconds": 851,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -37,
+      "from": "미금",
+      "officialSeconds": 1080,
+      "rideSeconds": 1043,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 80,
+      "from": "동천",
+      "officialSeconds": 1642,
+      "rideSeconds": 1722,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 99,
+      "from": "동천",
+      "officialSeconds": 1554,
+      "rideSeconds": 1653,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 94,
+      "from": "동천",
+      "officialSeconds": 1454,
+      "rideSeconds": 1548,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 88,
+      "from": "동천",
+      "officialSeconds": 1356,
+      "rideSeconds": 1444,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 65,
+      "from": "동천",
+      "officialSeconds": 1225,
+      "rideSeconds": 1290,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 58,
+      "from": "동천",
+      "officialSeconds": 1091,
+      "rideSeconds": 1149,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 53,
+      "from": "동천",
+      "officialSeconds": 906,
+      "rideSeconds": 959,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 33,
+      "from": "동천",
+      "officialSeconds": 500,
+      "rideSeconds": 533,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "동천",
+      "officialSeconds": 296,
+      "rideSeconds": 317,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 30,
+      "from": "동천",
+      "officialSeconds": 132,
+      "rideSeconds": 162,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 26,
+      "from": "동천",
+      "officialSeconds": 147,
+      "rideSeconds": 173,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 13,
+      "from": "동천",
+      "officialSeconds": 309,
+      "rideSeconds": 322,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 4,
+      "from": "동천",
+      "officialSeconds": 499,
+      "rideSeconds": 503,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -7,
+      "from": "동천",
+      "officialSeconds": 700,
+      "rideSeconds": 693,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -28,
+      "from": "동천",
+      "officialSeconds": 913,
+      "rideSeconds": 885,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 71,
+      "from": "수지구청",
+      "officialSeconds": 1821,
+      "rideSeconds": 1892,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 90,
+      "from": "수지구청",
+      "officialSeconds": 1733,
+      "rideSeconds": 1823,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 85,
+      "from": "수지구청",
+      "officialSeconds": 1633,
+      "rideSeconds": 1718,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 79,
+      "from": "수지구청",
+      "officialSeconds": 1535,
+      "rideSeconds": 1614,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 56,
+      "from": "수지구청",
+      "officialSeconds": 1404,
+      "rideSeconds": 1460,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 49,
+      "from": "수지구청",
+      "officialSeconds": 1270,
+      "rideSeconds": 1319,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 44,
+      "from": "수지구청",
+      "officialSeconds": 1085,
+      "rideSeconds": 1129,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 24,
+      "from": "수지구청",
+      "officialSeconds": 679,
+      "rideSeconds": 703,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 12,
+      "from": "수지구청",
+      "officialSeconds": 475,
+      "rideSeconds": 487,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "수지구청",
+      "officialSeconds": 311,
+      "rideSeconds": 332,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "수지구청",
+      "officialSeconds": 149,
+      "rideSeconds": 170,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 17,
+      "from": "수지구청",
+      "officialSeconds": 132,
+      "rideSeconds": 149,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 8,
+      "from": "수지구청",
+      "officialSeconds": 322,
+      "rideSeconds": 330,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -3,
+      "from": "수지구청",
+      "officialSeconds": 523,
+      "rideSeconds": 520,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -24,
+      "from": "수지구청",
+      "officialSeconds": 736,
+      "rideSeconds": 712,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 71,
+      "from": "성복",
+      "officialSeconds": 1977,
+      "rideSeconds": 2048,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 90,
+      "from": "성복",
+      "officialSeconds": 1889,
+      "rideSeconds": 1979,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 85,
+      "from": "성복",
+      "officialSeconds": 1789,
+      "rideSeconds": 1874,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 79,
+      "from": "성복",
+      "officialSeconds": 1691,
+      "rideSeconds": 1770,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 56,
+      "from": "성복",
+      "officialSeconds": 1560,
+      "rideSeconds": 1616,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 49,
+      "from": "성복",
+      "officialSeconds": 1426,
+      "rideSeconds": 1475,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 44,
+      "from": "성복",
+      "officialSeconds": 1241,
+      "rideSeconds": 1285,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 24,
+      "from": "성복",
+      "officialSeconds": 835,
+      "rideSeconds": 859,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 12,
+      "from": "성복",
+      "officialSeconds": 631,
+      "rideSeconds": 643,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "성복",
+      "officialSeconds": 467,
+      "rideSeconds": 488,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "성복",
+      "officialSeconds": 305,
+      "rideSeconds": 326,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 30,
+      "from": "성복",
+      "officialSeconds": 126,
+      "rideSeconds": 156,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "성복",
+      "officialSeconds": 160,
+      "rideSeconds": 181,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 10,
+      "from": "성복",
+      "officialSeconds": 361,
+      "rideSeconds": 371,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -11,
+      "from": "성복",
+      "officialSeconds": 574,
+      "rideSeconds": 563,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 68,
+      "from": "상현",
+      "officialSeconds": 2163,
+      "rideSeconds": 2231,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 87,
+      "from": "상현",
+      "officialSeconds": 2075,
+      "rideSeconds": 2162,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 82,
+      "from": "상현",
+      "officialSeconds": 1975,
+      "rideSeconds": 2057,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 76,
+      "from": "상현",
+      "officialSeconds": 1877,
+      "rideSeconds": 1953,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 53,
+      "from": "상현",
+      "officialSeconds": 1746,
+      "rideSeconds": 1799,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 46,
+      "from": "상현",
+      "officialSeconds": 1612,
+      "rideSeconds": 1658,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 41,
+      "from": "상현",
+      "officialSeconds": 1427,
+      "rideSeconds": 1468,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 21,
+      "from": "상현",
+      "officialSeconds": 1021,
+      "rideSeconds": 1042,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 9,
+      "from": "상현",
+      "officialSeconds": 817,
+      "rideSeconds": 826,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 18,
+      "from": "상현",
+      "officialSeconds": 653,
+      "rideSeconds": 671,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 18,
+      "from": "상현",
+      "officialSeconds": 491,
+      "rideSeconds": 509,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 27,
+      "from": "상현",
+      "officialSeconds": 312,
+      "rideSeconds": 339,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 27,
+      "from": "상현",
+      "officialSeconds": 156,
+      "rideSeconds": 183,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 19,
+      "from": "상현",
+      "officialSeconds": 171,
+      "rideSeconds": 190,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -2,
+      "from": "상현",
+      "officialSeconds": 384,
+      "rideSeconds": 382,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 56,
+      "from": "광교중앙",
+      "officialSeconds": 2365,
+      "rideSeconds": 2421,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 75,
+      "from": "광교중앙",
+      "officialSeconds": 2277,
+      "rideSeconds": 2352,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 70,
+      "from": "광교중앙",
+      "officialSeconds": 2177,
+      "rideSeconds": 2247,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 64,
+      "from": "광교중앙",
+      "officialSeconds": 2079,
+      "rideSeconds": 2143,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 41,
+      "from": "광교중앙",
+      "officialSeconds": 1948,
+      "rideSeconds": 1989,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 34,
+      "from": "광교중앙",
+      "officialSeconds": 1814,
+      "rideSeconds": 1848,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 29,
+      "from": "광교중앙",
+      "officialSeconds": 1629,
+      "rideSeconds": 1658,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 9,
+      "from": "광교중앙",
+      "officialSeconds": 1223,
+      "rideSeconds": 1232,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -3,
+      "from": "광교중앙",
+      "officialSeconds": 1019,
+      "rideSeconds": 1016,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 6,
+      "from": "광교중앙",
+      "officialSeconds": 855,
+      "rideSeconds": 861,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 6,
+      "from": "광교중앙",
+      "officialSeconds": 693,
+      "rideSeconds": 699,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 15,
+      "from": "광교중앙",
+      "officialSeconds": 514,
+      "rideSeconds": 529,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 15,
+      "from": "광교중앙",
+      "officialSeconds": 358,
+      "rideSeconds": 373,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 18,
+      "from": "광교중앙",
+      "officialSeconds": 172,
+      "rideSeconds": 190,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 9,
+      "from": "광교중앙",
+      "officialSeconds": 183,
+      "rideSeconds": 192,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 40,
+      "from": "광교",
+      "officialSeconds": 2587,
+      "rideSeconds": 2627,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신사",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 59,
+      "from": "광교",
+      "officialSeconds": 2499,
+      "rideSeconds": 2558,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 54,
+      "from": "광교",
+      "officialSeconds": 2399,
+      "rideSeconds": 2453,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "신논현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 48,
+      "from": "광교",
+      "officialSeconds": 2301,
+      "rideSeconds": 2349,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "강남",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 25,
+      "from": "광교",
+      "officialSeconds": 2170,
+      "rideSeconds": 2195,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 18,
+      "from": "광교",
+      "officialSeconds": 2036,
+      "rideSeconds": 2054,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "양재시민의숲",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 13,
+      "from": "광교",
+      "officialSeconds": 1851,
+      "rideSeconds": 1864,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "청계산입구",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -7,
+      "from": "광교",
+      "officialSeconds": 1445,
+      "rideSeconds": 1438,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "판교",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -19,
+      "from": "광교",
+      "officialSeconds": 1241,
+      "rideSeconds": 1222,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "정자",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -10,
+      "from": "광교",
+      "officialSeconds": 1077,
+      "rideSeconds": 1067,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "미금",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -10,
+      "from": "광교",
+      "officialSeconds": 915,
+      "rideSeconds": 905,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "동천",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -1,
+      "from": "광교",
+      "officialSeconds": 736,
+      "rideSeconds": 735,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "수지구청",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": -1,
+      "from": "광교",
+      "officialSeconds": 580,
+      "rideSeconds": 579,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "성복",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 2,
+      "from": "광교",
+      "officialSeconds": 394,
+      "rideSeconds": 396,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "상현",
+      "transfers": 0
+    },
+    {
+      "deltaSeconds": 14,
+      "from": "광교",
+      "officialSeconds": 192,
+      "rideSeconds": 206,
+      "source": "https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp",
+      "to": "광교중앙",
+      "transfers": 0
+    }
+  ],
+  "unmatchedRows": 0
+}

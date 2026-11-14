@@ -5,33 +5,34 @@
   "graph": {
     "abnormal": 0,
     "branchServiceCheck": true,
+    "dataIssues": [],
     "physicalTriangleBoundViolations": 0,
     "physicalTriangleExcessSeconds": {
-      "count": 91557,
-      "max": 260,
+      "count": 1228076,
+      "max": 296,
       "min": 1,
-      "p50": 68,
-      "p95": 202
+      "p50": 84,
+      "p95": 230
     },
     "stateTriangleViolations": 0,
-    "symmetryNonzero": 1172,
+    "symmetryNonzero": 124965,
     "symmetrySeconds": {
-      "count": 28680,
-      "max": 430,
+      "count": 212878,
+      "max": 2300,
       "min": 0,
-      "p50": 0,
-      "p95": 0
+      "p50": 14,
+      "p95": 180
     },
     "triangleExamples": [
       "신내 -> 오금 via 태릉입구: excess=38, bound=95",
       "신내 -> 오금 via 군자: excess=63, bound=77",
       "신내 -> 광화문 via 청구: excess=87, bound=130",
-      "신내 -> 쌍문 via 노원: excess=232, bound=242",
-      "신내 -> 쌍문 via 태릉입구: excess=38, bound=95"
+      "신내 -> 성균관대 via 금정: excess=89, bound=131",
+      "신내 -> 성균관대 via 총신대입구(이수): excess=22, bound=153"
     ]
   },
-  "origins": 240,
+  "origins": 653,
   "passed": true,
   "reachability": 1.0,
-  "registryStations": 984
+  "registryStations": 988
 }

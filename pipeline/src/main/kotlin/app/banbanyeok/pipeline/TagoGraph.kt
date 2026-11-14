@@ -3,7 +3,7 @@ package app.banbanyeok.pipeline
 import kotlinx.serialization.json.JsonObject
 
 internal const val MIN_MATCHED = 3
-internal const val MIN_RATIO = 0.5
+internal const val MIN_RATIO = 0.4
 internal val RUN_RANGE = 30..1800
 internal val TAGO_HEADWAY_RANGE = 60..7200
 
@@ -39,16 +39,28 @@ internal data class TagoEdgeResult(
 )
 
 /**
- * Directed run time between consecutive TAGO stations. Falls back to the reverse direction (mirrored) when one
- * direction does not pass the match gate; returns null when neither does.
+ * Directed run time between consecutive TAGO stations [from] → [to] of [service]. A row heads towards [to] when its
+ * terminus sits at or beyond [to] in the service order (termini resolved to physical stations, so another
+ * operator's id for the same station counts); rows with an unknown terminus are kept for both directions.
+ * Falls back to the reverse direction (mirrored) when one direction does not pass the match gate.
  */
 internal fun tagoRunTimes(
     tago: TagoInput,
+    service: MetroService,
+    codes: Map<String, String>,
     from: String,
     to: String,
-): Pair<TagoEdgeResult?, TagoEdgeResult?> {
-    val forward = estimateRun(tago.timetable.getValue(from), tago.timetable.getValue(to))?.takeIf(::acceptable)
-    val reverse = estimateRun(tago.timetable.getValue(to), tago.timetable.getValue(from))?.takeIf(::acceptable)
+): TagoRun {
+    val heading = TagoHeading(tago, service, codes)
+    val i = service.stations.indexOf(from)
+    val j = service.stations.indexOf(to)
+    val rawForward = estimateRun(heading.rows(from, i, j), heading.rows(to, i, j))
+    val rawReverse = estimateRun(heading.rows(to, j, i), heading.rows(from, j, i))
+    val forward = rawForward?.takeIf(::acceptable)
+    val reverse = rawReverse?.takeIf(::acceptable)
+    if (forward == null && reverse == null) {
+        return TagoRun(null, null, listOfNotNull(rawForward, rawReverse).map(::describe))
+    }
 
     fun result(
         estimate: RunEstimate?,
@@ -56,19 +68,53 @@ internal fun tagoRunTimes(
     ) = estimate?.let {
         TagoEdgeResult(
             it.seconds,
-            obj(
-                "seconds" to it.seconds,
-                "runSeconds" to it.runSeconds,
-                "dwellSeconds" to it.dwellSeconds,
-                "matched" to it.matched,
-                "ratio" to (it.ratio * 1000).toInt() / 1000.0,
-                "directions" to "${it.fromDirection}>${it.toDirection}",
-                "mirrored" to mirrored,
-            ),
+            JsonObject(describe(it) + ("mirrored" to jsonValue(mirrored))),
         )
     }
-    return (result(forward, false) ?: result(reverse, true)) to (result(reverse, false) ?: result(forward, true))
+    return TagoRun(result(forward, false) ?: result(reverse, true), result(reverse, false) ?: result(forward, true))
 }
+
+/** Rows of a station heading from position [origin] towards [target] of the service order, judged by terminus. */
+private class TagoHeading(
+    private val tago: TagoInput,
+    private val service: MetroService,
+    private val codes: Map<String, String>,
+) {
+    private val order = service.stations.map { codes.getValue(it) }
+
+    private fun position(end: String?): Int? {
+        val id = end ?: return null
+        val own = service.stations.indexOf(id)
+        if (own >= 0) return own
+        return codes[id]?.let { order.indexOf(it) }?.takeIf { it >= 0 }
+    }
+
+    fun rows(
+        station: String,
+        origin: Int,
+        target: Int,
+    ): List<TagoTrain> =
+        tago.timetable.getValue(station).values.flatten().filter { train ->
+            val p = position(train.end) ?: return@filter true
+            if (target > origin) p >= target else p <= target
+        }
+}
+
+internal data class TagoRun(
+    val forward: TagoEdgeResult?,
+    val reverse: TagoEdgeResult?,
+    /** Raw estimates that failed the gate, for the report. */
+    val rejected: List<JsonObject> = emptyList(),
+)
+
+private fun describe(it: RunEstimate): JsonObject =
+    obj(
+        "seconds" to it.seconds,
+        "runSeconds" to it.runSeconds,
+        "dwellSeconds" to it.dwellSeconds,
+        "matched" to it.matched,
+        "ratio" to (it.ratio * 1000).toInt() / 1000.0,
+    )
 
 private fun acceptable(estimate: RunEstimate): Boolean =
     estimate.matched >= MIN_MATCHED && estimate.ratio >= MIN_RATIO && estimate.seconds in RUN_RANGE
@@ -95,7 +141,8 @@ internal fun tagoVersusS3(
             val to = ids[line to rules.canonical(row[2])]
             if (seconds == 0 || previous[1] != line) return@mapNotNull null
             if (from == null || to == null) return@mapNotNull null
-            val (forward, reverse) = tagoRunTimes(tago, from, to)
+            val forward = estimateByCodes(tago.timetable.getValue(from), tago.timetable.getValue(to))
+            val reverse = estimateByCodes(tago.timetable.getValue(to), tago.timetable.getValue(from))
             obj(
                 "line" to line,
                 "from" to rules.predecessor(line, row[2], previous[2]),

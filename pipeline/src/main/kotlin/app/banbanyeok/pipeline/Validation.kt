@@ -152,11 +152,14 @@ internal fun graphGate(
     )
 }
 
+/** 6 h: 수도권 끝과 끝(춘천↔신창 약 4시간 20분)을 넘는 값은 그래프 오류로 본다. P2(1~8호선)는 4 h였다. */
+private const val MAX_OD_SECONDS = 21_600
+
 private fun normalCell(
     costs: List<List<Cost>>,
     a: Int,
     c: Int,
-): Boolean = if (a == c) costs[a][c] == Cost(0, 0) else costs[a][c].seconds in 1..14400
+): Boolean = if (a == c) costs[a][c] == Cost(0, 0) else costs[a][c].seconds in 1..MAX_OD_SECONDS
 
 private fun branchValid(
     net: Network,

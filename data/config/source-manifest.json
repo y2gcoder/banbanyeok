@@ -40,5 +40,19 @@
     "rows": 140,
     "sha256": "3699fadb54cb42d7ce6fb17525d609d1f506e6c3ade3d10fa7806b001b80ec09",
     "source_url": "https://datafile.seoul.go.kr/bigfile/iot/inf/nio_download.do?useCache=false"
+  },
+  {
+    "bytes": 39893721,
+    "content_type": "application/json",
+    "effective_date": "timetable revision date not supplied; weekday (dailyTypeCode 01)",
+    "estimated": false,
+    "fetched_at": "2026-11-14T19:23:03.378385Z",
+    "file": "data/raw/tago",
+    "id": "S6",
+    "license": "이용허락범위 제한 없음 (data.go.kr/15098554)",
+    "request_body": null,
+    "rows": 1120,
+    "sha256": "2fc57c3a1c5aab86fb02c3c280b30cacca3f24652a70221984234f5c5ae9736d",
+    "source_url": "https://apis.data.go.kr/1613000/SubwayInfo (GetKwrdFndSubwaySttnList, GetSubwaySttnAcctoSchdulList)"
   }
 ]

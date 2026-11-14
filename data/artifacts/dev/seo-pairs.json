@@ -1,5 +1,5 @@
 {
-  "dataVersion": "20261114.5",
+  "dataVersion": "20261114.6",
   "pairs": [
     {
       "a": "1qs",
@@ -669,23 +669,23 @@
       "b": "e87",
       "results": [
         {
-          "maxSeconds": 890,
-          "reason": "가장 오래 걸리는 가산디지털단지에서 오는 분도 15분이에요. 2위 대림보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
-          "spreadSeconds": 99,
+          "maxSeconds": 804,
+          "reason": "둘 다 13분이에요. 2위 대림보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "spreadSeconds": 13,
           "stationCode": "eza",
           "times": [
             791,
-            890
+            804
           ],
-          "totalSeconds": 1681,
+          "totalSeconds": 1595,
           "transfers": [
             0,
-            1
+            0
           ]
         },
         {
           "maxSeconds": 941,
-          "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 592,
           "stationCode": "bcc",
           "times": [
@@ -700,7 +700,7 @@
         },
         {
           "maxSeconds": 1031,
-          "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
           "spreadSeconds": 201,
           "stationCode": "kez",
           "times": [
@@ -1092,15 +1092,15 @@
           ]
         },
         {
-          "maxSeconds": 1185,
+          "maxSeconds": 1176,
           "reason": "공평 모드 대안이에요. 1위 구로디지털단지보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
-          "spreadSeconds": 29,
+          "spreadSeconds": 20,
           "stationCode": "jgn",
           "times": [
             1156,
-            1185
+            1176
           ],
-          "totalSeconds": 2341,
+          "totalSeconds": 2332,
           "transfers": [
             1,
             1
@@ -1180,7 +1180,7 @@
       "results": [
         {
           "maxSeconds": 371,
-          "reason": "둘 다 6분이에요. 2위 합정보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "reason": "둘 다 6분이에요. 2위 홍대입구와 최장 시간은 같지만, 시간 차이가 더 작아요 (0분 vs 1분).",
           "spreadSeconds": 18,
           "stationCode": "hbf",
           "times": [
@@ -1188,6 +1188,21 @@
             353
           ],
           "totalSeconds": 724,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 375,
+          "reason": "공평 모드 대안이에요. 1위 충정로와 최장 시간은 같아요.",
+          "spreadSeconds": 94,
+          "stationCode": "ryf",
+          "times": [
+            281,
+            375
+          ],
+          "totalSeconds": 656,
           "transfers": [
             0,
             0
@@ -1203,21 +1218,6 @@
             546
           ],
           "totalSeconds": 917,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 703,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 6분 더 걸려요.",
-          "spreadSeconds": 32,
-          "stationCode": "pnm",
-          "times": [
-            671,
-            703
-          ],
-          "totalSeconds": 1374,
           "transfers": [
             0,
             0
@@ -1383,8 +1383,23 @@
       "b": "s1r",
       "results": [
         {
+          "maxSeconds": 521,
+          "reason": "가장 오래 걸리는 신촌에서 오는 분도 9분이에요. 2위 영등포구청보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "spreadSeconds": 91,
+          "stationCode": "mkh",
+          "times": [
+            521,
+            430
+          ],
+          "totalSeconds": 951,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 611,
-          "reason": "가장 오래 걸리는 신촌에서 오는 분도 10분이에요. 2위 충정로와 최장 시간은 같지만, 시간 차이가 더 작아요 (3분 vs 4분).",
+          "reason": "공평 모드 대안이에요. 1위 당산보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
           "spreadSeconds": 168,
           "stationCode": "r2q",
           "times": [
@@ -1399,7 +1414,7 @@
         },
         {
           "maxSeconds": 623,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청과 최장 시간은 같아요.",
+          "reason": "공평 모드 대안이에요. 1위 당산보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
           "spreadSeconds": 252,
           "stationCode": "hbf",
           "times": [
@@ -1410,21 +1425,6 @@
           "transfers": [
             0,
             0
-          ]
-        },
-        {
-          "maxSeconds": 786,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 265,
-          "stationCode": "mkh",
-          "times": [
-            521,
-            786
-          ],
-          "totalSeconds": 1307,
-          "transfers": [
-            0,
-            1
           ]
         }
       ]
@@ -2507,13 +2507,13 @@
         {
           "maxSeconds": 1084,
           "reason": "가장 오래 걸리는 혜화에서 오는 분도 18분이에요. 2위 건대입구와 최장 시간과 차이가 같고, 합계가 2분 더 짧아요.",
-          "spreadSeconds": 139,
+          "spreadSeconds": 148,
           "stationCode": "s5v",
           "times": [
             1084,
-            945
+            936
           ],
-          "totalSeconds": 2029,
+          "totalSeconds": 2020,
           "transfers": [
             1,
             1
@@ -2586,15 +2586,15 @@
           ]
         },
         {
-          "maxSeconds": 814,
-          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 5분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
-          "spreadSeconds": 116,
-          "stationCode": "7my",
+          "maxSeconds": 758,
+          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 4분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
+          "spreadSeconds": 35,
+          "stationCode": "ct5",
           "times": [
-            814,
-            698
+            758,
+            723
           ],
-          "totalSeconds": 1512,
+          "totalSeconds": 1481,
           "transfers": [
             1,
             0
@@ -2607,8 +2607,23 @@
       "b": "nn9",
       "results": [
         {
+          "maxSeconds": 679,
+          "reason": "가장 오래 걸리는 혜화에서 오는 분도 11분이에요. 2위 을지로4가보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "spreadSeconds": 274,
+          "stationCode": "ep2",
+          "times": [
+            679,
+            405
+          ],
+          "totalSeconds": 1084,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 703,
-          "reason": "가장 오래 걸리는 공덕에서 오는 분도 12분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
           "spreadSeconds": 65,
           "stationCode": "pnm",
           "times": [
@@ -2623,7 +2638,7 @@
         },
         {
           "maxSeconds": 793,
-          "reason": "공평 모드 대안이에요. 1위 을지로4가보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
           "spreadSeconds": 444,
           "stationCode": "s1q",
           "times": [
@@ -2634,21 +2649,6 @@
           "transfers": [
             0,
             0
-          ]
-        },
-        {
-          "maxSeconds": 794,
-          "reason": "공평 모드 대안이에요. 1위 을지로4가보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
-          "spreadSeconds": 25,
-          "stationCode": "rb2",
-          "times": [
-            769,
-            794
-          ],
-          "totalSeconds": 1563,
-          "transfers": [
-            0,
-            1
           ]
         }
       ]
@@ -2709,8 +2709,23 @@
       "b": "ryf",
       "results": [
         {
+          "maxSeconds": 679,
+          "reason": "가장 오래 걸리는 혜화에서 오는 분도 11분이에요. 2위 을지로3가보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "spreadSeconds": 64,
+          "stationCode": "ep2",
+          "times": [
+            679,
+            615
+          ],
+          "totalSeconds": 1294,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 731,
-          "reason": "둘 다 12분이에요. 2위 을지로입구보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 33,
           "stationCode": "wym",
           "times": [
@@ -2725,27 +2740,12 @@
         },
         {
           "maxSeconds": 758,
-          "reason": "공평 모드 대안이에요. 1위 을지로3가보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
           "spreadSeconds": 87,
           "stationCode": "j3y",
           "times": [
             758,
             671
-          ],
-          "totalSeconds": 1429,
-          "transfers": [
-            1,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 791,
-          "reason": "공평 모드 대안이에요. 1위 을지로3가보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 153,
-          "stationCode": "pnm",
-          "times": [
-            638,
-            791
           ],
           "totalSeconds": 1429,
           "transfers": [
@@ -3882,8 +3882,23 @@
       "b": "k3a",
       "results": [
         {
+          "maxSeconds": 659,
+          "reason": "가장 오래 걸리는 건대입구에서 오는 분도 11분이에요. 2위 잠실과 최장 시간과 차이가 같고, 합계가 1분 더 짧아요.",
+          "spreadSeconds": 187,
+          "stationCode": "8jt",
+          "times": [
+            659,
+            472
+          ],
+          "totalSeconds": 1131,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 671,
-          "reason": "가장 오래 걸리는 강남에서 오는 분도 11분이에요. 2위 종합운동장보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 논현과 최장 시간은 같아요. 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 120,
           "stationCode": "dxy",
           "times": [
@@ -3898,7 +3913,7 @@
         },
         {
           "maxSeconds": 731,
-          "reason": "공평 모드 대안이에요. 1위 잠실보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 논현보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
           "spreadSeconds": 240,
           "stationCode": "j4w",
           "times": [
@@ -3910,21 +3925,6 @@
             0,
             0
           ]
-        },
-        {
-          "maxSeconds": 819,
-          "reason": "공평 모드 대안이에요. 1위 잠실보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 174,
-          "stationCode": "58f",
-          "times": [
-            819,
-            645
-          ],
-          "totalSeconds": 1464,
-          "transfers": [
-            0,
-            1
-          ]
         }
       ]
     },
@@ -3933,8 +3933,23 @@
       "b": "mj0",
       "results": [
         {
+          "maxSeconds": 723,
+          "reason": "가장 오래 걸리는 청량리에서 오는 분도 12분이에요. 2위 신당보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 232,
+          "stationCode": "ct5",
+          "times": [
+            491,
+            723
+          ],
+          "totalSeconds": 1214,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 834,
-          "reason": "가장 오래 걸리는 청량리에서 오는 분도 14분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
           "spreadSeconds": 223,
           "stationCode": "7gf",
           "times": [
@@ -3949,7 +3964,7 @@
         },
         {
           "maxSeconds": 909,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 3분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 208,
           "stationCode": "s1q",
           "times": [
@@ -3960,21 +3975,6 @@
           "transfers": [
             0,
             1
-          ]
-        },
-        {
-          "maxSeconds": 968,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 450,
-          "stationCode": "9fy",
-          "times": [
-            968,
-            518
-          ],
-          "totalSeconds": 1486,
-          "transfers": [
-            1,
-            0
           ]
         }
       ]
@@ -5259,8 +5259,23 @@
       "b": "mj0",
       "results": [
         {
+          "maxSeconds": 723,
+          "reason": "가장 오래 걸리는 청량리에서 오는 분도 12분이에요. 2위 신당보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 52,
+          "stationCode": "ct5",
+          "times": [
+            671,
+            723
+          ],
+          "totalSeconds": 1394,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 834,
-          "reason": "가장 오래 걸리는 청량리에서 오는 분도 14분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
           "spreadSeconds": 43,
           "stationCode": "7gf",
           "times": [
@@ -5275,7 +5290,7 @@
         },
         {
           "maxSeconds": 909,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 3분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 28,
           "stationCode": "s1q",
           "times": [
@@ -5283,21 +5298,6 @@
             909
           ],
           "totalSeconds": 1790,
-          "transfers": [
-            0,
-            1
-          ]
-        },
-        {
-          "maxSeconds": 1067,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 36,
-          "stationCode": "wym",
-          "times": [
-            1031,
-            1067
-          ],
-          "totalSeconds": 2098,
           "transfers": [
             0,
             1
@@ -6309,18 +6309,18 @@
           ]
         },
         {
-          "maxSeconds": 1241,
-          "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
-          "spreadSeconds": 280,
-          "stationCode": "wym",
+          "maxSeconds": 1180,
+          "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
+          "spreadSeconds": 304,
+          "stationCode": "s1r",
           "times": [
-            961,
-            1241
+            1180,
+            876
           ],
-          "totalSeconds": 2202,
+          "totalSeconds": 2056,
           "transfers": [
             0,
-            0
+            1
           ]
         }
       ]
@@ -6484,7 +6484,7 @@
       "results": [
         {
           "maxSeconds": 331,
-          "reason": "가장 오래 걸리는 고속터미널에서 오는 분도 6분이에요. 2위 남부터미널보다 가장 오래 걸리는 사람이 4분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 고속터미널에서 오는 분도 6분이에요. 2위 논현보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
           "spreadSeconds": 80,
           "stationCode": "ekd",
           "times": [
@@ -6498,33 +6498,33 @@
           ]
         },
         {
-          "maxSeconds": 615,
-          "reason": "공평 모드 대안이에요. 1위 교대보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 194,
-          "stationCode": "ksw",
+          "maxSeconds": 472,
+          "reason": "공평 모드 대안이에요. 1위 교대보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 133,
+          "stationCode": "8jt",
           "times": [
-            421,
-            615
+            339,
+            472
           ],
-          "totalSeconds": 1036,
+          "totalSeconds": 811,
           "transfers": [
             0,
-            1
+            0
           ]
         },
         {
-          "maxSeconds": 645,
-          "reason": "공평 모드 대안이에요. 1위 교대보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
-          "spreadSeconds": 645,
-          "stationCode": "58f",
+          "maxSeconds": 541,
+          "reason": "공평 모드 대안이에요. 1위 교대보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
+          "spreadSeconds": 147,
+          "stationCode": "fkn",
           "times": [
-            0,
-            645
+            541,
+            394
           ],
-          "totalSeconds": 645,
+          "totalSeconds": 935,
           "transfers": [
             0,
-            1
+            0
           ]
         }
       ]
@@ -6615,18 +6615,18 @@
           ]
         },
         {
-          "maxSeconds": 1021,
-          "reason": "공평 모드 대안이에요. 1위 약수보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 418,
-          "stationCode": "7my",
+          "maxSeconds": 971,
+          "reason": "공평 모드 대안이에요. 1위 약수보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 70,
+          "stationCode": "cjw",
           "times": [
-            1021,
-            603
+            901,
+            971
           ],
-          "totalSeconds": 1624,
+          "totalSeconds": 1872,
           "transfers": [
             0,
-            0
+            1
           ]
         }
       ]
@@ -6790,7 +6790,7 @@
       "results": [
         {
           "maxSeconds": 1021,
-          "reason": "가장 오래 걸리는 고속터미널에서 오는 분도 17분이에요. 2위 을지로3가보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 고속터미널에서 오는 분도 17분이에요. 2위 여의도보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
           "spreadSeconds": 148,
           "stationCode": "7my",
           "times": [
@@ -6804,32 +6804,32 @@
           ]
         },
         {
-          "maxSeconds": 1201,
+          "maxSeconds": 1180,
           "reason": "공평 모드 대안이에요. 1위 종로3가보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 240,
-          "stationCode": "wym",
+          "spreadSeconds": 1180,
+          "stationCode": "s1r",
           "times": [
-            961,
-            1201
+            1180,
+            0
           ],
-          "totalSeconds": 2162,
+          "totalSeconds": 1180,
           "transfers": [
             0,
-            1
+            0
           ]
         },
         {
-          "maxSeconds": 1204,
+          "maxSeconds": 1190,
           "reason": "공평 모드 대안이에요. 1위 종로3가보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 141,
-          "stationCode": "s1q",
+          "spreadSeconds": 1190,
+          "stationCode": "58f",
           "times": [
-            1204,
-            1063
+            0,
+            1190
           ],
-          "totalSeconds": 2267,
+          "totalSeconds": 1190,
           "transfers": [
-            1,
+            0,
             0
           ]
         }
@@ -7330,17 +7330,17 @@
         },
         {
           "maxSeconds": 971,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
-          "spreadSeconds": 81,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 5분 더 작아요.",
+          "spreadSeconds": 167,
           "stationCode": "eza",
           "times": [
             971,
-            890
+            804
           ],
-          "totalSeconds": 1861,
+          "totalSeconds": 1775,
           "transfers": [
             0,
-            1
+            0
           ]
         }
       ]
@@ -7941,15 +7941,15 @@
           ]
         },
         {
-          "maxSeconds": 971,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 300,
-          "stationCode": "eza",
+          "maxSeconds": 919,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 304,
+          "stationCode": "ep2",
           "times": [
-            971,
-            671
+            919,
+            615
           ],
-          "totalSeconds": 1642,
+          "totalSeconds": 1534,
           "transfers": [
             0,
             0
@@ -8881,29 +8881,29 @@
       "results": [
         {
           "maxSeconds": 841,
-          "reason": "둘 다 14분이에요. 2위 압구정보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
-          "spreadSeconds": 16,
+          "reason": "가장 오래 걸리는 종로3가에서 오는 분도 14분이에요. 2위 압구정보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 300,
           "stationCode": "b4d",
           "times": [
             841,
-            825
+            541
           ],
-          "totalSeconds": 1666,
+          "totalSeconds": 1382,
           "transfers": [
             0,
-            1
+            0
           ]
         },
         {
-          "maxSeconds": 945,
-          "reason": "공평 모드 대안이에요. 1위 신사보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 224,
+          "maxSeconds": 936,
+          "reason": "공평 모드 대안이에요. 1위 신사보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+          "spreadSeconds": 215,
           "stationCode": "s5v",
           "times": [
             721,
-            945
+            936
           ],
-          "totalSeconds": 1666,
+          "totalSeconds": 1657,
           "transfers": [
             0,
             1
@@ -9114,17 +9114,17 @@
           ]
         },
         {
-          "maxSeconds": 671,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 55,
-          "stationCode": "j3y",
+          "maxSeconds": 603,
+          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 228,
+          "stationCode": "nn9",
           "times": [
-            616,
-            671
+            603,
+            375
           ],
-          "totalSeconds": 1287,
+          "totalSeconds": 978,
           "transfers": [
-            1,
+            0,
             0
           ]
         }
@@ -10003,7 +10003,7 @@
       "results": [
         {
           "maxSeconds": 1269,
-          "reason": "가장 오래 걸리는 노원에서 오는 분도 21분이에요. 2위 충무로보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 노원에서 오는 분도 21분이에요. 2위 군자보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
           "spreadSeconds": 208,
           "stationCode": "3g2",
           "times": [
@@ -10017,30 +10017,30 @@
           ]
         },
         {
-          "maxSeconds": 1399,
-          "reason": "공평 모드 대안이에요. 1위 건대입구보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
-          "spreadSeconds": 64,
-          "stationCode": "cjw",
+          "maxSeconds": 1358,
+          "reason": "공평 모드 대안이에요. 1위 건대입구보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 249,
+          "stationCode": "p2r",
           "times": [
-            1399,
-            1335
+            1109,
+            1358
           ],
-          "totalSeconds": 2734,
+          "totalSeconds": 2467,
           "transfers": [
             0,
             1
           ]
         },
         {
-          "maxSeconds": 1464,
-          "reason": "공평 모드 대안이에요. 1위 건대입구보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 355,
-          "stationCode": "p2r",
+          "maxSeconds": 1399,
+          "reason": "공평 모드 대안이에요. 1위 건대입구보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
+          "spreadSeconds": 73,
+          "stationCode": "cjw",
           "times": [
-            1109,
-            1464
+            1399,
+            1326
           ],
-          "totalSeconds": 2573,
+          "totalSeconds": 2725,
           "transfers": [
             0,
             1
@@ -10053,43 +10053,43 @@
       "b": "mj0",
       "results": [
         {
-          "maxSeconds": 1099,
-          "reason": "가장 오래 걸리는 노원에서 오는 분도 18분이에요. 2위 고려대보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
-          "spreadSeconds": 130,
-          "stationCode": "2je",
+          "maxSeconds": 919,
+          "reason": "가장 오래 걸리는 노원에서 오는 분도 15분이에요. 2위 상봉보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 55,
+          "stationCode": "jc9",
           "times": [
-            1099,
-            969
+            919,
+            864
           ],
-          "totalSeconds": 2068,
+          "totalSeconds": 1783,
           "transfers": [
             0,
             1
           ]
         },
         {
-          "maxSeconds": 1143,
-          "reason": "공평 모드 대안이에요. 1위 혜화보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
-          "spreadSeconds": 79,
-          "stationCode": "bmk",
+          "maxSeconds": 993,
+          "reason": "공평 모드 대안이에요. 1위 성신여대입구보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 254,
+          "stationCode": "8gc",
           "times": [
-            1143,
-            1064
+            739,
+            993
           ],
-          "totalSeconds": 2207,
+          "totalSeconds": 1732,
           "transfers": [
-            1,
-            1
+            0,
+            0
           ]
         },
         {
-          "maxSeconds": 1149,
-          "reason": "공평 모드 대안이에요. 1위 혜화보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 230,
-          "stationCode": "jc9",
+          "maxSeconds": 1099,
+          "reason": "공평 모드 대안이에요. 1위 성신여대입구보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
+          "spreadSeconds": 130,
+          "stationCode": "2je",
           "times": [
-            919,
-            1149
+            1099,
+            969
           ],
           "totalSeconds": 2068,
           "transfers": [
@@ -11124,8 +11124,38 @@
       "b": "mj0",
       "results": [
         {
+          "maxSeconds": 883,
+          "reason": "가장 오래 걸리는 천호에서 오는 분도 15분이에요. 2위 상봉보다 가장 오래 걸리는 사람이 4분 덜 걸려요.",
+          "spreadSeconds": 160,
+          "stationCode": "ct5",
+          "times": [
+            883,
+            723
+          ],
+          "totalSeconds": 1606,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 1135,
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 4분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+          "spreadSeconds": 142,
+          "stationCode": "8gc",
+          "times": [
+            1135,
+            993
+          ],
+          "totalSeconds": 2128,
+          "transfers": [
+            1,
+            0
+          ]
+        },
+        {
           "maxSeconds": 1203,
-          "reason": "가장 오래 걸리는 천호에서 오는 분도 20분이에요. 2위 신당보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
           "spreadSeconds": 294,
           "stationCode": "s1q",
           "times": [
@@ -11135,36 +11165,6 @@
           "totalSeconds": 2112,
           "transfers": [
             0,
-            1
-          ]
-        },
-        {
-          "maxSeconds": 1236,
-          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 402,
-          "stationCode": "7gf",
-          "times": [
-            1236,
-            834
-          ],
-          "totalSeconds": 2070,
-          "transfers": [
-            1,
-            1
-          ]
-        },
-        {
-          "maxSeconds": 1240,
-          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
-          "spreadSeconds": 128,
-          "stationCode": "bvq",
-          "times": [
-            1240,
-            1112
-          ],
-          "totalSeconds": 2352,
-          "transfers": [
-            2,
             1
           ]
         }
@@ -12123,18 +12123,18 @@
           ]
         },
         {
-          "maxSeconds": 881,
-          "reason": "공평 모드 대안이에요. 1위 잠실보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 450,
-          "stationCode": "4v6",
+          "maxSeconds": 868,
+          "reason": "공평 모드 대안이에요. 1위 잠실보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
+          "spreadSeconds": 44,
+          "stationCode": "nbj",
           "times": [
-            431,
-            881
+            824,
+            868
           ],
-          "totalSeconds": 1312,
+          "totalSeconds": 1692,
           "transfers": [
-            0,
-            0
+            1,
+            1
           ]
         }
       ]
@@ -12144,8 +12144,23 @@
       "b": "mj0",
       "results": [
         {
+          "maxSeconds": 723,
+          "reason": "가장 오래 걸리는 청량리에서 오는 분도 12분이에요. 2위 신당보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 322,
+          "stationCode": "ct5",
+          "times": [
+            401,
+            723
+          ],
+          "totalSeconds": 1124,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 834,
-          "reason": "가장 오래 걸리는 청량리에서 오는 분도 14분이에요. 2위 동대문보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
           "spreadSeconds": 313,
           "stationCode": "7gf",
           "times": [
@@ -12160,7 +12175,7 @@
         },
         {
           "maxSeconds": 878,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 360,
           "stationCode": "9fy",
           "times": [
@@ -12171,21 +12186,6 @@
           "transfers": [
             1,
             0
-          ]
-        },
-        {
-          "maxSeconds": 909,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 298,
-          "stationCode": "s1q",
-          "times": [
-            611,
-            909
-          ],
-          "totalSeconds": 1520,
-          "transfers": [
-            0,
-            1
           ]
         }
       ]
@@ -12553,7 +12553,7 @@
       "results": [
         {
           "maxSeconds": 1121,
-          "reason": "가장 오래 걸리는 신림에서 오는 분도 19분이에요. 2위 삼성보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 신림에서 오는 분도 19분이에요. 2위 선릉과 거의 같아요.",
           "spreadSeconds": 30,
           "stationCode": "ryf",
           "times": [
@@ -12561,6 +12561,21 @@
             1121
           ],
           "totalSeconds": 2212,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 1140,
+          "reason": "공평 모드 대안이에요. 1위 홍대입구와 최장 시간은 같아요.",
+          "spreadSeconds": 49,
+          "stationCode": "cbf",
+          "times": [
+            1140,
+            1091
+          ],
+          "totalSeconds": 2231,
           "transfers": [
             0,
             0
@@ -12576,21 +12591,6 @@
             1181
           ],
           "totalSeconds": 2332,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 1181,
-          "reason": "공평 모드 대안이에요. 1위 홍대입구보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 150,
-          "stationCode": "ep4",
-          "times": [
-            1181,
-            1031
-          ],
-          "totalSeconds": 2212,
           "transfers": [
             0,
             0
@@ -12735,18 +12735,18 @@
           ]
         },
         {
-          "maxSeconds": 971,
-          "reason": "공평 모드 대안이에요. 1위 약수보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 300,
-          "stationCode": "4v6",
+          "maxSeconds": 961,
+          "reason": "공평 모드 대안이에요. 1위 약수보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+          "spreadSeconds": 31,
+          "stationCode": "nbj",
           "times": [
-            671,
-            971
+            930,
+            961
           ],
-          "totalSeconds": 1642,
+          "totalSeconds": 1891,
           "transfers": [
             0,
-            0
+            1
           ]
         }
       ]
@@ -13092,18 +13092,18 @@
           ]
         },
         {
-          "maxSeconds": 941,
-          "reason": "공평 모드 대안이에요. 1위 강변보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 330,
-          "stationCode": "6yr",
+          "maxSeconds": 930,
+          "reason": "공평 모드 대안이에요. 1위 강변보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
+          "spreadSeconds": 62,
+          "stationCode": "nbj",
           "times": [
-            611,
-            941
+            930,
+            868
           ],
-          "totalSeconds": 1552,
+          "totalSeconds": 1798,
           "transfers": [
             0,
-            0
+            1
           ]
         }
       ]
@@ -13143,18 +13143,18 @@
           ]
         },
         {
-          "maxSeconds": 834,
-          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 553,
-          "stationCode": "7gf",
+          "maxSeconds": 723,
+          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 723,
+          "stationCode": "ct5",
           "times": [
-            281,
-            834
+            0,
+            723
           ],
-          "totalSeconds": 1115,
+          "totalSeconds": 723,
           "transfers": [
             0,
-            1
+            0
           ]
         }
       ]
@@ -13980,15 +13980,15 @@
       "b": "k3a",
       "results": [
         {
-          "maxSeconds": 1335,
+          "maxSeconds": 1326,
           "reason": "가장 오래 걸리는 강남에서 오는 분도 22분이에요. 2위 동대입구보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
-          "spreadSeconds": 266,
+          "spreadSeconds": 257,
           "stationCode": "cjw",
           "times": [
             1069,
-            1335
+            1326
           ],
-          "totalSeconds": 2404,
+          "totalSeconds": 2395,
           "transfers": [
             0,
             1
@@ -13997,31 +13997,31 @@
         {
           "maxSeconds": 1384,
           "reason": "공평 모드 대안이에요. 1위 충무로보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
-          "spreadSeconds": 139,
+          "spreadSeconds": 148,
           "stationCode": "k17",
           "times": [
             1384,
-            1245
+            1236
           ],
-          "totalSeconds": 2629,
+          "totalSeconds": 2620,
           "transfers": [
             1,
             1
           ]
         },
         {
-          "maxSeconds": 1391,
-          "reason": "공평 모드 대안이에요. 1위 충무로보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 4분 더 작아요.",
-          "spreadSeconds": 33,
-          "stationCode": "ct5",
+          "maxSeconds": 1386,
+          "reason": "공평 모드 대안이에요. 1위 충무로보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
+          "spreadSeconds": 88,
+          "stationCode": "wym",
           "times": [
-            1358,
-            1391
+            1298,
+            1386
           ],
-          "totalSeconds": 2749,
+          "totalSeconds": 2684,
           "transfers": [
             1,
-            0
+            1
           ]
         }
       ]
@@ -14031,8 +14031,23 @@
       "b": "mj0",
       "results": [
         {
+          "maxSeconds": 864,
+          "reason": "가장 오래 걸리는 청량리에서 오는 분도 14분이에요. 2위 동대문보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "spreadSeconds": 275,
+          "stationCode": "jc9",
+          "times": [
+            589,
+            864
+          ],
+          "totalSeconds": 1453,
+          "transfers": [
+            0,
+            1
+          ]
+        },
+        {
           "maxSeconds": 889,
-          "reason": "가장 오래 걸리는 수유에서 오는 분도 15분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 성신여대입구보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
           "spreadSeconds": 371,
           "stationCode": "9fy",
           "times": [
@@ -14047,7 +14062,7 @@
         },
         {
           "maxSeconds": 949,
-          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 5분 더 작아요.",
+          "reason": "공평 모드 대안이에요. 1위 성신여대입구보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
           "spreadSeconds": 40,
           "stationCode": "s1q",
           "times": [
@@ -14055,21 +14070,6 @@
             909
           ],
           "totalSeconds": 1858,
-          "transfers": [
-            0,
-            1
-          ]
-        },
-        {
-          "maxSeconds": 969,
-          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
-          "spreadSeconds": 200,
-          "stationCode": "2je",
-          "times": [
-            769,
-            969
-          ],
-          "totalSeconds": 1738,
           "transfers": [
             0,
             1
@@ -14098,14 +14098,14 @@
         },
         {
           "maxSeconds": 1069,
-          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
-          "spreadSeconds": 37,
+          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+          "spreadSeconds": 98,
           "stationCode": "cjw",
           "times": [
             1069,
-            1032
+            971
           ],
-          "totalSeconds": 2101,
+          "totalSeconds": 2040,
           "transfers": [
             0,
             1
@@ -14214,15 +14214,15 @@
           ]
         },
         {
-          "maxSeconds": 1148,
-          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 259,
-          "stationCode": "9fy",
+          "maxSeconds": 1129,
+          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 3분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+          "spreadSeconds": 8,
+          "stationCode": "30q",
           "times": [
-            889,
-            1148
+            1129,
+            1121
           ],
-          "totalSeconds": 2037,
+          "totalSeconds": 2250,
           "transfers": [
             0,
             1
@@ -14316,17 +14316,17 @@
           ]
         },
         {
-          "maxSeconds": 1298,
-          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 97,
-          "stationCode": "wym",
+          "maxSeconds": 1279,
+          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
+          "spreadSeconds": 182,
+          "stationCode": "ep2",
           "times": [
-            1298,
-            1201
+            1279,
+            1097
           ],
-          "totalSeconds": 2499,
+          "totalSeconds": 2376,
           "transfers": [
-            1,
+            0,
             1
           ]
         }
@@ -14440,7 +14440,7 @@
       "results": [
         {
           "maxSeconds": 461,
-          "reason": "가장 오래 걸리는 신림에서 오는 분도 8분이에요. 2위 구로디지털단지보다 가장 오래 걸리는 사람이 6분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 신림에서 오는 분도 8분이에요. 2위 신도림보다 가장 오래 걸리는 사람이 5분 덜 걸려요.",
           "spreadSeconds": 112,
           "stationCode": "bcc",
           "times": [
@@ -14448,6 +14448,21 @@
             349
           ],
           "totalSeconds": 810,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 804,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
+          "spreadSeconds": 193,
+          "stationCode": "eza",
+          "times": [
+            611,
+            804
+          ],
+          "totalSeconds": 1415,
           "transfers": [
             0,
             0
@@ -14463,21 +14478,6 @@
             830
           ],
           "totalSeconds": 1201,
-          "transfers": [
-            0,
-            1
-          ]
-        },
-        {
-          "maxSeconds": 890,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 7분 더 걸려요.",
-          "spreadSeconds": 279,
-          "stationCode": "eza",
-          "times": [
-            611,
-            890
-          ],
-          "totalSeconds": 1501,
           "transfers": [
             0,
             1
@@ -14572,17 +14572,17 @@
         },
         {
           "maxSeconds": 1121,
-          "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 4분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
-          "spreadSeconds": 148,
+          "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
+          "spreadSeconds": 476,
           "stationCode": "ryf",
           "times": [
             1121,
-            973
+            645
           ],
-          "totalSeconds": 2094,
+          "totalSeconds": 1766,
           "transfers": [
             0,
-            1
+            0
           ]
         }
       ]
@@ -15184,17 +15184,17 @@
         },
         {
           "maxSeconds": 881,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 4분 더 작아요.",
-          "spreadSeconds": 95,
+          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 451,
           "stationCode": "mkh",
           "times": [
             881,
-            786
+            430
           ],
-          "totalSeconds": 1667,
+          "totalSeconds": 1311,
           "transfers": [
             0,
-            1
+            0
           ]
         }
       ]
@@ -15714,8 +15714,23 @@
       "b": "mj0",
       "results": [
         {
+          "maxSeconds": 881,
+          "reason": "가장 오래 걸리는 잠실에서 오는 분도 15분이에요. 2위 신당보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 158,
+          "stationCode": "ct5",
+          "times": [
+            881,
+            723
+          ],
+          "totalSeconds": 1604,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 1001,
-          "reason": "가장 오래 걸리는 잠실에서 오는 분도 17분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
           "spreadSeconds": 167,
           "stationCode": "7gf",
           "times": [
@@ -15729,30 +15744,15 @@
           ]
         },
         {
-          "maxSeconds": 1091,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 182,
-          "stationCode": "s1q",
+          "maxSeconds": 1016,
+          "reason": "공평 모드 대안이에요. 1위 왕십리보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 225,
+          "stationCode": "3mp",
           "times": [
-            1091,
-            909
+            791,
+            1016
           ],
-          "totalSeconds": 2000,
-          "transfers": [
-            0,
-            1
-          ]
-        },
-        {
-          "maxSeconds": 1112,
-          "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 471,
-          "stationCode": "bvq",
-          "times": [
-            641,
-            1112
-          ],
-          "totalSeconds": 1753,
+          "totalSeconds": 1807,
           "transfers": [
             0,
             1
@@ -15999,18 +15999,18 @@
           ]
         },
         {
-          "maxSeconds": 1241,
-          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 40,
-          "stationCode": "wym",
+          "maxSeconds": 1190,
+          "reason": "공평 모드 대안이에요. 1위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 35,
+          "stationCode": "58f",
           "times": [
-            1241,
-            1201
+            1155,
+            1190
           ],
-          "totalSeconds": 2442,
+          "totalSeconds": 2345,
           "transfers": [
-            0,
-            1
+            1,
+            0
           ]
         }
       ]
@@ -16174,7 +16174,7 @@
       "results": [
         {
           "maxSeconds": 731,
-          "reason": "가장 오래 걸리는 합정에서 오는 분도 12분이에요. 2위 구로디지털단지보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 합정에서 오는 분도 12분이에요. 2위 신도림보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
           "spreadSeconds": 382,
           "stationCode": "bcc",
           "times": [
@@ -16182,6 +16182,21 @@
             731
           ],
           "totalSeconds": 1080,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 804,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
+          "spreadSeconds": 223,
+          "stationCode": "eza",
+          "times": [
+            804,
+            581
+          ],
+          "totalSeconds": 1385,
           "transfers": [
             0,
             0
@@ -16201,21 +16216,6 @@
             1,
             0
           ]
-        },
-        {
-          "maxSeconds": 890,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 3분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
-          "spreadSeconds": 309,
-          "stationCode": "eza",
-          "times": [
-            890,
-            581
-          ],
-          "totalSeconds": 1471,
-          "transfers": [
-            1,
-            0
-          ]
         }
       ]
     },
@@ -16225,7 +16225,7 @@
       "results": [
         {
           "maxSeconds": 349,
-          "reason": "가장 오래 걸리는 가산디지털단지에서 오는 분도 6분이에요. 2위 구로디지털단지보다 가장 오래 걸리는 사람이 8분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 가산디지털단지에서 오는 분도 6분이에요. 2위 가산디지털단지보다 가장 오래 걸리는 사람이 7분 덜 걸려요.",
           "spreadSeconds": 38,
           "stationCode": "bcc",
           "times": [
@@ -16239,33 +16239,33 @@
           ]
         },
         {
-          "maxSeconds": 830,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 8분 더 걸려요.",
-          "spreadSeconds": 429,
-          "stationCode": "kez",
+          "maxSeconds": 804,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 7분 더 걸려요.",
+          "spreadSeconds": 804,
+          "stationCode": "e87",
           "times": [
-            830,
-            401
+            0,
+            804
           ],
-          "totalSeconds": 1231,
+          "totalSeconds": 804,
           "transfers": [
-            1,
+            0,
             0
           ]
         },
         {
-          "maxSeconds": 890,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 9분 더 걸려요.",
-          "spreadSeconds": 890,
-          "stationCode": "e87",
+          "maxSeconds": 804,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 7분 더 걸려요.",
+          "spreadSeconds": 804,
+          "stationCode": "eza",
           "times": [
-            0,
-            890
+            804,
+            0
           ],
-          "totalSeconds": 890,
+          "totalSeconds": 804,
           "transfers": [
             0,
-            1
+            0
           ]
         }
       ]
@@ -16276,7 +16276,7 @@
       "results": [
         {
           "maxSeconds": 1070,
-          "reason": "가장 오래 걸리는 가산디지털단지에서 오는 분도 18분이에요. 2위 신도림과 거의 같아요.",
+          "reason": "가장 오래 걸리는 가산디지털단지에서 오는 분도 18분이에요. 2위 신도림과 최장 시간은 같지만, 시간 차이가 더 작아요 (3분 vs 5분).",
           "spreadSeconds": 159,
           "stationCode": "r2q",
           "times": [
@@ -16292,15 +16292,15 @@
         {
           "maxSeconds": 1091,
           "reason": "공평 모드 대안이에요. 1위 영등포구청과 최장 시간은 같아요.",
-          "spreadSeconds": 201,
+          "spreadSeconds": 287,
           "stationCode": "eza",
           "times": [
-            890,
+            804,
             1091
           ],
-          "totalSeconds": 1981,
+          "totalSeconds": 1895,
           "transfers": [
-            1,
+            0,
             0
           ]
         },
@@ -16409,15 +16409,15 @@
         {
           "maxSeconds": 1181,
           "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 291,
+          "spreadSeconds": 377,
           "stationCode": "eza",
           "times": [
-            890,
+            804,
             1181
           ],
-          "totalSeconds": 2071,
+          "totalSeconds": 1985,
           "transfers": [
-            1,
+            0,
             0
           ]
         }
@@ -16546,16 +16546,16 @@
         },
         {
           "maxSeconds": 1146,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
-          "spreadSeconds": 256,
+          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 342,
           "stationCode": "eza",
           "times": [
-            890,
+            804,
             1146
           ],
-          "totalSeconds": 2036,
+          "totalSeconds": 1950,
           "transfers": [
-            1,
+            0,
             1
           ]
         },
@@ -16582,7 +16582,7 @@
       "results": [
         {
           "maxSeconds": 491,
-          "reason": "가장 오래 걸리는 영등포구청에서 오는 분도 8분이에요. 2위 구로디지털단지보다 가장 오래 걸리는 사람이 6분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 영등포구청에서 오는 분도 8분이에요. 2위 신도림보다 가장 오래 걸리는 사람이 5분 덜 걸려요.",
           "spreadSeconds": 142,
           "stationCode": "bcc",
           "times": [
@@ -16590,6 +16590,21 @@
             491
           ],
           "totalSeconds": 840,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 804,
+          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
+          "spreadSeconds": 463,
+          "stationCode": "eza",
+          "times": [
+            804,
+            341
+          ],
+          "totalSeconds": 1145,
           "transfers": [
             0,
             0
@@ -16609,21 +16624,6 @@
             1,
             0
           ]
-        },
-        {
-          "maxSeconds": 890,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 7분 더 걸려요.",
-          "spreadSeconds": 549,
-          "stationCode": "eza",
-          "times": [
-            890,
-            341
-          ],
-          "totalSeconds": 1231,
-          "transfers": [
-            1,
-            0
-          ]
         }
       ]
     },
@@ -16632,8 +16632,23 @@
       "b": "ryf",
       "results": [
         {
+          "maxSeconds": 804,
+          "reason": "가장 오래 걸리는 가산디지털단지에서 오는 분도 13분이에요. 2위 대림보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "spreadSeconds": 133,
+          "stationCode": "eza",
+          "times": [
+            804,
+            671
+          ],
+          "totalSeconds": 1475,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 821,
-          "reason": "가장 오래 걸리는 홍대입구에서 오는 분도 14분이에요. 2위 신도림보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
           "spreadSeconds": 472,
           "stationCode": "bcc",
           "times": [
@@ -16647,23 +16662,8 @@
           ]
         },
         {
-          "maxSeconds": 890,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 4분 더 작아요.",
-          "spreadSeconds": 219,
-          "stationCode": "eza",
-          "times": [
-            890,
-            671
-          ],
-          "totalSeconds": 1561,
-          "transfers": [
-            1,
-            0
-          ]
-        },
-        {
           "maxSeconds": 911,
-          "reason": "공평 모드 대안이에요. 1위 대림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+          "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 81,
           "stationCode": "kez",
           "times": [
@@ -16734,17 +16734,17 @@
       "b": "s1r",
       "results": [
         {
-          "maxSeconds": 890,
-          "reason": "둘 다 15분이에요. 2위 대림보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
-          "spreadSeconds": 14,
+          "maxSeconds": 876,
+          "reason": "가장 오래 걸리는 여의도에서 오는 분도 15분이에요. 2위 대림보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 72,
           "stationCode": "eza",
           "times": [
-            890,
+            804,
             876
           ],
-          "totalSeconds": 1766,
+          "totalSeconds": 1680,
           "transfers": [
-            1,
+            0,
             1
           ]
         },
@@ -16817,15 +16817,15 @@
         {
           "maxSeconds": 1241,
           "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 351,
+          "spreadSeconds": 437,
           "stationCode": "eza",
           "times": [
-            890,
+            804,
             1241
           ],
-          "totalSeconds": 2131,
+          "totalSeconds": 2045,
           "transfers": [
-            1,
+            0,
             0
           ]
         }
@@ -17259,15 +17259,15 @@
           ]
         },
         {
-          "maxSeconds": 1032,
-          "reason": "공평 모드 대안이에요. 1위 약수보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
-          "spreadSeconds": 11,
+          "maxSeconds": 1021,
+          "reason": "공평 모드 대안이에요. 1위 약수보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 50,
           "stationCode": "cjw",
           "times": [
             1021,
-            1032
+            971
           ],
-          "totalSeconds": 2053,
+          "totalSeconds": 1992,
           "transfers": [
             0,
             1
@@ -17550,8 +17550,23 @@
       "b": "ep4",
       "results": [
         {
+          "maxSeconds": 546,
+          "reason": "가장 오래 걸리는 합정에서 오는 분도 9분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 111,
+          "stationCode": "nn9",
+          "times": [
+            435,
+            546
+          ],
+          "totalSeconds": 981,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 643,
-          "reason": "가장 오래 걸리는 서울역에서 오는 분도 11분이에요. 2위 시청과 최장 시간은 같지만, 시간 차이가 더 작아요 (1분 vs 6분).",
+          "reason": "공평 모드 대안이에요. 1위 공덕보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 62,
           "stationCode": "hbf",
           "times": [
@@ -17565,30 +17580,15 @@
           ]
         },
         {
-          "maxSeconds": 671,
-          "reason": "공평 모드 대안이에요. 1위 충정로와 최장 시간은 같아요.",
-          "spreadSeconds": 363,
-          "stationCode": "gf9",
+          "maxSeconds": 645,
+          "reason": "공평 모드 대안이에요. 1위 공덕보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "spreadSeconds": 394,
+          "stationCode": "ryf",
           "times": [
-            308,
-            671
+            645,
+            251
           ],
-          "totalSeconds": 979,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 716,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 367,
-          "stationCode": "bfa",
-          "times": [
-            349,
-            716
-          ],
-          "totalSeconds": 1065,
+          "totalSeconds": 896,
           "transfers": [
             0,
             0
@@ -17601,8 +17601,23 @@
       "b": "eza",
       "results": [
         {
+          "maxSeconds": 671,
+          "reason": "둘 다 11분이에요. 2위 이대보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "spreadSeconds": 26,
+          "stationCode": "ryf",
+          "times": [
+            645,
+            671
+          ],
+          "totalSeconds": 1316,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 851,
-          "reason": "가장 오래 걸리는 신도림에서 오는 분도 14분이에요. 2위 신촌과 거의 같아요.",
+          "reason": "공평 모드 대안이에요. 1위 홍대입구보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 58,
           "stationCode": "k7d",
           "times": [
@@ -17617,7 +17632,7 @@
         },
         {
           "maxSeconds": 853,
-          "reason": "공평 모드 대안이에요. 1위 이대와 최장 시간은 같아요.",
+          "reason": "공평 모드 대안이에요. 1위 홍대입구보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 62,
           "stationCode": "1qs",
           "times": [
@@ -17627,21 +17642,6 @@
           "totalSeconds": 1644,
           "transfers": [
             1,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 971,
-          "reason": "공평 모드 대안이에요. 1위 이대보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 52,
-          "stationCode": "70x",
-          "times": [
-            919,
-            971
-          ],
-          "totalSeconds": 1890,
-          "transfers": [
-            0,
             0
           ]
         }
@@ -17822,13 +17822,13 @@
         {
           "maxSeconds": 994,
           "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 4분 더 작아요.",
-          "spreadSeconds": 49,
+          "spreadSeconds": 58,
           "stationCode": "s5v",
           "times": [
             994,
-            945
+            936
           ],
-          "totalSeconds": 1939,
+          "totalSeconds": 1930,
           "transfers": [
             1,
             1
@@ -17837,16 +17837,16 @@
         {
           "maxSeconds": 1114,
           "reason": "공평 모드 대안이에요. 1위 사당보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 289,
+          "spreadSeconds": 573,
           "stationCode": "b4d",
           "times": [
             1114,
-            825
+            541
           ],
-          "totalSeconds": 1939,
+          "totalSeconds": 1655,
           "transfers": [
             1,
-            1
+            0
           ]
         }
       ]
@@ -17907,8 +17907,23 @@
       "b": "nn9",
       "results": [
         {
+          "maxSeconds": 405,
+          "reason": "가장 오래 걸리는 공덕에서 오는 분도 7분이에요. 2위 삼각지와 최장 시간과 차이가 같고, 합계가 6분 더 짧아요.",
+          "spreadSeconds": 405,
+          "stationCode": "ep2",
+          "times": [
+            0,
+            405
+          ],
+          "totalSeconds": 405,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 406,
-          "reason": "가장 오래 걸리는 공덕에서 오는 분도 7분이에요. 2위 종로3가보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역과 최장 시간은 같아요. 시간 차이는 6분 더 작아요.",
           "spreadSeconds": 57,
           "stationCode": "bfa",
           "times": [
@@ -17922,32 +17937,17 @@
           ]
         },
         {
-          "maxSeconds": 603,
-          "reason": "공평 모드 대안이에요. 1위 삼각지보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 85,
-          "stationCode": "7my",
+          "maxSeconds": 435,
+          "reason": "공평 모드 대안이에요. 1위 서울역과 최장 시간은 같아요.",
+          "spreadSeconds": 435,
+          "stationCode": "nn9",
           "times": [
-            518,
-            603
+            435,
+            0
           ],
-          "totalSeconds": 1121,
+          "totalSeconds": 435,
           "transfers": [
             0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 643,
-          "reason": "공평 모드 대안이에요. 1위 삼각지보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 290,
-          "stationCode": "hbf",
-          "times": [
-            643,
-            353
-          ],
-          "totalSeconds": 996,
-          "transfers": [
-            1,
             0
           ]
         }
@@ -17958,43 +17958,43 @@
       "b": "r2q",
       "results": [
         {
+          "maxSeconds": 645,
+          "reason": "가장 오래 걸리는 서울역에서 오는 분도 11분이에요. 2위 공덕보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "spreadSeconds": 154,
+          "stationCode": "ryf",
+          "times": [
+            645,
+            491
+          ],
+          "totalSeconds": 1136,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 713,
+          "reason": "공평 모드 대안이에요. 1위 홍대입구보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 278,
+          "stationCode": "nn9",
+          "times": [
+            435,
+            713
+          ],
+          "totalSeconds": 1148,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 793,
-          "reason": "가장 오래 걸리는 서울역에서 오는 분도 13분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 홍대입구보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 122,
           "stationCode": "k7d",
           "times": [
             793,
             671
-          ],
-          "totalSeconds": 1464,
-          "transfers": [
-            1,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 821,
-          "reason": "공평 모드 대안이에요. 1위 이대보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 178,
-          "stationCode": "hbf",
-          "times": [
-            643,
-            821
-          ],
-          "totalSeconds": 1464,
-          "transfers": [
-            1,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 853,
-          "reason": "공평 모드 대안이에요. 1위 이대보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 242,
-          "stationCode": "1qs",
-          "times": [
-            853,
-            611
           ],
           "totalSeconds": 1464,
           "transfers": [
@@ -18009,8 +18009,23 @@
       "b": "ryf",
       "results": [
         {
+          "maxSeconds": 435,
+          "reason": "가장 오래 걸리는 서울역에서 오는 분도 7분이에요. 2위 시청보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "spreadSeconds": 60,
+          "stationCode": "nn9",
+          "times": [
+            435,
+            375
+          ],
+          "totalSeconds": 810,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 581,
-          "reason": "가장 오래 걸리는 홍대입구에서 오는 분도 10분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 공덕보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 273,
           "stationCode": "gf9",
           "times": [
@@ -18024,32 +18039,17 @@
           ]
         },
         {
-          "maxSeconds": 643,
-          "reason": "공평 모드 대안이에요. 1위 시청보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
-          "spreadSeconds": 152,
-          "stationCode": "hbf",
+          "maxSeconds": 615,
+          "reason": "공평 모드 대안이에요. 1위 공덕보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
+          "spreadSeconds": 615,
+          "stationCode": "ep2",
           "times": [
-            643,
-            491
+            0,
+            615
           ],
-          "totalSeconds": 1134,
+          "totalSeconds": 615,
           "transfers": [
-            1,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 671,
-          "reason": "공평 모드 대안이에요. 1위 시청보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 5분 더 작아요.",
-          "spreadSeconds": 28,
-          "stationCode": "j3y",
-          "times": [
-            643,
-            671
-          ],
-          "totalSeconds": 1314,
-          "transfers": [
-            1,
+            0,
             0
           ]
         }
@@ -18111,8 +18111,23 @@
       "b": "s1r",
       "results": [
         {
+          "maxSeconds": 463,
+          "reason": "가장 오래 걸리는 여의도에서 오는 분도 8분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "spreadSeconds": 28,
+          "stationCode": "nn9",
+          "times": [
+            435,
+            463
+          ],
+          "totalSeconds": 898,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 643,
-          "reason": "가장 오래 걸리는 서울역에서 오는 분도 11분이에요. 2위 종로3가보다 가장 오래 걸리는 사람이 4분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 공덕보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 20,
           "stationCode": "hbf",
           "times": [
@@ -18127,7 +18142,7 @@
         },
         {
           "maxSeconds": 873,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 공덕보다 가장 오래 걸리는 사람이 7분 더 걸려요.",
           "spreadSeconds": 355,
           "stationCode": "7my",
           "times": [
@@ -18137,21 +18152,6 @@
           "totalSeconds": 1391,
           "transfers": [
             0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 884,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 421,
-          "stationCode": "nn9",
-          "times": [
-            884,
-            463
-          ],
-          "totalSeconds": 1347,
-          "transfers": [
-            1,
             0
           ]
         }
@@ -18447,18 +18447,18 @@
           ]
         },
         {
-          "maxSeconds": 1181,
+          "maxSeconds": 1176,
           "reason": "공평 모드 대안이에요. 1위 신림보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 390,
-          "stationCode": "4q3",
+          "spreadSeconds": 40,
+          "stationCode": "jgn",
           "times": [
-            1181,
-            791
+            1136,
+            1176
           ],
-          "totalSeconds": 1972,
+          "totalSeconds": 2312,
           "transfers": [
             0,
-            0
+            1
           ]
         }
       ]
@@ -18519,8 +18519,23 @@
       "b": "nn9",
       "results": [
         {
+          "maxSeconds": 375,
+          "reason": "가장 오래 걸리는 공덕에서 오는 분도 6분이에요. 2위 상수보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "spreadSeconds": 124,
+          "stationCode": "ryf",
+          "times": [
+            251,
+            375
+          ],
+          "totalSeconds": 626,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 476,
-          "reason": "가장 오래 걸리는 공덕에서 오는 분도 8분이에요. 2위 합정보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 홍대입구보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
           "spreadSeconds": 170,
           "stationCode": "aev",
           "times": [
@@ -18535,27 +18550,12 @@
         },
         {
           "maxSeconds": 546,
-          "reason": "공평 모드 대안이에요. 1위 상수보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 홍대입구보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 546,
           "stationCode": "ep4",
           "times": [
             0,
             546
-          ],
-          "totalSeconds": 546,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 546,
-          "reason": "공평 모드 대안이에요. 1위 상수보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 546,
-          "stationCode": "nn9",
-          "times": [
-            546,
-            0
           ],
           "totalSeconds": 546,
           "transfers": [
@@ -18723,8 +18723,23 @@
       "b": "s1r",
       "results": [
         {
+          "maxSeconds": 430,
+          "reason": "가장 오래 걸리는 여의도에서 오는 분도 7분이에요. 2위 영등포구청과 최장 시간과 차이가 같고, 합계가 2분 더 짧아요.",
+          "spreadSeconds": 119,
+          "stationCode": "mkh",
+          "times": [
+            311,
+            430
+          ],
+          "totalSeconds": 741,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 443,
-          "reason": "둘 다 7분이에요. 2위 공덕보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 당산과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
           "spreadSeconds": 42,
           "stationCode": "r2q",
           "times": [
@@ -18739,7 +18754,7 @@
         },
         {
           "maxSeconds": 546,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 당산보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 83,
           "stationCode": "nn9",
           "times": [
@@ -18747,21 +18762,6 @@
             463
           ],
           "totalSeconds": 1009,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 623,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 42,
-          "stationCode": "hbf",
-          "times": [
-            581,
-            623
-          ],
-          "totalSeconds": 1204,
           "transfers": [
             0,
             0
@@ -19081,7 +19081,7 @@
       "results": [
         {
           "maxSeconds": 581,
-          "reason": "가장 오래 걸리는 신도림에서 오는 분도 10분이에요. 2위 영등포구청보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 신도림에서 오는 분도 10분이에요. 2위 홍대입구보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
           "spreadSeconds": 35,
           "stationCode": "ep4",
           "times": [
@@ -19089,6 +19089,21 @@
             546
           ],
           "totalSeconds": 1127,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 671,
+          "reason": "공평 모드 대안이에요. 1위 합정보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 296,
+          "stationCode": "ryf",
+          "times": [
+            671,
+            375
+          ],
+          "totalSeconds": 1046,
           "transfers": [
             0,
             0
@@ -19107,21 +19122,6 @@
           "transfers": [
             0,
             0
-          ]
-        },
-        {
-          "maxSeconds": 851,
-          "reason": "공평 모드 대안이에요. 1위 합정보다 가장 오래 걸리는 사람이 4분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
-          "spreadSeconds": 10,
-          "stationCode": "k7d",
-          "times": [
-            851,
-            841
-          ],
-          "totalSeconds": 1692,
-          "transfers": [
-            0,
-            1
           ]
         }
       ]
@@ -19284,8 +19284,23 @@
       "b": "s1r",
       "results": [
         {
+          "maxSeconds": 431,
+          "reason": "둘 다 7분이에요. 2위 영등포구청과 최장 시간은 같지만, 시간 차이가 더 작아요 (0분 vs 1분).",
+          "spreadSeconds": 1,
+          "stationCode": "mkh",
+          "times": [
+            431,
+            430
+          ],
+          "totalSeconds": 861,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 443,
-          "reason": "가장 오래 걸리는 여의도에서 오는 분도 7분이에요. 2위 오목교보다 가장 오래 걸리는 사람이 6분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 당산과 최장 시간은 같아요.",
           "spreadSeconds": 102,
           "stationCode": "r2q",
           "times": [
@@ -19300,7 +19315,7 @@
         },
         {
           "maxSeconds": 776,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 6분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 당산보다 가장 오래 걸리는 사람이 6분 더 걸려요.",
           "spreadSeconds": 183,
           "stationCode": "vyf",
           "times": [
@@ -19311,21 +19326,6 @@
           "transfers": [
             1,
             0
-          ]
-        },
-        {
-          "maxSeconds": 786,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 6분 더 걸려요.",
-          "spreadSeconds": 355,
-          "stationCode": "mkh",
-          "times": [
-            431,
-            786
-          ],
-          "totalSeconds": 1217,
-          "transfers": [
-            0,
-            1
           ]
         }
       ]
@@ -19505,13 +19505,13 @@
         {
           "maxSeconds": 1096,
           "reason": "공평 모드 대안이에요. 1위 건대입구와 최장 시간은 같아요.",
-          "spreadSeconds": 151,
+          "spreadSeconds": 160,
           "stationCode": "s5v",
           "times": [
             1096,
-            945
+            936
           ],
-          "totalSeconds": 2041,
+          "totalSeconds": 2032,
           "transfers": [
             1,
             1
@@ -19591,7 +19591,7 @@
       "results": [
         {
           "maxSeconds": 353,
-          "reason": "가장 오래 걸리는 공덕에서 오는 분도 6분이에요. 2위 종로3가보다 가장 오래 걸리는 사람이 4분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 공덕에서 오는 분도 6분이에요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
           "spreadSeconds": 102,
           "stationCode": "hbf",
           "times": [
@@ -19605,30 +19605,30 @@
           ]
         },
         {
-          "maxSeconds": 603,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
-          "spreadSeconds": 205,
-          "stationCode": "7my",
+          "maxSeconds": 405,
+          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 97,
+          "stationCode": "ep2",
           "times": [
-            398,
-            603
+            308,
+            405
           ],
-          "totalSeconds": 1001,
+          "totalSeconds": 713,
           "transfers": [
             0,
             0
           ]
         },
         {
-          "maxSeconds": 671,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
-          "spreadSeconds": 125,
-          "stationCode": "ep4",
+          "maxSeconds": 581,
+          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
+          "spreadSeconds": 206,
+          "stationCode": "ryf",
           "times": [
-            671,
-            546
+            581,
+            375
           ],
-          "totalSeconds": 1217,
+          "totalSeconds": 956,
           "transfers": [
             0,
             0
@@ -19949,28 +19949,28 @@
         {
           "maxSeconds": 1097,
           "reason": "가장 오래 걸리는 종각에서 오는 분도 18분이에요. 2위 약수보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
-          "spreadSeconds": 152,
+          "spreadSeconds": 161,
           "stationCode": "s5v",
           "times": [
             1097,
-            945
+            936
           ],
-          "totalSeconds": 2042,
+          "totalSeconds": 2033,
           "transfers": [
             1,
             1
           ]
         },
         {
-          "maxSeconds": 1185,
+          "maxSeconds": 1176,
           "reason": "공평 모드 대안이에요. 1위 압구정보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 328,
+          "spreadSeconds": 319,
           "stationCode": "jgn",
           "times": [
             857,
-            1185
+            1176
           ],
-          "totalSeconds": 2042,
+          "totalSeconds": 2033,
           "transfers": [
             1,
             1
@@ -19979,16 +19979,16 @@
         {
           "maxSeconds": 1217,
           "reason": "공평 모드 대안이에요. 1위 압구정보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 392,
+          "spreadSeconds": 676,
           "stationCode": "b4d",
           "times": [
             1217,
-            825
+            541
           ],
-          "totalSeconds": 2042,
+          "totalSeconds": 1758,
           "transfers": [
             1,
-            1
+            0
           ]
         }
       ]
@@ -20049,8 +20049,23 @@
       "b": "nn9",
       "results": [
         {
+          "maxSeconds": 428,
+          "reason": "둘 다 7분이에요. 2위 종로3가보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "spreadSeconds": 23,
+          "stationCode": "ep2",
+          "times": [
+            428,
+            405
+          ],
+          "totalSeconds": 833,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 603,
-          "reason": "가장 오래 걸리는 공덕에서 오는 분도 10분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 325,
           "stationCode": "7my",
           "times": [
@@ -20065,7 +20080,7 @@
         },
         {
           "maxSeconds": 643,
-          "reason": "공평 모드 대안이에요. 1위 종로3가보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역보다 가장 오래 걸리는 사람이 4분 더 걸려요.",
           "spreadSeconds": 290,
           "stationCode": "hbf",
           "times": [
@@ -20073,21 +20088,6 @@
             353
           ],
           "totalSeconds": 996,
-          "transfers": [
-            1,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 763,
-          "reason": "공평 모드 대안이에요. 1위 종로3가보다 가장 오래 걸리는 사람이 3분 더 걸려요. 대신 시간 차이는 4분 더 작아요.",
-          "spreadSeconds": 60,
-          "stationCode": "pnm",
-          "times": [
-            763,
-            703
-          ],
-          "totalSeconds": 1466,
           "transfers": [
             1,
             0
@@ -20152,7 +20152,7 @@
       "results": [
         {
           "maxSeconds": 581,
-          "reason": "가장 오래 걸리는 홍대입구에서 오는 분도 10분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 홍대입구에서 오는 분도 10분이에요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 2분 더 짧아요.",
           "spreadSeconds": 273,
           "stationCode": "gf9",
           "times": [
@@ -20160,6 +20160,21 @@
             581
           ],
           "totalSeconds": 889,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 615,
+          "reason": "공평 모드 대안이에요. 1위 시청과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
+          "spreadSeconds": 187,
+          "stationCode": "ep2",
+          "times": [
+            428,
+            615
+          ],
+          "totalSeconds": 1043,
           "transfers": [
             0,
             0
@@ -20175,21 +20190,6 @@
             491
           ],
           "totalSeconds": 1134,
-          "transfers": [
-            1,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 671,
-          "reason": "공평 모드 대안이에요. 1위 시청보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 5분 더 작아요.",
-          "spreadSeconds": 28,
-          "stationCode": "j3y",
-          "times": [
-            643,
-            671
-          ],
-          "totalSeconds": 1314,
           "transfers": [
             1,
             0
@@ -20357,13 +20357,13 @@
         {
           "maxSeconds": 1006,
           "reason": "가장 오래 걸리는 을지로입구에서 오는 분도 17분이에요. 2위 구의와 거의 같아요.",
-          "spreadSeconds": 61,
+          "spreadSeconds": 70,
           "stationCode": "s5v",
           "times": [
             1006,
-            945
+            936
           ],
-          "totalSeconds": 1951,
+          "totalSeconds": 1942,
           "transfers": [
             1,
             1
@@ -20436,17 +20436,17 @@
           ]
         },
         {
-          "maxSeconds": 788,
-          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 145,
-          "stationCode": "gpg",
+          "maxSeconds": 723,
+          "reason": "공평 모드 대안이에요. 1위 동대문보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 142,
+          "stationCode": "ct5",
           "times": [
-            643,
-            788
+            581,
+            723
           ],
-          "totalSeconds": 1431,
+          "totalSeconds": 1304,
           "transfers": [
-            1,
+            0,
             0
           ]
         }
@@ -20487,17 +20487,17 @@
           ]
         },
         {
-          "maxSeconds": 703,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 6분 더 걸려요.",
-          "spreadSeconds": 422,
-          "stationCode": "pnm",
+          "maxSeconds": 643,
+          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
+          "spreadSeconds": 238,
+          "stationCode": "ep2",
           "times": [
-            281,
-            703
+            643,
+            405
           ],
-          "totalSeconds": 984,
+          "totalSeconds": 1048,
           "transfers": [
-            0,
+            1,
             0
           ]
         }
@@ -20778,32 +20778,32 @@
           ]
         },
         {
-          "maxSeconds": 1185,
+          "maxSeconds": 1176,
           "reason": "공평 모드 대안이에요. 1위 성수보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 211,
+          "spreadSeconds": 202,
           "stationCode": "jgn",
           "times": [
-            1185,
+            1176,
             974
           ],
-          "totalSeconds": 2159,
+          "totalSeconds": 2150,
           "transfers": [
             1,
             1
           ]
         },
         {
-          "maxSeconds": 1245,
-          "reason": "공평 모드 대안이에요. 1위 성수보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 28,
-          "stationCode": "k17",
+          "maxSeconds": 1211,
+          "reason": "공평 모드 대안이에요. 1위 성수보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 105,
+          "stationCode": "71t",
           "times": [
-            1245,
-            1217
+            1211,
+            1106
           ],
-          "totalSeconds": 2462,
+          "totalSeconds": 2317,
           "transfers": [
-            1,
+            0,
             1
           ]
         }
@@ -20814,15 +20814,15 @@
       "b": "nn9",
       "results": [
         {
-          "maxSeconds": 1185,
+          "maxSeconds": 1176,
           "reason": "가장 오래 걸리는 강남에서 오는 분도 20분이에요. 2위 이촌보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
-          "spreadSeconds": 359,
+          "spreadSeconds": 350,
           "stationCode": "jgn",
           "times": [
-            1185,
+            1176,
             826
           ],
-          "totalSeconds": 2011,
+          "totalSeconds": 2002,
           "transfers": [
             1,
             0
@@ -20844,15 +20844,15 @@
           ]
         },
         {
-          "maxSeconds": 1245,
+          "maxSeconds": 1236,
           "reason": "공평 모드 대안이에요. 1위 약수보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 4분 더 작아요.",
-          "spreadSeconds": 123,
+          "spreadSeconds": 114,
           "stationCode": "k17",
           "times": [
-            1245,
+            1236,
             1122
           ],
-          "totalSeconds": 2367,
+          "totalSeconds": 2358,
           "transfers": [
             1,
             1
@@ -20946,18 +20946,18 @@
           ]
         },
         {
-          "maxSeconds": 1241,
-          "reason": "공평 모드 대안이에요. 1위 신림보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 420,
-          "stationCode": "bcc",
+          "maxSeconds": 1236,
+          "reason": "공평 모드 대안이에요. 1위 신림보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 2분 더 작아요.",
+          "spreadSeconds": 20,
+          "stationCode": "k17",
           "times": [
-            1241,
-            821
+            1236,
+            1216
           ],
-          "totalSeconds": 2062,
+          "totalSeconds": 2452,
           "transfers": [
-            0,
-            0
+            1,
+            1
           ]
         }
       ]
@@ -20968,7 +20968,7 @@
       "results": [
         {
           "maxSeconds": 881,
-          "reason": "둘 다 15분이에요. 2위 구의보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "둘 다 15분이에요. 2위 압구정보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
           "spreadSeconds": 0,
           "stationCode": "4v6",
           "times": [
@@ -20979,6 +20979,21 @@
           "transfers": [
             0,
             0
+          ]
+        },
+        {
+          "maxSeconds": 936,
+          "reason": "공평 모드 대안이에요. 1위 강변보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 32,
+          "stationCode": "s5v",
+          "times": [
+            936,
+            904
+          ],
+          "totalSeconds": 1840,
+          "transfers": [
+            1,
+            1
           ]
         },
         {
@@ -20995,21 +21010,6 @@
             0,
             0
           ]
-        },
-        {
-          "maxSeconds": 945,
-          "reason": "공평 모드 대안이에요. 1위 강변보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 41,
-          "stationCode": "s5v",
-          "times": [
-            945,
-            904
-          ],
-          "totalSeconds": 1849,
-          "transfers": [
-            1,
-            1
-          ]
         }
       ]
     },
@@ -21019,7 +21019,7 @@
       "results": [
         {
           "maxSeconds": 1151,
-          "reason": "둘 다 19분이에요. 2위 대림보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "reason": "둘 다 19분이에요. 2위 고속터미널보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
           "spreadSeconds": 35,
           "stationCode": "kez",
           "times": [
@@ -21030,6 +21030,21 @@
           "transfers": [
             0,
             1
+          ]
+        },
+        {
+          "maxSeconds": 1190,
+          "reason": "공평 모드 대안이에요. 1위 구로디지털단지보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 545,
+          "stationCode": "58f",
+          "times": [
+            645,
+            1190
+          ],
+          "totalSeconds": 1835,
+          "transfers": [
+            1,
+            0
           ]
         },
         {
@@ -21046,21 +21061,6 @@
             0,
             1
           ]
-        },
-        {
-          "maxSeconds": 1322,
-          "reason": "공평 모드 대안이에요. 1위 구로디지털단지보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
-          "spreadSeconds": 34,
-          "stationCode": "v96",
-          "times": [
-            1322,
-            1288
-          ],
-          "totalSeconds": 2610,
-          "transfers": [
-            1,
-            2
-          ]
         }
       ]
     },
@@ -21069,30 +21069,30 @@
       "b": "wym",
       "results": [
         {
-          "maxSeconds": 825,
-          "reason": "가장 오래 걸리는 강남에서 오는 분도 14분이에요. 2위 압구정보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
-          "spreadSeconds": 44,
+          "maxSeconds": 781,
+          "reason": "가장 오래 걸리는 을지로3가에서 오는 분도 13분이에요. 2위 압구정보다 가장 오래 걸리는 사람이 3분 덜 걸려요.",
+          "spreadSeconds": 240,
           "stationCode": "b4d",
           "times": [
-            825,
+            541,
             781
           ],
-          "totalSeconds": 1606,
+          "totalSeconds": 1322,
           "transfers": [
-            1,
+            0,
             0
           ]
         },
         {
-          "maxSeconds": 945,
-          "reason": "공평 모드 대안이에요. 1위 신사보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 284,
+          "maxSeconds": 936,
+          "reason": "공평 모드 대안이에요. 1위 신사보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
+          "spreadSeconds": 275,
           "stationCode": "s5v",
           "times": [
-            945,
+            936,
             661
           ],
-          "totalSeconds": 1606,
+          "totalSeconds": 1597,
           "transfers": [
             1,
             0
@@ -21100,7 +21100,7 @@
         },
         {
           "maxSeconds": 961,
-          "reason": "공평 모드 대안이에요. 1위 신사보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 신사보다 가장 오래 걸리는 사람이 3분 더 걸려요.",
           "spreadSeconds": 316,
           "stationCode": "58f",
           "times": [
@@ -21427,7 +21427,7 @@
       "results": [
         {
           "maxSeconds": 463,
-          "reason": "가장 오래 걸리는 공덕에서 오는 분도 8분이에요. 2위 여의나루보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "가장 오래 걸리는 공덕에서 오는 분도 8분이에요. 2위 홍대입구와 최장 시간은 같지만, 시간 차이가 더 작아요 (1분 vs 2분).",
           "spreadSeconds": 20,
           "stationCode": "s1r",
           "times": [
@@ -21435,6 +21435,21 @@
             443
           ],
           "totalSeconds": 906,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 491,
+          "reason": "공평 모드 대안이에요. 1위 여의도와 최장 시간은 같아요.",
+          "spreadSeconds": 116,
+          "stationCode": "ryf",
+          "times": [
+            375,
+            491
+          ],
+          "totalSeconds": 866,
           "transfers": [
             0,
             0
@@ -21454,21 +21469,6 @@
             0,
             0
           ]
-        },
-        {
-          "maxSeconds": 546,
-          "reason": "공평 모드 대안이에요. 1위 여의도보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 145,
-          "stationCode": "ep4",
-          "times": [
-            546,
-            401
-          ],
-          "totalSeconds": 947,
-          "transfers": [
-            0,
-            0
-          ]
         }
       ]
     },
@@ -21477,8 +21477,38 @@
       "b": "ryf",
       "results": [
         {
+          "maxSeconds": 375,
+          "reason": "가장 오래 걸리는 홍대입구에서 오는 분도 6분이에요. 2위 홍대입구와 거의 같아요.",
+          "spreadSeconds": 375,
+          "stationCode": "nn9",
+          "times": [
+            0,
+            375
+          ],
+          "totalSeconds": 375,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 375,
+          "reason": "공평 모드 대안이에요. 1위 공덕과 최장 시간은 같아요.",
+          "spreadSeconds": 375,
+          "stationCode": "ryf",
+          "times": [
+            375,
+            0
+          ],
+          "totalSeconds": 375,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 491,
-          "reason": "가장 오래 걸리는 홍대입구에서 오는 분도 8분이에요. 2위 합정보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 공덕보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 4분 더 작아요.",
           "spreadSeconds": 138,
           "stationCode": "hbf",
           "times": [
@@ -21490,36 +21520,6 @@
             0,
             0
           ]
-        },
-        {
-          "maxSeconds": 546,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
-          "spreadSeconds": 295,
-          "stationCode": "ep4",
-          "times": [
-            546,
-            251
-          ],
-          "totalSeconds": 797,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 625,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 149,
-          "stationCode": "aev",
-          "times": [
-            476,
-            625
-          ],
-          "totalSeconds": 1101,
-          "transfers": [
-            0,
-            1
-          ]
         }
       ]
     },
@@ -21528,8 +21528,23 @@
       "b": "s1q",
       "results": [
         {
+          "maxSeconds": 499,
+          "reason": "가장 오래 걸리는 동대문역사문화공원에서 오는 분도 8분이에요. 2위 광화문과 최장 시간과 차이가 같고, 합계가 1분 더 짧아요.",
+          "spreadSeconds": 94,
+          "stationCode": "ep2",
+          "times": [
+            405,
+            499
+          ],
+          "totalSeconds": 904,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 503,
-          "reason": "둘 다 8분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역과 최장 시간은 같아요. 시간 차이는 1분 더 작아요.",
           "spreadSeconds": 20,
           "stationCode": "03j",
           "times": [
@@ -21544,7 +21559,7 @@
         },
         {
           "maxSeconds": 551,
-          "reason": "공평 모드 대안이에요. 1위 광화문보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 서울역보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
           "spreadSeconds": 198,
           "stationCode": "hbf",
           "times": [
@@ -21552,21 +21567,6 @@
             551
           ],
           "totalSeconds": 904,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 573,
-          "reason": "공평 모드 대안이에요. 1위 광화문보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 160,
-          "stationCode": "5bv",
-          "times": [
-            413,
-            573
-          ],
-          "totalSeconds": 986,
           "transfers": [
             0,
             0
@@ -21783,8 +21783,23 @@
       "b": "s1r",
       "results": [
         {
+          "maxSeconds": 430,
+          "reason": "가장 오래 걸리는 여의도에서 오는 분도 7분이에요. 2위 영등포구청과 최장 시간은 같지만, 시간 차이가 더 작아요 (3분 vs 7분).",
+          "spreadSeconds": 179,
+          "stationCode": "mkh",
+          "times": [
+            251,
+            430
+          ],
+          "totalSeconds": 681,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 443,
-          "reason": "가장 오래 걸리는 여의도에서 오는 분도 7분이에요. 2위 여의도와 거의 같아요.",
+          "reason": "공평 모드 대안이에요. 1위 당산과 최장 시간은 같아요.",
           "spreadSeconds": 443,
           "stationCode": "r2q",
           "times": [
@@ -21799,7 +21814,7 @@
         },
         {
           "maxSeconds": 443,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청과 최장 시간은 같아요.",
+          "reason": "공평 모드 대안이에요. 1위 당산과 최장 시간은 같아요.",
           "spreadSeconds": 443,
           "stationCode": "s1r",
           "times": [
@@ -21807,21 +21822,6 @@
             0
           ],
           "totalSeconds": 443,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 523,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 2분 더 걸려요. 대신 시간 차이는 3분 더 작아요.",
-          "spreadSeconds": 250,
-          "stationCode": "x69",
-          "times": [
-            523,
-            273
-          ],
-          "totalSeconds": 796,
           "transfers": [
             0,
             0
@@ -21915,15 +21915,15 @@
           ]
         },
         {
-          "maxSeconds": 671,
-          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 300,
-          "stationCode": "j3y",
+          "maxSeconds": 615,
+          "reason": "공평 모드 대안이에요. 1위 충정로보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 116,
+          "stationCode": "ep2",
           "times": [
-            671,
-            371
+            615,
+            499
           ],
-          "totalSeconds": 1042,
+          "totalSeconds": 1114,
           "transfers": [
             0,
             0
@@ -21936,8 +21936,38 @@
       "b": "s1r",
       "results": [
         {
+          "maxSeconds": 430,
+          "reason": "둘 다 7분이에요. 2위 공덕보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+          "spreadSeconds": 29,
+          "stationCode": "mkh",
+          "times": [
+            401,
+            430
+          ],
+          "totalSeconds": 831,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
+          "maxSeconds": 463,
+          "reason": "공평 모드 대안이에요. 1위 당산보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
+          "spreadSeconds": 88,
+          "stationCode": "nn9",
+          "times": [
+            375,
+            463
+          ],
+          "totalSeconds": 838,
+          "transfers": [
+            0,
+            0
+          ]
+        },
+        {
           "maxSeconds": 491,
-          "reason": "가장 오래 걸리는 홍대입구에서 오는 분도 8분이에요. 2위 충정로보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+          "reason": "공평 모드 대안이에요. 1위 당산보다 가장 오래 걸리는 사람이 1분 더 걸려요.",
           "spreadSeconds": 48,
           "stationCode": "r2q",
           "times": [
@@ -21948,36 +21978,6 @@
           "transfers": [
             0,
             0
-          ]
-        },
-        {
-          "maxSeconds": 623,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
-          "spreadSeconds": 132,
-          "stationCode": "hbf",
-          "times": [
-            491,
-            623
-          ],
-          "totalSeconds": 1114,
-          "transfers": [
-            0,
-            0
-          ]
-        },
-        {
-          "maxSeconds": 786,
-          "reason": "공평 모드 대안이에요. 1위 영등포구청보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
-          "spreadSeconds": 385,
-          "stationCode": "mkh",
-          "times": [
-            401,
-            786
-          ],
-          "totalSeconds": 1187,
-          "transfers": [
-            0,
-            1
           ]
         }
       ]

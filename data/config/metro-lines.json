@@ -581,63 +581,14 @@
         "MTRKRK4K335 문산"
       ]
     },
-    "경의중앙임진강": {
-      "group": "경의중앙",
-      "label": "경의중앙선 문산~임진강",
-      "kric": [
-        "한국철도공사:경의중앙선",
-        "한국철도공사:경원선"
-      ],
-      "stations": [
-        "MTRKRK4K335 문산",
-        "MTRKRK4K336 운천",
-        "MTRKRK4K337 임진강"
-      ]
-    },
     "경춘": {
       "group": "경춘",
-      "label": "경춘선 청량리~춘천",
+      "label": "경춘선 상봉~춘천",
       "kric": [
         "한국철도공사:경춘선",
         "한국철도공사:경의중앙선"
       ],
       "stations": [
-        "MTRKRK2K117 청량리",
-        "MTRKRK2K118 회기",
-        "MTRKRK2K119 중랑",
-        "MTRKRK2K120 상봉",
-        "MTRKRK2K121 망우",
-        "MTRKRK2P122 신내",
-        "MTRKRK2P123 갈매",
-        "MTRKRK2P124 별내(삼육대학교)",
-        "MTRKRK2P125 퇴계원",
-        "MTRKRK2P126 사릉",
-        "MTRKRK2P127 금곡",
-        "MTRKRK2P128 평내호평",
-        "MTRKRK2P129 천마산",
-        "MTRKRK2P130 마석",
-        "MTRKRK2P131 대성리",
-        "MTRKRK2P132 청평",
-        "MTRKRK2P133 상천(호명호수)",
-        "MTRKRK2P134 가평(자라섬.남이섬)",
-        "MTRKRK2P135 굴봉산(제이드가든)",
-        "MTRKRK2P136 백양리(엘리시안강촌)",
-        "MTRKRK2P137 강촌",
-        "MTRKRK2P138 김유정",
-        "MTRKRK2P139 남춘천(강원대)",
-        "MTRKRK2P140 춘천(한림대)"
-      ]
-    },
-    "경춘광운대": {
-      "group": "경춘",
-      "label": "경춘선 광운대~춘천",
-      "kric": [
-        "한국철도공사:경춘선",
-        "한국철도공사:경의중앙선",
-        "한국철도공사:경원선"
-      ],
-      "stations": [
-        "MTRKRK2119 광운대",
         "MTRKRK2K120 상봉",
         "MTRKRK2K121 망우",
         "MTRKRK2P122 신내",

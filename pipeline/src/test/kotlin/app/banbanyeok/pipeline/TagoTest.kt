@@ -125,25 +125,30 @@ class TagoTest :
         describe("run time estimate") {
             it("recovers run plus dwell from whole-day timetables without train ids") {
                 val (from, to) = synthetic(run = 150)
-                val estimate = assertNotNull(estimateRun(mapOf("U" to from), mapOf("U" to to)))
+                val estimate = assertNotNull(estimateRun(from, to))
                 assertEquals(180, estimate.seconds)
                 assertEquals(from.size, estimate.matched)
             }
-            it("chooses the matching direction codes of a through-running operator") {
-                val (from, to) = synthetic(run = 200)
-                val (_, other) = synthetic(run = 1000)
-                val estimate = assertNotNull(estimateRun(mapOf("U" to from), mapOf("U" to other, "D" to to)))
-                assertEquals("U>D", "${estimate.fromDirection}>${estimate.toDirection}")
+            it("prefers the adjacent run over a weaker headway alias and keeps the peak inside the window") {
+                val (from, to) = synthetic(run = 69, dwell = 0)
+                // A second, sparser train set 6 min later: the 69 s peak must win, not the 429 s alias.
+                val alias = from.filterIndexed { i, _ -> i % 3 == 0 }.map { TagoTrain(null, it.departure!! + 429) }
+                assertEquals(69, assertNotNull(estimateRun(from, to + alias)).seconds)
+            }
+            it("matches departures when an operator omits intermediate arrival times") {
+                val (from, to) = synthetic(run = 120)
+                val departuresOnly = to.map { TagoTrain(it.departure, null) }
+                assertEquals(150, assertNotNull(estimateRun(from, departuresOnly)).seconds)
             }
             it("matches the recorded GTX-A 대곡→서울역 weekday timetable") {
                 val daegok = mapOf("U" to recorded("mtrgxax103-01-u"), "D" to recorded("mtrgxax103-01-d"))
                 val seoul = mapOf("U" to recorded("mtrgxax106-01-u"), "D" to recorded("mtrgxax106-01-d"))
-                val forward = assertNotNull(estimateRun(daegok, seoul))
+                val forward = assertNotNull(estimateByCodes(daegok, seoul))
                 assertEquals(141, forward.matched)
                 assertEquals(1.0, forward.ratio)
                 // 서울역 is the terminus: no departures, so no dwell is added.
                 assertEquals(780, forward.seconds)
-                val reverse = assertNotNull(estimateRun(seoul, daegok))
+                val reverse = assertNotNull(estimateByCodes(seoul, daegok))
                 assertEquals(141, reverse.matched)
                 assertTrue(reverse.seconds in 600..800)
             }
@@ -195,11 +200,13 @@ class TagoGraphTest :
                         "TE" to ("E" to "경춘"),
                         "TN" to ("N" to "N선"),
                     ),
+                    // Every row runs towards the second station (terminus TC/TE), so the reverse run has no data and
+                    // is mirrored from the forward estimate.
                     mapOf(
-                        "TB" to mapOf("U" to bDepart),
-                        "TC" to mapOf("U" to cArrive),
-                        "TD" to mapOf("U" to dDepart),
-                        "TE" to mapOf("U" to eArrive),
+                        "TB" to mapOf("U" to bDepart.map { it.copy(end = "TC") }),
+                        "TC" to mapOf("U" to cArrive.map { it.copy(end = "TC") }),
+                        "TD" to mapOf("U" to dDepart.map { it.copy(end = "TE") }),
+                        "TE" to mapOf("U" to eArrive.map { it.copy(end = "TE") }),
                     ),
                 )
             val records =

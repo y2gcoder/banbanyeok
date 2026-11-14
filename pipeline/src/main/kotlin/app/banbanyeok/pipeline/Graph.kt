@@ -314,7 +314,7 @@ internal class NetworkBuilder(
             edge(to, from, copied.second)
             return
         }
-        val (forward, reverse) = tagoRunTimes(tago, a, b)
+        val (forward, reverse, rejected) = tagoRunTimes(tago, service, tagoCodes, a, b)
         if (forward == null || reverse == null) {
             issues.add("TAGO run time unmatched: ${service.id} $a→$b")
         } else {
@@ -328,6 +328,7 @@ internal class NetworkBuilder(
                 "to" to "$b ${stationName(tagoCodes.getValue(b))}",
                 "forward" to forward?.json,
                 "reverse" to reverse?.json,
+                "rejected" to rejected,
             ),
         )
     }
