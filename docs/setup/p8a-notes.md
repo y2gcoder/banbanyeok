@@ -198,8 +198,50 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 
 ## 8. 검증 결과
 
-(실제 배포 후 채움)
+모두 실제 GCP·Supabase에서 실행했다(2026-11-14). 배포는 이 브랜치에서 GitHub Actions로 했다. 새 워크플로는 기본 브랜치에 없어 `workflow_dispatch`가 404여서(GitHub 제약) 첫 검증 동안만 브랜치 `push` 트리거를 임시로 두었고 PR에서는 제거했다.
+
+| 확인 | 결과 |
+|---|---|
+| 배포 워크플로 전체 | 초록. 이미지 빌드(AppCDS 학습 포함)·푸시 → migrate Job(`Run: 2`, 이후 재실행은 변경 없음) → 산출물 발행 → 후보 리비전(트래픽 0) 스모크 → 전환 → 공개 URL 스모크 → cleanup Job 갱신 |
+| 첫 시도 실패와 수정 | 후보 스모크가 `/healthz`에서 404로 실패 → 원인은 Cloud Run 앞단의 `/healthz` 예약(3.9절). 트래픽은 전환되지 않았다(후보 스모크가 막음). 스모크를 `/v1/healthz`로 바꿔 재배포해 통과 |
+| 서비스 URL | `https://server-b3z6eb4wma-du.a.run.app` |
+| `/v1/healthz`, `/v1/manifest` | 200, `ok` / `dataVersion=20261114.5`(발행 manifest 일치) |
+| 추천 1건 | 02f+dd9, 공평 → 후보 3개, 1위 군자 |
+| DB 읽기 | 없는 방 `GET /v1/rooms/abcdefghjk` → 404 `ROOM_NOT_FOUND`(500 아님 = Supabase 세션 풀러 연결·스키마 확인) |
+| 방 생성·조회·삭제 | 201 → 200 → 204 → 다시 조회 404. 실제 Supabase에 쓰고 방장 토큰으로 바로 지움(토큰 출력 없음) |
+| 산출물 버킷 | `manifest.json`(루트)과 `versions/20261114.5/*`(해시 이름 4개). 서버가 GCS에서 읽고 `Application started`까지 확인 |
+| `cleanup` Job 수동 실행 | 성공(종료 코드 0). 로그 `cleanup: CleanupReport(rooms=0, anonUsers=0)`, DB 연결·질의 약 0.9초 → DB를 실제로 조회한다 |
+| Scheduler 수동 실행 | `gcloud scheduler jobs run cleanup-daily` → Job 실행 성공(Scheduler → Job IAM 확인). 일정 `0 4 * * *` Asia/Seoul |
+| 백업 워크플로 수동 실행 | 성공. 파일 `banbanyeok-<UTC시각>.dump` **14,143 bytes**, 목차 검증 통과(테이블 4개, 항목 31개), 비밀번호가 로그에 없음 |
+| 복원 검증 | 받은 실제 백업을 `mise run db:restore-check`로 로컬 Postgres 17에 복원 → 테이블 3개 + `databasechangelog`(changeset 2개) + `participants_limit` 트리거 확인(운영 DB는 아직 비어 있어 행 수는 0) |
+| 로컬 사전 검증 | 마이그레이션 이미지(빈 Postgres 17.6, 재실행), 백업→복원(행이 있는 DB), 스모크(로컬 서버), `stage-release` 단위 테스트 4개, 속도 제한 신뢰 헤더 테스트 3개 |
+| 정적 검사 | `ktlintCheck ktlintBuildScripts detekt detektBuildLogic`, 서버·파이프라인 테스트 통과. 새 suppress·baseline 없음. `shellcheck`(모든 새 스크립트), `actionlint` 통과 |
+
+### 콜드스타트 실측 (min 0, Cloud Run 서울, 1 vCPU·512Mi·gen2·boost, 요청은 서울 인근 클라이언트에서 curl)
+
+방법과 한계: Cloud Run은 마지막 요청 뒤 **17분이 지나도 인스턴스를 남기는 경우가 많았다**. 17분 간격으로 6번 재는 첫 시도에서는 1번만 진짜 콜드였다(나머지 5번은 웜 0.11~0.14초, 로그의 `Application started`는 1회뿐). 그 1번은 **4.22초**였다. 그래서 같은 이미지로 **리비전 6개**(`COLD_NONCE`만 다른 트래픽 0 리비전, 태그 URL)를 만들고 35분 방치한 뒤 각 태그의 첫 요청을 쟀다. 로그의 `Starting new instance`와 `Application started`가 요청마다 새로 찍혀 6번 모두 새 인스턴스의 첫 요청임을 확인했다(리비전을 새로 만든 첫 요청이라 이미지 레이어가 그 호스트에 없을 수도 있어 실제 콜드와 거의 같거나 약간 불리하다).
+
+| 측정(초, curl total) | n | p50 | p90 | min | max |
+|---|---|---|---|---|---|
+| **콜드 첫 `/v1/healthz`** | 6 | **3.69** | **4.29** | 3.09 | 4.47 |
+| 이어서 첫 DB 읽기(첫 Hikari 연결 + Supabase TLS) | 6 | 0.67 | 0.70 | 0.55 | 0.70 |
+| 이어서 추천 1건 | 6 | 0.22 | 0.23 | 0.19 | 0.24 |
+| 웜 `/v1/healthz`(기준: 클라이언트 왕복 포함) | 6 | 0.09 | 0.16 | 0.08 | 0.23 |
+
+(첫 시도의 진짜 콜드 1건 4.22초를 합치면 n=7, 3.09~4.47초, p50 3.91초.)
+
+로그로 본 콜드 한 번의 구성(요청 3.63초): 인스턴스 시작 → 첫 앱 로그까지 약 3.1초(컨테이너 기동·JVM·시크릿 주입·**GCS에서 산출물 4개(약 1MB) 읽기와 검증**·Hikari 설정) → Ktor 시작 약 0.4초 → 응답. 스파이크의 Ktor AppCDS p90 1.39초(DB·GCS 없음)보다 약 2.5~3초 더 걸린다. 원인 추정(**미검증**): 아카이브를 로컬 파일 저장소로 학습해서 GCS 클라이언트·인증 클래스가 아카이브에 없다(P3 노트 7절이 예견한 부분), 그리고 시작할 때 산출물 로드가 직렬로 있다. 단계별 시간은 따로 재지 않았다.
+
+해석: 사용자 규칙(콜드 3초 초과·상시 비용이면 재검토)의 기준으로는 **p50이 3초를 넘는다**. 다만 이 수치는 "브라우저가 서버를 처음 깨우는 요청"이고, 설계상 입력 화면이 열릴 때 `/v1/healthz`로 미리 깨우므로 사용자가 체감하는 지연은 (입력하는 시간만큼) 가려진다. min 1은 0원 목표 위반이라 하지 않았다. → 결정 필요 7(수용 / AppCDS 학습에 GCS 경로 포함 후 재측정 / 산출물 지연 로드).
 
 ## 9. 결정 필요
 
-(배포 후 확정)
+1. **WIF를 더 좁힐지**: 지금은 저장소 ID만 조건이라 모든 브랜치·워크플로가 `github-deployer`/`db-backup`을 가장할 수 있다. `main`만 허용하거나 GitHub Environment(승인자)를 붙이면 안전하지만 브랜치 배포·검증이 막힌다. 권고: 안정되면 `assertion.ref == 'refs/heads/main'`(또는 Environment `production`)으로 좁히기.
+2. **개인정보 방침의 백업 보존**(방침은 직접 고치지 않음): 4항의 `{백업 보존 기간}`에 "30일"을 쓰고, 삭제·만료로 DB에서 지운 정보가 백업에는 최대 30일 남는다(방 최대 30일 + 정리 5일 이내 + 백업 30일 = 최대 약 65일)는 문장을 넣을지. "요청하면 지체 없이 삭제"와 충돌하지 않게 "백업에서는 보존 기간이 지나면 지워진다"로 한정해야 한다. 더 줄이려면 백업 보존을 7~14일로 줄이는 선택지가 있다(복구 가능 기간과 맞바꿈).
+3. **백업 실행 주체**: GitHub Actions 예약은 공개 저장소가 60일 활동이 없으면 조용히 멈춘다. 허용할지, 백업 최신 파일 시각 점검을 루틴에 넣을지, Cloud Scheduler + Job으로 옮길지(이미지·미러링 비용 있음).
+4. **Supabase 일시정지 방지의 보장 수준**: 매일 cleanup의 DELETE 질의가 활동으로 잡히는지 공식 기준이 없다(3.5절). 첫 경고 메일이 오면 Scheduler를 하루 2회로 늘릴지(무료 3개 한도 안).
+5. **발행 후 배포 실패 틈**(3.3절): manifest 발행이 스모크보다 먼저라서, 배포가 실패하면 이전 리비전의 새 인스턴스가 새 manifest를 읽는다. 수용(스키마 호환은 서버가 검증)할지, 후보 리비전에 산출물 접두사를 주입하는 방식으로 바꿀지.
+6. **로그 방침 표기**(3.8절): 일반 로그 서울, 감사 로그(`_Required`) global(Google 관리, 이용자 정보 없음)로 구분해 쓸지.
+7. **콜드스타트 p50 3.7초**(8절): 입력 화면의 프리워밍으로 수용할지, AppCDS 학습에 GCS 경로(fake-gcs-server)를 넣거나 산출물 로드를 지연해 줄여 볼지(둘 다 이 PR 밖, 효과는 재측정으로 확인). 웹(P8b)은 `/v1/healthz` 프리워밍이 필수다.
+8. **서버 URL 별칭**: `https://server-b3z6eb4wma-du.a.run.app`(결정적 URL)을 웹의 `SERVER_ORIGIN`으로 쓴다. 커스텀 도메인은 P8b/도메인 결정 뒤.
+9. P3의 남은 결정(산출물 갱신 정책 8절 1번을 이 배포가 채택함: 새 데이터 = 새 리비전). 이의가 없으면 확정으로 본다.
