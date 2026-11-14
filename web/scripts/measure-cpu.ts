@@ -9,7 +9,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 
 const base = (process.env.BASE_URL ?? "").replace(/\/+$/, "");
 const worker = process.env.WORKER_NAME ?? "banbanyeok-web";
-const repeats = Number(process.env.REPEATS ?? 15);
+const repeats = Number(process.env.REPEATS ?? 20);
 if (!base) throw new Error("BASE_URL이 필요합니다");
 
 type TailEvent = {
@@ -103,6 +103,15 @@ async function main() {
     const statuses = [...new Set(mine.map((e) => e.event?.response?.status ?? e.outcome))].join("/");
     out(
       `| \`${path.length > 40 ? `${path.slice(0, 37)}...` : path}\` | ${mine.length} | ${statuses || "-"} | ${fmt(cpu[0] ?? Number.NaN)} | ${fmt(percentile(sortedCpu, 50))} | ${fmt(percentile(sortedCpu, 90))} | ${fmt(sortedCpu.at(-1) ?? Number.NaN)} | ${fmt(percentile(sortedWall, 50))} |`,
+    );
+  }
+  out("\n상태가 200이 아니거나 outcome이 ok가 아닌 이벤트:");
+  for (const e of events) {
+    const status = e.event?.response?.status;
+    if (e.outcome === "ok" && status === 200) continue;
+    const url = e.event?.request?.url ? new URL(e.event.request.url) : null;
+    out(
+      `- ${url ? `${url.host}${url.pathname}${url.search}` : "?"} status=${status ?? "-"} outcome=${e.outcome ?? "-"} cpu=${e.cpuTime ?? "-"} wall=${e.wallTime ?? "-"}`,
     );
   }
   out(`\ntail 원본 ${rawBytes}바이트, 앞부분: ${rawHead.slice(0, 300).replace(/\n/g, " ⏎ ")}`);
