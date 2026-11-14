@@ -21,7 +21,7 @@ dependencies {
     implementation(libs.ktor.server.status.pages)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.body.limit)
-    runtimeOnly(libs.logback.classic)
+    implementation(libs.logback.classic)
 
     testImplementation(testFixtures(project(":server:room")))
     testImplementation(testFixtures(project(":server:artifact")))

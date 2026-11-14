@@ -12,8 +12,8 @@ class StartupTimeline(
     private val startMillis: Long = System.currentTimeMillis(),
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) {
-    // 로거를 처음 만드는 비용(로깅 설정 읽기)이 첫 단계(`main`)의 phaseMs에 들어가도록 시작 시각을 먼저 받는다.
-    private val log = LoggerFactory.getLogger("startup")
+    // 로거는 첫 표시 때 만든다(로깅 초기화가 다른 초기화와 겹쳐 돌 수 있게). 그 비용은 첫 단계의 phaseMs에 들어간다.
+    private val log by lazy { LoggerFactory.getLogger("startup") }
     private var last = startMillis
 
     @Synchronized
