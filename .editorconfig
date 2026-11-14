@@ -10,7 +10,3 @@ indent_size = 4
 [*.{kt,kts}]
 ktlint_code_style = ktlint_official
 max_line_length = 120
-
-[pipeline/**/*.kt]
-# Temporary P2b: long source records/URLs will be split during pipeline refactoring.
-ktlint_standard_max-line-length = disabled

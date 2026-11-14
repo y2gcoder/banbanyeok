@@ -1,36 +1,20 @@
 package app.banbanyeok.pipeline
 
 import app.banbanyeok.schema.Sha256
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import org.w3c.dom.Element
 import java.io.ByteArrayInputStream
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import java.nio.charset.Charset
 import java.nio.file.Path
-import java.time.Duration
-import java.time.Instant
 import java.util.zip.ZipInputStream
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.path.createDirectories
-import kotlin.io.path.name
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
-
-internal fun quote(value: String): String =
-    "\"" +
-        value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\r", "\\r")
-            .replace("\n", "\\n")
-            .replace("\t", "\\t") + "\""
-
-internal fun strings(values: Collection<String>): String = values.joinToString(",", "[", "]", transform = ::quote)
 
 internal fun duration(value: String): Int {
     require(Regex("[0-9]{2}:[0-5][0-9]").matches(value)) { "Invalid mm:ss: $value" }
@@ -66,7 +50,7 @@ internal fun csv(text: String): List<List<String>> {
         }
     }
     require(!quoted) { "Unterminated CSV quote" }
-    if (cell.isNotEmpty() || row.isNotEmpty()) {
+    if (listOf(cell.isNotEmpty(), row.isNotEmpty()).any { it }) {
         row.add(cell.toString().trim())
         rows.add(row)
     }
@@ -101,7 +85,8 @@ internal fun xlsx(bytes: ByteArray): List<List<String>> {
     return xml(entries.getValue("xl/worksheets/sheet1.xml")).elements("row").map { row ->
         val cells = MutableList(15) { "" }
         row.elements("c").forEach { c ->
-            val index = c.getAttribute("r").takeWhile { it.isLetter() }.fold(0) { n, letter -> n * 26 + letter.code - 64 } - 1
+            val index =
+                c.getAttribute("r").takeWhile { it.isLetter() }.fold(0) { n, letter -> n * 26 + letter.code - 64 } - 1
             if (index in cells.indices) {
                 val value =
                     c
@@ -126,9 +111,27 @@ internal data class Source(
 
 internal val sources =
     listOf(
-        Source("S1", "kric.xlsx", "https://data.kric.go.kr/rips/dataset/download.file?type=filedata&id=32&operation=1", null, "이용허락범위 제한 없음 (data.go.kr/15013205)"),
-        Source("S3", "runtime.csv", "https://datafile.seoul.go.kr/bigfile/iot/inf/nio_download.do?useCache=false", "infId=OA-12034&seq=9&infSeq=1", "공공누리 제1유형 (OA-12034)"),
-        Source("S4", "transfer.csv", "https://datafile.seoul.go.kr/bigfile/iot/inf/nio_download.do?useCache=false", "infId=OA-13290&seq=8&infSeq=1", "공공누리 제1유형 (OA-13290)"),
+        Source(
+            "S1",
+            "kric.xlsx",
+            "https://data.kric.go.kr/rips/dataset/download.file?type=filedata&id=32&operation=1",
+            null,
+            "이용허락범위 제한 없음 (data.go.kr/15013205)",
+        ),
+        Source(
+            "S3",
+            "runtime.csv",
+            "https://datafile.seoul.go.kr/bigfile/iot/inf/nio_download.do?useCache=false",
+            "infId=OA-12034&seq=9&infSeq=1",
+            "공공누리 제1유형 (OA-12034)",
+        ),
+        Source(
+            "S4",
+            "transfer.csv",
+            "https://datafile.seoul.go.kr/bigfile/iot/inf/nio_download.do?useCache=false",
+            "infId=OA-13290&seq=8&infSeq=1",
+            "공공누리 제1유형 (OA-13290)",
+        ),
     )
 
 internal fun csvBytes(bytes: ByteArray): List<List<String>> {
@@ -148,7 +151,15 @@ internal fun checkSource(
     contentType: String,
 ): List<List<String>> {
     require(!contentType.lowercase().contains("html")) { "${source.id}: HTML response" }
-    require(contentType.lowercase().let { it.contains("octet-stream") || it.contains("excel") || it.contains("spreadsheet") || it.contains("csv") || it.contains("text/plain") || it.contains("download") }) { "${source.id}: unexpected Content-Type $contentType" }
+    require(
+        contentType.lowercase().let {
+            it.contains("octet-stream") || it.contains("excel") ||
+                it.contains("spreadsheet") ||
+                it.contains("csv") ||
+                it.contains("text/plain") ||
+                it.contains("download")
+        },
+    ) { "${source.id}: unexpected Content-Type $contentType" }
     val rows = if (source.id == "S1") xlsx(bytes) else csvBytes(bytes)
     val expected =
         when (source.id) {
@@ -156,59 +167,76 @@ internal fun checkSource(
             "S3" -> listOf("연번", "호선", "역명", "소요시간")
             else -> listOf("연번", "호선", "환승역명", "환승노선", "환승거리", "환승소요시간")
         }
-    require(rows.size > 100 && rows.first().take(expected.size) == expected) { "${source.id}: schema/row count mismatch" }
+    require(
+        rows.size > 100 && rows.first().take(expected.size) == expected,
+    ) { "${source.id}: schema/row count mismatch" }
     require(rows.drop(1).all { it.size == rows.first().size }) { "${source.id}: malformed row width" }
-    if (source.id != "S1") rows.drop(1).forEach { duration(it[if (source.id == "S3") 3 else 5]) }
+    checkDurations(source, rows)
     return rows
 }
 
-internal fun fetch(root: Path) {
+internal fun fetch(
+    root: Path,
+    http: PipelineHttp = JdkPipelineHttp(),
+    clock: java.time.Clock = java.time.Clock.systemUTC(),
+) {
     val raw = root.resolve("data/raw").createDirectories()
-    val client =
-        HttpClient
-            .newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .connectTimeout(Duration.ofSeconds(30))
-            .build()
     val manifests =
         sources.map { source ->
-            val request = HttpRequest.newBuilder(URI(source.url)).timeout(Duration.ofSeconds(90))
-            if (source.form != null) request.header("Content-Type", "application/x-www-form-urlencoded").POST(HttpRequest.BodyPublishers.ofString(source.form)) else request.GET()
-            val response = client.send(request.build(), HttpResponse.BodyHandlers.ofByteArray())
-            require(response.statusCode() == 200) { "${source.id}: HTTP ${response.statusCode()}" }
-            val bytes = response.body()
-            val type = response.headers().firstValue("Content-Type").orElse("")
-            val rows = checkSource(source, bytes, type)
+            val response = http.request(source.url, source.form)
+            val bytes = response.bytes
+            val rows = checkSource(source, bytes, response.contentType)
             raw.resolve(source.file).writeBytes(bytes)
             if (source.id == "S1") {
                 val dates =
                     rows.drop(1).map { row ->
                         val normalized = normalizedSourceDate(row[14])
-                        """{"sourceId":${quote("${row[11]}:${row[2]}:${row[0]}")},"rawDate":${quote(row[14])},"effective_date":${normalized?.let(::quote) ?: "null"},"dateQuarantined":${normalized == null}}"""
+                        obj(
+                            "sourceId" to "${row[11]}:${row[2]}:${row[0]}",
+                            "rawDate" to row[14],
+                            "effective_date" to normalized,
+                            "dateQuarantined" to (normalized == null),
+                        )
                     }
-                root.resolve("data/config/source-dates.json").writeText(dates.joinToString(",\n", "[\n", "\n]\n"))
+                root.resolve("data/config/source-dates.json").writeText(jsonValue(dates).toString())
             }
-            """{"id":${quote(source.id)},"file":${quote("data/raw/${source.file}")},"source_url":${quote(source.url)},"request_body":${source.form?.let(::quote) ?: "null"},"fetched_at":${quote(Instant.now().toString())},"sha256":${quote(Sha256.hex(bytes))},"bytes":${bytes.size},"content_type":${quote(type)},"rows":${rows.size - 1},"license":${quote(source.license)},"effective_date":${quote(
-                when (source.id) {
-                    "S1" -> "mixed row dates; see source-dates.json"
-                    "S3" -> "2024-08-10"
-                    else -> "2025-03-31"
-                },
-            )},"estimated":false}"""
+            obj(
+                "id" to source.id,
+                "file" to "data/raw/${source.file}",
+                "source_url" to source.url,
+                "request_body" to source.form,
+                "fetched_at" to clock.instant().toString(),
+                "sha256" to Sha256.hex(bytes),
+                "bytes" to bytes.size,
+                "content_type" to response.contentType,
+                "rows" to rows.size - 1,
+                "license" to source.license,
+                "effective_date" to
+                    when (source.id) {
+                        "S1" -> "mixed row dates; see source-dates.json"
+                        "S3" -> "2024-08-10"
+                        else -> "2025-03-31"
+                    },
+                "estimated" to false,
+            )
         }
-    root.resolve("data/config/source-manifest.json").writeText(manifests.joinToString(",\n", "[\n", "\n]\n"))
+    root.resolve("data/config/source-manifest.json").writeText(jsonValue(manifests).toString())
     println("Fetched and validated S1/S3/S4")
 }
 
-/** Build is offline except public spotchecks; raw bytes must match the successful fetch receipt. */
+/** Offline integrity/schema validation against the successful fetch receipt. */
 internal fun verifyRaw(root: Path) {
-    val manifest = root.resolve("data/config/source-manifest.json").readText()
+    val manifest =
+        kotlinx.serialization.json.Json
+            .parseToJsonElement(
+                root.resolve("data/config/source-manifest.json").readText(),
+            ).jsonArray
+            .map { it.jsonObject }
     sources.forEach { source ->
-        val receipt = manifest.lineSequence().single { it.contains("\"id\":" + quote(source.id)) }
+        val receipt = manifest.single { it.text("id") == source.id }
         val bytes = root.resolve("data/raw/${source.file}").readBytes()
-        require(receipt.contains("\"sha256\":" + quote(Sha256.hex(bytes)))) { "${source.id}: raw SHA-256 mismatch; fetch again" }
-        val type = Regex("\"content_type\":\"([^\"]+)\"").find(receipt)?.groupValues?.get(1) ?: error("Missing Content-Type receipt")
-        checkSource(source, bytes, type)
+        require(receipt.text("sha256") == Sha256.hex(bytes)) { "${source.id}: raw SHA-256 mismatch; fetch again" }
+        checkSource(source, bytes, receipt.text("content_type"))
     }
 }
 
@@ -233,3 +261,10 @@ internal fun normalizedSourceDate(value: String): String? =
     } catch (_: java.time.DateTimeException) {
         null
     }
+
+private fun checkDurations(
+    source: Source,
+    rows: List<List<String>>,
+) {
+    if (source.id != "S1") rows.drop(1).forEach { duration(it[if (source.id == "S3") 3 else 5]) }
+}

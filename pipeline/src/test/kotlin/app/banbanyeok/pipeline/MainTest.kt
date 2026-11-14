@@ -1,6 +1,8 @@
 package app.banbanyeok.pipeline
 
 import io.kotest.core.spec.style.DescribeSpec
+import java.nio.file.Path
+import kotlin.io.path.readText
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -24,11 +26,12 @@ class MainTest :
             }
 
             it("branchRootsAndOneWayLoopAreExplicit") {
-                assertEquals("성수", predecessor("2", "용답", "시청"))
-                assertEquals("신도림", predecessor("2", "도림천", "신설동"))
-                assertEquals("강동", predecessor("5", "둔촌동", "하남검단산"))
-                assertEquals(false, bidirectional("6", "응암", "역촌"))
-                assertEquals(true, bidirectional("6", "응암", "새절"))
+                val rules = NetworkRules(parseObject(Path.of("../data/config/network-rules.json").readText()))
+                assertEquals("성수", rules.predecessor("2", "용답", "시청"))
+                assertEquals("신도림", rules.predecessor("2", "도림천", "신설동"))
+                assertEquals("강동", rules.predecessor("5", "둔촌동", "하남검단산"))
+                assertEquals(false, rules.bidirectional("6", "응암", "역촌"))
+                assertEquals(true, rules.bidirectional("6", "응암", "새절"))
             }
 
             it("rejectsHtmlEvenWithSuccessfulDownloadStatus") {
@@ -51,7 +54,18 @@ class MainTest :
             }
 
             it("physicalTriangleViolationIsBoundedBySkippedTransfer") {
-                val stationA = app.banbanyeok.schema.Station("001", "A", app.banbanyeok.schema.StationStatus.ACTIVE, 37.0, 127.0, listOf("1"), emptyList(), emptyMap(), 1)
+                val stationA =
+                    app.banbanyeok.schema.Station(
+                        "001",
+                        "A",
+                        app.banbanyeok.schema.StationStatus.ACTIVE,
+                        37.0,
+                        127.0,
+                        listOf("1"),
+                        emptyList(),
+                        emptyMap(),
+                        1,
+                    )
                 val stationB = stationA.copy(code = "002", name = "B")
                 val stationC = stationA.copy(code = "003", name = "C")
                 val registry = app.banbanyeok.schema.Registry(1, 1, listOf(stationA, stationB, stationC))
@@ -62,7 +76,21 @@ class MainTest :
                         listOf(Edge(1, 360, 1), Edge(3, 120, 0)),
                         listOf(Edge(2, 120, 0)),
                     )
-                val net = Network(registry, registry, registry.stations, listOf("001" to "1", "002" to "1", "002" to "2", "003" to "2"), graph, mapOf("1" to 60, "2" to 60), emptyList())
+                val net =
+                    Network(
+                        registry,
+                        registry,
+                        registry.stations,
+                        listOf(
+                            "001" to "1",
+                            "002" to "1",
+                            "002" to "2",
+                            "003" to "2",
+                        ),
+                        graph,
+                        mapOf("1" to 60, "2" to 60),
+                        emptyList(),
+                    )
                 val costs = matrixCosts(net)
                 assertEquals(660, costs[0][2].seconds)
                 assertEquals(costs[0][2], costs[2][0])
