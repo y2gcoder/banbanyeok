@@ -19,7 +19,7 @@ class ArchitectureTest :
                             .any { prefix -> it.name.startsWith(prefix) }
                     }.shouldBeEmpty()
             }
-            it("pipeline only depends on schema and core among shared modules") {
+            it("pipeline only depends on schema, core and app-logic among shared modules") {
                 val dependencies =
                     Regex("""project\("(:shared:[^"]+)"\)""")
                         .findAll(File("pipeline/build.gradle.kts").readText())
@@ -31,10 +31,22 @@ class ArchitectureTest :
                     .flatMap { it.imports }
                     .filter { it.name.startsWith("app.banbanyeok.") }
                     .filterNot {
-                        listOf("app.banbanyeok.pipeline.", "app.banbanyeok.schema.", "app.banbanyeok.core.")
-                            .any { prefix -> it.name.startsWith(prefix) }
+                        listOf(
+                            "app.banbanyeok.pipeline.",
+                            "app.banbanyeok.schema.",
+                            "app.banbanyeok.core.",
+                            "app.banbanyeok.applogic.",
+                        ).any { prefix -> it.name.startsWith(prefix) }
                     }.shouldBeEmpty()
-                dependencies.filterNot { it in setOf(":shared:schema", ":shared:core") }.shouldBeEmpty()
+                dependencies
+                    .filterNot {
+                        it in
+                            setOf(
+                                ":shared:schema",
+                                ":shared:core",
+                                ":shared:app-logic",
+                            )
+                    }.shouldBeEmpty()
             }
             it("server feature modules do not depend on each other") {
                 val features =

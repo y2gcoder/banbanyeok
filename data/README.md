@@ -48,6 +48,6 @@ registryVersion 3→4, 총 코드 984개 유지, active 952→944 / deprecated 3
 ./gradlew :pipeline:run --args=all
 ```
 
-단위 테스트 31개와 Postgres 통합 1개, ktlint/detekt를 통과했다. 독립 fixture 골든은 fair 순위·개인별 초·집계·정확한 한국어 이유를 검증하고, 실제 435쌍도 재계산 대조한다. 이름/좌표가 같은 기관 간 중복 병합, 코드/addedIn 보존, 우선 코드, 옛 이름, 반복 실행, 신촌 예외, 먼 동명이역, 범위 밖 동명이역, 순환/없는/퇴역 replacement를 검사한다. suppress/baseline·새 버전·공용 설정 변경은 없다.
+단위 테스트 31개와 Postgres 통합 1개, ktlint/detekt를 통과했다. 독립 fixture 골든은 fair 순위·개인별 초·집계·정확한 한국어 이유를 검증하고, 실제 435쌍도 재계산 대조한다. 이름/좌표가 같은 기관 간 중복 병합, 코드/addedIn 보존, 우선 코드, 옛 이름, 반복 실행, 신촌 예외, 먼 동명이역, 범위 밖 동명이역, 순환/없는/퇴역 replacement를 검사한다. suppress/baseline·새 버전·빌드 공용 설정 변경은 없다. 루트 ArchitectureTest의 유한 허용 목록 두 곳과 테스트 이름만 코디네이터 승인대로 app-logic을 포함하도록 바꿨다. SEO 이유를 서버와 같은 공유 모듈에서 생성하기 위한 의존성이며, 다른 모듈 경계는 유지한다.
 
 재생성 결과 출발 코드 240개와 후보 코드 97개는 이전과 같다. OD는 registryVersion 헤더 4바이트를 제외한 **모든 바이트가 이전과 동일**하여 원래 소요시간·환승 수를 바꾸지 않았다. 후보 목록은 코드 집합/순서는 같고 registryVersion만 4로 갱신했다. 키 없는 all 성공, 두 번째 실행은 SEO까지 Artifacts unchanged를 확인했다. 실제 키 배차 갱신은 이번 범위 밖이며 실행하지 않았다.
