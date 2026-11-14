@@ -1,4 +1,4 @@
-/**
+/*
  * contracts/ 아래 파일을 commonTest용 Kotlin 소스 상수로 바꾼다(tech-stack 3.3).
  * 파일 I/O 없이 jvm(·이후 android·ios) 테스트가 같은 데이터를 쓴다.
  * 사용: 모듈 build.gradle.kts에서 id("banbanyeok.contract-test-data")를 적용하고, 코드에서

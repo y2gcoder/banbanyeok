@@ -115,7 +115,7 @@ class ArchitectureTest :
                     .flatMap { it.imports }
                     .filter {
                         it.name.startsWith("org.h2.") ||
-                            it.name.contains("exposed") && it.name.startsWith("io.mockk")
+                            (it.name.contains("exposed") && it.name.startsWith("io.mockk"))
                     }.shouldBeEmpty()
             }
         }

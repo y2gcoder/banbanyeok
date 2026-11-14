@@ -1,4 +1,4 @@
-/**
+/*
  * shared 아래 모듈의 KMP 컨벤션.
  *
  * 타깃은 jvm만 켠다. 웹은 추천을 직접 계산하지 않고 서버 API(contracts/openapi.yaml)를 호출하므로 js 타깃은 쓰지 않는다
@@ -12,6 +12,7 @@ plugins {
 }
 
 kotlin {
+    compilerOptions { allWarningsAsErrors.set(true) }
     explicitApi()
     jvmToolchain(25) // 이유는 mise.toml 참고. 빌드·테스트는 JDK 25에서 돈다.
 

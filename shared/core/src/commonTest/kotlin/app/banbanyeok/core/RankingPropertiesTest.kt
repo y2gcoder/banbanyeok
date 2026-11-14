@@ -30,9 +30,9 @@ class RankingPropertiesTest {
     @Test
     fun candidatePermutationPreservesEntireResult() {
         val random = Random(20261112)
-        repeat(300) {
+        repeat(300) { iteration ->
             for (mode in listOf("fair", "fast", "favor:p0")) {
-                val input = sample(random, mode, if (it % 2 == 0) 0 else 180)
+                val input = sample(random, mode, if (iteration % 2 == 0) 0 else 180)
                 val order = input.candidates.indices.shuffled(random)
                 val shuffled =
                     input.copy(
@@ -48,9 +48,9 @@ class RankingPropertiesTest {
     @Test
     fun participantPermutationPreservesMappedResult() {
         val random = Random(7301)
-        repeat(300) {
+        repeat(300) { iteration ->
             for (mode in listOf("fair", "fast", "favor:p0")) {
-                val input = sample(random, mode, if (it % 2 == 0) 0 else 180)
+                val input = sample(random, mode, if (iteration % 2 == 0) 0 else 180)
                 val order = input.participants.indices.shuffled(random)
                 val shuffled =
                     input.copy(
@@ -75,7 +75,7 @@ class RankingPropertiesTest {
     @Test
     fun strictlyReducingEveryTimeCannotLowerStrictFairOrFastRank() {
         val random = Random(4432)
-        repeat(1000) {
+        repeat(1000) { _ ->
             for (mode in listOf("fair", "fast")) {
                 val input = sample(random, mode, 0)
                 val before = rank(input)
@@ -102,8 +102,8 @@ class RankingPropertiesTest {
     @Test
     fun favorRespectsCapsRetainsBaselineAndDoesNotIncreaseStrictWinnerTime() {
         val random = Random(8721)
-        repeat(1000) {
-            val input = sample(random, "favor:p0", if (it % 2 == 0) 0 else 180)
+        repeat(1000) { iteration ->
+            val input = sample(random, "favor:p0", if (iteration % 2 == 0) 0 else 180)
             val result = rank(input)
             if (result.baselineStationCode != null) {
                 assertTrue(result.recommendations.any { it.stationCode == result.baselineStationCode })

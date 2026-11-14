@@ -77,11 +77,15 @@ object CompositionRoot {
 
     private fun artifactStore(config: AppConfig): ArtifactStore =
         when (config.artifacts.kind) {
-            ArtifactStoreKind.LOCAL -> LocalFileArtifactStore(Path.of(config.artifacts.localDir))
-            ArtifactStoreKind.GCS ->
+            ArtifactStoreKind.LOCAL -> {
+                LocalFileArtifactStore(Path.of(config.artifacts.localDir))
+            }
+
+            ArtifactStoreKind.GCS -> {
                 GcsArtifactStore.withDefaultCredentials(
                     requireNotNull(config.artifacts.gcsBucket) { "GCS 버킷 이름이 없습니다" },
                     config.artifacts.gcsPrefix,
                 )
+            }
         }
 }

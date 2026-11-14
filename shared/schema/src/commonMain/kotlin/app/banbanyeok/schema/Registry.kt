@@ -156,15 +156,18 @@ public object RegistryCodec {
                 "${station.code}: addedIn=${station.addedIn}은 1..${registry.registryVersion} 이어야 합니다"
             }
             when (station.status) {
-                StationStatus.ACTIVE ->
+                StationStatus.ACTIVE -> {
                     schemaCheck(station.deprecatedIn == null && station.replacedBy == null) {
                         "${station.code}: active 역에 deprecatedIn/replacedBy가 있습니다"
                     }
-                StationStatus.DEPRECATED ->
+                }
+
+                StationStatus.DEPRECATED -> {
                     schemaCheck(
                         station.deprecatedIn != null &&
                             station.deprecatedIn in station.addedIn..registry.registryVersion,
                     ) { "${station.code}: deprecated 역은 addedIn..registryVersion 범위의 deprecatedIn이 필요합니다" }
+                }
             }
             station.replacedBy?.let {
                 StationCode.parse(it)

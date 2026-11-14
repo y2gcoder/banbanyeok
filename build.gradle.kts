@@ -26,26 +26,7 @@ listOf("ktlintBuildScripts" to false, "ktlintFormatBuildScripts" to true).forEac
     }
 }
 
-// Included build cannot apply its own precompiled plugin; bridge it to the same detekt configuration.
-val detektBuildLogicCli = configurations.create("detektBuildLogicCli")
-dependencies { add(detektBuildLogicCli.name, libs.detekt.cli) }
-val detektJavaHome =
-    providers
-        .exec {
-            commandLine("mise", "where", "java@temurin-21.0.9+10.0.LTS")
-        }.standardOutput.asText
-        .map { it.trim() }
-tasks.register<JavaExec>("detektBuildLogic") {
-    setExecutable(detektJavaHome.get() + "/bin/java")
-    classpath = detektBuildLogicCli
-    mainClass.set("io.gitlab.arturbosch.detekt.cli.Main")
-    args(
-        "--input",
-        "build-logic/src/main/kotlin",
-        "--config",
-        "config/detekt/detekt.yml",
-        "--build-upon-default-config",
-        "--jvm-target",
-        "17",
-    )
+// The included build applies the same detekt version/configuration on JDK 25.
+tasks.register("detektBuildLogic") {
+    dependsOn(gradle.includedBuild("build-logic").task(":detekt"))
 }

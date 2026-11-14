@@ -44,16 +44,30 @@ public object ReasonInputValidator {
     public fun validate(input: ReasonInput): InputErrorCode? {
         validatePeople(input.people.map { it.person })?.let { return it }
         return when {
-            StationCode.parseOrNull(input.stationCode) == null -> InputErrorCode.BAD_STATION_CODE
-            input.stationName.isBlank() -> InputErrorCode.EMPTY_STATION_NAME
-            input.people.any { it.seconds < 0 || it.transfers < 0 } || input.toleranceSeconds < 0 ->
+            StationCode.parseOrNull(input.stationCode) == null -> {
+                InputErrorCode.BAD_STATION_CODE
+            }
+
+            input.stationName.isBlank() -> {
+                InputErrorCode.EMPTY_STATION_NAME
+            }
+
+            input.people.any { it.seconds < 0 || it.transfers < 0 } || input.toleranceSeconds < 0 -> {
                 InputErrorCode.NEGATIVE_VALUE
-            input.rank !in 1..ReasonInput.MAX_RANK -> InputErrorCode.RANK_OUT_OF_RANGE
-            input.reasonCode.mode != input.mode || input.reasonCode.isAlternative != (input.rank > 1) ->
+            }
+
+            input.rank !in 1..ReasonInput.MAX_RANK -> {
+                InputErrorCode.RANK_OUT_OF_RANGE
+            }
+
+            input.reasonCode.mode != input.mode || input.reasonCode.isAlternative != (input.rank > 1) -> {
                 InputErrorCode.REASON_CODE_MISMATCH
-            else ->
+            }
+
+            else -> {
                 validateAggregates(input)
                     ?: input.comparison?.let { validateComparison(input, it) } ?: validateFavor(input)
+            }
         }
     }
 
@@ -73,13 +87,25 @@ public object ReasonInputValidator {
     ): InputErrorCode? {
         val expectedRank = if (input.rank == 1) 2 else 1
         return when {
-            comparison.rank != expectedRank || comparison.rank > ReasonInput.MAX_RANK ->
+            comparison.rank != expectedRank || comparison.rank > ReasonInput.MAX_RANK -> {
                 InputErrorCode.COMPARISON_MISMATCH
-            comparison.timesSeconds.size != input.people.size || comparison.timesSeconds.any { it < 0 } ->
+            }
+
+            comparison.timesSeconds.size != input.people.size || comparison.timesSeconds.any { it < 0 } -> {
                 InputErrorCode.COMPARISON_MISMATCH
-            comparison.stationName.isBlank() -> InputErrorCode.EMPTY_STATION_NAME
-            StationCode.parseOrNull(comparison.stationCode) == null -> InputErrorCode.BAD_STATION_CODE
-            else -> null
+            }
+
+            comparison.stationName.isBlank() -> {
+                InputErrorCode.EMPTY_STATION_NAME
+            }
+
+            StationCode.parseOrNull(comparison.stationCode) == null -> {
+                InputErrorCode.BAD_STATION_CODE
+            }
+
+            else -> {
+                null
+            }
         }
     }
 

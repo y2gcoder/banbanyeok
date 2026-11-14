@@ -15,7 +15,7 @@
 필요한 것: [mise](https://mise.jdx.dev), Python 3.9 이상, 1Password 데스크톱 앱과 `op` CLI(비밀값이 필요한 작업에만).
 
 ```sh
-mise install                       # JDK 25(앱) + 21(detekt), node 24, pnpm 12, gitleaks, lefthook를 mise.toml 버전대로 설치
+mise install                       # JDK 25(앱·detekt), node 24, pnpm 12, gitleaks, lefthook를 mise.toml 버전대로 설치
 cp mise.local.toml.example mise.local.toml   # 선택: 비밀값이 필요하면 개인 1Password 계정 고정
 mise run hooks:install             # 커밋 전 gitleaks 검사 훅 설치(한 번만)
 mise run doctor                    # JDK·node·pnpm·Docker 및 선택 1Password 확인

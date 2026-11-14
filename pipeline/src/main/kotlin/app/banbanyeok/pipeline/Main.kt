@@ -17,9 +17,18 @@ fun main(args: Array<String>) {
             it.parent
         }.first { it.resolve("contracts/data-format.md").exists() }
     when (args.singleOrNull()) {
-        "fetch" -> fetch(root)
-        "spotcheck" -> spotcheck(root)
-        "headways" -> refreshHeadways(root)
+        "fetch" -> {
+            fetch(root)
+        }
+
+        "spotcheck" -> {
+            spotcheck(root)
+        }
+
+        "headways" -> {
+            refreshHeadways(root)
+        }
+
         "refresh" -> {
             require(!System.getenv("SEOUL_OPENAPI_KEY").isNullOrBlank()) {
                 "SEOUL_OPENAPI_KEY is required for refresh; build/all use configured estimates"
@@ -31,14 +40,24 @@ fun main(args: Array<String>) {
             validate(root)
             writeHeadwayComparison(root, before, oldCosts)
         }
-        "build" -> build(root)
-        "validate" -> validate(root)
+
+        "build" -> {
+            build(root)
+        }
+
+        "validate" -> {
+            validate(root)
+        }
+
         "all" -> {
             if (!root.resolve("data/raw/kric.xlsx").exists()) fetch(root)
             build(root)
             validate(root)
         }
-        else -> error("Usage: fetch|headways|build|validate|all|spotcheck|refresh")
+
+        else -> {
+            error("Usage: fetch|headways|build|validate|all|spotcheck|refresh")
+        }
     }
 }
 

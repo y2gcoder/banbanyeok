@@ -26,7 +26,7 @@ class ShareLinkCodecTest {
     fun encodedQueryUsesOnlyUnreservedCharacters() {
         val link = ShareLink(listOf(a, b), LinkMode.Fair, listOf("??>>", "ÿÿ"))
         val query = ShareLinkCodec.encodeQuery(link)
-        assertTrue(query.all { it.isLetterOrDigit() && it.code < 128 || it in "-_.=&" }, query)
+        assertTrue(query.all { (it.isLetterOrDigit() && it.code < 128) || it in "-_.=&" }, query)
         assertTrue('|' !in query)
     }
 

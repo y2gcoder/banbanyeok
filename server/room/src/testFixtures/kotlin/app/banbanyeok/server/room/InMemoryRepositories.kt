@@ -34,8 +34,14 @@ class InMemoryRoomRepository : RoomRepository {
             val list = participants.getValue(roomId)
             val capacity = minOf(MAX_PARTICIPANTS, room.expectedCount ?: MAX_PARTICIPANTS)
             when {
-                room.locked -> AddResult.Locked
-                list.size >= capacity -> AddResult.Full
+                room.locked -> {
+                    AddResult.Locked
+                }
+
+                list.size >= capacity -> {
+                    AddResult.Full
+                }
+
                 else -> {
                     list += participant
                     touch(room, activity)

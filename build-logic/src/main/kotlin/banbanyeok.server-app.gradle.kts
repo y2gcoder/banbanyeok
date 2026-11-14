@@ -1,4 +1,4 @@
-/** Ktor 서버 앱 컨벤션: 조립(composition root)과 HTTP 계층을 가진 server:app 모듈에 적용한다. */
+// Ktor 서버 앱 컨벤션: 조립(composition root)과 HTTP 계층을 가진 server:app 모듈에 적용한다.
 plugins {
     id("banbanyeok.kotlin-jvm")
     id("banbanyeok.serialization")

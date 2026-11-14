@@ -20,7 +20,7 @@ class GoldenRankingTest {
                     RankInput(
                         input.participants,
                         input.candidates,
-                        input.times.map { row -> row.map { it?.let { (it * 60).toInt() } } },
+                        input.times.map { row -> row.map { it?.let { minutes -> (minutes * 60).toInt() } } },
                         input.transfers,
                         input.mode,
                         (input.tolerance * 60).toInt(),

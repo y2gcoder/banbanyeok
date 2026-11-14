@@ -68,7 +68,7 @@ internal data class Network(
 
 internal class NetworkBuilder(
     private val registry: Registry,
-    private val input: PipelineInput,
+    input: PipelineInput,
 ) {
     private val previous = input.previous
     private val rules = input.rules
