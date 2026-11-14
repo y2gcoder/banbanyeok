@@ -18,7 +18,7 @@ COPY data/artifacts/dev/ /training/artifacts/
 RUN bash -c 'set -eu; \
   export APP_PROFILE=local SERVER_PORT=8080 ARTIFACT_LOCAL_DIR=/training/artifacts \
     DATABASE_URL=jdbc:postgresql://127.0.0.1:1/none RATE_LIMIT_ENABLED=false; \
-  java -Xms32m -Xmx256m -XX:ArchiveClassesAtExit=/app/app.jsa -cp "$(cat /app/classpath.txt)" app.banbanyeok.server.app.MainKt \
+  java -Xms32m -Xmx256m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ArchiveClassesAtExit=/app/app.jsa -cp "$(cat /app/classpath.txt)" app.banbanyeok.server.app.MainKt \
     > /tmp/training.log 2>&1 & pid=$!; \
   ready=0; for i in $(seq 1 120); do \
     if (exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /healthz HTTP/1.0\r\n\r\n" >&3; read -r line <&3; [[ "$line" == *200* ]]) 2>/dev/null; then ready=1; break; fi; sleep 1; done; \
