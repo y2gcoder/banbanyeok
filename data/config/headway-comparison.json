@@ -1,0 +1,72 @@
+[
+  {
+    "afterSeconds": 1028,
+    "beforeSeconds": 1020,
+    "deltaSeconds": 8,
+    "from": "서울역",
+    "to": "청량리"
+  },
+  {
+    "afterSeconds": 1901,
+    "beforeSeconds": 1920,
+    "deltaSeconds": -19,
+    "from": "강남",
+    "to": "홍대입구"
+  },
+  {
+    "afterSeconds": 611,
+    "beforeSeconds": 630,
+    "deltaSeconds": -19,
+    "from": "성수",
+    "to": "신설동"
+  },
+  {
+    "afterSeconds": 731,
+    "beforeSeconds": 750,
+    "deltaSeconds": -19,
+    "from": "신도림",
+    "to": "까치산"
+  },
+  {
+    "afterSeconds": 803,
+    "beforeSeconds": 850,
+    "deltaSeconds": -47,
+    "from": "강동",
+    "to": "마천"
+  },
+  {
+    "afterSeconds": 1253,
+    "beforeSeconds": 1300,
+    "deltaSeconds": -47,
+    "from": "강동",
+    "to": "하남검단산"
+  },
+  {
+    "afterSeconds": 626,
+    "beforeSeconds": 630,
+    "deltaSeconds": -4,
+    "from": "응암",
+    "to": "연신내"
+  },
+  {
+    "afterSeconds": 1091,
+    "beforeSeconds": 1110,
+    "deltaSeconds": -19,
+    "from": "사당",
+    "to": "잠실"
+  },
+  {
+    "afterSeconds": 803,
+    "beforeSeconds": 850,
+    "deltaSeconds": -47,
+    "from": "광화문",
+    "to": "왕십리"
+  },
+  {
+    "afterSeconds": 1756,
+    "beforeSeconds": 1822,
+    "deltaSeconds": -66,
+    "from": "답십리",
+    "to": "역삼"
+  }
+]
