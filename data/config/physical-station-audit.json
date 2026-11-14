@@ -1,1 +1,6090 @@
-{"registryVersion":4,"scopedActiveStations":657,"multipleLineStations":118,"violations":[],"replacementChainsChecked":40,"remainingSameNames":[{"name":"신촌","codes":["1qs","pxn"],"pairDistancesKm":[{"a":"1qs","b":"pxn","km":0.6998131271135419}]},{"name":"양평","codes":["51c","h1r"],"pairDistancesKm":[{"a":"51c","b":"h1r","km":53.42519206330181}]}],"stations":[{"code":"02f","name":"신내","lines":["6호선","경춘선"],"sourceCount":2,"multipleLines":true},{"code":"034","name":"오금","lines":["3호선","5호선"],"sourceCount":2,"multipleLines":true},{"code":"03j","name":"광화문","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"043","name":"성균관대","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"071","name":"쌍문","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"073","name":"구반포","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"07a","name":"석천사거리","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"0a9","name":"서울대벤처타운","lines":["수도권 경량도시철도 신림선"],"sourceCount":1,"multipleLines":false},{"code":"0c7","name":"동두천","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"0ca","name":"귤현","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"0gf","name":"중곡","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"0js","name":"마포","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"0pc","name":"서동탄","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"0pt","name":"신검단중앙","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"0qx","name":"운서","lines":["인천국제공항선"],"sourceCount":1,"multipleLines":false},{"code":"0r0","name":"제물포","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"0v2","name":"석촌","lines":["8호선","수도권  도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"0yd","name":"문정","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"0ys","name":"한성백제","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"10t","name":"의정부","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"119","name":"효창공원앞","lines":["6호선","경의중앙선"],"sourceCount":2,"multipleLines":true},{"code":"144","name":"미금","lines":["분당선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"151","name":"샛강","lines":["서울 도시철도 9호선","수도권 경량도시철도 신림선"],"sourceCount":2,"multipleLines":true},{"code":"15a","name":"임학","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"15d","name":"강일","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"18t","name":"서현","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"1b1","name":"용마산","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"1cs","name":"안양","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"1f1","name":"돌곶이","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"1k0","name":"금정","lines":["경부선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"1kf","name":"송내","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"1kt","name":"신풍","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"1mr","name":"북한산보국문","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"1mx","name":"증산","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"1qs","name":"신촌","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"1ta","name":"용유","lines":["자기부상철도"],"sourceCount":1,"multipleLines":false},{"code":"1vz","name":"수락산","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"1y8","name":"광운대","lines":["경원선","경의중앙선","경춘선"],"sourceCount":3,"multipleLines":true},{"code":"21t","name":"매교","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"22h","name":"구성","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"24v","name":"광교중앙","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"263","name":"상현","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"26m","name":"배방","lines":["장항선"],"sourceCount":1,"multipleLines":false},{"code":"27v","name":"금천구청","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"2bw","name":"신반포","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"2c2","name":"국회의사당","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"2ew","name":"디지털미디어시티","lines":["6호선","경의중앙선","인천국제공항선"],"sourceCount":3,"multipleLines":true},{"code":"2gf","name":"고잔","lines":["수인선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"2gg","name":"주안국가산단","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"2gq","name":"총신대입구(이수)","lines":["4호선","7호선"],"sourceCount":2,"multipleLines":true},{"code":"2h7","name":"옥수","lines":["3호선","경원선"],"sourceCount":2,"multipleLines":true},{"code":"2je","name":"혜화","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"2kt","name":"정부과천청사","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"2qb","name":"평촌","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"2rz","name":"정자","lines":["분당선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"2tw","name":"독정","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"307","name":"상천","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"30q","name":"명동","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"32m","name":"미사","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"36h","name":"구파발","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"36k","name":"운정","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"376","name":"선정릉","lines":["분당선","수도권  도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"390","name":"인천가좌","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"393","name":"삼양","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"3cr","name":"삼양사거리","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"3g2","name":"건대입구","lines":["2호선","7호선"],"sourceCount":2,"multipleLines":true},{"code":"3j3","name":"삼가","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"3jc","name":"오빈","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"3mp","name":"한양대","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"3q5","name":"센트럴파크","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"3qj","name":"중계","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"3qv","name":"직산","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"3rt","name":"원흥","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"3s7","name":"남한산성입구","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"3t2","name":"판교","lines":["경강선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"3v6","name":"사리","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"3vr","name":"운양","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"401","name":"대방","lines":["경부선","수도권 경량도시철도 신림선"],"sourceCount":2,"multipleLines":true},{"code":"40c","name":"어룡","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"42x","name":"신둔도예촌","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"48k","name":"작전","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"492","name":"전대·에버랜드","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"49g","name":"방배","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"4a9","name":"반포","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"4bn","name":"안산","lines":["수인선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"4cb","name":"사가정","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"4d7","name":"마포구청","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"4fv","name":"행당","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"4h1","name":"가정중앙시장","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"4k9","name":"당정","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"4mq","name":"몽촌토성","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"4pk","name":"창동","lines":["4호선","경원선"],"sourceCount":2,"multipleLines":true},{"code":"4q3","name":"서울대입구","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"4s2","name":"신금호","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"4v6","name":"강변","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"4vw","name":"부개","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"4wv","name":"동오","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"4x5","name":"마장","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"4zk","name":"지평","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"501","name":"언주","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"51c","name":"양평","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"51q","name":"아라","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"52d","name":"캠퍼스타운","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"58a","name":"이태원","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"58f","name":"고속터미널","lines":["3호선","7호선","서울 도시철도 9호선"],"sourceCount":3,"multipleLines":true},{"code":"5bv","name":"서대문","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"5p3","name":"송도달빛축제공원","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"5rt","name":"부평구청","lines":["도시철도 7호선","인천지하철 1호선"],"sourceCount":2,"multipleLines":true},{"code":"5th","name":"기흥","lines":["분당선","에버라인"],"sourceCount":2,"multipleLines":true},{"code":"5ys","name":"파주","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"60d","name":"응봉","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"60j","name":"성환","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"62d","name":"가양","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"62p","name":"걸포북변","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"63a","name":"부천시청","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"642","name":"단대오거리","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"65s","name":"오이도","lines":["수인선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"660","name":"효자","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"66h","name":"김유정","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"67a","name":"인천터미널","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"67k","name":"경기도청북부청사","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"68d","name":"소요산","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"68y","name":"양천구청","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"6az","name":"봉명","lines":["장항선"],"sourceCount":1,"multipleLines":false},{"code":"6cf","name":"삼산체육관","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"6dc","name":"장기","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"6fd","name":"서울숲","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"6jk","name":"대흥","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"6qq","name":"마곡","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"6rs","name":"4.19민주묘지","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"6sc","name":"오산","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"6td","name":"선부","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"6vb","name":"경기광주","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"6yr","name":"구의","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"707","name":"백마","lines":["경의중앙선","서해선"],"sourceCount":2,"multipleLines":true},{"code":"70e","name":"도봉산","lines":["7호선","경원선"],"sourceCount":2,"multipleLines":true},{"code":"70x","name":"사당","lines":["2호선","4호선"],"sourceCount":2,"multipleLines":true},{"code":"71t","name":"뚝섬","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"73b","name":"임진강","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"73e","name":"한성대입구","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"76h","name":"능곡","lines":["경의중앙선","서해선"],"sourceCount":2,"multipleLines":true},{"code":"786","name":"보라매병원","lines":["수도권 경량도시철도 신림선"],"sourceCount":1,"multipleLines":false},{"code":"7am","name":"까치산","lines":["2호선","5호선"],"sourceCount":2,"multipleLines":true},{"code":"7bd","name":"인천시청","lines":["인천지하철 1호선","인천지하철 2호선"],"sourceCount":2,"multipleLines":true},{"code":"7e2","name":"초월","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"7gf","name":"신당","lines":["2호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"7gk","name":"중앙보훈병원","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"7hm","name":"동구릉","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"7k4","name":"인천대공원","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"7m0","name":"수진","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"7m8","name":"학동","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"7my","name":"종로3가","lines":["1호선","3호선","5호선"],"sourceCount":3,"multipleLines":true},{"code":"7sf","name":"운천","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"7sw","name":"김포공항","lines":["5호선","김포도시철도","서울 도시철도 9호선","서해선","인천국제공항선"],"sourceCount":5,"multipleLines":true},{"code":"7wc","name":"개봉","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"7xd","name":"서울지방병무청","lines":["수도권 경량도시철도 신림선"],"sourceCount":1,"multipleLines":false},{"code":"7y1","name":"장지","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"7zq","name":"가평","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"80m","name":"노들","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"81y","name":"가오리","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"826","name":"녹천","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"82b","name":"미아","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"82y","name":"답십리","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"83n","name":"정릉","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"847","name":"서빙고","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"84e","name":"증미","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"8a7","name":"중화","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"8be","name":"영종","lines":["인천국제공항선"],"sourceCount":1,"multipleLines":false},{"code":"8bz","name":"솔밭공원","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"8e5","name":"대화","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"8g9","name":"태평","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"8gc","name":"상봉","lines":["7호선","경의중앙선","경춘선"],"sourceCount":3,"multipleLines":true},{"code":"8gy","name":"수지구청","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"8jt","name":"논현","lines":["7호선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"8kk","name":"마곡나루","lines":["서울 도시철도 9호선","인천국제공항선"],"sourceCount":2,"multipleLines":true},{"code":"8km","name":"과천","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"8pc","name":"용두","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"8qw","name":"신원","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"8sp","name":"솔샘","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"8tc","name":"인천공항2터미널","lines":["인천국제공항선"],"sourceCount":1,"multipleLines":false},{"code":"8v0","name":"영등포시장","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"97p","name":"검단호수공원","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"98k","name":"숭의","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"98x","name":"부천종합운동장","lines":["도시철도 7호선","서해선"],"sourceCount":2,"multipleLines":true},{"code":"999","name":"합동청사","lines":["자기부상철도"],"sourceCount":1,"multipleLines":false},{"code":"99s","name":"학여울","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"9ah","name":"이매","lines":["경강선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"9am","name":"아시아드경기장","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"9ce","name":"인덕원","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"9cw","name":"한남","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"9ds","name":"염창","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"9f4","name":"보산","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"9fy","name":"동대문","lines":["1호선","4호선"],"sourceCount":2,"multipleLines":true},{"code":"9k5","name":"삼성","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"9qf","name":"춘천","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"9tm","name":"석계","lines":["6호선","경원선"],"sourceCount":2,"multipleLines":true},{"code":"9yf","name":"이천","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"9zw","name":"노원","lines":["4호선","7호선"],"sourceCount":2,"multipleLines":true},{"code":"a0j","name":"일원","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"a2h","name":"녹양","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"a2r","name":"금곡","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"a4j","name":"청구","lines":["5호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"a5z","name":"성남","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"a6g","name":"수원시청","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"a78","name":"고색","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"a95","name":"안암","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"acv","name":"동춘","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"aeb","name":"한티","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"aev","name":"상수","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"ak0","name":"갈산","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"ak3","name":"반월","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"and","name":"원인재","lines":["수인선","인천지하철 1호선"],"sourceCount":2,"multipleLines":true},{"code":"anr","name":"주안","lines":["경인선","인천지하철 2호선"],"sourceCount":2,"multipleLines":true},{"code":"apx","name":"버티고개","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"ar8","name":"팔당","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"aty","name":"보라매","lines":["7호선","수도권 경량도시철도 신림선"],"sourceCount":2,"multipleLines":true},{"code":"avc","name":"소사","lines":["경인선","서해선"],"sourceCount":2,"multipleLines":true},{"code":"awc","name":"가천대","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"aym","name":"백양리","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"b2w","name":"먹골","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"b42","name":"세류","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"b4d","name":"신사","lines":["3호선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"b57","name":"화서","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"b58","name":"신현","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"b62","name":"송정","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"b8v","name":"춘의","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"b9t","name":"오류동","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"b9x","name":"용답","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"ba8","name":"회현","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"bab","name":"신이문","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"bap","name":"모란","lines":["8호선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"bcc","name":"대림","lines":["2호선","7호선"],"sourceCount":2,"multipleLines":true},{"code":"bd2","name":"상왕십리","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"bdc","name":"명일","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"bdj","name":"탑석","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"bfa","name":"삼각지","lines":["4호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"bgc","name":"천호","lines":["5호선","8호선"],"sourceCount":2,"multipleLines":true},{"code":"bgg","name":"인천","lines":["경인선","수인선"],"sourceCount":2,"multipleLines":true},{"code":"bjr","name":"독립문","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"bmk","name":"고려대","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"bnc","name":"인천논현","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"bne","name":"계양","lines":["인천국제공항선","인천지하철 1호선"],"sourceCount":2,"multipleLines":true},{"code":"bsj","name":"양천향교","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"bvq","name":"성수","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"bvt","name":"곤지암","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"bya","name":"운길산","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"c1p","name":"경마공원","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"c3n","name":"광명사거리","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"c3s","name":"월드컵경기장","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"c52","name":"세종대왕릉","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"c65","name":"원시","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"c6a","name":"인천대입구","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"c6g","name":"의정부중앙","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"c78","name":"서부여성회관","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"c8b","name":"청담","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"c95","name":"상갈","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"ca8","name":"어정","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"caz","name":"숭실대입구","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"cbf","name":"선릉","lines":["2호선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"cex","name":"외대앞","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"cjd","name":"명학","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"cjw","name":"충무로","lines":["3호선","4호선"],"sourceCount":2,"multipleLines":true},{"code":"ckf","name":"부평","lines":["경인선","인천지하철 1호선"],"sourceCount":2,"multipleLines":true},{"code":"cms","name":"올림픽공원","lines":["5호선","수도권  도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"cpf","name":"대성리","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"cpw","name":"잠실나루","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"cq5","name":"굴봉산","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"cs2","name":"노량진","lines":["경부선","서울 도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"ct5","name":"왕십리","lines":["2호선","5호선","경원선","분당선"],"sourceCount":4,"multipleLines":true},{"code":"cvb","name":"수유","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"cvp","name":"까치울","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"cw4","name":"초당","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"cye","name":"금촌","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"d10","name":"남구로","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"d2c","name":"부발","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"d6d","name":"다산","lines":["수도권 광역철도 8호선"],"sourceCount":1,"multipleLines":false},{"code":"d7s","name":"모래내시장","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"d97","name":"간석오거리","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"dd9","name":"수서","lines":["3호선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"dgn","name":"테크노파크","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"djn","name":"오남","lines":["진접선"],"sourceCount":1,"multipleLines":false},{"code":"djw","name":"개화산","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"dka","name":"신림","lines":["2호선","수도권 경량도시철도 신림선"],"sourceCount":2,"multipleLines":true},{"code":"dkx","name":"예술회관","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"dm3","name":"역곡","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"dsf","name":"발산","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"dt3","name":"구룡","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"dtz","name":"가재울","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"dvh","name":"백운","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"dvy","name":"소새울","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"dw8","name":"양재시민의숲","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"dx1","name":"별내별가람","lines":["진접선"],"sourceCount":1,"multipleLines":false},{"code":"dxy","name":"잠실","lines":["2호선","8호선"],"sourceCount":2,"multipleLines":true},{"code":"dyj","name":"발곡","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"dyp","name":"회기","lines":["경원선","경의중앙선"],"sourceCount":2,"multipleLines":true},{"code":"dzc","name":"광교","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"e08","name":"길음","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"e50","name":"중앙","lines":["수인선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"e55","name":"등촌","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"e5c","name":"능길","lines":["수인선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"e5n","name":"죽전","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"e6n","name":"달월","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"e6t","name":"범골","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"e87","name":"가산디지털단지","lines":["7호선","경부선"],"sourceCount":2,"multipleLines":true},{"code":"e8y","name":"둔촌오륜","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"ea2","name":"장기주차장","lines":["자기부상철도"],"sourceCount":1,"multipleLines":false},{"code":"ekb","name":"쌍용","lines":["장항선"],"sourceCount":1,"multipleLines":false},{"code":"ekd","name":"교대","lines":["2호선","3호선"],"sourceCount":2,"multipleLines":true},{"code":"env","name":"개롱","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"ep2","name":"서울역","lines":["1호선","4호선","경의중앙선","인천국제공항선"],"sourceCount":4,"multipleLines":true},{"code":"ep4","name":"합정","lines":["2호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"esk","name":"원종","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"esy","name":"진위","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"evj","name":"간석","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"ey8","name":"완정","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"eyq","name":"화정","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"eyv","name":"국제업무지구","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"eyw","name":"탕정","lines":["장항선"],"sourceCount":1,"multipleLines":false},{"code":"ez1","name":"상동","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"ez2","name":"청라국제도시","lines":["인천국제공항선"],"sourceCount":1,"multipleLines":false},{"code":"ez7","name":"풍산","lines":["경의중앙선","서해선"],"sourceCount":2,"multipleLines":true},{"code":"eza","name":"신도림","lines":["2호선","경부선"],"sourceCount":2,"multipleLines":true},{"code":"f3j","name":"한국항공대","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"f46","name":"거여","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"f63","name":"산곡","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"f8w","name":"영통","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"fae","name":"신길","lines":["5호선","경부선"],"sourceCount":2,"multipleLines":true},{"code":"fav","name":"오리","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"fb1","name":"신연수","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"fcc","name":"잠원","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"fcx","name":"검단사거리","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"fhc","name":"지석","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"fj1","name":"신창","lines":["장항선"],"sourceCount":1,"multipleLines":false},{"code":"fjf","name":"흥선","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"fjk","name":"연천","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"fjq","name":"여주","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"fk1","name":"수리산","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"fkn","name":"양재","lines":["3호선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"fm1","name":"소래포구","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"fm2","name":"가능","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"fm4","name":"양주","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"fm7","name":"불광","lines":["3호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"fmr","name":"곡산","lines":["경의중앙선","서해선"],"sourceCount":2,"multipleLines":true},{"code":"fnh","name":"마들","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"fnj","name":"동두천중앙","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"fwf","name":"서강대","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"fxj","name":"도곡","lines":["3호선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"g0v","name":"남태령","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"g11","name":"복정","lines":["8호선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"g3m","name":"사우","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"g48","name":"초지","lines":["서해선","수인선","안산과천선"],"sourceCount":3,"multipleLines":true},{"code":"g6h","name":"송탄","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"g74","name":"신방화","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"g7y","name":"대치","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"ga2","name":"경복궁","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"gcd","name":"어천","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"gea","name":"평택지제","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"gf9","name":"시청","lines":["1호선","2호선"],"sourceCount":2,"multipleLines":true},{"code":"ggj","name":"신목동","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"gnb","name":"청산","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"gnx","name":"태릉입구","lines":["6호선","7호선"],"sourceCount":2,"multipleLines":true},{"code":"gpg","name":"종각","lines":["1호선"],"sourceCount":1,"multipleLines":false},{"code":"gqt","name":"지행","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"gr7","name":"남춘천","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"grq","name":"석남","lines":["도시철도 7호선","인천지하철 2호선"],"sourceCount":2,"multipleLines":true},{"code":"gwf","name":"망포","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"gxq","name":"송도","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"gxx","name":"동인천","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"gyf","name":"박촌","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"gyt","name":"서원","lines":["수도권 경량도시철도 신림선"],"sourceCount":1,"multipleLines":false},{"code":"gzb","name":"무악재","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"h1r","name":"양평","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"h26","name":"문래","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"h8b","name":"지식정보단지","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"h8d","name":"한대앞","lines":["수인선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"ha9","name":"보라매공원","lines":["수도권 경량도시철도 신림선"],"sourceCount":1,"multipleLines":false},{"code":"hbf","name":"충정로","lines":["2호선","5호선"],"sourceCount":2,"multipleLines":true},{"code":"hbj","name":"도봉","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"hed","name":"가락시장","lines":["3호선","8호선"],"sourceCount":2,"multipleLines":true},{"code":"hg9","name":"신천","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"hh6","name":"병점","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"hhr","name":"압구정로데오","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"hj0","name":"상도","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"hjd","name":"가정","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"hmg","name":"월롱","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"hmh","name":"야목","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"hqd","name":"천왕","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"hr1","name":"공항시장","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"hsx","name":"영등포","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"j0b","name":"강매","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"j2x","name":"관악산","lines":["수도권 경량도시철도 신림선"],"sourceCount":1,"multipleLines":false},{"code":"j3y","name":"을지로입구","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"j4w","name":"종합운동장","lines":["2호선","수도권  도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"j7v","name":"한강진","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"j8a","name":"운연","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"j8f","name":"동암","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"jae","name":"봉은사","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"jc9","name":"성신여대입구","lines":["4호선","우이신설선"],"sourceCount":2,"multipleLines":true},{"code":"jd6","name":"서정리","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"jdm","name":"목동","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"jew","name":"내방","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"jgn","name":"약수","lines":["3호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"jgw","name":"세마","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"jkz","name":"시청·용인대","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"jne","name":"청계산입구","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"jra","name":"계산","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"jrc","name":"시우","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"jt3","name":"삼성중앙","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"jvd","name":"하남시청","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"jwd","name":"대야미","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"jyy","name":"진접","lines":["진접선"],"sourceCount":1,"multipleLines":false},{"code":"k14","name":"고덕","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"k17","name":"동대입구","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"k2w","name":"호구포","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"k3a","name":"강남","lines":["2호선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"k3b","name":"역삼","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"k5a","name":"용인중앙시장","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"k5r","name":"두정","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"k71","name":"시흥능곡","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"k7d","name":"이대","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"k8f","name":"월계","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"k91","name":"아차산","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"kcm","name":"선유도","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"kdf","name":"산성","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"kez","name":"구로디지털단지","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"kh0","name":"신설동","lines":["1호선","2호선","우이신설선"],"sourceCount":3,"multipleLines":true},{"code":"kjt","name":"강동구청","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"krm","name":"명지대","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"ksw","name":"남부터미널","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"kte","name":"금호","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"kxr","name":"서초","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"kxx","name":"개포동","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"kz4","name":"남동구청","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"m3q","name":"시민공원","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"m3r","name":"덕정","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"m5r","name":"강동","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"m88","name":"양수","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"mbk","name":"신갈","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"md7","name":"암사","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"mgc","name":"사평","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"mj0","name":"청량리","lines":["1호선","경원선","경의중앙선"],"sourceCount":3,"multipleLines":true},{"code":"mjh","name":"고진","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"mkh","name":"당산","lines":["2호선","서울 도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"mky","name":"길동","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"mmp","name":"연신내","lines":["3호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"mnc","name":"화곡","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"mpm","name":"수색","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"mt4","name":"새절","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"mxe","name":"어린이대공원","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"n15","name":"장승배기","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"n24","name":"보정","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"n4x","name":"구리","lines":["8호선","경의중앙선"],"sourceCount":2,"multipleLines":true},{"code":"nbj","name":"강남구청","lines":["7호선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"nn9","name":"공덕","lines":["5호선","6호선","경의중앙선","인천국제공항선"],"sourceCount":4,"multipleLines":true},{"code":"np5","name":"의정부시청","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"nqj","name":"김량장","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"nr0","name":"온수","lines":["7호선","경인선"],"sourceCount":2,"multipleLines":true},{"code":"nr6","name":"검암","lines":["인천국제공항선","인천지하철 2호선"],"sourceCount":2,"multipleLines":true},{"code":"nss","name":"역촌","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"ntz","name":"파라다이스시티","lines":["자기부상철도"],"sourceCount":1,"multipleLines":false},{"code":"nvy","name":"남성","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"nw4","name":"마석","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"nwk","name":"낙성대","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"p0x","name":"봉천","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"p2r","name":"군자","lines":["5호선","7호선"],"sourceCount":2,"multipleLines":true},{"code":"p43","name":"사릉","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"p5t","name":"의왕","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"pea","name":"잠실새내","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"peb","name":"수내","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"pjy","name":"방화","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"pnm","name":"을지로4가","lines":["2호선","5호선"],"sourceCount":2,"multipleLines":true},{"code":"ps1","name":"동백","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"psk","name":"시흥시청","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"pt9","name":"마천","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"pty","name":"홍제","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"pxm","name":"굴포천","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"pxn","name":"신촌","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"py2","name":"청명","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"pyh","name":"송파나루","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"q12","name":"신정","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"q1n","name":"아현","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"q31","name":"백석","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"q59","name":"삼동","lines":["경강선"],"sourceCount":1,"multipleLines":false},{"code":"q6j","name":"굽은다리","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"q6x","name":"청평","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"qbk","name":"상월곡","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"qbv","name":"덕소","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"qbz","name":"화랑대","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"qed","name":"구일","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"qfw","name":"상일동","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"qk1","name":"망월사","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"qk9","name":"보문","lines":["6호선","우이신설선"],"sourceCount":2,"multipleLines":true},{"code":"qm8","name":"신답","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"qqf","name":"전곡","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"qqj","name":"부평시장","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"qqr","name":"경찰병원","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"qtb","name":"회룡","lines":["경원선","의정부"],"sourceCount":2,"multipleLines":true},{"code":"qwe","name":"도화","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"r10","name":"주엽","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"r18","name":"시흥대야","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"r25","name":"하남검단산","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"r26","name":"남영","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"r2q","name":"영등포구청","lines":["2호선","5호선"],"sourceCount":2,"multipleLines":true},{"code":"r3j","name":"동막","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"r4d","name":"선학","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"r4v","name":"둔전","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"r5z","name":"우장산","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"r77","name":"북한산우이","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"r8e","name":"구로","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"r96","name":"미아사거리","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"r98","name":"양촌","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"rb2","name":"숙대입구","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"rch","name":"도농","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"rec","name":"도림천","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"rfk","name":"봉화산","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"rj8","name":"새말","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"rk0","name":"원덕","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"rk8","name":"퇴계원","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"rrt","name":"오목천","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"rvv","name":"송파","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"ry7","name":"부천","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"ryf","name":"홍대입구","lines":["2호선","경의중앙선","인천국제공항선"],"sourceCount":3,"multipleLines":true},{"code":"ryr","name":"매봉","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"ryx","name":"가좌","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"rzd","name":"마두","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"s1q","name":"동대문역사문화공원","lines":["2호선","4호선","5호선"],"sourceCount":3,"multipleLines":true},{"code":"s1r","name":"여의도","lines":["5호선","서울 도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"s1y","name":"대곡","lines":["경의중앙선","서해선","일산선"],"sourceCount":3,"multipleLines":true},{"code":"s3y","name":"고촌","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"s5v","name":"압구정","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"s91","name":"광흥창","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"s9k","name":"동작","lines":["4호선","서울 도시철도 9호선"],"sourceCount":2,"multipleLines":true},{"code":"sfp","name":"상계","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"sm6","name":"종로5가","lines":["1호선"],"sourceCount":1,"multipleLines":false},{"code":"sr7","name":"선바위","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"ssr","name":"평택","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"swc","name":"평내호평","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"sz2","name":"흑석","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"t0d","name":"야당","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"t12","name":"산본","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"t1m","name":"상록수","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"t2d","name":"송산","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"t3r","name":"자양","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"t87","name":"천안","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"tcj","name":"신포","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"tds","name":"용산","lines":["경부선","경원선"],"sourceCount":2,"multipleLines":true},{"code":"tf6","name":"만수","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"tfm","name":"신대방","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"tj5","name":"방이","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"tkc","name":"경전철의정부","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"tnt","name":"군포","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"tq7","name":"녹사평","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"tt6","name":"하남풍산","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"ttj","name":"야탑","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"txt","name":"망원","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"txv","name":"인천공항1터미널","lines":["인천국제공항선"],"sourceCount":1,"multipleLines":false},{"code":"tzv","name":"동묘앞","lines":["1호선","6호선"],"sourceCount":2,"multipleLines":true},{"code":"v17","name":"인천국제공항","lines":["자기부상철도"],"sourceCount":1,"multipleLines":false},{"code":"v2k","name":"서구청","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"v66","name":"면목","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"v6c","name":"금릉","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"v6j","name":"석촌고분","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"v6p","name":"정왕","lines":["수인선","안산과천선"],"sourceCount":2,"multipleLines":true},{"code":"v96","name":"신용산","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"vc4","name":"동수","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"vdj","name":"녹번","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"vdw","name":"왕길","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"vfz","name":"검바위","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"vgd","name":"둔촌동","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"vq0","name":"인하대","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"vsf","name":"달미","lines":["서해선"],"sourceCount":1,"multipleLines":false},{"code":"vsr","name":"안국","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"vvr","name":"도심","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"vwc","name":"석바위시장","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"vyf","name":"오목교","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"w1g","name":"별내","lines":["경춘선","수도권 광역철도 8호선"],"sourceCount":2,"multipleLines":true},{"code":"w2d","name":"신정네거리","lines":["2호선"],"sourceCount":1,"multipleLines":false},{"code":"w2r","name":"원당","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"w3d","name":"문학경기장","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"w4h","name":"장자호수공원","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"w7g","name":"아신","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"w7n","name":"삼송","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"w7x","name":"독바위","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"w93","name":"수원","lines":["경부선","분당선"],"sourceCount":2,"multipleLines":true},{"code":"w9g","name":"석수","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"wa0","name":"신대방삼거리","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"wb5","name":"화계","lines":["우이신설선"],"sourceCount":1,"multipleLines":false},{"code":"wbz","name":"방학","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"wcb","name":"매탄권선","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"wdj","name":"하계","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"wdx","name":"국수","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"wg2","name":"오산대","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"wne","name":"개화","lines":["서울 도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"wnj","name":"강촌","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"wpy","name":"풍무","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"wqy","name":"응암","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"wsj","name":"중동","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"wt8","name":"관악","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"wws","name":"곤제","lines":["의정부"],"sourceCount":1,"multipleLines":false},{"code":"www","name":"탄현","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"wwy","name":"장한평","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"wym","name":"을지로3가","lines":["2호선","3호선"],"sourceCount":2,"multipleLines":true},{"code":"wz4","name":"구산","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"x3w","name":"공항화물청사","lines":["인천국제공항선"],"sourceCount":1,"multipleLines":false},{"code":"x4g","name":"부평삼거리","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"x69","name":"여의나루","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"x73","name":"남위례","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"x85","name":"장암","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"x8c","name":"도원","lines":["경인선"],"sourceCount":1,"multipleLines":false},{"code":"x8q","name":"당곡","lines":["수도권 경량도시철도 신림선"],"sourceCount":1,"multipleLines":false},{"code":"x9n","name":"대공원","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"xan","name":"아산","lines":["장항선"],"sourceCount":1,"multipleLines":false},{"code":"xbr","name":"월곡","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"xdw","name":"제기동","lines":["1호선"],"sourceCount":1,"multipleLines":false},{"code":"xfx","name":"대모산입구","lines":["분당선"],"sourceCount":1,"multipleLines":false},{"code":"xgj","name":"범계","lines":["안산과천선"],"sourceCount":1,"multipleLines":false},{"code":"xgn","name":"보평","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"xgp","name":"철산","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"xgq","name":"광나루","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"xmd","name":"온양온천","lines":["장항선"],"sourceCount":1,"multipleLines":false},{"code":"xn1","name":"신논현","lines":["서울 도시철도 9호선","신분당선"],"sourceCount":2,"multipleLines":true},{"code":"xnc","name":"이촌","lines":["4호선","경원선"],"sourceCount":2,"multipleLines":true},{"code":"xqr","name":"강남대","lines":["에버라인"],"sourceCount":1,"multipleLines":false},{"code":"xqw","name":"경인교대입구","lines":["인천지하철 1호선"],"sourceCount":1,"multipleLines":false},{"code":"xs3","name":"삼전","lines":["수도권  도시철도 9호선"],"sourceCount":1,"multipleLines":false},{"code":"xvw","name":"망우","lines":["경의중앙선","경춘선"],"sourceCount":2,"multipleLines":true},{"code":"xxa","name":"광명","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"xy3","name":"갈매","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"xym","name":"검단오류","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"xzd","name":"암사역사공원","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"y1n","name":"남동인더스파크","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"y39","name":"덕계","lines":["경원선"],"sourceCount":1,"multipleLines":false},{"code":"y5p","name":"신흥","lines":["8호선"],"sourceCount":1,"multipleLines":false},{"code":"y72","name":"중랑","lines":["경의중앙선","경춘선"],"sourceCount":2,"multipleLines":true},{"code":"ycs","name":"천마산","lines":["경춘선"],"sourceCount":1,"multipleLines":false},{"code":"ygg","name":"연수","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"ygq","name":"신중동","lines":["도시철도 7호선"],"sourceCount":1,"multipleLines":false},{"code":"yjc","name":"공릉","lines":["7호선"],"sourceCount":1,"multipleLines":false},{"code":"yp8","name":"구래","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false},{"code":"yys","name":"일산","lines":["경의중앙선","서해선"],"sourceCount":2,"multipleLines":true},{"code":"yz2","name":"정발산","lines":["일산선"],"sourceCount":1,"multipleLines":false},{"code":"yzg","name":"독산","lines":["경부선"],"sourceCount":1,"multipleLines":false},{"code":"z01","name":"불암산","lines":["4호선"],"sourceCount":1,"multipleLines":false},{"code":"z2z","name":"워터파크","lines":["자기부상철도"],"sourceCount":1,"multipleLines":false},{"code":"z65","name":"창신","lines":["6호선"],"sourceCount":1,"multipleLines":false},{"code":"z93","name":"용문","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"zc4","name":"지축","lines":["3호선","일산선"],"sourceCount":2,"multipleLines":true},{"code":"zcz","name":"애오개","lines":["5호선"],"sourceCount":1,"multipleLines":false},{"code":"zd5","name":"양정","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"zew","name":"행신","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"zn3","name":"동천","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"zt0","name":"대청","lines":["3호선"],"sourceCount":1,"multipleLines":false},{"code":"zvn","name":"문산","lines":["경의중앙선"],"sourceCount":1,"multipleLines":false},{"code":"zwr","name":"마전","lines":["인천지하철 2호선"],"sourceCount":1,"multipleLines":false},{"code":"zxc","name":"월곶","lines":["수인선"],"sourceCount":1,"multipleLines":false},{"code":"zxd","name":"성복","lines":["신분당선"],"sourceCount":1,"multipleLines":false},{"code":"zyr","name":"마산","lines":["김포도시철도"],"sourceCount":1,"multipleLines":false}]}
+{
+  "multipleLineStations": 118,
+  "registryVersion": 4,
+  "remainingSameNames": [
+    {
+      "codes": [
+        "1qs",
+        "pxn"
+      ],
+      "name": "신촌",
+      "pairDistancesKm": [
+        {
+          "a": "1qs",
+          "b": "pxn",
+          "km": 0.6998131271135419
+        }
+      ]
+    },
+    {
+      "codes": [
+        "51c",
+        "h1r"
+      ],
+      "name": "양평",
+      "pairDistancesKm": [
+        {
+          "a": "51c",
+          "b": "h1r",
+          "km": 53.42519206330181
+        }
+      ]
+    }
+  ],
+  "replacementChainsChecked": 40,
+  "scopedActiveStations": 657,
+  "stations": [
+    {
+      "code": "02f",
+      "lines": [
+        "6호선",
+        "경춘선"
+      ],
+      "multipleLines": true,
+      "name": "신내",
+      "sourceCount": 2
+    },
+    {
+      "code": "034",
+      "lines": [
+        "3호선",
+        "5호선"
+      ],
+      "multipleLines": true,
+      "name": "오금",
+      "sourceCount": 2
+    },
+    {
+      "code": "03j",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "광화문",
+      "sourceCount": 1
+    },
+    {
+      "code": "043",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "성균관대",
+      "sourceCount": 1
+    },
+    {
+      "code": "071",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "쌍문",
+      "sourceCount": 1
+    },
+    {
+      "code": "073",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "구반포",
+      "sourceCount": 1
+    },
+    {
+      "code": "07a",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "석천사거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "0a9",
+      "lines": [
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": false,
+      "name": "서울대벤처타운",
+      "sourceCount": 1
+    },
+    {
+      "code": "0c7",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "동두천",
+      "sourceCount": 1
+    },
+    {
+      "code": "0ca",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "귤현",
+      "sourceCount": 1
+    },
+    {
+      "code": "0gf",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "중곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "0js",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "마포",
+      "sourceCount": 1
+    },
+    {
+      "code": "0pc",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "서동탄",
+      "sourceCount": 1
+    },
+    {
+      "code": "0pt",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "신검단중앙",
+      "sourceCount": 1
+    },
+    {
+      "code": "0qx",
+      "lines": [
+        "인천국제공항선"
+      ],
+      "multipleLines": false,
+      "name": "운서",
+      "sourceCount": 1
+    },
+    {
+      "code": "0r0",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "제물포",
+      "sourceCount": 1
+    },
+    {
+      "code": "0v2",
+      "lines": [
+        "8호선",
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "석촌",
+      "sourceCount": 2
+    },
+    {
+      "code": "0yd",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "문정",
+      "sourceCount": 1
+    },
+    {
+      "code": "0ys",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "한성백제",
+      "sourceCount": 1
+    },
+    {
+      "code": "10t",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "의정부",
+      "sourceCount": 1
+    },
+    {
+      "code": "119",
+      "lines": [
+        "6호선",
+        "경의중앙선"
+      ],
+      "multipleLines": true,
+      "name": "효창공원앞",
+      "sourceCount": 2
+    },
+    {
+      "code": "144",
+      "lines": [
+        "분당선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "미금",
+      "sourceCount": 2
+    },
+    {
+      "code": "151",
+      "lines": [
+        "서울 도시철도 9호선",
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": true,
+      "name": "샛강",
+      "sourceCount": 2
+    },
+    {
+      "code": "15a",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "임학",
+      "sourceCount": 1
+    },
+    {
+      "code": "15d",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "강일",
+      "sourceCount": 1
+    },
+    {
+      "code": "18t",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "서현",
+      "sourceCount": 1
+    },
+    {
+      "code": "1b1",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "용마산",
+      "sourceCount": 1
+    },
+    {
+      "code": "1cs",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "안양",
+      "sourceCount": 1
+    },
+    {
+      "code": "1f1",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "돌곶이",
+      "sourceCount": 1
+    },
+    {
+      "code": "1k0",
+      "lines": [
+        "경부선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "금정",
+      "sourceCount": 2
+    },
+    {
+      "code": "1kf",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "송내",
+      "sourceCount": 1
+    },
+    {
+      "code": "1kt",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "신풍",
+      "sourceCount": 1
+    },
+    {
+      "code": "1mr",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "북한산보국문",
+      "sourceCount": 1
+    },
+    {
+      "code": "1mx",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "증산",
+      "sourceCount": 1
+    },
+    {
+      "code": "1qs",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "신촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "1ta",
+      "lines": [
+        "자기부상철도"
+      ],
+      "multipleLines": false,
+      "name": "용유",
+      "sourceCount": 1
+    },
+    {
+      "code": "1vz",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "수락산",
+      "sourceCount": 1
+    },
+    {
+      "code": "1y8",
+      "lines": [
+        "경원선",
+        "경의중앙선",
+        "경춘선"
+      ],
+      "multipleLines": true,
+      "name": "광운대",
+      "sourceCount": 3
+    },
+    {
+      "code": "21t",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "매교",
+      "sourceCount": 1
+    },
+    {
+      "code": "22h",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "구성",
+      "sourceCount": 1
+    },
+    {
+      "code": "24v",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "광교중앙",
+      "sourceCount": 1
+    },
+    {
+      "code": "263",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "상현",
+      "sourceCount": 1
+    },
+    {
+      "code": "26m",
+      "lines": [
+        "장항선"
+      ],
+      "multipleLines": false,
+      "name": "배방",
+      "sourceCount": 1
+    },
+    {
+      "code": "27v",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "금천구청",
+      "sourceCount": 1
+    },
+    {
+      "code": "2bw",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "신반포",
+      "sourceCount": 1
+    },
+    {
+      "code": "2c2",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "국회의사당",
+      "sourceCount": 1
+    },
+    {
+      "code": "2ew",
+      "lines": [
+        "6호선",
+        "경의중앙선",
+        "인천국제공항선"
+      ],
+      "multipleLines": true,
+      "name": "디지털미디어시티",
+      "sourceCount": 3
+    },
+    {
+      "code": "2gf",
+      "lines": [
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "고잔",
+      "sourceCount": 2
+    },
+    {
+      "code": "2gg",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "주안국가산단",
+      "sourceCount": 1
+    },
+    {
+      "code": "2gq",
+      "lines": [
+        "4호선",
+        "7호선"
+      ],
+      "multipleLines": true,
+      "name": "총신대입구(이수)",
+      "sourceCount": 2
+    },
+    {
+      "code": "2h7",
+      "lines": [
+        "3호선",
+        "경원선"
+      ],
+      "multipleLines": true,
+      "name": "옥수",
+      "sourceCount": 2
+    },
+    {
+      "code": "2je",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "혜화",
+      "sourceCount": 1
+    },
+    {
+      "code": "2kt",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "정부과천청사",
+      "sourceCount": 1
+    },
+    {
+      "code": "2qb",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "평촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "2rz",
+      "lines": [
+        "분당선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "정자",
+      "sourceCount": 2
+    },
+    {
+      "code": "2tw",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "독정",
+      "sourceCount": 1
+    },
+    {
+      "code": "307",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "상천",
+      "sourceCount": 1
+    },
+    {
+      "code": "30q",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "명동",
+      "sourceCount": 1
+    },
+    {
+      "code": "32m",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "미사",
+      "sourceCount": 1
+    },
+    {
+      "code": "36h",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "구파발",
+      "sourceCount": 1
+    },
+    {
+      "code": "36k",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "운정",
+      "sourceCount": 1
+    },
+    {
+      "code": "376",
+      "lines": [
+        "분당선",
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "선정릉",
+      "sourceCount": 2
+    },
+    {
+      "code": "390",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "인천가좌",
+      "sourceCount": 1
+    },
+    {
+      "code": "393",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "삼양",
+      "sourceCount": 1
+    },
+    {
+      "code": "3cr",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "삼양사거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "3g2",
+      "lines": [
+        "2호선",
+        "7호선"
+      ],
+      "multipleLines": true,
+      "name": "건대입구",
+      "sourceCount": 2
+    },
+    {
+      "code": "3j3",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "삼가",
+      "sourceCount": 1
+    },
+    {
+      "code": "3jc",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "오빈",
+      "sourceCount": 1
+    },
+    {
+      "code": "3mp",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "한양대",
+      "sourceCount": 1
+    },
+    {
+      "code": "3q5",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "센트럴파크",
+      "sourceCount": 1
+    },
+    {
+      "code": "3qj",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "중계",
+      "sourceCount": 1
+    },
+    {
+      "code": "3qv",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "직산",
+      "sourceCount": 1
+    },
+    {
+      "code": "3rt",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "원흥",
+      "sourceCount": 1
+    },
+    {
+      "code": "3s7",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "남한산성입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "3t2",
+      "lines": [
+        "경강선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "판교",
+      "sourceCount": 2
+    },
+    {
+      "code": "3v6",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "사리",
+      "sourceCount": 1
+    },
+    {
+      "code": "3vr",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "운양",
+      "sourceCount": 1
+    },
+    {
+      "code": "401",
+      "lines": [
+        "경부선",
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": true,
+      "name": "대방",
+      "sourceCount": 2
+    },
+    {
+      "code": "40c",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "어룡",
+      "sourceCount": 1
+    },
+    {
+      "code": "42x",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "신둔도예촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "48k",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "작전",
+      "sourceCount": 1
+    },
+    {
+      "code": "492",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "전대·에버랜드",
+      "sourceCount": 1
+    },
+    {
+      "code": "49g",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "방배",
+      "sourceCount": 1
+    },
+    {
+      "code": "4a9",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "반포",
+      "sourceCount": 1
+    },
+    {
+      "code": "4bn",
+      "lines": [
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "안산",
+      "sourceCount": 2
+    },
+    {
+      "code": "4cb",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "사가정",
+      "sourceCount": 1
+    },
+    {
+      "code": "4d7",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "마포구청",
+      "sourceCount": 1
+    },
+    {
+      "code": "4fv",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "행당",
+      "sourceCount": 1
+    },
+    {
+      "code": "4h1",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "가정중앙시장",
+      "sourceCount": 1
+    },
+    {
+      "code": "4k9",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "당정",
+      "sourceCount": 1
+    },
+    {
+      "code": "4mq",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "몽촌토성",
+      "sourceCount": 1
+    },
+    {
+      "code": "4pk",
+      "lines": [
+        "4호선",
+        "경원선"
+      ],
+      "multipleLines": true,
+      "name": "창동",
+      "sourceCount": 2
+    },
+    {
+      "code": "4q3",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "서울대입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "4s2",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "신금호",
+      "sourceCount": 1
+    },
+    {
+      "code": "4v6",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "강변",
+      "sourceCount": 1
+    },
+    {
+      "code": "4vw",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "부개",
+      "sourceCount": 1
+    },
+    {
+      "code": "4wv",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "동오",
+      "sourceCount": 1
+    },
+    {
+      "code": "4x5",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "마장",
+      "sourceCount": 1
+    },
+    {
+      "code": "4zk",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "지평",
+      "sourceCount": 1
+    },
+    {
+      "code": "501",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "언주",
+      "sourceCount": 1
+    },
+    {
+      "code": "51c",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "양평",
+      "sourceCount": 1
+    },
+    {
+      "code": "51q",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "아라",
+      "sourceCount": 1
+    },
+    {
+      "code": "52d",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "캠퍼스타운",
+      "sourceCount": 1
+    },
+    {
+      "code": "58a",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "이태원",
+      "sourceCount": 1
+    },
+    {
+      "code": "58f",
+      "lines": [
+        "3호선",
+        "7호선",
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "고속터미널",
+      "sourceCount": 3
+    },
+    {
+      "code": "5bv",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "서대문",
+      "sourceCount": 1
+    },
+    {
+      "code": "5p3",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "송도달빛축제공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "5rt",
+      "lines": [
+        "도시철도 7호선",
+        "인천지하철 1호선"
+      ],
+      "multipleLines": true,
+      "name": "부평구청",
+      "sourceCount": 2
+    },
+    {
+      "code": "5th",
+      "lines": [
+        "분당선",
+        "에버라인"
+      ],
+      "multipleLines": true,
+      "name": "기흥",
+      "sourceCount": 2
+    },
+    {
+      "code": "5ys",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "파주",
+      "sourceCount": 1
+    },
+    {
+      "code": "60d",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "응봉",
+      "sourceCount": 1
+    },
+    {
+      "code": "60j",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "성환",
+      "sourceCount": 1
+    },
+    {
+      "code": "62d",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "가양",
+      "sourceCount": 1
+    },
+    {
+      "code": "62p",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "걸포북변",
+      "sourceCount": 1
+    },
+    {
+      "code": "63a",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "부천시청",
+      "sourceCount": 1
+    },
+    {
+      "code": "642",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "단대오거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "65s",
+      "lines": [
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "오이도",
+      "sourceCount": 2
+    },
+    {
+      "code": "660",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "효자",
+      "sourceCount": 1
+    },
+    {
+      "code": "66h",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "김유정",
+      "sourceCount": 1
+    },
+    {
+      "code": "67a",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "인천터미널",
+      "sourceCount": 1
+    },
+    {
+      "code": "67k",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "경기도청북부청사",
+      "sourceCount": 1
+    },
+    {
+      "code": "68d",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "소요산",
+      "sourceCount": 1
+    },
+    {
+      "code": "68y",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "양천구청",
+      "sourceCount": 1
+    },
+    {
+      "code": "6az",
+      "lines": [
+        "장항선"
+      ],
+      "multipleLines": false,
+      "name": "봉명",
+      "sourceCount": 1
+    },
+    {
+      "code": "6cf",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "삼산체육관",
+      "sourceCount": 1
+    },
+    {
+      "code": "6dc",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "장기",
+      "sourceCount": 1
+    },
+    {
+      "code": "6fd",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "서울숲",
+      "sourceCount": 1
+    },
+    {
+      "code": "6jk",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "대흥",
+      "sourceCount": 1
+    },
+    {
+      "code": "6qq",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "마곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "6rs",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "4.19민주묘지",
+      "sourceCount": 1
+    },
+    {
+      "code": "6sc",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "오산",
+      "sourceCount": 1
+    },
+    {
+      "code": "6td",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "선부",
+      "sourceCount": 1
+    },
+    {
+      "code": "6vb",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "경기광주",
+      "sourceCount": 1
+    },
+    {
+      "code": "6yr",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "구의",
+      "sourceCount": 1
+    },
+    {
+      "code": "707",
+      "lines": [
+        "경의중앙선",
+        "서해선"
+      ],
+      "multipleLines": true,
+      "name": "백마",
+      "sourceCount": 2
+    },
+    {
+      "code": "70e",
+      "lines": [
+        "7호선",
+        "경원선"
+      ],
+      "multipleLines": true,
+      "name": "도봉산",
+      "sourceCount": 2
+    },
+    {
+      "code": "70x",
+      "lines": [
+        "2호선",
+        "4호선"
+      ],
+      "multipleLines": true,
+      "name": "사당",
+      "sourceCount": 2
+    },
+    {
+      "code": "71t",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "뚝섬",
+      "sourceCount": 1
+    },
+    {
+      "code": "73b",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "임진강",
+      "sourceCount": 1
+    },
+    {
+      "code": "73e",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "한성대입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "76h",
+      "lines": [
+        "경의중앙선",
+        "서해선"
+      ],
+      "multipleLines": true,
+      "name": "능곡",
+      "sourceCount": 2
+    },
+    {
+      "code": "786",
+      "lines": [
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": false,
+      "name": "보라매병원",
+      "sourceCount": 1
+    },
+    {
+      "code": "7am",
+      "lines": [
+        "2호선",
+        "5호선"
+      ],
+      "multipleLines": true,
+      "name": "까치산",
+      "sourceCount": 2
+    },
+    {
+      "code": "7bd",
+      "lines": [
+        "인천지하철 1호선",
+        "인천지하철 2호선"
+      ],
+      "multipleLines": true,
+      "name": "인천시청",
+      "sourceCount": 2
+    },
+    {
+      "code": "7e2",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "초월",
+      "sourceCount": 1
+    },
+    {
+      "code": "7gf",
+      "lines": [
+        "2호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "신당",
+      "sourceCount": 2
+    },
+    {
+      "code": "7gk",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "중앙보훈병원",
+      "sourceCount": 1
+    },
+    {
+      "code": "7hm",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "동구릉",
+      "sourceCount": 1
+    },
+    {
+      "code": "7k4",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "인천대공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "7m0",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "수진",
+      "sourceCount": 1
+    },
+    {
+      "code": "7m8",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "학동",
+      "sourceCount": 1
+    },
+    {
+      "code": "7my",
+      "lines": [
+        "1호선",
+        "3호선",
+        "5호선"
+      ],
+      "multipleLines": true,
+      "name": "종로3가",
+      "sourceCount": 3
+    },
+    {
+      "code": "7sf",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "운천",
+      "sourceCount": 1
+    },
+    {
+      "code": "7sw",
+      "lines": [
+        "5호선",
+        "김포도시철도",
+        "서울 도시철도 9호선",
+        "서해선",
+        "인천국제공항선"
+      ],
+      "multipleLines": true,
+      "name": "김포공항",
+      "sourceCount": 5
+    },
+    {
+      "code": "7wc",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "개봉",
+      "sourceCount": 1
+    },
+    {
+      "code": "7xd",
+      "lines": [
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": false,
+      "name": "서울지방병무청",
+      "sourceCount": 1
+    },
+    {
+      "code": "7y1",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "장지",
+      "sourceCount": 1
+    },
+    {
+      "code": "7zq",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "가평",
+      "sourceCount": 1
+    },
+    {
+      "code": "80m",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "노들",
+      "sourceCount": 1
+    },
+    {
+      "code": "81y",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "가오리",
+      "sourceCount": 1
+    },
+    {
+      "code": "826",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "녹천",
+      "sourceCount": 1
+    },
+    {
+      "code": "82b",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "미아",
+      "sourceCount": 1
+    },
+    {
+      "code": "82y",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "답십리",
+      "sourceCount": 1
+    },
+    {
+      "code": "83n",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "정릉",
+      "sourceCount": 1
+    },
+    {
+      "code": "847",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "서빙고",
+      "sourceCount": 1
+    },
+    {
+      "code": "84e",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "증미",
+      "sourceCount": 1
+    },
+    {
+      "code": "8a7",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "중화",
+      "sourceCount": 1
+    },
+    {
+      "code": "8be",
+      "lines": [
+        "인천국제공항선"
+      ],
+      "multipleLines": false,
+      "name": "영종",
+      "sourceCount": 1
+    },
+    {
+      "code": "8bz",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "솔밭공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "8e5",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "대화",
+      "sourceCount": 1
+    },
+    {
+      "code": "8g9",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "태평",
+      "sourceCount": 1
+    },
+    {
+      "code": "8gc",
+      "lines": [
+        "7호선",
+        "경의중앙선",
+        "경춘선"
+      ],
+      "multipleLines": true,
+      "name": "상봉",
+      "sourceCount": 3
+    },
+    {
+      "code": "8gy",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "수지구청",
+      "sourceCount": 1
+    },
+    {
+      "code": "8jt",
+      "lines": [
+        "7호선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "논현",
+      "sourceCount": 2
+    },
+    {
+      "code": "8kk",
+      "lines": [
+        "서울 도시철도 9호선",
+        "인천국제공항선"
+      ],
+      "multipleLines": true,
+      "name": "마곡나루",
+      "sourceCount": 2
+    },
+    {
+      "code": "8km",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "과천",
+      "sourceCount": 1
+    },
+    {
+      "code": "8pc",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "용두",
+      "sourceCount": 1
+    },
+    {
+      "code": "8qw",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "신원",
+      "sourceCount": 1
+    },
+    {
+      "code": "8sp",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "솔샘",
+      "sourceCount": 1
+    },
+    {
+      "code": "8tc",
+      "lines": [
+        "인천국제공항선"
+      ],
+      "multipleLines": false,
+      "name": "인천공항2터미널",
+      "sourceCount": 1
+    },
+    {
+      "code": "8v0",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "영등포시장",
+      "sourceCount": 1
+    },
+    {
+      "code": "97p",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "검단호수공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "98k",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "숭의",
+      "sourceCount": 1
+    },
+    {
+      "code": "98x",
+      "lines": [
+        "도시철도 7호선",
+        "서해선"
+      ],
+      "multipleLines": true,
+      "name": "부천종합운동장",
+      "sourceCount": 2
+    },
+    {
+      "code": "999",
+      "lines": [
+        "자기부상철도"
+      ],
+      "multipleLines": false,
+      "name": "합동청사",
+      "sourceCount": 1
+    },
+    {
+      "code": "99s",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "학여울",
+      "sourceCount": 1
+    },
+    {
+      "code": "9ah",
+      "lines": [
+        "경강선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "이매",
+      "sourceCount": 2
+    },
+    {
+      "code": "9am",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "아시아드경기장",
+      "sourceCount": 1
+    },
+    {
+      "code": "9ce",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "인덕원",
+      "sourceCount": 1
+    },
+    {
+      "code": "9cw",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "한남",
+      "sourceCount": 1
+    },
+    {
+      "code": "9ds",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "염창",
+      "sourceCount": 1
+    },
+    {
+      "code": "9f4",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "보산",
+      "sourceCount": 1
+    },
+    {
+      "code": "9fy",
+      "lines": [
+        "1호선",
+        "4호선"
+      ],
+      "multipleLines": true,
+      "name": "동대문",
+      "sourceCount": 2
+    },
+    {
+      "code": "9k5",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "삼성",
+      "sourceCount": 1
+    },
+    {
+      "code": "9qf",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "춘천",
+      "sourceCount": 1
+    },
+    {
+      "code": "9tm",
+      "lines": [
+        "6호선",
+        "경원선"
+      ],
+      "multipleLines": true,
+      "name": "석계",
+      "sourceCount": 2
+    },
+    {
+      "code": "9yf",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "이천",
+      "sourceCount": 1
+    },
+    {
+      "code": "9zw",
+      "lines": [
+        "4호선",
+        "7호선"
+      ],
+      "multipleLines": true,
+      "name": "노원",
+      "sourceCount": 2
+    },
+    {
+      "code": "a0j",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "일원",
+      "sourceCount": 1
+    },
+    {
+      "code": "a2h",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "녹양",
+      "sourceCount": 1
+    },
+    {
+      "code": "a2r",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "금곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "a4j",
+      "lines": [
+        "5호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "청구",
+      "sourceCount": 2
+    },
+    {
+      "code": "a5z",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "성남",
+      "sourceCount": 1
+    },
+    {
+      "code": "a6g",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "수원시청",
+      "sourceCount": 1
+    },
+    {
+      "code": "a78",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "고색",
+      "sourceCount": 1
+    },
+    {
+      "code": "a95",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "안암",
+      "sourceCount": 1
+    },
+    {
+      "code": "acv",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "동춘",
+      "sourceCount": 1
+    },
+    {
+      "code": "aeb",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "한티",
+      "sourceCount": 1
+    },
+    {
+      "code": "aev",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "상수",
+      "sourceCount": 1
+    },
+    {
+      "code": "ak0",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "갈산",
+      "sourceCount": 1
+    },
+    {
+      "code": "ak3",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "반월",
+      "sourceCount": 1
+    },
+    {
+      "code": "and",
+      "lines": [
+        "수인선",
+        "인천지하철 1호선"
+      ],
+      "multipleLines": true,
+      "name": "원인재",
+      "sourceCount": 2
+    },
+    {
+      "code": "anr",
+      "lines": [
+        "경인선",
+        "인천지하철 2호선"
+      ],
+      "multipleLines": true,
+      "name": "주안",
+      "sourceCount": 2
+    },
+    {
+      "code": "apx",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "버티고개",
+      "sourceCount": 1
+    },
+    {
+      "code": "ar8",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "팔당",
+      "sourceCount": 1
+    },
+    {
+      "code": "aty",
+      "lines": [
+        "7호선",
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": true,
+      "name": "보라매",
+      "sourceCount": 2
+    },
+    {
+      "code": "avc",
+      "lines": [
+        "경인선",
+        "서해선"
+      ],
+      "multipleLines": true,
+      "name": "소사",
+      "sourceCount": 2
+    },
+    {
+      "code": "awc",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "가천대",
+      "sourceCount": 1
+    },
+    {
+      "code": "aym",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "백양리",
+      "sourceCount": 1
+    },
+    {
+      "code": "b2w",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "먹골",
+      "sourceCount": 1
+    },
+    {
+      "code": "b42",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "세류",
+      "sourceCount": 1
+    },
+    {
+      "code": "b4d",
+      "lines": [
+        "3호선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "신사",
+      "sourceCount": 2
+    },
+    {
+      "code": "b57",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "화서",
+      "sourceCount": 1
+    },
+    {
+      "code": "b58",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "신현",
+      "sourceCount": 1
+    },
+    {
+      "code": "b62",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "송정",
+      "sourceCount": 1
+    },
+    {
+      "code": "b8v",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "춘의",
+      "sourceCount": 1
+    },
+    {
+      "code": "b9t",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "오류동",
+      "sourceCount": 1
+    },
+    {
+      "code": "b9x",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "용답",
+      "sourceCount": 1
+    },
+    {
+      "code": "ba8",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "회현",
+      "sourceCount": 1
+    },
+    {
+      "code": "bab",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "신이문",
+      "sourceCount": 1
+    },
+    {
+      "code": "bap",
+      "lines": [
+        "8호선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "모란",
+      "sourceCount": 2
+    },
+    {
+      "code": "bcc",
+      "lines": [
+        "2호선",
+        "7호선"
+      ],
+      "multipleLines": true,
+      "name": "대림",
+      "sourceCount": 2
+    },
+    {
+      "code": "bd2",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "상왕십리",
+      "sourceCount": 1
+    },
+    {
+      "code": "bdc",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "명일",
+      "sourceCount": 1
+    },
+    {
+      "code": "bdj",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "탑석",
+      "sourceCount": 1
+    },
+    {
+      "code": "bfa",
+      "lines": [
+        "4호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "삼각지",
+      "sourceCount": 2
+    },
+    {
+      "code": "bgc",
+      "lines": [
+        "5호선",
+        "8호선"
+      ],
+      "multipleLines": true,
+      "name": "천호",
+      "sourceCount": 2
+    },
+    {
+      "code": "bgg",
+      "lines": [
+        "경인선",
+        "수인선"
+      ],
+      "multipleLines": true,
+      "name": "인천",
+      "sourceCount": 2
+    },
+    {
+      "code": "bjr",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "독립문",
+      "sourceCount": 1
+    },
+    {
+      "code": "bmk",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "고려대",
+      "sourceCount": 1
+    },
+    {
+      "code": "bnc",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "인천논현",
+      "sourceCount": 1
+    },
+    {
+      "code": "bne",
+      "lines": [
+        "인천국제공항선",
+        "인천지하철 1호선"
+      ],
+      "multipleLines": true,
+      "name": "계양",
+      "sourceCount": 2
+    },
+    {
+      "code": "bsj",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "양천향교",
+      "sourceCount": 1
+    },
+    {
+      "code": "bvq",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "성수",
+      "sourceCount": 1
+    },
+    {
+      "code": "bvt",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "곤지암",
+      "sourceCount": 1
+    },
+    {
+      "code": "bya",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "운길산",
+      "sourceCount": 1
+    },
+    {
+      "code": "c1p",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "경마공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "c3n",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "광명사거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "c3s",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "월드컵경기장",
+      "sourceCount": 1
+    },
+    {
+      "code": "c52",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "세종대왕릉",
+      "sourceCount": 1
+    },
+    {
+      "code": "c65",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "원시",
+      "sourceCount": 1
+    },
+    {
+      "code": "c6a",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "인천대입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "c6g",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "의정부중앙",
+      "sourceCount": 1
+    },
+    {
+      "code": "c78",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "서부여성회관",
+      "sourceCount": 1
+    },
+    {
+      "code": "c8b",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "청담",
+      "sourceCount": 1
+    },
+    {
+      "code": "c95",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "상갈",
+      "sourceCount": 1
+    },
+    {
+      "code": "ca8",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "어정",
+      "sourceCount": 1
+    },
+    {
+      "code": "caz",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "숭실대입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "cbf",
+      "lines": [
+        "2호선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "선릉",
+      "sourceCount": 2
+    },
+    {
+      "code": "cex",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "외대앞",
+      "sourceCount": 1
+    },
+    {
+      "code": "cjd",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "명학",
+      "sourceCount": 1
+    },
+    {
+      "code": "cjw",
+      "lines": [
+        "3호선",
+        "4호선"
+      ],
+      "multipleLines": true,
+      "name": "충무로",
+      "sourceCount": 2
+    },
+    {
+      "code": "ckf",
+      "lines": [
+        "경인선",
+        "인천지하철 1호선"
+      ],
+      "multipleLines": true,
+      "name": "부평",
+      "sourceCount": 2
+    },
+    {
+      "code": "cms",
+      "lines": [
+        "5호선",
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "올림픽공원",
+      "sourceCount": 2
+    },
+    {
+      "code": "cpf",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "대성리",
+      "sourceCount": 1
+    },
+    {
+      "code": "cpw",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "잠실나루",
+      "sourceCount": 1
+    },
+    {
+      "code": "cq5",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "굴봉산",
+      "sourceCount": 1
+    },
+    {
+      "code": "cs2",
+      "lines": [
+        "경부선",
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "노량진",
+      "sourceCount": 2
+    },
+    {
+      "code": "ct5",
+      "lines": [
+        "2호선",
+        "5호선",
+        "경원선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "왕십리",
+      "sourceCount": 4
+    },
+    {
+      "code": "cvb",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "수유",
+      "sourceCount": 1
+    },
+    {
+      "code": "cvp",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "까치울",
+      "sourceCount": 1
+    },
+    {
+      "code": "cw4",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "초당",
+      "sourceCount": 1
+    },
+    {
+      "code": "cye",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "금촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "d10",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "남구로",
+      "sourceCount": 1
+    },
+    {
+      "code": "d2c",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "부발",
+      "sourceCount": 1
+    },
+    {
+      "code": "d6d",
+      "lines": [
+        "수도권 광역철도 8호선"
+      ],
+      "multipleLines": false,
+      "name": "다산",
+      "sourceCount": 1
+    },
+    {
+      "code": "d7s",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "모래내시장",
+      "sourceCount": 1
+    },
+    {
+      "code": "d97",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "간석오거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "dd9",
+      "lines": [
+        "3호선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "수서",
+      "sourceCount": 2
+    },
+    {
+      "code": "dgn",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "테크노파크",
+      "sourceCount": 1
+    },
+    {
+      "code": "djn",
+      "lines": [
+        "진접선"
+      ],
+      "multipleLines": false,
+      "name": "오남",
+      "sourceCount": 1
+    },
+    {
+      "code": "djw",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "개화산",
+      "sourceCount": 1
+    },
+    {
+      "code": "dka",
+      "lines": [
+        "2호선",
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": true,
+      "name": "신림",
+      "sourceCount": 2
+    },
+    {
+      "code": "dkx",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "예술회관",
+      "sourceCount": 1
+    },
+    {
+      "code": "dm3",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "역곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "dsf",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "발산",
+      "sourceCount": 1
+    },
+    {
+      "code": "dt3",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "구룡",
+      "sourceCount": 1
+    },
+    {
+      "code": "dtz",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "가재울",
+      "sourceCount": 1
+    },
+    {
+      "code": "dvh",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "백운",
+      "sourceCount": 1
+    },
+    {
+      "code": "dvy",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "소새울",
+      "sourceCount": 1
+    },
+    {
+      "code": "dw8",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "양재시민의숲",
+      "sourceCount": 1
+    },
+    {
+      "code": "dx1",
+      "lines": [
+        "진접선"
+      ],
+      "multipleLines": false,
+      "name": "별내별가람",
+      "sourceCount": 1
+    },
+    {
+      "code": "dxy",
+      "lines": [
+        "2호선",
+        "8호선"
+      ],
+      "multipleLines": true,
+      "name": "잠실",
+      "sourceCount": 2
+    },
+    {
+      "code": "dyj",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "발곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "dyp",
+      "lines": [
+        "경원선",
+        "경의중앙선"
+      ],
+      "multipleLines": true,
+      "name": "회기",
+      "sourceCount": 2
+    },
+    {
+      "code": "dzc",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "광교",
+      "sourceCount": 1
+    },
+    {
+      "code": "e08",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "길음",
+      "sourceCount": 1
+    },
+    {
+      "code": "e50",
+      "lines": [
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "중앙",
+      "sourceCount": 2
+    },
+    {
+      "code": "e55",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "등촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "e5c",
+      "lines": [
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "능길",
+      "sourceCount": 2
+    },
+    {
+      "code": "e5n",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "죽전",
+      "sourceCount": 1
+    },
+    {
+      "code": "e6n",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "달월",
+      "sourceCount": 1
+    },
+    {
+      "code": "e6t",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "범골",
+      "sourceCount": 1
+    },
+    {
+      "code": "e87",
+      "lines": [
+        "7호선",
+        "경부선"
+      ],
+      "multipleLines": true,
+      "name": "가산디지털단지",
+      "sourceCount": 2
+    },
+    {
+      "code": "e8y",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "둔촌오륜",
+      "sourceCount": 1
+    },
+    {
+      "code": "ea2",
+      "lines": [
+        "자기부상철도"
+      ],
+      "multipleLines": false,
+      "name": "장기주차장",
+      "sourceCount": 1
+    },
+    {
+      "code": "ekb",
+      "lines": [
+        "장항선"
+      ],
+      "multipleLines": false,
+      "name": "쌍용",
+      "sourceCount": 1
+    },
+    {
+      "code": "ekd",
+      "lines": [
+        "2호선",
+        "3호선"
+      ],
+      "multipleLines": true,
+      "name": "교대",
+      "sourceCount": 2
+    },
+    {
+      "code": "env",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "개롱",
+      "sourceCount": 1
+    },
+    {
+      "code": "ep2",
+      "lines": [
+        "1호선",
+        "4호선",
+        "경의중앙선",
+        "인천국제공항선"
+      ],
+      "multipleLines": true,
+      "name": "서울역",
+      "sourceCount": 4
+    },
+    {
+      "code": "ep4",
+      "lines": [
+        "2호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "합정",
+      "sourceCount": 2
+    },
+    {
+      "code": "esk",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "원종",
+      "sourceCount": 1
+    },
+    {
+      "code": "esy",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "진위",
+      "sourceCount": 1
+    },
+    {
+      "code": "evj",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "간석",
+      "sourceCount": 1
+    },
+    {
+      "code": "ey8",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "완정",
+      "sourceCount": 1
+    },
+    {
+      "code": "eyq",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "화정",
+      "sourceCount": 1
+    },
+    {
+      "code": "eyv",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "국제업무지구",
+      "sourceCount": 1
+    },
+    {
+      "code": "eyw",
+      "lines": [
+        "장항선"
+      ],
+      "multipleLines": false,
+      "name": "탕정",
+      "sourceCount": 1
+    },
+    {
+      "code": "ez1",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "상동",
+      "sourceCount": 1
+    },
+    {
+      "code": "ez2",
+      "lines": [
+        "인천국제공항선"
+      ],
+      "multipleLines": false,
+      "name": "청라국제도시",
+      "sourceCount": 1
+    },
+    {
+      "code": "ez7",
+      "lines": [
+        "경의중앙선",
+        "서해선"
+      ],
+      "multipleLines": true,
+      "name": "풍산",
+      "sourceCount": 2
+    },
+    {
+      "code": "eza",
+      "lines": [
+        "2호선",
+        "경부선"
+      ],
+      "multipleLines": true,
+      "name": "신도림",
+      "sourceCount": 2
+    },
+    {
+      "code": "f3j",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "한국항공대",
+      "sourceCount": 1
+    },
+    {
+      "code": "f46",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "거여",
+      "sourceCount": 1
+    },
+    {
+      "code": "f63",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "산곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "f8w",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "영통",
+      "sourceCount": 1
+    },
+    {
+      "code": "fae",
+      "lines": [
+        "5호선",
+        "경부선"
+      ],
+      "multipleLines": true,
+      "name": "신길",
+      "sourceCount": 2
+    },
+    {
+      "code": "fav",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "오리",
+      "sourceCount": 1
+    },
+    {
+      "code": "fb1",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "신연수",
+      "sourceCount": 1
+    },
+    {
+      "code": "fcc",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "잠원",
+      "sourceCount": 1
+    },
+    {
+      "code": "fcx",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "검단사거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "fhc",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "지석",
+      "sourceCount": 1
+    },
+    {
+      "code": "fj1",
+      "lines": [
+        "장항선"
+      ],
+      "multipleLines": false,
+      "name": "신창",
+      "sourceCount": 1
+    },
+    {
+      "code": "fjf",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "흥선",
+      "sourceCount": 1
+    },
+    {
+      "code": "fjk",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "연천",
+      "sourceCount": 1
+    },
+    {
+      "code": "fjq",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "여주",
+      "sourceCount": 1
+    },
+    {
+      "code": "fk1",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "수리산",
+      "sourceCount": 1
+    },
+    {
+      "code": "fkn",
+      "lines": [
+        "3호선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "양재",
+      "sourceCount": 2
+    },
+    {
+      "code": "fm1",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "소래포구",
+      "sourceCount": 1
+    },
+    {
+      "code": "fm2",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "가능",
+      "sourceCount": 1
+    },
+    {
+      "code": "fm4",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "양주",
+      "sourceCount": 1
+    },
+    {
+      "code": "fm7",
+      "lines": [
+        "3호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "불광",
+      "sourceCount": 2
+    },
+    {
+      "code": "fmr",
+      "lines": [
+        "경의중앙선",
+        "서해선"
+      ],
+      "multipleLines": true,
+      "name": "곡산",
+      "sourceCount": 2
+    },
+    {
+      "code": "fnh",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "마들",
+      "sourceCount": 1
+    },
+    {
+      "code": "fnj",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "동두천중앙",
+      "sourceCount": 1
+    },
+    {
+      "code": "fwf",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "서강대",
+      "sourceCount": 1
+    },
+    {
+      "code": "fxj",
+      "lines": [
+        "3호선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "도곡",
+      "sourceCount": 2
+    },
+    {
+      "code": "g0v",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "남태령",
+      "sourceCount": 1
+    },
+    {
+      "code": "g11",
+      "lines": [
+        "8호선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "복정",
+      "sourceCount": 2
+    },
+    {
+      "code": "g3m",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "사우",
+      "sourceCount": 1
+    },
+    {
+      "code": "g48",
+      "lines": [
+        "서해선",
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "초지",
+      "sourceCount": 3
+    },
+    {
+      "code": "g6h",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "송탄",
+      "sourceCount": 1
+    },
+    {
+      "code": "g74",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "신방화",
+      "sourceCount": 1
+    },
+    {
+      "code": "g7y",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "대치",
+      "sourceCount": 1
+    },
+    {
+      "code": "ga2",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "경복궁",
+      "sourceCount": 1
+    },
+    {
+      "code": "gcd",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "어천",
+      "sourceCount": 1
+    },
+    {
+      "code": "gea",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "평택지제",
+      "sourceCount": 1
+    },
+    {
+      "code": "gf9",
+      "lines": [
+        "1호선",
+        "2호선"
+      ],
+      "multipleLines": true,
+      "name": "시청",
+      "sourceCount": 2
+    },
+    {
+      "code": "ggj",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "신목동",
+      "sourceCount": 1
+    },
+    {
+      "code": "gnb",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "청산",
+      "sourceCount": 1
+    },
+    {
+      "code": "gnx",
+      "lines": [
+        "6호선",
+        "7호선"
+      ],
+      "multipleLines": true,
+      "name": "태릉입구",
+      "sourceCount": 2
+    },
+    {
+      "code": "gpg",
+      "lines": [
+        "1호선"
+      ],
+      "multipleLines": false,
+      "name": "종각",
+      "sourceCount": 1
+    },
+    {
+      "code": "gqt",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "지행",
+      "sourceCount": 1
+    },
+    {
+      "code": "gr7",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "남춘천",
+      "sourceCount": 1
+    },
+    {
+      "code": "grq",
+      "lines": [
+        "도시철도 7호선",
+        "인천지하철 2호선"
+      ],
+      "multipleLines": true,
+      "name": "석남",
+      "sourceCount": 2
+    },
+    {
+      "code": "gwf",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "망포",
+      "sourceCount": 1
+    },
+    {
+      "code": "gxq",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "송도",
+      "sourceCount": 1
+    },
+    {
+      "code": "gxx",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "동인천",
+      "sourceCount": 1
+    },
+    {
+      "code": "gyf",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "박촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "gyt",
+      "lines": [
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": false,
+      "name": "서원",
+      "sourceCount": 1
+    },
+    {
+      "code": "gzb",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "무악재",
+      "sourceCount": 1
+    },
+    {
+      "code": "h1r",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "양평",
+      "sourceCount": 1
+    },
+    {
+      "code": "h26",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "문래",
+      "sourceCount": 1
+    },
+    {
+      "code": "h8b",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "지식정보단지",
+      "sourceCount": 1
+    },
+    {
+      "code": "h8d",
+      "lines": [
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "한대앞",
+      "sourceCount": 2
+    },
+    {
+      "code": "ha9",
+      "lines": [
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": false,
+      "name": "보라매공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "hbf",
+      "lines": [
+        "2호선",
+        "5호선"
+      ],
+      "multipleLines": true,
+      "name": "충정로",
+      "sourceCount": 2
+    },
+    {
+      "code": "hbj",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "도봉",
+      "sourceCount": 1
+    },
+    {
+      "code": "hed",
+      "lines": [
+        "3호선",
+        "8호선"
+      ],
+      "multipleLines": true,
+      "name": "가락시장",
+      "sourceCount": 2
+    },
+    {
+      "code": "hg9",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "신천",
+      "sourceCount": 1
+    },
+    {
+      "code": "hh6",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "병점",
+      "sourceCount": 1
+    },
+    {
+      "code": "hhr",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "압구정로데오",
+      "sourceCount": 1
+    },
+    {
+      "code": "hj0",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "상도",
+      "sourceCount": 1
+    },
+    {
+      "code": "hjd",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "가정",
+      "sourceCount": 1
+    },
+    {
+      "code": "hmg",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "월롱",
+      "sourceCount": 1
+    },
+    {
+      "code": "hmh",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "야목",
+      "sourceCount": 1
+    },
+    {
+      "code": "hqd",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "천왕",
+      "sourceCount": 1
+    },
+    {
+      "code": "hr1",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "공항시장",
+      "sourceCount": 1
+    },
+    {
+      "code": "hsx",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "영등포",
+      "sourceCount": 1
+    },
+    {
+      "code": "j0b",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "강매",
+      "sourceCount": 1
+    },
+    {
+      "code": "j2x",
+      "lines": [
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": false,
+      "name": "관악산",
+      "sourceCount": 1
+    },
+    {
+      "code": "j3y",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "을지로입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "j4w",
+      "lines": [
+        "2호선",
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "종합운동장",
+      "sourceCount": 2
+    },
+    {
+      "code": "j7v",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "한강진",
+      "sourceCount": 1
+    },
+    {
+      "code": "j8a",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "운연",
+      "sourceCount": 1
+    },
+    {
+      "code": "j8f",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "동암",
+      "sourceCount": 1
+    },
+    {
+      "code": "jae",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "봉은사",
+      "sourceCount": 1
+    },
+    {
+      "code": "jc9",
+      "lines": [
+        "4호선",
+        "우이신설선"
+      ],
+      "multipleLines": true,
+      "name": "성신여대입구",
+      "sourceCount": 2
+    },
+    {
+      "code": "jd6",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "서정리",
+      "sourceCount": 1
+    },
+    {
+      "code": "jdm",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "목동",
+      "sourceCount": 1
+    },
+    {
+      "code": "jew",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "내방",
+      "sourceCount": 1
+    },
+    {
+      "code": "jgn",
+      "lines": [
+        "3호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "약수",
+      "sourceCount": 2
+    },
+    {
+      "code": "jgw",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "세마",
+      "sourceCount": 1
+    },
+    {
+      "code": "jkz",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "시청·용인대",
+      "sourceCount": 1
+    },
+    {
+      "code": "jne",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "청계산입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "jra",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "계산",
+      "sourceCount": 1
+    },
+    {
+      "code": "jrc",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "시우",
+      "sourceCount": 1
+    },
+    {
+      "code": "jt3",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "삼성중앙",
+      "sourceCount": 1
+    },
+    {
+      "code": "jvd",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "하남시청",
+      "sourceCount": 1
+    },
+    {
+      "code": "jwd",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "대야미",
+      "sourceCount": 1
+    },
+    {
+      "code": "jyy",
+      "lines": [
+        "진접선"
+      ],
+      "multipleLines": false,
+      "name": "진접",
+      "sourceCount": 1
+    },
+    {
+      "code": "k14",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "고덕",
+      "sourceCount": 1
+    },
+    {
+      "code": "k17",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "동대입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "k2w",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "호구포",
+      "sourceCount": 1
+    },
+    {
+      "code": "k3a",
+      "lines": [
+        "2호선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "강남",
+      "sourceCount": 2
+    },
+    {
+      "code": "k3b",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "역삼",
+      "sourceCount": 1
+    },
+    {
+      "code": "k5a",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "용인중앙시장",
+      "sourceCount": 1
+    },
+    {
+      "code": "k5r",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "두정",
+      "sourceCount": 1
+    },
+    {
+      "code": "k71",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "시흥능곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "k7d",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "이대",
+      "sourceCount": 1
+    },
+    {
+      "code": "k8f",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "월계",
+      "sourceCount": 1
+    },
+    {
+      "code": "k91",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "아차산",
+      "sourceCount": 1
+    },
+    {
+      "code": "kcm",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "선유도",
+      "sourceCount": 1
+    },
+    {
+      "code": "kdf",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "산성",
+      "sourceCount": 1
+    },
+    {
+      "code": "kez",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "구로디지털단지",
+      "sourceCount": 1
+    },
+    {
+      "code": "kh0",
+      "lines": [
+        "1호선",
+        "2호선",
+        "우이신설선"
+      ],
+      "multipleLines": true,
+      "name": "신설동",
+      "sourceCount": 3
+    },
+    {
+      "code": "kjt",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "강동구청",
+      "sourceCount": 1
+    },
+    {
+      "code": "krm",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "명지대",
+      "sourceCount": 1
+    },
+    {
+      "code": "ksw",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "남부터미널",
+      "sourceCount": 1
+    },
+    {
+      "code": "kte",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "금호",
+      "sourceCount": 1
+    },
+    {
+      "code": "kxr",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "서초",
+      "sourceCount": 1
+    },
+    {
+      "code": "kxx",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "개포동",
+      "sourceCount": 1
+    },
+    {
+      "code": "kz4",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "남동구청",
+      "sourceCount": 1
+    },
+    {
+      "code": "m3q",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "시민공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "m3r",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "덕정",
+      "sourceCount": 1
+    },
+    {
+      "code": "m5r",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "강동",
+      "sourceCount": 1
+    },
+    {
+      "code": "m88",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "양수",
+      "sourceCount": 1
+    },
+    {
+      "code": "mbk",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "신갈",
+      "sourceCount": 1
+    },
+    {
+      "code": "md7",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "암사",
+      "sourceCount": 1
+    },
+    {
+      "code": "mgc",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "사평",
+      "sourceCount": 1
+    },
+    {
+      "code": "mj0",
+      "lines": [
+        "1호선",
+        "경원선",
+        "경의중앙선"
+      ],
+      "multipleLines": true,
+      "name": "청량리",
+      "sourceCount": 3
+    },
+    {
+      "code": "mjh",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "고진",
+      "sourceCount": 1
+    },
+    {
+      "code": "mkh",
+      "lines": [
+        "2호선",
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "당산",
+      "sourceCount": 2
+    },
+    {
+      "code": "mky",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "길동",
+      "sourceCount": 1
+    },
+    {
+      "code": "mmp",
+      "lines": [
+        "3호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "연신내",
+      "sourceCount": 2
+    },
+    {
+      "code": "mnc",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "화곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "mpm",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "수색",
+      "sourceCount": 1
+    },
+    {
+      "code": "mt4",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "새절",
+      "sourceCount": 1
+    },
+    {
+      "code": "mxe",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "어린이대공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "n15",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "장승배기",
+      "sourceCount": 1
+    },
+    {
+      "code": "n24",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "보정",
+      "sourceCount": 1
+    },
+    {
+      "code": "n4x",
+      "lines": [
+        "8호선",
+        "경의중앙선"
+      ],
+      "multipleLines": true,
+      "name": "구리",
+      "sourceCount": 2
+    },
+    {
+      "code": "nbj",
+      "lines": [
+        "7호선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "강남구청",
+      "sourceCount": 2
+    },
+    {
+      "code": "nn9",
+      "lines": [
+        "5호선",
+        "6호선",
+        "경의중앙선",
+        "인천국제공항선"
+      ],
+      "multipleLines": true,
+      "name": "공덕",
+      "sourceCount": 4
+    },
+    {
+      "code": "np5",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "의정부시청",
+      "sourceCount": 1
+    },
+    {
+      "code": "nqj",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "김량장",
+      "sourceCount": 1
+    },
+    {
+      "code": "nr0",
+      "lines": [
+        "7호선",
+        "경인선"
+      ],
+      "multipleLines": true,
+      "name": "온수",
+      "sourceCount": 2
+    },
+    {
+      "code": "nr6",
+      "lines": [
+        "인천국제공항선",
+        "인천지하철 2호선"
+      ],
+      "multipleLines": true,
+      "name": "검암",
+      "sourceCount": 2
+    },
+    {
+      "code": "nss",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "역촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "ntz",
+      "lines": [
+        "자기부상철도"
+      ],
+      "multipleLines": false,
+      "name": "파라다이스시티",
+      "sourceCount": 1
+    },
+    {
+      "code": "nvy",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "남성",
+      "sourceCount": 1
+    },
+    {
+      "code": "nw4",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "마석",
+      "sourceCount": 1
+    },
+    {
+      "code": "nwk",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "낙성대",
+      "sourceCount": 1
+    },
+    {
+      "code": "p0x",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "봉천",
+      "sourceCount": 1
+    },
+    {
+      "code": "p2r",
+      "lines": [
+        "5호선",
+        "7호선"
+      ],
+      "multipleLines": true,
+      "name": "군자",
+      "sourceCount": 2
+    },
+    {
+      "code": "p43",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "사릉",
+      "sourceCount": 1
+    },
+    {
+      "code": "p5t",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "의왕",
+      "sourceCount": 1
+    },
+    {
+      "code": "pea",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "잠실새내",
+      "sourceCount": 1
+    },
+    {
+      "code": "peb",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "수내",
+      "sourceCount": 1
+    },
+    {
+      "code": "pjy",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "방화",
+      "sourceCount": 1
+    },
+    {
+      "code": "pnm",
+      "lines": [
+        "2호선",
+        "5호선"
+      ],
+      "multipleLines": true,
+      "name": "을지로4가",
+      "sourceCount": 2
+    },
+    {
+      "code": "ps1",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "동백",
+      "sourceCount": 1
+    },
+    {
+      "code": "psk",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "시흥시청",
+      "sourceCount": 1
+    },
+    {
+      "code": "pt9",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "마천",
+      "sourceCount": 1
+    },
+    {
+      "code": "pty",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "홍제",
+      "sourceCount": 1
+    },
+    {
+      "code": "pxm",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "굴포천",
+      "sourceCount": 1
+    },
+    {
+      "code": "pxn",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "신촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "py2",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "청명",
+      "sourceCount": 1
+    },
+    {
+      "code": "pyh",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "송파나루",
+      "sourceCount": 1
+    },
+    {
+      "code": "q12",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "신정",
+      "sourceCount": 1
+    },
+    {
+      "code": "q1n",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "아현",
+      "sourceCount": 1
+    },
+    {
+      "code": "q31",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "백석",
+      "sourceCount": 1
+    },
+    {
+      "code": "q59",
+      "lines": [
+        "경강선"
+      ],
+      "multipleLines": false,
+      "name": "삼동",
+      "sourceCount": 1
+    },
+    {
+      "code": "q6j",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "굽은다리",
+      "sourceCount": 1
+    },
+    {
+      "code": "q6x",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "청평",
+      "sourceCount": 1
+    },
+    {
+      "code": "qbk",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "상월곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "qbv",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "덕소",
+      "sourceCount": 1
+    },
+    {
+      "code": "qbz",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "화랑대",
+      "sourceCount": 1
+    },
+    {
+      "code": "qed",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "구일",
+      "sourceCount": 1
+    },
+    {
+      "code": "qfw",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "상일동",
+      "sourceCount": 1
+    },
+    {
+      "code": "qk1",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "망월사",
+      "sourceCount": 1
+    },
+    {
+      "code": "qk9",
+      "lines": [
+        "6호선",
+        "우이신설선"
+      ],
+      "multipleLines": true,
+      "name": "보문",
+      "sourceCount": 2
+    },
+    {
+      "code": "qm8",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "신답",
+      "sourceCount": 1
+    },
+    {
+      "code": "qqf",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "전곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "qqj",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "부평시장",
+      "sourceCount": 1
+    },
+    {
+      "code": "qqr",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "경찰병원",
+      "sourceCount": 1
+    },
+    {
+      "code": "qtb",
+      "lines": [
+        "경원선",
+        "의정부"
+      ],
+      "multipleLines": true,
+      "name": "회룡",
+      "sourceCount": 2
+    },
+    {
+      "code": "qwe",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "도화",
+      "sourceCount": 1
+    },
+    {
+      "code": "r10",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "주엽",
+      "sourceCount": 1
+    },
+    {
+      "code": "r18",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "시흥대야",
+      "sourceCount": 1
+    },
+    {
+      "code": "r25",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "하남검단산",
+      "sourceCount": 1
+    },
+    {
+      "code": "r26",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "남영",
+      "sourceCount": 1
+    },
+    {
+      "code": "r2q",
+      "lines": [
+        "2호선",
+        "5호선"
+      ],
+      "multipleLines": true,
+      "name": "영등포구청",
+      "sourceCount": 2
+    },
+    {
+      "code": "r3j",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "동막",
+      "sourceCount": 1
+    },
+    {
+      "code": "r4d",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "선학",
+      "sourceCount": 1
+    },
+    {
+      "code": "r4v",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "둔전",
+      "sourceCount": 1
+    },
+    {
+      "code": "r5z",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "우장산",
+      "sourceCount": 1
+    },
+    {
+      "code": "r77",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "북한산우이",
+      "sourceCount": 1
+    },
+    {
+      "code": "r8e",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "구로",
+      "sourceCount": 1
+    },
+    {
+      "code": "r96",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "미아사거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "r98",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "양촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "rb2",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "숙대입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "rch",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "도농",
+      "sourceCount": 1
+    },
+    {
+      "code": "rec",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "도림천",
+      "sourceCount": 1
+    },
+    {
+      "code": "rfk",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "봉화산",
+      "sourceCount": 1
+    },
+    {
+      "code": "rj8",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "새말",
+      "sourceCount": 1
+    },
+    {
+      "code": "rk0",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "원덕",
+      "sourceCount": 1
+    },
+    {
+      "code": "rk8",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "퇴계원",
+      "sourceCount": 1
+    },
+    {
+      "code": "rrt",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "오목천",
+      "sourceCount": 1
+    },
+    {
+      "code": "rvv",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "송파",
+      "sourceCount": 1
+    },
+    {
+      "code": "ry7",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "부천",
+      "sourceCount": 1
+    },
+    {
+      "code": "ryf",
+      "lines": [
+        "2호선",
+        "경의중앙선",
+        "인천국제공항선"
+      ],
+      "multipleLines": true,
+      "name": "홍대입구",
+      "sourceCount": 3
+    },
+    {
+      "code": "ryr",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "매봉",
+      "sourceCount": 1
+    },
+    {
+      "code": "ryx",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "가좌",
+      "sourceCount": 1
+    },
+    {
+      "code": "rzd",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "마두",
+      "sourceCount": 1
+    },
+    {
+      "code": "s1q",
+      "lines": [
+        "2호선",
+        "4호선",
+        "5호선"
+      ],
+      "multipleLines": true,
+      "name": "동대문역사문화공원",
+      "sourceCount": 3
+    },
+    {
+      "code": "s1r",
+      "lines": [
+        "5호선",
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "여의도",
+      "sourceCount": 2
+    },
+    {
+      "code": "s1y",
+      "lines": [
+        "경의중앙선",
+        "서해선",
+        "일산선"
+      ],
+      "multipleLines": true,
+      "name": "대곡",
+      "sourceCount": 3
+    },
+    {
+      "code": "s3y",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "고촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "s5v",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "압구정",
+      "sourceCount": 1
+    },
+    {
+      "code": "s91",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "광흥창",
+      "sourceCount": 1
+    },
+    {
+      "code": "s9k",
+      "lines": [
+        "4호선",
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": true,
+      "name": "동작",
+      "sourceCount": 2
+    },
+    {
+      "code": "sfp",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "상계",
+      "sourceCount": 1
+    },
+    {
+      "code": "sm6",
+      "lines": [
+        "1호선"
+      ],
+      "multipleLines": false,
+      "name": "종로5가",
+      "sourceCount": 1
+    },
+    {
+      "code": "sr7",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "선바위",
+      "sourceCount": 1
+    },
+    {
+      "code": "ssr",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "평택",
+      "sourceCount": 1
+    },
+    {
+      "code": "swc",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "평내호평",
+      "sourceCount": 1
+    },
+    {
+      "code": "sz2",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "흑석",
+      "sourceCount": 1
+    },
+    {
+      "code": "t0d",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "야당",
+      "sourceCount": 1
+    },
+    {
+      "code": "t12",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "산본",
+      "sourceCount": 1
+    },
+    {
+      "code": "t1m",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "상록수",
+      "sourceCount": 1
+    },
+    {
+      "code": "t2d",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "송산",
+      "sourceCount": 1
+    },
+    {
+      "code": "t3r",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "자양",
+      "sourceCount": 1
+    },
+    {
+      "code": "t87",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "천안",
+      "sourceCount": 1
+    },
+    {
+      "code": "tcj",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "신포",
+      "sourceCount": 1
+    },
+    {
+      "code": "tds",
+      "lines": [
+        "경부선",
+        "경원선"
+      ],
+      "multipleLines": true,
+      "name": "용산",
+      "sourceCount": 2
+    },
+    {
+      "code": "tf6",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "만수",
+      "sourceCount": 1
+    },
+    {
+      "code": "tfm",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "신대방",
+      "sourceCount": 1
+    },
+    {
+      "code": "tj5",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "방이",
+      "sourceCount": 1
+    },
+    {
+      "code": "tkc",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "경전철의정부",
+      "sourceCount": 1
+    },
+    {
+      "code": "tnt",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "군포",
+      "sourceCount": 1
+    },
+    {
+      "code": "tq7",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "녹사평",
+      "sourceCount": 1
+    },
+    {
+      "code": "tt6",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "하남풍산",
+      "sourceCount": 1
+    },
+    {
+      "code": "ttj",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "야탑",
+      "sourceCount": 1
+    },
+    {
+      "code": "txt",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "망원",
+      "sourceCount": 1
+    },
+    {
+      "code": "txv",
+      "lines": [
+        "인천국제공항선"
+      ],
+      "multipleLines": false,
+      "name": "인천공항1터미널",
+      "sourceCount": 1
+    },
+    {
+      "code": "tzv",
+      "lines": [
+        "1호선",
+        "6호선"
+      ],
+      "multipleLines": true,
+      "name": "동묘앞",
+      "sourceCount": 2
+    },
+    {
+      "code": "v17",
+      "lines": [
+        "자기부상철도"
+      ],
+      "multipleLines": false,
+      "name": "인천국제공항",
+      "sourceCount": 1
+    },
+    {
+      "code": "v2k",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "서구청",
+      "sourceCount": 1
+    },
+    {
+      "code": "v66",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "면목",
+      "sourceCount": 1
+    },
+    {
+      "code": "v6c",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "금릉",
+      "sourceCount": 1
+    },
+    {
+      "code": "v6j",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "석촌고분",
+      "sourceCount": 1
+    },
+    {
+      "code": "v6p",
+      "lines": [
+        "수인선",
+        "안산과천선"
+      ],
+      "multipleLines": true,
+      "name": "정왕",
+      "sourceCount": 2
+    },
+    {
+      "code": "v96",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "신용산",
+      "sourceCount": 1
+    },
+    {
+      "code": "vc4",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "동수",
+      "sourceCount": 1
+    },
+    {
+      "code": "vdj",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "녹번",
+      "sourceCount": 1
+    },
+    {
+      "code": "vdw",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "왕길",
+      "sourceCount": 1
+    },
+    {
+      "code": "vfz",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "검바위",
+      "sourceCount": 1
+    },
+    {
+      "code": "vgd",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "둔촌동",
+      "sourceCount": 1
+    },
+    {
+      "code": "vq0",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "인하대",
+      "sourceCount": 1
+    },
+    {
+      "code": "vsf",
+      "lines": [
+        "서해선"
+      ],
+      "multipleLines": false,
+      "name": "달미",
+      "sourceCount": 1
+    },
+    {
+      "code": "vsr",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "안국",
+      "sourceCount": 1
+    },
+    {
+      "code": "vvr",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "도심",
+      "sourceCount": 1
+    },
+    {
+      "code": "vwc",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "석바위시장",
+      "sourceCount": 1
+    },
+    {
+      "code": "vyf",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "오목교",
+      "sourceCount": 1
+    },
+    {
+      "code": "w1g",
+      "lines": [
+        "경춘선",
+        "수도권 광역철도 8호선"
+      ],
+      "multipleLines": true,
+      "name": "별내",
+      "sourceCount": 2
+    },
+    {
+      "code": "w2d",
+      "lines": [
+        "2호선"
+      ],
+      "multipleLines": false,
+      "name": "신정네거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "w2r",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "원당",
+      "sourceCount": 1
+    },
+    {
+      "code": "w3d",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "문학경기장",
+      "sourceCount": 1
+    },
+    {
+      "code": "w4h",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "장자호수공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "w7g",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "아신",
+      "sourceCount": 1
+    },
+    {
+      "code": "w7n",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "삼송",
+      "sourceCount": 1
+    },
+    {
+      "code": "w7x",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "독바위",
+      "sourceCount": 1
+    },
+    {
+      "code": "w93",
+      "lines": [
+        "경부선",
+        "분당선"
+      ],
+      "multipleLines": true,
+      "name": "수원",
+      "sourceCount": 2
+    },
+    {
+      "code": "w9g",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "석수",
+      "sourceCount": 1
+    },
+    {
+      "code": "wa0",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "신대방삼거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "wb5",
+      "lines": [
+        "우이신설선"
+      ],
+      "multipleLines": false,
+      "name": "화계",
+      "sourceCount": 1
+    },
+    {
+      "code": "wbz",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "방학",
+      "sourceCount": 1
+    },
+    {
+      "code": "wcb",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "매탄권선",
+      "sourceCount": 1
+    },
+    {
+      "code": "wdj",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "하계",
+      "sourceCount": 1
+    },
+    {
+      "code": "wdx",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "국수",
+      "sourceCount": 1
+    },
+    {
+      "code": "wg2",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "오산대",
+      "sourceCount": 1
+    },
+    {
+      "code": "wne",
+      "lines": [
+        "서울 도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "개화",
+      "sourceCount": 1
+    },
+    {
+      "code": "wnj",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "강촌",
+      "sourceCount": 1
+    },
+    {
+      "code": "wpy",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "풍무",
+      "sourceCount": 1
+    },
+    {
+      "code": "wqy",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "응암",
+      "sourceCount": 1
+    },
+    {
+      "code": "wsj",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "중동",
+      "sourceCount": 1
+    },
+    {
+      "code": "wt8",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "관악",
+      "sourceCount": 1
+    },
+    {
+      "code": "wws",
+      "lines": [
+        "의정부"
+      ],
+      "multipleLines": false,
+      "name": "곤제",
+      "sourceCount": 1
+    },
+    {
+      "code": "www",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "탄현",
+      "sourceCount": 1
+    },
+    {
+      "code": "wwy",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "장한평",
+      "sourceCount": 1
+    },
+    {
+      "code": "wym",
+      "lines": [
+        "2호선",
+        "3호선"
+      ],
+      "multipleLines": true,
+      "name": "을지로3가",
+      "sourceCount": 2
+    },
+    {
+      "code": "wz4",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "구산",
+      "sourceCount": 1
+    },
+    {
+      "code": "x3w",
+      "lines": [
+        "인천국제공항선"
+      ],
+      "multipleLines": false,
+      "name": "공항화물청사",
+      "sourceCount": 1
+    },
+    {
+      "code": "x4g",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "부평삼거리",
+      "sourceCount": 1
+    },
+    {
+      "code": "x69",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "여의나루",
+      "sourceCount": 1
+    },
+    {
+      "code": "x73",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "남위례",
+      "sourceCount": 1
+    },
+    {
+      "code": "x85",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "장암",
+      "sourceCount": 1
+    },
+    {
+      "code": "x8c",
+      "lines": [
+        "경인선"
+      ],
+      "multipleLines": false,
+      "name": "도원",
+      "sourceCount": 1
+    },
+    {
+      "code": "x8q",
+      "lines": [
+        "수도권 경량도시철도 신림선"
+      ],
+      "multipleLines": false,
+      "name": "당곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "x9n",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "대공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "xan",
+      "lines": [
+        "장항선"
+      ],
+      "multipleLines": false,
+      "name": "아산",
+      "sourceCount": 1
+    },
+    {
+      "code": "xbr",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "월곡",
+      "sourceCount": 1
+    },
+    {
+      "code": "xdw",
+      "lines": [
+        "1호선"
+      ],
+      "multipleLines": false,
+      "name": "제기동",
+      "sourceCount": 1
+    },
+    {
+      "code": "xfx",
+      "lines": [
+        "분당선"
+      ],
+      "multipleLines": false,
+      "name": "대모산입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "xgj",
+      "lines": [
+        "안산과천선"
+      ],
+      "multipleLines": false,
+      "name": "범계",
+      "sourceCount": 1
+    },
+    {
+      "code": "xgn",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "보평",
+      "sourceCount": 1
+    },
+    {
+      "code": "xgp",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "철산",
+      "sourceCount": 1
+    },
+    {
+      "code": "xgq",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "광나루",
+      "sourceCount": 1
+    },
+    {
+      "code": "xmd",
+      "lines": [
+        "장항선"
+      ],
+      "multipleLines": false,
+      "name": "온양온천",
+      "sourceCount": 1
+    },
+    {
+      "code": "xn1",
+      "lines": [
+        "서울 도시철도 9호선",
+        "신분당선"
+      ],
+      "multipleLines": true,
+      "name": "신논현",
+      "sourceCount": 2
+    },
+    {
+      "code": "xnc",
+      "lines": [
+        "4호선",
+        "경원선"
+      ],
+      "multipleLines": true,
+      "name": "이촌",
+      "sourceCount": 2
+    },
+    {
+      "code": "xqr",
+      "lines": [
+        "에버라인"
+      ],
+      "multipleLines": false,
+      "name": "강남대",
+      "sourceCount": 1
+    },
+    {
+      "code": "xqw",
+      "lines": [
+        "인천지하철 1호선"
+      ],
+      "multipleLines": false,
+      "name": "경인교대입구",
+      "sourceCount": 1
+    },
+    {
+      "code": "xs3",
+      "lines": [
+        "수도권  도시철도 9호선"
+      ],
+      "multipleLines": false,
+      "name": "삼전",
+      "sourceCount": 1
+    },
+    {
+      "code": "xvw",
+      "lines": [
+        "경의중앙선",
+        "경춘선"
+      ],
+      "multipleLines": true,
+      "name": "망우",
+      "sourceCount": 2
+    },
+    {
+      "code": "xxa",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "광명",
+      "sourceCount": 1
+    },
+    {
+      "code": "xy3",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "갈매",
+      "sourceCount": 1
+    },
+    {
+      "code": "xym",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "검단오류",
+      "sourceCount": 1
+    },
+    {
+      "code": "xzd",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "암사역사공원",
+      "sourceCount": 1
+    },
+    {
+      "code": "y1n",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "남동인더스파크",
+      "sourceCount": 1
+    },
+    {
+      "code": "y39",
+      "lines": [
+        "경원선"
+      ],
+      "multipleLines": false,
+      "name": "덕계",
+      "sourceCount": 1
+    },
+    {
+      "code": "y5p",
+      "lines": [
+        "8호선"
+      ],
+      "multipleLines": false,
+      "name": "신흥",
+      "sourceCount": 1
+    },
+    {
+      "code": "y72",
+      "lines": [
+        "경의중앙선",
+        "경춘선"
+      ],
+      "multipleLines": true,
+      "name": "중랑",
+      "sourceCount": 2
+    },
+    {
+      "code": "ycs",
+      "lines": [
+        "경춘선"
+      ],
+      "multipleLines": false,
+      "name": "천마산",
+      "sourceCount": 1
+    },
+    {
+      "code": "ygg",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "연수",
+      "sourceCount": 1
+    },
+    {
+      "code": "ygq",
+      "lines": [
+        "도시철도 7호선"
+      ],
+      "multipleLines": false,
+      "name": "신중동",
+      "sourceCount": 1
+    },
+    {
+      "code": "yjc",
+      "lines": [
+        "7호선"
+      ],
+      "multipleLines": false,
+      "name": "공릉",
+      "sourceCount": 1
+    },
+    {
+      "code": "yp8",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "구래",
+      "sourceCount": 1
+    },
+    {
+      "code": "yys",
+      "lines": [
+        "경의중앙선",
+        "서해선"
+      ],
+      "multipleLines": true,
+      "name": "일산",
+      "sourceCount": 2
+    },
+    {
+      "code": "yz2",
+      "lines": [
+        "일산선"
+      ],
+      "multipleLines": false,
+      "name": "정발산",
+      "sourceCount": 1
+    },
+    {
+      "code": "yzg",
+      "lines": [
+        "경부선"
+      ],
+      "multipleLines": false,
+      "name": "독산",
+      "sourceCount": 1
+    },
+    {
+      "code": "z01",
+      "lines": [
+        "4호선"
+      ],
+      "multipleLines": false,
+      "name": "불암산",
+      "sourceCount": 1
+    },
+    {
+      "code": "z2z",
+      "lines": [
+        "자기부상철도"
+      ],
+      "multipleLines": false,
+      "name": "워터파크",
+      "sourceCount": 1
+    },
+    {
+      "code": "z65",
+      "lines": [
+        "6호선"
+      ],
+      "multipleLines": false,
+      "name": "창신",
+      "sourceCount": 1
+    },
+    {
+      "code": "z93",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "용문",
+      "sourceCount": 1
+    },
+    {
+      "code": "zc4",
+      "lines": [
+        "3호선",
+        "일산선"
+      ],
+      "multipleLines": true,
+      "name": "지축",
+      "sourceCount": 2
+    },
+    {
+      "code": "zcz",
+      "lines": [
+        "5호선"
+      ],
+      "multipleLines": false,
+      "name": "애오개",
+      "sourceCount": 1
+    },
+    {
+      "code": "zd5",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "양정",
+      "sourceCount": 1
+    },
+    {
+      "code": "zew",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "행신",
+      "sourceCount": 1
+    },
+    {
+      "code": "zn3",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "동천",
+      "sourceCount": 1
+    },
+    {
+      "code": "zt0",
+      "lines": [
+        "3호선"
+      ],
+      "multipleLines": false,
+      "name": "대청",
+      "sourceCount": 1
+    },
+    {
+      "code": "zvn",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "문산",
+      "sourceCount": 1
+    },
+    {
+      "code": "zwr",
+      "lines": [
+        "인천지하철 2호선"
+      ],
+      "multipleLines": false,
+      "name": "마전",
+      "sourceCount": 1
+    },
+    {
+      "code": "zxc",
+      "lines": [
+        "수인선"
+      ],
+      "multipleLines": false,
+      "name": "월곶",
+      "sourceCount": 1
+    },
+    {
+      "code": "zxd",
+      "lines": [
+        "신분당선"
+      ],
+      "multipleLines": false,
+      "name": "성복",
+      "sourceCount": 1
+    },
+    {
+      "code": "zyr",
+      "lines": [
+        "김포도시철도"
+      ],
+      "multipleLines": false,
+      "name": "마산",
+      "sourceCount": 1
+    }
+  ],
+  "violations": []
+}

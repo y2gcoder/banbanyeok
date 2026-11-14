@@ -57,10 +57,10 @@ private class ArtifactWriter(
     private val seo = seoPairs(net.registry, od, readSeoHubs(root, net.registry), previous?.dataVersion ?: "20000101.1")
     private val files =
         linkedMapOf(
-            "stations.json" to RegistryCodec.encode(net.registry).toByteArray(),
-            "candidates.json" to RegistryCodec.encodeCandidates(candidates).toByteArray(),
+            "stations.json" to jsonText(RegistryCodec.encode(net.registry)).toByteArray(),
+            "candidates.json" to jsonText(RegistryCodec.encodeCandidates(candidates)).toByteArray(),
             "od.bin" to OdBinCodec.encode(od),
-            "seo-pairs.json" to seo.toString().toByteArray(),
+            "seo-pairs.json" to jsonText(seo).toByteArray(),
         )
 
     fun write() {
@@ -80,7 +80,7 @@ private class ArtifactWriter(
                 ?.plus(1) ?: 1
         require(revision <= 999) { "Daily dataVersion revision exhausted" }
         val version = "$date.$revision"
-        files["seo-pairs.json"] = JsonObject(seo + ("dataVersion" to jsonValue(version))).toString().toByteArray()
+        files["seo-pairs.json"] = jsonText(JsonObject(seo + ("dataVersion" to jsonValue(version)))).toByteArray()
         require(files.getValue("seo-pairs.json").size <= 1_048_576) { "SEO pairs exceed 1 MiB; reduce selected hubs" }
         val manifest =
             Manifest(
@@ -101,7 +101,7 @@ private class ArtifactWriter(
                         receipt("seo-pairs.json"),
                     ),
             )
-        val manifestText = ManifestCodec.encode(manifest)
+        val manifestText = jsonText(ManifestCodec.encode(manifest))
         DataSetLoader.load(
             manifestText,
             files.getValue("stations.json"),

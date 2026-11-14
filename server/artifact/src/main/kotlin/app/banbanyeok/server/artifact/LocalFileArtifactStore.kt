@@ -1,7 +1,7 @@
 package app.banbanyeok.server.artifact
 
 import app.banbanyeok.schema.Sha256
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -20,12 +20,13 @@ import kotlin.io.path.relativeTo
  */
 public class LocalFileArtifactStore(
     root: Path,
+    private val ioDispatcher: CoroutineDispatcher,
 ) : ArtifactStore {
     private val root: Path = root.toAbsolutePath().normalize()
     private val lock = Mutex()
 
     override suspend fun get(key: ArtifactKey): StoredArtifact? =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             val file = resolve(key)
             if (!file.isRegularFile()) {
                 null
@@ -41,7 +42,7 @@ public class LocalFileArtifactStore(
         ifMatch: ArtifactVersion?,
     ): ArtifactVersion =
         lock.withLock {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val file = resolve(key)
                 if (ifMatch != null) {
                     val current = if (file.isRegularFile()) versionOf(file.readBytes()) else ArtifactVersion.ABSENT
@@ -60,7 +61,7 @@ public class LocalFileArtifactStore(
         }
 
     override suspend fun list(prefix: String): List<ArtifactKey> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             if (!root.exists()) {
                 emptyList()
             } else {

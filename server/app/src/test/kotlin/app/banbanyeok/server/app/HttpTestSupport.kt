@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package app.banbanyeok.server.app
 
 import app.banbanyeok.server.app.application.RoomResultService
@@ -23,13 +25,14 @@ import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import java.nio.file.Path
 import java.time.Clock
 
 /** data/artifacts/dev의 실제 산출물. 읽기 전용이라 모든 테스트가 한 번만 읽어 공유한다. */
 object DevArtifacts {
     val dir: Path = Path.of(requireNotNull(System.getProperty("artifacts.dev.dir")))
-    val store = LocalFileArtifactStore(dir)
+    val store = LocalFileArtifactStore(dir, UnconfinedTestDispatcher())
     private val loaded by lazy { runBlocking { ArtifactLoader(store).load() } }
     val directory: StationDirectory by lazy { StationDirectory(loaded.dataSet) }
     val published: PublishedArtifacts by lazy { PublishedArtifacts(store, loaded) }

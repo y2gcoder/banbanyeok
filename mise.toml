@@ -87,3 +87,7 @@ run = "bash scripts/dev.sh web"
 [tasks."dev:web:mock"]
 description = "웹 + openapi 기반 가짜 서버(web/mock). 서버 없이 모든 화면이 동작한다"
 run = "bash scripts/dev.sh web:mock"
+
+[tasks."data:refresh"]
+description = "파이프라인 all → 웹 역 인덱스 재생성 (배차 API 갱신은 별도)"
+run = ["./gradlew :pipeline:run --args=all", "pnpm --filter web gen:stations"]

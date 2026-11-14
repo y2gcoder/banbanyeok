@@ -20,6 +20,8 @@ import app.banbanyeok.server.room.exposed.ConnectedDatabase
 import app.banbanyeok.server.room.exposed.DatabaseFactory
 import app.banbanyeok.server.room.exposed.ExposedAnonUserRepository
 import app.banbanyeok.server.room.exposed.ExposedRoomRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import java.nio.file.Path
 import java.time.Clock
 
@@ -47,7 +49,8 @@ object CompositionRoot {
     suspend fun create(
         config: AppConfig,
         clock: Clock = Clock.systemUTC(),
-        store: ArtifactStore = artifactStore(config),
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+        store: ArtifactStore = artifactStore(config, ioDispatcher),
         database: ConnectedDatabase? = null,
     ): Components {
         val loaded = ArtifactLoader(store).load()
@@ -57,8 +60,8 @@ object CompositionRoot {
 
         val ids = SecureRandomIdGenerator()
         val tokens = TokenService(config.tokenPepper.toByteArray(Charsets.UTF_8), ids)
-        val roomRepository = ExposedRoomRepository(db)
-        val anonRepository = ExposedAnonUserRepository(db)
+        val roomRepository = ExposedRoomRepository(db, ioDispatcher)
+        val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
         val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
         val recommendation = RecommendationService(directory.travel, directory)
         val services =
@@ -75,16 +78,20 @@ object CompositionRoot {
         }
     }
 
-    private fun artifactStore(config: AppConfig): ArtifactStore =
+    private fun artifactStore(
+        config: AppConfig,
+        ioDispatcher: CoroutineDispatcher,
+    ): ArtifactStore =
         when (config.artifacts.kind) {
             ArtifactStoreKind.LOCAL -> {
-                LocalFileArtifactStore(Path.of(config.artifacts.localDir))
+                LocalFileArtifactStore(Path.of(config.artifacts.localDir), ioDispatcher)
             }
 
             ArtifactStoreKind.GCS -> {
                 GcsArtifactStore.withDefaultCredentials(
                     requireNotNull(config.artifacts.gcsBucket) { "GCS 버킷 이름이 없습니다" },
-                    config.artifacts.gcsPrefix,
+                    prefix = config.artifacts.gcsPrefix,
+                    ioDispatcher = ioDispatcher,
                 )
             }
         }

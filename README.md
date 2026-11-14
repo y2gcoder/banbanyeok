@@ -36,6 +36,8 @@ mise run test                      # 위 둘을 함께
 | `prototype/` | Python 참조 오라클과 계약 파일 생성기 |
 | `data/registry/` | 역 코드 레지스트리(append-only). 실제 데이터는 파이프라인이 만든다 |
 
+데이터를 갱신하려면 `mise run data:refresh`를 실행합니다. 파이프라인 `all` 실행 후 웹 역 인덱스를 재생성합니다. 키가 필요한 배차 갱신은 포함하지 않으며 `mise run dev:pipeline -- refresh`로 별도 실행합니다.
+
 골든 데이터를 바꿨다면(알고리즘 변경 포함) `mise run golden:regen`으로 스냅샷·픽스처·링크 벡터를 다시 만들고 **diff를 사람이 검토**한 뒤 커밋합니다. `mise run golden:check`는 파일을 바꾸지 않고 일치만 확인합니다.
 
 ### 비밀값

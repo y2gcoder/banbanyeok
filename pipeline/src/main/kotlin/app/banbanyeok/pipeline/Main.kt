@@ -9,7 +9,6 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 fun main(args: Array<String>) {
     val root =
@@ -84,7 +83,7 @@ private fun build(root: Path) {
     val report = root.resolve("data/config/validation-report.json")
     val reach = 1.0 - unreachable.toDouble() / times.size
     val passed = unreachable == 0 && gate.passed && appendOnly.isEmpty()
-    report.writeText(
+    report.writeJson(
         obj(
             "passed" to passed,
             "registryStations" to net.registry.stations.size,
@@ -99,9 +98,9 @@ private fun build(root: Path) {
     writeCoverage(root, net)
     writeRegistryAudit(root, net.registry)
     // Registry and review draft are control-plane inputs, not published travel artifacts.
-    root.resolve("data/registry/stations.json").writeText(RegistryCodec.encode(net.registry))
-    root.resolve("data/registry/candidates.json").writeText(RegistryCodec.encodeCandidates(candidateList))
-    root.resolve("data/registry/candidate-review.json").writeText(
+    root.resolve("data/registry/stations.json").writeJson(RegistryCodec.encode(net.registry))
+    root.resolve("data/registry/candidates.json").writeJson(RegistryCodec.encodeCandidates(candidateList))
+    root.resolve("data/registry/candidate-review.json").writeJson(
         jsonValue(
             candidates.map { station ->
                 obj(
@@ -163,7 +162,7 @@ private fun writeCoverage(
 ) {
     val origins = net.origins.map { it.code }.toSet()
     val excluded = net.registry.stations.filter { it.status == StationStatus.ACTIVE && it.code !in origins }
-    root.resolve("data/config/coverage-report.json").writeText(
+    root.resolve("data/config/coverage-report.json").writeJson(
         obj(
             "scope" to "서울교통공사 1~8호선 S3 운영 구간",
             "includedPhysicalStations" to net.origins.size,

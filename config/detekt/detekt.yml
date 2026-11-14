@@ -27,10 +27,9 @@ style:
     max: 4
     excludeGuardClauses: true
 
-# Constructor/API changes are deferred; see docs/setup/t1-notes.md (8 findings).
 coroutines:
   InjectDispatcher:
-    active: false
+    active: true
 potential-bugs:
   # Analysis API cannot resolve serialization compiler-generated serializer() here (3 false positives).
   # The Kotlin compiler still rejects unreachable code through allWarningsAsErrors.

@@ -1,6 +1,4 @@
 {
-  "schemaVersion": 1,
-  "registryVersion": 4,
   "candidates": [
     "03j",
     "0js",
@@ -99,5 +97,7 @@
     "x69",
     "xgp",
     "xnc"
-  ]
+  ],
+  "registryVersion": 4,
+  "schemaVersion": 1
 }
