@@ -23,14 +23,21 @@ function client() {
   return createClient<paths>({ baseUrl: apiBaseUrl() });
 }
 
-/** 추천에 필요한 상태(별칭은 서버로 보내지 않는다). */
-export type RecommendQuery = Pick<ShareState, "origins" | "mode" | "favorIndex">;
+/** 추천에 필요한 상태. 별칭은 서버가 표시 이름(label)과 문장에 쓴다. */
+export type RecommendQuery = Pick<ShareState, "origins" | "mode" | "favorIndex" | "nicknames">;
 
-/** `POST /recommend` 본문. favorIndex는 배려 모드일 때만 보낸다. */
+/**
+ * `POST /recommend` 본문. favorIndex는 배려 모드일 때만 보낸다. 별칭은 사람이 넣은 것만 보낸다: 넣지 않은 사람은 `null`,
+ * 아무도 넣지 않았으면 필드를 생략한다.
+ */
 export function recommendBody(query: RecommendQuery): RecommendBody {
-  return query.mode === "favor" && query.favorIndex !== null
-    ? { origins: query.origins, mode: query.mode, favorIndex: query.favorIndex }
-    : { origins: query.origins, mode: query.mode };
+  const nicknames = query.origins.map((_, i) => query.nicknames?.[i]?.trim() || null);
+  return {
+    origins: query.origins,
+    mode: query.mode,
+    ...(query.mode === "favor" && query.favorIndex !== null ? { favorIndex: query.favorIndex } : {}),
+    ...(nicknames.some((name) => name !== null) ? { nicknames } : {}),
+  };
 }
 
 export async function recommend(query: RecommendQuery, signal?: AbortSignal): Promise<RecommendResult> {

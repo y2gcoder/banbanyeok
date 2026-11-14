@@ -34,6 +34,8 @@ function toStation([code, name, lineIdx, aliases, supported, lat, lng]: RawStati
 
 const stations: readonly Station[] = (raw.stations as RawStation[]).map(toStation);
 const byCode = new Map(stations.map((s) => [s.code, s]));
+/** 폐기된 코드 → 정식 코드(빌드 때 replacedBy 사슬을 끝까지 따라간 값). */
+const replaced: Readonly<Record<string, string>> = raw.replaced;
 
 let searchable: Searchable[] | null = null;
 function searchIndex(): Searchable[] {
@@ -46,8 +48,9 @@ function searchIndex(): Searchable[] {
   return searchable;
 }
 
+/** 코드로 역을 찾는다. 폐기된 코드(옛 링크·기억한 역)는 정식 역을 돌려준다. */
 export function stationByCode(code: string): Station | undefined {
-  return byCode.get(code);
+  return byCode.get(code) ?? byCode.get(replaced[code] ?? "");
 }
 
 const CHOSEONG_ONLY = /^[ㄱ-ㅎ]+$/;

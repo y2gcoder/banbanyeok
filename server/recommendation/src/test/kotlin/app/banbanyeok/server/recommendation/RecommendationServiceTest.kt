@@ -1,5 +1,6 @@
 package app.banbanyeok.server.recommendation
 
+import app.banbanyeok.applogic.LabelKind
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -48,7 +49,7 @@ class RecommendationServiceTest :
                 result.candidates.size shouldBeLessThanOrEqual 3
             }
 
-            it("uses nicknames in the sentence and A/B/C/D, never a first-person word, when there are none") {
+            it("uses nicknames, or origin labels when there are none, never a first-person word") {
                 val named =
                     service().recommend(
                         RecommendRequest(
@@ -57,8 +58,11 @@ class RecommendationServiceTest :
                         ),
                     )
                 named.candidates.first().reason shouldContain "민수"
+                named.labels.map { it.text } shouldContainExactly listOf("민수", "지연")
                 val anonymous = service().recommend(RecommendRequest(people("03v", "130"), RecommendMode.FAIR))
-                anonymous.candidates.first().reason shouldContain "A"
+                anonymous.labels.map { it.text } shouldContainExactly listOf("03v역에서 오는 분", "130역에서 오는 분")
+                anonymous.labels.map { it.kind } shouldContainExactly listOf(LabelKind.ORIGIN, LabelKind.ORIGIN)
+                anonymous.candidates.first().reason shouldContain "03v역에서 오는 분"
                 anonymous.candidates.map { it.reason }.forEach {
                     it shouldNotContain "나는"
                     it shouldNotContain "나가"
@@ -66,7 +70,10 @@ class RecommendationServiceTest :
                 }
             }
 
-            it("tells identical nicknames apart with the input-order letter") {
+            it("numbers people from the same origin and keeps identical nicknames as they are") {
+                val same = service().recommend(RecommendRequest(people("03v", "03v", "130"), RecommendMode.FAIR))
+                same.labels.map { it.text } shouldContainExactly
+                    listOf("03v역에서 오는 분 1", "03v역에서 오는 분 2", "130역에서 오는 분")
                 val twins =
                     service().recommend(
                         RecommendRequest(
@@ -74,8 +81,23 @@ class RecommendationServiceTest :
                             RecommendMode.FAIR,
                         ),
                     )
-                twins.candidates.first().reason shouldContain "민수(A)"
-                twins.candidates.first().reason shouldNotContain "민수도"
+                twins.labels.map { it.text } shouldContainExactly listOf("민수", "민수")
+            }
+
+            it("never puts a hidden participant's origin into labels or sentences") {
+                val result =
+                    service().recommend(
+                        RecommendRequest(
+                            listOf(
+                                RecommendParticipant("a", null, "03v"),
+                                RecommendParticipant("b", null, "130", hidden = true),
+                            ),
+                            RecommendMode.FAST,
+                        ),
+                    )
+                result.labels.map { it.text } shouldContainExactly listOf("03v역에서 오는 분", "참가자 2")
+                result.labels.map { it.kind } shouldContainExactly listOf(LabelKind.ORIGIN, LabelKind.ORDINAL)
+                result.candidates.map { it.reason }.forEach { it shouldNotContain "130역에서" }
             }
 
             it("treats a blank nickname as none and rejects an invalid one") {
@@ -86,7 +108,7 @@ class RecommendationServiceTest :
                             RecommendMode.FAIR,
                         ),
                     )
-                blank.candidates.first().reason shouldContain "A"
+                blank.labels.first().text shouldBe "03v역에서 오는 분"
                 shouldThrow<RecommendationException> {
                     service().recommend(
                         RecommendRequest(

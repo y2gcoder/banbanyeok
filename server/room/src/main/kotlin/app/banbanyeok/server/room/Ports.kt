@@ -111,6 +111,12 @@ public interface StationCatalog {
     public val dataVersion: String
 
     public fun isOrigin(code: String): Boolean
+
+    /**
+     * 폐기된(deprecated) 코드를 레지스트리의 replacedBy 사슬을 따라 정식(active) 코드로 바꾼다. 정식 코드와 모르는 코드는 그대로다.
+     * 방은 입력을 저장하기 전과 결과를 계산하기 전에 이 값을 쓴다(옛 링크·옛 방이 계속 열리게).
+     */
+    public fun canonical(code: String): String = code
 }
 
 /** ID와 토큰 생성. 테스트는 결정적인 구현을 쓴다. */

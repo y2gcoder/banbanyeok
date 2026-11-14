@@ -51,8 +51,12 @@ class SequentialIdGenerator : IdGenerator {
 class FakeStationCatalog(
     override val dataVersion: String = "20261112.1",
     private val origins: Set<String> = setOf("03v", "130", "225", "31a"),
+    /** 폐기된 코드 → 대체 코드(한 단계). */
+    private val replacedBy: Map<String, String> = emptyMap(),
 ) : StationCatalog {
     override fun isOrigin(code: String): Boolean = code in origins
+
+    override fun canonical(code: String): String = generateSequence(code) { replacedBy[it] }.last()
 }
 
 val testPepper = "test-pepper-0123456789-0123456789".toByteArray()

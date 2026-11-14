@@ -142,6 +142,8 @@ public data class ComputeParticipant(
     val id: String,
     val nickname: String?,
     val originCode: String,
+    /** 출발역을 숨겼다. 계산에는 [originCode]를 쓰지만 표시 이름·문장에는 출발역을 쓰지 않는다. */
+    val hidden: Boolean,
 )
 
 public data class CleanupReport(

@@ -83,7 +83,7 @@ public object SituationAdvisor {
             input.candidates.firstOrNull()
                 ?: return listOf(Notice(NoticeKind.NO_COMMON_CANDIDATE, "모두가 갈 수 있는 역을 찾지 못했어요. 출발역을 바꿔 보세요."))
 
-        val names = DisplayNames.resolve(input.people)
+        val names = ParticipantLabels.of(input.people).map { it.text }
         val topMax = top.timesSeconds.max()
         val codes = input.people.map { it.originCode }
         val allSameOrigin = codes.all { it != null } && codes.toSet().size == 1

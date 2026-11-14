@@ -35,4 +35,10 @@ describe("역 검색", () => {
     expect(gangnam && stationByCode(gangnam.code)?.lines).toContain("2호선");
     expect(gangnam?.geo).not.toBeNull();
   });
+
+  it("폐기된 코드는 replacedBy의 정식 역으로 찾는다(옛 링크)", () => {
+    expect(stationByCode("194")?.code).toBe("nn9"); // 공덕
+    expect(stationByCode("ve5")?.name).toBe("홍대입구");
+    expect(stationByCode("zz0")).toBeUndefined();
+  });
 });

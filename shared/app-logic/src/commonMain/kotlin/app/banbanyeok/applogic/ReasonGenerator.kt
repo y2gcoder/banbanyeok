@@ -2,7 +2,7 @@ package app.banbanyeok.applogic
 
 /**
  * 후보 카드의 "추천 이유" 문장을 만든다. 서버가 한 번 만들어 응답의 `reason`에 넣고, 웹·앱은 그대로 보여 준다.
- * 규칙표는 docs/setup/p6-notes.md. 분 표시는 [DisplayMinutes]의 반올림 규칙을 따른다.
+ * 규칙표는 docs/setup/p6-notes.md. 사람 이름은 [ParticipantLabels], 분 표시는 [DisplayMinutes]의 반올림 규칙을 따른다.
  *
  * 문장 규칙(product-ux 5.2): 해요체, 한 줄(문장 1~3개), 숫자는 분 단위, 비교 대상(2위 또는 1위)을 밝히고,
  * 손해 보는 사람이 있으면 숨기지 않는다.
@@ -266,7 +266,7 @@ public object ReasonGenerator {
     private class View(
         val input: ReasonInput,
     ) {
-        val names: List<String> = DisplayNames.resolve(input.people.map { it.person })
+        val names: List<String> = ParticipantLabels.of(input.people.map { it.person }).map { it.text }
         val n = input.people.size
         val minutes: List<Int> = input.people.map { DisplayMinutes.fromSeconds(it.seconds) }
         private val stats = Stats(minutes)

@@ -67,7 +67,7 @@
 | `sources` | 문자열→문자열 객체 | 기관별 코드(`kric`, `seoul`, `tago`, …). 값은 불투명 문자열 |
 | `addedIn` | 정수 | 처음 들어간 `registryVersion` |
 | `deprecatedIn` | 정수, 선택 | `status=deprecated`일 때만 |
-| `replacedBy` | 코드, 선택 | 이 역을 대체하는 코드. 레지스트리에 존재해야 한다 |
+| `replacedBy` | 코드, 선택 | 이 역을 대체하는 코드. 레지스트리에 존재해야 한다. 소비자(서버·웹 역 인덱스)는 사슬을 따라 `active` 코드까지 가서 그 코드로 계산·표시한다(순환·끊긴 사슬은 파이프라인 게이트가 거부한다) |
 
 **append-only 규칙** (옛 링크 보존, `RegistryCompatibility`와 CI가 검사):
 이전 `main`의 레지스트리에 있던 코드는 새 레지스트리에도 있어야 한다. 코드는 같은 `addedIn`을 유지하고, `status`는 `active → deprecated`로만 바뀐다(되돌림 금지). `registryVersion`은 줄어들지 않는다.
@@ -181,7 +181,7 @@ manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.
 
 **인코더(정규형)**: 파라미터 순서 `v, o, m, n`, 소문자 코드, 퍼센트 인코딩 없이 `.`을 그대로 쓴다.
 **디코더**: 순서 무관, **알 수 없는 키는 무시**(유입 추적용 `utm_*` 등), 값은 먼저 퍼센트 디코딩한 뒤 해석한다(`%2E`도 받는다. 옛 구분자 `|`는 별칭 세그먼트에서 base64url 알파벳 위반이므로 `BAD_NICKNAMES`). 잘못된 퍼센트 이스케이프나 UTF-8은 `MALFORMED_QUERY`. 필수 키(`v`,`o`,`m`) 누락은 `MISSING_PARAM`, 같은 키가 두 번이면 `DUPLICATE_PARAM`. 오류는 하나만 보고하며 검사 순서는 위 표의 `v`→`o`→`m`→`n` 순이다.
-**별칭이 없는 링크가 기본**이다. 화면은 별칭이 없으면 "나/친구1/친구2"로 표시한다.
+**별칭이 없는 링크가 기본**이다. 화면의 사람 이름은 §8 규칙으로 서버가 만든다(별칭이 없으면 "{출발역}에서 오는 분"). 링크의 `o`에 폐기된(`deprecated`) 코드가 있으면 서버와 웹 역 인덱스가 `replacedBy`를 따라 정식 코드로 읽으므로 옛 링크도 열린다.
 
 벡터 예시 (전체는 JSON):
 
@@ -195,3 +195,22 @@ manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.
 | `favor_index_out_of_range` | `v=1&o=03v.130&m=p2` | `FAVOR_INDEX_OUT_OF_RANGE` |
 
 벡터 JSON 형식: `encode[]`는 `{id, input:{origins, mode, favorIndex, nicknames}, expectedQuery}`, `decode[]`는 `{id, query, expected:{origins, mode, favorIndex, nicknames}}` 또는 `{id, query, expectedError}`. `nicknames`는 `null`(별칭 없음) 또는 길이가 `origins`와 같은 배열(빈 별칭은 `null`).
+
+## 8. 참가자 표시 이름 (`label`)
+
+화면과 추천 이유 문장에서 사람을 부르는 이름이다. **서버가 만들어** 응답의 `participants[].label`·`labelKind`에 넣고, 웹·앱은 다시 만들지 않고 그대로 쓴다. 구현은 `shared/app-logic`의 `ParticipantLabels` 한 곳이며(파이프라인의 SEO 문장도 같은 구현을 쓴다), 벡터 [`golden/display-labels.json`](golden/display-labels.json)이 기준이다.
+
+참가자 목록의 순서(`/recommend`는 입력 순서, 방은 참여 순서)대로 한 사람씩 정한다.
+
+| 순서 | 조건 | `label` | `labelKind` |
+|---|---|---|---|
+| 1 | 사람이 이름(별칭)을 넣었다(앞뒤 공백을 빼고 비어 있지 않음) | 그 이름(앞뒤 공백 제거, 나머지는 그대로. 이모지 포함) | `name` |
+| 2 | 이름이 없고 출발역이 보인다 | `{출발역 이름}에서 오는 분`. 이 규칙을 쓰는 사람 중 같은 출발역 이름이 둘 이상이면 입력 순서대로 ` 1`, ` 2`, …를 붙인다 | `origin` |
+| 3 | 이름이 없고 출발역을 숨겼다(또는 출발역 이름을 모른다) | `참가자 {목록 안 순번}`(1부터) | `ordinal` |
+
+- **번호 세기**: 2번 규칙의 번호는 2번 규칙을 쓰는 사람끼리만 센다. 이름을 넣은 사람과 숨긴 사람은 세지 않는다(숨긴 사람이 같은 역에서 온다는 사실이 번호로 드러나지 않게).
+- **보는 사람과 무관**: 같은 방이면 누가 보든 같은 값이다. 출발역을 숨긴 사람은 본인이 볼 때도 `참가자 N`이다.
+- **쓰지 않는 것**: 익명 사용자 ID, 참가자 ID, 토큰 같은 내부 식별자(여러 방에 걸쳐 같은 사람을 이어 볼 수 있게 되므로). "나/너/친구1" 같은 시점 표현. 보는 사람 표시 "(나)"는 클라이언트가 자기 화면에서만 붙인다.
+- 같은 별칭이 둘 이상이어도 구별 글자를 붙이지 않는다. 입력 화면의 "나/친구1" 같은 문구는 입력 칸 안내(placeholder)일 뿐 이름이 아니다.
+
+벡터 JSON 형식: `vectors[]`는 `{id, people:[{name, originName, hidden}], expected:[{label, kind}], note?}`. `name`이 `null`이면 이름 없음, `hidden=true`이면 `originName`을 알아도 쓰지 않는다.

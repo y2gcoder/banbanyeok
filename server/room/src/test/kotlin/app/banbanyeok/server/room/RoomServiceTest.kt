@@ -156,6 +156,24 @@ class RoomServiceTest :
                 }
             }
 
+            it("stores a deprecated station code as its replacement so old links keep working") {
+                RoomFixture(stations = FakeStationCatalog(replacedBy = mapOf("0zz" to "1zz", "1zz" to "130"))).run {
+                    runTest {
+                        val created = service.create(command())
+                        service.join(created.roomId, host("0zz", "지연"), null)
+                        service.get(created.roomId, null).participants.map { it.originCode } shouldContainExactly
+                            listOf("03v", "130")
+                        service
+                            .loadForResult(
+                                created.roomId,
+                                null,
+                            ).computeParticipants
+                            .map { it.originCode } shouldContainExactly
+                            listOf("03v", "130")
+                    }
+                }
+            }
+
             it("accepts the room id in upper case") {
                 roomTest {
                     val created = service.create(command())

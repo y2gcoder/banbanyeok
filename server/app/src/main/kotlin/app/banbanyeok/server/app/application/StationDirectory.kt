@@ -16,6 +16,10 @@ class StationDirectory(
 ) : StationCatalog,
     StationNames {
     private val names: Map<String, String> = dataSet.registry.stations.associate { it.code to it.name }
+    private val replacements: Map<String, String> =
+        dataSet.registry.stations
+            .mapNotNull { station -> station.replacedBy?.let { station.code to it } }
+            .toMap()
     private val travelTimes: TravelTimeProvider = OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion)
     val travel: TravelTimeProvider get() = travelTimes
 
@@ -27,6 +31,13 @@ class StationDirectory(
     override fun isOrigin(code: String): Boolean = travelTimes.isOrigin(code)
 
     override fun nameOf(code: String): String? = names[code]
+
+    /**
+     * 폐기된 코드를 replacedBy 사슬의 끝(active 코드)으로 바꾼다. 사슬의 순환·끊김은 파이프라인 게이트가 막지만, 여기서도
+     * 레지스트리 크기만큼만 따라가 끝나지 않는 일은 없게 한다.
+     */
+    override fun canonical(code: String): String =
+        generateSequence(code) { replacements[it] }.take(replacements.size + 1).last()
 
     /** 출발역 표시 이름. 레지스트리에 없으면 null. */
     fun displayName(code: String?): String? = code?.let(names::get)

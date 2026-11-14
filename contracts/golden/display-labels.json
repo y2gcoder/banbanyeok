@@ -1,0 +1,479 @@
+{
+  "formatVersion": 1,
+  "description": "참가자 표시 이름(label) 테스트 벡터. 규칙: contracts/data-format.md §8. 구현은 shared/app-logic ParticipantLabels 한 곳(서버가 응답에 넣고 웹·앱은 그대로 쓴다). 사람이 고친 규칙 파일이며 생성기가 없다.",
+  "vectors": [
+    {
+      "id": "names_given",
+      "people": [
+        {
+          "name": "민수",
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": "지연",
+          "originName": "홍대입구",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "민수",
+          "kind": "name"
+        },
+        {
+          "label": "지연",
+          "kind": "name"
+        }
+      ]
+    },
+    {
+      "id": "no_names_use_origin",
+      "people": [
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "홍대입구",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "강남에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "홍대입구에서 오는 분",
+          "kind": "origin"
+        }
+      ],
+      "note": "이름이 없는 링크가 기본이다"
+    },
+    {
+      "id": "same_origin_numbered_in_input_order",
+      "people": [
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "강남에서 오는 분 1",
+          "kind": "origin"
+        },
+        {
+          "label": "강남에서 오는 분 2",
+          "kind": "origin"
+        }
+      ]
+    },
+    {
+      "id": "same_origin_among_others",
+      "people": [
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "홍대입구",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "강남에서 오는 분 1",
+          "kind": "origin"
+        },
+        {
+          "label": "홍대입구에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "강남에서 오는 분 2",
+          "kind": "origin"
+        },
+        {
+          "label": "강남에서 오는 분 3",
+          "kind": "origin"
+        }
+      ]
+    },
+    {
+      "id": "named_person_not_counted_for_numbering",
+      "people": [
+        {
+          "name": "민수",
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "민수",
+          "kind": "name"
+        },
+        {
+          "label": "강남에서 오는 분",
+          "kind": "origin"
+        }
+      ],
+      "note": "번호는 출발역 이름을 쓰는 사람끼리만 센다"
+    },
+    {
+      "id": "mixed_name_and_origin",
+      "people": [
+        {
+          "name": null,
+          "originName": "신촌",
+          "hidden": false
+        },
+        {
+          "name": "지연",
+          "originName": "합정",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "잠실",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "신촌에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "지연",
+          "kind": "name"
+        },
+        {
+          "label": "잠실에서 오는 분",
+          "kind": "origin"
+        }
+      ]
+    },
+    {
+      "id": "station_name_ending_with_station",
+      "people": [
+        {
+          "name": null,
+          "originName": "서울역",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "사당",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "서울역에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "사당에서 오는 분",
+          "kind": "origin"
+        }
+      ],
+      "note": "역 이름은 레지스트리의 표시 이름 그대로 쓴다"
+    },
+    {
+      "id": "hidden_participant_uses_ordinal",
+      "people": [
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "홍대입구",
+          "hidden": true
+        }
+      ],
+      "expected": [
+        {
+          "label": "강남에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "참가자 2",
+          "kind": "ordinal"
+        }
+      ],
+      "note": "숨긴 사람의 출발역 이름은 표시 이름에 쓰지 않는다"
+    },
+    {
+      "id": "hidden_same_origin_not_counted",
+      "people": [
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": true
+        }
+      ],
+      "expected": [
+        {
+          "label": "강남에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "참가자 2",
+          "kind": "ordinal"
+        }
+      ],
+      "note": "숨긴 사람을 번호에 세면 같은 역에서 온다는 사실이 드러난다"
+    },
+    {
+      "id": "hidden_between_same_origins",
+      "people": [
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": true
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "강남에서 오는 분 1",
+          "kind": "origin"
+        },
+        {
+          "label": "참가자 2",
+          "kind": "ordinal"
+        },
+        {
+          "label": "강남에서 오는 분 2",
+          "kind": "origin"
+        },
+        {
+          "label": "강남에서 오는 분 3",
+          "kind": "origin"
+        }
+      ]
+    },
+    {
+      "id": "hidden_with_name_uses_name",
+      "people": [
+        {
+          "name": "민수",
+          "originName": "강남",
+          "hidden": true
+        },
+        {
+          "name": null,
+          "originName": "홍대입구",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "민수",
+          "kind": "name"
+        },
+        {
+          "label": "홍대입구에서 오는 분",
+          "kind": "origin"
+        }
+      ]
+    },
+    {
+      "id": "all_hidden",
+      "people": [
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": true
+        },
+        {
+          "name": null,
+          "originName": "홍대입구",
+          "hidden": true
+        },
+        {
+          "name": null,
+          "originName": "잠실",
+          "hidden": true
+        }
+      ],
+      "expected": [
+        {
+          "label": "참가자 1",
+          "kind": "ordinal"
+        },
+        {
+          "label": "참가자 2",
+          "kind": "ordinal"
+        },
+        {
+          "label": "참가자 3",
+          "kind": "ordinal"
+        }
+      ],
+      "note": "순번은 방 안 순서(1부터)다"
+    },
+    {
+      "id": "unknown_origin_uses_ordinal",
+      "people": [
+        {
+          "name": null,
+          "originName": null,
+          "hidden": false
+        },
+        {
+          "name": null,
+          "originName": "강남",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "참가자 1",
+          "kind": "ordinal"
+        },
+        {
+          "label": "강남에서 오는 분",
+          "kind": "origin"
+        }
+      ],
+      "note": "출발역 이름을 모르면 숨긴 것과 같이 다룬다"
+    },
+    {
+      "id": "emoji_nickname_kept",
+      "people": [
+        {
+          "name": "🎂🎂",
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": "👩‍👩‍👧",
+          "originName": "잠실",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "🎂🎂",
+          "kind": "name"
+        },
+        {
+          "label": "👩‍👩‍👧",
+          "kind": "name"
+        }
+      ],
+      "note": "별칭은 바꾸지 않는다(코드포인트 20자 검사는 입력 검증의 몫)"
+    },
+    {
+      "id": "nickname_trimmed_and_blank_ignored",
+      "people": [
+        {
+          "name": "  민수 ",
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": "   ",
+          "originName": "홍대입구",
+          "hidden": false
+        },
+        {
+          "name": "",
+          "originName": "잠실",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "민수",
+          "kind": "name"
+        },
+        {
+          "label": "홍대입구에서 오는 분",
+          "kind": "origin"
+        },
+        {
+          "label": "잠실에서 오는 분",
+          "kind": "origin"
+        }
+      ],
+      "note": "공백만 있는 이름은 없는 것으로 본다"
+    },
+    {
+      "id": "same_nickname_kept_as_is",
+      "people": [
+        {
+          "name": "민수",
+          "originName": "강남",
+          "hidden": false
+        },
+        {
+          "name": "민수",
+          "originName": "잠실",
+          "hidden": false
+        }
+      ],
+      "expected": [
+        {
+          "label": "민수",
+          "kind": "name"
+        },
+        {
+          "label": "민수",
+          "kind": "name"
+        }
+      ],
+      "note": "같은 이름에 구별 글자를 붙이지 않는다"
+    }
+  ]
+}

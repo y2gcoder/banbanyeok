@@ -7,6 +7,8 @@
  * "출발 가능"은 od.bin 출발역 축에 있는 역이다. 서버가 계산할 수 있는 출발역만 고르게 하고,
  * 나머지는 검색에 보이되 "아직 수도권 지하철역만 계산할 수 있어요"로 안내한다.
  * 좌표는 지도 앱 길찾기 링크(카카오맵 웹)에만 쓰며 출발 가능 역·후보역만 담는다(소수 5자리 ≈ 1m).
+ * `replaced`는 폐기된 코드 → 정식(active) 코드다. replacedBy 사슬을 끝까지 따라간 값이라 옛 링크·기억한 역이 계속 열린다
+ * (contracts/data-format.md §3).
  *
  * 사용: pnpm gen:stations  (CI는 재생성 후 git diff로 커밋본과 비교한다)
  */
@@ -79,6 +81,7 @@ type RegistryStation = {
   lng: number;
   lines: string[];
   aliases: string[];
+  replacedBy?: string;
 };
 
 function decodeCode(value: number): string {
@@ -136,14 +139,30 @@ const stations = registry.stations
 
 for (const raw of unknownLines) console.warn(`알 수 없는 노선명(그대로 씀): ${raw}`);
 
+/** 폐기된 코드를 사슬 끝의 active 코드로. 순환·끊김은 파이프라인 게이트가 막지만 여기서도 실패로 멈춘다. */
+const byCode = new Map(registry.stations.map((s) => [s.code, s]));
+function activeCode(start: RegistryStation): string {
+  let station = start;
+  for (let step = 0; station.status !== "active"; step++) {
+    const next = station.replacedBy === undefined ? undefined : byCode.get(station.replacedBy);
+    if (!next || step > registry.stations.length) throw new Error(`replacedBy 사슬이 active 역에 닿지 않음: ${start.code}`);
+    station = next;
+  }
+  return station.code;
+}
+const replaced = Object.fromEntries(
+  registry.stations.filter((s) => s.status === "deprecated" && s.replacedBy).map((s) => [s.code, activeCode(s)]),
+);
+
 const body = {
   "//": "pnpm gen:stations가 만든 파일. 직접 고치지 않는다.",
   registryVersion: registry.registryVersion,
   dataVersion: manifest.dataVersion,
   lines: lineTable,
   stations,
+  replaced,
 };
 writeFileSync(out, `${JSON.stringify(body)}\n`);
 process.stdout.write(
-  `stations: ${stations.length} (출발 가능 ${origins.size}), lines: ${lineTable.length}, bytes: ${JSON.stringify(body).length}\n`,
+  `stations: ${stations.length} (출발 가능 ${origins.size}), replaced: ${Object.keys(replaced).length}, lines: ${lineTable.length}, bytes: ${JSON.stringify(body).length}\n`,
 );

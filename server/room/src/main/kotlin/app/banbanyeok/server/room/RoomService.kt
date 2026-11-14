@@ -87,7 +87,14 @@ public class RoomService(
         val selfId = (caller(stored, viewerToken) as? Caller.Member)?.participantId
         return RoomResultContext(
             viewOf(stored, selfId),
-            stored.participants.map { ComputeParticipant(it.id, it.nickname, it.originCode) },
+            stored.participants.map {
+                ComputeParticipant(
+                    it.id,
+                    it.nickname,
+                    stations.canonical(it.originCode),
+                    it.hidden,
+                )
+            },
         )
     }
 
@@ -254,7 +261,7 @@ public class RoomService(
                         id = it.id,
                         nickname = it.nickname,
                         hidden = it.hidden,
-                        originCode = if (!it.hidden || it.id == selfId) it.originCode else null,
+                        originCode = if (!it.hidden || it.id == selfId) stations.canonical(it.originCode) else null,
                         isHost = it.id == room.hostParticipantId,
                         isSelf = it.id == selfId,
                     )
@@ -314,8 +321,9 @@ public class RoomService(
                     nickname.none { Character.isISOControl(it) }
             if (!valid) reject(RoomError.INVALID_NICKNAME, "별칭이 올바르지 않습니다")
         }
-        if (!stations.isOrigin(input.originCode)) reject(RoomError.INVALID_STATION, "알 수 없는 출발역입니다")
-        return input.copy(nickname = nickname)
+        val originCode = stations.canonical(input.originCode)
+        if (!stations.isOrigin(originCode)) reject(RoomError.INVALID_STATION, "알 수 없는 출발역입니다")
+        return input.copy(nickname = nickname, originCode = originCode)
     }
 
     private fun newParticipant(
