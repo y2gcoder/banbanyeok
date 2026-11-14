@@ -8,7 +8,7 @@ name: deploy-server
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, y2gcoder/p8a2-coldstart]  # TEMP-BRANCH-TRIGGER: 콜드스타트 실험 배포용, PR 최종 전에 제거
     paths:
       - 'server/**'          # server/db/changelog 포함
       - 'contracts/**'

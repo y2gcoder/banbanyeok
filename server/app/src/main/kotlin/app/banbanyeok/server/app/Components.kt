@@ -43,21 +43,24 @@ class Components(
  */
 object CompositionRoot {
     /**
+     * 시계는 항상 UTC 시스템 시계다(서비스 단위 테스트가 가짜 시계를 쓴다).
      * @param store 테스트가 저장소를 바꿔 끼울 때만 넘긴다. 없으면 설정이 고른다(로컬 파일 또는 GCS).
      * @param database 테스트가 이미 만든 DB를 넘길 때만 쓴다. 없으면 설정으로 연결하고 [Components.close]가 닫는다.
      */
     suspend fun create(
         config: AppConfig,
-        clock: Clock = Clock.systemUTC(),
         ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-        store: ArtifactStore = artifactStore(config, ioDispatcher),
+        timeline: StartupTimeline? = null,
+        store: ArtifactStore = artifactStore(config, ioDispatcher).also { timeline?.mark("artifact-store-created") },
         database: ConnectedDatabase? = null,
     ): Components {
-        val loaded = ArtifactLoader(store).load()
+        val loaded = ArtifactLoader(store) { timeline?.mark(it) }.load()
         val directory = StationDirectory(loaded.dataSet)
         val owned = if (database == null) DatabaseFactory.connect(config.database) else null
         val db = (database ?: requireNotNull(owned)).database
+        timeline?.mark("database-pool-created")
 
+        val clock = Clock.systemUTC()
         val ids = SecureRandomIdGenerator()
         val tokens = TokenService(config.tokenPepper.toByteArray(Charsets.UTF_8), ids)
         val roomRepository = ExposedRoomRepository(db, ioDispatcher)
@@ -73,6 +76,7 @@ object CompositionRoot {
                 directory = directory,
                 published = PublishedArtifacts(store, loaded),
             )
+        timeline?.mark("services-assembled")
         return Components(config, clock, services, RoomCleanup(roomRepository, anonRepository, clock)) {
             owned?.close()
         }
