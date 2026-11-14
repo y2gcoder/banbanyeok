@@ -1,6 +1,8 @@
 package app.banbanyeok.server.app
 
 import org.slf4j.LoggerFactory
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * 콜드스타트 단계별 경과 시간(ms)을 기록한다. 값은 시간 숫자와 단계 이름뿐이고 설정·비밀은 싣지 않는다.
@@ -23,6 +25,7 @@ class StartupTimeline(
     private val log by lazy { LoggerFactory.getLogger("startup") }
     private val pending = ArrayDeque<Entry>()
     private var last = startMillis
+    private val loggingReady = CountDownLatch(1)
     private var flushed = false
     private var announced = false
 
@@ -32,6 +35,20 @@ class StartupTimeline(
         pending.addLast(Entry(phase, now - startMillis, now - last))
         last = now
         if (flushed) drain()
+    }
+
+    /**
+     * 로깅 초기화가 끝났음을 알린다(main 스레드가 첫 로그를 남긴 직후). SLF4J는 두 스레드가 동시에 처음 초기화하면 호출을 가로채
+     * 경고를 내고 줄을 잃을 수 있어서, 조립 스레드는 로거를 쓰는 일(DB 풀 등)을 [awaitLoggingReady] 뒤에 한다.
+     */
+    fun markLoggingReady() {
+        mark("logging-ready")
+        loggingReady.countDown()
+    }
+
+    /** [markLoggingReady]까지 기다린다. main이 실패해 알리지 못해도 멈추지 않게 제한 시간이 있다. */
+    fun awaitLoggingReady() {
+        loggingReady.await(LOGGING_WAIT_SECONDS, TimeUnit.SECONDS)
     }
 
     /** 지금까지의 표시를 로그로 내보내고 이후 표시는 바로 남긴다. 로깅이 준비된 뒤에 부른다. */
@@ -48,5 +65,9 @@ class StartupTimeline(
             announced = true
             log.info("startup phase={} sinceMainMs={} phaseMs={}{}", e.phase, e.sinceMainMs, e.phaseMs, first)
         }
+    }
+
+    private companion object {
+        const val LOGGING_WAIT_SECONDS = 10L
     }
 }

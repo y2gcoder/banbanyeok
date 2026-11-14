@@ -28,12 +28,13 @@ public class ConnectedDatabase(
 
     /**
      * 첫 연결(TLS·인증 왕복)을 별도 스레드에서 미리 맺어 둔다. 콜드스타트 때 산출물 읽기와 겹쳐 돌아서, 첫 방 요청이 이 비용
-     * (Supabase 풀러 기준 약 0.5초)을 치르지 않는다. 최선 노력이라 실패해도 무시한다(첫 요청이 다시 시도한다).
+     * (Supabase 풀러 기준 약 0.5초)을 치르지 않는다. 최선 노력이라 실패해도 무시하고(첫 요청이 다시 시도한다) [onSuccess]는
+     * 연결이 실제로 맺어져 유효할 때만 부른다.
      */
-    public fun warmUp(onDone: () -> Unit = {}) {
+    public fun warmUp(onSuccess: () -> Unit = {}) {
         thread(name = "db-warmup", isDaemon = true) {
             runCatching { dataSource.connection.use { it.isValid(WARMUP_VALID_SECONDS) } }
-            onDone()
+                .onSuccess { valid -> if (valid) onSuccess() }
         }
     }
 

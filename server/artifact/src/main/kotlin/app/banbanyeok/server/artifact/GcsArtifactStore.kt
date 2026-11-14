@@ -30,7 +30,8 @@ public class GcsArtifactStore(
     private val ioDispatcher: CoroutineDispatcher,
     prefix: String = "",
     private val endpoint: String? = null,
-    private val tokens: MetadataTokenProvider = MetadataTokenProvider(),
+    /** 인증 토큰 제공자. 기본은 운영(엔드포인트가 없을 때) 메타데이터 서버, 에뮬레이터 주소가 있으면 없음(인증 안 함). */
+    private val tokens: MetadataTokenProvider? = if (endpoint == null) MetadataTokenProvider() else null,
     /** 첫 요청의 단계 시간 측정용 훅(단계 이름뿐). */
     private val onPhase: (String) -> Unit = {},
 ) : ArtifactStore {
@@ -47,7 +48,7 @@ public class GcsArtifactStore(
      * 연결을 다음 요청에 재사용한다. 최선 노력이라 실패해도 무시한다. 에뮬레이터 주소가 있으면 하지 않는다.
      */
     public fun warmUp() {
-        if (endpoint != null) return
+        if (tokens == null) return
         thread(name = "gcs-warmup", isDaemon = true) {
             runCatching {
                 val connection = URI.create("$apiBase/").toURL().openConnection() as HttpURLConnection
@@ -79,7 +80,10 @@ public class GcsArtifactStore(
                 when (code) {
                     HTTP_OK -> {
                         // 한 응답 안에서 내용과 generation이 함께 오므로 읽는 도중 덮어써도 서로 어긋나지 않는다.
-                        val generation = connection.getHeaderField("x-goog-generation").orEmpty()
+                        // generation이 없으면 ABSENT(빈 값)로 오해해 조건부 쓰기가 틀어지므로 실패시킨다.
+                        val generation =
+                            connection.getHeaderField("x-goog-generation")?.takeIf { it.isNotBlank() }
+                                ?: error("응답에 x-goog-generation 헤더가 없습니다(다시 시도하지 않음): $key")
                         StoredArtifact(key, connection.inputStream.use { it.readBytes() }, ArtifactVersion(generation))
                     }
 
@@ -177,7 +181,7 @@ public class GcsArtifactStore(
         connection.requestMethod = method
         connection.connectTimeout = TIMEOUT_MS
         connection.readTimeout = TIMEOUT_MS
-        if (endpoint == null) {
+        if (tokens != null) {
             val token = tokens.token()
             if (!tokenReported) {
                 tokenReported = true
@@ -188,14 +192,24 @@ public class GcsArtifactStore(
         return connection
     }
 
-    /** 5xx와 연결 오류만 짧게 다시 시도한다(최대 [ATTEMPTS]번). */
+    /**
+     * 일시적 오류만 짧게 다시 시도한다(최대 [ATTEMPTS]번): 연결 오류, 5xx, 408(요청 시간 초과), 429(속도 제한).
+     * 401이면 캐시된 토큰이 무효일 수 있으니 토큰을 비우고 한 번만 다시 시도한다.
+     */
     private fun <T> retrying(block: () -> T): T {
         var last: Exception? = null
+        var tokenRefreshed = false
         repeat(ATTEMPTS) { attempt ->
             try {
                 return block()
             } catch (e: TransientHttpException) {
-                if (e.code < HTTP_SERVER_ERROR) throw IOException("GCS 읽기 실패(${e.code}): ${e.body}", e)
+                val refreshable = e.code == HTTP_UNAUTHORIZED && tokens != null && !tokenRefreshed
+                if (refreshable) {
+                    tokenRefreshed = true
+                    tokens.invalidate()
+                } else if (!isRetryable(e.code)) {
+                    throw IOException("GCS 읽기 실패(${e.code}): ${e.body}", e)
+                }
                 last = e
             } catch (e: IOException) {
                 last = e
@@ -204,6 +218,9 @@ public class GcsArtifactStore(
         }
         throw IOException("GCS 요청이 계속 실패했습니다", last)
     }
+
+    private fun isRetryable(code: Int): Boolean =
+        code >= HTTP_SERVER_ERROR || code == HTTP_REQUEST_TIMEOUT || code == HTTP_TOO_MANY_REQUESTS
 
     private class TransientHttpException(
         val code: Int,
@@ -231,7 +248,10 @@ public class GcsArtifactStore(
     private companion object {
         const val DEFAULT_ENDPOINT = "https://storage.googleapis.com"
         const val HTTP_OK = 200
+        const val HTTP_UNAUTHORIZED = 401
+        const val HTTP_REQUEST_TIMEOUT = 408
         const val HTTP_NOT_FOUND = 404
+        const val HTTP_TOO_MANY_REQUESTS = 429
         const val HTTP_PRECONDITION_FAILED = 412
         const val HTTP_SERVER_ERROR = 500
         const val HTTP_ERROR_FLOOR = 400

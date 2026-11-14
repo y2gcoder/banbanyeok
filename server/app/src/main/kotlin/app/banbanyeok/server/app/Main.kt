@@ -32,12 +32,12 @@ fun main(args: Array<String>) {
         } catch (e: ConfigException) {
             fail(e.message.orEmpty())
         }
-    // 산출물 읽기·DB 풀 준비(GCS 클라이언트·인증·네트워크 왕복)를 별도 스레드에서 바로 시작하고, 그동안 이 스레드는 로깅 초기화를 한다
-    // (콜드스타트 단축: 두 일이 겹친다). 결과는 아래에서 기다린다.
+    // 산출물 읽기(GCS 토큰·TLS·왕복, 로거를 쓰지 않음)를 별도 스레드에서 바로 시작하고, 그동안 이 스레드는 로깅 초기화를 한다
+    // (콜드스타트 단축: 두 일이 겹친다). 로거를 쓰는 DB 풀 준비는 로깅이 준비된 뒤에 한다(SLF4J 초기화 경합 방지). 결과는 아래에서 기다린다.
     val assembly = startAssembly(config, timeline)
     logger.info("시작 중: 명령 {}", command) // 로깅 초기화를 여기서 한다(시작 작업과 겹친다)
-    timeline.mark("logging-ready")
-    val components = awaitAssembly(assembly)
+    timeline.markLoggingReady() // 조립 스레드는 이것을 기다린 뒤에야 로거를 쓰는 일을 한다
+    val components = awaitAssembly(assembly, timeline)
     timeline.flush()
     when (command) {
         "serve" -> serve(components, timeline)
@@ -57,8 +57,12 @@ private fun startAssembly(
     return future
 }
 
-private fun awaitAssembly(assembly: CompletableFuture<Result<Components>>): Components =
+private fun awaitAssembly(
+    assembly: CompletableFuture<Result<Components>>,
+    timeline: StartupTimeline,
+): Components =
     assembly.get().getOrElse { e ->
+        timeline.flush() // 시작 실패 때도 어디까지 갔는지 단계 시간을 남긴다
         if (e is ArtifactLoadException) fail("산출물을 불러오지 못해 시작하지 않습니다: ${e.message}") else throw e
     }
 

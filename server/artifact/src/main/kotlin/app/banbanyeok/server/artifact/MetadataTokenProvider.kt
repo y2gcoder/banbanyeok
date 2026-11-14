@@ -21,6 +21,13 @@ public class MetadataTokenProvider(
     private var cached: String? = null
     private var expiresAtMillis = 0L
 
+    /** 캐시된 토큰을 버린다(서버가 401로 거절했을 때). 다음 [token] 호출이 새로 받는다. */
+    @Synchronized
+    public fun invalidate() {
+        cached = null
+        expiresAtMillis = 0L
+    }
+
     @Synchronized
     public fun token(): String {
         val now = clock.millis()

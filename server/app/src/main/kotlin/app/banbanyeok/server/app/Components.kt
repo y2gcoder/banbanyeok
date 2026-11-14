@@ -22,6 +22,8 @@ import app.banbanyeok.server.room.exposed.ExposedAnonUserRepository
 import app.banbanyeok.server.room.exposed.ExposedRoomRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.nio.file.Path
 import java.time.Clock
 
@@ -54,37 +56,41 @@ object CompositionRoot {
         store: ArtifactStore =
             artifactStore(config, ioDispatcher, timeline).also { timeline?.mark("artifact-store-created") },
         database: ConnectedDatabase? = null,
-    ): Components {
-        timeline?.mark("assembly-started")
-        // DB 풀을 먼저 만들고 첫 연결을 뒤에서 맺기 시작한다(산출물 읽기와 겹침).
-        val owned = if (database == null) DatabaseFactory.connect(config.database) else null
-        owned?.warmUp { timeline?.mark("database-connection-warm") }
-        val db = (database ?: requireNotNull(owned)).database
-        timeline?.mark("database-pool-created")
-        val loaded = ArtifactLoader(store) { timeline?.mark(it) }.load()
-        val directory = StationDirectory(loaded.dataSet)
+    ): Components =
+        coroutineScope {
+            timeline?.mark("assembly-started")
+            // 산출물 읽기는 IO 스레드에서 바로 시작한다(로거를 쓰지 않는다). DB 풀(Hikari는 로거를 쓴다)은 로깅 초기화가 끝난 뒤에 만들고
+            // 첫 연결을 뒤에서 맺기 시작한다. 둘은 겹쳐서 돈다.
+            val loading = async(ioDispatcher) { ArtifactLoader(store) { timeline?.mark(it) }.load() }
+            timeline?.awaitLoggingReady()
+            val owned = if (database == null) DatabaseFactory.connect(config.database) else null
+            owned?.warmUp { timeline?.mark("database-connection-warm") }
+            val db = (database ?: requireNotNull(owned)).database
+            timeline?.mark("database-pool-created")
+            val loaded = loading.await()
+            val directory = StationDirectory(loaded.dataSet)
 
-        val clock = Clock.systemUTC()
-        val ids = SecureRandomIdGenerator()
-        val tokens = TokenService(config.tokenPepper.toByteArray(Charsets.UTF_8), ids)
-        val roomRepository = ExposedRoomRepository(db, ioDispatcher)
-        val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
-        val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
-        val recommendation = RecommendationService(directory.travel, directory)
-        val services =
-            ApiServices(
-                anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
-                rooms = rooms,
-                results = RoomResultService(rooms, recommendation),
-                recommendation = recommendation,
-                directory = directory,
-                published = PublishedArtifacts(store, loaded),
-            )
-        timeline?.mark("services-assembled")
-        return Components(config, clock, services, RoomCleanup(roomRepository, anonRepository, clock)) {
-            owned?.close()
+            val clock = Clock.systemUTC()
+            val ids = SecureRandomIdGenerator()
+            val tokens = TokenService(config.tokenPepper.toByteArray(Charsets.UTF_8), ids)
+            val roomRepository = ExposedRoomRepository(db, ioDispatcher)
+            val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
+            val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
+            val recommendation = RecommendationService(directory.travel, directory)
+            val services =
+                ApiServices(
+                    anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
+                    rooms = rooms,
+                    results = RoomResultService(rooms, recommendation),
+                    recommendation = recommendation,
+                    directory = directory,
+                    published = PublishedArtifacts(store, loaded),
+                )
+            timeline?.mark("services-assembled")
+            Components(config, clock, services, RoomCleanup(roomRepository, anonRepository, clock)) {
+                owned?.close()
+            }
         }
-    }
 
     private fun artifactStore(
         config: AppConfig,
