@@ -82,6 +82,16 @@ export interface EventProperties {
     participant_count: number;
     person_position: number;
   };
+  room_created: {
+    participant_count_expected?: number;
+    hidden_used: boolean;
+    room_hash?: string;
+  };
+  participant_joined: {
+    hidden: boolean;
+    seconds_since_room_created?: number;
+    room_hash?: string;
+  };
   map_app_opened: {
     app: "kakao" | "naver";
     rank: number;
@@ -144,6 +154,16 @@ export const EVENT_SPECS = {
   link_person_selected: {
     participant_count: { type: "integer", required: true, min: 2, max: 4 },
     person_position: { type: "integer", required: true, min: 0, max: 3 },
+  },
+  room_created: {
+    participant_count_expected: { type: "integer", required: false, min: 2, max: 4 },
+    hidden_used: { type: "boolean", required: true },
+    room_hash: { type: "string", required: false },
+  },
+  participant_joined: {
+    hidden: { type: "boolean", required: true },
+    seconds_since_room_created: { type: "integer", required: false, min: 0 },
+    room_hash: { type: "string", required: false },
   },
   map_app_opened: {
     app: { type: "enum", required: true, values: ["kakao", "naver"] },

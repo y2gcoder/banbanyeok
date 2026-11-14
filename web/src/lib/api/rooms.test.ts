@@ -1,0 +1,113 @@
+/**
+ * 방 API 호출이 계약대로(경로·메서드·헤더) 나가는지. 토큰은 `Authorization` 헤더에만 있고 URL·본문에는 없어야 한다.
+ */
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiRequestError } from "./client";
+import {
+  answerOutcome,
+  createRoom,
+  deleteRoom,
+  getRoom,
+  getRoomResult,
+  joinRoom,
+  removeParticipant,
+  updateParticipant,
+  updateRoom,
+} from "./rooms";
+
+const ROOM = "qt7yvmsht3";
+const SECRET = "tok_SECRET_value_123";
+
+type Sent = { url: URL; method: string; headers: Headers; body: string };
+let sent: Sent[] = [];
+let respond: () => Response = () => new Response(null, { status: 204 });
+
+beforeEach(() => {
+  sent = [];
+  respond = () => new Response(null, { status: 204 });
+  vi.stubGlobal("fetch", async (input: Request) => {
+    sent.push({
+      url: new URL(input.url),
+      method: input.method,
+      headers: input.headers,
+      body: await input.clone().text(),
+    });
+    return respond();
+  });
+});
+afterEach(() => vi.unstubAllGlobals());
+
+const json = (status: number, body: unknown) => () =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+
+describe("방 API 호출", () => {
+  it("방 만들기: POST /rooms, Idempotency-Key, 토큰 없음", async () => {
+    respond = json(201, { roomId: ROOM, hostToken: "h", participantId: "p", participantToken: "t", expiresAt: "x" });
+    await createRoom({ mode: "fair", host: { originCode: "03v", hidden: false } }, "key-1");
+    const [call] = sent;
+    expect(call?.method).toBe("POST");
+    expect(call?.url.pathname).toBe("/v1/rooms");
+    expect(call?.headers.get("idempotency-key")).toBe("key-1");
+    expect(call?.headers.get("authorization")).toBeNull();
+  });
+
+  it("방 조회: 참여자 토큰은 헤더로만, 없으면 헤더 없음", async () => {
+    respond = json(200, { roomId: ROOM, participants: [] });
+    await getRoom(ROOM, SECRET);
+    await getRoom(ROOM, null);
+    expect(sent[0]?.headers.get("authorization")).toBe(`Bearer ${SECRET}`);
+    expect(sent[1]?.headers.get("authorization")).toBeNull();
+    for (const call of sent) expect(call.url.toString()).not.toContain(SECRET);
+  });
+
+  it("참여: POST /rooms/{id}/participants, Idempotency-Key, 본문에 토큰 없음", async () => {
+    respond = json(201, { participantId: "p", participantToken: "t" });
+    await joinRoom(ROOM, { originCode: "03v", hidden: true, nickname: "민수" }, "key-2");
+    const [call] = sent;
+    expect(call?.url.pathname).toBe(`/v1/rooms/${ROOM}/participants`);
+    expect(call?.headers.get("idempotency-key")).toBe("key-2");
+    expect(JSON.parse(call?.body ?? "{}")).toEqual({ originCode: "03v", hidden: true, nickname: "민수" });
+  });
+
+  it("수정·삭제·내보내기·방 설정·방 삭제·결과·outcome: 올바른 메서드와 경로, 토큰은 Authorization 헤더에만", async () => {
+    respond = json(200, {});
+    await updateParticipant(ROOM, "pid", SECRET, { originCode: "03v", hidden: false });
+    respond = () => new Response(null, { status: 204 });
+    await removeParticipant(ROOM, "pid", SECRET);
+    respond = json(200, {});
+    await updateRoom(ROOM, SECRET, { locked: true });
+    respond = () => new Response(null, { status: 204 });
+    await deleteRoom(ROOM, SECRET);
+    respond = json(200, {});
+    await getRoomResult(ROOM, { mode: "favor", favor: "pid" }, SECRET);
+    respond = () => new Response(null, { status: 204 });
+    await answerOutcome(ROOM, SECRET, { outcome: "other", stationCode: "03v" });
+
+    expect(sent.map((c) => `${c.method} ${c.url.pathname}${c.url.search}`)).toEqual([
+      `PUT /v1/rooms/${ROOM}/participants/pid`,
+      `DELETE /v1/rooms/${ROOM}/participants/pid`,
+      `PATCH /v1/rooms/${ROOM}`,
+      `DELETE /v1/rooms/${ROOM}`,
+      `GET /v1/rooms/${ROOM}/result?mode=favor&favor=pid`,
+      `POST /v1/rooms/${ROOM}/outcome`,
+    ]);
+    for (const call of sent) {
+      expect(call.headers.get("authorization")).toBe(`Bearer ${SECRET}`);
+      expect(call.url.toString()).not.toContain(SECRET);
+      expect(call.body).not.toContain(SECRET);
+    }
+  });
+
+  it("오류는 계약의 {code, message}로 ApiRequestError가 된다(204 응답은 오류가 아니다)", async () => {
+    respond = json(409, { code: "ROOM_FULL", message: "방이 가득 찼습니다" });
+    await expect(joinRoom(ROOM, { originCode: "03v", hidden: false }, "k")).rejects.toMatchObject({
+      status: 409,
+      code: "ROOM_FULL",
+      name: "ApiRequestError",
+    });
+    respond = json(404, { code: "ROOM_NOT_FOUND", message: "없음" });
+    await expect(removeParticipant(ROOM, "pid", SECRET)).rejects.toBeInstanceOf(ApiRequestError);
+    respond = () => new Response(null, { status: 204 });
+    await expect(removeParticipant(ROOM, "pid", SECRET)).resolves.toBeUndefined();
+  });
+});

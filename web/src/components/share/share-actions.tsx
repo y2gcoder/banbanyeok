@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { track } from "@/lib/analytics";
 
-/** path는 `/s?...`. 출처는 브라우저에서 붙인다(서버 렌더링에는 window가 없다). */
-type Props = { path: string; title: string; text: string };
+/**
+ * path는 `/s?...`(혼자 입력한 결과) 또는 `/r/<방 ID>`(방). 출처는 브라우저에서 붙인다(서버 렌더링에는 window가 없다).
+ * `linkType`은 통계 이벤트의 링크 종류다. 방 링크라도 방 ID는 통계에 보내지 않는다.
+ */
+type Props = { path: string; title: string; text: string; linkType?: "url_state" | "room" };
 
 const absolute = (path: string) => new URL(path, window.location.origin).toString();
 
@@ -24,20 +27,20 @@ async function copy(text: string): Promise<boolean> {
  * 공유: 시스템 공유 시트(navigator.share, 카톡을 고른다)가 기본이고, 없으면 링크 복사 대화상자를 연다.
  * 카카오 SDK 공유(앱 키 필요)는 이번 범위가 아니다.
  */
-export function ShareActions({ path, title, text }: Props) {
+export function ShareActions({ path, title, text, linkType = "url_state" }: Props) {
   // 대체 대화상자에 보여 줄 링크. null이면 닫힘. 브라우저에서만 만든다.
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
-    track("share_clicked", { channel: "copy", link_type: "url_state" });
+    track("share_clicked", { channel: "copy", link_type: linkType });
     const ok = await copy(absolute(path));
     setCopied(ok);
     if (!ok) setFallbackUrl(absolute(path));
   };
 
   const shareToKakao = async () => {
-    track("share_clicked", { channel: "system", link_type: "url_state" });
+    track("share_clicked", { channel: "system", link_type: linkType });
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ title, text, url: absolute(path) });

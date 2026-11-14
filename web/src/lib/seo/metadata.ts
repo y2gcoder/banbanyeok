@@ -127,3 +127,38 @@ export function sharedLinkMetadata(
     twitter: { card: "summary_large_image", title: fullTitle, description: preview.description, images },
   };
 }
+
+const ROOM_TITLE = "같이 만날 역 정해요";
+const ROOM_DESCRIPTION =
+  "각자 출발역을 넣으면 모두에게 공평한 만날 역을 지하철 시간으로 계산해요. 출발역은 숨길 수도 있어요.";
+
+/**
+ * 방 링크(`/r/<방 ID>`, 방 만들기 `/r/new`)의 미리보기. **방 ID·참여자 정보를 쓰지 않는 일반 문구**다: 서버를 부르지 않고(방 ID만으로는
+ * 어떤 방인지 알 수 없게), 숨기기를 지키며(이름·출발역 없음), 요청마다 이미지를 그리지 않는다(Workers CPU). 색인하지 않는다.
+ */
+export function roomLinkMetadata(): Metadata {
+  const fullTitle = `${ROOM_TITLE} | ${SITE_NAME}`;
+  // 사이트 기본 미리보기 이미지(빌드 때 만든 정적 PNG). `openGraph`를 하위 페이지가 정의하면 부모의 이미지가 사라지므로 직접 가리킨다.
+  const images = [
+    {
+      url: "/opengraph-image",
+      width: OG_WIDTH,
+      height: OG_HEIGHT,
+      alt: `${SITE_NAME}: 우리 어디서 만나야 덜 억울할까?`,
+    },
+  ];
+  return {
+    robots: { index: false, follow: false },
+    title: ROOM_TITLE,
+    description: ROOM_DESCRIPTION,
+    openGraph: {
+      type: "website",
+      siteName: SITE_NAME,
+      locale: "ko_KR",
+      title: fullTitle,
+      description: ROOM_DESCRIPTION,
+      images,
+    },
+    twitter: { card: "summary_large_image", title: fullTitle, description: ROOM_DESCRIPTION, images },
+  };
+}
