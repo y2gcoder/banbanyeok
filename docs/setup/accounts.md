@@ -19,7 +19,7 @@
 | 상태 | 계정 / 키 | 왜 필요한가 | 1Password 항목 | 비용 | 메모 |
 |---|---|---|---|---|---|
 | ✅ | GCP 프로젝트 `banbanyeok-7eoxn` + 전용 결제 계정 `banbanyeok` | Cloud Run(서버), GCS(데이터 산출물), Secret Manager, WIF(키 없는 배포) | `gcp-project` (프로젝트 ID만) | 무료 구간 내 0원 목표 | 2026-11-13 완료. 예산 알림 월 5천 원(50·90·100%, 예측 100%). gcloud 구성 `banbanyeok`(서울 리전), 저장소 폴더에서는 `mise.local.toml`로 자동 선택. API: run, artifactregistry, secretmanager, storage, iamcredentials, sts, billingbudgets |
-| ⬜ | Postgres (Neon 또는 서울 리전 후보) | 방, 참여자, 익명 사용자 | `db-url-prod`, `db-url-dev` | 무료 | **리전은 S0에서 결정** (서버가 서울이라 서울 리전 선호) |
+| ✅ | Postgres: Supabase 무료(서울), 세션 풀러 | 방, 참여자, 익명 사용자 | 비밀번호는 Secret Manager `database-password`(원본 1Password). URL·사용자는 저장소 변수 `DATABASE_URL`·`DATABASE_USER` | 무료 | 2026-11-14 P8a 배포 완료. 7일 비활동 일시정지는 매일 cleanup Job의 DB 질의로 방지(보장은 아님, p8a-notes 3.5) |
 | ⬜ | Cloudflare 계정 (Workers) | 웹 호스팅 (Next.js + OpenNext). 상업 이용 가능 | `cloudflare-api-token` (CI 배포용, 권한 최소화) | 무료, 필요 시 월 5달러 | 동적 OG의 CPU 한도는 S0b에서 실측 |
 | ⬜ | PostHog | 사용 통계 | `posthog-project-key` (공개되는 `phc_` 키), `posthog-personal-api-key` (필요할 때만) | 무료 (월 100만 이벤트) | US/EU 리전은 S0에서 결정 |
 | ⬜ | 도메인 | 공유 링크 신뢰감, 앱 링크(유니버설 링크) 연결 | — | 연 1~2만 원 | Cloudflare Registrar를 쓰면 DNS까지 한 곳에서 관리. 앱 계획이 있으므로 일찍 정하는 게 좋음 |
@@ -54,3 +54,17 @@
 | 배포 서비스 계정 | `github-deployer` | 아직 프로젝트 권한 없음. P8에서 최소 권한 부여 |
 | GitHub 저장소 변수 | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`, `GCP_ARTIFACT_BUCKET` | 비밀이 아닌 식별자라 secrets가 아닌 variables |
 | main 브랜치 보호 | PR 필수(승인 0), `ci-ok`·`gitleaks` 필수, 서명 커밋, 일직선 이력, squash 병합만 | 관리자는 우회 가능 |
+
+### P8a 추가 리소스 (2026-11-14, `infra/gcp/bootstrap.sh`로 생성)
+
+| 리소스 | 값 | 메모 |
+|---|---|---|
+| Artifact Registry | `asia-northeast3-docker.pkg.dev/banbanyeok-7eoxn/server` (이미지 `server`, `migrate`) | 이미지별 최근 3개 유지 |
+| Cloud Run 서비스 | `server` (1 vCPU·512Mi·동시성 40·max 2·min 0·boost, 공개 호출) | 앞단이 `/healthz`를 예약하므로 `/v1/healthz` 사용 |
+| Cloud Run Job | `migrate`(Liquibase), `cleanup`(서버 이미지, 인자 `cleanup`) | |
+| Cloud Scheduler | `cleanup-daily` (매일 04:00 KST) | 만료 정리 + DB 깨우기 |
+| 서비스 계정 | `server-runtime`, `db-migrator`, `db-backup`, `scheduler-invoker` | 권한 표: [p8a-notes](p8a-notes.md) 2절 |
+| 백업 버킷 | `gs://banbanyeok-7eoxn-backups` (비공개, 30일 후 삭제, soft delete 끔) | 주 1회 `db-backup` 워크플로 |
+| 로그 | 일반 로그 버킷 `default-seoul`(서울, 30일). `_Required`(감사)는 global 고정 | p8a-notes 3.8 |
+| Secret Manager | `database-password`, `token-pepper`, `proxy-shared-secret` | 값은 1Password가 원본, 코드·로그에 없음 |
+| 저장소 변수 추가 | `DATABASE_URL`, `DATABASE_USER` (선택 `CORS_ALLOWED_ORIGINS`, `RATE_LIMIT_CLIENT_IP_SOURCE`) | 비밀 아님 |

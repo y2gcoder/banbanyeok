@@ -79,7 +79,7 @@ GitHub Actions db-backup.yml (주 1회+수동, db-backup 계정) ─▶ pg_dump 
 
 ### 3.3 배포 흐름과 롤백
 
-`deploy-server.yml`: 인증 → 서버 이미지(AppCDS 학습 포함)·마이그레이션 이미지 빌드·푸시 → `migrate` Job 갱신·실행·대기 → 산출물 발행 → **후보 리비전을 트래픽 0·태그 `candidate`로 배포** → 후보 URL에서 스모크(`scripts/smoke-server.sh`: healthz, manifest 버전, 추천 1건, 없는 방 404로 DB 읽기, 방 생성·조회·삭제로 DB 쓰기·pepper) → 트래픽 전환 → 공개 URL 재확인 → `cleanup` Job 갱신. 후보 스모크가 실패하면 트래픽이 바뀌지 않는다. 전환 뒤 확인이 실패하면 직전 리비전으로 되돌린다. 동시 실행은 `concurrency: deploy-server`(대기, 취소 없음)로 막는다.
+`deploy-server.yml`: 인증 → 서버 이미지(AppCDS 학습 포함)·마이그레이션 이미지 빌드·푸시 → `migrate` Job 갱신·실행·대기 → 산출물 발행 → **후보 리비전을 트래픽 0·태그 `candidate`로 배포** → 후보 URL에서 스모크(`scripts/smoke-server.sh`: `/v1/healthz`(아래 참고), manifest 버전, 추천 1건, 없는 방 404로 DB 읽기, 방 생성·조회·삭제로 DB 쓰기·pepper) → 트래픽 전환 → 공개 URL 재확인 → `cleanup` Job 갱신. 후보 스모크가 실패하면 트래픽이 바뀌지 않는다. 전환 뒤 확인이 실패하면 직전 리비전으로 되돌린다. 동시 실행은 `concurrency: deploy-server`(대기, 취소 없음)로 막는다.
 
 트리거: `workflow_dispatch` + main 푸시 중 `server/**`(changelog 포함)·`contracts/**`·`shared/**`·`build-logic/**`·`gradle/**`·`data/artifacts/dev/**`·발행 스크립트·워크플로 자신. 새 데이터 발행은 새 리비전을 낸다(P3 8절 권고 1: 리비전이 곧 데이터 버전).
 
@@ -120,6 +120,17 @@ Actions를 택한 이유: 이미지를 따로 만들거나 Docker Hub 이미지�
 ### 3.7 배차 갱신 태스크 (7번)
 
 `mise run data:refresh-headways` = `scripts/refresh-headways.sh`: `op` 설치·로그인 확인(명확한 오류) → `data/raw/kric.xlsx`가 없으면 `fetch`(키 불필요; `all`과 같은 기준)로 원본을 먼저 받음 → `op run --env-file=.env.tpl -- ./gradlew :pipeline:run --args=refresh`(build→validate 포함) → `web/node_modules`가 없으면 설치 → `pnpm --filter web gen`. 새 worktree에서 `fetch`는 `data/config/source-manifest.json`의 수집 기록을 갱신하므로 diff를 검토한다. `mise run data:refresh`(키 없음)는 그대로다.
+
+### 3.8 로그 저장 위치 (서울)
+
+기본 Cloud Logging 버킷 `_Default`·`_Required`는 `location=global`이라 개인정보 처리방침의 "로그 저장 위치"를 서울로 쓸 수 없다. `bootstrap.sh`가 (1) 서울 버킷 `default-seoul`(보존 30일)을 만들고, (2) `_Default` 싱크의 대상을 그 버킷으로 바꾸며, (3) `gcloud logging settings update --storage-location=asia-northeast3`(이후 만드는 버킷의 기본 위치, 프로젝트 수준에서 지원되지 않으면 경고만)를 멱등하게 시도한다.
+- 일반 로그(Cloud Run 요청·앱 로그)는 이후 서울 버킷에 저장된다. 이미 global `_Default`에 쌓인 로그는 그 버킷의 보존 기간(기본 30일)이 지나면 사라진다.
+- **`_Required`(감사 로그: 관리자 활동·시스템 이벤트)는 보존 400일, 잠김이라 위치도 보존도 바꿀 수 없고 `global`에 저장된다.** 감사 로그에는 리소스 변경 기록과 호출한 계정이 들어 있고 서비스 이용자(방·출발역) 정보는 없다. 방침에는 "일반 로그: 서울, 감사 로그: Google 관리 global"로 구분해 쓰는 것을 권한다 → 결정 필요 6.
+- 서버 로그는 요청 방식·방 ID를 가린 경로·응답 코드만 남긴다(방침 2항과 같음). Cloud Run이 요청 로그에 붙이는 접속 IP·User-Agent는 `run.googleapis.com/requests` 로그에 들어간다.
+
+### 3.9 Cloud Run `/healthz` 예약 경로 (실측으로 발견)
+
+Cloud Run 앞단(Google Front End)은 `/healthz` 경로를 예약해서 요청이 앱에 닿기 전에 `404 (Not Found)!!1` HTML을 돌려준다(요청 로그도 남지 않는다). 첫 배포의 스모크가 이 때문에 실패했다. 계약(`openapi.yaml`)이 이미 `/v1/healthz`를 같은 응답으로 정의하므로 **배포된 서버는 `/v1/healthz`로 확인**한다(스모크·콜드스타트 측정·웹 프리워밍 모두). 웹의 `/api/healthz` rewrite 대상도 `/v1/healthz`여야 한다(P8b에 전달함). 컨테이너 안(AppCDS 학습, 로컬)에서는 `/healthz`도 그대로 동작한다.
 
 ## 4. 레이트 리밋 키 권고 (8번)
 

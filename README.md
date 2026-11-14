@@ -88,3 +88,18 @@ Postgres 기본값은 17 메이저의 고정 안정판 17.6이며 `POSTGRES_VERS
 작업으로 실행하고 URL/자격 증명을 Secret Manager에서 주입합니다.
 외부 데이터 API나 운영 서비스 연결처럼 비밀값이 필요한 경우에만 개인 1Password를 설정하고
 `op run --env-file=.env.tpl -- <명령>`을 사용합니다.
+
+## 배포 (서버·DB)
+
+서버는 Cloud Run(서울, min 0), DB는 Supabase 무료(세션 풀러), 데이터 산출물은 GCS 버킷에 발행합니다. 자세한 구성·권한 표·결정은 [docs/setup/p8a-notes.md](docs/setup/p8a-notes.md).
+
+```sh
+bash infra/gcp/bootstrap.sh                    # 최초 한 번(프로젝트 owner): 저장소·서비스 계정·버킷·최소 권한·Scheduler. 멱등. DRY_RUN=1이면 출력만
+gh workflow run deploy-server.yml              # 배포: 이미지 → migrate Job → 산출물 발행 → 후보 리비전 스모크 → 전환 → cleanup Job
+bash scripts/smoke-server.sh <서비스 URL>      # healthz·manifest·추천·방 생성/조회/삭제 확인 (Cloud Run에서는 /v1/healthz, /healthz는 앞단이 예약)
+gh workflow run db-backup.yml                  # DB 백업(주 1회 자동). 복원 검증: mise run db:restore-check -- <덤프>
+mise run release:stage                         # 산출물을 발행 형식(해시 이름 + manifest)으로 build/release에 만든다
+mise run data:refresh-headways                 # 배차 간격 실제 값 갱신(op 필요) → 웹 생성물까지
+```
+
+배포 워크플로가 필요로 하는 저장소 변수(비밀 아님): `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`, `GCP_ARTIFACT_BUCKET`, `DATABASE_URL`, `DATABASE_USER`. 비밀번호·토큰 pepper·프록시 공유 비밀은 Secret Manager에만 있고 런타임이 직접 읽습니다.
