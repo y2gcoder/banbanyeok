@@ -255,3 +255,52 @@
 2. 이메일 삭제 대행 시 본인 확인 절차(2-5).
 3. 철회 후 '요청 시 삭제'의 실행 방법: 통계에는 이용자를 알아볼 정보가 없으므로, 통계 설정 화면이 이 기기의
    통계 식별자를 보여 주거나 삭제 요청을 함께 보내는 방식이 필요하다(동의 UI 작업에서 정한다).
+
+## 5. 구현·배포 대조 (P9, 2026-11-15)
+
+방침의 모든 문장을 코드(main 534a206)와 실제 배포 설정(읽기 전용 조회: `gcloud logging buckets list`, `gcloud logging sinks describe _Default`,
+`gcloud secrets list`, Cloud Run 요청 로그 1건의 **필드 이름만**, 배포 주소의 응답 헤더)에 대조했다. 값·IP·토큰은 출력하지 않았다.
+이 절의 판단도 실무 관점의 의견이며, 상용화 전 변호사 검토 권고는 그대로다.
+
+### 5-1. 고친 사실
+
+| 방침 | 전 | 후 | 근거 |
+|---|---|---|---|
+| 2·4·요약 | 혼자 입력한 값은 "저장하지 않음" | 운영자 서버·DB는 저장하지 않지만, 공유 링크 주소(출발역·이름)는 Cloudflare Workers 로그에 최대 7일 남음 | `web/wrangler.jsonc` `observability.enabled: true`, `/s`·`/result`가 쿼리로 상태를 받음. [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)(요청·응답 메타데이터 기록, 최대 보존 7일) |
+| 2·9 | 서버 로그에는 방 ID를 남기지 않음 | 운영자 앱 로그는 그대로지만, Cloud Run이 자동으로 남기는 요청 기록(`run.googleapis.com/requests`)에는 요청 주소 전체(방 ID·참여자 ID·쿼리), 접속 IP, User-Agent가 있음 | 실제 로그 1건의 `httpRequest` 필드: `requestUrl, remoteIp, userAgent, status, latency …`, 경로에 `/rooms/` 포함 |
+| 2 | (토큰 기록 여부 미기재) | 토큰이 담긴 헤더는 호스팅 기록에 남지 않음 | 서버는 헤더를 로그하지 않음(`Plugins.kt`). Cloudflare는 `auth`·`token`·`key`가 들어간 헤더와 cookie를 `REDACTED`로 기록([Tail 이벤트](https://developers.cloudflare.com/workers/runtime-apis/handlers/tail/)) |
+| 3 | 동의 화면에서 만 14세 이상임을 "확인" | 만 14세 이상만 동의할 수 있다고 "안내" | `consent-text.ts`는 안내 문구이고 확인란이 없음 |
+| 4 | `{접속 기록 보존 기간}` | Google 30일, Workers 로그 최대 7일, Supabase 1일, Cloudflare 자체 기록은 미공개 | `default-seoul` 30일, [Supabase 요금표](https://supabase.com/pricing)(무료 로그 1일) |
+| 4·5·8 | 백업 30일 | 주 1회 서울 비공개 버킷, 30일 뒤 자동 삭제, soft delete 끔. 삭제 요청은 "DB에서는 즉시, 백업에서는 30일이 지나면" | p8a-notes 3.6·9절 2번. Supabase 무료 플랜은 자동 백업이 없음([문서](https://supabase.com/docs/guides/platform/backups)) |
+| 6 | (없음) | 메신저로 링크를 보내면 메신저 회사가 미리보기용으로 링크 주소를 읽음 | `/s` 미리보기 메타·`/s/og`(P5) |
+| 7 | Google LLC(미국) | Google Asia Pacific Pte. Ltd.(싱가포르)와 계열사, 한국 계약 상대방은 재판매자 Google Cloud Korea LLC | [Google 계약 주체](https://cloud.google.com/terms/google-entity) |
+| 7 | Supabase, Inc.(미국) | Supabase Pte. Ltd.(싱가포르). AWS Marketplace로 구매한 경우에만 Inc. | [Supabase 약관](https://supabase.com/terms) 정의 조항 |
+| 7 | (없음) | **GitHub, Inc.(미국) 추가**: 주 1회 백업 작업이 GitHub 호스트 러너에서 `pg_dump`로 DB 전체를 받아 GCS로 옮긴다 | `.github/workflows/db-backup.yml`, `scripts/db-backup.sh`. [러너는 작업마다 새 VM](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) |
+| 7 | Google 위탁 업무에 백업 없음 | Cloud Storage 백업, Cloud Run 정리 작업 추가 | p8a-notes 1절 |
+| 7 | `{…개인정보 문의처}` 4개 | Google 문의 양식, dpo@cloudflare.com, privacy@supabase.com, privacy@posthog.com, dpo@github.com | 각 사 개인정보 처리방침([Cloudflare](https://www.cloudflare.com/privacypolicy/), [Supabase](https://supabase.com/privacy), [PostHog](https://posthog.com/privacy), [GitHub](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)), [Google DPO 양식](https://support.google.com/cloud/contact/dpo) |
+| 7 | `{Cloud Logging 저장 위치}` `{Google 처리 국가}` | 일반 로그·백업·비밀값 서울, 감사 로그는 Google 관리 global(이용자 정보 없음), 지원은 미국·싱가포르·인도 등 | `_Default` 싱크 → `asia-northeast3/default-seoul`, 비밀 3개 `userManaged asia-northeast3`. [Google 재수탁자](https://cloud.google.com/terms/subprocessors) |
+| 7 | `{Cloudflare 처리 국가}` | 전 세계 엣지에서 처리, 기록은 주로 미국·EEA | [Cloudflare 재수탁자](https://www.cloudflare.com/gdpr/subprocessors/cloudflare-services/) |
+| 7 | `{Supabase 처리 국가}` | 저장 서울, 지원 싱가포르·미국 | 저장소 변수 `DATABASE_URL` 호스트가 ap-northeast-2(값은 출력하지 않음), [Supabase 재수탁자](https://supabase.com/legal/subprocessors) |
+| 7 | `{재수탁자 목록 링크}` | 5개 회사의 공개 목록 링크 | 위 링크, [PostHog](https://posthog.com/subprocessors), [GitHub](https://docs.github.com/en/site-policy/privacy-policies/github-subprocessors) |
+| 9 | `{내부 관리계획 수립 여부}` | 문장 삭제(사실 확인 전에는 단정하지 않음) → 5-2의 결정 필요 | — |
+| 9 | 관리 화면 접속 기록 `{접속기록 보관 기간}` | Google Cloud 감사 로그 400일. 배포·백업은 키 파일 없는 단기 인증(WIF) | `_Required` 400일 잠김, p8a-notes 2절 |
+| 11 | 방 토큰(로컬 저장소), 기기 토큰(HttpOnly 쿠키, `{기간}`) | 웹에는 방 화면이 없어 토큰을 저장하지 않음. 쿠키 없음. 실제 키: `banbanyeok:me`, `bby.analytics.consent`, `ph_<키>_posthog`(로컬)·`ph_<키>_window_id`·`ph_<키>_primary_window_exists`(세션), `__ph_opt_in_out_<키>`, `bby.analytics.seen` | `src/lib/form/remember.ts`, `src/lib/analytics/{consent,visit,tracker}.ts`, posthog-js 1.447.3 번들의 키 이름. 배포 주소 `/`·`/privacy`·`/api/healthz`에 `Set-Cookie` 0건. 프록시는 `cookie`·`set-cookie`를 지움(`src/lib/proxy`) |
+| 11 | 쿠키 차단 안내(서드 파티 쿠키 등) | 사이트 데이터 삭제 안내, 거부 효과에서 "방 기능 일부" 삭제 | 위와 같음 |
+
+구현과 맞아 고치지 않은 것: 방 만료 7일/30일/약속일 다음 날 0시(`ExpiryPolicy`), 매일 정리와 90일 익명 사용자 삭제(`RoomCleanup`), HMAC-SHA256 토큰 해시, 중복 요청 방지 10분(`Idempotency`), 요청량 제한 메모리(`RateLimiter`), 최대 4명(트리거), DB 통신 TLS(`sslmode=require`), 통계 옵트인·분리 동의·DNT/GPC·철회 시 식별자 삭제, PostHog 미국·`$geoip_disable`, 카카오맵 링크 형식. 통계 표의 `room_created`·`participant_joined`·`outcome_answered`는 아직 보내지 않지만 보낼 수 있는 항목의 고지라 그대로 두었다.
+
+### 5-2. 결정 필요
+
+1. **위탁 계약 문서(제26조①)**: 방침 7항은 "위탁 계약에 … 문서로 들어 있다"고 쓴다. Google(Cloud Data Processing Addendum이 약관에 포함)과 Cloudflare(Self-Serve 약관에 DPA 포함)는 자동 적용으로 보이지만, Supabase(대시보드 조직 설정의 법률 문서에서 DPA 확인·서명), PostHog(DPA 생성·서명 페이지), **GitHub(무료 개인 계정에 DPA가 적용되는지)**는 운영자가 직접 확인해야 한다. GitHub에 문서가 없으면 백업을 Cloud Run Job(서울)으로 옮기는 것이 깔끔하다(p8a 결정 필요 3과 같은 결론).
+2. **GitHub를 처리 경로에서 뺄지**: 지금은 방침에 수탁자로 공개했다. 백업을 Cloud Run Job + Cloud Scheduler로 옮기면 GitHub 행을 지울 수 있다(국외 이전 1건 감소).
+3. **Workers Logs의 요청 주소 기록**: 공유 링크의 출발역·이름이 최대 7일 남는다. `observability.logs.invocation_logs = false`(또는 표본 비율 축소)로 끌지. 끄면 장애 분석 근거가 줄어든다. 끄면 방침 2·4·요약의 Workers 문구를 지운다.
+4. **Cloud Run 요청 기록의 방 ID**: 30일 남는다. `_Default` 싱크에 `run.googleapis.com/requests` 제외 필터를 둘지(요청 지연·상태 기록을 잃음).
+5. **Google 계약 주체 확인**: 결제 계정의 청구 주소가 한국인지. Cloud Console > 결제 > 결제 계정 관리(또는 청구서 PDF)에 판매자가 "Google Cloud Korea LLC"로 나오는지 본다. 다르면 7항 Google 행을 그 주체로 바꾼다.
+6. **Supabase 계약 주체 확인**: AWS Marketplace로 구매하지 않았는지(무료 플랜 직접 가입이면 Pte. Ltd.). Supabase 대시보드 > Organization > Billing.
+7. **2단계 인증**: 9항이 단정한다. Google·Cloudflare·Supabase·PostHog·GitHub 계정 보안 설정에서 모두 켜져 있는지 확인.
+8. **접속기록 보관(안전성 확보조치 기준 고시)**: Google 감사 로그는 관리 작업만 400일 남고, Cloud Storage 백업 다운로드(Data Access 감사 로그는 기본 꺼짐)와 Supabase 대시보드·SQL 접속 기록은 남지 않거나 1일이다. 고시의 개인정보취급자 접속기록 보관 의무(기간·대상)가 1인 운영에 어떻게 적용되는지 변호사에게 묻고, 필요하면 GCS Data Access 로그를 켠다.
+9. **내부 관리계획**: 고시의 소규모 처리자 생략 범위를 확인하고, 필요하면 짧은 계획을 `docs/legal/`에 둔다. 그 전에는 방침에 수립 여부를 쓰지 않는다.
+10. **복원 시 삭제분 재적용**: 백업으로 DB를 되살리면 그 사이 이용자가 지운 방·참여자가 되살아난다. 만료분은 정리 작업이 다시 지우지만, 직접 지운 것은 기록이 없어 다시 지울 수 없다. 복원 절차(p8a-notes 3.6)에 "복원 후 cleanup 실행 + 복원 시점 이후 삭제 요청 재처리"를 넣을지, 삭제 기록(방 ID 해시만)을 30일 남길지.
+11. **방 화면 출시 전 갱신**: 방 기능 화면이 들어오면 11항 표에 토큰 저장 위치·기간을 추가해야 한다. 프록시가 `cookie`·`set-cookie`를 지우므로 tech-stack 5.5의 HttpOnly 쿠키 설계는 지금 구조로는 동작하지 않는다(설계를 바꾸거나 로컬 저장소로 정한다).
+12. **Cloudflare 봇 쿠키**: 지금은 쿠키가 없다(배포 주소 응답 확인). Bot Fight Mode나 챌린지를 켜면 Cloudflare가 `__cf_bm` 등 쿠키를 붙이므로 그때 11항을 고친다.
+13. **Workers 유료 전환**(P8b 결정 1)과 무관하게 방침은 "최대 7일"로 맞다.
