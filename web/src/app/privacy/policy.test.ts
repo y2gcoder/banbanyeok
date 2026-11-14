@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { policyMarkdown } from "./markdown";
-import { CONTACT_EMAIL, POLICY, REQUIRED_PLACEHOLDERS } from "./policy";
+import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS, REQUIRED_PLACEHOLDERS } from "./policy";
 
 const mdPath = resolve(import.meta.dirname, "../../../../docs/legal/privacy-policy.md");
 const markdown = policyMarkdown(POLICY);
@@ -39,10 +39,31 @@ describe("개인정보 처리방침", () => {
     }
   });
 
-  it("시행일은 자리표시로 남고, 이메일은 전용 연락 주소만 쓴다(개인 메일을 넣지 않는다)", () => {
+  it("시행일은 자리표시로 남고, 다른 자리표시는 하나도 남지 않는다", () => {
     for (const placeholder of REQUIRED_PLACEHOLDERS) expect(markdown).toContain(placeholder);
+    const leftovers = (markdown.match(/\{[^{}\n]+\}/g) ?? []).filter(
+      (found) => !(REQUIRED_PLACEHOLDERS as readonly string[]).includes(found),
+    );
+    expect(leftovers).toEqual([]);
+  });
+
+  it("이메일은 운영자 전용 연락 주소와 수탁자의 공식 문의 주소만 쓴다(개인 메일을 넣지 않는다)", () => {
     expect(markdown).toContain(CONTACT_EMAIL);
-    expect(markdown.replaceAll(CONTACT_EMAIL, "")).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);
+    let rest = markdown.replaceAll(CONTACT_EMAIL, "");
+    for (const email of PROCESSOR_CONTACT_EMAILS) {
+      expect(markdown, `허용 목록의 ${email}을 방침이 쓰지 않으면 목록에서 지운다`).toContain(email);
+      rest = rest.replaceAll(email, "");
+    }
+    expect(rest).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);
+  });
+
+  it("수탁자 문의 주소 허용 목록에는 회사 주소만 둔다(무료 메일·운영자 도메인 금지)", () => {
+    const personalDomains =
+      /@(gmail|googlemail|naver|daum|hanmail|kakao|nate|outlook|hotmail|icloud|me|yahoo|proton|protonmail)\./i;
+    for (const email of PROCESSOR_CONTACT_EMAILS) {
+      expect(email).not.toMatch(personalDomains);
+      expect(email.endsWith("@banbanyeok.app")).toBe(false);
+    }
   });
 
   it("목차 앵커가 겹치지 않는다", () => {

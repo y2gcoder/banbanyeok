@@ -10,6 +10,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { mockRecommend } from "../../../mock/recommend";
 import { loadMockData, validateRecommend } from "../../../mock/server";
+import { type CreateRoomForm, toCreateRoomRequest, toOutcomeAnswer, toParticipantInput } from "../room/input";
+import { searchStations } from "../stations";
 import { recommendBody } from "./client";
 
 type OpenApi = {
@@ -98,5 +100,61 @@ describe("웹이 보내는 요청이 계약을 지킨다", () => {
     expect(recommendBody({ ...base, nicknames: null })).not.toHaveProperty("nicknames");
     expect(recommendBody({ ...base, nicknames: [null, " ", null] })).not.toHaveProperty("nicknames");
     expect(recommendBody({ ...base, nicknames: [" 민수 ", null, ""] }).nicknames).toEqual(["민수", null, null]);
+  });
+});
+
+describe("방 요청이 계약을 지킨다", () => {
+  type Content = { content: Record<string, { schema: unknown }> };
+  const compileBody = (path: string, method: "post" | "put") => {
+    const operation = doc.paths[path]?.[method] as { requestBody?: Content } | undefined;
+    return ajv.compile(rebased(operation?.requestBody?.content["application/json"]?.schema) as object);
+  };
+  const createSchema = compileBody("/rooms", "post");
+  const participantSchema = compileBody("/rooms/{roomId}/participants", "post");
+  const updateSchema = compileBody("/rooms/{roomId}/participants/{participantId}", "put");
+  const outcomeSchema = compileBody("/rooms/{roomId}/outcome", "post");
+
+  const gangnam = searchStations("강남").find((s) => s.name === "강남" && s.supported);
+  if (!gangnam) throw new Error("테스트 역이 없다");
+  const form = (patch: Partial<CreateRoomForm> = {}): CreateRoomForm => ({
+    host: { nickname: "민수", station: gangnam, hidden: true },
+    mode: "fair",
+    meetingDate: "",
+    expectedCount: null,
+    ...patch,
+  });
+
+  it("방 만들기: 기본·배려·약속일·예상 인원 조합", () => {
+    for (const patch of [
+      {},
+      { mode: "favor" as const },
+      { meetingDate: "2026-11-20", expectedCount: 3 },
+      { mode: "fast" as const, expectedCount: 4 },
+    ]) {
+      const checked = toCreateRoomRequest(form(patch), "2026-11-15");
+      if (!checked.ok) throw new Error(checked.message);
+      expect(createSchema(checked.value), JSON.stringify(createSchema.errors)).toBe(true);
+    }
+  });
+
+  it("참여·수정 본문(이름 있음·없음, 숨김)과 outcome 본문", () => {
+    for (const nickname of ["민수", ""]) {
+      for (const hidden of [true, false]) {
+        const checked = toParticipantInput({ nickname, station: gangnam, hidden });
+        if (!checked.ok) throw new Error(checked.message);
+        expect(participantSchema(checked.value), JSON.stringify(participantSchema.errors)).toBe(true);
+        expect(updateSchema(checked.value)).toBe(true);
+      }
+    }
+    for (const choice of [
+      { kind: "top1" },
+      { kind: "top3" },
+      { kind: "none" },
+      { kind: "other", station: gangnam },
+    ] as const) {
+      const checked = toOutcomeAnswer(choice);
+      if (!checked.ok) throw new Error(checked.message);
+      expect(outcomeSchema(checked.value), JSON.stringify(outcomeSchema.errors)).toBe(true);
+    }
   });
 });

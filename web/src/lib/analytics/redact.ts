@@ -10,6 +10,9 @@ const URL_PROPERTY = /(url|href|referrer|pathname)/i;
 /** SEO 조합 페이지 경로 `/meet/<역코드>-<역코드>`: 역 코드를 속성에 남기지 않도록 자리표시로 바꾼다. */
 const PAIR_PATH = /\/meet\/[0-9a-z]{3}-[0-9a-z]{3}(?=\/|$)/g;
 
+/** 방 경로 `/r/<방 ID 10자>`: 방 ID는 방 링크 그 자체(방을 보고 참여할 수 있는 권한)라서 속성에 남기지 않는다. `/r/new`는 그대로 둔다. */
+const ROOM_PATH = /\/r\/[0-9a-z]{10}(?=\/|$)/gi;
+
 function stripQueryAndHash(value: string): string {
   try {
     const url = new URL(value);
@@ -21,9 +24,9 @@ function stripQueryAndHash(value: string): string {
   }
 }
 
-/** 쿼리·해시를 떼고 조합 페이지 경로의 역 코드를 가린다. 주소로 읽히지 않는 값(`$direct`, `/s?o=…`)도 같은 규칙을 쓴다. */
+/** 쿼리·해시를 떼고 조합 페이지 경로의 역 코드와 방 경로의 방 ID를 가린다. 주소로 읽히지 않는 값(`$direct`, `/s?o=…`)도 같은 규칙을 쓴다. */
 export function redactUrl(value: string): string {
-  return stripQueryAndHash(value).replace(PAIR_PATH, "/meet/[pair]");
+  return stripQueryAndHash(value).replace(PAIR_PATH, "/meet/[pair]").replace(ROOM_PATH, "/r/[room]");
 }
 
 function redactBag(bag: Record<string, unknown> | undefined): void {

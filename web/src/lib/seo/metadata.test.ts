@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { describe, expect, it } from "vitest";
 import fixture from "../../../fixtures/seo-pairs.json";
-import { hubMetadata, pairDescription, pairMetadata, pairTitle, sharedLinkMetadata, siteMetadata } from "./metadata";
+import {
+  hubMetadata,
+  pairDescription,
+  pairMetadata,
+  pairTitle,
+  roomLinkMetadata,
+  sharedLinkMetadata,
+  siteMetadata,
+} from "./metadata";
 import { buildPairPages, type PairPage } from "./pair-pages";
 import { parseSeoPairs } from "./pairs";
 
@@ -108,5 +116,23 @@ describe("공유 링크 메타데이터", () => {
     expect(meta.title).toBe("만날 역 후보");
     expect(meta.robots).toEqual({ index: false, follow: false });
     expect(meta.openGraph).toBeUndefined();
+  });
+});
+
+describe("방 링크 메타데이터", () => {
+  it("색인하지 않고, 방 ID·참여자와 무관한 일반 문구와 사이트 기본 이미지를 쓴다", () => {
+    const meta = roomLinkMetadata();
+    expect(meta.robots).toEqual({ index: false, follow: false });
+    expect(meta.title).toBe("같이 만날 역 정해요");
+    expect(og(meta)).toMatchObject({
+      title: "같이 만날 역 정해요 | 반반역",
+      images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
+    });
+    expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: "/opengraph-image" }] });
+  });
+
+  it("함수가 인자를 받지 않아 방 ID·이름·출발역이 문구에 들어갈 길이 없다", () => {
+    expect(roomLinkMetadata.length).toBe(0);
+    expect(JSON.stringify(roomLinkMetadata())).not.toContain("/r/");
   });
 });

@@ -115,7 +115,10 @@ describe("속성 검증(실행 시)", () => {
     expectTypeOf<EventProperties["station_chosen"]>().toHaveProperty("meeting_station_code");
     expectTypeOf<EventProperties["input_completed"]>().not.toHaveProperty("origin_codes");
     expectTypeOf<EventProperties["input_completed"]["mode"]>().toEqualTypeOf<"fair" | "fast" | "favor">();
-    // 서버 전용 이벤트는 웹이 보낼 수 없다.
-    expectTypeOf<"room_created">().not.toExtend<EventName>();
+    // 방 이벤트는 서버가 통계를 보내기 전까지 웹도 보낸다(client_or_server). 방 ID·토큰은 속성에 없다.
+    expectTypeOf<"room_created">().toExtend<EventName>();
+    expectTypeOf<"participant_joined">().toExtend<EventName>();
+    expectTypeOf<EventProperties["room_created"]>().not.toHaveProperty("room_id");
+    expectTypeOf<"nonexistent_event">().not.toExtend<EventName>();
   });
 });
