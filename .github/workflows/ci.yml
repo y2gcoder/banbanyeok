@@ -23,6 +23,7 @@ jobs:
     outputs:
       kotlin: ${{ steps.filter.outputs.kotlin }}
       oracle: ${{ steps.filter.outputs.oracle }}
+      web: ${{ steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -51,6 +52,15 @@ jobs:
               - 'prototype/**'
               - 'contracts/**'
               - 'data/registry/**'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'web/**'
+              - 'contracts/**'
+              - 'data/artifacts/dev/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'mise.toml'
               - '.github/workflows/ci.yml'
 
   # Kotlin: ./gradlew build = 컴파일 + jvm 테스트(shared 모듈은 commonTest를 jvm으로 실행) + commonMain 순수성 검사
@@ -111,14 +121,45 @@ jobs:
           python3 -B prototype/gen_fixtures.py --check
           python3 -B prototype/gen_link_vectors.py --check
 
+  # 웹(web/): 타입 검사 → 린트(Biome·ESLint 타입 규칙·Knip·dependency-cruiser) → 단위·컴포넌트 테스트
+  # → 계약 동기화(openapi 타입·역 인덱스 재생성 후 diff) → 모바일 e2e(가짜 서버) → OpenNext Cloudflare 빌드(배포 없음).
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # node·pnpm 버전은 mise.toml이 단일 출처다.
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: node pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm check:contracts
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
+      - run: pnpm cf:build
+
   # 브랜치 보호에서 필수로 지정할 단일 체크. 경로 필터로 건너뛴 잡은 통과로 본다.
   ci-ok:
     if: always()
-    needs: [changes, unit, lint, integration, oracle]
+    needs: [changes, unit, lint, integration, oracle, web]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "changes=${{ needs.changes.result }} unit=${{ needs.unit.result }} lint=${{ needs.lint.result }} integration=${{ needs.integration.result }} oracle=${{ needs.oracle.result }}"
+          echo "changes=${{ needs.changes.result }} unit=${{ needs.unit.result }} lint=${{ needs.lint.result }} integration=${{ needs.integration.result }} oracle=${{ needs.oracle.result }} web=${{ needs.web.result }}"
           if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
             exit 1
           fi

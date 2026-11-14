@@ -81,7 +81,9 @@ run = "bash scripts/dev.sh seed"
 run = "bash scripts/dev.sh server"
 
 [tasks."dev:web"]
+description = "웹(next dev). API는 API_ORIGIN, 없으면 로컬 서버(SERVER_PORT)로 rewrite한다. 실행기는 web/scripts/dev.ts"
 run = "bash scripts/dev.sh web"
 
 [tasks."dev:web:mock"]
+description = "웹 + openapi 기반 가짜 서버(web/mock). 서버 없이 모든 화면이 동작한다"
 run = "bash scripts/dev.sh web:mock"
