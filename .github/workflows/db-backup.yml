@@ -5,9 +5,6 @@ name: db-backup
 
 on:
   workflow_dispatch:
-  push:  # TEMP-BRANCH-TRIGGER: 첫 실행 검증용, PR 최종 전에 제거
-    branches: [y2gcoder/p8a-deploy]
-    paths: ['.github/workflows/db-backup.yml']
   schedule:
     - cron: '17 18 * * 0'   # UTC 일요일 18:17 = KST 월요일 03:17
 
