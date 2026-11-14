@@ -31,8 +31,14 @@ public class GcsArtifactStore(
     prefix: String = "",
     private val endpoint: String? = null,
     private val tokens: MetadataTokenProvider = MetadataTokenProvider(),
+    /** 첫 요청의 단계 시간 측정용 훅(단계 이름뿐). */
+    private val onPhase: (String) -> Unit = {},
 ) : ArtifactStore {
     private val prefix: String = prefix.trim('/').let { if (it.isEmpty()) "" else "$it/" }
+
+    @Volatile private var tokenReported = false
+
+    @Volatile private var responseReported = false
     private val apiBase: String = (endpoint ?: DEFAULT_ENDPOINT).trimEnd('/')
 
     /**
@@ -56,7 +62,12 @@ public class GcsArtifactStore(
             val url = "$apiBase/storage/v1/b/$bucket/o/${encode(prefix + key.value)}?alt=media"
             retrying {
                 val connection = open(url, "GET")
-                when (val code = connection.responseCode) {
+                val code = connection.responseCode
+                if (!responseReported) {
+                    responseReported = true
+                    onPhase("gcs-first-response")
+                }
+                when (code) {
                     HTTP_OK -> {
                         // 한 응답 안에서 내용과 generation이 함께 오므로 읽는 도중 덮어써도 서로 어긋나지 않는다.
                         val generation = connection.getHeaderField("x-goog-generation").orEmpty()
@@ -157,7 +168,14 @@ public class GcsArtifactStore(
         connection.requestMethod = method
         connection.connectTimeout = TIMEOUT_MS
         connection.readTimeout = TIMEOUT_MS
-        if (endpoint == null) connection.setRequestProperty("Authorization", "Bearer ${tokens.token()}")
+        if (endpoint == null) {
+            val token = tokens.token()
+            if (!tokenReported) {
+                tokenReported = true
+                onPhase("gcs-token-ready")
+            }
+            connection.setRequestProperty("Authorization", "Bearer $token")
+        }
         return connection
     }
 

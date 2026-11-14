@@ -52,7 +52,7 @@ object CompositionRoot {
         ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
         timeline: StartupTimeline? = null,
         store: ArtifactStore =
-            artifactStore(config, ioDispatcher).also { timeline?.mark("artifact-store-created") },
+            artifactStore(config, ioDispatcher, timeline).also { timeline?.mark("artifact-store-created") },
         database: ConnectedDatabase? = null,
     ): Components {
         timeline?.mark("assembly-started")
@@ -87,6 +87,7 @@ object CompositionRoot {
     private fun artifactStore(
         config: AppConfig,
         ioDispatcher: CoroutineDispatcher,
+        timeline: StartupTimeline?,
     ): ArtifactStore =
         when (config.artifacts.kind) {
             ArtifactStoreKind.LOCAL -> {
@@ -99,6 +100,7 @@ object CompositionRoot {
                     ioDispatcher = ioDispatcher,
                     prefix = config.artifacts.gcsPrefix,
                     endpoint = config.artifacts.gcsEndpoint,
+                    onPhase = { timeline?.mark(it) },
                 ).also { it.warmUp() }
             }
         }
