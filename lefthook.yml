@@ -4,3 +4,6 @@ pre-commit:
     gitleaks:
       # 스테이징된 변경만 검사한다. 오탐은 .gitleaks.toml에 좁게 허용하고, 훅을 건너뛰는 --no-verify는 쓰지 않는다.
       run: gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml
+    ktlint:
+      glob: "*.{kt,kts}"
+      run: bash scripts/ktlint-staged.sh {staged_files}

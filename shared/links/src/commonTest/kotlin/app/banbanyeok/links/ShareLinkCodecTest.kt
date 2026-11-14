@@ -32,20 +32,29 @@ class ShareLinkCodecTest {
 
     @Test
     fun allEmptyNicknamesAreOmitted() {
-        assertEquals("v=1&o=03v.130&m=f", ShareLinkCodec.encodeQuery(ShareLink(listOf(a, b), LinkMode.Fair, listOf(null, ""))))
+        assertEquals(
+            "v=1&o=03v.130&m=f",
+            ShareLinkCodec.encodeQuery(ShareLink(listOf(a, b), LinkMode.Fair, listOf(null, ""))),
+        )
     }
 
     @Test
     fun decodeUrlExtractsQueryBeforeFragment() {
         val result = ShareLinkCodec.decodeUrl("https://banbanyeok.example/s?utm_source=kakao&v=1&o=03v.130&m=p1#top")
         assertEquals(ShareLink(listOf(a, b), LinkMode.Favor(1)), result.getOrNull())
-        assertEquals(LinkDecoding.Failure(LinkErrorCode.MISSING_PARAM), ShareLinkCodec.decodeUrl("https://banbanyeok.example/s"))
+        assertEquals(
+            LinkDecoding.Failure(LinkErrorCode.MISSING_PARAM),
+            ShareLinkCodec.decodeUrl("https://banbanyeok.example/s"),
+        )
     }
 
     @Test
     fun errorsAreReportedInTheDocumentedOrder() {
         // v가 틀리고 o도 틀리면 v가 먼저
-        assertEquals(LinkDecoding.Failure(LinkErrorCode.UNSUPPORTED_VERSION), ShareLinkCodec.decodeQuery("v=2&o=zz&m=z"))
+        assertEquals(
+            LinkDecoding.Failure(LinkErrorCode.UNSUPPORTED_VERSION),
+            ShareLinkCodec.decodeQuery("v=2&o=zz&m=z"),
+        )
         // o가 틀리고 m도 틀리면 o가 먼저
         assertEquals(LinkDecoding.Failure(LinkErrorCode.BAD_ORIGIN_COUNT), ShareLinkCodec.decodeQuery("v=1&o=03v&m=z"))
         // m이 틀리고 n도 틀리면 m이 먼저
@@ -56,7 +65,10 @@ class ShareLinkCodecTest {
 
     @Test
     fun plusIsNotDecodedAsSpace() {
-        assertEquals(LinkDecoding.Failure(LinkErrorCode.BAD_NICKNAMES), ShareLinkCodec.decodeQuery("v=1&o=03v.130&m=f&n=+/+/.7KeA"))
+        assertEquals(
+            LinkDecoding.Failure(LinkErrorCode.BAD_NICKNAMES),
+            ShareLinkCodec.decodeQuery("v=1&o=03v.130&m=f&n=+/+/.7KeA"),
+        )
     }
 
     @Test
@@ -70,7 +82,13 @@ class ShareLinkCodecTest {
         assertFailsWith<IllegalArgumentException> { ShareLink(listOf(a, a, a, a, a), LinkMode.Fair) }
         assertFailsWith<IllegalArgumentException> { ShareLink(listOf(a, b), LinkMode.Favor(2)) }
         assertFailsWith<IllegalArgumentException> { ShareLink(listOf(a, b), LinkMode.Fair, listOf("x")) }
-        assertFailsWith<IllegalArgumentException> { ShareLink(listOf(a, b), LinkMode.Fair, listOf("a".repeat(21), null)) }
+        assertFailsWith<IllegalArgumentException> {
+            ShareLink(
+                listOf(a, b),
+                LinkMode.Fair,
+                listOf("a".repeat(21), null),
+            )
+        }
         assertFailsWith<IllegalArgumentException> { ShareLink(listOf(a, b), LinkMode.Fair, listOf("\uD83D", null)) }
         ShareLink(listOf(a, b), LinkMode.Fair, listOf("🙂".repeat(20), null)) // 코드포인트 20자는 통과
     }
@@ -80,7 +98,7 @@ class ShareLinkCodecTest {
         assertEquals(1, NicknameRules.codePointCount("🙂"))
         assertEquals(2, NicknameRules.codePointCount("민수"))
         assertEquals(0, NicknameRules.codePointCount(""))
-        assertEquals(2, NicknameRules.codePointCount("\uD83D"+ "x")) // 짝 없는 서로게이트는 각각 1
+        assertEquals(2, NicknameRules.codePointCount("\uD83D" + "x")) // 짝 없는 서로게이트는 각각 1
         assertTrue(NicknameRules.isWellFormed("가🙂"))
         assertTrue(!NicknameRules.isWellFormed("\uDE42"))
     }

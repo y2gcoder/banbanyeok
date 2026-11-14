@@ -41,34 +41,51 @@ public class OdMatrix(
     }
 
     public fun originCodeValue(index: Int): Int = origins[index]
+
     public fun candidateCodeValue(index: Int): Int = candidates[index]
+
     public fun originCode(index: Int): StationCode = StationCode.ofValue(origins[index])
+
     public fun candidateCode(index: Int): StationCode = StationCode.ofValue(candidates[index])
 
     /** 코드 값으로 행 인덱스를 찾는다. 없으면 -1. */
     public fun indexOfOrigin(code: StationCode): Int = search(origins, code.value)
+
     public fun indexOfCandidate(code: StationCode): Int = search(candidates, code.value)
 
     /** 초. 도달 불가는 [UNREACHABLE]. */
-    public fun timeSeconds(origin: Int, candidate: Int): Int = times[cell(origin, candidate)]
+    public fun timeSeconds(
+        origin: Int,
+        candidate: Int,
+    ): Int = times[cell(origin, candidate)]
 
     /** 환승 횟수. 도달 불가는 [UNREACHABLE]. */
-    public fun transfers(origin: Int, candidate: Int): Int = changes[cell(origin, candidate)]
+    public fun transfers(
+        origin: Int,
+        candidate: Int,
+    ): Int = changes[cell(origin, candidate)]
 
-    private fun cell(origin: Int, candidate: Int): Int {
+    private fun cell(
+        origin: Int,
+        candidate: Int,
+    ): Int {
         require(origin in origins.indices && candidate in candidates.indices) { "인덱스 범위 밖: ($origin, $candidate)" }
         return origin * candidates.size + candidate
     }
 
-    internal fun rawOrigins(): IntArray = origins
-    internal fun rawCandidates(): IntArray = candidates
-    internal fun rawTimes(): IntArray = times
-    internal fun rawTransfers(): IntArray = changes
+    internal val rawOrigins: IntArray get() = origins
 
-    override fun equals(other: Any?): Boolean = other is OdMatrix &&
-        registryVersion == other.registryVersion && origins.contentEquals(other.origins) &&
-        candidates.contentEquals(other.candidates) && times.contentEquals(other.times) &&
-        changes.contentEquals(other.changes)
+    internal val rawCandidates: IntArray get() = candidates
+
+    internal val rawTimes: IntArray get() = times
+
+    internal val rawTransfers: IntArray get() = changes
+
+    override fun equals(other: Any?): Boolean =
+        other is OdMatrix &&
+            registryVersion == other.registryVersion && origins.contentEquals(other.origins) &&
+            candidates.contentEquals(other.candidates) && times.contentEquals(other.times) &&
+            changes.contentEquals(other.changes)
 
     override fun hashCode(): Int {
         var h = registryVersion
@@ -86,7 +103,10 @@ public class OdMatrix(
         public const val MAX_TRANSFERS: Int = 254
 
         /** 오름차순 IntArray에서 값의 위치를 찾는다. 없으면 -1. (IntArray.binarySearch는 common stdlib에 없다.) */
-        private fun search(sorted: IntArray, value: Int): Int {
+        private fun search(
+            sorted: IntArray,
+            value: Int,
+        ): Int {
             var low = 0
             var high = sorted.size - 1
             while (low <= high) {
@@ -100,7 +120,10 @@ public class OdMatrix(
             return -1
         }
 
-        private fun requireCodes(codes: IntArray, label: String) {
+        private fun requireCodes(
+            codes: IntArray,
+            label: String,
+        ) {
             for (i in codes.indices) {
                 schemaCheck(codes[i] in 0 until StationCode.CAPACITY) { "$label 코드 값 범위 오류: ${codes[i]}" }
                 schemaCheck(i == 0 || codes[i - 1] < codes[i]) { "$label 코드는 엄격한 오름차순이어야 합니다 (위치 $i)" }
@@ -130,13 +153,19 @@ public object OdBinCodec {
         putU32(out, 20, m)
         // 24..31 reserved = 0
         var pos = HEADER_SIZE
-        for (v in matrix.rawOrigins()) { putU16(out, pos, v); pos += 2 }
-        for (v in matrix.rawCandidates()) { putU16(out, pos, v); pos += 2 }
-        for (t in matrix.rawTimes()) {
+        for (v in matrix.rawOrigins) {
+            putU16(out, pos, v)
+            pos += 2
+        }
+        for (v in matrix.rawCandidates) {
+            putU16(out, pos, v)
+            pos += 2
+        }
+        for (t in matrix.rawTimes) {
             putU16(out, pos, if (t == OdMatrix.UNREACHABLE) TIME_RAW_UNREACHABLE else t)
             pos += 2
         }
-        for (x in matrix.rawTransfers()) {
+        for (x in matrix.rawTransfers) {
             out[pos++] = (if (x == OdMatrix.UNREACHABLE) TRANSFER_RAW_UNREACHABLE else x).toByte()
         }
         return out
@@ -165,32 +194,50 @@ public object OdBinCodec {
         val candidates = IntArray(m.toInt()) { u16(bytes, pos + it * 2) }
         pos += m.toInt() * 2
         val cells = n.toInt() * m.toInt()
-        val times = IntArray(cells) {
-            val raw = u16(bytes, pos + it * 2)
-            if (raw == TIME_RAW_UNREACHABLE) OdMatrix.UNREACHABLE else raw
-        }
+        val times =
+            IntArray(cells) {
+                val raw = u16(bytes, pos + it * 2)
+                if (raw == TIME_RAW_UNREACHABLE) OdMatrix.UNREACHABLE else raw
+            }
         pos += cells * 2
-        val transfers = IntArray(cells) {
-            val raw = bytes[pos + it].toInt() and 0xff
-            if (raw == TRANSFER_RAW_UNREACHABLE) OdMatrix.UNREACHABLE else raw
-        }
+        val transfers =
+            IntArray(cells) {
+                val raw = bytes[pos + it].toInt() and 0xff
+                if (raw == TRANSFER_RAW_UNREACHABLE) OdMatrix.UNREACHABLE else raw
+            }
         return OdMatrix(registryVersion.toInt(), origins, candidates, times, transfers)
     }
 
-    private fun expectedSize(n: Long, m: Long, headerSize: Int = HEADER_SIZE): Long =
-        headerSize + 2 * n + 2 * m + 2 * n * m + n * m
+    private fun expectedSize(
+        n: Long,
+        m: Long,
+        headerSize: Int = HEADER_SIZE,
+    ): Long = headerSize + 2 * n + 2 * m + 2 * n * m + n * m
 
-    private fun u16(b: ByteArray, o: Int): Int = (b[o].toInt() and 0xff) or ((b[o + 1].toInt() and 0xff) shl 8)
+    private fun u16(
+        b: ByteArray,
+        o: Int,
+    ): Int = (b[o].toInt() and 0xff) or ((b[o + 1].toInt() and 0xff) shl 8)
 
-    private fun u32(b: ByteArray, o: Int): Long =
-        (u16(b, o).toLong()) or (u16(b, o + 2).toLong() shl 16)
+    private fun u32(
+        b: ByteArray,
+        o: Int,
+    ): Long = (u16(b, o).toLong()) or (u16(b, o + 2).toLong() shl 16)
 
-    private fun putU16(b: ByteArray, o: Int, v: Int) {
+    private fun putU16(
+        b: ByteArray,
+        o: Int,
+        v: Int,
+    ) {
         b[o] = v.toByte()
         b[o + 1] = (v ushr 8).toByte()
     }
 
-    private fun putU32(b: ByteArray, o: Int, v: Int) {
+    private fun putU32(
+        b: ByteArray,
+        o: Int,
+        v: Int,
+    ) {
         putU16(b, o, v and 0xffff)
         putU16(b, o + 2, v ushr 16)
     }

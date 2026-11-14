@@ -11,8 +11,7 @@ public data class ManifestFile(
     val bytes: Long,
 ) {
     /** 길이와 SHA-256이 모두 맞으면 true. */
-    public fun matches(content: ByteArray): Boolean =
-        content.size.toLong() == bytes && Sha256.hex(content) == sha256
+    public fun matches(content: ByteArray): Boolean = content.size.toLong() == bytes && Sha256.hex(content) == sha256
 }
 
 @Serializable
@@ -40,23 +39,25 @@ public data class Manifest(
 
 public object ManifestCodec {
     private val reader = Json { ignoreUnknownKeys = false }
-    private val writer = Json {
-        prettyPrint = true
-        prettyPrintIndent = "  "
-        explicitNulls = false
-    }
+    private val writer =
+        Json {
+            prettyPrint = true
+            prettyPrintIndent = "  "
+            explicitNulls = false
+        }
 
     private val dataVersionPattern = Regex("^[0-9]{8}\\.[0-9]{1,3}$")
     private val timestampPattern = Regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")
 
     public fun parse(json: String): Manifest {
-        val manifest = try {
-            reader.decodeFromString(Manifest.serializer(), json)
-        } catch (e: SerializationException) {
-            throw SchemaException("manifest JSON 형식 오류: ${e.message}", e)
-        } catch (e: IllegalArgumentException) {
-            throw SchemaException("manifest JSON 형식 오류: ${e.message}", e)
-        }
+        val manifest =
+            try {
+                reader.decodeFromString(Manifest.serializer(), json)
+            } catch (e: SerializationException) {
+                throw SchemaException("manifest JSON 형식 오류: ${e.message}", e)
+            } catch (e: IllegalArgumentException) {
+                throw SchemaException("manifest JSON 형식 오류: ${e.message}", e)
+            }
         validate(manifest)
         return manifest
     }
@@ -79,15 +80,23 @@ public object ManifestCodec {
                 "previousDataVersion('$it')은 dataVersion('${manifest.dataVersion}')보다 앞서야 합니다"
             }
         }
-        schemaCheck(timestampPattern.matches(manifest.generatedAt)) { "generatedAt은 UTC ISO-8601(...Z)이어야 합니다: '${manifest.generatedAt}'" }
+        schemaCheck(timestampPattern.matches(manifest.generatedAt)) {
+            "generatedAt은 UTC ISO-8601(...Z)이어야 합니다: '${manifest.generatedAt}'"
+        }
         schemaCheck(manifest.registryVersion >= 1) { "registryVersion은 1 이상이어야 합니다" }
         schemaCheck(manifest.timeModel.isNotBlank()) { "timeModel이 비어 있습니다" }
-        schemaCheck(manifest.originCount in 0..StationCode.CAPACITY && manifest.candidateCount in 0..StationCode.CAPACITY) {
+        schemaCheck(
+            manifest.originCount in 0..StationCode.CAPACITY && manifest.candidateCount in 0..StationCode.CAPACITY,
+        ) {
             "originCount/candidateCount 범위 오류"
         }
         val files = manifest.files
-        listOf("registry" to files.registry, "candidates" to files.candidates, "od" to files.od, "seoPages" to files.seoPages)
-            .forEach { (key, file) -> if (file != null) validateFile(key, file) }
+        listOf(
+            "registry" to files.registry,
+            "candidates" to files.candidates,
+            "od" to files.od,
+            "seoPages" to files.seoPages,
+        ).forEach { (key, file) -> if (file != null) validateFile(key, file) }
     }
 
     /** `YYYYMMDD.N`을 비교 가능한 수로 바꾼다(문자열 비교는 N이 두 자리일 때 틀린다). */
@@ -96,9 +105,15 @@ public object ManifestCodec {
         return date.toLong() * 1000 + n.toLong()
     }
 
-    private fun validateFile(key: String, file: ManifestFile) {
+    private fun validateFile(
+        key: String,
+        file: ManifestFile,
+    ) {
         val path = file.path
-        schemaCheck(path.isNotEmpty() && !path.startsWith("/") && !path.contains('\\') && path.split('/').none { it == ".." || it.isEmpty() }) {
+        schemaCheck(
+            path.isNotEmpty() && !path.startsWith("/") && !path.contains('\\') &&
+                path.split('/').none { it == ".." || it.isEmpty() },
+        ) {
             "files.$key.path가 안전한 상대 경로가 아닙니다: '$path'"
         }
         schemaCheck(file.sha256.length == 64 && file.sha256.all { it in '0'..'9' || it in 'a'..'f' }) {
@@ -137,10 +152,14 @@ public object DataSetLoader {
         val candidates = RegistryCodec.parseCandidates(candidatesBytes.decodeToString(throwOnInvalidSequence = true))
         val od = OdBinCodec.decode(odBytes)
 
-        schemaCheck(manifest.schemaVersion == registry.schemaVersion && manifest.schemaVersion == candidates.schemaVersion) {
+        schemaCheck(
+            manifest.schemaVersion == registry.schemaVersion && manifest.schemaVersion == candidates.schemaVersion,
+        ) {
             "manifest.schemaVersion=${manifest.schemaVersion}과 레지스트리/후보의 schemaVersion이 다릅니다"
         }
-        schemaCheck(manifest.registryVersion == registry.registryVersion && manifest.registryVersion == od.registryVersion) {
+        schemaCheck(
+            manifest.registryVersion == registry.registryVersion && manifest.registryVersion == od.registryVersion,
+        ) {
             "registryVersion 불일치: manifest ${manifest.registryVersion}, 레지스트리 ${registry.registryVersion}, od.bin ${od.registryVersion}"
         }
         schemaCheck(manifest.originCount == od.originCount && manifest.candidateCount == od.candidateCount) {

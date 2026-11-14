@@ -10,7 +10,12 @@ import kotlin.test.assertNull
 
 class ReasonInputValidationTest {
     private val names = listOf("민지", "지훈")
-    private fun fair(vararg minutes: Int, label: List<String?> = names) = reason(ReasonMode.FAIR, 1, label, minutes.toList())
+
+    private fun fair(
+        vararg minutes: Int,
+        label: List<String?> = names,
+    ) = reason(ReasonMode.FAIR, 1, label, minutes.toList())
+
     private fun error(input: ReasonInput): InputErrorCode? = ReasonInputValidator.validate(input)
 
     @Test
@@ -35,7 +40,10 @@ class ReasonInputValidationTest {
         assertEquals(InputErrorCode.DUPLICATE_PERSON, ReasonInputValidator.validatePeople(dup))
         val sameOrigin = listOf(PersonRef("p0", "민지", "03v"), PersonRef("p1", "지훈", "03v"))
         assertNull(ReasonInputValidator.validatePeople(sameOrigin))
-        assertEquals(InputErrorCode.BLANK_PERSON_ID, ReasonInputValidator.validatePeople(listOf(PersonRef(" "), PersonRef("p1"))))
+        assertEquals(
+            InputErrorCode.BLANK_PERSON_ID,
+            ReasonInputValidator.validatePeople(listOf(PersonRef(" "), PersonRef("p1"))),
+        )
     }
 
     @Test
@@ -43,10 +51,19 @@ class ReasonInputValidationTest {
         val twentyEmoji = "🙂".repeat(20) // UTF-16으로는 40, 코드포인트로는 20
         val twentyOneEmoji = "🙂".repeat(21)
         assertNull(ReasonInputValidator.validatePeople(Fixtures.people(listOf(twentyEmoji, null))))
-        assertEquals(InputErrorCode.NICKNAME_TOO_LONG, ReasonInputValidator.validatePeople(Fixtures.people(listOf(twentyOneEmoji, null))))
+        assertEquals(
+            InputErrorCode.NICKNAME_TOO_LONG,
+            ReasonInputValidator.validatePeople(Fixtures.people(listOf(twentyOneEmoji, null))),
+        )
         assertNull(ReasonInputValidator.validatePeople(Fixtures.people(listOf("a".repeat(20), null))))
-        assertEquals(InputErrorCode.NICKNAME_TOO_LONG, ReasonInputValidator.validatePeople(Fixtures.people(listOf("a".repeat(21), null))))
-        assertEquals(InputErrorCode.NICKNAME_MALFORMED, ReasonInputValidator.validatePeople(Fixtures.people(listOf("\uD83D", null))))
+        assertEquals(
+            InputErrorCode.NICKNAME_TOO_LONG,
+            ReasonInputValidator.validatePeople(Fixtures.people(listOf("a".repeat(21), null))),
+        )
+        assertEquals(
+            InputErrorCode.NICKNAME_MALFORMED,
+            ReasonInputValidator.validatePeople(Fixtures.people(listOf("\uD83D", null))),
+        )
     }
 
     @Test
@@ -54,7 +71,9 @@ class ReasonInputValidationTest {
         val badOrigin = listOf(PersonRef("p0", null, "03V"), PersonRef("p1", null, "130"))
         assertEquals(InputErrorCode.BAD_STATION_CODE, ReasonInputValidator.validatePeople(badOrigin))
         // 숨긴 참가자는 출발역 코드가 없을 수 있다
-        assertNull(ReasonInputValidator.validatePeople(listOf(PersonRef("p0", null, null), PersonRef("p1", null, "130"))))
+        assertNull(
+            ReasonInputValidator.validatePeople(listOf(PersonRef("p0", null, null), PersonRef("p1", null, "130"))),
+        )
         assertEquals(InputErrorCode.BAD_STATION_CODE, error(fair(34, 38).copy(stationCode = "oo0")))
         assertEquals(InputErrorCode.BAD_STATION_CODE, error(fair(34, 38).copy(stationCode = "ab")))
         assertEquals(
@@ -69,7 +88,11 @@ class ReasonInputValidationTest {
         val negative = fair(34, 38).let { it.copy(people = listOf(it.people[0].copy(seconds = -1), it.people[1])) }
         assertEquals(InputErrorCode.NEGATIVE_VALUE, error(negative))
         assertEquals(InputErrorCode.NEGATIVE_VALUE, error(fair(34, 38).copy(toleranceSeconds = -1)))
-        val negativeTransfer = fair(34, 38).let { it.copy(people = listOf(it.people[0].copy(transfers = -1), it.people[1])) }
+        val negativeTransfer =
+            fair(
+                34,
+                38,
+            ).let { it.copy(people = listOf(it.people[0].copy(transfers = -1), it.people[1])) }
         assertEquals(InputErrorCode.NEGATIVE_VALUE, error(negativeTransfer))
     }
 
@@ -77,7 +100,10 @@ class ReasonInputValidationTest {
     fun rankAndReasonCodeMustAgree() {
         assertEquals(InputErrorCode.RANK_OUT_OF_RANGE, error(fair(34, 38).copy(rank = 0)))
         assertEquals(InputErrorCode.RANK_OUT_OF_RANGE, error(fair(34, 38).copy(rank = 4)))
-        assertEquals(InputErrorCode.REASON_CODE_MISMATCH, error(fair(34, 38).copy(reasonCode = ReasonCode.FAIR_ALTERNATIVE)))
+        assertEquals(
+            InputErrorCode.REASON_CODE_MISMATCH,
+            error(fair(34, 38).copy(reasonCode = ReasonCode.FAIR_ALTERNATIVE)),
+        )
         assertEquals(InputErrorCode.REASON_CODE_MISMATCH, error(fair(34, 38).copy(reasonCode = ReasonCode.FAST_TOTAL)))
         assertEquals(InputErrorCode.REASON_CODE_MISMATCH, error(fair(34, 38).copy(rank = 2)))
     }
@@ -92,12 +118,27 @@ class ReasonInputValidationTest {
     @Test
     fun comparisonMustBeTheRightRankAndSize() {
         assertNull(error(fair(34, 38).copy(comparison = versus(2, "합정", listOf(36, 42)))))
-        assertEquals(InputErrorCode.COMPARISON_MISMATCH, error(fair(34, 38).copy(comparison = versus(1, "합정", listOf(36, 42)))))
-        assertEquals(InputErrorCode.COMPARISON_MISMATCH, error(fair(34, 38).copy(comparison = versus(2, "합정", listOf(36)))))
-        assertEquals(InputErrorCode.COMPARISON_MISMATCH, error(fair(34, 38).copy(comparison = versus(4, "합정", listOf(36, 42)))))
-        assertEquals(InputErrorCode.EMPTY_STATION_NAME, error(fair(34, 38).copy(comparison = versus(2, " ", listOf(36, 42)))))
+        assertEquals(
+            InputErrorCode.COMPARISON_MISMATCH,
+            error(fair(34, 38).copy(comparison = versus(1, "합정", listOf(36, 42)))),
+        )
+        assertEquals(
+            InputErrorCode.COMPARISON_MISMATCH,
+            error(fair(34, 38).copy(comparison = versus(2, "합정", listOf(36)))),
+        )
+        assertEquals(
+            InputErrorCode.COMPARISON_MISMATCH,
+            error(fair(34, 38).copy(comparison = versus(4, "합정", listOf(36, 42)))),
+        )
+        assertEquals(
+            InputErrorCode.EMPTY_STATION_NAME,
+            error(fair(34, 38).copy(comparison = versus(2, " ", listOf(36, 42)))),
+        )
         val alternative = reason(ReasonMode.FAIR, 3, names, listOf(34, 38))
-        assertEquals(InputErrorCode.COMPARISON_MISMATCH, error(alternative.copy(comparison = versus(2, "합정", listOf(36, 42)))))
+        assertEquals(
+            InputErrorCode.COMPARISON_MISMATCH,
+            error(alternative.copy(comparison = versus(2, "합정", listOf(36, 42)))),
+        )
         assertNull(error(alternative.copy(comparison = versus(1, "합정", listOf(36, 42)))))
     }
 
@@ -110,7 +151,10 @@ class ReasonInputValidationTest {
         assertEquals(InputErrorCode.FAVOR_CONTEXT_MISSING, error(fair(34, 38).copy(favor = context)))
         assertEquals(InputErrorCode.FAVOR_CONTEXT_INVALID, error(withoutContext.copy(favor = context.copy(index = 2))))
         assertEquals(InputErrorCode.FAVOR_CONTEXT_INVALID, error(withoutContext.copy(favor = context.copy(index = -1))))
-        assertEquals(InputErrorCode.FAVOR_CONTEXT_INVALID, error(withoutContext.copy(favor = context.copy(capSeconds = listOf(null)))))
+        assertEquals(
+            InputErrorCode.FAVOR_CONTEXT_INVALID,
+            error(withoutContext.copy(favor = context.copy(capSeconds = listOf(null)))),
+        )
         assertEquals(
             InputErrorCode.FAVOR_CONTEXT_INVALID,
             error(withoutContext.copy(favor = context.copy(baselineTimesSeconds = listOf(1800, -1)))),
@@ -119,7 +163,8 @@ class ReasonInputValidationTest {
 
     @Test
     fun generateThrowsWithTheErrorCode() {
-        val exception = assertFailsWith<ReasonInputException> { ReasonGenerator.generate(fair(34, 38).copy(totalSeconds = 0)) }
+        val exception =
+            assertFailsWith<ReasonInputException> { ReasonGenerator.generate(fair(34, 38).copy(totalSeconds = 0)) }
         assertEquals(InputErrorCode.AGGREGATE_MISMATCH, exception.code)
     }
 

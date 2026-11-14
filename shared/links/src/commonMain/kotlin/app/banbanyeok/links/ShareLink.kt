@@ -11,7 +11,9 @@ public sealed interface LinkMode {
     public data object Fast : LinkMode
 
     /** 배려(`p<index>`). [index]는 `origins` 안의 0부터 시작하는 위치(0..3). */
-    public data class Favor(val index: Int) : LinkMode
+    public data class Favor(
+        val index: Int,
+    ) : LinkMode
 }
 
 /**
@@ -64,8 +66,13 @@ public enum class LinkErrorCode {
 
 /** [ShareLinkCodec.decodeQuery]의 결과. 오류는 하나만 보고한다. */
 public sealed interface LinkDecoding {
-    public data class Success(val link: ShareLink) : LinkDecoding
-    public data class Failure(val code: LinkErrorCode) : LinkDecoding
+    public data class Success(
+        val link: ShareLink,
+    ) : LinkDecoding
+
+    public data class Failure(
+        val code: LinkErrorCode,
+    ) : LinkDecoding
 
     public fun getOrNull(): ShareLink? = (this as? Success)?.link
 }

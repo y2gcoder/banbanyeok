@@ -28,7 +28,13 @@ class ManifestTest {
         assertTrue(manifest.files.registry.matches(registryBytes))
         assertTrue(manifest.files.candidates.matches(candidatesBytes))
         assertTrue(manifest.files.od.matches(odBytes))
-        assertTrue(manifest.files.od.path.contains(manifest.files.od.sha256.take(16)))
+        assertTrue(
+            manifest.files.od.path
+                .contains(
+                    manifest.files.od.sha256
+                        .take(16),
+                ),
+        )
     }
 
     @Test
@@ -40,12 +46,23 @@ class ManifestTest {
 
     @Test
     fun rejectsTamperedFiles() {
-        fun load(registry: ByteArray = registryBytes, candidates: ByteArray = candidatesBytes, od: ByteArray = odBytes) =
-            DataSetLoader.load(manifestText, registry, candidates, od)
+        fun load(
+            registry: ByteArray = registryBytes,
+            candidates: ByteArray = candidatesBytes,
+            od: ByteArray = odBytes,
+        ) = DataSetLoader.load(manifestText, registry, candidates, od)
         assertFailsWith<SchemaException> { load(od = odBytes.copyOf().also { it[odBytes.size - 1] = 9 }) }
         assertFailsWith<SchemaException> { load(od = odBytes.copyOf(odBytes.size - 1)) }
         assertFailsWith<SchemaException> { load(registry = registryBytes + byteArrayOf(10)) }
-        assertFailsWith<SchemaException> { load(candidates = candidatesBytes.copyOf().also { it[it.size - 3] = 'x'.code.toByte() }) }
+        assertFailsWith<SchemaException> {
+            load(
+                candidates =
+                    candidatesBytes.copyOf().also {
+                        it[it.size - 3] =
+                            'x'.code.toByte()
+                    },
+            )
+        }
     }
 
     @Test
@@ -58,6 +75,7 @@ class ManifestTest {
     @Test
     fun rejectsInconsistentManifest() {
         val base = ManifestCodec.parse(manifestText)
+
         fun mutated(change: (Manifest) -> Manifest) =
             assertFailsWith<SchemaException> {
                 DataSetLoader.load(ManifestCodec.encode(change(base)), registryBytes, candidatesBytes, odBytes)
@@ -70,15 +88,16 @@ class ManifestTest {
     @Test
     fun structuralValidation() {
         val base = ManifestCodec.parse(manifestText)
-        val bad = listOf(
-            base.copy(dataVersion = "2026-11-12"),
-            base.copy(generatedAt = "2026-11-12T00:00:00+09:00"),
-            base.copy(minClientSchema = 2),
-            base.copy(previousDataVersion = "20261112.2"),
-            base.copy(files = base.files.copy(od = base.files.od.copy(path = "../od.bin"))),
-            base.copy(files = base.files.copy(od = base.files.od.copy(path = "/abs/od.bin"))),
-            base.copy(files = base.files.copy(od = base.files.od.copy(sha256 = "ABC"))),
-        )
+        val bad =
+            listOf(
+                base.copy(dataVersion = "2026-11-12"),
+                base.copy(generatedAt = "2026-11-12T00:00:00+09:00"),
+                base.copy(minClientSchema = 2),
+                base.copy(previousDataVersion = "20261112.2"),
+                base.copy(files = base.files.copy(od = base.files.od.copy(path = "../od.bin"))),
+                base.copy(files = base.files.copy(od = base.files.od.copy(path = "/abs/od.bin"))),
+                base.copy(files = base.files.copy(od = base.files.od.copy(sha256 = "ABC"))),
+            )
         for (manifest in bad) assertFailsWith<SchemaException>(manifest.toString()) { ManifestCodec.validate(manifest) }
         // N=10 같은 두 자리 순번도 올바르게 비교된다
         ManifestCodec.validate(base.copy(dataVersion = "20261112.10", previousDataVersion = "20261112.9"))
@@ -86,7 +105,9 @@ class ManifestTest {
 
     @Test
     fun rejectsUnknownKeysAndBrokenJson() {
-        assertFailsWith<SchemaException> { ManifestCodec.parse(manifestText.replace("\"timeModel\"", "\"extra\": 1,\n  \"timeModel\"")) }
+        assertFailsWith<SchemaException> {
+            ManifestCodec.parse(manifestText.replace("\"timeModel\"", "\"extra\": 1,\n  \"timeModel\""))
+        }
         assertFailsWith<SchemaException> { ManifestCodec.parse("{") }
         assertFailsWith<SchemaException> { ManifestCodec.parse("{}") }
     }

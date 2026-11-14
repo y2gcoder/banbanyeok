@@ -17,16 +17,18 @@ abstract class CommonMainPurityTask : DefaultTask() {
 
     @TaskAction
     fun check() {
-        val forbidden = Regex(
-            """^\s*(import\s+(java|javax|android|androidx|platform|kotlinx\.browser|org\.w3c|org\.khronos)\.|import\s+kotlin\.js\.|import\s+kotlin\.native\.|import\s+kotlin\.io\.path\.|import\s+kotlin\.concurrent\.)""",
-        )
-        val violations = sources.asFileTree.files
-            .filter { it.extension == "kt" }
-            .flatMap { file ->
-                file.readLines().mapIndexedNotNull { i, line ->
-                    if (forbidden.containsMatchIn(line)) "${file.path}:${i + 1}: ${line.trim()}" else null
+        val forbidden =
+            Regex(
+                """^\s*(import\s+(java|javax|android|androidx|platform|kotlinx\.browser|org\.w3c|org\.khronos)\.|import\s+kotlin\.js\.|import\s+kotlin\.native\.|import\s+kotlin\.io\.path\.|import\s+kotlin\.concurrent\.)""",
+            )
+        val violations =
+            sources.asFileTree.files
+                .filter { it.extension == "kt" }
+                .flatMap { file ->
+                    file.readLines().mapIndexedNotNull { i, line ->
+                        if (forbidden.containsMatchIn(line)) "${file.path}:${i + 1}: ${line.trim()}" else null
+                    }
                 }
-            }
         if (violations.isNotEmpty()) {
             throw org.gradle.api.GradleException(
                 "commonMain에 플랫폼 API import가 있습니다:\n" + violations.joinToString("\n"),

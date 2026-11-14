@@ -4,7 +4,10 @@ package app.banbanyeok.applogic
 internal object Fixtures {
     private val CODES = listOf("03v", "130", "225", "31a")
 
-    fun people(names: List<String?>, originCodes: List<String?>? = null): List<PersonRef> =
+    fun people(
+        names: List<String?>,
+        originCodes: List<String?>? = null,
+    ): List<PersonRef> =
         names.mapIndexed { i, name -> PersonRef(id = "p$i", name = name, originCode = originCodes?.get(i) ?: CODES[i]) }
 
     fun reason(
@@ -42,24 +45,34 @@ internal object Fixtures {
         )
     }
 
-    private fun defaultCode(mode: ReasonMode, rank: Int): ReasonCode = when (mode) {
-        ReasonMode.FAIR -> if (rank == 1) ReasonCode.FAIR_MINIMAX else ReasonCode.FAIR_ALTERNATIVE
-        ReasonMode.FAST -> if (rank == 1) ReasonCode.FAST_TOTAL else ReasonCode.FAST_ALTERNATIVE
-        ReasonMode.FAVOR -> if (rank == 1) ReasonCode.FAVOR_CAPPED else ReasonCode.FAVOR_ALTERNATIVE
-    }
+    private fun defaultCode(
+        mode: ReasonMode,
+        rank: Int,
+    ): ReasonCode =
+        when (mode) {
+            ReasonMode.FAIR -> if (rank == 1) ReasonCode.FAIR_MINIMAX else ReasonCode.FAIR_ALTERNATIVE
+            ReasonMode.FAST -> if (rank == 1) ReasonCode.FAST_TOTAL else ReasonCode.FAST_ALTERNATIVE
+            ReasonMode.FAVOR -> if (rank == 1) ReasonCode.FAVOR_CAPPED else ReasonCode.FAVOR_ALTERNATIVE
+        }
 
-    fun versus(rank: Int, station: String, minutes: List<Int>? = null, seconds: List<Int>? = null, code: String = "0bk"): Comparison =
-        Comparison(rank, code, station, seconds ?: minutes!!.map { it * 60 })
+    fun versus(
+        rank: Int,
+        station: String,
+        minutes: List<Int>? = null,
+        seconds: List<Int>? = null,
+        code: String = "0bk",
+    ): Comparison = Comparison(rank, code, station, seconds ?: minutes!!.map { it * 60 })
 
     fun favor(
         index: Int,
         baselineMinutes: List<Int>,
         capMinutes: List<Int?>,
         closerStationsExcluded: Boolean = false,
-    ): FavorContext = FavorContext(
-        index,
-        baselineMinutes.map { it * 60 },
-        capMinutes.map { it?.let { minutes -> minutes * 60 } },
-        closerStationsExcluded,
-    )
+    ): FavorContext =
+        FavorContext(
+            index,
+            baselineMinutes.map { it * 60 },
+            capMinutes.map { it?.let { minutes -> minutes * 60 } },
+            closerStationsExcluded,
+        )
 }

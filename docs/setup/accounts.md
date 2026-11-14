@@ -11,7 +11,7 @@
 | ✅ | GitHub SSH 서명·인증 키 | 커밋 서명(Verified) | 완료 | `Dev / github-y2gcoder` | 0 | — |
 | ✅ | 1Password `banbanyeok` vault | 비밀값 원본 | 완료 | — | 0 | — |
 | ✅ | GitHub 저장소 `y2gcoder/banbanyeok` (퍼블릭, AGPL-3.0) | 모노레포 | 2026-11-12 공개. secret scanning·push protection·Dependabot 알림 켬 | — | 0 | https://github.com/new |
-| ⬜ | 서울 열린데이터광장 인증키 | 전체 지하철 시간표, 역 정보, 최단경로 대조 (`sample` 키는 5건 제한) | 웨이브 1 (P2 파이프라인) | `seoul-opendata` | 0 | https://data.seoul.go.kr |
+| ✅ (2026-11-14, 일반 인증키) | 서울 열린데이터광장 인증키 | 전체 지하철 시간표, 역 정보, 최단경로 대조 (`sample` 키는 5건 제한) | 웨이브 1 (P2 파이프라인) | `seoul-opendata` | 0 | https://data.seoul.go.kr |
 | ⬜ | 공공데이터포털 TAGO 지하철정보 활용신청 | 서울 외 수도권 노선 시간표 (개발계정 자동승인) | 웨이브 1 (P2) | `data-go-kr-tago` | 0 | https://www.data.go.kr/data/15098554/openapi.do |
 
 ## 배포 단계에서 필요 (웨이브 2, P8)

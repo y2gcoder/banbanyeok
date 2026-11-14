@@ -4,11 +4,32 @@
 kotlin = "2.4.21"                  # 2026-10-08 게시. 2.5.0-RC는 안정판이 아니라 제외
 kotlinx-serialization = "1.12.0"   # 1.13.0은 2026-11-11 게시라 제외
 kotlinx-coroutines = "1.11.0"
-# 서버 프레임워크(Ktor vs Spring Boot)는 미정이다. 아래 ktor 항목은 후보로 고정해 둔 값이며 지금은 어떤 모듈도 쓰지 않는다.
+# 서버는 Ktor로 확정. 실제 프레임워크 연결은 P3에서 구현한다.
 ktor = "3.6.1"                     # 2026-10-29 게시
 logback = "1.5.38"
 
+kotest = "6.0.4"
+mockk = "1.14.6"
+testcontainers = "1.21.3"
+konsist = "0.17.3"
+ktlint-plugin = "14.1.0"
+ktlint = "1.7.1"
+detekt = "1.23.8"
+postgres-jdbc = "42.7.8"
+
 [libraries]
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
+ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-plugin" }
+detekt-cli = { module = "io.gitlab.arturbosch.detekt:detekt-cli", version.ref = "detekt" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+postgres-jdbc = { module = "org.postgresql:postgresql", version.ref = "postgres-jdbc" }
+
 # build-logic(컨벤션 플러그인)의 클래스패스로 들어간다. 모듈 빌드 파일은 id("banbanyeok.*")만 쓰고 플러그인 버전을 직접 적지 않는다.
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-serialization-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
@@ -16,7 +37,7 @@ kotlin-serialization-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-ser
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 
-# (후보, 미사용)
+# (P3에서 사용)
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }

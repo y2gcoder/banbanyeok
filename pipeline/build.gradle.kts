@@ -11,4 +11,9 @@ dependencies {
     implementation(project(":shared:schema"))
 
     testImplementation(kotlin("test"))
+    "integrationTestRuntimeOnly"(libs.postgres.jdbc)
+}
+
+tasks.named<Test>("integrationTest") {
+    systemProperty("kotest.framework.config.fqn", "app.banbanyeok.pipeline.ProjectConfig")
 }

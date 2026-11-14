@@ -34,7 +34,10 @@ class MapLinksTest {
     fun nameWithCommaOrSlashCannotBreakThePath() {
         val place = MapPlace("A,B/C 역", 37.0, 127.0)
         val web = KakaoMapLinks.transitDirections(place, to).webUrl
-        assertEquals("https://map.kakao.com/link/by/traffic/A%2CB%2FC%20%EC%97%AD,37.000000,127.000000/", web.substringBefore("%EC%8B%A0"))
+        assertEquals(
+            "https://map.kakao.com/link/by/traffic/A%2CB%2FC%20%EC%97%AD,37.000000,127.000000/",
+            web.substringBefore("%EC%8B%A0"),
+        )
     }
 
     @Test

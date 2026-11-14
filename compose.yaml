@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:${POSTGRES_VERSION:-17.6}
+    environment:
+      POSTGRES_DB: banbanyeok
+      POSTGRES_USER: local
+      POSTGRES_PASSWORD: local-development-only
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U local -d banbanyeok"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  migrate:
+    image: liquibase/liquibase:4.33.0
+    profiles: [tools]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./server/db/changelog:/liquibase/changelog:ro
+    command:
+      - --search-path=/liquibase/changelog
+      - --changelog-file=master.sql
+      - --url=jdbc:postgresql://db:5432/banbanyeok
+      - --username=local
+      - --password=local-development-only
+      - update
+volumes:
+  postgres-data:

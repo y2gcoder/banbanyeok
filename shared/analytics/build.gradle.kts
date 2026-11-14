@@ -2,4 +2,3 @@
 plugins {
     id("banbanyeok.kmp-library")
 }
-

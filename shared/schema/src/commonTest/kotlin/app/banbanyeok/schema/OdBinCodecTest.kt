@@ -29,7 +29,11 @@ class OdBinCodecTest {
         // 프로토타입 출력: R1 -> [X,Y,Z,R4,B4,G4] = [10,20,26,15,20,30]분, B7 -> [24,28,12,33,18,22]분.
         val set = loadFixtureSet()
         val byName = set.registry.stations.associateBy { it.name }
-        fun time(from: String, to: String): Pair<Int, Int> {
+
+        fun time(
+            from: String,
+            to: String,
+        ): Pair<Int, Int> {
             val o = set.od.indexOfOrigin(StationCode.parse(byName.getValue(from).code))
             val c = set.od.indexOfCandidate(StationCode.parse(byName.getValue(to).code))
             return set.od.timeSeconds(o, c) to set.od.transfers(o, c)
@@ -41,13 +45,14 @@ class OdBinCodecTest {
 
     @Test
     fun roundTripWithUnreachableCells() {
-        val matrix = OdMatrix(
-            registryVersion = 7,
-            originCodes = intArrayOf(3, 99, 32767),
-            candidateCodes = intArrayOf(0, 5),
-            timesSeconds = intArrayOf(0, 65534, -1, 30, 120, 254),
-            transfers = intArrayOf(0, 254, -1, 1, 2, 0),
-        )
+        val matrix =
+            OdMatrix(
+                registryVersion = 7,
+                originCodes = intArrayOf(3, 99, 32767),
+                candidateCodes = intArrayOf(0, 5),
+                timesSeconds = intArrayOf(0, 65534, -1, 30, 120, 254),
+                transfers = intArrayOf(0, 254, -1, 1, 2, 0),
+            )
         val bytes = OdBinCodec.encode(matrix)
         assertEquals(32 + 2 * 3 + 2 * 2 + 2 * 6 + 6, bytes.size)
         assertEquals(matrix, OdBinCodec.decode(bytes))
@@ -64,7 +69,10 @@ class OdBinCodecTest {
 
     @Test
     fun writerRejectsOutOfRangeValues() {
-        fun matrix(time: Int, transfer: Int) = {
+        fun matrix(
+            time: Int,
+            transfer: Int,
+        ) = {
             OdMatrix(1, intArrayOf(1), intArrayOf(2), intArrayOf(time), intArrayOf(transfer))
         }
         assertFailsWith<SchemaException> { matrix(65535, 0)() }
@@ -89,8 +97,18 @@ class OdBinCodecTest {
         corrupt { it.also { b -> b[8] = 1 } } // flags
         corrupt { it.also { b -> b[24] = 1 } } // reserved
         corrupt { it.also { b -> b[16] = 19 } } // N 불일치 -> 길이 오류
-        corrupt { it.also { b -> b[32] = b[34]; b[33] = b[35] } } // 출발역 코드 중복(오름차순 위반)
-        corrupt { it.also { b -> b[HEADER_TIMES_START] = 0xff.toByte(); b[HEADER_TIMES_START + 1] = 0xff.toByte() } } // 시간만 도달 불가
+        corrupt {
+            it.also { b ->
+                b[32] = b[34]
+                b[33] = b[35]
+            }
+        } // 출발역 코드 중복(오름차순 위반)
+        corrupt {
+            it.also { b ->
+                b[HEADER_TIMES_START] = 0xff.toByte()
+                b[HEADER_TIMES_START + 1] = 0xff.toByte()
+            }
+        } // 시간만 도달 불가
     }
 
     @Test
@@ -110,9 +128,10 @@ class OdBinCodecTest {
     }
 }
 
-internal fun loadFixtureSet(): DataSet = DataSetLoader.load(
-    manifestJson = ContractFiles.text("fixtures/manifest.sample.json"),
-    registryBytes = ContractFiles.bytes("fixtures/stations.sample.json"),
-    candidatesBytes = ContractFiles.bytes("fixtures/candidates.sample.json"),
-    odBytes = ContractFiles.bytes("fixtures/od.sample.bin"),
-)
+internal fun loadFixtureSet(): DataSet =
+    DataSetLoader.load(
+        manifestJson = ContractFiles.text("fixtures/manifest.sample.json"),
+        registryBytes = ContractFiles.bytes("fixtures/stations.sample.json"),
+        candidatesBytes = ContractFiles.bytes("fixtures/candidates.sample.json"),
+        odBytes = ContractFiles.bytes("fixtures/od.sample.bin"),
+    )

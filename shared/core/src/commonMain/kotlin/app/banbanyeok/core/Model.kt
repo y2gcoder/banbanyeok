@@ -14,7 +14,11 @@ public data class RankInput(
 )
 
 /** Corresponds to OpenAPI PersonalTime; order follows the input participants. */
-public data class PersonalTime(val participantId: String, val seconds: Int, val transfers: Int)
+public data class PersonalTime(
+    val participantId: String,
+    val seconds: Int,
+    val transfers: Int,
+)
 
 /** Corresponds to OpenAPI Candidate; stationName is supplied by the adapter's registry. */
 public data class Candidate(
@@ -28,7 +32,10 @@ public data class Candidate(
     val reasonCode: String,
 )
 
-public data class ExcludedCandidate(val stationCode: String, val reasonCode: String)
+public data class ExcludedCandidate(
+    val stationCode: String,
+    val reasonCode: String,
+)
 
 /** Full ranking, without the HTTP layer's top-three truncation, names or dataVersion.
  * mode is fair/fast/favor:<participantId>. baselineStationCode is always strict fair first place.

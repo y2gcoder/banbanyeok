@@ -53,9 +53,18 @@ internal object Coordinate6Serializer : KSerializer<Double> {
 
     override fun deserialize(decoder: Decoder): Double = decoder.decodeDouble()
 
-    override fun serialize(encoder: Encoder, value: Double) {
+    override fun serialize(
+        encoder: Encoder,
+        value: Double,
+    ) {
         require(value.isFinite()) { "좌표는 유한한 수여야 합니다" }
-        if (encoder is JsonEncoder) encoder.encodeJsonElement(JsonUnquotedLiteral(format(value))) else encoder.encodeDouble(value)
+        if (encoder is JsonEncoder) {
+            encoder.encodeJsonElement(
+                JsonUnquotedLiteral(format(value)),
+            )
+        } else {
+            encoder.encodeDouble(value)
+        }
     }
 
     internal fun format(value: Double): String {
@@ -87,11 +96,12 @@ public data class CandidateList(
 /** 레지스트리·후보 JSON의 파서와 (정규형) 작성기. 알 수 없는 키는 오류다(data-format.md §6). */
 public object RegistryCodec {
     private val reader = Json { ignoreUnknownKeys = false }
-    private val writer = Json {
-        prettyPrint = true
-        prettyPrintIndent = "  "
-        explicitNulls = false
-    }
+    private val writer =
+        Json {
+            prettyPrint = true
+            prettyPrintIndent = "  "
+            explicitNulls = false
+        }
 
     public fun parse(json: String): Registry {
         val registry = decode { reader.decodeFromString(Registry.serializer(), json) }
@@ -115,13 +125,14 @@ public object RegistryCodec {
         return writer.encodeToString(CandidateList.serializer(), list) + "\n"
     }
 
-    private inline fun <T> decode(block: () -> T): T = try {
-        block()
-    } catch (e: SerializationException) {
-        throw SchemaException("JSON 형식 오류: ${e.message}", e)
-    } catch (e: IllegalArgumentException) {
-        throw SchemaException("JSON 형식 오류: ${e.message}", e)
-    }
+    private inline fun <T> decode(block: () -> T): T =
+        try {
+            block()
+        } catch (e: SerializationException) {
+            throw SchemaException("JSON 형식 오류: ${e.message}", e)
+        } catch (e: IllegalArgumentException) {
+            throw SchemaException("JSON 형식 오류: ${e.message}", e)
+        }
 
     /** data-format.md §3의 구조 규칙. 위반이면 [SchemaException]. */
     public fun validate(registry: Registry) {
@@ -145,12 +156,15 @@ public object RegistryCodec {
                 "${station.code}: addedIn=${station.addedIn}은 1..${registry.registryVersion} 이어야 합니다"
             }
             when (station.status) {
-                StationStatus.ACTIVE -> schemaCheck(station.deprecatedIn == null && station.replacedBy == null) {
-                    "${station.code}: active 역에 deprecatedIn/replacedBy가 있습니다"
-                }
-                StationStatus.DEPRECATED -> schemaCheck(
-                    station.deprecatedIn != null && station.deprecatedIn in station.addedIn..registry.registryVersion,
-                ) { "${station.code}: deprecated 역은 addedIn..registryVersion 범위의 deprecatedIn이 필요합니다" }
+                StationStatus.ACTIVE ->
+                    schemaCheck(station.deprecatedIn == null && station.replacedBy == null) {
+                        "${station.code}: active 역에 deprecatedIn/replacedBy가 있습니다"
+                    }
+                StationStatus.DEPRECATED ->
+                    schemaCheck(
+                        station.deprecatedIn != null &&
+                            station.deprecatedIn in station.addedIn..registry.registryVersion,
+                    ) { "${station.code}: deprecated 역은 addedIn..registryVersion 범위의 deprecatedIn이 필요합니다" }
             }
             station.replacedBy?.let {
                 StationCode.parse(it)
@@ -173,7 +187,10 @@ public object RegistryCodec {
     }
 
     /** 후보가 모두 레지스트리에 active로 있고 같은 registryVersion인지 확인한다. */
-    public fun validateAgainst(list: CandidateList, registry: Registry) {
+    public fun validateAgainst(
+        list: CandidateList,
+        registry: Registry,
+    ) {
         schemaCheck(list.registryVersion == registry.registryVersion) {
             "후보 목록 registryVersion=${list.registryVersion} != 레지스트리 ${registry.registryVersion}"
         }
@@ -189,7 +206,10 @@ public object RegistryCodec {
  * 빈 목록이면 통과. 파이프라인 검증 게이트와 CI가 쓴다.
  */
 public object RegistryCompatibility {
-    public fun checkAppendOnly(previous: Registry, next: Registry): List<String> {
+    public fun checkAppendOnly(
+        previous: Registry,
+        next: Registry,
+    ): List<String> {
         val violations = mutableListOf<String>()
         if (next.registryVersion < previous.registryVersion) {
             violations += "registryVersion이 줄었습니다: ${previous.registryVersion} -> ${next.registryVersion}"

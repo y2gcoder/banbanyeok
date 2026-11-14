@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:Graph.kt$(line != "2" || name != "까치산") &amp;&amp; seoulRecords.none { it.line == "${line}호선" &amp;&amp; it.name == canonical(name) }</ID>
+    <ID>ComplexCondition:Graph.kt$(other != "2" || name != "까치산") &amp;&amp; seoulRecords.none { it.line == "${other}호선" &amp;&amp; it.name == canonical(name) }</ID>
+    <ID>CyclomaticComplexMethod:Graph.kt$internal fun network(root: Path): Network</ID>
+    <ID>CyclomaticComplexMethod:Sources.kt$internal fun checkSource( source: Source, bytes: ByteArray, contentType: String, ): List&lt;List&lt;String&gt;&gt;</ID>
+    <ID>CyclomaticComplexMethod:Sources.kt$internal fun csv(text: String): List&lt;List&lt;String&gt;&gt;</ID>
+    <ID>CyclomaticComplexMethod:Validation.kt$internal fun graphGate( net: Network, costs: List&lt;List&lt;Cost&gt;&gt;, ): Gate</ID>
+    <ID>LongMethod:Graph.kt$internal fun network(root: Path): Network</ID>
+    <ID>LongMethod:Main.kt$private fun build(root: Path)</ID>
+    <ID>LoopWithTooManyJumpStatements:Graph.kt$for</ID>
+    <ID>NestedBlockDepth:Validation.kt$internal fun graphGate( net: Network, costs: List&lt;List&lt;Cost&gt;&gt;, ): Gate</ID>
+    <ID>NestedBlockDepth:Validation.kt$internal fun stateTriangles(distances: List&lt;List&lt;Cost&gt;&gt;): Int</ID>
+  </CurrentIssues>
+</SmellBaseline>

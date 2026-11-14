@@ -1,6 +1,9 @@
 package app.banbanyeok.applogic
 
-internal enum class Josa(val withFinal: String, val withoutFinal: String) {
+internal enum class Josa(
+    val withFinal: String,
+    val withoutFinal: String,
+) {
     EUN_NEUN("은", "는"),
     I_GA("이", "가"),
     WA_GWA("과", "와"),
@@ -19,7 +22,10 @@ internal object Korean {
     private const val LATIN_WITH_FINAL = "LMNR"
     private const val DIGITS_WITH_FINAL = "013678"
 
-    fun attach(word: String, josa: Josa): String = word + if (hasFinalConsonant(word)) josa.withFinal else josa.withoutFinal
+    fun attach(
+        word: String,
+        josa: Josa,
+    ): String = word + if (hasFinalConsonant(word)) josa.withFinal else josa.withoutFinal
 
     fun hasFinalConsonant(word: String): Boolean {
         for (index in word.indices.reversed()) {

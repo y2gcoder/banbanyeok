@@ -7,7 +7,11 @@ import kotlin.math.floor
  * 지도 앱에 넘길 장소. [name]은 지도 앱에 표시될 이름이며 그대로 쓴다(예: "합정역").
  * 좌표는 십진 도(WGS84)다.
  */
-public data class MapPlace(val name: String, val latitude: Double, val longitude: Double) {
+public data class MapPlace(
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+) {
     init {
         require(name.isNotBlank()) { "장소 이름이 비어 있습니다" }
         require(latitude.isFinite() && latitude in -90.0..90.0) { "위도가 올바르지 않습니다: $latitude" }
@@ -21,7 +25,10 @@ public data class MapPlace(val name: String, val latitude: Double, val longitude
  * @property webUrl 기본으로 쓰는 웹 링크(https). 앱이 설치돼 있으면 모바일 브라우저가 앱으로 넘기는 경우가 많다.
  * @property appUrl 보조 앱 스킴. 앱이 없으면 열리지 않으므로 호출하는 쪽이 [webUrl]로 되돌아가야 한다.
  */
-public data class MapLinks(val webUrl: String, val appUrl: String)
+public data class MapLinks(
+    val webUrl: String,
+    val appUrl: String,
+)
 
 /**
  * 카카오맵 대중교통 길찾기 링크.
@@ -32,10 +39,14 @@ public data class MapLinks(val webUrl: String, val appUrl: String)
  *   앱을 열지 못할 수 있으니 웹 링크가 기본이다. 근거와 확인일은 docs/setup/p6-notes.md.
  */
 public object KakaoMapLinks {
-    public fun transitDirections(from: MapPlace, to: MapPlace): MapLinks = MapLinks(
-        webUrl = "https://map.kakao.com/link/by/traffic/${segment(from)}/${segment(to)}",
-        appUrl = "kakaomap://route?sp=${coordinates(from)}&ep=${coordinates(to)}&by=PUBLICTRANSIT",
-    )
+    public fun transitDirections(
+        from: MapPlace,
+        to: MapPlace,
+    ): MapLinks =
+        MapLinks(
+            webUrl = "https://map.kakao.com/link/by/traffic/${segment(from)}/${segment(to)}",
+            appUrl = "kakaomap://route?sp=${coordinates(from)}&ep=${coordinates(to)}&by=PUBLICTRANSIT",
+        )
 
     private fun segment(place: MapPlace): String = "${Percent.encode(place.name)},${coordinates(place)}"
 
@@ -53,14 +64,23 @@ public object KakaoMapLinks {
  *   비공식)를 웹 링크로 쓴다. 사용자는 거기서 "도착"을 눌러 길찾기를 시작한다. 근거와 확인일은 docs/setup/p6-notes.md.
  */
 public object NaverMapLinks {
-    public fun transitDirections(from: MapPlace, to: MapPlace, appName: String): MapLinks {
+    public fun transitDirections(
+        from: MapPlace,
+        to: MapPlace,
+        appName: String,
+    ): MapLinks {
         require(appName.isNotBlank()) { "appName이 비어 있습니다" }
         return MapLinks(
             webUrl = "https://map.naver.com/p/search/${Percent.encode(to.name)}",
-            appUrl = "nmap://route/public" +
-                "?slat=${Coordinate.format(from.latitude)}&slng=${Coordinate.format(from.longitude)}&sname=${Percent.encode(from.name)}" +
-                "&dlat=${Coordinate.format(to.latitude)}&dlng=${Coordinate.format(to.longitude)}&dname=${Percent.encode(to.name)}" +
-                "&appname=${Percent.encode(appName)}",
+            appUrl =
+                "nmap://route/public" +
+                    "?slat=${Coordinate.format(
+                        from.latitude,
+                    )}&slng=${Coordinate.format(from.longitude)}&sname=${Percent.encode(from.name)}" +
+                    "&dlat=${Coordinate.format(
+                        to.latitude,
+                    )}&dlng=${Coordinate.format(to.longitude)}&dname=${Percent.encode(to.name)}" +
+                    "&appname=${Percent.encode(appName)}",
         )
     }
 }

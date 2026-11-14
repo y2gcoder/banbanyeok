@@ -7,13 +7,16 @@ import kotlin.jvm.JvmInline
  * 문자열 사전순 = 값 오름차순이므로 JVM·JS 어디서든 정렬이 같다. 형식은 contracts/data-format.md §2.
  */
 @JvmInline
-public value class StationCode private constructor(public val value: Int) {
+public value class StationCode private constructor(
+    public val value: Int,
+) {
     /** 3자 문자열 표기. */
-    override fun toString(): String = buildString(LENGTH) {
-        append(ALPHABET[(value shr 10) and 31])
-        append(ALPHABET[(value shr 5) and 31])
-        append(ALPHABET[value and 31])
-    }
+    override fun toString(): String =
+        buildString(LENGTH) {
+            append(ALPHABET[(value shr 10) and 31])
+            append(ALPHABET[(value shr 5) and 31])
+            append(ALPHABET[value and 31])
+        }
 
     public companion object {
         public const val ALPHABET: String = "0123456789abcdefghjkmnpqrstvwxyz"

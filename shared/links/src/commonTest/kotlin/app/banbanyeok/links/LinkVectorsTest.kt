@@ -69,21 +69,40 @@ class LinkVectorsTest {
             val decoded = ShareLinkCodec.decodeQuery(ShareLinkCodec.encodeQuery(link)).getOrNull()
             // 빈 문자열 별칭은 없는 것으로 정규화되므로 null로 바꿔 비교한다
             val normalized = link.copy(nicknames = link.nicknames?.map { it?.ifEmpty { null } })
-            assertEquals(normalized, decoded, item.jsonObject.getValue("id").jsonPrimitive.content)
+            assertEquals(
+                normalized,
+                decoded,
+                item.jsonObject
+                    .getValue("id")
+                    .jsonPrimitive.content,
+            )
         }
     }
 
     private fun linkFrom(obj: JsonObject): ShareLink {
         val origins = obj.getValue("origins").jsonArray.map { StationCode.parse(it.jsonPrimitive.content) }
-        val mode = when (obj.getValue("mode").jsonPrimitive.content) {
-            "fair" -> LinkMode.Fair
-            "fast" -> LinkMode.Fast
-            "favor" -> LinkMode.Favor(obj.getValue("favorIndex").jsonPrimitive.int)
-            else -> error("알 수 없는 mode")
-        }
-        val nicknames = obj.getValue("nicknames").let { element: JsonElement ->
-            if (element is JsonNull) null else element.jsonArray.map { if (it is JsonNull) null else (it as JsonPrimitive).content }
-        }
+        val mode =
+            when (obj.getValue("mode").jsonPrimitive.content) {
+                "fair" -> LinkMode.Fair
+                "fast" -> LinkMode.Fast
+                "favor" -> LinkMode.Favor(obj.getValue("favorIndex").jsonPrimitive.int)
+                else -> error("알 수 없는 mode")
+            }
+        val nicknames =
+            obj.getValue("nicknames").let { element: JsonElement ->
+                if (element is JsonNull) {
+                    null
+                } else {
+                    element.jsonArray.map {
+                        if (it is JsonNull) {
+                            null
+                        } else {
+                            (it as JsonPrimitive)
+                                .content
+                        }
+                    }
+                }
+            }
         return ShareLink(origins, mode, nicknames)
     }
 }

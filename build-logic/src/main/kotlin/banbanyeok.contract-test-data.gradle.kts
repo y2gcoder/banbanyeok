@@ -8,19 +8,20 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
 }
 
-val generateGoldenTests = tasks.register<GenerateContractTestData>("generateGoldenTests") {
-    group = "verification"
-    description = "contracts/golden, contracts/fixtures를 commonTest 소스(ContractFiles)로 생성한다."
-    val contracts = rootProject.layout.projectDirectory.dir("contracts")
-    contractsDir.set(contracts)
-    files.from(
-        contracts.asFileTree.matching {
-            include("golden/**", "fixtures/**", "events.json")
-        },
-    )
-    packageName.set("app.banbanyeok.contracts")
-    outputDir.set(layout.buildDirectory.dir("generated/contracts/commonTest/kotlin"))
-}
+val generateGoldenTests =
+    tasks.register<GenerateContractTestData>("generateGoldenTests") {
+        group = "verification"
+        description = "contracts/golden, contracts/fixtures를 commonTest 소스(ContractFiles)로 생성한다."
+        val contracts = rootProject.layout.projectDirectory.dir("contracts")
+        contractsDir.set(contracts)
+        files.from(
+            contracts.asFileTree.matching {
+                include("golden/**", "fixtures/**", "events.json")
+            },
+        )
+        packageName.set("app.banbanyeok.contracts")
+        outputDir.set(layout.buildDirectory.dir("generated/contracts/commonTest/kotlin"))
+    }
 
 kotlin.sourceSets.named("commonTest") {
     kotlin.srcDir(generateGoldenTests.flatMap { it.outputDir })

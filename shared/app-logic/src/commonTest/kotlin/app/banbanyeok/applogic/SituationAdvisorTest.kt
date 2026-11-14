@@ -6,7 +6,11 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class SituationAdvisorTest {
-    private fun candidate(name: String, vararg minutes: Int) = CandidateTimes(name, minutes.map { it * 60 })
+    private fun candidate(
+        name: String,
+        vararg minutes: Int,
+    ) = CandidateTimes(name, minutes.map { it * 60 })
+
     private val two = Fixtures.people(listOf("민지", "지훈"))
 
     private fun evaluate(
@@ -43,7 +47,10 @@ class SituationAdvisorTest {
             evaluate(listOf(candidate("서울역", 3, 5))).single().text,
         )
         // 5분(300초)까지가 같은 동네. 5분 1초부터는 아니다.
-        assertEquals(NoticeKind.SAME_NEIGHBORHOOD, evaluate(listOf(CandidateTimes("신촌", listOf(100, 300)))).single().kind)
+        assertEquals(
+            NoticeKind.SAME_NEIGHBORHOOD,
+            evaluate(listOf(CandidateTimes("신촌", listOf(100, 300)))).single().kind,
+        )
         assertEquals(emptyList(), evaluate(listOf(CandidateTimes("신촌", listOf(100, 301)))))
     }
 
@@ -78,10 +85,16 @@ class SituationAdvisorTest {
 
     @Test
     fun similarCandidatesWithinTwoMinutes() {
-        val three = evaluate(listOf(candidate("신촌", 38, 30), candidate("합정", 39, 30), candidate("을지로3가", 40, 30))).single()
+        val three =
+            evaluate(
+                listOf(candidate("신촌", 38, 30), candidate("합정", 39, 30), candidate("을지로3가", 40, 30)),
+            ).single()
         assertEquals(NoticeKind.SIMILAR_CANDIDATES, three.kind)
         assertEquals("세 곳 다 비슷해요. 가고 싶은 동네로 고르세요.", three.text)
-        assertEquals("두 곳 다 비슷해요. 가고 싶은 동네로 고르세요.", evaluate(listOf(candidate("신촌", 38, 30), candidate("합정", 38, 30))).single().text)
+        assertEquals(
+            "두 곳 다 비슷해요. 가고 싶은 동네로 고르세요.",
+            evaluate(listOf(candidate("신촌", 38, 30), candidate("합정", 38, 30))).single().text,
+        )
         // 3분 차이는 비슷하다고 하지 않는다
         assertEquals(emptyList(), evaluate(listOf(candidate("신촌", 38, 30), candidate("합정", 41, 30))))
         // 단독 후보는 비교 대상이 없다
@@ -109,7 +122,10 @@ class SituationAdvisorTest {
     @Test
     fun invalidInputIsRejected() {
         fun code(block: () -> Unit) = assertFailsWith<ReasonInputException>(block = block).code
-        assertEquals(InputErrorCode.PEOPLE_COUNT, code { evaluate(emptyList(), people = Fixtures.people(listOf("민지"))) })
+        assertEquals(
+            InputErrorCode.PEOPLE_COUNT,
+            code { evaluate(emptyList(), people = Fixtures.people(listOf("민지"))) },
+        )
         assertEquals(
             InputErrorCode.RANK_OUT_OF_RANGE,
             code { evaluate(List(4) { candidate("신촌", 10, 20) }) },

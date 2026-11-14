@@ -34,7 +34,10 @@ class GoldenContractTest {
     @Test
     fun snapshotRowsAreInternallyConsistent() {
         for (snapshot in expected.scenarios) {
-            val participantCount = snapshot.ranking.first().times.size
+            val participantCount =
+                snapshot.ranking
+                    .first()
+                    .times.size
             snapshot.ranking.forEachIndexed { index, row ->
                 assertEquals(index + 1, row.rank, snapshot.id)
                 assertEquals(participantCount, row.times.size, snapshot.id)
@@ -56,7 +59,11 @@ class GoldenContractTest {
                 assertTrue(column >= 0, "${scenario.id}: ${row.stationId}")
                 input.participants.indices.forEach { person ->
                     assertEquals(input.times[person][column], row.times[person], "${scenario.id}/${row.stationId}")
-                    assertEquals(input.transfers[person][column], row.transfers[person], "${scenario.id}/${row.stationId}")
+                    assertEquals(
+                        input.transfers[person][column],
+                        row.transfers[person],
+                        "${scenario.id}/${row.stationId}",
+                    )
                 }
             }
         }
