@@ -56,11 +56,13 @@ object CompositionRoot {
         database: ConnectedDatabase? = null,
     ): Components {
         timeline?.mark("assembly-started")
-        val loaded = ArtifactLoader(store) { timeline?.mark(it) }.load()
-        val directory = StationDirectory(loaded.dataSet)
+        // DB 풀을 먼저 만들고 첫 연결을 뒤에서 맺기 시작한다(산출물 읽기와 겹침).
         val owned = if (database == null) DatabaseFactory.connect(config.database) else null
+        owned?.warmUp { timeline?.mark("database-connection-warm") }
         val db = (database ?: requireNotNull(owned)).database
         timeline?.mark("database-pool-created")
+        val loaded = ArtifactLoader(store) { timeline?.mark(it) }.load()
+        val directory = StationDirectory(loaded.dataSet)
 
         val clock = Clock.systemUTC()
         val ids = SecureRandomIdGenerator()
