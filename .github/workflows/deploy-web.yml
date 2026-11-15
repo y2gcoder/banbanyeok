@@ -1,4 +1,5 @@
-# 웹 배포(Cloudflare Workers + OpenNext). 순서: 빌드(cf:build) → 캐시 채우기(populateCache) → wrangler deploy → 스모크 테스트.
+# 웹 배포(Cloudflare Workers + OpenNext). 순서: 빌드(cf:build) → 캐시 채우기(populateCache) → wrangler deploy
+# → (서버 연결 시) 서버 데이터 대기 → 스모크 테스트.
 # 트리거: 수동 실행, 또는 main에서 web/·contracts/·data/artifacts/ 가 바뀔 때(PR은 CI를 통과해야 main에 들어온다).
 # 서드파티 액션은 ci.yml과 같은 커밋 SHA로 고정한다.
 #
@@ -38,7 +39,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 빌드·배포 약 10분 + 서버 데이터 대기 최대 25분.
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: web
@@ -112,6 +114,15 @@ jobs:
           rm -f "$secrets_file"
           workers_dev="$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' "$RUNNER_TEMP/deploy.log" | head -1 || true)"
           echo "WORKERS_DEV_URL=$workers_dev" >> "$GITHUB_ENV"
+
+      # 같은 커밋의 deploy-server가 새 데이터를 발행하기 전에는 새 역 색인으로 부른 /api/v1/recommend가 400이 된다.
+      # 서버 manifest의 dataVersion이 이 웹 빌드(index.gen.json)의 값 이상이 될 때까지 30초 간격, 최대 25분 기다린다.
+      # 더 새 서버 데이터는 통과로 본다(append-only 레지스트리라 옛 색인의 코드도 유효). 이유는 scripts/wait-data-version.sh.
+      - name: 서버 데이터 대기
+        if: ${{ env.SERVER_ORIGIN != '' }}
+        run: |
+          if [ -n "$SITE_DOMAIN" ]; then export BASE_URL="https://$SITE_DOMAIN"; else export BASE_URL="$WORKERS_DEV_URL"; fi
+          INTERVAL=30 MAX_WAIT=1500 bash scripts/wait-data-version.sh
 
       # 배포된 주소를 직접 확인한다(도메인이 있으면 정식 주소 + www·workers.dev 리디렉트).
       - name: 스모크 테스트
