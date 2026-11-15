@@ -34,25 +34,32 @@ const inputSchema = z.object({
 export const rememberedMeSchema = z.object({ code: stationCode, nickname: nicknameSchema });
 export type RememberedMe = z.infer<typeof rememberedMeSchema>;
 
-export type InputRow = { nickname: string; code: string | null };
+/** `favored`: "누구 쪽으로"(favor 모드)에서 배려하던 사람. 다시 입력으로 돌아와도 모드를 이어 가려고 한 줄에만 붙는다. */
+export type InputRow = { nickname: string; code: string | null; favored?: boolean };
 
-/** 역을 넣은 줄만 모아 링크 상태로 만든다. 역이 2개 미만이면 오류 메시지. */
+/**
+ * 역을 넣은 줄만 모아 링크 상태로 만든다. 역이 2개 미만이면 오류 메시지.
+ * favor 모드인데 배려하던 줄이 지워졌거나 역이 비었으면 공평으로 되돌린다.
+ */
 export function toShareState(
   rows: readonly InputRow[],
   timeSlot: TimeSlot = DEFAULT_SLOT,
   mode: Mode = "fair",
 ): { ok: true; state: ShareState } | { ok: false; message: string } {
-  const filled = rows.flatMap((row) => (row.code ? [{ nickname: row.nickname.trim(), code: row.code }] : []));
+  const filled = rows.flatMap((row) =>
+    row.code ? [{ nickname: row.nickname.trim(), code: row.code, favored: row.favored === true }] : [],
+  );
   const parsed = inputSchema.safeParse({ people: filled });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "입력을 확인해 주세요" };
   const people = parsed.data.people;
+  const favorIndex = mode === "favor" ? filled.findIndex((p) => p.favored) : -1;
   const nicknames = people.map((p) => p.nickname || null);
   return {
     ok: true,
     state: {
       origins: people.map((p) => p.code),
-      mode,
-      favorIndex: null,
+      mode: favorIndex >= 0 ? "favor" : mode === "favor" ? "fair" : mode,
+      favorIndex: favorIndex >= 0 ? favorIndex : null,
       nicknames: nicknames.some((n) => n) ? nicknames : null,
       timeSlot,
     },

@@ -4,16 +4,19 @@ import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.artifact.PublishedArtifacts
+import app.banbanyeok.server.recommendation.HolidayCalendar
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.TimeBasis
 import app.banbanyeok.server.recommendation.TimeSlotLabels
+import app.banbanyeok.server.recommendation.TimeSlotResolver
 import app.banbanyeok.server.room.AnonUserService
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
 import app.banbanyeok.server.room.RoomService
+import app.banbanyeok.server.room.RoomView
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -73,10 +76,10 @@ private fun Route.roomRoutes(
         }
     }
     route("/rooms/{roomId}") {
-        get { call.respond(services.rooms.get(call.roomId(), call.bearerToken()).toDto(services.directory)) }
+        get { call.respondRoom(services, services.rooms.get(call.roomId(), call.bearerToken())) }
         patch {
             val patch = call.receive<JsonObject>().toRoomPatch()
-            call.respond(services.rooms.updateRoom(call.roomId(), call.bearerToken(), patch).toDto(services.directory))
+            call.respondRoom(services, services.rooms.updateRoom(call.roomId(), call.bearerToken(), patch))
         }
         delete {
             services.rooms.delete(call.roomId(), call.bearerToken())
@@ -195,6 +198,14 @@ private fun Route.dataRoutes(services: ApiServices) {
         }
     }
 }
+
+/** 방 응답의 계산 기준을 정하는 규칙. 결과 계산(RoomResultService)과 같은 번들 공휴일 목록·같은 규칙이다. */
+private val roomTimes: TimeSlotResolver by lazy { TimeSlotResolver(HolidayCalendar.bundled()) }
+
+private suspend fun ApplicationCall.respondRoom(
+    services: ApiServices,
+    room: RoomView,
+) = respond(room.toDto(services.directory, roomTimes.resolve(room.meetingDate, room.meetingTime)))
 
 private fun ApplicationCall.roomId(): String = requireNotNull(parameters["roomId"])
 

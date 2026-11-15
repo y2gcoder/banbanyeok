@@ -13,6 +13,7 @@ vi.mock("@/lib/api/rooms");
 const ROOM = "qt7yvmsht3";
 let members: { id: string; token: string }[] = [];
 let tokenSeq = 0;
+let basis: Room["timeBasis"];
 
 function roomFor(token: string | null): Room {
   const host = {
@@ -31,6 +32,7 @@ function roomFor(token: string | null): Room {
     locked: false,
     expiresAt: "2999-01-01T00:00:00Z",
     dataVersion: "20261114.5",
+    ...(basis ? { timeBasis: basis } : {}),
     participants: [
       host,
       ...members.map((m) => ({
@@ -68,6 +70,7 @@ beforeEach(() => {
   window.localStorage.clear();
   members = [];
   tokenSeq = 0;
+  basis = undefined;
   vi.mocked(api.getRoom).mockImplementation(async (_id, token) => roomFor(token));
   vi.mocked(api.getRoomResult).mockImplementation(() => new Promise(() => {}));
   vi.mocked(api.newIdempotencyKey).mockImplementation(() => `key-${++tokenSeq}`);
@@ -83,6 +86,27 @@ beforeEach(() => {
 });
 
 describe("방 화면", () => {
+  it("참여 화면에도 서버가 준 계산 기준 문구를 그대로 보여 준다(웹이 날짜로 다시 계산하지 않는다)", async () => {
+    // 약속일이 평범한 토요일이어도 서버가 공휴일로 정했으면 서버 문구가 이긴다.
+    basis = {
+      timeSlot: "holiday-evening",
+      requestedTimeSlot: "holiday-evening",
+      dayType: "holiday",
+      band: "evening",
+      label: "일요일·공휴일 저녁",
+      holidayName: "추석",
+    };
+    renderScreen();
+    await screen.findByRole("heading", { name: "나도 출발역 넣기" });
+    expect(screen.getByText("일요일·공휴일 저녁(추석) 기준으로 계산해요")).toBeInTheDocument();
+  });
+
+  it("서버가 계산 기준을 주지 않으면(옛 서버) 문구를 그리지 않는다", async () => {
+    renderScreen();
+    await screen.findByRole("heading", { name: "나도 출발역 넣기" });
+    expect(screen.queryByText(/기준으로 계산해요/)).toBeNull();
+  });
+
   it("저장소가 막힌 기기에서도 참여가 성공하면 이번 방문 동안은 내 항목으로 보이고, 다시 제출할 수 없다(중복 참가자 방지)", async () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new DOMException("blocked", "SecurityError");

@@ -587,6 +587,12 @@ components:
           type: array
           maxItems: 4
           items: {$ref: '#/components/schemas/Participant'}
+        timeBasis:
+          description: |
+            방이 계산할 기준: 약속 날짜(`meetingDate`)·시각(`meetingTime`)에서 서버가 정한 구분과 화면 문구(`label`). 결과를 계산하기 전(참여자가
+            1명이어도)에 참여 화면의 "○○ 기준으로 계산해요"가 이 `label`을 그대로 쓴다. 클라이언트는 날짜로 공휴일·요일을 다시 계산하지 않는다.
+            `timeSlot`과 `requestedTimeSlot`은 같다(대신 계산하는 경우는 결과 응답에서만 생긴다).
+          $ref: '#/components/schemas/TimeBasis'
 
     PersonalTime:
       type: object

@@ -214,6 +214,46 @@ class TimeSlotHttpTest :
                         .json()
                         .getValue("meetingTime")
                         .jsonPrimitive.content shouldBe "19:30"
+                    // 참여 화면의 "○○ 기준으로 계산해요"가 쓰는 서버 문구(결과를 계산하기 전에도 있다).
+                    val basis = room.json().basis()
+                    basis.getValue("label").jsonPrimitive.content shouldBe "토요일 저녁"
+                    basis.getValue("timeSlot").jsonPrimitive.content shouldBe "saturday-evening"
+                    basis.getValue("requestedTimeSlot").jsonPrimitive.content shouldBe "saturday-evening"
+                    basis.getValue("holidayName") shouldBe kotlinx.serialization.json.JsonNull
+                }
+            }
+
+            it("states the room's basis without a meeting date or time as weekday daytime, and names a holiday") {
+                withMockedApi { services ->
+                    fun room(
+                        date: String?,
+                        time: LocalTime?,
+                    ) = RoomView(
+                        ROOM,
+                        RoomMode.FAIR,
+                        null,
+                        false,
+                        date?.let(LocalDate::parse),
+                        Instant.parse("2026-11-22T15:00:00Z"),
+                        "20261116.1",
+                        emptyList(),
+                        time,
+                    )
+                    coEvery { services.rooms.get(ROOM, null) } returns room(null, null)
+                    val plain = client.json(HttpMethod.Get, "/v1/rooms/$ROOM")
+                    OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/$ROOM", plain)
+                    plain
+                        .json()
+                        .basis()
+                        .getValue("label")
+                        .jsonPrimitive.content shouldBe "평일 낮"
+
+                    // 2026-09-25(추석, 금요일) 낮: 서버가 공휴일로 정하고 이름을 준다.
+                    coEvery { services.rooms.get(ROOM, null) } returns room("2026-09-25", LocalTime.of(12, 0))
+                    val holidayRoom = client.json(HttpMethod.Get, "/v1/rooms/$ROOM")
+                    val holiday = holidayRoom.json().basis()
+                    holiday.getValue("label").jsonPrimitive.content shouldBe "일요일·공휴일 낮"
+                    holiday.getValue("holidayName").jsonPrimitive.content shouldBe "추석"
                 }
             }
 

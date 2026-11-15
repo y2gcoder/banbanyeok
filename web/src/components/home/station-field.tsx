@@ -34,11 +34,10 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
   useEffect(() => {
     if (value) setQuery(value.name);
   }, [value]);
-  const items = useMemo(() => {
-    const found = searchStations(query);
-    // 고른 역은 목록에 항상 있어야 Combobox가 값을 표시한다.
-    return value && !found.some((s) => s.code === value.code) ? [value, ...found] : found;
-  }, [query, value]);
+  // 검색 결과만 후보로 둔다. 고른 역을 목록 맨 앞에 끼워 넣으면(예전 방식) 다른 역을 새로 칠 때 그 역이 첫 후보가 되어
+  // 자동 하이라이트·Enter가 고른 역을 다시 고르고, 정확 일치("강남")는 두 번째로 밀렸다. 입력 칸 글자는 우리가 정하므로(inputValue)
+  // 고른 역이 목록에 없어도 표시에는 영향이 없다.
+  const items = useMemo(() => searchStations(query), [query]);
 
   return (
     <Combobox<Station>

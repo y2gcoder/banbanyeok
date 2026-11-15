@@ -14,6 +14,7 @@ import { resultErrorMessage } from "@/lib/api/errors";
 import { recommendQueryOptions, takeResponseMillis } from "@/lib/api/queries";
 import type { Mode } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
+import { restoreHref } from "@/lib/form/prefill";
 import { modeFromParam, modeToParam, type ShareState } from "@/lib/link/codec";
 import { shareMessage } from "@/lib/result/share-message";
 import { sharePath } from "@/lib/result/share-url";
@@ -192,7 +193,7 @@ export function ResultScreen({
       {variant === "creator" ? (
         <nav className={SIDE}>
           <Link
-            href="/"
+            href={restoreHref(state)}
             className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-[15px] font-semibold text-ink-soft hover:text-ink"
           >
             <ArrowLeftIcon className="size-4" aria-hidden="true" />
@@ -247,7 +248,7 @@ export function ResultScreen({
                 다시 시도
               </Button>
               <Link
-                href="/"
+                href={restoreHref(state)}
                 className="inline-flex h-11 items-center rounded-lg px-3 text-[15px] font-semibold text-ink-soft"
               >
                 출발역 바꾸기

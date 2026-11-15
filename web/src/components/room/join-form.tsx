@@ -2,7 +2,7 @@
 
 import { type FormEvent, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { ParticipantInput } from "@/lib/api/types";
+import type { ParticipantInput, Room } from "@/lib/api/types";
 import { type ParticipantFormValue, toParticipantInput } from "@/lib/room/input";
 import { ParticipantFields } from "./participant-fields";
 import { slowMessage, useSlowStage } from "./use-slow-hint";
@@ -17,10 +17,22 @@ type Props = {
   onSubmit: (input: ParticipantInput, value: ParticipantFormValue) => void;
   onCancel?: () => void;
   onEdited?: () => void;
+  /** 방의 계산 기준(서버가 준 `timeBasis`). 없으면(옛 서버) 문구를 그리지 않는다. 화면은 라벨을 다시 만들지 않는다. */
+  timeBasis?: Room["timeBasis"];
 };
 
 /** 방에 참여하거나(친구) 내 항목을 고치는(참여자) 폼. */
-export function JoinForm({ mode, initial, personIndex, pending, error, onSubmit, onCancel, onEdited }: Props) {
+export function JoinForm({
+  mode,
+  initial,
+  personIndex,
+  pending,
+  error,
+  onSubmit,
+  onCancel,
+  onEdited,
+  timeBasis,
+}: Props) {
   const id = useId();
   const [value, setValue] = useState(initial);
   const [problem, setProblem] = useState<string | null>(null);
@@ -59,6 +71,12 @@ export function JoinForm({ mode, initial, personIndex, pending, error, onSubmit,
         personIndex={personIndex}
         namePlaceholder="이름 (선택, 예: 민수)"
       />
+      {timeBasis ? (
+        <p id={`${id}-basis`} role="status" className="text-[14px] font-semibold text-ink">
+          {timeBasis.label}
+          {timeBasis.holidayName ? `(${timeBasis.holidayName})` : ""} 기준으로 계산해요
+        </p>
+      ) : null}
       {problem || error ? (
         <p role="alert" className="text-sm font-semibold text-destructive">
           {problem ?? error}

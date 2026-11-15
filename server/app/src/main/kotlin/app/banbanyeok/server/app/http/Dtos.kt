@@ -77,6 +77,8 @@ data class RoomDto(
     val expiresAt: String,
     val dataVersion: String,
     val participants: List<ParticipantDto>,
+    /** 방이 계산할 기준(약속 날짜·시각에서 서버가 정한 구분과 화면 문구). 참여자 화면의 "○○ 기준으로 계산해요"가 이 `label`을 쓴다. */
+    val timeBasis: TimeBasisDto,
 )
 
 @Serializable
