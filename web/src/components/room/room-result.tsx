@@ -8,6 +8,7 @@ import { ModeTabs } from "@/components/result/mode-tabs";
 import { Notices } from "@/components/result/notices";
 import { Candidates, LoadingCard } from "@/components/result/result-screen";
 import { Button } from "@/components/ui/button";
+import { TimeBasisNote } from "@/components/when/time-basis";
 import { track, trackResultViewed } from "@/lib/analytics";
 import type { Mode, Room } from "@/lib/api/types";
 import type { ResultView } from "@/lib/result/view-model";
@@ -15,6 +16,7 @@ import { toResultView } from "@/lib/result/view-model";
 import { roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
 import { favorIndexOf } from "@/lib/room/view";
+import { slotForMeeting } from "@/lib/when/time-slot";
 
 type Props = {
   roomId: string;
@@ -125,6 +127,10 @@ export function RoomResult({
           <LoadingCard />
         )}
       </div>
+      <TimeBasisNote
+        basis={data?.timeBasis}
+        requested={slotForMeeting(room.meetingDate ?? null, room.meetingTime ?? null)}
+      />
       {view && top && renderAfter ? renderAfter(view) : null}
     </section>
   );

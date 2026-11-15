@@ -525,7 +525,10 @@ components:
         favorTarget:
           type: string
           description: '`mode=favor`일 때 우대 대상. 방장은 `host`, 이후 참여자는 participantId'
-        meetingDate: {type: string, format: date, description: 약속일(선택). 만료와 "실제로 만났나" 질문 시점, 계산 구분(요일 유형)에 쓴다}
+        meetingDate:
+          type: string
+          format: date
+          description: '약속일(선택). 만료와 "실제로 만났나" 질문 시점, 계산 구분(요일 유형)에 쓴다'
         meetingTime:
           $ref: '#/components/schemas/MeetingTime'
           description: 약속 시각(선택). 계산 구분(시간대)에 쓴다. 없으면 낮
@@ -557,7 +560,7 @@ components:
 
     Room:
       type: object
-      required: [roomId, mode, locked, meetingDate, meetingTime, expiresAt, dataVersion, participants]
+      required: [roomId, mode, locked, expiresAt, dataVersion, participants]
       properties:
         roomId: {type: string}
         mode: {$ref: '#/components/schemas/Mode'}

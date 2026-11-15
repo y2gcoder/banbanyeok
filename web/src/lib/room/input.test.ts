@@ -45,6 +45,7 @@ describe("방 만들기 본문", () => {
     host: { nickname: "", station: gangnam, hidden: false },
     mode: "fair",
     meetingDate: "",
+    meetingTime: "",
     expectedCount: null,
     ...patch,
   });
@@ -75,6 +76,20 @@ describe("방 만들기 본문", () => {
     expect(toCreateRoomRequest(form({ meetingDate: "2026-11-14" }), TODAY).ok).toBe(false);
     expect(toCreateRoomRequest(form({ meetingDate: "2026-12-16" }), TODAY).ok).toBe(false);
     expect(toCreateRoomRequest(form({ meetingDate: "2026-02-30" }), TODAY).ok).toBe(false);
+  });
+
+  it("약속 시각은 HH:MM일 때만 보낸다", () => {
+    expect(toCreateRoomRequest(form({ meetingDate: TODAY, meetingTime: "19:30" }), TODAY)).toMatchObject({
+      ok: true,
+      value: { meetingDate: TODAY, meetingTime: "19:30" },
+    });
+    expect(toCreateRoomRequest(form({ meetingTime: "08:05" }), TODAY)).toMatchObject({
+      ok: true,
+      value: { meetingTime: "08:05" },
+    });
+    expect(toCreateRoomRequest(form(), TODAY)).not.toHaveProperty("value.meetingTime");
+    expect(toCreateRoomRequest(form({ meetingTime: "24:00" }), TODAY).ok).toBe(false);
+    expect(toCreateRoomRequest(form({ meetingTime: "7:30" }), TODAY).ok).toBe(false);
   });
 
   it("예상 인원은 2~4명", () => {

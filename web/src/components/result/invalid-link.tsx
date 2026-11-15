@@ -11,6 +11,7 @@ const MESSAGES: Record<LinkErrorCode, string> = {
   BAD_STATION_CODE: "링크의 역 정보를 읽지 못했어요.",
   BAD_MODE: "링크의 추천 기준을 읽지 못했어요.",
   FAVOR_INDEX_OUT_OF_RANGE: "링크의 추천 기준을 읽지 못했어요.",
+  BAD_TIME_SLOT: "링크의 만나는 때(요일·시간대)를 읽지 못했어요.",
   BAD_NICKNAMES: "링크의 이름 정보를 읽지 못했어요.",
 };
 

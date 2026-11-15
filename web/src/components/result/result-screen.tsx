@@ -8,6 +8,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Wordmark } from "@/components/common/wordmark";
 import { ShareActions } from "@/components/share/share-actions";
 import { Button } from "@/components/ui/button";
+import { TimeBasisNote } from "@/components/when/time-basis";
 import { track, trackLinkOpened, trackResultViewed } from "@/lib/analytics";
 import { resultErrorMessage } from "@/lib/api/errors";
 import { recommendQueryOptions, takeResponseMillis } from "@/lib/api/queries";
@@ -261,7 +262,10 @@ export function ResultScreen({
       {view && top ? (
         <div className={SIDE}>
           {variant === "creator" ? (
-            <ShareActions path={sharePath(state)} {...shareMessage(top, modeLabel(state.mode, favorName))} />
+            <ShareActions
+              path={sharePath(state)}
+              {...shareMessage(top, modeLabel(state.mode, favorName), data?.timeBasis)}
+            />
           ) : (
             <Link
               href="/"
@@ -272,9 +276,11 @@ export function ResultScreen({
           )}
         </div>
       ) : null}
-      <p className={cn(SIDE, "text-center text-xs text-muted-foreground wide:text-left")}>
-        역에서 역까지, 평일 낮 기준 시간이에요.
-      </p>
+      <TimeBasisNote
+        basis={data?.timeBasis}
+        requested={state.timeSlot}
+        className={cn(SIDE, "text-center wide:text-left")}
+      />
     </main>
   );
 }

@@ -9,6 +9,7 @@ import type { Mode, RecommendResult } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
 import { encodeShareQuery, type ShareState } from "@/lib/link/codec";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
+import { DEFAULT_SLOT, type TimeSlot } from "@/lib/when/time-slot";
 import { ogSafeName } from "./og-coverage";
 import { OG_TEXT } from "./og-text";
 
@@ -29,6 +30,12 @@ export function modeSentence(mode: Mode, favorName: string | null): string {
   }
 }
 
+/** 평일 낮이 아닌 기준이면 " · 토요일 저녁 기준"(시간이 그 기준이라서). 평일 낮은 덧붙이지 않는다(옛 링크와 같은 문구). */
+function basisSuffix(view: ResultView): string {
+  const basis = view.timeBasis;
+  return basis.timeSlot === DEFAULT_SLOT ? "" : ` ${OG_TEXT.middleDot} ${basis.label}${OG_TEXT.basisSuffix}`;
+}
+
 function favorName(view: ResultView, state: ShareState): string | null {
   return state.favorIndex === null ? null : (view.people[state.favorIndex]?.name ?? null);
 }
@@ -41,7 +48,7 @@ export function sharedPreview(view: ResultView, state: ShareState): SharedPrevie
   const times = top.people.map((p) => `${p.name} ${formatMinutes(p.minutes)}`).join(" · ");
   return {
     title: `${top.stationName}${OG_TEXT.sharedSuffix}`,
-    description: `${times} · ${modeSentence(view.mode, favorName(view, state))}`,
+    description: `${times} · ${modeSentence(view.mode, favorName(view, state))}${basisSuffix(view)}`,
   };
 }
 
@@ -56,10 +63,11 @@ export function sharedCardData(view: ResultView, state: ShareState) {
   return {
     stationName: top.stationName,
     people: top.people.map((p, index) => ({ name: safe(p.name, index), minutes: p.minutes })),
-    modeLine: modeSentence(
-      view.mode,
-      state.favorIndex === null ? null : safe(view.people[state.favorIndex]?.name ?? "", state.favorIndex),
-    ),
+    modeLine:
+      modeSentence(
+        view.mode,
+        state.favorIndex === null ? null : safe(view.people[state.favorIndex]?.name ?? "", state.favorIndex),
+      ) + basisSuffix(view),
   };
 }
 
@@ -74,11 +82,12 @@ async function fetchResult(
   mode: Mode,
   favorIndex: number | null,
   nicknamesJson: string,
+  timeSlot: TimeSlot,
 ): Promise<RecommendResult | null> {
   try {
     const nicknames = JSON.parse(nicknamesJson) as ShareState["nicknames"];
     return await recommend(
-      { origins: origins.split("."), mode, favorIndex, nicknames },
+      { origins: origins.split("."), mode, favorIndex, nicknames, timeSlot },
       AbortSignal.timeout(RECOMMEND_TIMEOUT_MS),
     );
   } catch {
@@ -95,6 +104,7 @@ export async function loadSharedView(state: ShareState): Promise<ResultView | nu
     state.mode,
     state.favorIndex,
     JSON.stringify(state.nicknames),
+    state.timeSlot,
   );
   return result ? toResultView(result) : null;
 }

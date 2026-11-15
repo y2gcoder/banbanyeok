@@ -80,7 +80,7 @@ export interface paths {
         delete: operations["deleteRoom"];
         options?: never;
         head?: never;
-        /** 모드·잠금·약속일 변경 (방장) */
+        /** 모드·잠금·약속일·약속 시각 변경 (방장) */
         patch: operations["updateRoom"];
         trace?: never;
     };
@@ -240,7 +240,7 @@ export interface components {
          *     | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정) |
          *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
-         *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
+         *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
@@ -267,6 +267,32 @@ export interface components {
          * @enum {string}
          */
         Mode: "fair" | "fast" | "favor";
+        /**
+         * @description 구분 id = `{요일 유형}-{시간대}` (contracts/time-slots.json). 기본 `weekday-day`
+         * @enum {string}
+         */
+        TimeSlot: "weekday-morning" | "weekday-day" | "weekday-evening" | "weekday-night" | "saturday-morning" | "saturday-day" | "saturday-evening" | "saturday-night" | "holiday-morning" | "holiday-day" | "holiday-evening" | "holiday-night";
+        /**
+         * @description 약속 시각 `HH:MM`(24시간, 서울 시각). 03:00 전은 전날 운행일의 밤으로 계산한다
+         * @example 19:30
+         */
+        MeetingTime: string;
+        /** @description 결과를 계산한 기준(실제로 쓴 구분). 화면의 "○○ 기준" 문구는 `label`을 그대로 쓴다 */
+        TimeBasis: {
+            timeSlot: components["schemas"]["TimeSlot"];
+            /** @enum {string} */
+            dayType: "weekday" | "saturday" | "holiday";
+            /** @enum {string} */
+            band: "morning" | "day" | "evening" | "night";
+            /**
+             * @example 평일 낮
+             * @example 토요일 저녁
+             * @example 일요일·공휴일 밤
+             */
+            label: string;
+            /** @description 방의 약속일이 공휴일이면 그 이름(예 "추석"). 그 밖에는 null */
+            holidayName: string | null;
+        };
         ParticipantInput: {
             nickname?: string;
             originCode: components["schemas"]["StationCode"];
@@ -311,9 +337,11 @@ export interface components {
             favorTarget?: string;
             /**
              * Format: date
-             * @description 약속일(선택). 만료와 "실제로 만났나" 질문 시점에 쓴다
+             * @description 약속일(선택). 만료와 "실제로 만났나" 질문 시점, 계산 구분(요일 유형)에 쓴다
              */
             meetingDate?: string;
+            /** @description 약속 시각(선택). 계산 구분(시간대)에 쓴다. 없으면 낮 */
+            meetingTime?: components["schemas"]["MeetingTime"];
             host: components["schemas"]["ParticipantInput"];
             expectedCount?: number;
         };
@@ -331,6 +359,8 @@ export interface components {
             locked?: boolean;
             /** Format: date */
             meetingDate?: string | null;
+            /** @description 약속 시각. null이면 지운다 */
+            meetingTime?: components["schemas"]["MeetingTime"] | null;
         };
         Room: {
             roomId: string;
@@ -339,6 +369,7 @@ export interface components {
             locked: boolean;
             /** Format: date */
             meetingDate?: string | null;
+            meetingTime?: components["schemas"]["MeetingTime"] | null;
             /** Format: date-time */
             expiresAt: string;
             /** @description 방이 기록한 manifest dataVersion */
@@ -388,6 +419,7 @@ export interface components {
             /** @description 계산에 쓴 manifest dataVersion */
             dataVersion: string;
             participants: components["schemas"]["Participant"][];
+            timeBasis: components["schemas"]["TimeBasis"];
             /** @description 엄밀한 공평 1위. favor 상한의 기준 */
             baselineStationCode?: components["schemas"]["StationCode"] | null;
             candidates: components["schemas"]["Candidate"][];
@@ -766,6 +798,8 @@ export interface operations {
                      *     이름(`participants[].label`)과 `reason` 문장은 이 이름을 쓴다. 없는 사람은 "{출발역}에서 오는 분"이다(data-format §8).
                      */
                     nicknames?: (string | null)[];
+                    /** @description 언제 만나는가. 없으면 `weekday-day`(평일 낮). 형식이 틀리면 400 `INVALID_TIME_SLOT` */
+                    timeSlot?: components["schemas"]["TimeSlot"];
                 };
             };
         };

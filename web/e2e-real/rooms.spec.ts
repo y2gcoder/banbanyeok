@@ -72,7 +72,7 @@ async function createRoom(page: Page, options: { shot?: boolean; expectedCount?:
     await shot(page, "1-create");
   }
   if (options.expectedCount) {
-    await page.getByText("약속일·인원 정하기 (선택)").click();
+    await page.getByText("인원 정하기 (선택)").click();
     await page.getByRole("button", { name: `${options.expectedCount}명`, exact: true }).click();
   }
   await page.getByRole("button", { name: "방 만들기" }).click();

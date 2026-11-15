@@ -38,7 +38,9 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   await page.getByRole("button", { name: "만날 역 찾기" }).click();
 
   // 화면 2: 결과
-  await expect(page).toHaveURL(/\/result\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&n=/);
+  await expect(page).toHaveURL(
+    /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=/,
+  );
   const top = page.getByRole("article").first();
   await expect(top.getByText("1위")).toBeVisible();
   await expect(top.getByText(/^\d+분$|^\d+시간( \d+분)?$/).first()).toBeVisible();
@@ -61,7 +63,9 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   await page.getByRole("button", { name: "링크 복사" }).click();
   await expect(page.getByRole("button", { name: "링크를 복사했어요" })).toBeVisible();
   const shared = await page.evaluate(() => navigator.clipboard.readText());
-  expect(shared).toMatch(/\/s\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=p0&n=66-87IiY\.$/);
+  expect(shared).toMatch(
+    /\/s\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=p0&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=66-87IiY\.$/,
+  );
 
   // 화면 4: 받은 링크(새 기기처럼 새 페이지)
   const friend = await context.newPage();
@@ -92,7 +96,7 @@ test("카톡으로 보내기: 공유 시트가 없으면 링크 대화상자를 
   await page.getByRole("button", { name: "카톡으로 보내기" }).click();
   const dialog = page.getByRole("dialog", { name: "링크를 보내 주세요" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("textbox", { name: "링크" })).toHaveValue(/\/s\?v=1&o=k3a\.ryf&m=f$/);
+  await expect(dialog.getByRole("textbox", { name: "링크" })).toHaveValue(/\/s\?v=2&o=k3a\.ryf&m=f&t=weekday-day$/);
   await shot(page, "3-share-fallback");
 });
 

@@ -40,11 +40,16 @@ export function toParticipantInput(form: ParticipantFormValue): Checked<Particip
   };
 }
 
+/** 계약의 MeetingTime(`HH:MM`, 24시간). `<input type="time">`은 이 형식을 준다. */
+const MEETING_TIME = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+
 export type CreateRoomForm = {
   host: ParticipantFormValue;
   mode: Mode;
   /** `YYYY-MM-DD` 또는 빈 문자열(약속일 없음). */
   meetingDate: string;
+  /** `HH:MM` 또는 빈 문자열(약속 시각 없음). 결과를 어느 시간대 기준으로 계산할지 정한다. */
+  meetingTime: string;
   /** 예상 인원(2~4) 또는 null(정하지 않음). */
   expectedCount: number | null;
 };
@@ -55,6 +60,8 @@ export function toCreateRoomRequest(form: CreateRoomForm, today: string): Checke
   if (!host.ok) return host;
   if (form.meetingDate !== "" && !isMeetingDateInRange(form.meetingDate, today))
     return { ok: false, message: "약속일은 오늘부터 30일 안에서 골라 주세요." };
+  if (form.meetingTime !== "" && !MEETING_TIME.test(form.meetingTime))
+    return { ok: false, message: "약속 시각을 다시 골라 주세요." };
   if (form.expectedCount !== null && (form.expectedCount < MIN_PEOPLE || form.expectedCount > MAX_PEOPLE))
     return { ok: false, message: `예상 인원은 ${MIN_PEOPLE}~${MAX_PEOPLE}명으로 정해 주세요.` };
   return {
@@ -64,6 +71,7 @@ export function toCreateRoomRequest(form: CreateRoomForm, today: string): Checke
       host: host.value,
       ...(form.mode === "favor" ? { favorTarget: "host" } : {}),
       ...(form.meetingDate !== "" ? { meetingDate: form.meetingDate } : {}),
+      ...(form.meetingTime !== "" ? { meetingTime: form.meetingTime } : {}),
       ...(form.expectedCount !== null ? { expectedCount: form.expectedCount } : {}),
     },
   };

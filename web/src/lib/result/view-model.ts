@@ -44,6 +44,8 @@ export type ResultView = {
   people: PersonView[];
   candidates: CandidateView[];
   notices: Notice[];
+  /** 계산 기준(실제로 쓴 구분과 화면 문구). */
+  timeBasis: RecommendResult["timeBasis"];
 };
 
 function place(code: string | null, name: string | null) {
@@ -91,5 +93,13 @@ export function toResultView(result: RecommendResult): ResultView {
     originCodes: people.map((p) => p.originCode),
     candidates: candidates.map((c) => ({ stationName: c.stationName, seconds: c.people.map((p) => p.seconds) })),
   });
-  return { mode: result.mode, status: result.status, dataVersion: result.dataVersion, people, candidates, notices };
+  return {
+    mode: result.mode,
+    status: result.status,
+    dataVersion: result.dataVersion,
+    people,
+    candidates,
+    notices,
+    timeBasis: result.timeBasis,
+  };
 }

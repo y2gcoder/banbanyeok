@@ -217,7 +217,9 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
     // 펼친 채로 이어서 입력하고 제출할 수 있다.
     await pickStation(page, page.getByRole("combobox", { name: "친구1의 출발역" }), "홍대입구", /^홍대입구\s?2호선/);
     await page.getByRole("button", { name: "만날 역 찾기" }).click();
-    await expect(page).toHaveURL(/\/result\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&n=/);
+    await expect(page).toHaveURL(
+      /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=/,
+    );
   });
 
   test("결과 화면: 고른 기준·펼친 후보·스크롤 위치가 남는다", async ({ page }) => {
@@ -269,9 +271,10 @@ test.describe("데스크톱 키보드", () => {
 
   test("Tab으로 차례대로 이동하며 포커스가 보이고, 키보드만으로 입력·제출한다", async ({ page }) => {
     await open(page, screen("home"));
-    // Tab 순서: 워드마크 → 1번째 이름 → 1번째 역 → 2번째 이름 → 2번째 역 → 한 명 더 → (만날 역 찾기는 비활성) → 방 만들기 링크
+    // Tab 순서: 워드마크 → 1번째 이름 → 1번째 역 → 2번째 이름 → 2번째 역 → 한 명 더 → 언제(요일) → 언제(시간대)
+    // → (만날 역 찾기는 비활성) → 방 만들기 링크. 라디오 묶음은 묶음마다 한 번 멈추고 방향키로 고른다.
     const visited: string[] = [];
-    for (let i = 0; i < 7; i += 1) {
+    for (let i = 0; i < 9; i += 1) {
       await page.keyboard.press("Tab");
       const focus = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement;
@@ -287,7 +290,7 @@ test.describe("데스크톱 키보드", () => {
       visited.push(focus.tag);
       expect.soft(focus.visible, `포커스 표시: ${focus.tag} ${focus.name}`).toBe(true);
     }
-    expect(visited).toEqual(["A", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "A"]);
+    expect(visited).toEqual(["A", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT", "A"]);
 
     // 키보드만으로: 이름 → Tab → 역(입력 후 Enter로 고름) → Tab … → Enter로 제출
     await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).focus();
@@ -305,7 +308,9 @@ test.describe("데스크톱 키보드", () => {
     await expect(page.getByRole("combobox", { name: "친구1의 출발역" })).toHaveValue("홍대입구");
     // 목록이 닫힌 역 칸에서 한 번 더 Enter를 누르면 폼이 제출된다.
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/result\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&n=/);
+    await expect(page).toHaveURL(
+      /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=/,
+    );
 
     // 결과: 기준 탭은 화살표 키로 옮긴다.
     await page.getByRole("tab", { name: "공평하게" }).focus();

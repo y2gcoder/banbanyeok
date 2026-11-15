@@ -15,8 +15,8 @@ const vectors = JSON.parse(
 ) as Vectors;
 
 describe("링크 코덱 — contracts/golden/link-vectors.json", () => {
-  it("벡터 형식이 1판이고 경로가 /s다", () => {
-    expect(vectors.formatVersion).toBe(1);
+  it("벡터 형식이 2판이고 경로가 /s다", () => {
+    expect(vectors.formatVersion).toBe(2);
     expect(vectors.path).toBe("/s");
   });
 
@@ -30,22 +30,33 @@ describe("링크 코덱 — contracts/golden/link-vectors.json", () => {
     else expect(result).toEqual({ ok: true, state: vector.expected });
   });
 
-  it("오류 코드 9개가 모두 벡터에 있다", () => {
+  it("오류 코드 10개가 모두 벡터에 있다", () => {
     const codes = new Set(vectors.decode.flatMap((v) => ("expectedError" in v ? [v.expectedError] : [])));
-    expect(codes.size).toBe(9);
+    expect(codes.size).toBe(10);
   });
 });
 
 describe("링크 코덱 — 벡터 밖 경계", () => {
   it("앞의 ?를 허용한다", () => {
     expect(decodeShareQuery("?v=1&o=03v.130&m=f").ok).toBe(true);
+    expect(decodeShareQuery("?v=2&o=03v.130&m=f&t=holiday-night")).toMatchObject({
+      ok: true,
+      state: { timeSlot: "holiday-night" },
+    });
   });
 
   it("인코더는 규칙을 어기는 상태를 거부한다", () => {
-    const base: ShareState = { origins: ["03v", "130"], mode: "fair", favorIndex: null, nicknames: null };
+    const base: ShareState = {
+      origins: ["03v", "130"],
+      mode: "fair",
+      favorIndex: null,
+      nicknames: null,
+      timeSlot: "weekday-day",
+    };
     expect(() => encodeShareQuery({ ...base, origins: ["03v"] })).toThrow(RangeError);
     expect(() => encodeShareQuery({ ...base, mode: "favor", favorIndex: 2 })).toThrow(RangeError);
     expect(() => encodeShareQuery({ ...base, nicknames: ["a".repeat(21), null] })).toThrow(RangeError);
+    expect(() => encodeShareQuery({ ...base, timeSlot: "sunday-dawn" as never })).toThrow(RangeError);
   });
 
   it("+는 공백이 아니다(별칭 세그먼트에서 거부)", () => {

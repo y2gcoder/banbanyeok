@@ -16,7 +16,14 @@ export function takeResponseMillis(result: object): number | undefined {
 export function recommendQueryOptions(query: RecommendQuery) {
   return queryOptions({
     // 별칭은 표시 이름과 문장을 바꾸므로 키에 넣는다.
-    queryKey: ["recommend", query.origins.join("."), query.mode, query.favorIndex, query.nicknames] as const,
+    queryKey: [
+      "recommend",
+      query.origins.join("."),
+      query.mode,
+      query.favorIndex,
+      query.nicknames,
+      query.timeSlot,
+    ] as const,
     queryFn: async ({ signal }) => {
       const started = performance.now();
       const result = await recommend(query, signal);

@@ -77,7 +77,7 @@ async function useApp(page: Page) {
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
   await page.getByRole("button", { name: "만날 역 찾기" }).click();
-  await expect(page).toHaveURL(/\/result\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}/);
+  await expect(page).toHaveURL(/\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}/);
   await expect(page.getByRole("article").first().getByText("1위")).toBeVisible();
   await page.getByRole("tab", { name: "빨리 만나기" }).click();
   await expect(page).toHaveURL(/m=q/);

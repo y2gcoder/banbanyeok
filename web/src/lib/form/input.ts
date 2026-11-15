@@ -9,6 +9,7 @@ import {
   MIN_PEOPLE,
   type ShareState,
 } from "@/lib/link/codec";
+import { DEFAULT_SLOT, type TimeSlot } from "@/lib/when/time-slot";
 
 const stationCode = z.string().refine(isStationCode, "역 코드 형식이 아니에요");
 
@@ -38,6 +39,7 @@ export type InputRow = { nickname: string; code: string | null };
 /** 역을 넣은 줄만 모아 링크 상태로 만든다. 역이 2개 미만이면 오류 메시지. */
 export function toShareState(
   rows: readonly InputRow[],
+  timeSlot: TimeSlot = DEFAULT_SLOT,
   mode: Mode = "fair",
 ): { ok: true; state: ShareState } | { ok: false; message: string } {
   const filled = rows.flatMap((row) => (row.code ? [{ nickname: row.nickname.trim(), code: row.code }] : []));
@@ -52,6 +54,7 @@ export function toShareState(
       mode,
       favorIndex: null,
       nicknames: nicknames.some((n) => n) ? nicknames : null,
+      timeSlot,
     },
   };
 }
