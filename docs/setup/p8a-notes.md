@@ -182,6 +182,30 @@ Cloud Run 앞단(Google Front End)은 `/healthz` 경로를 예약해서 요청�
 
 **웹 확인(읽기만)**: 홈 입력 화면(`home-form.tsx`)만 `warmUpServer()`를 부른다. **방 참여 화면은 웹에 아직 없다**(R1 작업자가 만들고 거기서 `warmUpServer()`를 넣기로 함). 친구가 공유 링크(`/s?…`)로 처음 들어오는 화면은 서버 컴포넌트가 서버를 바로 부르므로(결과 prefetch와 `generateMetadata`의 3초 제한) 미리 깨울 기회가 없다. 이번 개선으로 새 인스턴스의 첫 요청이 약 1.6~1.9초라 그 3초 제한 안에 들어온다(개선 전 p50 3.3초는 제한을 넘겼다). `web/src`는 고치지 않았다.
 
+### 3.11 후속 점검 (P8a-3: 독립 검토 반영)
+
+**JVM 플래그 `-XX:TieredStopAtLevel=1`(C1 전용)의 워밍 후 비용 — 측정했고 플래그를 유지한다.** 우려는 C2로 올라가지 못해 데워진 뒤 `/v1/recommend`가 느려지는 것이었다. 같은 이미지(`server/Dockerfile`, 로컬 Docker Desktop arm64 네이티브, `--cpus=1 --memory=512m`)를 플래그 있음(C1) / 없음(기본 티어드)으로 띄워 같은 추천 요청(서울 역 300개에서 무작위 2명, fair·fast)을 보냈다. 클라이언트는 파이썬 keep-alive 연결이라 측정치에는 요청 왕복(수백 µs)이 섞여 있다. 2회 반복.
+
+| 항목 | C1 전용(현재) | 기본(티어드) |
+|---|---|---|
+| 컨테이너 시작 → 첫 `/v1/healthz` 200 (2회, ms) | 649 / 411 | 730 / 722 |
+| 첫 추천 요청 (2회, ms) | 13 / 13 | 69 / 15 |
+| 요청 1~100 p50 / p95 (ms) | 0.8 / 1.2~1.5 | 1.0 / 1.8~2.2 |
+| 요청 101~300 p50 / p95 | 0.5 / 0.6~0.7 | 0.5 / 0.8~0.9 |
+| 요청 301~600 p50 / p95 | 0.5 / 0.5~0.6 | 0.4~0.5 / 0.6~1.0 |
+| 워밍 후 순차 3000건 p50 / p95 / p99 | 0.44 / 0.57~0.62 / 0.80~0.86 | **0.32~0.33 / 0.48 / 0.70~0.75** |
+| 연결 4개 × 1500건 p50 / p95 / p99 | 0.56~0.57 / 0.85~0.98 / 1.6~1.7 | 0.51 / 0.80~0.90 / 1.6~2.7 |
+
+결론: 워밍 후 C1의 추천은 p50이 약 **0.1ms**(0.44 vs 0.33ms) 느릴 뿐이고 p95·p99는 같은 범위다. 사용자가 보는 지연(왕복 수십~수백 ms)에 비해 무시할 수 있고, 최대 2인스턴스·낮은 트래픽이라 처리량 상한도 문제가 아니다. 반면 콜드스타트는 컨테이너 시작→healthz가 C1이 **약 100~300ms 짧다**(로컬 측정, Cloud Run에서는 앞서 X1이 잡음 안이었다). 한 번만 쓰이는 시작 구간이 이득이라 플래그를 유지한다. 부하가 커져 CPU 바운드가 되면(수백 rps) 플래그를 빼는 쪽을 다시 본다(기본 티어드로 돌아가면 시작 구간 약 0.1~0.3초를 내준다). 한계: 로컬 arm64 Docker와 Cloud Run(amd64, gVisor)은 절대값이 다르다.
+
+**그 밖의 코드 수정(독립 검토 반영)**
+- SLF4J 초기화 경합: 조립 스레드가 DB 풀(Hikari)을 만들기 전에 main 스레드의 로깅 초기화 완료를 기다린다(`StartupTimeline.awaitLoggingReady`, 최대 10초). 산출물 읽기(GCS 토큰·TLS·왕복)는 로거를 쓰지 않아 계속 겹쳐 돈다(`CompositionRoot`가 `async(ioDispatcher)`로 시작). 로컬 3회 실행에서 `intercepted`·`Replaying`·SLF4J 경고 0건. Cloud Run에서의 콜드스타트 영향은 병합 후 배포의 시작 로그로 확인한다(예상: 변화 없음, DB 풀이 약 0.1초 늦게 시작해도 산출물 읽기 안에 끝남).
+- `GcsArtifactStore` 재시도: 408·429·5xx·연결 오류를 재시도, **401이면 캐시된 토큰을 버리고 한 번만** 재시도(`MetadataTokenProvider.invalidate`), 그 밖의 4xx는 바로 실패. 단위 테스트 4개(작은 HTTP 서버).
+- 응답에 `x-goog-generation` 헤더가 없으면 `ABSENT`(빈 값)로 취급하지 않고 실패시킨다(재시도 없는 `IllegalStateException`). 조건부 쓰기가 틀어지는 것을 막는다.
+- `database-connection-warm` 로그는 연결이 실제로 맺어져 유효할 때만 남긴다. 시작 실패(`awaitAssembly` 실패) 때도 타임라인을 로그로 내보낸 뒤 종료한다.
+
+**작업 실패 알림(제안, 이 PR에서 스크립트만 추가)**: bootstrap에 넣지 않고 `infra/gcp/monitoring-jobs.sh`로 분리했다(모니터링은 REST라 gcloud 전용 bootstrap과 섞지 않음, 이메일 채널은 표시 이름 `운영자 메일`로 조회, 주소는 저장소에 없음, 멱등). 정책 둘: ① `run.googleapis.com/job/completed_execution_count`의 `result=failed`가 5분 구간에 1건 이상(Job `cleanup`·`db-backup`별, 지표 존재 확인함), ② Scheduler 로그 ERROR 이상(cleanup-daily·db-backup-weekly; 이 프로젝트에는 Scheduler 지표 설명자가 없어 로그 기반). 한계: 주 1회 Job이 **아예 안 돈** 경우는 지표 부재 조건의 최대 기간(약 1일)을 넘어 잡지 못한다 → 3.6절의 최신 백업 점검을 유지. 실행은 코디네이터(`bash infra/gcp/monitoring-jobs.sh`, 정책 JSON 확인은 `DRY_RUN=1`). 정책 생성 요청은 검증하지 못했다(쓰기 권한 필요): 실패하면 응답 본문이 그대로 출력된다.
+
 ## 4. 레이트 리밋 키 권고 (8번)
 
 문제: 웹은 Cloudflare 뒤에서 서버 API를 **같은 출처 rewrite**로 부른다. Cloud Run이 직접 연결로 보는 상대는 Cloudflare 쪽이고, 그 앞단(GFE)이 붙이는 `X-Forwarded-For`의 **마지막 값**이 그 직접 연결의 IP다.
@@ -299,5 +323,5 @@ P8a에서 올린 9건 중 코디네이터가 정한 것(2026-11-14): 1 WIF → �
 이번 작업의 남은 일과 제안:
 1. **병합 후 순서**(이 PR은 라이브를 바꾸는 `bootstrap.sh` 실행이 필요하다): ① PR 병합 → main 배포가 backup 이미지를 AR에 올리고(`db-backup` Job은 아직 없어 "Job 갱신" 단계는 경고 후 건너뜀) 리뷰된 코드로 라이브를 덮는다 → ② `bash infra/gcp/bootstrap.sh` 실행(WIF를 `main` 한정으로 좁힘, `db-backup` Job·Scheduler `db-backup-weekly` 생성, 이전 GitHub 가장 권한 회수) → ③ `gh workflow run deploy-server.yml`(main에서)로 한 번 더 배포해 `db-backup` Job에 backup 이미지를 연결 → ④ `gcloud run jobs execute db-backup --region asia-northeast3 --wait`로 첫 백업을 실행하고 크기·`mise run db:restore-check` 복원을 확인. ②는 처음부터 main 한정이라 이후 브랜치에서 GCP를 쓸 수 없다(배포 검증은 main).
 2. **개인정보 방침(별도 작업)**: 백업 수탁자에서 GitHub 행 삭제(3.6절 "바뀐 사실": 서울 Cloud Run Job, 이미지 `postgres:17.6-alpine`, 보존 30일 불변).
-3. **작업 실패 알림이 없다**: Scheduler가 실행하는 `cleanup`·`db-backup` Job이 실패해도 알림이 가지 않는다(실행 목록에서만 보임). 제안: Cloud Monitoring 로그 기반 알림(Job 실행 실패) 또는 가동 확인처럼 최근 백업 파일 시각 점검. 6.1절의 모니터링과 같은 방식으로 코디네이터가 설정.
+3. **작업 실패 알림**: 3.11절의 `infra/gcp/monitoring-jobs.sh`(Job 실행 실패 지표 + Scheduler 로그 알림, 이메일 채널 `운영자 메일`)를 코디네이터가 실행하면 된다. 주 1회 Job이 아예 안 도는 경우는 못 잡으므로 최신 백업 점검은 유지.
 4. 선택 정리: `GcsArtifactStore.warmUp`과 메타데이터 고정 주소(3.10절, 효과 없음)는 다음에 코드를 줄일 때 제거 후보.
