@@ -24,3 +24,18 @@ for (const [status, code] of [
     await expect(page.getByRole("link", { name: "출발역 바꾸기" })).toBeVisible();
   });
 }
+
+// B1: 서버(CORS)가 허용되지 않은 Origin을 403 + 빈 HTML 본문으로 거절했을 때도 오류 화면에 이유 문구가 있어야 한다(예전에는 버튼만 보였다).
+test("계약 밖의 403(빈 HTML 본문)이어도 짧은 안내 문구가 보이고 내부 값은 보이지 않는다", async ({ page }) => {
+  await page.goto("/result?v=1&o=1qs.2je&m=f");
+  await expect(page.getByRole("article").first().getByText("1위")).toBeVisible();
+
+  await page.route("**/api/v1/recommend", (route) =>
+    route.fulfill({ status: 403, contentType: "text/html", body: "" }),
+  );
+  await page.getByRole("tab", { name: "빨리 만나기" }).click();
+  const alert = page.getByRole("tabpanel").getByRole("alert");
+  await expect(alert).toContainText("이 기준으로는 결과를 받지 못했어요.");
+  await expect(alert).not.toContainText(/403|HTTP|UNKNOWN/);
+  await expect(page.getByRole("button", { name: "다시 시도" })).toBeVisible();
+});

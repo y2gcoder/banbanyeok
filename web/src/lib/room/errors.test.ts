@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiRequestError } from "@/lib/api/client";
-import { CONNECTION_MESSAGE, errorCode, isClientError, isRoomGone, isTokenRejected, roomErrorMessage } from "./errors";
+import { CONNECTION_MESSAGE } from "@/lib/api/errors";
+import { errorCode, isClientError, isRoomGone, isTokenRejected, roomErrorMessage } from "./errors";
 
 const err = (status: number, code: string, message = "서버 문구") => new ApiRequestError(status, code, message);
 
@@ -12,6 +13,10 @@ describe("방 오류", () => {
     expect(roomErrorMessage(err(400, "SOMETHING_NEW", "새 오류예요"))).toBe("새 오류예요");
     expect(roomErrorMessage(err(502, "UPSTREAM_UNAVAILABLE"))).toBe(CONNECTION_MESSAGE);
     expect(roomErrorMessage(new TypeError("Failed to fetch"))).toBe(CONNECTION_MESSAGE);
+  });
+
+  it("계약의 오류 모양이 아닌 4xx(빈 본문·HTML)는 'HTTP 403' 같은 값을 보이지 않는다", () => {
+    expect(roomErrorMessage(err(403, "UNKNOWN", "HTTP 403"))).not.toMatch(/HTTP|403/);
   });
 
   it("분기용 판별", () => {

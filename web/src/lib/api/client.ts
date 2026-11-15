@@ -71,9 +71,12 @@ export async function recommend(query: RecommendQuery, signal?: AbortSignal): Pr
 }
 
 /** 응답이 오류이면 계약의 오류 모양(`{code, message}`)을 [ApiRequestError]로 던진다. 오류 본문이 없으면 HTTP 상태로 만든다. */
-export function failure(status: number, error: ApiError | undefined): ApiRequestError {
-  const detail: ApiError = error ?? { code: "UNKNOWN", message: `HTTP ${status}` };
-  return new ApiRequestError(status, detail.code, detail.message);
+export function failure(status: number, error: ApiError | string | undefined): ApiRequestError {
+  // 프록시·CDN이 준 빈 본문·HTML(JSON이 아닌 본문은 openapi-fetch가 문자열로 준다)은 계약의 오류 모양이 아니다.
+  if (error !== undefined && typeof error === "object" && typeof error.code === "string") {
+    return new ApiRequestError(status, error.code, typeof error.message === "string" ? error.message : "");
+  }
+  return new ApiRequestError(status, "UNKNOWN", `HTTP ${status}`);
 }
 
 /** 입력 화면을 열 때 서버를 미리 깨운다(Cloud Run min 0 콜드스타트를 입력 시간 뒤로 숨긴다). 실패해도 무시한다. */
