@@ -7,7 +7,10 @@ import Link from "next/link";
  */
 export function SiteFooter() {
   return (
-    <nav aria-label="사이트 정보" className="mx-auto w-full max-w-2xl border-t border-rule px-5 pt-4 pb-8 text-[14px]">
+    <nav
+      aria-label="사이트 정보"
+      className="mx-auto w-full max-w-2xl border-t border-rule px-gutter pt-4 pb-safe text-[14px] wide:max-w-6xl"
+    >
       <ul className="flex flex-wrap gap-x-4 gap-y-1">
         <li>
           <Link

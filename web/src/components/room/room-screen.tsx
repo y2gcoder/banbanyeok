@@ -31,7 +31,16 @@ import { JoinForm } from "./join-form";
 import { OutcomeCard } from "./outcome-card";
 import { PeopleList } from "./people-list";
 import { RoomResult } from "./room-result";
-import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell } from "./room-states";
+import {
+  CannotJoin,
+  ROOM_MAIN,
+  ROOM_SIDE,
+  RoomGone,
+  RoomIntro,
+  RoomLoadError,
+  RoomLoading,
+  RoomShell,
+} from "./room-states";
 import { useIdempotencyKey } from "./use-idempotency-key";
 
 const SHARE_TITLE = "같이 만날 역 정해요";
@@ -236,153 +245,162 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const busy = leave.isPending || kick.isPending || lock.isPending || remove.isPending;
 
   return (
-    <RoomShell>
-      <RoomIntro title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"} />
-      <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
+    <RoomShell split="room">
+      {/* 왼쪽 칸(폰에서는 위): 소개·링크 보내기·참여자·참여/수정 폼 */}
+      <div className={ROOM_SIDE}>
+        <RoomIntro title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"} />
+        <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
 
-      {/* 첫 사람(방장)이 방금 만든 방이거나 아직 혼자일 때: 링크 보내기가 가장 먼저 할 일이다. */}
-      {joined && !enough ? (
-        <section
-          aria-labelledby="share-title"
-          className="flex flex-col gap-3 rounded-2xl border-2 border-ink bg-surface p-5"
-        >
-          <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
-            친구에게 링크를 보내 주세요
-          </h2>
-          <p className="text-[14px] text-ink-soft">
-            친구가 링크로 들어와 자기 출발역을 넣으면 여기에 나타나요. 두 명 이상 모이면 결과를 볼 수 있어요.
-          </p>
-          <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
-        </section>
-      ) : null}
+        {/* 첫 사람(방장)이 방금 만든 방이거나 아직 혼자일 때: 링크 보내기가 가장 먼저 할 일이다. */}
+        {joined && !enough ? (
+          <section
+            aria-labelledby="share-title"
+            className="flex flex-col gap-3 rounded-2xl border-2 border-ink bg-surface p-5"
+          >
+            <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
+              친구에게 링크를 보내 주세요
+            </h2>
+            <p className="text-[14px] text-ink-soft">
+              친구가 링크로 들어와 자기 출발역을 넣으면 여기에 나타나요. 두 명 이상 모이면 결과를 볼 수 있어요.
+            </p>
+            <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
+          </section>
+        ) : null}
 
-      <PeopleList
-        people={people}
-        maxPeople={MAX_PEOPLE}
-        canKick={isHost}
-        editing={editing}
-        busy={busy}
-        onEditSelf={() => {
-          setActionError(null);
-          edit.reset();
-          setEditing(true);
-        }}
-        onRemoveSelf={() => {
-          setActionError(null);
-          leave.mutate();
-        }}
-        onKick={(id) => {
-          setActionError(null);
-          kick.mutate(id);
-        }}
-      />
-      {actionError && !isHost ? (
-        <p role="alert" className="-mt-2 text-sm font-semibold text-destructive">
-          {actionError}
-        </p>
-      ) : null}
-
-      {joined && editing ? (
-        <JoinForm
-          key="edit"
-          mode="edit"
-          initial={myValue()}
-          personIndex={Math.max(0, selfIndex)}
-          pending={edit.isPending}
-          error={edit.isError ? roomErrorMessage(edit.error) : null}
-          onSubmit={(input, value) => {
-            if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
-            edit.mutate(input);
+        <PeopleList
+          people={people}
+          maxPeople={MAX_PEOPLE}
+          canKick={isHost}
+          editing={editing}
+          busy={busy}
+          onEditSelf={() => {
+            setActionError(null);
+            edit.reset();
+            setEditing(true);
           }}
-          onCancel={() => setEditing(false)}
+          onRemoveSelf={() => {
+            setActionError(null);
+            leave.mutate();
+          }}
+          onKick={(id) => {
+            setActionError(null);
+            kick.mutate(id);
+          }}
         />
-      ) : null}
+        {actionError && !isHost ? (
+          <p role="alert" className="-mt-2 text-sm font-semibold text-destructive">
+            {actionError}
+          </p>
+        ) : null}
 
-      {!joined && state === "can-join" ? (
-        <>
+        {joined && editing ? (
           <JoinForm
-            key="join"
-            mode="join"
-            initial={joinValue}
-            personIndex={room.participants.length}
-            pending={join.isPending}
-            error={join.isError ? roomErrorMessage(join.error) : null}
+            key="edit"
+            mode="edit"
+            initial={myValue()}
+            personIndex={Math.max(0, selfIndex)}
+            pending={edit.isPending}
+            error={edit.isError ? roomErrorMessage(edit.error) : null}
             onSubmit={(input, value) => {
               if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
-              join.mutate(input);
+              edit.mutate(input);
+            }}
+            onCancel={() => setEditing(false)}
+          />
+        ) : null}
+
+        {!joined && state === "can-join" ? (
+          <>
+            <JoinForm
+              key="join"
+              mode="join"
+              initial={joinValue}
+              personIndex={room.participants.length}
+              pending={join.isPending}
+              error={join.isError ? roomErrorMessage(join.error) : null}
+              onSubmit={(input, value) => {
+                if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
+                join.mutate(input);
+              }}
+            />
+            {storable ? null : (
+              <p role="status" className="-mt-2 text-[13px] text-destructive">
+                이 브라우저는 저장 공간을 막아 두어서, 참여한 뒤 이 기기에서 내 항목을 고칠 수 없어요.
+              </p>
+            )}
+          </>
+        ) : null}
+        {!joined && (state === "full" || state === "locked") ? <CannotJoin reason={state} /> : null}
+
+        {joined && enough ? (
+          <section
+            aria-labelledby="share-title"
+            className="flex flex-col gap-3 rounded-2xl border border-rule bg-surface p-5"
+          >
+            <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
+              링크 다시 보내기
+            </h2>
+            <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
+          </section>
+        ) : null}
+      </div>
+
+      {/* 오른쪽 칸(폰에서는 가운데): 결과 */}
+      <div className={ROOM_MAIN}>
+        {enough ? (
+          <RoomResult
+            roomId={roomId}
+            room={room}
+            participantToken={token}
+            participantId={participantId}
+            isHost={isHost}
+            onResultSeen={() => {
+              if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
+            }}
+            renderAfter={(view) =>
+              joined && token && meetingDay ? (
+                <OutcomeCard
+                  roomId={roomId}
+                  participantToken={token}
+                  topStationCode={view.candidates[0]?.stationCode ?? ""}
+                  resultSeenAt={record?.resultSeenAt}
+                  answered={Boolean(record?.outcomeAnswered)}
+                  collapsed={!room.meetingDate}
+                  onAnswered={() => record && commit({ ...record, outcomeAnswered: true })}
+                />
+              ) : null
+            }
+          />
+        ) : (
+          <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
+            두 명 이상 들어오면 결과를 볼 수 있어요.
+          </section>
+        )}
+      </div>
+
+      {/* 왼쪽 칸 아래(폰에서는 맨 아래): 방장 설정·만료 안내 */}
+      <div className={ROOM_SIDE}>
+        {isHost ? (
+          <HostControls
+            locked={room.locked}
+            lockedByCount={fullByCount}
+            busy={busy}
+            error={actionError}
+            onToggleLock={(locked) => {
+              setActionError(null);
+              lock.mutate(locked);
+            }}
+            onDeleteRoom={() => {
+              setActionError(null);
+              remove.mutate();
             }}
           />
-          {storable ? null : (
-            <p role="status" className="-mt-2 text-[13px] text-destructive">
-              이 브라우저는 저장 공간을 막아 두어서, 참여한 뒤 이 기기에서 내 항목을 고칠 수 없어요.
-            </p>
-          )}
-        </>
-      ) : null}
-      {!joined && (state === "full" || state === "locked") ? <CannotJoin reason={state} /> : null}
+        ) : null}
 
-      {joined && enough ? (
-        <section
-          aria-labelledby="share-title"
-          className="flex flex-col gap-3 rounded-2xl border border-rule bg-surface p-5"
-        >
-          <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
-            링크 다시 보내기
-          </h2>
-          <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
-        </section>
-      ) : null}
-
-      {enough ? (
-        <RoomResult
-          roomId={roomId}
-          room={room}
-          participantToken={token}
-          participantId={participantId}
-          isHost={isHost}
-          onResultSeen={() => {
-            if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
-          }}
-          renderAfter={(view) =>
-            joined && token && meetingDay ? (
-              <OutcomeCard
-                roomId={roomId}
-                participantToken={token}
-                topStationCode={view.candidates[0]?.stationCode ?? ""}
-                resultSeenAt={record?.resultSeenAt}
-                answered={Boolean(record?.outcomeAnswered)}
-                collapsed={!room.meetingDate}
-                onAnswered={() => record && commit({ ...record, outcomeAnswered: true })}
-              />
-            ) : null
-          }
-        />
-      ) : (
-        <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
-          두 명 이상 들어오면 결과를 볼 수 있어요.
-        </section>
-      )}
-
-      {isHost ? (
-        <HostControls
-          locked={room.locked}
-          lockedByCount={fullByCount}
-          busy={busy}
-          error={actionError}
-          onToggleLock={(locked) => {
-            setActionError(null);
-            lock.mutate(locked);
-          }}
-          onDeleteRoom={() => {
-            setActionError(null);
-            remove.mutate();
-          }}
-        />
-      ) : null}
-
-      <p className="text-center text-xs text-muted-foreground">
-        방은 마지막 변경 후 7일이 지나거나 만든 지 30일이 지나면 사라져요.
-      </p>
+        <p className="text-center text-xs text-muted-foreground">
+          방은 마지막 변경 후 7일이 지나거나 만든 지 30일이 지나면 사라져요.
+        </p>
+      </div>
     </RoomShell>
   );
 }

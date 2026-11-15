@@ -19,7 +19,7 @@ import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/to
 import { stationByCode } from "@/lib/stations";
 import { cn } from "@/lib/utils";
 import { ParticipantFields } from "./participant-fields";
-import { RoomShell } from "./room-states";
+import { ROOM_MAIN, ROOM_SIDE, RoomShell } from "./room-states";
 import { useIdempotencyKey } from "./use-idempotency-key";
 import { slowMessage, useSlowStage } from "./use-slow-hint";
 
@@ -89,25 +89,37 @@ export function CreateRoomForm() {
 
   const submitted = create.isPending || create.isSuccess;
   return (
-    <RoomShell>
-      <nav>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 rounded-md py-1 text-[15px] font-semibold text-ink-soft hover:text-ink"
-        >
-          <ArrowLeftIcon className="size-4" aria-hidden="true" />
-          혼자 입력하기
-        </Link>
-      </nav>
-      <section aria-labelledby={`${id}-title`} className="flex flex-col gap-2">
-        <h1 id={`${id}-title`} className="text-[28px] leading-[1.2] font-extrabold tracking-[-0.02em] text-ink">
-          친구가 각자 입력하는 방 만들기
-        </h1>
-        <p className="text-[15px] text-ink-soft">
-          내 출발역만 넣고 링크를 보내면, 친구들이 들어와서 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요.
-        </p>
-      </section>
-      <form onSubmit={submit} noValidate className="flex flex-col gap-5">
+    <RoomShell split="form">
+      <div className={ROOM_SIDE}>
+        <nav>
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-[15px] font-semibold text-ink-soft hover:text-ink"
+          >
+            <ArrowLeftIcon className="size-4" aria-hidden="true" />
+            혼자 입력하기
+          </Link>
+        </nav>
+        <section aria-labelledby={`${id}-title`} className="flex flex-col gap-2">
+          <h1
+            id={`${id}-title`}
+            className="text-[28px] leading-[1.2] font-extrabold tracking-[-0.02em] text-ink lg:text-[40px] wide:text-[32px]"
+          >
+            친구가 각자 입력하는 방 만들기
+          </h1>
+          <p className="text-[15px] text-ink-soft">
+            내 출발역만 넣고 링크를 보내면, 친구들이 들어와서 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요.
+          </p>
+        </section>
+      </div>
+      <form
+        onSubmit={submit}
+        noValidate
+        className={cn(
+          ROOM_MAIN,
+          "wide:rounded-2xl wide:border wide:border-rule wide:bg-surface wide:p-4 wide:shadow-[0_1px_0_var(--rule)] lg:p-8",
+        )}
+      >
         <ParticipantFields
           idPrefix={`${id}-host`}
           value={host}
@@ -144,7 +156,9 @@ export function CreateRoomForm() {
           ))}
         </fieldset>
         <details className="rounded-xl border border-rule bg-surface p-3.5">
-          <summary className="cursor-pointer text-[15px] font-bold text-ink">약속일·인원 정하기 (선택)</summary>
+          <summary className="-my-3 cursor-pointer py-3 text-[15px] font-bold text-ink">
+            약속일·인원 정하기 (선택)
+          </summary>
           <div className="mt-3 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`${id}-date`} className="text-[15px] font-semibold text-ink">
@@ -160,7 +174,7 @@ export function CreateRoomForm() {
                   setProblem(null);
                   setMeetingDate(e.target.value);
                 }}
-                className="h-11 rounded-lg border border-input bg-surface px-3 text-[15px]"
+                className="h-11 rounded-lg border border-input bg-surface px-3 text-[16px]"
               />
               <p className="text-[13px] text-muted-foreground">
                 정하면 약속 다음 날 방이 사라져요. 안 정하면 마지막 변경 후 7일(최대 30일) 뒤에 사라져요.
@@ -176,7 +190,7 @@ export function CreateRoomForm() {
                     aria-pressed={expectedCount === count}
                     onClick={() => setExpectedCount(count)}
                     className={cn(
-                      "h-10 rounded-full border px-4 text-[15px] font-semibold",
+                      "h-11 rounded-full border px-4 text-[15px] font-semibold",
                       expectedCount === count
                         ? "border-ink bg-ink text-primary-foreground"
                         : "border-rule-strong bg-surface text-ink",

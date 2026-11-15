@@ -97,7 +97,7 @@ export function HomeForm() {
           return (
             <li key={row.key} className="relative flex gap-3">
               {/* 노선도처럼 사람마다 색이 있는 역 점과, 다음 사람으로 이어지는 선 */}
-              <span aria-hidden="true" className="relative flex w-5 shrink-0 justify-center pt-[13px]">
+              <span aria-hidden="true" className="relative flex w-5 shrink-0 justify-center pt-3">
                 <span
                   className="relative z-10 size-5 rounded-full border-[5px] bg-surface"
                   style={{ borderColor: personColor(index) }}
@@ -118,13 +118,13 @@ export function HomeForm() {
                     placeholder={placeholder}
                     maxLength={MAX_NICKNAME_CODE_POINTS * 2}
                     autoComplete="off"
-                    className="h-8 w-full min-w-0 rounded-md bg-transparent px-1 text-[15px] font-bold text-ink outline-none placeholder:text-ink-soft focus-visible:bg-surface"
+                    className="h-11 w-full min-w-0 rounded-md bg-transparent px-1 text-[16px] font-bold text-ink placeholder:text-ink-soft focus-visible:bg-surface"
                   />
                   {index >= MIN_PEOPLE ? (
                     <button
                       type="button"
                       onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}
-                      className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-ink"
+                      className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-ink"
                     >
                       <XIcon className="size-4" aria-hidden="true" />
                       <span className="sr-only">{row.nickname.trim() || placeholder} 빼기</span>
@@ -145,7 +145,7 @@ export function HomeForm() {
         <button
           type="button"
           onClick={() => setRows(withNewRow)}
-          className="ml-8 inline-flex w-fit items-center gap-1.5 rounded-md px-1 py-1 text-[15px] font-semibold text-ink-soft hover:text-ink"
+          className="ml-8 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-md px-1 text-[15px] font-semibold text-ink-soft hover:text-ink"
         >
           <PlusIcon className="size-4" aria-hidden="true" />한 명 더 (최대 {MAX_PEOPLE}명)
         </button>

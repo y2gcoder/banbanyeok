@@ -60,7 +60,7 @@ export function PeopleList({ people, maxPeople, canKick, editing, busy, onEditSe
                     variant="ghost"
                     aria-label="수정 내 항목"
                     onClick={onEditSelf}
-                    className="h-9 px-3 text-[14px] font-semibold"
+                    className="h-11 px-3 text-[14px] font-semibold"
                   >
                     수정
                   </Button>

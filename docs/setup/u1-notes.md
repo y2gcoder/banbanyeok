@@ -1,0 +1,228 @@
+# U1 작업 노트: 모바일 우선 반응형 (폰·폴더블 접힘/펼침·태블릿·데스크톱)
+
+검증일: 2026-11-15. 범위: `/`, `/result`, `/s`, `/r/new`, `/r/[roomId]`(참여·목록·결과·방장 도구), `/meet`, `/meet/[pair]`, `/privacy`,
+동의 배너, 404, 깨진 링크 안내. OG 이미지는 대상이 아니다. 새 의존성 없음. 디자인 토큰(플랫폼·안전 노랑·사람별 색)은 그대로 두고
+브레이크포인트·여백·유틸리티만 **추가**했다. 역 검색(`station-field.tsx`)의 데이터 로딩은 건드리지 않았다(지우기 버튼 크기만 `ui/combobox.tsx`에서).
+
+## 1. 한눈에
+
+- **폰(기본)**: 지금까지의 한 칸 화면 그대로. 터치 목표 44px, 입력 글자 16px(iOS 확대 방지), 노치·홈 인디케이터 안전 영역만 보강했다.
+- **두 칸(wide, 640px~)**: 펼친 폴더블·가로로 눕힌 폰·태블릿·데스크톱에서 폰 화면을 늘리지 않고 칸을 나눈다.
+  입력 화면은 제목 | 입력 카드, 결과는 기준 탭·공유 | 후보, 방은 소개·참여자·참여 폼·방장 설정 | 결과, 방 만들기는 소개 | 폼 카드.
+- **넓은 화면(lg, 1024px~)**: 왼쪽 칸 폭을 고정(22~30rem)하고 본문 최대 폭 72rem(`max-w-6xl`). SEO 조합 페이지는 후보 3장이 나란히,
+  허브는 역 묶음이 3칸, 처리방침은 목차가 왼쪽에 붙고 본문은 읽기 폭(42rem)을 지킨다.
+- **경첩으로 나뉜 화면**(Viewport Segments, 크로미움 138+): 두 칸의 경계를 경첩에 맞춘다. 다른 브라우저에는 영향 없음.
+- **앱 아이콘·매니페스트**: 탭 아이콘(ICO·SVG), iOS 홈 화면 아이콘, 웹 앱 매니페스트(standalone, 192·512 + maskable), 테마 색·iOS 상태 표시줄(12절).
+- 검사: 28개 기기 크기 × 11개 화면 행렬 + 전환·키보드·큰 글자·경첩·hover. **바꾸기 전 361건 중 24건 통과 → 지금 모두 통과**(이후 hover 검사 1건 추가, 362건).
+
+## 2. 뷰포트 행렬과 근거
+
+크기는 CSS px(레이아웃 뷰포트). 가능한 한 Playwright 1.65.0 기기 설명자(`devices`)에서 그대로 가져왔고(`web/e2e/support/viewports.ts`),
+설명자에 없는 기기는 **제조사 공식 해상도 ÷ 기기 픽셀 비율**로 계산했다.
+
+| 분류 | id | 크기 | 근거 |
+|---|---|---|---|
+| 폰(최소 보장) | phone-320 | 320×568 | Playwright `iPhone SE` |
+| 폰 | phone-360 / 390 / 393 / 412 / 430 | 360×780 · 390×664 · 393×659 · 412×839 · 430×739 | `Galaxy S24` · `iPhone 14` · `iPhone 16` · `Pixel 7` · `iPhone 15 Pro Max` |
+| 폴드 접힘 | fold-cover-344 | 344×882 | Z Fold5 커버 904×2316(삼성 뉴스룸 사양표) ÷ 2.625 |
+| 폴드 접힘 | fold-cover-360 | 360×764 | Playwright `Galaxy Z Fold 7 Cover` |
+| 폴드 접힘 | fold-cover-411 | 411×960 | Z Fold7 커버 1080×2520(삼성 뉴스룸 사양표) ÷ 2.625 |
+| 폴드 펼침 | fold-open-690 / 829-land | 690×829 · 829×690 | Z Fold5 메인 1812×2176(삼성 사양표) ÷ 2.625 — 행렬에서 가장 좁은 펼침 |
+| 폴드 펼침 | fold-open-928 / 984 / 1028-land | 928×1004 · 984×1016 · 1028×876 | `Galaxy Z Fold 6` · `Galaxy Z Fold 7`(메인 2184×1968, 삼성 사양표와 일치) · `Galaxy Z Fold 6 landscape` |
+| 가로 폰 | land-568 / 667 / 756 / 863 | 568×320 · 667×375 · 756×352 · 863×360 | `iPhone SE landscape` · `iPhone 8 landscape` · `iPhone 17 Pro landscape` · `Pixel 7 landscape` |
+| 태블릿 | tablet-640 / 768 / 820 / 1024-land | 640×1024 · 768×1024 · 820×1180 · 1024×768 | `Galaxy Tab S9` · `iPad Mini` · iPad Air 1640×2360(애플 사양) ÷ 2 · `iPad Mini landscape` |
+| 데스크톱 | desktop-1280 / 1440 / 1920 | 1280×800 · 1440×900 · 1920×1080 | 맥 창 크기(작업 지시) |
+| 확대 | zoom200-1280 / 1440, zoom400-1280 | 640×400 · 720×450 · 320×200 | 브라우저 확대 = CSS 폭 ÷ 배율, 픽셀 비율 = 배율. 400%는 WCAG 1.4.10 reflow 기준(320 CSS px) |
+
+출처: 삼성 뉴스룸 Galaxy Z Fold5 사양표(https://news.samsung.com/global/samsung-galaxy-z-flip5-and-galaxy-z-fold5-delivering-flexibility-and-versatility-without-compromise),
+Galaxy Z Fold7 사양표(https://news.samsung.com/us/samsung-galaxy-z-fold7-raising-the-bar-for-smartphones). 펼친 폭은 기기 픽셀 비율(화면 크기 설정)에 따라
+690~990으로 달라진다.
+
+**폴더블 아이폰은 공식 사양이 없다**(2026-11-15 기준 애플 발표 없음, 루머상 안쪽 7.7~7.8″·바깥 5.3~5.5″). 위 범위(접힘 344~411, 펼침 690~1028)가
+루머 크기를 덮는다고 보고 별도 행은 두지 않았다. 출시되면 Playwright 기기 설명자가 생기는 대로 행렬에 넣는다.
+
+## 3. 브레이크포인트 결정
+
+| 이름 | 값 | 무엇이 바뀌나 | 근거 |
+|---|---|---|---|
+| (기본) | ~639px | 한 칸 | 모바일 우선 |
+| `wide` | **40rem = 640px** | 두 칸, 여백 1.5rem | 가장 좁은 폰(320)의 본문 폭은 280px(여백 20×2). 두 칸 각각이 그 폭을 지키는 가장 작은 화면 = 2×280 + 칸 사이 24 + 좌우 여백 48 = **632** ≤ 640 |
+| `lg` | 64rem = 1024px | 왼쪽 칸 고정 폭, 여백 2rem, SEO 3칸, 처리방침 목차 | Tailwind 기본값. 1024 이상이면 오른쪽 칸이 왼쪽 고정 폭(22~30rem) 외에도 560px 이상 남는다 |
+| `tall` | 높이 40rem 이상 | 왼쪽 칸·목차를 화면에 붙임(sticky) | 가로로 눕힌 폰(높이 320~430)에서 붙은 칸이 화면을 차지하지 않게 |
+
+- **왜 768(Tailwind `md`)이 아닌가**: Z Fold5를 기본 배율로 펼치면 690px, 가로로 눕힌 iPhone 8·17 Pro는 667·756px이다. 768로 잡으면 이 화면들이
+  폰 화면(448px 칸)을 가운데 띄운 채로 남는다(`before/fold-open-690/*.png`). 640이면 이들이 모두 두 칸이 되고, 커버 화면(344~484)은 한 칸으로 남는다.
+- **rem이라 큰 글자에서 경계도 커진다**: 미디어 쿼리의 rem은 브라우저 기본 글자 크기를 따른다. 기본 글자를 24px로 키우면 두 칸 경계가 960px이 되어
+  칸이 좁아져 글자가 넘치는 일이 없다(4절 테스트).
+- 펼친 폴더블에서의 모습: `u1-screens/fold-open-690/*`(가장 좁은 펼침, 두 칸이 시작되는 폭), `fold-open-1028-land/*`(가로).
+
+## 4. 화면별 변경
+
+| 화면 | 폰 | 두 칸(wide~) |
+|---|---|---|
+| `/` 입력 | 이름 칸 44px·16px, 줄 빼기 버튼 44px, "한 명 더" 44px | 왼쪽 제목(40→52px), 오른쪽 흰 카드 안에 입력. 높이가 충분하면 제목이 붙어 있다 |
+| `/result`, `/s` | 기준 탭 높이 52px(탭 44px), 배려 대상·"나는 누구?" 칩 44px, "다시 입력" 44px | 왼쪽: 머리·나는 누구?·기준 탭·공유(카톡/링크 복사) / 오른쪽: 안내·후보. 문서 순서는 폰과 같아 읽는 순서는 탭 → 후보 → 공유 |
+| 1위 카드 | 역 이름 글자를 카드 폭에 맞춰 24~34px(`cqi` 컨테이너 단위). "동대문역사문화공원"이 좁은 칸에서 글자 중간에 끊기지 않는다 | 같음 |
+| 사람별 시간 | 이름 칸을 40%까지만(긴 이름은 말줄임) → 막대가 너무 짧아지지 않는다 | 같음 |
+| `/r/new` | 이름·약속일 16px, 인원 칩·"약속일·인원 정하기" 펼치기 44px | 왼쪽 소개 / 오른쪽 폼 카드 |
+| `/r/[roomId]` | 수정·삭제·내보내기·확인/취소·잠그기 버튼 44px, "만났나" 펼치기 44px | 왼쪽: 소개·링크 보내기·참여자·참여/수정 폼·잠김 안내 → 아래에 방장 설정·만료 안내 / 오른쪽: 결과(탭·후보·만났나). 첫 로딩 화면도 같은 칸 |
+| `/meet` | 칩 44px | 역 묶음 2칸(lg 3칸), 설명 읽기 폭 제한 |
+| `/meet/[pair]` | 경로 표시 링크 44px | 1위가 한 줄, 2·3위 나란히(lg에서는 셋이 나란히). 하단 데이터 기준 읽기 폭 제한 |
+| `/privacy` | 목차 링크 44px, 통계 설정 스위치 누르는 영역 44×64(보이는 스위치 크기는 그대로) | lg에서 목차가 왼쪽에 붙고(높이가 충분할 때) 본문은 42rem |
+| 동의 배너 | 화면 높이의 60%까지만, 안내·체크박스는 배너 안에서 스크롤(스크롤 그림자로 더 있음을 보임), 버튼은 늘 보임. 체크박스 레이블 누르는 영역 47px | 안내 | 체크박스를 나란히(높이 절반) |
+| 404·깨진 링크 | 링크 44px, 여백 안전 영역 | 한 칸 그대로(내용이 짧다) |
+| 공통 | 워드마크 링크 44px, 하단 링크 띠가 본문 폭과 맞음 | |
+
+구조 원칙: 두 칸 배치는 **CSS 그리드의 칸 지정만** 쓴다(`wide:col-start-2 wide:row-span-N`). 문서(DOM) 순서는 폰 순서 그대로라 키보드·화면 낭독기
+순서가 폰과 같고, 화면 크기가 바뀌어도 컴포넌트가 다시 만들어지지 않아 입력값·펼친 상태·스크롤이 남는다(5절 테스트).
+
+## 5. 높이·키보드·안전 영역
+
+- `100vh`는 원래 없었다(`min-h-dvh` 사용). 붙는 칸은 `tall`(높이 40rem 이상)에서만, 붙은 목차는 `max-h-[calc(100dvh-2rem)]`로 스크롤된다.
+- `viewport-fit=cover`(`layout.tsx`). 좌우 여백은 `px-gutter` 유틸리티 = `max(여백, env(safe-area-inset-left/right))`라 가로로 눕힌 폰의
+  노치·펀치홀·둥근 모서리를 피한다. 맨 아래 링크 띠는 `pb-safe` = `2rem + env(safe-area-inset-bottom)`(홈 인디케이터), 동의 배너도 같은 처리.
+- **하단 고정 요소는 동의 배너 하나**(다른 화면에는 하단 고정 CTA가 없다). 화면 키보드가 열리면 배너를 잠시 숨긴다
+  (`use-on-screen-keyboard.ts`): 초점이 글자 칸에 있고 `visualViewport.height × scale`이 레이아웃 높이보다 150px 넘게 작으면 열린 것으로 본다
+  (확대(pinch)·주소창 접힘은 제외). `visualViewport`가 없으면 터치 기기에서 글자 칸 초점만으로 판단. 숨겨도 고른 체크는 남는다.
+  `interactive-widget=resizes-content`는 쓰지 않았다(레이아웃 뷰포트가 줄면 붙은 배너가 키보드 위로 올라와 입력 칸을 가린다).
+- iOS 입력 확대: 모든 글자 입력 칸 16px 이상(이름 칸·약속일·링크 대화상자). 역 검색 칸은 원래 17px.
+
+## 6. 경첩 피하기 (Viewport Segments API, 점진적 향상)
+
+- `globals.css`의 `@media (horizontal-viewport-segments: 2) { .hinge-split { … } }`: 두 칸 화면(입력·결과·방·방 만들기)의 칸 너비를
+  `env(viewport-segment-width 0 0 / 1 0)`, 칸 사이를 경첩 폭(`env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0)`) + 양쪽 여백으로 잡아
+  왼쪽 칸은 왼쪽 조각, 오른쪽 칸은 오른쪽 조각 안에만 놓인다. 레이어 밖 규칙이라 Tailwind 유틸리티보다 우선한다.
+- 미디어 기능을 모르는 브라우저(사파리·파이어폭스)는 규칙 전체를 무시하고, 조각이 하나인 화면에서는 맞지 않는다(행렬 전체가 이 상태로 통과).
+- 근거: MDN Viewport Segments API(https://developer.mozilla.org/en-US/docs/Web/API/Viewport_segments_API, 호환표: Chrome·Edge·Chrome Android 138,
+  Samsung Internet 30, Safari·Firefox 미지원), Chrome 블로그 "Support foldable devices with the Viewport Segments API"
+  (https://developer.chrome.com/blog/viewport-segments-api-shipped).
+- 테스트: 크로미움 개발자 도구 프로토콜 `Emulation.setDeviceMetricsOverride`의 `displayFeature`(세로 경첩, 928px 화면 가운데 454~474)로
+  흉내 내고, `main`의 모든 칸이 경첩에 걸치지 않는지 확인한다. **탐색 전에** 걸어야 문서의 미디어 쿼리·`env()`가 조각을 본다
+  (`Emulation.setDisplayFeaturesOverride`나 탐색 후 새로 고침으로는 `env()`가 잡히지 않았다). 캡처: `u1-screens/fold-split-928/`.
+- **위아래로 나뉜 화면(`vertical-viewport-segments: 2`, 반쯤 접어 세운 자세)은 손대지 않았다**: 한 칸 스크롤이 경첩을 지나간다(결정 필요 3).
+
+## 7. 터치·포인터·키보드
+
+- 터치 목표 44×44: 행렬의 터치 기기 크기 전부에서 화면 안 모든 버튼·링크·입력·탭·펼치기를 잰다. 문장 안 글자 링크는 WCAG 2.5.5 예외로 뺐고,
+  체크박스·라디오는 연결된 레이블 전체를 목표로 본다. 보이는 크기를 키우기 어려운 곳(스위치, 펼치기 제목, 체크박스 레이블)은 바깥 상자·패딩으로 누르는 영역만 넓혔다.
+- hover: Tailwind 4의 `hover:`는 원래 `@media (hover: hover)` 안에 생성된다. 빌드된 CSS의 모든 `:hover` 규칙이 그 안에 있는지 e2e로 고정했다.
+- 포커스 표시: 이름 칸·역 검색 칸의 `outline-none`을 지워 전역 `:focus-visible` 윤곽(2px)을 쓴다. 데스크톱 e2e가 Tab 순서
+  (워드마크 → 이름 → 역 → 이름 → 역 → 한 명 더 → 방 만들기 링크)와 각 요소의 포커스 표시를 확인한다.
+- Enter: 역 칸에서 Enter로 후보를 고르고, 목록이 닫힌 상태에서 한 번 더 Enter를 누르면 폼이 제출된다(e2e). 결과의 기준 탭은 화살표 키로 옮긴다.
+- **사파리 주의**: 맥 사파리는 기본 설정에서 Tab이 링크를 건너뛴다(Option+Tab, 또는 설정 "Tab 키로 웹 페이지의 각 항목 강조"). WebKit으로 돌린 행렬에서
+  키보드 테스트만 이 차이로 실패했고(Tab 순서에 링크가 없음) 배치 검사는 모두 통과했다. 앱 문제는 아니다.
+
+## 8. 접근성: 확대·큰 글자
+
+- 브라우저 확대 200%(1280·1440 창)와 400%(1280 창 → 320×200)를 행렬에 넣었다. 가로 넘침·겹침·잘림 없음, 400%에서도 주요 버튼이 눌린다.
+- 큰 기본 글자: 크로미움 `Page.setFontSizes`로 기본 글자를 24px(150%)로 두고 폰 320·390, 펼침 690, 데스크톱 1280에서 11개 화면을 다시 검사한다.
+  rem으로 잡은 간격·브레이크포인트가 함께 커지고(690·1280에서 두 칸 경계가 960px로 올라가 690은 한 칸이 된다) 겹침·잘림이 없다.
+- **한계**: 글자 크기 대부분이 px(`text-[15px]` 등)라 "기본 글자 크기" 설정만 바꾸면 글자는 그대로다. 안드로이드 크롬·iOS 사파리의 글자 크기 조절과
+  데스크톱 확대는 페이지 확대로 동작하므로 위 확대 검사가 그 경우를 덮는다(결정 필요 1).
+
+## 9. 테스트
+
+| 파일 | 내용 | 실행 |
+|---|---|---|
+| `web/e2e/responsive.spec.ts` | 28개 크기 × 11개 화면(308건): 가로 넘침(`scrollWidth ≤ innerWidth`), 주요 버튼 보임·눌림(`click({trial:true})` = 가려짐 검사 포함), 겹침·잘림, 터치 44px·입력 16px, 두 칸/한 칸 배치. 접힘↔펼침 전환 3건, 데스크톱 키보드, 큰 글자 44건, 경첩 5건, hover 1건 | `pnpm e2e`(CI web 잡) |
+| `web/e2e/support/` | 뷰포트 행렬, 배치 검사 함수, 방 API 흉내(가짜 서버는 방을 구현하지 않으므로 같은 출처 요청을 가로챈다) | |
+| `web/e2e-analytics/banner-layout.spec.ts` | 동의 배너(키 있는 빌드에서만 뜬다): 7개 크기에서 화면 60% 이하·버튼 화면 안·넘침 없음·44px, 화면 키보드가 열리면 숨고 닫히면 다시 보임 | `pnpm e2e`(뒤쪽 설정) |
+| `web/e2e-real/viewport-sweep.ts` + `rooms.spec.ts` | 실제 서버로 그린 방장 화면·참여 전 화면을 7개 크기로 바꿔 가며 같은 검사. **방을 더 만들지 않는다**(만들기·참여는 IP당 버스트 10회, 별도 spec으로 2회를 더 쓰자 기존 시나리오가 429로 실패했다) | `pnpm e2e:real`(CI e2e-real 잡) |
+| `use-on-screen-keyboard.test.tsx`, `consent.test.tsx` | 키보드 감지(글자 칸·체크박스·확대·주소창), 배너 숨김과 체크 유지 | `pnpm test` |
+
+접힘↔펼침 전환(`setViewportSize`, 360×764 ↔ 984×1016): 입력 화면의 이름·고른 역·추가한 줄, 결과 화면의 기준 탭·펼친 후보·스크롤(맨 위로 돌아가지 않고
+보던 후보 목록이 화면 안에 남음, 크롬 스크롤 고정), 방 참여 폼의 이름·역·숨기기가 그대로이고 배치가 한 칸 ↔ 두 칸으로 바뀐다. 펼친 채로 이어서 제출된다.
+
+결과(로컬, 2026-11-15):
+
+```text
+$ pnpm typecheck && pnpm lint && pnpm test       # 통과 (Vitest 49 파일 383 테스트, 아이콘·매니페스트 포함)
+$ pnpm check:contracts                           # 통과
+$ CI=1 pnpm e2e                                  # 기본 382 passed(아이콘 2 포함), 통계 빌드 20 passed (반응형만일 때 --repeat-each=2로 760건도 통과)
+$ pnpm e2e:real                                  # 7 passed, 1 skipped(라이브 PostHog) — 로컬 compose DB + Ktor + next start
+바꾸기 전(main a903640) 같은 행렬: 361건 중 24건 통과
+  (44px 미만 터치 목표 905건, 16px 미만 입력 5종, 두 칸 아님 11건, 경첩 걸침 17건, 포커스 표시 없음 4건)
+WebKit(로컬, Desktop Safari 기반 + 각 크기): 행렬 311/312 — 실패 1건은 7절 사파리 Tab 동작
+```
+
+## 10. 캡처 (`docs/setup/u1-screens/`)
+
+CSS px 1:1(저장소 크기 때문). 기기: 폰 `phone-390`, 폴드 접힘 `fold-cover-344`, 폴드 펼침 `fold-open-690`(세로)·`fold-open-1028-land`(가로), 데스크톱
+`desktop-1280`, 경첩 `fold-split-928`. 화면: home·result·room-new·room-friend-join·room-host-full·meet-pair. 바꾸기 전은 `before/<기기>/`
+(경첩 캡처는 바꾸기 전에는 해당 없음). 동의 배너는 `consent-banner/<기기>.png`. 다시 만들기:
+
+```sh
+cd web
+UPDATE_SCREENSHOTS=1 pnpm exec playwright test e2e/responsive.spec.ts -g "phone-390|fold-cover-344|fold-open-690|fold-open-1028|desktop-1280 |경첩"
+UPDATE_SCREENSHOTS=1 SHOTS_DIR=u1-screens/before …   # 이전 빌드를 띄워 놓고 같은 명령(E2E_WEB_PORT)
+UPDATE_SCREENSHOTS=1 pnpm e2e:analytics -- e2e-analytics/banner-layout.spec.ts
+```
+
+## 11. Worker 번들 크기 (`opennextjs-cloudflare build` → `wrangler deploy --dry-run`, 같은 환경)
+
+| | raw | gzip |
+|---|---|---|
+| main(a903640) | 12,443.02 KiB | 2,727.27 KiB |
+| 반응형만(0537cb6) | 12,449.65 KiB | 2,728.98 KiB (+1.71 KiB) |
+| 이 브랜치(아이콘·매니페스트 포함) | 12,525.96 KiB | **2,744.23 KiB** (+16.96 KiB) |
+
+반응형 증가분(+1.71)은 키보드 감지 훅과 클래스 문자열, 아이콘 증가분(+15.25)은 `app/`의 `favicon.ico`·`icon.svg`·`apple-icon.png`·`manifest.ts`가
+Next 메타데이터 라우트(이미지를 품은 라우트 처리기)로 Worker에 들어가기 때문이다. `public/icons/*`(매니페스트 아이콘)는 정적 자산이라 번들에 들지 않는다.
+무료 한도 3 MiB(3,072 KiB)까지 여유 약 328 KiB(결정 필요 8).
+
+## 12. 앱 아이콘·매니페스트·테마 색 (공개 전 점검 추가분)
+
+이전에는 `/favicon.ico`·`/icon.png`·`/apple-icon.png`·`/manifest.webmanifest`가 모두 404였다(탭·홈 화면 아이콘 없음).
+Next 16 app 디렉터리 규약(`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/01-metadata/{app-icons,manifest}.md`)으로 넣었다.
+
+| 경로 | 파일 | 내용 |
+|---|---|---|
+| `/favicon.ico` | `src/app/favicon.ico` | 16·32·48 PNG를 담은 ICO(`<link rel="icon" sizes="48x48">`, 경로를 직접 찾는 클라이언트용) |
+| `/icon.svg` | `src/app/icon.svg` | 탭 아이콘 SVG(`sizes="any"`, 최신 브라우저는 이것을 쓴다) |
+| `/apple-icon.png` | `src/app/apple-icon.png` | 180×180 꽉 찬 사각형(iOS가 모서리를 자른다) |
+| `/manifest.webmanifest` | `src/app/manifest.ts` → `src/lib/seo/app-manifest.ts` | 이름·짧은 이름 "반반역", `id`·`start_url`·`scope` "/", `display: standalone`(서비스 워커 없음), `lang: ko`, 바탕·테마 색 `#eef1f0`(= `--platform`), 아이콘 192·512 `any` + 192·512 `maskable` |
+| `/icons/*.png` | `public/icons/` | 매니페스트 아이콘(정적 자산) |
+
+**아이콘 디자인**: 워드마크의 "반반 나뉜 원"(두 사람의 시간이 반반)을 그대로 쓰고 바탕만 다른 시안 3개를 만들었다. 모두 토큰 색만 쓴다.
+
+| 시안 | 비교 이미지 | 판단 |
+|---|---|---|
+| A 승강장 회색 바탕 | [icon-a.png](u1-screens/icon-a.png) | 밝은 탭 막대에서 바탕이 사라지고 마크만 남는다. 홈 화면에서 다른 앱 사이에 묻힌다 |
+| B 잉크 바탕 + 안전선 노랑 반 | [icon-b.png](u1-screens/icon-b.png) | 어두운 탭 막대에서 바탕이 막대와 섞인다. 노랑 반쪽이 "1위 표시" 색과 같은 의미로 읽힐 수 있다 |
+| **C 안전선 노랑 바탕 (적용)** | [icon-c.png](u1-screens/icon-c.png) | 밝은·어두운 탭 막대 모두에서 또렷하고, 16px에서도 반반 원이 보인다. 승강장 안전선 = 서비스 첫인상 |
+
+- 원본: `web/assets/icons/mark-{a,b,c}-*.svg`(바탕 `<rect id="bg">` + 마크 `<g id="mark">`). PNG·ICO는 `pnpm gen:icons`(`scripts/build-icons.ts`)가
+  Playwright 크로미움(기존 개발 의존성)으로 그린다. 시안 바꾸기: `ICON_VARIANT=a pnpm gen:icons`. 비교 이미지: `pnpm gen:icons --preview`.
+- 렌더러·OS마다 픽셀이 조금 달라 CI의 재생성 diff(`check:contracts`)에는 넣지 않았다. 대신 단위 테스트(`app-manifest.test.ts`)가 파일 크기(16·32·48,
+  180, 192, 512)·ICO 구조·SVG 색(토큰만)·매니페스트 값·테마 색 = `--platform`을 확인한다.
+- 탭 아이콘은 마크를 지름 75%로 크게, 홈 화면은 90%, maskable은 76%(바깥 반지름 146 < 안전 영역 반지름 204.8, 512 기준)로 그린다.
+
+**테마 색(밝은/어두운 모드)**: 화면은 밝은 모드 하나(`color-scheme: light`)다. 그래서 `theme-color`도 하나(`#eef1f0`)로 두고
+`<meta name="color-scheme" content="light">`를 붙였다. 기기가 어두운 모드일 때 어두운 테마 색을 주면 밝은 화면 위에 어두운 주소창·상태 표시줄이 얹혀
+화면과 따로 논다(e2e가 어두운 모드 기기에서도 바탕·테마 색이 그대로인지 확인한다). 어두운 화면을 만들 때 함께 `media`별 값으로 나눈다.
+
+**iOS 상태 표시줄**: 홈 화면에 추가한 웹 앱은 `apple-mobile-web-app-capable`(Next가 `mobile-web-app-capable`로 출력)·제목 "반반역"·
+`apple-mobile-web-app-status-bar-style: default`. `black-translucent`는 내용이 상태 표시줄 밑으로 들어가고 시계·배터리 글자가 흰색이라
+밝은 화면에서 보이지 않는다. `default`면 내용이 상태 표시줄 아래에서 시작하므로 위쪽 안전 영역 여백이 따로 필요 없다(좌우·아래는 5절).
+
+**검사**: `e2e/app-icons.spec.ts`(링크 태그, 각 경로 200·형식, 매니페스트 값·아이콘, 테마 색·상태 표시줄 메타, 어두운 모드 기기),
+배포 스모크 `scripts/smoke-deploy.sh`에 `/favicon.ico`·`/manifest.webmanifest`·매니페스트 아이콘 전부·apple-touch-icon 200 검사를 추가했다.
+로컬 `wrangler dev`(OpenNext Worker)에서 6개 경로가 모두 200·올바른 형식으로 나오는 것을 확인했다.
+
+## 13. 결정 필요 / 한계
+
+1. **글자 크기 단위**: 화면 글자는 대부분 px다. 브라우저 "기본 글자 크기" 설정(데스크톱 크롬·파이어폭스)을 키워도 글자는 그대로이고 간격만 커진다.
+   모바일 글자 키우기·확대는 페이지 확대라 문제없다(8절). 글자도 기본 크기를 따르게 하려면 `text-[15px]` 류를 rem으로 일괄 바꾸는 작업이 필요하다
+   (화면 전부를 건드림). 지금 할지 정해 달라. 권고: 지금은 두고, 디자인 토큰에 글자 단계(`--text-*`)를 정할 때 함께.
+2. **동의 배너를 키보드가 열린 동안 숨김**: 배너가 입력 칸을 가리지 않게 하려는 것이고 동의 여부·문구는 바뀌지 않는다(키보드를 내리면 다시 보인다).
+   처리방침 검토(L1) 관점에서 문제없는지 확인 부탁.
+3. **위아래로 나뉜 폴더블 자세(`vertical-viewport-segments: 2`)**: 지원하지 않았다. 지원하면 "위 조각 = 기준 탭·공유, 아래 조각 = 후보(따로 스크롤)"가
+   자연스럽지만, 지원 기기가 크로미움 폴더블의 반쯤 접은 자세뿐이라 효과 대비 복잡도가 크다. 필요하면 후속으로.
+4. **폴더블 아이폰**: 공식 사양 없음(2절). 출시 후 Playwright 설명자로 행렬에 넣는다.
+5. **CI는 크로미움만** 돌린다(기존과 같음). WebKit은 로컬에서 한 번 돌렸다(9절). 사파리 행렬을 CI에 넣으면 브라우저 설치·시간이 늘어난다(약 +1~2분).
+6. **실제 기기 확인은 안 했다**: 노치·홈 인디케이터(`env(safe-area-inset-*)`)와 실제 화면 키보드는 자동화 브라우저에 없어 값이 0이거나 흉내다.
+   실제 iPhone(가로)·Galaxy Fold에서 한 번 열어 보는 것을 권한다.
+7. **앱 아이콘 시안 최종 선택(사용자 확인)**: C(안전선 노랑 바탕)를 적용했다. A·B와 비교 이미지는 12절. 바꾸려면 `ICON_VARIANT=a|b pnpm gen:icons` 한 번이면 된다.
+   안전선 노랑은 토큰 주석상 "1위 표시와 강조에만" 쓰는 색인데, 아이콘은 서비스 자체의 강조로 보고 썼다(화면 안 쓰임은 바뀌지 않는다).
+8. **아이콘 라우트의 번들 비용(+15.25 KiB gzip)**: app 디렉터리 규약을 지키느라 아이콘이 Worker 번들에 들어간다. 줄이려면 `favicon.ico`·`apple-icon.png`를
+   `public/`으로 옮기고 `metadata.icons`로 연결하면 된다(번들 0, 대신 규약에서 벗어남). 여유가 줄면 그때 옮긴다.

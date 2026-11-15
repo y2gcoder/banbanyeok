@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readChoice, readScopes, writeChoice } from "@/lib/analytics/consent";
@@ -133,6 +133,37 @@ describe("동의 배너", () => {
     render(<ConsentBanner />);
     expect(screen.queryByRole("region")).toBeNull();
     expect(readChoice()).toBe("unset"); // 묻지 않고 기록도 만들지 않는다(미동의로만 취급)
+  });
+
+  it("화면 키보드로 글자를 치는 동안에는 숨어 입력 칸을 가리지 않고, 고른 체크는 남는다", async () => {
+    const user = userEvent.setup();
+    const vv = Object.assign(new EventTarget(), { height: 800, scale: 1 });
+    Object.defineProperty(window, "visualViewport", { configurable: true, value: vv });
+    Object.defineProperty(document.documentElement, "clientHeight", { configurable: true, value: 800 });
+    try {
+      render(
+        <>
+          <input aria-label="역 이름" />
+          <ConsentBanner />
+        </>,
+      );
+      await user.click(collectBox());
+      act(() => {
+        screen.getByRole("textbox", { name: "역 이름" }).focus();
+        vv.height = 380; // 키보드가 올라와 보이는 영역이 줄었다
+        vv.dispatchEvent(new Event("resize"));
+      });
+      expect(screen.queryByRole("region")).toBeNull(); // hidden이라 접근성 트리에서도 빠진다
+      act(() => {
+        screen.getByRole("textbox", { name: "역 이름" }).blur();
+        vv.height = 800;
+        vv.dispatchEvent(new Event("resize"));
+      });
+      expect(screen.getByRole("region", { name: /이용 통계를 모아도 될까요/ })).toBeVisible();
+      expect(collectBox()).toBeChecked();
+    } finally {
+      Object.defineProperty(window, "visualViewport", { configurable: true, value: undefined });
+    }
   });
 });
 

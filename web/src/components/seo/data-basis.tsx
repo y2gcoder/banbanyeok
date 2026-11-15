@@ -4,7 +4,7 @@ import { dataVersionDate } from "@/lib/seo/pairs";
 export function DataBasis({ dataVersion }: { dataVersion: string }) {
   const { year, month, day } = dataVersionDate(dataVersion);
   return (
-    <footer className="mt-10 flex flex-col gap-3 border-t border-rule pt-6 text-[13px] leading-relaxed text-muted-foreground">
+    <footer className="mt-10 flex flex-col gap-3 border-t border-rule pt-6 text-[13px] leading-relaxed text-muted-foreground [&>p]:max-w-3xl">
       <h2 className="text-sm font-bold text-ink">데이터 기준</h2>
       <p>
         {year}년 {month}월 {day}일 데이터(버전 {dataVersion})로 계산했어요. 역에서 역까지 걸리는 시간이고, 열차 대기와

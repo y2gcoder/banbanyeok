@@ -14,6 +14,7 @@
     "gen:stations": "node scripts/build-station-index.ts",
     "gen:og-font": "node scripts/build-og-font.ts",
     "gen:events": "node scripts/build-analytics-events.ts",
+    "gen:icons": "node scripts/build-icons.ts",
     "check:contracts": "pnpm gen && git diff --exit-code -- src/lib/api/schema.gen.ts src/lib/stations/index.gen.json src/lib/seo/og-glyphs.gen.json public/fonts src/lib/analytics/events.gen.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check . && eslint . && knip && depcruise src --config .dependency-cruiser.cjs",

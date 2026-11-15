@@ -116,7 +116,7 @@ export function RoomResult({
         ) : query.isError ? (
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
             <p className="text-[15px] text-ink">{roomErrorMessage(query.error)}</p>
-            <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-10">
+            <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-11">
               <RotateCwIcon aria-hidden="true" />
               다시 시도
             </Button>

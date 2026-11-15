@@ -17,12 +17,25 @@ import { modeFromParam, modeToParam, type ShareState } from "@/lib/link/codec";
 import { shareMessage } from "@/lib/result/share-message";
 import { sharePath } from "@/lib/result/share-url";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
+import { cn } from "@/lib/utils";
 import { OtherCandidateRow, TopCandidateCard } from "./candidate-card";
 import type { ChoiceContext } from "./directions";
 import { ModeTabs, modeLabel } from "./mode-tabs";
 import { Notices } from "./notices";
 
 export type ResultVariant = "creator" | "received";
+
+/**
+ * 결과 화면 배치. 폰은 한 칸(위에서 아래로: 머리 → 기준 탭 → 후보 → 공유). 두 칸 폭(wide)부터는 왼쪽 칸에 머리·기준 탭·공유를,
+ * 오른쪽 칸에 후보(탭 패널)를 둔다. 문서 순서는 폰 순서 그대로라 탭 → 패널 → 공유로 읽히고, 왼쪽 칸 항목은 1~3행, 패널은
+ * 오른쪽 칸 1~4행을 차지한다(마지막 행이 남는 높이를 받아 왼쪽 항목이 위로 모인다).
+ */
+export const RESULT_GRID =
+  "hinge-split mx-auto grid min-h-dvh w-full max-w-md content-start gap-5 px-gutter pt-4 pb-10 wide:max-w-6xl wide:grid-cols-2 wide:grid-rows-[auto_auto_auto_1fr] wide:gap-x-6 wide:pt-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-x-12";
+/** 왼쪽 칸 항목. */
+export const SIDE = "wide:col-start-1";
+/** 오른쪽 칸(후보). */
+export const PANEL = "wide:col-start-2 wide:row-span-4 wide:row-start-1";
 
 const searchParsers = { m: parseAsString, me: parseAsInteger };
 
@@ -94,8 +107,8 @@ function WhoAmI({
           onClick={() => onChange(meIndex === index ? null : index)}
           className={
             meIndex === index
-              ? "h-10 rounded-full border border-ink bg-ink px-4 text-[15px] font-semibold text-primary-foreground"
-              : "h-10 rounded-full border border-rule-strong bg-surface px-4 text-[15px] font-semibold text-ink"
+              ? "h-11 rounded-full border border-ink bg-ink px-4 text-[15px] font-semibold text-primary-foreground"
+              : "h-11 rounded-full border border-rule-strong bg-surface px-4 text-[15px] font-semibold text-ink"
           }
         >
           {name}
@@ -179,19 +192,19 @@ export function ResultScreen({
   const sender = first?.labelKind === "name" ? first.name : null;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-5 pt-4 pb-10">
+    <main className={RESULT_GRID}>
       {variant === "creator" ? (
-        <nav>
+        <nav className={SIDE}>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 rounded-md py-1 text-[15px] font-semibold text-ink-soft hover:text-ink"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-[15px] font-semibold text-ink-soft hover:text-ink"
           >
             <ArrowLeftIcon className="size-4" aria-hidden="true" />
             다시 입력
           </Link>
         </nav>
       ) : (
-        <header className="flex flex-col gap-3">
+        <header className={cn(SIDE, "flex flex-col gap-3")}>
           <Wordmark />
           <h1 className="text-[24px] leading-tight font-extrabold tracking-[-0.02em] text-ink">
             {sender ? `${withJosa(sender, "이/가")} 고른 만날 역 후보` : "친구가 보낸 만날 역 후보"}
@@ -211,17 +224,19 @@ export function ResultScreen({
 
       {variant === "creator" ? <h1 className="sr-only">만날 역 후보</h1> : null}
 
-      <ModeTabs
-        mode={state.mode}
-        favorIndex={state.favorIndex}
-        people={people}
-        onChange={changeMode}
-        defaultFavorIndex={longest}
-        label={variant === "received" ? "기준 바꿔 보기" : "추천 기준"}
-        panelId={panelId}
-      />
+      <div className={SIDE}>
+        <ModeTabs
+          mode={state.mode}
+          favorIndex={state.favorIndex}
+          people={people}
+          onChange={changeMode}
+          defaultFavorIndex={longest}
+          label={variant === "received" ? "기준 바꿔 보기" : "추천 기준"}
+          panelId={panelId}
+        />
+      </div>
 
-      <div id={panelId} role="tabpanel" aria-busy={query.isFetching} className="flex flex-col gap-4">
+      <div id={panelId} role="tabpanel" aria-busy={query.isFetching} className={cn(PANEL, "flex flex-col gap-4")}>
         {view ? (
           <>
             <Notices notices={view.notices} onFavor={(index) => changeMode("favor", index)} />
@@ -231,13 +246,13 @@ export function ResultScreen({
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
             <p className="text-[15px] text-ink">{errorMessage(query.error)}</p>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-10">
+              <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-11">
                 <RotateCwIcon aria-hidden="true" />
                 다시 시도
               </Button>
               <Link
                 href="/"
-                className="inline-flex h-10 items-center rounded-lg px-3 text-[15px] font-semibold text-ink-soft"
+                className="inline-flex h-11 items-center rounded-lg px-3 text-[15px] font-semibold text-ink-soft"
               >
                 출발역 바꾸기
               </Link>
@@ -249,18 +264,22 @@ export function ResultScreen({
       </div>
 
       {view && top ? (
-        variant === "creator" ? (
-          <ShareActions path={sharePath(state)} {...shareMessage(top, modeLabel(state.mode, favorName))} />
-        ) : (
-          <Link
-            href="/"
-            className="mt-2 inline-flex h-14 items-center justify-center rounded-xl border-2 border-ink text-[17px] font-bold text-ink"
-          >
-            나도 다른 조합으로 찾아보기
-          </Link>
-        )
+        <div className={SIDE}>
+          {variant === "creator" ? (
+            <ShareActions path={sharePath(state)} {...shareMessage(top, modeLabel(state.mode, favorName))} />
+          ) : (
+            <Link
+              href="/"
+              className="mt-2 inline-flex h-14 w-full items-center justify-center rounded-xl border-2 border-ink text-[17px] font-bold text-ink wide:mt-0"
+            >
+              나도 다른 조합으로 찾아보기
+            </Link>
+          )}
+        </div>
       ) : null}
-      <p className="text-center text-xs text-muted-foreground">역에서 역까지, 평일 낮 기준 시간이에요.</p>
+      <p className={cn(SIDE, "text-center text-xs text-muted-foreground wide:text-left")}>
+        역에서 역까지, 평일 낮 기준 시간이에요.
+      </p>
     </main>
   );
 }

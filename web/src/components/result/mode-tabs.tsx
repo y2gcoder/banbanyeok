@@ -37,7 +37,7 @@ export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex
         value={mode}
         onValueChange={(value: Mode) => onChange(value, value === "favor" ? (favorIndex ?? defaultFavorIndex) : null)}
       >
-        <TabsList aria-label={label} className="grid h-11 w-full grid-cols-3 rounded-xl bg-muted p-1">
+        <TabsList aria-label={label} className="grid h-13 w-full grid-cols-3 rounded-xl bg-muted p-1">
           {MODES.map((value) => (
             <TabsTrigger
               key={value}
@@ -63,7 +63,7 @@ export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex
               aria-pressed={favorIndex === person.index}
               onClick={() => onChange("favor", person.index)}
               className={cn(
-                "h-9 rounded-full border px-3.5 text-[15px] font-semibold",
+                "h-11 rounded-full border px-3.5 text-[15px] font-semibold",
                 favorIndex === person.index
                   ? "border-ink bg-ink text-primary-foreground"
                   : "border-rule-strong bg-surface text-ink",

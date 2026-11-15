@@ -41,13 +41,13 @@ export default async function PairPage({ params }: Props) {
       <nav aria-label="현재 위치" className="text-[13px] text-muted-foreground">
         <ol className="flex flex-wrap items-center gap-1.5">
           <li>
-            <Link href="/" className="hover:text-ink">
+            <Link href="/" className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink">
               반반역
             </Link>
           </li>
           <li aria-hidden="true">›</li>
           <li>
-            <Link href={HUB_PATH} className="hover:text-ink">
+            <Link href={HUB_PATH} className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink">
               인기 역 조합
             </Link>
           </li>
@@ -63,12 +63,12 @@ export default async function PairPage({ params }: Props) {
           <br />
           중간 만날 곳 추천
         </h1>
-        <p className="text-[16px] text-ink-soft">
+        <p className="max-w-2xl text-[16px] text-ink-soft">
           {page.first.name}에서 출발하는 사람과 {page.second.name}에서 출발하는 사람이 지하철로 가장 공평하게 만나는 곳{" "}
           {page.candidates.length}곳이에요. 시간은 각자 걸리는 분이에요.
         </p>
       </section>
-      <ol aria-label="추천 후보" className="flex flex-col gap-4">
+      <ol aria-label="추천 후보" className="grid gap-4 wide:grid-cols-2 lg:grid-cols-3">
         {page.candidates.map((candidate) => (
           <PairCandidateCard key={candidate.rank} candidate={candidate} />
         ))}
@@ -76,7 +76,7 @@ export default async function PairPage({ params }: Props) {
       <StartLink
         pageKind="pair"
         href={prefillHref([page.first.code, page.second.code])}
-        className="inline-flex h-14 items-center justify-center rounded-xl border-2 border-ink text-[17px] font-bold text-ink"
+        className="inline-flex h-14 items-center justify-center rounded-xl border-2 border-ink px-6 text-[17px] font-bold text-ink wide:w-fit wide:min-w-80"
       >
         다른 역으로 다시 찾기
       </StartLink>
@@ -90,7 +90,7 @@ export default async function PairPage({ params }: Props) {
               <li key={item.slug}>
                 <Link
                   href={item.path}
-                  className="inline-flex rounded-full border border-rule bg-surface px-3.5 py-2 text-[14px] font-semibold text-ink hover:border-ink"
+                  className="inline-flex min-h-11 items-center rounded-full border border-rule bg-surface px-3.5 text-[14px] font-semibold text-ink hover:border-ink"
                 >
                   {item.first.name} · {item.second.name}
                 </Link>

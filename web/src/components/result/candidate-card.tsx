@@ -55,7 +55,7 @@ export function TopCandidateCard({
   return (
     <article
       aria-labelledby={`cand-${candidate.rank}`}
-      className="flex flex-col gap-5 rounded-2xl border border-rule bg-surface p-5 shadow-[0_1px_0_var(--rule)]"
+      className="@container flex flex-col gap-5 rounded-2xl border border-rule bg-surface p-5 shadow-[0_1px_0_var(--rule)]"
     >
       <header className="flex items-start gap-3">
         <TransferRing />
@@ -65,7 +65,8 @@ export function TopCandidateCard({
           </p>
           <h2
             id={`cand-${candidate.rank}`}
-            className="text-[34px] leading-none font-extrabold tracking-[-0.03em] text-ink"
+            // 카드 폭에 맞춰 글자를 줄인다(좁은 칸에서도 "동대문역사문화공원"이 한 줄에 들어가게). 넓으면 34px.
+            className="text-[clamp(24px,8.5cqi,34px)] leading-none font-extrabold tracking-[-0.03em] text-ink"
           >
             {candidate.stationName}
           </h2>

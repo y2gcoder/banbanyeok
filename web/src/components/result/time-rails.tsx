@@ -33,7 +33,8 @@ export function TimeRails({
         return (
           <li
             key={person.index}
-            className="grid grid-cols-[minmax(3.5rem,auto)_1fr_auto] items-center gap-x-3 gap-y-0.5"
+            // 이름 칸은 이름 길이만큼, 다만 40%까지만(긴 이름은 말줄임). 막대가 너무 짧아지지 않게 한다.
+            className="grid grid-cols-[fit-content(40%)_1fr_auto] items-center gap-x-3 gap-y-0.5"
           >
             <span className="truncate text-[15px] font-bold text-ink">
               {person.name}

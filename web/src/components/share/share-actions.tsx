@@ -85,7 +85,7 @@ export function ShareActions({ path, title, text, linkType = "url_state" }: Prop
               readOnly
               value={fallbackUrl ?? ""}
               onFocus={(e) => e.currentTarget.select()}
-              className="h-11 rounded-lg border border-input bg-surface px-3 text-sm font-normal"
+              className="h-11 rounded-lg border border-input bg-surface px-3 text-[16px] font-normal"
             />
           </label>
           <Button type="button" onClick={() => void copyLink()} className="h-12 rounded-xl text-base font-bold">

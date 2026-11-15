@@ -10,6 +10,7 @@ import {
   type TestInfo,
   test,
 } from "@playwright/test";
+import { sweepViewports } from "./viewport-sweep";
 
 /**
  * 방(각자 입력) 흐름 e2e: 실제 서버(Ktor + DB)에 붙은 웹을 대상으로 모바일 폭에서 확인한다.
@@ -161,6 +162,16 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await expect(top.getByText("민수(나)")).toBeVisible();
   await expectNoA11yViolations(page);
   await shot(page, "6-host-with-result");
+  // 반응형(U1): 방장 화면(목록·결과·방장 설정)을 폰~데스크톱 크기로 바꿔 가며 본다. 넓으면 목록과 결과가 나란히.
+  await sweepViewports(
+    page,
+    (p) => [
+      p.getByRole("button", { name: "카톡으로 보내기" }),
+      p.getByRole("tab", { name: "빨리 만나기" }),
+      p.getByRole("button", { name: "참여 잠그기" }),
+    ],
+    (p) => [p.getByRole("region", { name: "들어온 사람" }), p.getByRole("region", { name: "만날 역 후보" })],
+  );
 
   // 서버 응답에도 숨긴 출발역 코드가 없다(방장·토큰 없는 사람 모두).
   const hostRoomBody = await page.evaluate(
@@ -181,6 +192,12 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
     viewer.page.getByRole("region", { name: "들어온 사람" }).getByRole("listitem").filter({ hasText: "참가자 2" }),
   ).toBeVisible();
   await expect(viewer.page.getByRole("region", { name: "들어온 사람" }).getByText("홍대입구")).toHaveCount(0);
+  // 반응형(U1): 참여 전 화면(참여 폼 + 결과). 넓으면 참여 폼과 결과가 나란히.
+  await sweepViewports(
+    viewer.page,
+    (p) => [p.getByRole("combobox", { name: "내 출발역" }), p.getByRole("tab", { name: "빨리 만나기" })],
+    (p) => [p.getByRole("form", { name: "나도 출발역 넣기" }), p.getByRole("region", { name: "만날 역 후보" })],
+  );
   await viewer.context.close();
 
   // 친구: 내 입력 수정(숨기기 풀고 다른 역)
