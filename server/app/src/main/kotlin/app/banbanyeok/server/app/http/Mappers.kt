@@ -3,12 +3,14 @@ package app.banbanyeok.server.app.http
 import app.banbanyeok.applogic.ParticipantLabel
 import app.banbanyeok.applogic.ParticipantLabels
 import app.banbanyeok.applogic.PersonRef
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResult
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.Recommendation
 import app.banbanyeok.server.recommendation.RecommendedStation
+import app.banbanyeok.server.recommendation.TimeBasis
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.ErrorKind
@@ -65,17 +67,31 @@ fun labelsOf(
 fun RoomView.participantDtos(directory: StationDirectory): List<ParticipantDto> =
     participants.zip(labelsOf(participants, directory)) { participant, label -> participant.toDto(directory, label) }
 
-fun RoomView.toDto(directory: StationDirectory) =
-    RoomDto(
-        roomId = id,
-        mode = mode.wire(),
-        favorTarget = favorParticipantId,
-        locked = locked,
-        meetingDate = meetingDate?.toString(),
-        meetingTime = meetingTime?.let { "%02d:%02d".format(java.util.Locale.ROOT, it.hour, it.minute) },
-        expiresAt = expiresAt.toString(),
-        dataVersion = dataVersion,
-        participants = participantDtos(directory),
+fun RoomView.toDto(
+    directory: StationDirectory,
+    timeBasis: TimeBasis,
+) = RoomDto(
+    roomId = id,
+    mode = mode.wire(),
+    favorTarget = favorParticipantId,
+    locked = locked,
+    meetingDate = meetingDate?.toString(),
+    meetingTime = meetingTime?.let { "%02d:%02d".format(java.util.Locale.ROOT, it.hour, it.minute) },
+    expiresAt = expiresAt.toString(),
+    dataVersion = dataVersion,
+    participants = participantDtos(directory),
+    timeBasis = timeBasis.toDto(requested = timeBasis.slot),
+)
+
+/** 계산 기준 DTO. [requested]는 요청한(방은 약속 날짜·시각에서 정한) 구분이고 `slot`과 다르면 기본 구분으로 대신 계산했다는 뜻이다. */
+private fun TimeBasis.toDto(requested: TimeSlot) =
+    TimeBasisDto(
+        timeSlot = slot.id,
+        requestedTimeSlot = requested.id,
+        dayType = slot.day.id,
+        band = slot.band.id,
+        label = label,
+        holidayName = holidayName,
     )
 
 fun RecommendedStation.candidateJson(): JsonObject =
@@ -111,15 +127,7 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
         participants = participants,
         baselineStationCode = baselineStationCode,
         candidates = candidates.map { it.candidateJson() },
-        timeBasis =
-            TimeBasisDto(
-                timeSlot = timeBasis.slot.id,
-                requestedTimeSlot = requestedSlot.id,
-                dayType = timeBasis.slot.day.id,
-                band = timeBasis.slot.band.id,
-                label = timeBasis.label,
-                holidayName = timeBasis.holidayName,
-            ),
+        timeBasis = timeBasis.toDto(requested = requestedSlot),
     )
 
 fun RoomResult.toDto(directory: StationDirectory): ResultDto =

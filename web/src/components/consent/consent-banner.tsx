@@ -22,20 +22,24 @@ function ScopeCheckbox({
   const id = useId();
   const detailId = useId();
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-2.5 wide:gap-3">
       <input
         id={id}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         aria-describedby={detailId}
-        className="mt-0.5 size-5 shrink-0 accent-ink"
+        className="mt-1 size-5 shrink-0 accent-ink wide:mt-0.5"
       />
       <div className="flex min-w-0 flex-col">
-        <label htmlFor={id} className="-my-3.5 py-3.5 text-[14px] leading-snug font-semibold text-ink">
+        <label
+          htmlFor={id}
+          className="min-h-11 py-1.5 text-[13px] leading-snug font-semibold text-ink wide:-my-3.5 wide:min-h-0 wide:py-3.5 wide:text-[14px]"
+        >
           {label}
         </label>
-        <p id={detailId} className="text-[12px] leading-snug text-ink-soft">
+        {/* 폰에서는 화면을 줄이려고 눈에는 숨긴다(스크린 리더는 읽는다). 항목·목적·보유 기간은 처리방침 링크와 두 칸 폭 화면에 있다. */}
+        <p id={detailId} className="text-[12px] leading-snug text-ink-soft max-wide:sr-only">
           {detail}
         </p>
       </div>
@@ -51,9 +55,12 @@ function ScopeCheckbox({
  * - [선택한 대로 저장]과 [모두 거부]는 같은 크기·같은 모양이다(다크 패턴 금지). 닫기(X)나 "나중에"는 두지 않는다.
  * - 문서 끝에 `sticky bottom-0`으로 둔다: 스크롤 중에는 아래에 붙어 있고, 맨 아래에서는 본문을 가리지 않고 제자리에 놓인다.
  * - 키가 없는 빌드(통계 꺼짐)나 브라우저 추적 거부(DNT·GPC)에서는 묻지 않는다.
- * - 반응형(U1): 높이가 짧은 화면(가로로 눕힌 폰)에서도 화면의 60%를 넘게 가리지 않는다. 안내·체크박스는 그 안에서 스크롤되고 버튼은
- *   늘 보인다. 두 칸 폭(wide)부터는 안내와 체크박스를 나란히 두어 높이를 줄인다. 화면 키보드로 글자를 치는 동안에는 잠시 숨겨
- *   입력 칸을 가리지 않는다(고른 체크 상태는 그대로 남는다).
+ * - 반응형(U1·U2): 폰에서는 화면을 적게 가린다(390×844에서 약 4분의 1). 안내는 짧게(고지 문장은 그대로), 두 체크박스를 나란히 두고
+ *   그 아래 같은 크기의 두 버튼을 한 줄로 둔다. 체크박스 설명(항목·목적·보유 기간)과 철회 안내는 폰에서는 눈에서만 숨기고(스크린 리더는 읽는다)
+ *   처리방침 링크로 이어 준다. 두 칸 폭(wide)부터는 모두 보이고 안내와 체크박스를 나란히 둔다. 높이가 짧은 화면(가로로 눕힌 폰)에서도
+ *   화면의 60%를 넘게 가리지 않는다(안내·체크박스는 그 안에서 스크롤, 버튼은 늘 보임). 배너는 문서 끝의 `sticky`라 맨 아래까지 스크롤하면
+ *   본문 아래에 배너 자리가 따로 있어 마지막 줄을 가리지 않는다. 화면 키보드로 글자를 치는 동안에는 잠시 숨겨 입력 칸을 가리지 않는다
+ *   (고른 체크 상태는 그대로 남는다).
  */
 export function ConsentBanner() {
   const state = useConsentState();
@@ -66,12 +73,12 @@ export function ConsentBanner() {
     <section
       aria-labelledby={titleId}
       hidden={typing}
-      className="sticky bottom-0 z-40 mx-auto w-full max-w-md pt-2 pb-3 [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] [padding-left:max(0.75rem,env(safe-area-inset-left))] [padding-right:max(0.75rem,env(safe-area-inset-right))] wide:max-w-3xl"
+      className="sticky bottom-0 z-40 mx-auto w-full max-w-md pt-2 pb-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] [padding-left:max(0.75rem,env(safe-area-inset-left))] [padding-right:max(0.75rem,env(safe-area-inset-right))] wide:max-w-3xl"
     >
-      <div className="flex max-h-[60dvh] flex-col gap-3 rounded-2xl border border-rule-strong bg-surface p-4 shadow-lg">
-        <div className="scroll-shadow-y -mx-1 flex min-h-0 flex-col gap-3 overflow-y-auto px-1 wide:grid wide:grid-cols-2 wide:gap-x-6">
+      <div className="flex max-h-[60dvh] flex-col gap-2.5 rounded-2xl border border-rule-strong bg-surface p-3 shadow-lg wide:gap-3 wide:p-4">
+        <div className="scroll-shadow-y -mx-1 flex min-h-0 flex-col gap-2.5 overflow-y-auto px-1 wide:grid wide:grid-cols-2 wide:gap-x-6 wide:gap-y-3">
           <div className="flex flex-col gap-1 wide:row-span-2">
-            <h2 id={titleId} className="text-[15px] leading-snug font-bold text-ink">
+            <h2 id={titleId} className="text-[14px] leading-snug font-bold text-ink wide:text-[15px]">
               {CONSENT_COPY.question}
             </h2>
             <p className="text-[12px] leading-snug text-ink-soft">
@@ -79,21 +86,23 @@ export function ConsentBanner() {
               <Link href="/privacy" className="font-semibold text-ink underline underline-offset-4">
                 개인정보 처리방침
               </Link>
-              에서 자세히 볼 수 있어요. {CONSENT_COPY.later}
+              에서 자세히 볼 수 있어요. <span className="max-wide:sr-only">{CONSENT_COPY.later}</span>
             </p>
           </div>
-          <ScopeCheckbox
-            label={CONSENT_COPY.collect.label}
-            detail={CONSENT_COPY.collect.detail}
-            checked={collect}
-            onChange={setCollect}
-          />
-          <ScopeCheckbox
-            label={CONSENT_COPY.transfer.label}
-            detail={CONSENT_COPY.transfer.detail}
-            checked={transfer}
-            onChange={setTransfer}
-          />
+          <div className="grid grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 min-[360px]:gap-x-3 wide:row-span-2 wide:grid-cols-1 wide:gap-3">
+            <ScopeCheckbox
+              label={CONSENT_COPY.collect.label}
+              detail={CONSENT_COPY.collect.detail}
+              checked={collect}
+              onChange={setCollect}
+            />
+            <ScopeCheckbox
+              label={CONSENT_COPY.transfer.label}
+              detail={CONSENT_COPY.transfer.detail}
+              checked={transfer}
+              onChange={setTransfer}
+            />
+          </div>
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-2 wide:ml-auto wide:w-full wide:max-w-sm">
           <Button

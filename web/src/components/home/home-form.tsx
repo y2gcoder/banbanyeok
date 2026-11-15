@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { WhenPicker } from "@/components/when/when-picker";
 import { track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
+import type { Mode } from "@/lib/api/types";
 import { toShareState } from "@/lib/form/input";
-import { parsePrefill } from "@/lib/form/prefill";
+import { parsePrefill, parseRestore } from "@/lib/form/prefill";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/codec";
 import { resultPath } from "@/lib/result/share-url";
@@ -25,7 +26,7 @@ import { StationField } from "./station-field";
  */
 const INPUT_PLACEHOLDERS = ["나", "친구1", "친구2", "친구3"] as const;
 
-type Row = { key: number; nickname: string; station: Station | null };
+type Row = { key: number; nickname: string; station: Station | null; favored?: boolean };
 
 const emptyRow = (key: number): Row => ({ key, nickname: "", station: null });
 // 줄 키는 서버·클라이언트 렌더에서 같아야 한다(수화 일치). 새 줄은 지금 가장 큰 키 + 1.
@@ -47,6 +48,8 @@ export function HomeForm() {
   // 기본값은 지금(서울) 시각의 구분이다. 서버 렌더에는 시각이 없으므로 평일 낮으로 그리고, 열리자마자 지금으로 바꾼다.
   const [slot, setSlot] = useState<TimeSlot>(DEFAULT_SLOT);
   const [slotIsNow, setSlotIsNow] = useState(false);
+  // 입력 화면에는 모드를 고르는 곳이 없다. 결과에서 "다시 입력"으로 돌아왔을 때 그 모드(와 배려하던 사람)를 이어 가려고만 들고 있다.
+  const [mode, setMode] = useState<Mode>("fair");
 
   useEffect(() => {
     startedAt.current = performance.now();
@@ -54,6 +57,15 @@ export function HomeForm() {
     setSlotIsNow(true);
     // 서버(Cloud Run min 0)를 미리 깨운다. 입력하는 동안 콜드스타트가 끝난다.
     void warmUpServer();
+    // 결과의 "다시 입력"이 보낸 주소(`/?v=2&o=…&m=…&t=…&n=…`)면 모든 줄·모드·구분을 그대로 되살린다.
+    const restored = parseRestore(window.location.search);
+    if (restored) {
+      setRows(restored.rows.map((row, key) => ({ key, ...row })));
+      setSlot(restored.slot);
+      setSlotIsNow(false);
+      setMode(restored.mode);
+      return;
+    }
     // SEO 페이지가 보낸 `/?o=<코드>.<코드>`가 있으면 그 역으로 채운다(기억해 둔 "나"보다 우선).
     const prefilled = parsePrefill(window.location.search);
     if (prefilled.length > 0) {
@@ -78,8 +90,9 @@ export function HomeForm() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const result = toShareState(
-      rows.map((row) => ({ nickname: row.nickname, code: row.station?.code ?? null })),
+      rows.map((row) => ({ nickname: row.nickname, code: row.station?.code ?? null, favored: row.favored === true })),
       slot,
+      mode,
     );
     if (!result.ok) {
       setError(result.message);

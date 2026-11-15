@@ -1,16 +1,20 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { prefillHref } from "@/lib/form/prefill";
+import { prefillHref, restoreHref } from "@/lib/form/prefill";
+import { encodeShareQuery, type ShareState } from "@/lib/link/codec";
 import { searchStations } from "@/lib/stations";
 import { HomeForm } from "./home-form";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 const code = (name: string) => searchStations(name).find((s) => s.name === name && s.supported)?.code ?? "";
 
 describe("입력 화면 미리 채우기(SEO 페이지의 '다른 역으로 다시 찾기')", () => {
   beforeEach(() => {
+    push.mockReset();
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve(new Response("ok"))),
@@ -44,5 +48,29 @@ describe("입력 화면 미리 채우기(SEO 페이지의 '다른 역으로 다�
     window.history.replaceState(null, "", "/?o=zzz.yyy");
     render(<HomeForm />);
     expect(screen.getByRole("button", { name: "만날 역 찾기" })).toBeDisabled();
+  });
+
+  it("'다시 입력'으로 돌아오면 모든 줄의 이름·역, 구분, 모드가 그대로다(기억해 둔 '나'와 무관)", async () => {
+    window.localStorage.setItem("banbanyeok:me", JSON.stringify({ code: code("잠실"), nickname: "나" }));
+    const state: ShareState = {
+      origins: [code("혜화"), code("강남"), code("홍대입구")],
+      mode: "favor",
+      favorIndex: 2,
+      nicknames: ["민수", null, "지은"],
+      timeSlot: "saturday-night",
+    };
+    window.history.replaceState(null, "", restoreHref(state));
+    render(<HomeForm />);
+    expect(screen.getByRole("textbox", { name: "1번째 사람 이름(선택)" })).toHaveValue("민수");
+    expect(screen.getByRole("combobox", { name: "민수의 출발역" })).toHaveValue("혜화");
+    expect(screen.getByRole("combobox", { name: "친구1의 출발역" })).toHaveValue("강남");
+    expect(screen.getByRole("combobox", { name: "지은의 출발역" })).toHaveValue("홍대입구");
+    expect(screen.getByRole("radio", { name: "토요일" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /^밤/ })).toBeChecked();
+    expect(screen.queryByText(/지금 시각으로 골라 뒀어요/)).toBeNull();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "만날 역 찾기" }));
+    // 아무것도 안 바꾸고 다시 제출하면 똑같은 결과 링크로 간다(모드·배려하던 사람 포함).
+    expect(push).toHaveBeenCalledWith(`/result?${encodeShareQuery(state)}`);
   });
 });

@@ -97,6 +97,16 @@ const CANDIDATES = [
   },
 ];
 
+/** 서버가 약속 날짜·시각(2026-11-21 19:30)에서 정해 주는 계산 기준. 웹은 이 label을 그대로 쓴다. */
+export const ROOM_BASIS = {
+  timeSlot: "saturday-evening",
+  requestedTimeSlot: "saturday-evening",
+  dayType: "saturday",
+  band: "evening",
+  label: "토요일 저녁",
+  holidayName: null,
+};
+
 /** 시나리오의 방을 가로채 준비한다. 방장 시나리오는 이 기기에 방장 기록(토큰)을 넣어 둔다. 열 주소를 돌려준다. */
 export async function prepareRoom(page: Page, scenario: RoomScenario): Promise<string> {
   const people = scenario === "host-alone" ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
@@ -127,6 +137,9 @@ export async function prepareRoom(page: Page, scenario: RoomScenario): Promise<s
           locked: false,
           expiresAt: "2999-01-01T00:00:00Z",
           dataVersion: "20261114.5",
+          meetingDate: "2026-11-21",
+          meetingTime: "19:30",
+          timeBasis: ROOM_BASIS,
           participants,
         }),
       );
@@ -140,6 +153,7 @@ export async function prepareRoom(page: Page, scenario: RoomScenario): Promise<s
           participants,
           baselineStationCode: "s1q",
           candidates: CANDIDATES,
+          timeBasis: ROOM_BASIS,
         }),
       );
     }

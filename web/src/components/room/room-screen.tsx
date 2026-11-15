@@ -303,6 +303,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             initial={myValue()}
             personIndex={Math.max(0, selfIndex)}
             pending={edit.isPending}
+            timeBasis={room.timeBasis}
             error={edit.isError ? roomErrorMessage(edit.error) : null}
             onSubmit={(input, value) => {
               if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
@@ -320,6 +321,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
               initial={joinValue}
               personIndex={room.participants.length}
               pending={join.isPending}
+              timeBasis={room.timeBasis}
               error={join.isError ? roomErrorMessage(join.error) : null}
               onSubmit={(input, value) => {
                 if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });

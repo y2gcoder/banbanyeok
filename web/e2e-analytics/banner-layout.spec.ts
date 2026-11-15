@@ -60,6 +60,67 @@ for (const vp of CASES) {
   });
 }
 
+/**
+ * U2: 폰에서 배너가 화면 아래를 크게 가리지 않는다. 안내는 짧게, 두 버튼은 한 줄로 같은 크기, 체크박스 설명은 눈에서만 숨긴다.
+ * 맨 아래까지 스크롤하면 본문의 마지막 줄이 배너 위에 온다(배너는 문서 끝에 있어 본문 아래에 자기 자리가 있다).
+ */
+const u2ShotsDir = resolve(import.meta.dirname, "../../docs/setup/u2-screens");
+const U2_CASES = [
+  { id: "phone-390x844", width: 390, height: 844, touch: true, maxShare: 0.3 },
+  { id: "fold-cover-344", width: 344, height: 882, touch: true, maxShare: 0.4 },
+  { id: "fold-open-690", width: 690, height: 829, touch: true, maxShare: 0.3 },
+  { id: "desktop-1280", width: 1280, height: 800, touch: false, maxShare: 0.35 },
+] as const;
+
+for (const vp of U2_CASES) {
+  test.describe(`U2 ${vp.id}`, () => {
+    test.use({
+      viewport: { width: vp.width, height: vp.height },
+      isMobile: vp.touch,
+      hasTouch: vp.touch,
+      deviceScaleFactor: vp.touch ? 2 : 1,
+    });
+
+    test(`배너가 화면의 ${vp.maxShare * 100}% 이하이고 버튼은 같은 크기로 한 줄에 있다`, async ({ page }) => {
+      await page.goto("/");
+      await expect(banner(page)).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      if (process.env.UPDATE_SCREENSHOTS) {
+        mkdirSync(resolve(u2ShotsDir, vp.id), { recursive: true });
+        await page.screenshot({ path: resolve(u2ShotsDir, vp.id, "4-consent-banner.png"), scale: "css" });
+      }
+      const box = await banner(page).boundingBox();
+      expect(box?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(vp.height * vp.maxShare);
+
+      // 선택 동등성: 거부와 저장은 같은 크기·같은 줄이다.
+      const reject = await banner(page).getByRole("button", { name: "모두 거부" }).boundingBox();
+      const save = await banner(page).getByRole("button", { name: "선택한 대로 저장" }).boundingBox();
+      expect(reject?.width).toBeCloseTo(save?.width ?? -1, 0);
+      expect(reject?.height).toBeCloseTo(save?.height ?? -1, 0);
+      expect(reject?.y).toBeCloseTo(save?.y ?? -1, 0);
+      // 두 체크박스는 기본 해제로 둘 다 화면 안에서 눌린다.
+      for (const box of await banner(page).getByRole("checkbox").all()) {
+        await expect(box).not.toBeChecked();
+        await expect(box).toBeInViewport({ ratio: 1 });
+      }
+      expect.soft(await horizontalOverflow(page), "가로 넘침").toEqual([]);
+      if (vp.touch) expect.soft(await smallTouchTargets(page), "44px보다 작은 터치 목표").toEqual([]);
+    });
+
+    test("맨 아래까지 스크롤하면 본문 마지막 줄이 배너에 가려지지 않는다", async ({ page }) => {
+      await page.goto("/");
+      await expect(banner(page)).toBeVisible();
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const last = page.getByRole("link", { name: /친구가 각자 입력하게 하기/ });
+      await expect(last).toBeInViewport({ ratio: 1 });
+      const lastBox = await last.boundingBox();
+      const bannerBox = await banner(page).boundingBox();
+      expect(lastBox && bannerBox ? lastBox.y + lastBox.height <= bannerBox.y + 1 : false).toBe(true);
+      await last.click({ trial: true }); // 다른 요소가 가로채지 않는다
+    });
+  });
+}
+
 test.describe("화면 키보드", () => {
   test.use({ viewport: { width: 412, height: 839 }, isMobile: true, hasTouch: true });
 
