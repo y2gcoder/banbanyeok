@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app.application
 
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.recommendation.HolidayCalendar
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
@@ -37,6 +38,8 @@ class RoomResultService(
     private val recommendation: RecommendationService,
     /** 약속 날짜·시각 → 계산 구분. 없으면 평일 낮. */
     private val times: TimeSlotResolver = TimeSlotResolver(HolidayCalendar.bundled()),
+    /** 구분 행렬 검사가 뒤에서 도는 중이면 잠깐 기다린다(StationDirectory.awaitSlots). */
+    private val awaitSlots: suspend (TimeSlot) -> Unit = {},
 ) {
     suspend fun result(
         roomId: String,
@@ -51,6 +54,8 @@ class RoomResultService(
         }
         val resolvedMode = mode ?: view.mode.toRecommendMode()
         val favor = favorTarget(resolvedMode, favorId, view.favorParticipantId, view.participants)
+        val time = times.resolve(view.meetingDate, view.meetingTime)
+        awaitSlots(time.slot)
         val request =
             RecommendRequest(
                 participants =
@@ -59,7 +64,7 @@ class RoomResultService(
                     },
                 mode = resolvedMode,
                 favorId = favor,
-                time = times.resolve(view.meetingDate, view.meetingTime),
+                time = time,
             )
         return RoomResult(compute(request), view.participants)
     }

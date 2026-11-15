@@ -39,7 +39,7 @@ fun RoomCreateRequestDto.toCommand(deviceToken: String?): CreateRoomCommand {
         host.toInput(),
         expectedCount,
         deviceToken,
-        meetingTime?.let(::parseTime),
+        meetingTime?.takeIf { it !is JsonNull }?.let { parseTime(it.timeText()) },
     )
 }
 
@@ -53,14 +53,18 @@ fun parseTime(text: String): LocalTime {
     return LocalTime.parse(text)
 }
 
-/** `timeSlot` 값. 없으면 기본 구분(평일 낮). */
-fun requireTimeSlot(text: String?): TimeSlot =
-    if (text == null) {
-        TimeSlot.DEFAULT
-    } else {
-        TimeSlot.parseOrNull(text)
-            ?: throw AppException(ErrorKind.INVALID, "INVALID_TIME_SLOT", "timeSlot은 weekday-day 같은 구분 id여야 합니다")
-    }
+/** `timeSlot` 값. 없거나 null이면 기본 구분(평일 낮). 문자열이 아니거나 모르는 id면 INVALID_TIME_SLOT. */
+fun requireTimeSlot(value: JsonElement?): TimeSlot {
+    if (value == null || value is JsonNull) return TimeSlot.DEFAULT
+    val text = (value as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
+    return text?.let(TimeSlot::parseOrNull)
+        ?: throw AppException(ErrorKind.INVALID, "INVALID_TIME_SLOT", "timeSlot은 weekday-day 같은 구분 id여야 합니다")
+}
+
+/** 약속 시각 JSON 값의 문자열. 문자열이 아니면 INVALID_MEETING_TIME. */
+private fun JsonElement.timeText(): String =
+    (this as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
+        ?: throw AppException(ErrorKind.INVALID, "INVALID_MEETING_TIME", "meetingTime은 HH:MM 문자열이어야 합니다")
 
 fun ParticipantInputDto.toInput() = ParticipantInput(nickname, originCode, hidden)
 
@@ -87,7 +91,7 @@ fun JsonObject.toRoomPatch(): RoomPatch {
         }
     val meetingTime =
         if ("meetingTime" in this) {
-            Change.Set(this["meetingTime"]?.takeIf { it !is JsonNull }?.stringValue("meetingTime")?.let(::parseTime))
+            Change.Set(this["meetingTime"]?.takeIf { it !is JsonNull }?.let { parseTime(it.timeText()) })
         } else {
             Change.Unchanged
         }

@@ -6,6 +6,8 @@ import app.banbanyeok.schema.Manifest
 import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.ManifestFile
 import app.banbanyeok.schema.ManifestFiles
+import app.banbanyeok.schema.ManifestNames
+import app.banbanyeok.schema.generationOne
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
@@ -44,7 +46,7 @@ internal fun stageRelease(
     source: Path,
     out: Path,
 ): Manifest {
-    val manifestText = source.resolve("manifest.json").readText()
+    val manifestText = latestManifest(source).readText()
     val manifest = ManifestCodec.parse(manifestText)
     val version = manifest.dataVersion
     val entries = manifest.files
@@ -74,6 +76,8 @@ internal fun stageRelease(
                 ),
         )
     val publishedText = jsonText(ManifestCodec.encode(published))
+    // 세대 2면 세대 1(구분 행렬 없음)도 함께 쓴다: 세대 2를 모르는 옛 서버가 발행 뒤에도 계속 기동할 수 있게(되돌리기 포함).
+    val generationOne = if (published.files.odSlots != null) published.generationOne() else null
     if (out.exists()) out.deleteRecursively()
     out.createDirectories()
     staged.forEach { file ->
@@ -93,7 +97,30 @@ internal fun stageRelease(
                 .mapValues { out.resolve(it.value.path).readBytes() },
         ),
     )
-    out.resolve("manifest.json").writeText(publishedText)
-    println("Staged release $version: ${staged.size} files + manifest.json")
+    writeManifests(out, publishedText, generationOne)
+    val manifests = if (generationOne == null) "manifest.json" else "manifest.v2.json + manifest.json"
+    println("Staged release $version: ${staged.size} files + $manifests")
     return published
+}
+
+/** 세대 2면 `manifest.v2.json`을 쓰고 세대 1을 검증해 `manifest.json`에 마지막으로 쓴다. 세대 1뿐이면 `manifest.json`만. */
+private fun writeManifests(
+    out: Path,
+    publishedText: String,
+    generationOne: Manifest?,
+) {
+    if (generationOne == null) {
+        out.resolve(ManifestNames.GENERATION_ONE).writeText(publishedText)
+    } else {
+        val generationOneText = jsonText(ManifestCodec.encode(generationOne))
+        DataSetLoader.load(
+            generationOneText,
+            out.resolve(generationOne.files.registry.path).readBytes(),
+            out.resolve(generationOne.files.candidates.path).readBytes(),
+            out.resolve(generationOne.files.od.path).readBytes(),
+            supportedSchema = 1,
+        )
+        out.resolve(ManifestNames.GENERATION_TWO).writeText(publishedText)
+        out.resolve(ManifestNames.GENERATION_ONE).writeText(generationOneText)
+    }
 }

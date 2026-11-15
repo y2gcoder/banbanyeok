@@ -155,6 +155,7 @@ private fun Route.resultRoutes(services: ApiServices) {
                 RecommendParticipant(index.toString(), nicknames[index], code)
             }
         val slot = requireTimeSlot(body.timeSlot)
+        services.directory.awaitSlots(slot)
         val request =
             RecommendRequest(
                 people,

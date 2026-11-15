@@ -83,9 +83,13 @@ def encode_query(origins, mode, favor_index=None, nicknames=None, time_slot=DEFA
 def decode_query(query):
     """쿼리 문자열을 해석한다. 알 수 없는 키는 무시. 성공 시 dict, 실패 시 LinkError."""
     values = {}
+    raw_t = []  # t는 버전을 안 뒤에만 읽는다(v=1이면 아예 읽지 않는다: 중복·깨진 t로 옛 링크가 새로 실패하지 않게)
     for pair in query.split('&') if query else []:
         key, _, raw = pair.partition('=')
-        if key not in ('v', 'o', 'm', 't', 'n'):
+        if key == 't':
+            raw_t.append(raw)
+            continue
+        if key not in ('v', 'o', 'm', 'n'):
             continue
         if key in values:
             raise LinkError('DUPLICATE_PARAM')
@@ -101,10 +105,17 @@ def decode_query(query):
     if values['v'] not in (URL_VERSION, LEGACY_VERSION):
         raise LinkError('UNSUPPORTED_VERSION')
     legacy = values['v'] == LEGACY_VERSION
-    if legacy:
-        values.pop('t', None)  # v=1에는 t가 없다: 있어도 알 수 없는 키처럼 무시한다
-    elif 't' not in values:
-        raise LinkError('MISSING_PARAM')
+    if not legacy:  # v=1에는 t가 없다: 있어도 알 수 없는 키처럼 읽지 않는다
+        if not raw_t:
+            raise LinkError('MISSING_PARAM')
+        if len(raw_t) > 1:
+            raise LinkError('DUPLICATE_PARAM')
+        if re.search(r'%(?![0-9A-Fa-f]{2})', raw_t[0]):
+            raise LinkError('MALFORMED_QUERY')
+        try:
+            values['t'] = unquote(raw_t[0], errors='strict')
+        except UnicodeDecodeError:
+            raise LinkError('MALFORMED_QUERY')
     origins = values['o'].split('.')
     if not 2 <= len(origins) <= 4:
         raise LinkError('BAD_ORIGIN_COUNT')
@@ -191,6 +202,8 @@ def build_vectors():
     add_decode('legacy_v1_is_weekday_day', f'v=1&o={c[0]}.{c[1]}&m=f', '구분이 생기기 전의 링크(v=1)는 평일 낮이다')
     add_decode('legacy_v1_with_names', f'v=1&o={c[0]}.{c[1]}&m=f&n=66-87IiY.7KeA7Jew')
     add_decode('legacy_v1_ignores_t', f'v=1&o={c[0]}.{c[1]}&m=f&t=saturday-night', 'v=1에는 t가 없다: 알 수 없는 키처럼 무시한다')
+    add_decode('legacy_v1_ignores_duplicate_t', f'v=1&o={c[0]}.{c[1]}&m=f&t=a&t=b', 'v=1은 t를 읽지 않으므로 중복도 오류가 아니다')
+    add_decode('legacy_v1_ignores_malformed_t', f'v=1&o={c[0]}.{c[1]}&m=f&t=%ZZ', 'v=1은 t를 읽지 않으므로 깨진 인코딩도 오류가 아니다')
     add_decode('time_slot_param_order_is_free', f't=weekday-evening&m=q&o={c[0]}.{c[1]}&v=2')
     # 거부
     add_decode('missing_version', f'o={c[0]}.{c[1]}&m=f')
@@ -201,6 +214,8 @@ def build_vectors():
     add_decode('bad_time_slot', f'v=2&o={c[0]}.{c[1]}&m=f&t=sunday-dawn')
     add_decode('time_slot_case_sensitive', f'v=2&o={c[0]}.{c[1]}&m=f&t=Weekday-Day')
     add_decode('duplicate_time_slot', f'v=2&o={c[0]}.{c[1]}&m=f&t=weekday-day&t=weekday-night')
+    add_decode('malformed_time_slot', f'v=2&o={c[0]}.{c[1]}&m=f&t=%ZZ')
+    add_decode('percent_encoded_time_slot_accepted', f'v=2&o={c[0]}.{c[1]}&m=f&t=saturday%2Dnight', '값은 먼저 퍼센트 디코딩한다')
     add_decode('one_origin', f'v=1&o={c[0]}&m=f')
     add_decode('five_origins', 'v=1&o=' + '.'.join(c[:5]) + '&m=f')
     add_decode('uppercase_code_rejected', f'v=1&o={c[0].upper()}.{c[1]}&m=f', '대문자·혼동 문자 치환은 허용하지 않는다')

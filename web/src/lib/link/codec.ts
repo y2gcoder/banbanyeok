@@ -137,17 +137,30 @@ function percentDecode(raw: string): string {
   }
 }
 
-function readParams(query: string): Map<string, string> {
+/** 값들과, 버전을 안 뒤에 읽을 `t`의 원문들. v=1이면 `t`는 읽지 않는다(중복·깨진 인코딩으로 옛 링크가 새로 실패하지 않게). */
+function readParams(query: string): { values: Map<string, string>; rawSlots: string[] } {
   const values = new Map<string, string>();
+  const rawSlots: string[] = [];
   const body = query.startsWith("?") ? query.slice(1) : query;
   for (const pair of body ? body.split("&") : []) {
     const eq = pair.indexOf("=");
     const key = eq < 0 ? pair : pair.slice(0, eq);
-    if (key !== "v" && key !== "o" && key !== "m" && key !== "t" && key !== "n") continue; // 알 수 없는 키는 무시
-    if (values.has(key)) throw new LinkError("DUPLICATE_PARAM");
-    values.set(key, percentDecode(eq < 0 ? "" : pair.slice(eq + 1)));
+    const raw = eq < 0 ? "" : pair.slice(eq + 1);
+    if (key === "t") rawSlots.push(raw);
+    else if (key === "v" || key === "o" || key === "m" || key === "n") {
+      if (values.has(key)) throw new LinkError("DUPLICATE_PARAM");
+      values.set(key, percentDecode(raw));
+    } // 알 수 없는 키는 무시
   }
-  return values;
+  return { values, rawSlots };
+}
+
+/** v=2의 `t`: 꼭 하나, 퍼센트 디코딩. */
+function readSlot(rawSlots: readonly string[]): string {
+  const [raw, ...rest] = rawSlots;
+  if (raw === undefined) throw new LinkError("MISSING_PARAM");
+  if (rest.length > 0) throw new LinkError("DUPLICATE_PARAM");
+  return percentDecode(raw);
 }
 
 function readMode(m: string, count: number): Pick<ShareState, "mode" | "favorIndex"> {
@@ -176,15 +189,14 @@ function readNicknames(n: string | undefined, count: number): (string | null)[] 
 /** 쿼리 문자열(앞의 `?`는 있어도 된다)을 해석한다. 오류는 검사 순서 v→o→m→t→n의 첫 번째 하나만. */
 export function decodeShareQuery(query: string): DecodeResult {
   try {
-    const values = readParams(query);
+    const { values, rawSlots } = readParams(query);
     const v = values.get("v");
     const o = values.get("o");
     const m = values.get("m");
     if (v === undefined || o === undefined || m === undefined) throw new LinkError("MISSING_PARAM");
     if (v !== URL_VERSION && v !== LEGACY_VERSION) throw new LinkError("UNSUPPORTED_VERSION");
-    // v=1에는 t가 없다: 있어도 알 수 없는 키처럼 무시하고 평일 낮으로 읽는다.
-    const t = v === LEGACY_VERSION ? DEFAULT_SLOT : values.get("t");
-    if (t === undefined) throw new LinkError("MISSING_PARAM");
+    // v=1에는 t가 없다: 있어도 알 수 없는 키처럼 읽지 않고 평일 낮으로 읽는다.
+    const t = v === LEGACY_VERSION ? DEFAULT_SLOT : readSlot(rawSlots);
     const origins = o.split(".");
     if (origins.length < MIN_PEOPLE || origins.length > MAX_PEOPLE) throw new LinkError("BAD_ORIGIN_COUNT");
     if (!origins.every(isStationCode)) throw new LinkError("BAD_STATION_CODE");

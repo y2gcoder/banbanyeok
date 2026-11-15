@@ -10,26 +10,40 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import kotlinx.coroutines.CompletableDeferred
-import kotlin.concurrent.thread
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 private val night = TimeSlot(DayType.WEEKDAY, TimeBand.NIGHT)
 
 class BackgroundSlotsTest :
     DescribeSpec({
         describe("slot matrices verified after startup") {
-            it("waits for the background verification, then serves the matrix") {
+            it("never blocks: before verification ends the slot is unavailable (default slot)") {
+                BackgroundSlots(CompletableDeferred()).matrix(night).shouldBeNull()
+            }
+            it("lets a request coroutine wait for the background verification, then serves the matrix") {
                 val loading = CompletableDeferred<Map<TimeSlot, OdMatrix>>()
-                thread {
-                    Thread.sleep(50)
+                val slots = BackgroundSlots(loading)
+                coroutineScope {
+                    val waiting = async { slots.awaitReady() }
+                    delay(20)
                     loading.complete(mapOf(night to sampleOd))
+                    waiting.await()
                 }
-                BackgroundSlots(loading).matrix(night) shouldBeSameInstanceAs sampleOd
+                slots.matrix(night) shouldBeSameInstanceAs sampleOd
             }
             it("answers null (default slot) when verification failed or took too long") {
                 val failed = CompletableDeferred<Map<TimeSlot, OdMatrix>>()
                 failed.completeExceptionally(IllegalStateException("broken slot file"))
-                BackgroundSlots(failed).matrix(night).shouldBeNull()
-                BackgroundSlots(CompletableDeferred(), waitSeconds = 0).matrix(night).shouldBeNull()
+                val broken = BackgroundSlots(failed)
+                broken.awaitReady()
+                broken.matrix(night).shouldBeNull()
+                broken.matrix(night).shouldBeNull() // 두 번째부터는 기록하지 않는다
+                val slow = BackgroundSlots(CompletableDeferred(), wait = 10.milliseconds)
+                slow.awaitReady()
+                slow.matrix(night).shouldBeNull()
             }
         }
     })

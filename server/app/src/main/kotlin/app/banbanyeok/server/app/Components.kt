@@ -82,7 +82,12 @@ object CompositionRoot {
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
                     rooms = rooms,
-                    results = RoomResultService(rooms, recommendation),
+                    results =
+                        RoomResultService(
+                            rooms,
+                            recommendation,
+                            awaitSlots = directory::awaitSlots,
+                        ),
                     recommendation = recommendation,
                     directory = directory,
                     published = PublishedArtifacts(store, loaded),

@@ -8,12 +8,14 @@ import app.banbanyeok.schema.Manifest
 import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.ManifestFile
 import app.banbanyeok.schema.ManifestFiles
+import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.OdBinCodec
 import app.banbanyeok.schema.OdMatrix
 import app.banbanyeok.schema.RegistryCodec
 import app.banbanyeok.schema.Sha256
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.schema.generationOne
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import java.time.Clock
@@ -28,7 +30,7 @@ import kotlin.io.path.writeText
 
 /** Reads and fully validates the dev artifact set (manifest, registry, candidates, every slot matrix). */
 internal fun loadDevArtifacts(output: Path): app.banbanyeok.schema.DataSet {
-    val manifestText = output.resolve("manifest.json").readText()
+    val manifestText = latestManifest(output).readText()
     val manifest = ManifestCodec.parse(manifestText)
     return DataSetLoader.load(
         DataSetBytes(
@@ -42,6 +44,10 @@ internal fun loadDevArtifacts(output: Path): app.banbanyeok.schema.DataSet {
         ),
     )
 }
+
+/** The newest manifest generation present in [dir] (generation 2 first, then the generation-1 `manifest.json`). */
+internal fun latestManifest(dir: Path): Path =
+    dir.resolve(ManifestNames.GENERATION_TWO).takeIf { it.exists() } ?: dir.resolve(ManifestNames.GENERATION_ONE)
 
 /** Dev file name of a slot matrix: `od.bin` for the default slot, `od-<slot>.bin` for the others. */
 internal fun odFileName(slot: TimeSlot): String = if (slot == TimeSlot.DEFAULT) "od.bin" else "od-${slot.id}.bin"
@@ -80,8 +86,7 @@ private class ArtifactWriter(
 
     private val output = root.resolve("data/artifacts/dev").createDirectories()
     private val previous =
-        output
-            .resolve("manifest.json")
+        latestManifest(output)
             .takeIf {
                 it.exists()
             }?.let { ManifestCodec.parse(it.readText()) }
@@ -159,7 +164,9 @@ private class ArtifactWriter(
         )
         files.forEach { (name, bytes) -> output.resolve(name).writeBytes(bytes) }
         removeStaleSlotFiles()
-        output.resolve("manifest.json").writeText(manifestText)
+        // Generation 2 first, then the generation-1 pointer that older readers keep using (same files, no slots).
+        output.resolve(ManifestNames.GENERATION_TWO).writeText(manifestText)
+        output.resolve(ManifestNames.GENERATION_ONE).writeText(jsonText(ManifestCodec.encode(manifest.generationOne())))
         println(
             "Published dev artifacts: ${files.values.sumOf { it.size }} bytes; SEO ${files.getValue(
                 "seo-pairs.json",
@@ -185,6 +192,7 @@ private class ArtifactWriter(
             .forEach { it.delete() }
 
     private fun unchanged(): Boolean {
+        if (!output.resolve(ManifestNames.GENERATION_TWO).exists()) return false
         val old = previous?.files ?: return false
         if (old.odSlots?.mapValues { it.value.path } !=
             slots.associate { it.id to slotFiles.getValue(it) }

@@ -9,6 +9,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -17,11 +18,14 @@ import java.nio.file.Path
 
 private val devArtifacts: Path = Path.of(System.getProperty("artifacts.dev.dir"))
 
-private suspend fun copyDev(store: ArtifactStore) {
+private suspend fun copyDev(
+    store: ArtifactStore,
+    keep: (String) -> Boolean = { true },
+) {
     Files
         .list(devArtifacts)
         .use { files ->
-            files.filter { Files.isRegularFile(it) }.toList()
+            files.filter { Files.isRegularFile(it) && keep(it.fileName.toString()) }.toList()
         }.forEach { store.put(ArtifactKey(it.fileName.toString()), Files.readAllBytes(it)) }
 }
 
@@ -46,6 +50,28 @@ class ArtifactLoaderTest :
                 slots.values.forEach { it.originCount shouldBe loaded.dataSet.od.originCount }
                 phases.last() shouldBe "artifact-slots-validated"
                 phases.indexOf("artifact-validated") shouldBeLessThan phases.indexOf("artifact-slots-validated")
+            }
+
+            it("reads generation 1 when generation 2 is absent (data published before T2)") {
+                val store = LocalFileArtifactStore(Files.createTempDirectory("gen1-only"), UnconfinedTestDispatcher())
+                copyDev(store) { it != ArtifactLoader.MANIFEST_V2_KEY.value }
+                val loaded = ArtifactLoader(store).load()
+                loaded.dataSet.manifest.schemaVersion shouldBe 1
+                loaded.slots.await() shouldBe emptyMap()
+            }
+
+            it(
+                "ignores a generation 2 manifest whose dataVersion differs from manifest.json (stale after a rollback)",
+            ) {
+                val store = LocalFileArtifactStore(Files.createTempDirectory("stale-v2"), UnconfinedTestDispatcher())
+                copyDev(store)
+                val v2 = store.get(ArtifactLoader.MANIFEST_V2_KEY)!!.content.decodeToString()
+                val stale = Regex("\"dataVersion\": \"[0-9.]+\"").replace(v2, "\"dataVersion\": \"29991231.1\"")
+                store.put(ArtifactLoader.MANIFEST_V2_KEY, stale.encodeToByteArray())
+                val loaded = ArtifactLoader(store).load()
+                loaded.dataSet.manifest.schemaVersion shouldBe 1
+                loaded.dataVersion shouldNotBe "29991231.1"
+                loaded.slots.await() shouldBe emptyMap()
             }
 
             it("still starts on the default slot when a slot file is tampered, and reports the slot failure") {

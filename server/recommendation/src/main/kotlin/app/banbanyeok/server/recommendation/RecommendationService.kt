@@ -68,6 +68,8 @@ public data class Recommendation(
     public val labels: List<ParticipantLabel>,
     /** 실제로 계산한 구분. 요청한 구분의 행렬이 데이터에 없으면 기본 구분(평일 낮)이며 표시 이름도 그것을 따른다. */
     public val timeBasis: TimeBasis = TimeBasis(TimeSlot.DEFAULT, TimeSlotLabels.of(TimeSlot.DEFAULT)),
+    /** 요청한(방은 약속 날짜·시각에서 정한) 구분. [timeBasis]와 다르면 기본 구분으로 대신 계산한 것이다. */
+    public val requestedSlot: TimeSlot = TimeSlot.DEFAULT,
 )
 
 public enum class RecommendationError {
@@ -119,6 +121,7 @@ public class RecommendationService(
             dataVersion = travelTimes.dataVersion,
             baselineStationCode = result.baselineStationCode,
             labels = ParticipantLabels.of(refs),
+            requestedSlot = request.time.slot,
             timeBasis =
                 if (matrix.slot == request.time.slot) {
                     request.time

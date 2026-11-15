@@ -4,6 +4,7 @@ import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
 import app.banbanyeok.schema.ManifestCodec
+import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.OdMatrix
 import app.banbanyeok.schema.SchemaException
 import app.banbanyeok.schema.TimeSlot
@@ -45,12 +46,35 @@ public class ArtifactLoader(
     private val onPhase: (String) -> Unit = {},
 ) {
     public suspend fun load(): LoadedArtifacts {
-        val manifest = store.get(MANIFEST_KEY) ?: throw ArtifactLoadException("manifest.json이 저장소에 없습니다")
+        val manifest = currentManifest()
         onPhase("artifact-manifest-read")
         val manifestText = manifest.content.decodeToString()
         val dataSet = validated("산출물 검증 실패") { core(manifestText) }
         return LoadedArtifacts(dataSet, manifest.content, manifest.version, background.async { slots(dataSet) })
     }
+
+    /**
+     * 세대 2(구분 행렬 포함)와 세대 1을 함께 읽어 세대 2를 쓴다(data-format §5). 단 세대 1(발행 때 마지막에 바뀌는 포인터)과
+     * dataVersion이 다르면 세대 2는 지난 것이다(예: 옛 스크립트로 T2 이전 데이터로 되돌림) — 그때와 세대 2가 없을 때는 세대 1을 쓴다.
+     */
+    private suspend fun currentManifest(): StoredArtifact {
+        val (v2, v1) =
+            coroutineScope {
+                val v2 = async { store.get(MANIFEST_V2_KEY) }
+                val v1 = async { store.get(MANIFEST_KEY) }
+                v2.await() to v1.await()
+            }
+        if (v1 == null) return v2 ?: throw ArtifactLoadException("manifest.json이 저장소에 없습니다")
+        if (v2 == null) return v1
+        return if (dataVersionOf(v2) != null && dataVersionOf(v2) == dataVersionOf(v1)) v2 else v1
+    }
+
+    private fun dataVersionOf(manifest: StoredArtifact): String? =
+        try {
+            ManifestCodec.parse(manifest.content.decodeToString()).dataVersion
+        } catch (_: SchemaException) {
+            null
+        }
 
     /** manifest와 기본 파일 세 개. 서로 독립이라 동시에 읽는다(원격 저장소에서 왕복이 직렬로 쌓이지 않게). */
     private suspend fun core(manifestText: String): DataSet {
@@ -101,6 +125,7 @@ public class ArtifactLoader(
             ?: throw ArtifactLoadException("manifest가 가리키는 파일이 없습니다: $path")
 
     public companion object {
-        public val MANIFEST_KEY: ArtifactKey = ArtifactKey("manifest.json")
+        public val MANIFEST_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_ONE)
+        public val MANIFEST_V2_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_TWO)
     }
 }

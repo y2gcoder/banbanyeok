@@ -34,6 +34,8 @@
     {"id": "christmas_weekday_is_holiday", "date": "2026-12-25", "time": "18:00", "expected": "holiday-evening"},
     {"id": "substitute_holiday", "date": "2026-10-05", "time": "12:00", "expected": "holiday-day"},
     {"id": "lunar_new_year_2027", "date": "2027-02-08", "time": "08:00", "expected": "holiday-morning"},
+    {"id": "after_midnight_new_year_crosses_the_year", "date": "2027-01-02", "time": "01:00", "expected": "holiday-night"},
+    {"id": "after_midnight_after_new_year_is_ordinary", "date": "2027-01-02", "time": "03:00", "expected": "saturday-morning"},
     {"id": "date_only_is_day", "date": "2026-11-21", "time": null, "expected": "saturday-day"},
     {"id": "time_only_is_weekday", "date": null, "time": "22:00", "expected": "weekday-night"},
     {"id": "nothing_is_default", "date": null, "time": null, "expected": "weekday-day"},

@@ -1,6 +1,11 @@
 package app.banbanyeok.server.app
 
+import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.server.app.application.BackgroundSlots
+import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.http.ApiServices
+import app.banbanyeok.server.artifact.ArtifactLoader
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
@@ -18,6 +23,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import io.mockk.coEvery
 import io.mockk.slot
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -98,24 +105,69 @@ class TimeSlotHttpTest :
                         .getValue("band")
                         .jsonPrimitive.content shouldBe "night"
                     saturday.firstMax() shouldNotBe weekday.firstMax()
+                    saturday
+                        .basis()
+                        .getValue("requestedTimeSlot")
+                        .jsonPrimitive.content shouldBe "saturday-night"
+
+                    val explicitNull = client.json(HttpMethod.Post, "/v1/recommend", """$base,"timeSlot":null}""")
+                    explicitNull
+                        .json()
+                        .basis()
+                        .getValue("timeSlot")
+                        .jsonPrimitive.content shouldBe "weekday-day"
                 }
             }
 
-            it("rejects an unknown slot with the documented 400") {
+            it("rejects an unknown or non-string slot with the documented 400") {
                 testApplication {
                     application { apiModule(testConfig(), realApi()) }
+                    for (value in listOf("\"sunday-dawn\"", "5", "[\"weekday-day\"]")) {
+                        val response =
+                            client.json(
+                                HttpMethod.Post,
+                                "/v1/recommend",
+                                """{"origins":["$gangnam","$hongdae"],"mode":"fair","timeSlot":$value}""",
+                            )
+                        response.status shouldBe HttpStatusCode.BadRequest
+                        response
+                            .json()
+                            .getValue("code")
+                            .jsonPrimitive.content shouldBe "INVALID_TIME_SLOT"
+                        OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", response)
+                    }
+                }
+            }
+
+            it("answers 200 on the default slot when the slot matrices failed verification") {
+                val loaded = runBlocking { ArtifactLoader(DevArtifacts.store).load() }
+                val failed = CompletableDeferred<Map<TimeSlot, OdMatrix>>()
+                failed.completeExceptionally(IllegalStateException("구분 행렬 검증 실패(테스트)"))
+                val directory = StationDirectory(loaded.dataSet, BackgroundSlots(failed))
+                val mocks = MockedServices()
+                val api =
+                    ApiServices(
+                        mocks.anon,
+                        mocks.rooms,
+                        mocks.results,
+                        RecommendationService(directory.travel, directory),
+                        directory,
+                        DevArtifacts.published,
+                    )
+                testApplication {
+                    application { apiModule(testConfig(), api) }
                     val response =
                         client.json(
                             HttpMethod.Post,
                             "/v1/recommend",
-                            """{"origins":["$gangnam","$hongdae"],"mode":"fair","timeSlot":"sunday-dawn"}""",
+                            """{"origins":["$gangnam","$hongdae"],"mode":"fair","timeSlot":"saturday-night"}""",
                         )
-                    response.status shouldBe HttpStatusCode.BadRequest
-                    response
-                        .json()
-                        .getValue("code")
-                        .jsonPrimitive.content shouldBe "INVALID_TIME_SLOT"
+                    response.status shouldBe HttpStatusCode.OK
                     OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", response)
+                    val basis = response.json().basis()
+                    basis.getValue("timeSlot").jsonPrimitive.content shouldBe "weekday-day"
+                    basis.getValue("requestedTimeSlot").jsonPrimitive.content shouldBe "saturday-night"
+                    basis.getValue("label").jsonPrimitive.content shouldBe "평일 낮"
                 }
             }
         }
@@ -132,6 +184,17 @@ class TimeSlotHttpTest :
                     val created = client.json(HttpMethod.Post, "/v1/rooms", body)
                     created.status shouldBe HttpStatusCode.Created
                     command.captured.meetingTime shouldBe LocalTime.of(19, 30)
+                    val notText =
+                        client.json(
+                            HttpMethod.Post,
+                            "/v1/rooms",
+                            """{"mode":"fair","meetingTime":1930,"host":{"originCode":"$gangnam"}}""",
+                        )
+                    notText.status shouldBe HttpStatusCode.BadRequest
+                    notText
+                        .json()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "INVALID_MEETING_TIME"
 
                     coEvery { services.rooms.get(ROOM, null) } returns
                         RoomView(
@@ -165,12 +228,12 @@ class TimeSlotHttpTest :
                     patches[0].meetingTime shouldBe Change.Set(LocalTime.of(8, 5))
                     patches[1].meetingTime shouldBe Change.Set(null)
                     patches[2].meetingTime shouldBe Change.Unchanged
-                    listOf("8:05", "24:00", "19:30:00").forEach { bad ->
+                    listOf("\"8:05\"", "\"24:00\"", "\"19:30:00\"", "1930", "true").forEach { bad ->
                         val response =
                             client.json(
                                 HttpMethod.Patch,
                                 "/v1/rooms/$ROOM",
-                                """{"meetingTime":"$bad"}""",
+                                """{"meetingTime":$bad}""",
                                 token = "host-tok",
                             )
                         response.status shouldBe HttpStatusCode.BadRequest

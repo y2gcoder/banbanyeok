@@ -1,6 +1,6 @@
 {
   "candidateCount": 127,
-  "dataVersion": "20261115.7",
+  "dataVersion": "20261115.8",
   "files": {
     "candidates": {
       "bytes": 1468,
@@ -12,63 +12,6 @@
       "path": "od.bin",
       "sha256": "88cc5ae6b9371597dcb45db95cd10e51fc614dd7e3dbf572ade0bed1587a0512"
     },
-    "odSlots": {
-      "holiday-day": {
-        "bytes": 250385,
-        "path": "od-saturday-day.bin",
-        "sha256": "1d17197710e74d0fe7cdb4c4597978d3c483bfbb7dc93d412ebff77119e8d281"
-      },
-      "holiday-evening": {
-        "bytes": 250385,
-        "path": "od-saturday-evening.bin",
-        "sha256": "bce053dde466a0bd4df59986f6bbd1f7f640a39e22fd888481e75eea8aaddb8e"
-      },
-      "holiday-morning": {
-        "bytes": 250385,
-        "path": "od-saturday-morning.bin",
-        "sha256": "63d8de136ed13b6a4df1c18424523d878610fb06b7df19d8ee11a61fe1099499"
-      },
-      "holiday-night": {
-        "bytes": 250385,
-        "path": "od-saturday-night.bin",
-        "sha256": "e9969a7fab77614772465577d59734f6d76a8ea4626a456a936c8ef0b3e410fc"
-      },
-      "saturday-day": {
-        "bytes": 250385,
-        "path": "od-saturday-day.bin",
-        "sha256": "1d17197710e74d0fe7cdb4c4597978d3c483bfbb7dc93d412ebff77119e8d281"
-      },
-      "saturday-evening": {
-        "bytes": 250385,
-        "path": "od-saturday-evening.bin",
-        "sha256": "bce053dde466a0bd4df59986f6bbd1f7f640a39e22fd888481e75eea8aaddb8e"
-      },
-      "saturday-morning": {
-        "bytes": 250385,
-        "path": "od-saturday-morning.bin",
-        "sha256": "63d8de136ed13b6a4df1c18424523d878610fb06b7df19d8ee11a61fe1099499"
-      },
-      "saturday-night": {
-        "bytes": 250385,
-        "path": "od-saturday-night.bin",
-        "sha256": "e9969a7fab77614772465577d59734f6d76a8ea4626a456a936c8ef0b3e410fc"
-      },
-      "weekday-evening": {
-        "bytes": 250385,
-        "path": "od-weekday-evening.bin",
-        "sha256": "bf1889dcf7ed77dd2ef3ece24151d97e4f3db508b181d3d01e083e197521ed3f"
-      },
-      "weekday-morning": {
-        "bytes": 250385,
-        "path": "od-weekday-morning.bin",
-        "sha256": "7ac3b0c32371a8baee61960e39643f54cb18cc89764671ceeec510e1d8e89c21"
-      },
-      "weekday-night": {
-        "bytes": 250385,
-        "path": "od-weekday-night.bin",
-        "sha256": "85dbd032908d9cb967aab307b963cad834e458baa7123dbc95a287fbf9a1ddd1"
-      }
-    },
     "registry": {
       "bytes": 398209,
       "path": "stations.json",
@@ -77,14 +20,14 @@
     "seoPages": {
       "bytes": 947497,
       "path": "seo-pairs.json",
-      "sha256": "928a5ac7f7369ef0d11e2463f491fe1bfc0df146abe6491ed846b4146987ba80"
+      "sha256": "9250bcd85f8e02b9b8d82c4888a245f5e6bff9e856ad9d3958cb79fae2602373"
     }
   },
-  "generatedAt": "2026-11-15T16:17:52Z",
-  "minClientSchema": 2,
+  "generatedAt": "2026-11-15T17:34:27Z",
+  "minClientSchema": 1,
   "originCount": 653,
-  "previousDataVersion": "20261115.6",
+  "previousDataVersion": "20261115.7",
   "registryVersion": 5,
-  "schemaVersion": 2,
-  "timeModel": "slot-half-headway"
+  "schemaVersion": 1,
+  "timeModel": "weekday-offpeak-half-headway"
 }

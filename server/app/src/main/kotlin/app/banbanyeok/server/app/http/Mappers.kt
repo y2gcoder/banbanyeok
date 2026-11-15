@@ -114,6 +114,7 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
         timeBasis =
             TimeBasisDto(
                 timeSlot = timeBasis.slot.id,
+                requestedTimeSlot = requestedSlot.id,
                 dayType = timeBasis.slot.day.id,
                 band = timeBasis.slot.band.id,
                 label = timeBasis.label,

@@ -14,7 +14,7 @@
 | 후보 목록 | `data/registry/candidates.json` | JSON | 사람 + P2 (git) |
 | 시간·환승 행렬 | `versions/<dataVersion>/od.<hash>.bin` | 바이너리 | 파이프라인 |
 | 구분별 시간·환승 행렬 | `versions/<dataVersion>/od-<구분>.<hash>.bin` | 바이너리(od.bin과 같은 형식) | 파이프라인 |
-| manifest | `manifest.json` (발행 포인터) | JSON | 파이프라인 (마지막에 교체) |
+| manifest | `manifest.json`(세대 1) + `manifest.v2.json`(세대 2) (발행 포인터) | JSON | 파이프라인 (`manifest.json`을 마지막에 교체) |
 
 형식 판은 두 가지다. **구성 형식**(레지스트리 JSON·후보 JSON의 `schemaVersion`, od.bin 헤더의 `formatVersion`)은 `1`이고,
 **manifest 세대**(`manifest.schemaVersion`)는 `1` 또는 `2`다. 세대 2는 구분(§9)별 od 행렬(`files.odSlots`)을 더한 것이고 구성 형식은
@@ -166,6 +166,12 @@
 기본 구분으로만 계산한다(응답의 `timeBasis`가 평일 낮이 되어 사용자에게 드러난다).
 manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.3).
 
+**세대별 객체 이름.** 발행은 manifest를 두 개 쓴다. `manifest.v2.json`은 세대 2(구분 행렬 포함), `manifest.json`은 같은 dataVersion·같은 파일의
+세대 1(`files.odSlots` 없음, `timeModel` = `weekday-offpeak-half-headway`)이다. 그래서 세대 2를 모르는 옛 서버(배포 틈의 옛 리비전, 되돌리기)도
+계속 기동한다. 순서는 해시 파일 → `manifest.v2.json` → `manifest.json`(마지막). 세대 2를 아는 reader는 둘을 읽어 dataVersion이 같으면 세대 2를,
+다르거나 세대 2가 없으면 세대 1을 쓴다(옛 스크립트로 되돌려 `manifest.json`만 바뀐 경우 지난 세대 2를 쓰지 않게). 세대 1만 있는 데이터를 발행할
+때는 남은 `manifest.v2.json`을 지운다. dev 산출물(`data/artifacts/dev/`)도 같은 두 파일을 둔다.
+
 ## 6. 호환 규칙
 
 - 필드 **추가**(JSON): `schemaVersion`을 올리지 않고 reader가 모르는 필드를 무시하는 것은 허용하지 않는다. 우리는 reader를 엄격하게 둔다(알 수 없는 키 = 오류). 새 필드가 필요하면 `schemaVersion`을 올린다.
@@ -239,7 +245,7 @@ manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.
   요일 유형은 운행일로 정한다: 공휴일이거나 일요일 → `holiday`, 토요일 → `saturday`, 그 밖 → `weekday`. 시각이 없으면 낮, 날짜가 없으면 평일.
 - **공휴일**: [`holidays.json`](holidays.json)(관공서 공휴일과 대체공휴일, 출처 포함). 연 1회 갱신한다(우주항공청이 매년 6월 말 다음 해
   월력요항을 발표하면 그 해를 더하고 `coverage.to`를 늘린다. 임시공휴일은 국무회의 의결 뒤). 목록 범위 밖의 날짜는 일요일만 공휴일로 본다.
-  서버 테스트는 범위가 끝나기 두 달 전부터 실패해 갱신을 알린다. 외부 키가 필요한 공휴일 API는 쓰지 않는다.
+  서버 테스트는 범위가 끝나기 두 달 전부터 경고를 남긴다(벽시계로 CI를 깨뜨리지 않는다). 외부 키가 필요한 공휴일 API는 쓰지 않는다.
 - **배차를 재는 창**(`headwayWindow`, 출발 시각, 양끝 포함): 아침 07~10시, 낮 10~16시(P2b의 평시 창 그대로라 평일 낮 행렬은 T2 전과 바이트가
   같다), 저녁 17~21시, 밤 21~24시. 근거와 측정은 docs/setup/t2-notes.md.
 - **표시**: 결과 응답의 `timeBasis.label`("토요일 저녁")을 서버가 만들고 클라이언트는 그대로 쓴다(openapi `TimeBasis`).

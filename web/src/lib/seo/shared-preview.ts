@@ -97,7 +97,11 @@ async function fetchResult(
 
 const fetchResultOnce = cache(fetchResult);
 
-/** 결과를 받아 화면 값으로. 서버가 느리거나 실패하면 null(호출한 쪽이 기본 미리보기로 대체). 한 요청 안에서는 한 번만 부른다. */
+/**
+ * 결과를 받아 화면 값으로. 서버가 느리거나 실패하면 null(호출한 쪽이 기본 미리보기로 대체). 한 요청 안에서는 한 번만 부른다.
+ * 링크의 구분과 다른 기준으로 계산된 결과(서버가 구분 행렬을 못 써 평일 낮으로 대신 계산)도 null이다: 메신저가 미리보기를 오래 캐시하므로
+ * 틀린 기준의 제목·설명·그림을 남기지 않고 기본 미리보기(짧은 캐시)로 간다.
+ */
 export async function loadSharedView(state: ShareState): Promise<ResultView | null> {
   const result = await fetchResultOnce(
     state.origins.join("."),
@@ -106,5 +110,7 @@ export async function loadSharedView(state: ShareState): Promise<ResultView | nu
     JSON.stringify(state.nicknames),
     state.timeSlot,
   );
-  return result ? toResultView(result) : null;
+  if (!result) return null;
+  const used = (result.timeBasis as RecommendResult["timeBasis"] | undefined)?.timeSlot ?? DEFAULT_SLOT;
+  return used === state.timeSlot ? toResultView(result) : null;
 }

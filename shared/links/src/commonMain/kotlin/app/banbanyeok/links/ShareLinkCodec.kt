@@ -20,7 +20,8 @@ public object ShareLinkCodec {
 
     private const val ORIGIN_SEPARATOR = '.'
     private const val NICKNAME_SEPARATOR = '.'
-    private val KNOWN_KEYS = setOf("v", "o", "m", "t", "n")
+    private val KNOWN_KEYS = setOf("v", "o", "m", "n")
+    private const val SLOT_KEY = "t"
 
     /** 정규형 쿼리 문자열(앞의 `?` 없음). */
     public fun encodeQuery(link: ShareLink): String =
@@ -67,19 +68,33 @@ public object ShareLinkCodec {
      */
     public fun decodeQuery(query: String): LinkDecoding {
         val values = HashMap<String, String>()
-        parseValues(query, values)?.let { return fail(it) }
+        val rawSlots = mutableListOf<String>()
+        parseValues(query, values, rawSlots)?.let { return fail(it) }
         val version = values["v"]
         val originsText = values["o"]
         val modeText = values["m"]
-        // v=1에는 t가 없다: 있어도 알 수 없는 키처럼 무시하고 평일 낮으로 읽는다.
-        val slotText = if (version == LEGACY_VERSION) TimeSlot.DEFAULT.id else values["t"]
+        // v=1에는 t가 없다: 있어도 알 수 없는 키처럼 **읽지 않고**(중복·깨진 인코딩도 오류가 아니다) 평일 낮으로 읽는다.
+        val slot = if (version == LEGACY_VERSION) SlotRead(TimeSlot.DEFAULT.id) else readSlot(rawSlots)
         return when {
             version == null || originsText == null || modeText == null -> fail(LinkErrorCode.MISSING_PARAM)
             version != VERSION && version != LEGACY_VERSION -> fail(LinkErrorCode.UNSUPPORTED_VERSION)
-            slotText == null -> fail(LinkErrorCode.MISSING_PARAM)
-            else -> decodeContent(originsText, modeText, slotText, values["n"])
+            slot.text == null -> fail(slot.error ?: LinkErrorCode.MISSING_PARAM)
+            else -> decodeContent(originsText, modeText, slot.text, values["n"])
         }
     }
+
+    private class SlotRead(
+        val text: String?,
+        val error: LinkErrorCode? = null,
+    )
+
+    /** v=2의 `t`: 꼭 하나, 퍼센트 디코딩. */
+    private fun readSlot(raw: List<String>): SlotRead =
+        when (raw.size) {
+            0 -> SlotRead(null, LinkErrorCode.MISSING_PARAM)
+            1 -> Percent.decode(raw.single())?.let { SlotRead(it) } ?: SlotRead(null, LinkErrorCode.MALFORMED_QUERY)
+            else -> SlotRead(null, LinkErrorCode.DUPLICATE_PARAM)
+        }
 
     private fun decodeContent(
         originsText: String,
@@ -119,15 +134,23 @@ public object ShareLinkCodec {
     private fun parseValues(
         query: String,
         values: MutableMap<String, String>,
+        rawSlots: MutableList<String>,
     ): LinkErrorCode? {
         if (query.isNotEmpty()) {
             for (pair in query.split('&')) {
                 val separator = pair.indexOf('=')
                 val key = if (separator < 0) pair else pair.substring(0, separator)
-                if (key !in KNOWN_KEYS) continue
-                if (key in values) return LinkErrorCode.DUPLICATE_PARAM
                 val raw = if (separator < 0) "" else pair.substring(separator + 1)
-                values[key] = Percent.decode(raw) ?: return LinkErrorCode.MALFORMED_QUERY
+                when {
+                    // t는 버전을 안 뒤에 읽는다(v=1이면 읽지 않는다).
+                    key == SLOT_KEY -> rawSlots.add(raw)
+
+                    key !in KNOWN_KEYS -> Unit
+
+                    key in values -> return LinkErrorCode.DUPLICATE_PARAM
+
+                    else -> values[key] = Percent.decode(raw) ?: return LinkErrorCode.MALFORMED_QUERY
+                }
             }
         }
         return null

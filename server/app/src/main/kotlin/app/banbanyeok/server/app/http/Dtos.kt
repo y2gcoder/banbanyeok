@@ -1,6 +1,7 @@
 package app.banbanyeok.server.app.http
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 // contracts/openapi.yaml의 스키마와 이름·모양을 맞춘다. 요청 DTO는 문자열을 그대로 받고 검증은 서비스가 한다.
@@ -29,7 +30,8 @@ data class RoomCreateRequestDto(
     val mode: String,
     val favorTarget: String? = null,
     val meetingDate: String? = null,
-    val meetingTime: String? = null,
+    /** 문자열이 아니면 INVALID_MEETING_TIME이 되도록 JSON 값 그대로 받는다. null은 없음. */
+    val meetingTime: JsonElement? = null,
     val host: ParticipantInputDto,
     val expectedCount: Int? = null,
 )
@@ -83,8 +85,8 @@ data class RecommendRequestDto(
     val mode: String,
     val favorIndex: Int? = null,
     val nicknames: List<String?>? = null,
-    /** 언제 만나는가(`weekday-day` 형식). 없으면 기본 구분(평일 낮). */
-    val timeSlot: String? = null,
+    /** 언제 만나는가(`weekday-day` 형식). 없거나 null이면 기본 구분(평일 낮). 문자열이 아니면 INVALID_TIME_SLOT이 되도록 JSON 값 그대로 받는다. */
+    val timeSlot: JsonElement? = null,
 )
 
 @Serializable
@@ -97,6 +99,8 @@ data class OutcomeRequestDto(
 @Serializable
 data class TimeBasisDto(
     val timeSlot: String,
+    /** 요청한(방은 약속 날짜·시각에서 정한) 구분. [timeSlot]과 다르면 기본 구분으로 대신 계산했다. */
+    val requestedTimeSlot: String,
     val dayType: String,
     val band: String,
     val label: String,

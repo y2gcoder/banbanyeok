@@ -21,7 +21,14 @@ function result(overrides: Partial<RecommendResult> = {}): RecommendResult {
     status: "ok",
     mode: "fair",
     dataVersion: "20261112.6",
-    timeBasis: { timeSlot: "weekday-day", dayType: "weekday", band: "day", label: "평일 낮", holidayName: null },
+    timeBasis: {
+      timeSlot: "weekday-day",
+      requestedTimeSlot: "weekday-day",
+      dayType: "weekday",
+      band: "day",
+      label: "평일 낮",
+      holidayName: null,
+    },
     participants: [
       { participantId: "0", originCode: "1qs", originName: "신촌", hidden: false, label: "지훈🎂", labelKind: "name" },
       {
@@ -120,6 +127,7 @@ describe("계산 기준", () => {
       result({
         timeBasis: {
           timeSlot: "saturday-night",
+          requestedTimeSlot: "saturday-night",
           dayType: "saturday",
           band: "night",
           label: "토요일 밤",
@@ -143,6 +151,22 @@ describe("결과 불러오기(서버 호출)", () => {
       { origins: ["1qs", "70x"], mode: "fair", favorIndex: null, nicknames: ["지훈🎂", null], timeSlot: "weekday-day" },
       expect.any(AbortSignal),
     );
+  });
+
+  it("링크와 다른 기준(평일 낮 대체)으로 계산된 결과는 null — 틀린 기준의 미리보기를 메신저 캐시에 남기지 않는다", async () => {
+    recommend.mockResolvedValue(
+      result({
+        timeBasis: {
+          timeSlot: "weekday-day",
+          requestedTimeSlot: "saturday-night",
+          dayType: "weekday",
+          band: "day",
+          label: "평일 낮",
+          holidayName: null,
+        },
+      }),
+    );
+    expect(await loadSharedView({ ...state, timeSlot: "saturday-night", origins: ["1qs", "2je"] })).toBeNull();
   });
 
   it("실패하거나 시간이 지나면 null — 호출한 쪽이 기본 미리보기로 대체한다", async () => {

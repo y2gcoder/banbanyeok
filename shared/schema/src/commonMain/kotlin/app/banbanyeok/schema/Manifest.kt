@@ -168,6 +168,28 @@ public class DataSet(
     public fun odFor(slot: TimeSlot): OdMatrix? = if (slot == TimeSlot.DEFAULT) od else odSlots[slot]
 }
 
+/**
+ * 세대별 manifest 객체 이름(data-format §5). 발행은 두 개를 함께 쓴다: [GENERATION_ONE]은 세대 1(평일 낮 행렬만)이라 세대 2를 모르는
+ * 옛 서버·클라이언트가 계속 읽고, [GENERATION_TWO]는 구분 행렬까지 담는다. 세대 2를 아는 reader는 [GENERATION_TWO]를 먼저 읽고
+ * 없으면 [GENERATION_ONE]을 읽는다. 둘은 같은 dataVersion과 같은 해시 파일을 가리킨다.
+ */
+public object ManifestNames {
+    public const val GENERATION_ONE: String = "manifest.json"
+    public const val GENERATION_TWO: String = "manifest.v2.json"
+}
+
+/** 세대 1 timeModel(평일 낮 행렬, 배차/2 대기). */
+public const val GENERATION_ONE_TIME_MODEL: String = "weekday-offpeak-half-headway"
+
+/** 세대 2 manifest에서 구분 행렬을 뺀 세대 1 manifest(같은 dataVersion·같은 파일). 옛 reader용으로 함께 발행한다. */
+public fun Manifest.generationOne(): Manifest =
+    copy(
+        schemaVersion = 1,
+        minClientSchema = 1,
+        timeModel = GENERATION_ONE_TIME_MODEL,
+        files = files.copy(odSlots = null),
+    )
+
 /** 데이터 세트를 이루는 파일 내용. [odSlots]는 세대 2 manifest의 `files.odSlots` 파일(키 = 구분 id), 세대 1이면 비어 있다. */
 public class DataSetBytes(
     public val manifestJson: String,

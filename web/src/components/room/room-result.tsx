@@ -16,7 +16,6 @@ import { toResultView } from "@/lib/result/view-model";
 import { roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
 import { favorIndexOf } from "@/lib/room/view";
-import { slotForMeeting } from "@/lib/when/time-slot";
 
 type Props = {
   roomId: string;
@@ -127,10 +126,7 @@ export function RoomResult({
           <LoadingCard />
         )}
       </div>
-      <TimeBasisNote
-        basis={data ? (data.timeBasis ?? null) : undefined}
-        requested={slotForMeeting(room.meetingDate ?? null, room.meetingTime ?? null)}
-      />
+      <TimeBasisNote basis={data ? (data.timeBasis ?? null) : undefined} requested={null} />
       {view && top && renderAfter ? renderAfter(view) : null}
     </section>
   );

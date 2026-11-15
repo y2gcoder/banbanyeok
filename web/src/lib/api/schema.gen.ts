@@ -277,9 +277,14 @@ export interface components {
          * @example 19:30
          */
         MeetingTime: string;
-        /** @description 결과를 계산한 기준(실제로 쓴 구분). 화면의 "○○ 기준" 문구는 `label`을 그대로 쓴다 */
+        /**
+         * @description 결과를 계산한 기준(실제로 쓴 구분). 화면의 "○○ 기준" 문구는 `label`을 그대로 쓴다. `timeSlot`이 `requestedTimeSlot`과 다르면 평일 낮으로
+         *     대신 계산한 것이다(조건은 API 설명의 "언제 만나나").
+         */
         TimeBasis: {
             timeSlot: components["schemas"]["TimeSlot"];
+            /** @description 요청한 구분(`/recommend`의 `timeSlot`, 방은 약속 날짜·시각에서 서버가 정한 구분) */
+            requestedTimeSlot: components["schemas"]["TimeSlot"];
             /** @enum {string} */
             dayType: "weekday" | "saturday" | "holiday";
             /** @enum {string} */
@@ -340,8 +345,8 @@ export interface components {
              * @description 약속일(선택). 만료와 "실제로 만났나" 질문 시점, 계산 구분(요일 유형)에 쓴다
              */
             meetingDate?: string;
-            /** @description 약속 시각(선택). 계산 구분(시간대)에 쓴다. 없으면 낮 */
-            meetingTime?: components["schemas"]["MeetingTime"];
+            /** @description 약속 시각(선택). 계산 구분(시간대)에 쓴다. 생략하거나 null이면 없음(낮). 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME` */
+            meetingTime?: components["schemas"]["MeetingTime"] | null;
             host: components["schemas"]["ParticipantInput"];
             expectedCount?: number;
         };
@@ -359,7 +364,7 @@ export interface components {
             locked?: boolean;
             /** Format: date */
             meetingDate?: string | null;
-            /** @description 약속 시각. null이면 지운다 */
+            /** @description 약속 시각. null이면 지운다. 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME` */
             meetingTime?: components["schemas"]["MeetingTime"] | null;
         };
         Room: {
@@ -798,8 +803,8 @@ export interface operations {
                      *     이름(`participants[].label`)과 `reason` 문장은 이 이름을 쓴다. 없는 사람은 "{출발역}에서 오는 분"이다(data-format §8).
                      */
                     nicknames?: (string | null)[];
-                    /** @description 언제 만나는가. 없으면 `weekday-day`(평일 낮). 형식이 틀리면 400 `INVALID_TIME_SLOT` */
-                    timeSlot?: components["schemas"]["TimeSlot"];
+                    /** @description 언제 만나는가. 생략하거나 null이면 `weekday-day`(평일 낮). 문자열이 아니거나 모르는 id면 400 `INVALID_TIME_SLOT` */
+                    timeSlot?: components["schemas"]["TimeSlot"] | null;
                 };
             };
         };

@@ -166,6 +166,7 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
     baselineStationCode: baseline?.station.code ?? null,
     timeBasis: {
       timeSlot: slot,
+      requestedTimeSlot: slot,
       dayType: splitSlot(slot).day,
       band: splitSlot(slot).band,
       label: slotLabel(slot),
