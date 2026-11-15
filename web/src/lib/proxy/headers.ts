@@ -10,7 +10,12 @@
 export const PROXY_SECRET_HEADER = "x-banbanyeok-proxy-secret";
 export const CLIENT_IP_HEADER = "x-banbanyeok-client-ip";
 
-/** 서버로 넘기지 않는 요청 헤더: 홉 간 헤더, 쿠키(이 서비스는 쿠키를 쓰지 않는다), 프록시 체인·Cloudflare 내부 헤더. */
+/**
+ * 서버로 넘기지 않는 요청 헤더: 홉 간 헤더, 쿠키(이 서비스는 쿠키를 쓰지 않는다), 프록시 체인·Cloudflare 내부 헤더,
+ * `origin`. 브라우저는 같은 출처 POST·PATCH·DELETE에도 Origin을 붙이는데, 서버(Ktor CORS)는 허용 목록 밖의 Origin을 403으로
+ * 거절한다. 이 프록시를 지나는 호출은 서버 간 호출이라 CORS가 필요 없고 운영의 허용 목록도 비어 있다(B1: 탭을 바꿔 다시 받는
+ * 요청이 모두 403이었다).
+ */
 const DROPPED_EXACT = new Set([
   "host",
   "connection",
@@ -23,6 +28,7 @@ const DROPPED_EXACT = new Set([
   "upgrade",
   "content-length",
   "cookie",
+  "origin",
   "x-real-ip",
   "forwarded",
   "true-client-ip",

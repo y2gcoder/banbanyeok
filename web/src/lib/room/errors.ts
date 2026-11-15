@@ -1,5 +1,6 @@
 /** 방 API 오류를 화면 문구·상태로 바꾼다. 분기는 항상 `code`로 한다(계약 Error 표). */
 import { ApiRequestError } from "@/lib/api/client";
+import { CONNECTION_MESSAGE, resultErrorMessage } from "@/lib/api/errors";
 
 const MESSAGES: Readonly<Record<string, string>> = {
   ROOM_NOT_FOUND: "없거나 만료된 방이에요.",
@@ -18,14 +19,13 @@ const MESSAGES: Readonly<Record<string, string>> = {
   NOT_ENOUGH_PARTICIPANTS: "두 명 이상 들어와야 결과를 볼 수 있어요.",
 };
 
-export const CONNECTION_MESSAGE = "서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.";
-
-/** 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 그 밖의 4xx는 서버 message, 5xx·네트워크 오류는 연결 안내. */
+/** 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 계약의 오류 모양을 가진 그 밖의 4xx는 서버 message, 나머지는 결과 화면과 같은 안내. */
 export function roomErrorMessage(error: unknown): string {
   if (!(error instanceof ApiRequestError)) return CONNECTION_MESSAGE;
   const known = MESSAGES[error.code];
   if (known) return known;
-  return error.status >= 400 && error.status < 500 ? error.message : CONNECTION_MESSAGE;
+  const fromServer = error.code !== "UNKNOWN" && error.status >= 400 && error.status < 500 && error.message;
+  return fromServer || resultErrorMessage(error);
 }
 
 export const errorCode = (error: unknown): string | null => (error instanceof ApiRequestError ? error.code : null);

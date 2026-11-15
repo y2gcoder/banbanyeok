@@ -77,6 +77,30 @@ describe("upstreamHeaders", () => {
   });
 });
 
+describe("Origin 헤더", () => {
+  // B1: 브라우저는 같은 출처 POST에도 Origin을 붙인다. 서버(Ktor CORS)는 허용 목록에 없는 Origin을 403으로 거절하는데,
+  // 운영의 허용 목록은 비어 있다(웹 → 서버는 서버 간 호출이라 CORS가 필요 없다). 프록시가 넘기면 탭을 바꿔 다시 받는 요청이 모두 403이 된다.
+  it("서버로 넘기지 않는다(CORS는 서버 간 호출에 필요 없다)", () => {
+    const out = upstreamHeaders(new Headers({ origin: "https://banbanyeok.app", "content-type": "application/json" }), {
+      secret: "s",
+      clientIp: "1.2.3.4",
+    });
+    expect(out.get("origin")).toBeNull();
+    expect(out.get("content-type")).toBe("application/json");
+  });
+
+  it("프록시를 지난 POST 요청에도 없다", async () => {
+    const { seen, fetchImpl } = capture();
+    const request = new Request("https://web.test/api/v1/recommend", {
+      method: "POST",
+      headers: { origin: "https://web.test", "content-type": "application/json" },
+      body: "{}",
+    });
+    await proxyApiRequest(request, { origin: ORIGIN, secret: "s", fetchImpl });
+    expect(seen[0]?.headers.get("origin")).toBeNull();
+  });
+});
+
 describe("withTrustHeaders", () => {
   it("이미 있는 같은 이름 헤더를 덮어쓴다", () => {
     const headers = new Headers({ [PROXY_SECRET_HEADER]: "old" });

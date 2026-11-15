@@ -9,7 +9,7 @@ import { Wordmark } from "@/components/common/wordmark";
 import { ShareActions } from "@/components/share/share-actions";
 import { Button } from "@/components/ui/button";
 import { track, trackLinkOpened, trackResultViewed } from "@/lib/analytics";
-import { ApiRequestError } from "@/lib/api/client";
+import { resultErrorMessage } from "@/lib/api/errors";
 import { recommendQueryOptions, takeResponseMillis } from "@/lib/api/queries";
 import type { Mode } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
@@ -38,11 +38,6 @@ export const SIDE = "wide:col-start-1";
 export const PANEL = "wide:col-start-2 wide:row-span-4 wide:row-start-1";
 
 const searchParsers = { m: parseAsString, me: parseAsInteger };
-
-function errorMessage(error: unknown): string {
-  if (error instanceof ApiRequestError && error.status >= 400 && error.status < 500) return error.message;
-  return "서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.";
-}
 
 export function LoadingCard() {
   const [slow, setSlow] = useState(false);
@@ -244,7 +239,7 @@ export function ResultScreen({
           </>
         ) : query.isError ? (
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
-            <p className="text-[15px] text-ink">{errorMessage(query.error)}</p>
+            <p className="text-[15px] text-ink">{resultErrorMessage(query.error)}</p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-11">
                 <RotateCwIcon aria-hidden="true" />

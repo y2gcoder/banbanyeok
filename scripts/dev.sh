@@ -5,6 +5,9 @@ source scripts/dev-env.sh
 # 서버(Ktor)가 읽는 설정. 로컬 프로필 기본값 위에 이 워크트리의 포트를 덮어쓴다(이미 지정했으면 그대로 둔다).
 export DATABASE_URL="${DATABASE_URL:-jdbc:postgresql://127.0.0.1:${DB_PORT}/banbanyeok}"
 export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-http://localhost:${WEB_PORT},http://127.0.0.1:${WEB_PORT}}"
+# 로컬·CI e2e는 한 IP에서 짧은 시간에 쓰기(POST) 요청을 많이 보낸다(모드 전환 조합 등). 운영 기본(burst 20)이면 429가 나므로 넉넉히 둔다.
+export RATE_LIMIT_WRITE_BURST="${RATE_LIMIT_WRITE_BURST:-200}"
+export RATE_LIMIT_WRITE_PER_MINUTE="${RATE_LIMIT_WRITE_PER_MINUTE:-200}"
 case "${1:-}" in
   config) printf 'project=%s DB_PORT=%s SERVER_PORT=%s WEB_PORT=%s\n' "$COMPOSE_PROJECT_NAME" "$DB_PORT" "$SERVER_PORT" "$WEB_PORT" ;;
   db) shift; if (( $# )); then docker compose "$@"; else docker compose up -d --wait db; fi ;;
