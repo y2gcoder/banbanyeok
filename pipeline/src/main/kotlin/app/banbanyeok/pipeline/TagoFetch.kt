@@ -32,7 +32,8 @@ internal fun tagoDailyTypes(scope: JsonObject): List<String> =
     scope.getValue("dailyTypes").jsonArray.map { it.jsonPrimitive.content }
 
 /**
- * Resumable cache fill: station list (2 calls), then weekday U/D timetables for every scoped station.
+ * Resumable cache fill: station list (2 calls), then U/D timetables of every configured day type for every scoped
+ * station (`dailyTypes` in tago-scope.json: 01 weekday, 02 Saturday, 03 Sunday/holiday).
  * Completed pages are never re-requested; quota exhaustion stops with exit status 2 so the next day resumes.
  */
 internal fun tagoFetch(
@@ -172,7 +173,9 @@ internal fun writeTagoReceipt(
             "content_type" to "application/json",
             "rows" to files.size,
             "license" to "이용허락범위 제한 없음 (data.go.kr/15098554)",
-            "effective_date" to "timetable revision date not supplied; weekday (dailyTypeCode 01)",
+            "effective_date" to
+                "timetable revision date not supplied; dailyTypeCode ${tagoDailyTypes(scope).joinToString("/")} " +
+                "(01 weekday, 02 Saturday, 03 Sunday/holiday)",
             "estimated" to false,
         )
     path.writeJson(jsonValue(receipts.filter { it.text("id") != "S6" } + receipt).toString())
@@ -195,13 +198,19 @@ internal fun readTago(root: Path): TagoInput {
     requireNotNull(receipt) { "S6 (TAGO) receipt missing; run tago-fetch" }
     val files = tagoFiles(root, scoped, tagoDailyTypes(scope))
     require(receipt.text("sha256") == tagoDigest(root, files)) { "S6: TAGO cache digest mismatch; run tago-fetch" }
-    val timetable =
-        scoped.associateWith { id ->
-            listOf("U", "D").associateWith { direction -> api.schedule(id, "01", direction).map(::tagoTrain) }
+    val days = tagoDailyTypes(scope)
+    val timetables =
+        DayType.entries.filter { it.tagoDailyType in days }.associateWith { day ->
+            scoped.associateWith { id ->
+                listOf("U", "D").associateWith { direction ->
+                    api.schedule(id, day.tagoDailyType, direction).map(::tagoTrain)
+                }
+            }
         }
     return TagoInput(
         lines,
         list.associate { it.text("subwayStationId") to (it.text("subwayStationName") to it.text("subwayRouteName")) },
-        timetable,
+        timetables.getValue(DayType.WEEKDAY),
+        timetables,
     )
 }

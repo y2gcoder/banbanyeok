@@ -41,12 +41,13 @@ private fun departure(
     time: String,
     direction: String = "1",
     branch: String = "",
+    week: String = "1",
 ): JsonObject =
     obj(
         "LINE_NUM" to "01호선",
         "STATION_CD" to "0150",
         "INOUT_TAG" to direction,
-        "WEEK_TAG" to "1",
+        "WEEK_TAG" to week,
         "LEFTTIME" to time,
         "TRAIN_NO" to time,
         "BRANCH_LINE" to branch,
@@ -191,7 +192,7 @@ class StagesTest :
             it("fails clearly on missing credentials without filesystem or HTTP") {
                 val failure =
                     assertFailsWith<IllegalArgumentException> {
-                        refreshHeadways(
+                        seoulFetch(
                             Path.of("missing-root"),
                             key = null,
                             http =
@@ -248,30 +249,74 @@ class StagesTest :
                 assertTrue(empty.rows.isEmpty())
                 assertFailsWith<IllegalArgumentException> { timetablePage("""{"RESULT":{"CODE":"ERROR-300"}}""") }
             }
-            it("preserves estimates for incomplete directions and computes complete line means") {
+            it("preserves values for incomplete directions and computes complete line means per slot") {
                 val original = parseObject(Path.of("../data/config/headways.json").readText())
                 val rows =
-                    listOf(
-                        departure("10:00:00"),
-                        departure("10:10:00"),
-                        departure("10:00:00", "2"),
-                        departure("10:20:00", "2"),
+                    mapOf(
+                        DayType.WEEKDAY to
+                            listOf(
+                                departure("10:00:00"),
+                                departure("10:10:00"),
+                                departure("10:00:00", "2"),
+                                departure("10:20:00", "2"),
+                                departure("21:00:00"),
+                                departure("21:30:00"),
+                                departure("21:00:00", "2"),
+                                departure("21:20:00", "2"),
+                            ),
+                        DayType.SATURDAY to
+                            listOf(departure("10:00:00", week = "2"), departure("10:12:00", week = "2")),
                     )
-                val updated = updatedHeadways(original, rows, "2026-11-14T00:00:00Z")
-                assertEquals(
-                    "900",
+                val updated = slotHeadways(original, rows, "2026-11-16T00:00:00Z")
+
+                fun line(
+                    slot: String,
+                    line: String,
+                ) = updated
+                    .getValue("slots")
+                    .jsonObject
+                    .getValue(slot)
+                    .jsonObject
+                    .getValue("lines")
+                    .jsonObject
+                    .getValue(line)
+                    .jsonObject
+                assertEquals("900", line("weekday-day", "1").text("seconds"))
+                assertEquals("1500", line("weekday-night", "1").text("seconds"))
+                val defaultSlot =
                     updated
+                        .getValue("slots")
+                        .jsonObject
+                        .getValue("weekday-day")
+                        .jsonObject
+                assertEquals(updated.getValue("lines"), defaultSlot["lines"])
+                // Saturday has one direction only: the previous (default) value is kept and flagged as estimated.
+                assertEquals("true", line("saturday-day", "1").text("estimated"))
+                assertEquals(
+                    original
                         .getValue("lines")
                         .jsonObject
-                        .getValue("1")
+                        .getValue("8")
                         .jsonObject
                         .text("seconds"),
+                    line("weekday-day", "8").text("seconds"),
                 )
-                assertEquals(2, updated.getValue("directions").jsonArray.size)
-                assertEquals(
-                    original.getValue("lines").jsonObject.getValue("8"),
-                    updated.getValue("lines").jsonObject.getValue("8"),
-                )
+                assertEquals("true", updated.text("estimated"))
+                assertEquals(12, slotLineHeadways(updated).size)
+            }
+            it("measures each slot inside its own window and day type only") {
+                val rows =
+                    listOf(
+                        departure("07:00:00"),
+                        departure("07:05:00"),
+                        departure("10:30:00"),
+                        departure("10:40:00"),
+                        departure("07:00:00", week = "3"),
+                        departure("07:20:00", week = "3"),
+                    )
+                assertEquals(listOf("300"), stationHeadways(rows, "1", Band.MORNING.window).map { it.text("seconds") })
+                assertEquals(listOf("600"), stationHeadways(rows, "1", Band.DAY.window).map { it.text("seconds") })
+                assertEquals(listOf("1200"), stationHeadways(rows, "3", Band.MORNING.window).map { it.text("seconds") })
             }
         }
     })

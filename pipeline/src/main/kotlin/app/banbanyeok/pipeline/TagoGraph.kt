@@ -17,8 +17,14 @@ internal fun tagoNodes(
         service.stations.map { id -> codes.getValue(id) to (service.joins[id] ?: service.id) }
     }
 
-/** Boarding headway of a TAGO service (branch: its exclusive stations; trunk: every non-join station). */
-internal fun tagoServiceHeadways(tago: TagoInput): Map<String, Int> =
+/**
+ * Boarding headway of a TAGO service (branch: its exclusive stations; trunk: every non-join station) for one time
+ * slot: the day type's timetable, departures inside the band window.
+ */
+internal fun tagoServiceHeadways(
+    tago: TagoInput,
+    slot: TimeSlot = TimeSlot.DEFAULT,
+): Map<String, Int> =
     tago.lines.services.associate { service ->
         // A branch service waits for its own trains, counted where no other service of the group stops; a trunk
         // service counts every train of its section.
@@ -28,11 +34,14 @@ internal fun tagoServiceHeadways(tago: TagoInput): Map<String, Int> =
                 .flatMap { it.stations }
                 .toSet()
         val own = service.stations.filter { it !in shared && it !in service.joins }
+        val timetable = requireNotNull(tago.timetables[slot.day]) { "TAGO ${slot.day.id} timetable not cached" }
         val seconds =
-            requireNotNull(serviceHeadway(own.map { tago.timetable.getValue(it) })) {
-                "No TAGO departures for ${service.id}"
+            requireNotNull(serviceHeadway(own.map { timetable.getValue(it) }, slot.band.window)) {
+                "No TAGO departures for ${service.id} ($slot)"
             }
-        require(seconds in TAGO_HEADWAY_RANGE) { "TAGO headway for ${service.id} outside supported range: $seconds" }
+        require(seconds in TAGO_HEADWAY_RANGE) {
+            "TAGO headway for ${service.id} ($slot) outside supported range: $seconds"
+        }
         service.id to seconds
     }
 

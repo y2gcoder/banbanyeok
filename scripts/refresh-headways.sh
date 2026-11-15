@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 실제 시간표 기반 배차 간격 갱신: (원본이 없으면 받기) → 서울 열린데이터광장 키로 refresh(build→validate 포함) → 웹 생성물 재생성.
+# 실제 시간표 기반 배차 간격 갱신: (원본이 없으면 받기) → 서울 열린데이터광장 키로 refresh(S5 이어받기 수집 → 구분별 배차 →
+# build→validate) → 웹 생성물 재생성. 수집만 따로 하려면 scripts/fetch-seoul.sh.
 # 키는 1Password(op)에서 실행 시점에만 주입된다(.env.tpl의 op:// 참조). 사용: mise run data:refresh-headways
 set -euo pipefail
 cd "$(dirname "$0")/.."

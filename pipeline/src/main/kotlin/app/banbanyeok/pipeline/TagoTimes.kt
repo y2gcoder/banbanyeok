@@ -188,11 +188,17 @@ internal data class StationHeadway(
     val departures: Int,
 )
 
-/** Mean off-peak (10:00–16:00) departure gap per direction; whole service day when off-peak has < 2. */
-internal fun tagoStationHeadways(station: Map<String, List<TagoTrain>>): List<StationHeadway> =
+/**
+ * Mean departure gap per direction inside [window] (default the off-peak 10:00–16:00); whole service day when the
+ * window has < 2 departures (a sparse line: the day mean is the best available estimate of its wait).
+ */
+internal fun tagoStationHeadways(
+    station: Map<String, List<TagoTrain>>,
+    window: IntRange = OFFPEAK_START..OFFPEAK_END,
+): List<StationHeadway> =
     station.mapNotNull { (direction, trains) ->
         val all = trains.mapNotNull { it.departure }.distinct().sorted()
-        val offpeak = all.filter { it in OFFPEAK_START..OFFPEAK_END }
+        val offpeak = all.filter { it in window }
         val times = if (offpeak.size >= 2) offpeak else all
         if (times.size < 2) {
             null
@@ -202,8 +208,11 @@ internal fun tagoStationHeadways(station: Map<String, List<TagoTrain>>): List<St
     }
 
 /** Per-direction median over stations, then mean of directions: the same aggregation as the Seoul S5 headways. */
-internal fun serviceHeadway(stations: List<Map<String, List<TagoTrain>>>): Int? {
-    val byDirection = stations.flatMap(::tagoStationHeadways).groupBy { it.direction }
+internal fun serviceHeadway(
+    stations: List<Map<String, List<TagoTrain>>>,
+    window: IntRange = OFFPEAK_START..OFFPEAK_END,
+): Int? {
+    val byDirection = stations.flatMap { tagoStationHeadways(it, window) }.groupBy { it.direction }
     if (byDirection.isEmpty()) return null
     return byDirection.values
         .map { values -> median(values.map { it.seconds }) }

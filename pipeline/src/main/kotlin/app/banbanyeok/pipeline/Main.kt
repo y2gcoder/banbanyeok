@@ -26,6 +26,10 @@ fun main(args: Array<String>) {
         tagoCommand(root, args.drop(1))
         return
     }
+    if (args.singleOrNull() == "seoul-fetch") {
+        // The only command that needs SEOUL_OPENAPI_KEY. Exit 2 = limit reached; rerun to resume.
+        kotlin.system.exitProcess(seoulFetch(root))
+    }
     when (args.singleOrNull()) {
         "fetch" -> {
             fetch(root)
@@ -41,10 +45,11 @@ fun main(args: Array<String>) {
 
         "refresh" -> {
             require(!System.getenv("SEOUL_OPENAPI_KEY").isNullOrBlank()) {
-                "SEOUL_OPENAPI_KEY is required for refresh; build/all use configured estimates"
+                "SEOUL_OPENAPI_KEY is required for refresh; build/all use configured headways"
             }
             val before = network(root)
             val oldCosts = matrixCosts(before)
+            check(seoulFetch(root) == 0) { "Seoul S5 cache incomplete (limit reached); rerun refresh to resume" }
             refreshHeadways(root)
             build(root)
             validate(root)
@@ -66,7 +71,10 @@ fun main(args: Array<String>) {
         }
 
         else -> {
-            error("Usage: fetch|headways|build|validate|all|spotcheck|refresh|stage-release [outDir]")
+            error(
+                "Usage: fetch|seoul-fetch|headways|build|validate|all|spotcheck|refresh|tago-fetch [probe]|" +
+                    "stage-release [outDir]",
+            )
         }
     }
 }

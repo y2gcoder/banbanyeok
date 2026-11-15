@@ -21,6 +21,11 @@ internal data class Edge(
     val to: Int,
     val seconds: Int,
     val changes: Int,
+    /**
+     * Service whose boarding wait (headway/2) is included in [seconds]; null for ride edges. Time-slot networks
+     * swap only this term ([withWaits]), so walking and riding times are the same in every slot.
+     */
+    val wait: String? = null,
 )
 
 internal data class Cost(
@@ -70,6 +75,26 @@ internal data class Network(
     /** Blocking data problems (unmatched TAGO pairs etc.); the validation gate fails when non-empty. */
     val issues: List<String> = emptyList(),
 )
+
+/** The same network with another slot's boarding waits: each edge's included wait and the origin seeds change. */
+internal fun Network.withWaits(slotWaits: Map<String, Int>): Network {
+    require(slotWaits.keys == waits.keys) { "Slot waits must cover the same services" }
+    val reweighted =
+        graph.map { edges ->
+            edges.map { edge ->
+                val service = edge.wait ?: return@map edge
+                edge.copy(seconds = edge.seconds - waits.getValue(service) + slotWaits.getValue(service))
+            }
+        }
+    return copy(graph = reweighted, waits = slotWaits)
+}
+
+/** Boarding wait per service: TAGO service headway, else the Seoul Metro line headway, halved. */
+internal fun boardingWaits(
+    services: Collection<String>,
+    seoul: Map<String, Int>,
+    tago: Map<String, Int>,
+): Map<String, Int> = services.distinct().associateWith { (tago[it] ?: seoul.getValue(it.take(1))) / 2 }
 
 internal class NetworkBuilder(
     private val registry: Registry,
@@ -142,15 +167,23 @@ internal class NetworkBuilder(
         to: Int,
         seconds: Int,
         changes: Int = 0,
+        wait: String? = null,
     ) {
         require(seconds > 0)
-        graph[from].add(Edge(to, seconds, changes))
+        graph[from].add(Edge(to, seconds, changes, wait))
     }
 
-    private val waits =
-        distinctNodes.map { it.second }.distinct().associateWith {
-            (tagoHeadways[it] ?: headways.getValue(it.take(1))) / 2
-        }
+    /** Transfer/boarding edge: [walk] plus the boarding wait of [to]'s service. */
+    private fun boarding(
+        from: Int,
+        to: Int,
+        walk: Int,
+    ) {
+        val service = distinctNodes[to].second
+        edge(from, to, walk + waits.getValue(service), 1, service)
+    }
+
+    private val waits = boardingWaits(distinctNodes.map { it.second }, headways, tagoHeadways)
 
     private val tagoServices = tago?.lines?.groups.orEmpty()
 
@@ -190,8 +223,8 @@ internal class NetworkBuilder(
                 edge(copy, trunkCopies.getValue(ride.to), ride.seconds)
             }
             // Same-direction branch trains share the platform; boarding another service pays waiting only.
-            edge(from, copy, waits.getValue(rules.trunkService), 1)
-            edge(copy, from, waits.getValue(rules.trunkLine), 1)
+            edge(from, copy, waits.getValue(rules.trunkService), 1, rules.trunkService)
+            edge(copy, from, waits.getValue(rules.trunkLine), 1, rules.trunkLine)
         }
     }
 
@@ -213,9 +246,9 @@ internal class NetworkBuilder(
                 } else {
                     node(other, name)
                 }
-            edge(from, to, duration(row[5]) + waits.getValue(distinctNodes[to].second), 1)
+            boarding(from, to, duration(row[5]))
             // S4 has only one record for same-line branch boarding; walking is assumed symmetric.
-            if (line == other) edge(to, from, duration(row[5]) + waits.getValue(distinctNodes[from].second), 1)
+            if (line == other) boarding(to, from, duration(row[5]))
         }
     }
 
@@ -226,20 +259,22 @@ internal class NetworkBuilder(
             if (from in trunkCopies &&
                 transfer.to !in trunkCopies.values
             ) {
-                edge(trunkCopies.getValue(from), transfer.to, transfer.seconds, transfer.changes)
+                edge(trunkCopies.getValue(from), transfer.to, transfer.seconds, transfer.changes, transfer.wait)
             }
             if (transfer.to in trunkCopies &&
                 from !in trunkCopies.values
             ) {
-                edge(from, trunkCopies.getValue(transfer.to), transfer.seconds, transfer.changes)
+                // Seconds still include the main-line wait (P2 behaviour); the tag keeps slot networks exact.
+                edge(from, trunkCopies.getValue(transfer.to), transfer.seconds, transfer.changes, transfer.wait)
             }
         }
         // Preserve supplied directional differences; only mirror when S4 omits the reverse direction.
         val walkingEdges = graph.flatMapIndexed { from, edges -> edges.filter { it.changes > 0 }.map { from to it } }
         walkingEdges.forEach { (from, transfer) ->
             if (graph[transfer.to].none { it.to == from && it.changes > 0 }) {
-                val walking = transfer.seconds - waits.getValue(distinctNodes[transfer.to].second)
-                edge(transfer.to, from, walking + waits.getValue(distinctNodes[from].second), transfer.changes)
+                val walking = transfer.seconds - waits.getValue(requireNotNull(transfer.wait))
+                val service = distinctNodes[from].second
+                edge(transfer.to, from, walking + waits.getValue(service), transfer.changes, service)
             }
         }
     }
@@ -371,9 +406,7 @@ internal class NetworkBuilder(
                 return@forEach
             }
             sources.forEach { from ->
-                targets.filter { isTago(from) || isTago(it) }.forEach { to ->
-                    edge(from, to, duration(row[5]) + waits.getValue(distinctNodes[to].second), 1)
-                }
+                targets.filter { isTago(from) || isTago(it) }.forEach { to -> boarding(from, to, duration(row[5])) }
             }
         }
     }
@@ -386,7 +419,7 @@ internal class NetworkBuilder(
                     .filter { to ->
                         to != from && group(distinctNodes[to].second) == group(distinctNodes[from].second) &&
                             (isTago(from) || isTago(to))
-                    }.forEach { to -> edge(from, to, waits.getValue(distinctNodes[to].second), 1) }
+                    }.forEach { to -> boarding(from, to, 0) }
             }
         }
     }
@@ -422,8 +455,8 @@ internal class NetworkBuilder(
         val walk = override ?: tago.lines.walkSeconds(a, b)
         val pairs = left.flatMap { x -> right.map { y -> x to y } }
         pairs.forEach { (x, y) ->
-            edge(x, y, walk + waits.getValue(distinctNodes[y].second), 1)
-            edge(y, x, walk + waits.getValue(distinctNodes[x].second), 1)
+            boarding(x, y, walk)
+            boarding(y, x, walk)
         }
         tagoTransfers.add(
             obj(
