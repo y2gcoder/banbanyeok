@@ -2,10 +2,15 @@
 
 package app.banbanyeok.server.artifact
 
+import app.banbanyeok.schema.DayType
+import app.banbanyeok.schema.TimeBand
+import app.banbanyeok.schema.TimeSlot
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import java.nio.file.Files
 import java.nio.file.Path
@@ -27,6 +32,37 @@ class ArtifactLoaderTest :
                 val loaded = ArtifactLoader(LocalFileArtifactStore(devArtifacts, UnconfinedTestDispatcher())).load()
                 loaded.dataVersion shouldBe loaded.dataSet.manifest.dataVersion
                 loaded.dataSet.od.originCount shouldBe loaded.dataSet.manifest.originCount
+            }
+
+            it("verifies every non-default time slot in the background, sharing one matrix per file") {
+                val phases = mutableListOf<String>()
+                val loaded =
+                    ArtifactLoader(LocalFileArtifactStore(devArtifacts, UnconfinedTestDispatcher())) { phases += it }
+                        .load()
+                val slots = loaded.slots.await()
+                slots.keys shouldBe TimeSlot.ALL.filter { it != TimeSlot.DEFAULT }.toSet()
+                slots.getValue(TimeSlot(DayType.SATURDAY, TimeBand.NIGHT)) shouldBeSameInstanceAs
+                    slots.getValue(TimeSlot(DayType.HOLIDAY, TimeBand.NIGHT))
+                slots.values.forEach { it.originCount shouldBe loaded.dataSet.od.originCount }
+                phases.last() shouldBe "artifact-slots-validated"
+                phases.indexOf("artifact-validated") shouldBeLessThan phases.indexOf("artifact-slots-validated")
+            }
+
+            it("still starts on the default slot when a slot file is tampered, and reports the slot failure") {
+                val store =
+                    LocalFileArtifactStore(Files.createTempDirectory("tampered-slot"), UnconfinedTestDispatcher())
+                copyDev(store)
+                val key = ArtifactKey("od-weekday-night.bin")
+                val bytes =
+                    store
+                        .get(key)!!
+                        .content
+                        .copyOf()
+                        .also { it[it.size - 1] = (it[it.size - 1] + 1).toByte() }
+                store.put(key, bytes)
+                val loaded = ArtifactLoader(store).load()
+                loaded.dataSet.od.originCount shouldBe loaded.dataSet.manifest.originCount
+                shouldThrow<ArtifactLoadException> { loaded.slots.await() }.message shouldContain "구분"
             }
         }
 

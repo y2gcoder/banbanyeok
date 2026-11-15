@@ -188,10 +188,15 @@ public object DataSetLoader {
         supportedSchema: Int = MANIFEST_SCHEMA_VERSION,
     ): DataSet = load(DataSetBytes(manifestJson, registryBytes, candidatesBytes, odBytes), supportedSchema)
 
-    /** @param supportedSchema 이 클라이언트가 읽을 수 있는 최신 manifest 세대. */
+    /**
+     * @param supportedSchema 이 클라이언트가 읽을 수 있는 최신 manifest 세대.
+     * @param deferSlots true면 구분 행렬은 검사하지 않고 비워 둔다(`files.odSlots`도 비워서 넘긴다). 서버가 기본 행렬만으로 먼저
+     *   기동하고 구분 행렬은 뒤에서 [slotMatrices]로 검사할 때 쓴다(콜드스타트). manifest의 구조 검사(구분 목록 포함)는 그대로 한다.
+     */
     public fun load(
         files: DataSetBytes,
         supportedSchema: Int = MANIFEST_SCHEMA_VERSION,
+        deferSlots: Boolean = false,
     ): DataSet {
         val manifestJson = files.manifestJson
         val registryBytes = files.registry
@@ -233,8 +238,18 @@ public object DataSetLoader {
             val code = od.originCode(i).toString()
             schemaCheck(registry.station(code) != null) { "od.bin 출발역 '$code'가 레지스트리에 없습니다" }
         }
+        if (deferSlots) {
+            schemaCheck(odSlotBytes.isEmpty()) { "deferSlots면 구분 행렬 파일을 넘기지 않습니다" }
+            return DataSet(manifest, registry, candidates, od)
+        }
         return DataSet(manifest, registry, candidates, od, slotMatrices(manifest, od, odSlotBytes))
     }
+
+    /** [load]에서 미룬 구분 행렬을 검사해 읽는다. 규칙은 [load]와 같다(해시·길이, 헤더, 레지스트리 버전, 기본 행렬과 같은 축). */
+    public fun slotMatrices(
+        core: DataSet,
+        odSlotBytes: Map<String, ByteArray>,
+    ): Map<TimeSlot, OdMatrix> = slotMatrices(core.manifest, core.od, odSlotBytes)
 
     /** 구분 행렬마다 ③ 해시·길이, ④ 헤더·길이, ⑤ 레지스트리 버전, 그리고 기본 행렬과 같은 축인지 검사한다. */
     private fun slotMatrices(

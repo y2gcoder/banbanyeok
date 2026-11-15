@@ -2,6 +2,7 @@ package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.DataSet
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
+import app.banbanyeok.server.recommendation.SlotMatrices
 import app.banbanyeok.server.recommendation.StationNames
 import app.banbanyeok.server.recommendation.TravelMatrix
 import app.banbanyeok.server.recommendation.TravelTimeProvider
@@ -13,6 +14,8 @@ import app.banbanyeok.server.room.StationCatalog
  */
 class StationDirectory(
     dataSet: DataSet,
+    /** 기본 구분을 뺀 구분 행렬. 서버는 [BackgroundSlots], 테스트는 이미 읽은 데이터 세트의 행렬. */
+    slots: SlotMatrices = SlotMatrices { dataSet.odSlots[it] },
 ) : StationCatalog,
     StationNames {
     private val names: Map<String, String> = dataSet.registry.stations.associate { it.code to it.name }
@@ -21,7 +24,7 @@ class StationDirectory(
             .mapNotNull { station -> station.replacedBy?.let { station.code to it } }
             .toMap()
     private val travelTimes: TravelTimeProvider =
-        OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion, dataSet.odSlots)
+        OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion, slots)
     val travel: TravelTimeProvider get() = travelTimes
 
     override val dataVersion: String = dataSet.manifest.dataVersion
