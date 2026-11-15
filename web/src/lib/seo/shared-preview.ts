@@ -32,8 +32,8 @@ export function modeSentence(mode: Mode, favorName: string | null): string {
 
 /** 평일 낮이 아닌 기준이면 " · 토요일 저녁 기준"(시간이 그 기준이라서). 평일 낮은 덧붙이지 않는다(옛 링크와 같은 문구). */
 function basisSuffix(view: ResultView): string {
-  const basis = view.timeBasis;
-  return basis.timeSlot === DEFAULT_SLOT ? "" : ` ${OG_TEXT.middleDot} ${basis.label}${OG_TEXT.basisSuffix}`;
+  const basis = view.timeBasis as ResultView["timeBasis"] | undefined; // 구분을 모르는 옛 서버는 보내지 않는다
+  return !basis || basis.timeSlot === DEFAULT_SLOT ? "" : ` ${OG_TEXT.middleDot} ${basis.label}${OG_TEXT.basisSuffix}`;
 }
 
 function favorName(view: ResultView, state: ShareState): string | null {

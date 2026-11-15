@@ -128,7 +128,7 @@ export function RoomResult({
         )}
       </div>
       <TimeBasisNote
-        basis={data?.timeBasis}
+        basis={data ? (data.timeBasis ?? null) : undefined}
         requested={slotForMeeting(room.meetingDate ?? null, room.meetingTime ?? null)}
       />
       {view && top && renderAfter ? renderAfter(view) : null}

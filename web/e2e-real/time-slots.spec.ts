@@ -63,8 +63,8 @@ test("입력 화면에서 고른 요일·시간대가 결과·공유 링크에 �
   await page.getByRole("option", { name: /^혜화\s?4호선/ }).click();
   await page.getByRole("combobox", { name: "친구1의 출발역" }).fill("강남");
   await page.getByRole("option", { name: /^강남\s?2호선/ }).click();
-  await when.getByText("일요일·공휴일").click();
-  await when.getByText("아침", { exact: true }).click();
+  await when.getByRole("radio", { name: "일요일·공휴일" }).click();
+  await when.getByRole("radio", { name: /^아침/ }).click();
   await shot(page, "0-home-when");
   await page.getByRole("button", { name: "만날 역 찾기" }).click();
   await expect(page).toHaveURL(/&t=holiday-morning$/);

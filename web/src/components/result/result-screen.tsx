@@ -277,7 +277,7 @@ export function ResultScreen({
         </div>
       ) : null}
       <TimeBasisNote
-        basis={data?.timeBasis}
+        basis={data ? (data.timeBasis ?? null) : undefined}
         requested={state.timeSlot}
         className={cn(SIDE, "text-center wide:text-left")}
       />
