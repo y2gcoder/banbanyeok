@@ -1,6 +1,6 @@
 {
-  "formatVersion": 1,
-  "description": "공유 URL(/s) 링크 코덱 테스트 벡터. 기준 구현은 prototype/gen_link_vectors.py. 직접 고치지 말고 재생성한다. 규칙: contracts/data-format.md §7",
+  "formatVersion": 2,
+  "description": "공유 URL(/s) 링크 코덱 테스트 벡터. 기준 구현은 prototype/gen_link_vectors.py. 직접 고치지 말고 재생성한다. 규칙: contracts/data-format.md §7. 2판: 구분(t, v=2), v=1은 평일 낮",
   "path": "/s",
   "encode": [
     {
@@ -12,9 +12,10 @@
         ],
         "mode": "fair",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130&m=f"
+      "expectedQuery": "v=2&o=03v.130&m=f&t=weekday-day"
     },
     {
       "id": "fast_three",
@@ -26,9 +27,10 @@
         ],
         "mode": "fast",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130.225&m=q"
+      "expectedQuery": "v=2&o=03v.130.225&m=q&t=weekday-day"
     },
     {
       "id": "favor_second_of_four",
@@ -41,9 +43,10 @@
         ],
         "mode": "favor",
         "favorIndex": 1,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130.225.31a&m=p1"
+      "expectedQuery": "v=2&o=03v.130.225.31a&m=p1&t=weekday-day"
     },
     {
       "id": "same_origin_twice_is_allowed",
@@ -54,9 +57,10 @@
         ],
         "mode": "fair",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.03v&m=f",
+      "expectedQuery": "v=2&o=03v.03v&m=f&t=weekday-day",
       "note": "같은 출발역을 두 사람이 입력할 수 있다"
     },
     {
@@ -71,9 +75,10 @@
         "nicknames": [
           "민수",
           "지연"
-        ]
+        ],
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=66-87IiY.7KeA7Jew"
+      "expectedQuery": "v=2&o=03v.130&m=f&t=weekday-day&n=66-87IiY.7KeA7Jew"
     },
     {
       "id": "nicknames_partial",
@@ -89,9 +94,10 @@
           null,
           "지연",
           null
-        ]
+        ],
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130.225&m=q&n=.7KeA7Jew.",
+      "expectedQuery": "v=2&o=03v.130.225&m=q&t=weekday-day&n=.7KeA7Jew.",
       "note": "비어 있는 별칭은 빈 세그먼트"
     },
     {
@@ -106,9 +112,10 @@
         "nicknames": [
           "aaaaaaaaaaaaaaaaaaaa",
           null
-        ]
+        ],
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE."
+      "expectedQuery": "v=2&o=03v.130&m=f&t=weekday-day&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE."
     },
     {
       "id": "nickname_emoji_20_code_points",
@@ -122,9 +129,10 @@
         "nicknames": [
           "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
           null
-        ]
+        ],
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI.",
+      "expectedQuery": "v=2&o=03v.130&m=f&t=weekday-day&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI.",
       "note": "길이는 UTF-16 단위가 아니라 코드포인트로 센다(JS의 String.length와 다르다)"
     },
     {
@@ -139,16 +147,51 @@
         "nicknames": [
           "??>>",
           "ÿÿ"
-        ]
+        ],
+        "timeSlot": "weekday-day"
       },
-      "expectedQuery": "v=1&o=03v.130&m=f&n=Pz8-Pg.w7_Dvw",
+      "expectedQuery": "v=2&o=03v.130&m=f&t=weekday-day&n=Pz8-Pg.w7_Dvw",
       "note": "base64url의 - 와 _ 가 나오는 입력"
+    },
+    {
+      "id": "saturday_night",
+      "input": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null,
+        "timeSlot": "saturday-night"
+      },
+      "expectedQuery": "v=2&o=03v.130&m=f&t=saturday-night",
+      "note": "언제 만나나: 구분 id를 그대로 쓴다"
+    },
+    {
+      "id": "holiday_morning_favor_with_names",
+      "input": {
+        "origins": [
+          "03v",
+          "130",
+          "225"
+        ],
+        "mode": "favor",
+        "favorIndex": 2,
+        "nicknames": [
+          "민수",
+          null,
+          "지연"
+        ],
+        "timeSlot": "holiday-morning"
+      },
+      "expectedQuery": "v=2&o=03v.130.225&m=p2&t=holiday-morning&n=66-87IiY..7KeA7Jew"
     }
   ],
   "decode": [
     {
       "id": "roundtrip_fair_two",
-      "query": "v=1&o=03v.130&m=f",
+      "query": "v=2&o=03v.130&m=f&t=weekday-day",
       "expected": {
         "origins": [
           "03v",
@@ -156,12 +199,13 @@
         ],
         "mode": "fair",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_fast_three",
-      "query": "v=1&o=03v.130.225&m=q",
+      "query": "v=2&o=03v.130.225&m=q&t=weekday-day",
       "expected": {
         "origins": [
           "03v",
@@ -170,12 +214,13 @@
         ],
         "mode": "fast",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_favor_second_of_four",
-      "query": "v=1&o=03v.130.225.31a&m=p1",
+      "query": "v=2&o=03v.130.225.31a&m=p1&t=weekday-day",
       "expected": {
         "origins": [
           "03v",
@@ -185,12 +230,13 @@
         ],
         "mode": "favor",
         "favorIndex": 1,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_same_origin_twice_is_allowed",
-      "query": "v=1&o=03v.03v&m=f",
+      "query": "v=2&o=03v.03v&m=f&t=weekday-day",
       "expected": {
         "origins": [
           "03v",
@@ -198,12 +244,13 @@
         ],
         "mode": "fair",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_nicknames_korean",
-      "query": "v=1&o=03v.130&m=f&n=66-87IiY.7KeA7Jew",
+      "query": "v=2&o=03v.130&m=f&t=weekday-day&n=66-87IiY.7KeA7Jew",
       "expected": {
         "origins": [
           "03v",
@@ -214,12 +261,13 @@
         "nicknames": [
           "민수",
           "지연"
-        ]
+        ],
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_nicknames_partial",
-      "query": "v=1&o=03v.130.225&m=q&n=.7KeA7Jew.",
+      "query": "v=2&o=03v.130.225&m=q&t=weekday-day&n=.7KeA7Jew.",
       "expected": {
         "origins": [
           "03v",
@@ -232,12 +280,13 @@
           null,
           "지연",
           null
-        ]
+        ],
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_nickname_ascii_20_max",
-      "query": "v=1&o=03v.130&m=f&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE.",
+      "query": "v=2&o=03v.130&m=f&t=weekday-day&n=YWFhYWFhYWFhYWFhYWFhYWFhYWE.",
       "expected": {
         "origins": [
           "03v",
@@ -248,12 +297,13 @@
         "nicknames": [
           "aaaaaaaaaaaaaaaaaaaa",
           null
-        ]
+        ],
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_nickname_emoji_20_code_points",
-      "query": "v=1&o=03v.130&m=f&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI.",
+      "query": "v=2&o=03v.130&m=f&t=weekday-day&n=8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYLwn5mC8J-ZgvCfmYI.",
       "expected": {
         "origins": [
           "03v",
@@ -264,12 +314,13 @@
         "nicknames": [
           "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
           null
-        ]
+        ],
+        "timeSlot": "weekday-day"
       }
     },
     {
       "id": "roundtrip_nickname_base64_with_url_chars",
-      "query": "v=1&o=03v.130&m=f&n=Pz8-Pg.w7_Dvw",
+      "query": "v=2&o=03v.130&m=f&t=weekday-day&n=Pz8-Pg.w7_Dvw",
       "expected": {
         "origins": [
           "03v",
@@ -280,7 +331,41 @@
         "nicknames": [
           "??>>",
           "ÿÿ"
-        ]
+        ],
+        "timeSlot": "weekday-day"
+      }
+    },
+    {
+      "id": "roundtrip_saturday_night",
+      "query": "v=2&o=03v.130&m=f&t=saturday-night",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null,
+        "timeSlot": "saturday-night"
+      }
+    },
+    {
+      "id": "roundtrip_holiday_morning_favor_with_names",
+      "query": "v=2&o=03v.130.225&m=p2&t=holiday-morning&n=66-87IiY..7KeA7Jew",
+      "expected": {
+        "origins": [
+          "03v",
+          "130",
+          "225"
+        ],
+        "mode": "favor",
+        "favorIndex": 2,
+        "nicknames": [
+          "민수",
+          null,
+          "지연"
+        ],
+        "timeSlot": "holiday-morning"
       }
     },
     {
@@ -293,7 +378,8 @@
         ],
         "mode": "fair",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       },
       "note": "파라미터 순서는 상관없다"
     },
@@ -307,7 +393,8 @@
         ],
         "mode": "fast",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
       },
       "note": "알 수 없는 키는 무시한다"
     },
@@ -324,7 +411,8 @@
         "nicknames": [
           "민수",
           "지연"
-        ]
+        ],
+        "timeSlot": "weekday-day"
       },
       "note": "`.`가 %2E로 와도 값을 먼저 퍼센트 디코딩한다"
     },
@@ -338,7 +426,69 @@
         ],
         "mode": "fair",
         "favorIndex": null,
-        "nicknames": null
+        "nicknames": null,
+        "timeSlot": "weekday-day"
+      }
+    },
+    {
+      "id": "legacy_v1_is_weekday_day",
+      "query": "v=1&o=03v.130&m=f",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null,
+        "timeSlot": "weekday-day"
+      },
+      "note": "구분이 생기기 전의 링크(v=1)는 평일 낮이다"
+    },
+    {
+      "id": "legacy_v1_with_names",
+      "query": "v=1&o=03v.130&m=f&n=66-87IiY.7KeA7Jew",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": [
+          "민수",
+          "지연"
+        ],
+        "timeSlot": "weekday-day"
+      }
+    },
+    {
+      "id": "legacy_v1_ignores_t",
+      "query": "v=1&o=03v.130&m=f&t=saturday-night",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fair",
+        "favorIndex": null,
+        "nicknames": null,
+        "timeSlot": "weekday-day"
+      },
+      "note": "v=1에는 t가 없다: 알 수 없는 키처럼 무시한다"
+    },
+    {
+      "id": "time_slot_param_order_is_free",
+      "query": "t=weekday-evening&m=q&o=03v.130&v=2",
+      "expected": {
+        "origins": [
+          "03v",
+          "130"
+        ],
+        "mode": "fast",
+        "favorIndex": null,
+        "nicknames": null,
+        "timeSlot": "weekday-evening"
       }
     },
     {
@@ -358,8 +508,29 @@
     },
     {
       "id": "unsupported_version",
-      "query": "v=2&o=03v.130&m=f",
+      "query": "v=3&o=03v.130&m=f&t=weekday-day",
       "expectedError": "UNSUPPORTED_VERSION"
+    },
+    {
+      "id": "v2_missing_time_slot",
+      "query": "v=2&o=03v.130&m=f",
+      "expectedError": "MISSING_PARAM",
+      "note": "v=2는 t가 꼭 있어야 한다"
+    },
+    {
+      "id": "bad_time_slot",
+      "query": "v=2&o=03v.130&m=f&t=sunday-dawn",
+      "expectedError": "BAD_TIME_SLOT"
+    },
+    {
+      "id": "time_slot_case_sensitive",
+      "query": "v=2&o=03v.130&m=f&t=Weekday-Day",
+      "expectedError": "BAD_TIME_SLOT"
+    },
+    {
+      "id": "duplicate_time_slot",
+      "query": "v=2&o=03v.130&m=f&t=weekday-day&t=weekday-night",
+      "expectedError": "DUPLICATE_PARAM"
     },
     {
       "id": "one_origin",

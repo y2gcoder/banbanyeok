@@ -14,10 +14,10 @@ class ShareLinkCodecTest {
     @Test
     fun encodesCanonicalOrderAndDotSeparators() {
         val link = ShareLink(listOf(a, b), LinkMode.Fair, listOf("민수", "지연"))
-        assertEquals("v=1&o=03v.130&m=f&n=66-87IiY.7KeA7Jew", ShareLinkCodec.encodeQuery(link))
-        assertEquals("/s?v=1&o=03v.130&m=f&n=66-87IiY.7KeA7Jew", ShareLinkCodec.encodePath(link))
+        assertEquals("v=2&o=03v.130&m=f&t=weekday-day&n=66-87IiY.7KeA7Jew", ShareLinkCodec.encodeQuery(link))
+        assertEquals("/s?v=2&o=03v.130&m=f&t=weekday-day&n=66-87IiY.7KeA7Jew", ShareLinkCodec.encodePath(link))
         assertEquals(
-            "https://banbanyeok.example/s?v=1&o=03v.130&m=q",
+            "https://banbanyeok.example/s?v=2&o=03v.130&m=q&t=weekday-day",
             ShareLinkCodec.encodeUrl("https://banbanyeok.example/", ShareLink(listOf(a, b), LinkMode.Fast)),
         )
     }
@@ -33,7 +33,7 @@ class ShareLinkCodecTest {
     @Test
     fun allEmptyNicknamesAreOmitted() {
         assertEquals(
-            "v=1&o=03v.130&m=f",
+            "v=2&o=03v.130&m=f&t=weekday-day",
             ShareLinkCodec.encodeQuery(ShareLink(listOf(a, b), LinkMode.Fair, listOf(null, ""))),
         )
     }
@@ -53,7 +53,7 @@ class ShareLinkCodecTest {
         // v가 틀리고 o도 틀리면 v가 먼저
         assertEquals(
             LinkDecoding.Failure(LinkErrorCode.UNSUPPORTED_VERSION),
-            ShareLinkCodec.decodeQuery("v=2&o=zz&m=z"),
+            ShareLinkCodec.decodeQuery("v=3&o=zz&m=z"),
         )
         // o가 틀리고 m도 틀리면 o가 먼저
         assertEquals(LinkDecoding.Failure(LinkErrorCode.BAD_ORIGIN_COUNT), ShareLinkCodec.decodeQuery("v=1&o=03v&m=z"))
