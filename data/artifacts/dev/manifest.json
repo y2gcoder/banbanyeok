@@ -1,33 +1,33 @@
 {
-  "candidateCount": 97,
-  "dataVersion": "20261114.5",
+  "candidateCount": 127,
+  "dataVersion": "20261115.5",
   "files": {
     "candidates": {
-      "bytes": 1138,
+      "bytes": 1468,
       "path": "candidates.json",
-      "sha256": "4723731eff61b97d33c75e18f6ad08095d3e17d74dfc2dede11101671a09a785"
+      "sha256": "5dc17c32ce18f0a7a89890ee70c0ed05eca7752cf2978f5b416823f2003ebbbe"
     },
     "od": {
-      "bytes": 70546,
+      "bytes": 250385,
       "path": "od.bin",
-      "sha256": "7ba35164a95367c8f1f41b24ce666ac62585eb4ccb4355757c2763b3ab656924"
+      "sha256": "88cc5ae6b9371597dcb45db95cd10e51fc614dd7e3dbf572ade0bed1587a0512"
     },
     "registry": {
-      "bytes": 375404,
+      "bytes": 398209,
       "path": "stations.json",
-      "sha256": "08895140a962d62052792e6c5d192b95117b9809c421e495c8556ce59e3b3b8a"
+      "sha256": "44e649369b6d7efbd04f92e647cc0990e99ecf9898bc7e00fb07ab25c4805cfa"
     },
     "seoPages": {
-      "bytes": 581285,
+      "bytes": 947497,
       "path": "seo-pairs.json",
-      "sha256": "eefe6c357061c6d09cc634c4cc4dc365efa137f0912b4db57c59297fd5f93347"
+      "sha256": "fa8acd5f1e268905e336f3bf51d8f7bfa219057f92702bbb2f76e4debcfaf6f1"
     }
   },
-  "generatedAt": "2026-11-14T14:01:53Z",
+  "generatedAt": "2026-11-15T14:42:55Z",
   "minClientSchema": 1,
-  "originCount": 240,
-  "previousDataVersion": "20261114.4",
-  "registryVersion": 4,
+  "originCount": 653,
+  "previousDataVersion": "20261115.4",
+  "registryVersion": 5,
   "schemaVersion": 1,
   "timeModel": "weekday-offpeak-half-headway"
 }

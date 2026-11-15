@@ -1,0 +1,1251 @@
+{
+  "basis": "수도권 TAGO 운행계통. stations는 열차가 실제로 이어 달리는 순서(TAGO 역 ID + TAGO 역명)다. 역 순서는 공식 역번호(ID 뒷부분) 순서를 기본으로, 분기·직통 연결은 운영 계통에 맞춰 손으로 정했고, 빌드가 인접역 시간표 맞춤(일치율·소요시간 범위)으로 모든 인접 쌍을 검사한다. 같은 group의 계통이 같은 역에 서면 같은 승강장 갈아타기(보행 0초 + 다음 열차 대기, 환승 1)로 잇는다(5호선 마천계통과 같은 규칙). joins의 역은 기존 서울교통공사 계통(S3)의 노드를 쓴다. s3Line이 있는 계통은 서울교통공사 구간의 주행시간을 S3에서 복사한다. kric는 TAGO 역을 S1 행과 잇는 운영기관:노선 목록이다. 경의중앙선 용산~청량리와 수인분당선 청량리는 S1에 경원선(같은 코레일 선로)으로만 실려 있어 경원선을 함께 둔다. trunk=true 계통은 여러 계통이 함께 달리는 공동 구간을 하나로 묶은 것이다. 공동 구간 안에서만 타고 내리면 어느 열차든 타므로, 대기는 그 구간 역들의 전체 출발 간격으로 계산한다(분기 계통으로는 같은 승강장 갈아타기로 이어짐).",
+  "services": {
+    "1경인": {
+      "group": "1",
+      "label": "1호선 경원·경인",
+      "s3Line": "1",
+      "kric": [
+        "한국철도공사:경원선",
+        "한국철도공사:경부선",
+        "한국철도공사:경인선",
+        "서울교통공사:1호선"
+      ],
+      "stations": [
+        "MTRKR1100-3 연천",
+        "MTRKR1100-2 전곡",
+        "MTRKR1100-1 청산",
+        "MTRKR1100 소요산",
+        "MTRKR1101 동두천",
+        "MTRKR1102 보산",
+        "MTRKR1103 동두천중앙",
+        "MTRKR1104 지행",
+        "MTRKR1105 덕정",
+        "MTRKR1106 덕계",
+        "MTRKR1107 양주",
+        "MTRKR1108 녹양",
+        "MTRKR1109 가능",
+        "MTRKR1110 의정부",
+        "MTRKR1111 회룡",
+        "MTRKR1112 망월사",
+        "MTRKR1113 도봉산",
+        "MTRKR1114 도봉",
+        "MTRKR1115 방학",
+        "MTRKR1116 창동",
+        "MTRKR1117 녹천",
+        "MTRKR1118 월계",
+        "MTRKR1119 광운대",
+        "MTRKR1120 석계",
+        "MTRKR1121 신이문",
+        "MTRKR1122 외대앞",
+        "MTRKR1123 회기",
+        "MTRS11158 청량리(서울시립대입구)",
+        "MTRS11157 제기동",
+        "MTRS11156 신설동",
+        "MTRS11159 동묘앞",
+        "MTRS11155 동대문",
+        "MTRS11154 종로5가",
+        "MTRS11153 종로3가",
+        "MTRS11152 종각",
+        "MTRS11151 시청",
+        "MTRS11150 서울역",
+        "MTRKR1134 남영",
+        "MTRKR1135 용산",
+        "MTRKR1136 노량진",
+        "MTRKR1137 대방",
+        "MTRKR1138 신길",
+        "MTRKR1139 영등포",
+        "MTRKR1140 신도림",
+        "MTRKR1141 구로",
+        "MTRKR1142 구일",
+        "MTRKR1143 개봉",
+        "MTRKR1144 오류동",
+        "MTRKR1145 온수",
+        "MTRKR1146 역곡",
+        "MTRKR1147 소사",
+        "MTRKR1148 부천",
+        "MTRKR1149 중동",
+        "MTRKR1150 송내",
+        "MTRKR1151 부개",
+        "MTRKR1152 부평",
+        "MTRKR1153 백운",
+        "MTRKR1154 동암",
+        "MTRKR1155 간석",
+        "MTRKR1156 주안",
+        "MTRKR1157 도화",
+        "MTRKR1158 제물포",
+        "MTRKR1159 도원",
+        "MTRKR1160 동인천",
+        "MTRKR1161 인천"
+      ]
+    },
+    "1경부": {
+      "group": "1",
+      "label": "1호선 경원·경부·장항",
+      "s3Line": "1",
+      "kric": [
+        "한국철도공사:경원선",
+        "한국철도공사:경부선",
+        "한국철도공사:장항선",
+        "서울교통공사:1호선"
+      ],
+      "stations": [
+        "MTRKR1100-3 연천",
+        "MTRKR1100-2 전곡",
+        "MTRKR1100-1 청산",
+        "MTRKR1100 소요산",
+        "MTRKR1101 동두천",
+        "MTRKR1102 보산",
+        "MTRKR1103 동두천중앙",
+        "MTRKR1104 지행",
+        "MTRKR1105 덕정",
+        "MTRKR1106 덕계",
+        "MTRKR1107 양주",
+        "MTRKR1108 녹양",
+        "MTRKR1109 가능",
+        "MTRKR1110 의정부",
+        "MTRKR1111 회룡",
+        "MTRKR1112 망월사",
+        "MTRKR1113 도봉산",
+        "MTRKR1114 도봉",
+        "MTRKR1115 방학",
+        "MTRKR1116 창동",
+        "MTRKR1117 녹천",
+        "MTRKR1118 월계",
+        "MTRKR1119 광운대",
+        "MTRKR1120 석계",
+        "MTRKR1121 신이문",
+        "MTRKR1122 외대앞",
+        "MTRKR1123 회기",
+        "MTRS11158 청량리(서울시립대입구)",
+        "MTRS11157 제기동",
+        "MTRS11156 신설동",
+        "MTRS11159 동묘앞",
+        "MTRS11155 동대문",
+        "MTRS11154 종로5가",
+        "MTRS11153 종로3가",
+        "MTRS11152 종각",
+        "MTRS11151 시청",
+        "MTRS11150 서울역",
+        "MTRKR1134 남영",
+        "MTRKR1135 용산",
+        "MTRKR1136 노량진",
+        "MTRKR1137 대방",
+        "MTRKR1138 신길",
+        "MTRKR1139 영등포",
+        "MTRKR1140 신도림",
+        "MTRKR1141 구로",
+        "MTRKR1P142 가산디지털단지",
+        "MTRKR1P143 독산",
+        "MTRKR1P144 금천구청",
+        "MTRKR1P145 석수",
+        "MTRKR1P146 관악",
+        "MTRKR1P147 안양",
+        "MTRKR1P148 명학",
+        "MTRKR1P149 금정",
+        "MTRKR1P150 군포",
+        "MTRKR1P151 당정",
+        "MTRKR1P152 의왕",
+        "MTRKR1P153 성균관대",
+        "MTRKR1P154 화서",
+        "MTRKR1P155 수원",
+        "MTRKR1P156 세류",
+        "MTRKR1P157 병점",
+        "MTRKR1P158 세마",
+        "MTRKR1P159 오산대",
+        "MTRKR1P160 오산",
+        "MTRKR1P161 진위",
+        "MTRKR1P162 송탄",
+        "MTRKR1P163 서정리",
+        "MTRKR1P164 평택지제",
+        "MTRKR1P165 평택",
+        "MTRKR1P166 성환",
+        "MTRKR1P167 직산",
+        "MTRKR1P168 두정",
+        "MTRKR1P169 천안",
+        "MTRKR1P170 봉명",
+        "MTRKR1P171 쌍용(나사렛대)",
+        "MTRKR1P172 아산",
+        "MTRKR1P173 탕정",
+        "MTRKR1P174 배방",
+        "MTRKR1P176 온양온천",
+        "MTRKR1P177 신창(순천향대)"
+      ]
+    },
+    "1광명": {
+      "group": "1",
+      "label": "1호선 광명 셔틀",
+      "kric": [
+        "한국철도공사:경부선"
+      ],
+      "stations": [
+        "MTRKR1P144 금천구청",
+        "MTRKR1P144-1 광명"
+      ]
+    },
+    "1서동탄": {
+      "group": "1",
+      "label": "1호선 서동탄 지선",
+      "kric": [
+        "한국철도공사:경부선"
+      ],
+      "stations": [
+        "MTRKR1P157 병점",
+        "MTRKR1P157-1 서동탄"
+      ]
+    },
+    "1공동북": {
+      "group": "1",
+      "trunk": true,
+      "s3Line": "1",
+      "kric": [
+        "한국철도공사:경원선",
+        "한국철도공사:경부선",
+        "한국철도공사:경인선",
+        "서울교통공사:1호선"
+      ],
+      "label": "1호선 공동 구간 연천~청량리(경원선, 경인·경부 열차 모두)",
+      "joins": {
+        "MTRS11158": "1"
+      },
+      "stations": [
+        "MTRKR1100-3 연천",
+        "MTRKR1100-2 전곡",
+        "MTRKR1100-1 청산",
+        "MTRKR1100 소요산",
+        "MTRKR1101 동두천",
+        "MTRKR1102 보산",
+        "MTRKR1103 동두천중앙",
+        "MTRKR1104 지행",
+        "MTRKR1105 덕정",
+        "MTRKR1106 덕계",
+        "MTRKR1107 양주",
+        "MTRKR1108 녹양",
+        "MTRKR1109 가능",
+        "MTRKR1110 의정부",
+        "MTRKR1111 회룡",
+        "MTRKR1112 망월사",
+        "MTRKR1113 도봉산",
+        "MTRKR1114 도봉",
+        "MTRKR1115 방학",
+        "MTRKR1116 창동",
+        "MTRKR1117 녹천",
+        "MTRKR1118 월계",
+        "MTRKR1119 광운대",
+        "MTRKR1120 석계",
+        "MTRKR1121 신이문",
+        "MTRKR1122 외대앞",
+        "MTRKR1123 회기",
+        "MTRS11158 청량리(서울시립대입구)"
+      ]
+    },
+    "1공동남": {
+      "group": "1",
+      "trunk": true,
+      "s3Line": "1",
+      "kric": [
+        "한국철도공사:경원선",
+        "한국철도공사:경부선",
+        "한국철도공사:경인선",
+        "서울교통공사:1호선"
+      ],
+      "label": "1호선 공동 구간 서울역~구로(경인·경부 열차 모두)",
+      "joins": {
+        "MTRS11150": "1"
+      },
+      "stations": [
+        "MTRS11150 서울역",
+        "MTRKR1134 남영",
+        "MTRKR1135 용산",
+        "MTRKR1136 노량진",
+        "MTRKR1137 대방",
+        "MTRKR1138 신길",
+        "MTRKR1139 영등포",
+        "MTRKR1140 신도림",
+        "MTRKR1141 구로"
+      ]
+    },
+    "3일산": {
+      "group": "3",
+      "label": "3호선 일산선",
+      "kric": [
+        "한국철도공사:일산선",
+        "서울교통공사:3호선"
+      ],
+      "joins": {
+        "MTRS13309": "3"
+      },
+      "stations": [
+        "MTRKR3309 대화",
+        "MTRKR3310 주엽",
+        "MTRKR3311 정발산",
+        "MTRKR3312 마두",
+        "MTRKR3313 백석",
+        "MTRKR3314 대곡",
+        "MTRKR3315 화정",
+        "MTRKR3316 원당",
+        "MTRKR3317 원흥",
+        "MTRKR3318 삼송",
+        "MTRS13309 지축"
+      ]
+    },
+    "4진접": {
+      "group": "4",
+      "label": "4호선 진접선",
+      "kric": [
+        "남양주도시공사:진접선",
+        "서울교통공사:4호선"
+      ],
+      "joins": {
+        "MTRS14409": "4"
+      },
+      "stations": [
+        "MTRNU4405 진접",
+        "MTRNU4406 오남",
+        "MTRNU4408 별내별가람",
+        "MTRS14409 불암산(당고개)"
+      ]
+    },
+    "4안산": {
+      "group": "4",
+      "label": "4호선 안산과천선",
+      "kric": [
+        "한국철도공사:안산과천선",
+        "서울교통공사:4호선"
+      ],
+      "joins": {
+        "MTRS14434": "4"
+      },
+      "stations": [
+        "MTRS14434 남태령",
+        "MTRKR4435 선바위",
+        "MTRKR4436 경마공원",
+        "MTRKR4437 대공원",
+        "MTRKR4438 과천",
+        "MTRKR4439 정부과천청사",
+        "MTRKR4440 인덕원",
+        "MTRKR4441 평촌",
+        "MTRKR4442 범계",
+        "MTRKR4443 금정",
+        "MTRKR4444 산본",
+        "MTRKR4445 수리산",
+        "MTRKR4446 대야미",
+        "MTRKR4447 반월",
+        "MTRKR4448 상록수",
+        "MTRKR4449 한대앞",
+        "MTRKR4450 중앙",
+        "MTRKR4451 고잔",
+        "MTRKR4452 초지",
+        "MTRKR4453 안산",
+        "MTRKR4454 능길",
+        "MTRKR4455 정왕",
+        "MTRKR4456 오이도"
+      ]
+    },
+    "7인천": {
+      "group": "7",
+      "label": "7호선 부천·인천 구간",
+      "kric": [
+        "인천교통공사:도시철도 7호선",
+        "서울교통공사:7호선"
+      ],
+      "joins": {
+        "MTRS172752": "7"
+      },
+      "stations": [
+        "MTRS172752 온수(성공회대입구)",
+        "MTRIC7751 까치울",
+        "MTRIC7752 부천종합운동장",
+        "MTRIC7753 춘의",
+        "MTRIC7754 신중동",
+        "MTRIC7755 부천시청",
+        "MTRIC7756 상동",
+        "MTRIC7757 삼산체육관",
+        "MTRIC7758 굴포천",
+        "MTRIC7759 부평구청",
+        "MTRIC7760 산곡",
+        "MTRIC7761 석남(거북시장)"
+      ]
+    },
+    "8별내": {
+      "group": "8",
+      "label": "8호선 별내선",
+      "kric": [
+        "구리도시공사:8호선",
+        "남양주도시공사:수도권 광역철도 8호선",
+        "서울교통공사:8호선"
+      ],
+      "joins": {
+        "MTRS182809": "8"
+      },
+      "stations": [
+        "MTRNU82804 별내",
+        "MTRNU82806 다산",
+        "MTRGU82807 동구릉",
+        "MTRGU82805 구리",
+        "MTRGU82808 장자호수공원",
+        "MTRS182809 암사역사공원"
+      ]
+    },
+    "9": {
+      "group": "9",
+      "label": "9호선",
+      "kric": [
+        "서울특별시 서울시메트로9호선㈜:서울 도시철도 9호선",
+        "서울시메트로9호선㈜:수도권  도시철도 9호선"
+      ],
+      "stations": [
+        "MTRS990901 개화",
+        "MTRS990902 김포공항",
+        "MTRS990903 공항시장",
+        "MTRS990904 신방화",
+        "MTRS990905 마곡나루",
+        "MTRS990906 양천향교",
+        "MTRS990907 가양",
+        "MTRS990908 증미",
+        "MTRS990909 등촌",
+        "MTRS990910 염창",
+        "MTRS990911 신목동",
+        "MTRS990912 선유도",
+        "MTRS990913 당산",
+        "MTRS990914 국회의사당",
+        "MTRS990915 여의도",
+        "MTRS990916 샛강",
+        "MTRS99917 노량진",
+        "MTRS990918 노들",
+        "MTRS990919 흑석(중앙대입구)",
+        "MTRS990920 동작(현충원)",
+        "MTRS990921 구반포",
+        "MTRS990922 신반포",
+        "MTRS990923 고속터미널",
+        "MTRS990924 사평",
+        "MTRS990925 신논현",
+        "MTRS99926 언주",
+        "MTRS99927 선정릉",
+        "MTRS99928 삼성중앙",
+        "MTRS99929 봉은사",
+        "MTRS99930 종합운동장",
+        "MTRS99931 삼전",
+        "MTRS99932 석촌고분",
+        "MTRS99933 석촌",
+        "MTRS99934 송파나루",
+        "MTRS99935 한성백제",
+        "MTRS99936 올림픽공원(한국체대)",
+        "MTRS99937 둔촌오륜",
+        "MTRS99938 중앙보훈병원"
+      ]
+    },
+    "공항": {
+      "group": "공항",
+      "label": "공항철도",
+      "kric": [
+        "공항철도주식회사:인천국제공항선"
+      ],
+      "stations": [
+        "MTRARA1A01 서울역",
+        "MTRARA1A02 공덕",
+        "MTRARA1A03 홍대입구",
+        "MTRARA1A04 디지털미디어시티",
+        "MTRARA1A042 마곡나루",
+        "MTRARA1A05 김포공항",
+        "MTRARA1A06 계양",
+        "MTRARA1A07 검암",
+        "MTRARA1A071 청라국제도시",
+        "MTRARA1A072 영종",
+        "MTRARA1A08 운서",
+        "MTRARA1A09 공항화물청사",
+        "MTRARA1A10 인천공항1터미널",
+        "MTRARA1A11 인천공항2터미널"
+      ]
+    },
+    "신분당": {
+      "group": "신분당",
+      "label": "신분당선",
+      "kric": [
+        "경기도 신분당선:신분당선"
+      ],
+      "stations": [
+        "MTRDXD1D004 신사",
+        "MTRDXD1D005 논현",
+        "MTRDXD1D006 신논현",
+        "MTRDXD1D007 강남",
+        "MTRDXD1D008 양재(서초구청)",
+        "MTRDXD1D009 양재시민의숲(매헌)",
+        "MTRDXD1D010 청계산입구",
+        "MTRDXD1D011 판교(판교테크노밸리)",
+        "MTRDXD1D012 정자",
+        "MTRDXD1D013 미금(분당서울대병원)",
+        "MTRDXD1D014 동천",
+        "MTRDXD1D015 수지구청",
+        "MTRDXD1D016 성복",
+        "MTRDXD1D017 상현",
+        "MTRDXD1D018 광교중앙(아주대)",
+        "MTRDXD1D019 광교(경기대)"
+      ]
+    },
+    "수인분당": {
+      "group": "수인분당",
+      "label": "수인분당선",
+      "kric": [
+        "한국철도공사:분당선",
+        "한국철도공사:수인선",
+        "한국철도공사:경원선"
+      ],
+      "stations": [
+        "MTRKRK1K209 청량리",
+        "MTRKRK1K210 왕십리",
+        "MTRKRK1K211 서울숲",
+        "MTRKRK1K212 압구정로데오",
+        "MTRKRK1K213 강남구청",
+        "MTRKRK1K214 선정릉",
+        "MTRKRK1K215 선릉",
+        "MTRKRK1K216 한티",
+        "MTRKRK1K217 도곡",
+        "MTRKRK1K218 구룡",
+        "MTRKRK1K219 개포동",
+        "MTRKRK1K220 대모산입구",
+        "MTRKRK1K221 수서",
+        "MTRKRK1K222 복정(동서울대학)",
+        "MTRKRK1K223 가천대",
+        "MTRKRK1K224 태평",
+        "MTRKRK1K225 모란",
+        "MTRKRK1K226 야탑",
+        "MTRKRK1K227 이매(성남아트센터)",
+        "MTRKRK1K228 서현",
+        "MTRKRK1K229 수내(한국잡월드)",
+        "MTRKRK1K230 정자",
+        "MTRKRK1K231 미금(분당서울대병원)",
+        "MTRKRK1K232 오리",
+        "MTRKRK1K233 죽전(단국대)",
+        "MTRKRK1K234 보정",
+        "MTRKRK1K235 구성",
+        "MTRKRK1K236 신갈",
+        "MTRKRK1K237 기흥(백남준아트센터)",
+        "MTRKRK1K238 상갈(루터대학교)",
+        "MTRKRK1K239 청명",
+        "MTRKRK1K240 영통(경희대)",
+        "MTRKRK1K241 망포",
+        "MTRKRK1K242 매탄권선",
+        "MTRKRK1K243 수원시청(경기도문화의전당)",
+        "MTRKRK1K244 매교",
+        "MTRKRK1K245 수원",
+        "MTRKRK1K246 고색",
+        "MTRKRK1K247 오목천",
+        "MTRKRK1K248 어천",
+        "MTRKRK1K249 야목",
+        "MTRKRK1K250 사리",
+        "MTRKRK1K251 한대앞",
+        "MTRKRK1K252 중앙",
+        "MTRKRK1K253 고잔",
+        "MTRKRK1K254 초지",
+        "MTRKRK1K255 안산",
+        "MTRKRK1K256 능길",
+        "MTRKRK1K257 정왕",
+        "MTRKRK1K258 오이도",
+        "MTRKRK1K259 달월",
+        "MTRKRK1K260 월곶",
+        "MTRKRK1K261 소래포구",
+        "MTRKRK1K262 인천논현",
+        "MTRKRK1K263 호구포",
+        "MTRKRK1K264 남동인더스파크",
+        "MTRKRK1K265 원인재",
+        "MTRKRK1K266 연수",
+        "MTRKRK1K267 송도",
+        "MTRKRK1K269 인하대",
+        "MTRKRK1K270 숭의(인하대병원)",
+        "MTRKRK1K271 신포",
+        "MTRKRK1K272 인천"
+      ]
+    },
+    "경의중앙": {
+      "group": "경의중앙",
+      "label": "경의중앙선 문산~지평",
+      "kric": [
+        "한국철도공사:경의중앙선",
+        "한국철도공사:경원선"
+      ],
+      "stations": [
+        "MTRKRK4K335 문산",
+        "MTRKRK4K334 파주(두원대학)",
+        "MTRKRK4K333 월롱(서영대학교)",
+        "MTRKRK4K331 금촌",
+        "MTRKRK4K330 금릉",
+        "MTRKRK4K329 운정",
+        "MTRKRK4K328 야당",
+        "MTRKRK4K327 탄현",
+        "MTRKRK4K326 일산",
+        "MTRKRK4K325 풍산",
+        "MTRKRK4K324 백마",
+        "MTRKRK4K323 곡산",
+        "MTRKRK4K322 대곡",
+        "MTRKRK4K321 능곡",
+        "MTRKRK4K320 행신",
+        "MTRKRK4K319 강매",
+        "MTRKRK4K318 한국항공대",
+        "MTRKRK4K317 수색",
+        "MTRKRK4K316 디지털미디어시티",
+        "MTRKRK4K315 가좌",
+        "MTRKRK4K314 홍대입구",
+        "MTRKRK4K313 서강대",
+        "MTRKRK4K312 공덕",
+        "MTRKRK4K311 효창공원앞",
+        "MTRKRK4K110 용산",
+        "MTRKRK4K111 이촌",
+        "MTRKRK4K112 서빙고",
+        "MTRKRK4K113 한남",
+        "MTRKRK4K114 옥수",
+        "MTRKRK4K115 응봉",
+        "MTRKRK4K210 왕십리",
+        "MTRKRK4K209 청량리",
+        "MTRKRK4K118 회기",
+        "MTRKRK4K119 중랑",
+        "MTRKRK4K120 상봉",
+        "MTRKRK4K121 망우",
+        "MTRKRK4K122 양원(서울시북부병원)",
+        "MTRKRK4K123 구리",
+        "MTRKRK4K124 도농",
+        "MTRKRK4K125 양정",
+        "MTRKRK4K126 덕소",
+        "MTRKRK4K127 도심",
+        "MTRKRK4K128 팔당",
+        "MTRKRK4K129 운길산",
+        "MTRKRK4K130 양수",
+        "MTRKRK4K131 신원",
+        "MTRKRK4K132 국수",
+        "MTRKRK4K133 아신(아세아연합신학대)",
+        "MTRKRK4K134 오빈",
+        "MTRKRK4K135 양평",
+        "MTRKRK4K136 원덕(추읍산)",
+        "MTRKRK4K137 용문",
+        "MTRKRK4K138 지평"
+      ]
+    },
+    "경의중앙서울": {
+      "group": "경의중앙",
+      "label": "경의중앙선 서울역~문산",
+      "kric": [
+        "한국철도공사:경의중앙선",
+        "한국철도공사:경원선"
+      ],
+      "stations": [
+        "MTRKRK4P313 서울역",
+        "MTRKRK4P314 신촌",
+        "MTRKRK4K315 가좌",
+        "MTRKRK4K316 디지털미디어시티",
+        "MTRKRK4K317 수색",
+        "MTRKRK4K318 한국항공대",
+        "MTRKRK4K319 강매",
+        "MTRKRK4K320 행신",
+        "MTRKRK4K321 능곡",
+        "MTRKRK4K322 대곡",
+        "MTRKRK4K323 곡산",
+        "MTRKRK4K324 백마",
+        "MTRKRK4K325 풍산",
+        "MTRKRK4K326 일산",
+        "MTRKRK4K327 탄현",
+        "MTRKRK4K328 야당",
+        "MTRKRK4K329 운정",
+        "MTRKRK4K330 금릉",
+        "MTRKRK4K331 금촌",
+        "MTRKRK4K333 월롱(서영대학교)",
+        "MTRKRK4K334 파주(두원대학)",
+        "MTRKRK4K335 문산"
+      ]
+    },
+    "경춘": {
+      "group": "경춘",
+      "label": "경춘선 상봉~춘천",
+      "kric": [
+        "한국철도공사:경춘선",
+        "한국철도공사:경의중앙선"
+      ],
+      "stations": [
+        "MTRKRK2K120 상봉",
+        "MTRKRK2K121 망우",
+        "MTRKRK2P122 신내",
+        "MTRKRK2P123 갈매",
+        "MTRKRK2P124 별내(삼육대학교)",
+        "MTRKRK2P125 퇴계원",
+        "MTRKRK2P126 사릉",
+        "MTRKRK2P127 금곡",
+        "MTRKRK2P128 평내호평",
+        "MTRKRK2P129 천마산",
+        "MTRKRK2P130 마석",
+        "MTRKRK2P131 대성리",
+        "MTRKRK2P132 청평",
+        "MTRKRK2P133 상천(호명호수)",
+        "MTRKRK2P134 가평(자라섬.남이섬)",
+        "MTRKRK2P135 굴봉산(제이드가든)",
+        "MTRKRK2P136 백양리(엘리시안강촌)",
+        "MTRKRK2P137 강촌",
+        "MTRKRK2P138 김유정",
+        "MTRKRK2P139 남춘천(강원대)",
+        "MTRKRK2P140 춘천(한림대)"
+      ]
+    },
+    "경강": {
+      "group": "경강",
+      "label": "경강선",
+      "kric": [
+        "한국철도공사:경강선"
+      ],
+      "stations": [
+        "MTRKRK5K409 판교(판교테크노밸리)",
+        "MTRKRK5K410 성남",
+        "MTRKRK5K411 이매",
+        "MTRKRK5K412 삼동",
+        "MTRKRK5K413 경기광주",
+        "MTRKRK5K414 초월",
+        "MTRKRK5K415 곤지암",
+        "MTRKRK5K416 신둔도예촌",
+        "MTRKRK5K417 이천",
+        "MTRKRK5K418 부발",
+        "MTRKRK5K419 세종대왕릉",
+        "MTRKRK5K420 여주"
+      ]
+    },
+    "서해": {
+      "group": "서해",
+      "label": "서해선",
+      "kric": [
+        "한국철도공사:서해선"
+      ],
+      "stations": [
+        "MTRKRWSS07 일산",
+        "MTRKRWSS08 풍산",
+        "MTRKRWSS09 백마",
+        "MTRKRWSS10 곡산",
+        "MTRKRWSS11 대곡",
+        "MTRKRWSS12 능곡",
+        "MTRKRWSS13 김포공항역",
+        "MTRKRWSS14 원종",
+        "MTRKRWSS15 부천종합운동장역",
+        "MTRSWWSS16 소사",
+        "MTRSWWSS17 소새울",
+        "MTRSWWSS18 시흥대야",
+        "MTRSWWSS19 신천",
+        "MTRSWWSS20 신현",
+        "MTRSWWSS22 시흥시청",
+        "MTRSWWSS23 시흥능곡",
+        "MTRSWWSS24 달미",
+        "MTRSWWSS25 선부",
+        "MTRSWWSS26 초지",
+        "MTRSWWSS27 시우",
+        "MTRSWWSS28 원시"
+      ]
+    },
+    "GTX-A북": {
+      "group": "GTX-A",
+      "label": "GTX-A 운정중앙~서울역",
+      "kric": [],
+      "stations": [
+        "MTRGXAX101 운정중앙",
+        "MTRGXAX102 킨텍스",
+        "MTRGXAX103 대곡",
+        "MTRGXAX105 연신내",
+        "MTRGXAX106 서울역"
+      ]
+    },
+    "GTX-A남": {
+      "group": "GTX-A",
+      "label": "GTX-A 수서~동탄",
+      "kric": [],
+      "stations": [
+        "MTRGXAX108 수서",
+        "MTRGXAX109 성남",
+        "MTRGXAX110 구성",
+        "MTRSRAX111 동탄"
+      ]
+    },
+    "인천1": {
+      "group": "인천1",
+      "label": "인천1호선",
+      "kric": [
+        "인천교통공사:인천지하철 1호선"
+      ],
+      "stations": [
+        "MTRICI1107 검단호수공원",
+        "MTRICI1108 신검단중앙",
+        "MTRICI1109 아라",
+        "MTRICI1110 계양",
+        "MTRICI1111 귤현",
+        "MTRICI1112 박촌",
+        "MTRICI1113 임학",
+        "MTRICI1114 계산",
+        "MTRICI1115 경인교대입구",
+        "MTRICI1116 작전",
+        "MTRICI1117 갈산",
+        "MTRICI1118 부평구청",
+        "MTRICI1119 부평시장",
+        "MTRICI1120 부평",
+        "MTRICI1121 동수",
+        "MTRICI1122 부평삼거리",
+        "MTRICI1123 간석오거리",
+        "MTRICI1124 인천시청",
+        "MTRICI1125 예술회관",
+        "MTRICI1126 인천터미널",
+        "MTRICI1127 문학경기장",
+        "MTRICI1128 선학",
+        "MTRICI1129 신연수",
+        "MTRICI1130 원인재",
+        "MTRICI1131 동춘",
+        "MTRICI1132 동막",
+        "MTRICI1133 캠퍼스타운",
+        "MTRICI1134 테크노파크",
+        "MTRICI1135 지식정보단지",
+        "MTRICI1136 인천대입구",
+        "MTRICI1137 센트럴파크",
+        "MTRICI1138 국제업무지구",
+        "MTRICI1139 송도달빛축제공원"
+      ]
+    },
+    "인천2": {
+      "group": "인천2",
+      "label": "인천2호선",
+      "kric": [
+        "인천교통공사:인천지하철 2호선"
+      ],
+      "stations": [
+        "MTRICI2201 검단오류",
+        "MTRICI2202 왕길",
+        "MTRICI2203 검단사거리",
+        "MTRICI2204 마전",
+        "MTRICI2205 완정",
+        "MTRICI2206 독정",
+        "MTRICI2207 검암",
+        "MTRICI2208 검바위",
+        "MTRICI2209 아시아드경기장",
+        "MTRICI2210 서해구청",
+        "MTRICI2211 가정",
+        "MTRICI2212 가정중앙시장",
+        "MTRICI2213 석남",
+        "MTRICI2214 서부여성회관",
+        "MTRICI2215 인천가좌",
+        "MTRICI2216 가재울",
+        "MTRICI2217 주안국가산단",
+        "MTRICI2218 주안",
+        "MTRICI2219 시민공원",
+        "MTRICI2220 석바위시장",
+        "MTRICI2221 인천시청",
+        "MTRICI2222 석천사거리",
+        "MTRICI2223 모래내시장",
+        "MTRICI2224 만수",
+        "MTRICI2225 남동구청",
+        "MTRICI2226 인천대공원",
+        "MTRICI2227 운연"
+      ]
+    },
+    "신림": {
+      "group": "신림",
+      "label": "신림선",
+      "kric": [
+        "남서울경전철 주식회사:수도권 경량도시철도 신림선"
+      ],
+      "stations": [
+        "MTRSLL1S401 샛강",
+        "MTRSLL1S402 대방",
+        "MTRSLL1S403 서울지방병무청",
+        "MTRSLL1S404 보라매",
+        "MTRSLL1S405 보라매공원",
+        "MTRSLL1S406 보라매병원",
+        "MTRSLL1S407 당곡",
+        "MTRSLL1S408 신림",
+        "MTRSLL1S409 서원",
+        "MTRSLL1S410 서울대벤처타운",
+        "MTRSLL1S411 관악산(서울대)"
+      ]
+    },
+    "우이신설": {
+      "group": "우이신설",
+      "label": "우이신설선",
+      "kric": [
+        "우이신설경전철운영㈜:우이신설선"
+      ],
+      "stations": [
+        "MTRUIUIS110 북한산우이",
+        "MTRUIUIS111 솔밭공원",
+        "MTRUIUIS112 4.19민주묘지",
+        "MTRUIUIS113 가오리",
+        "MTRUIUIS114 화계",
+        "MTRUIUIS115 삼양",
+        "MTRUIUIS116 삼양사거리",
+        "MTRUIUIS117 솔샘",
+        "MTRUIUIS118 북한산보국문",
+        "MTRUIUIS119 정릉",
+        "MTRUIUIS120 성신여대입구",
+        "MTRUIUIS121 보문",
+        "MTRUIUIS122 신설동"
+      ]
+    },
+    "김포골드": {
+      "group": "김포골드",
+      "label": "김포골드라인",
+      "kric": [
+        "김포골드라인에스알에스㈜:김포도시철도"
+      ],
+      "stations": [
+        "MTRGMG1G100 양촌",
+        "MTRGMG1G101 구래",
+        "MTRGMG1G102 마산",
+        "MTRGMG1G103 장기",
+        "MTRGMG1G104 운양",
+        "MTRGMG1G105 걸포북변",
+        "MTRGMG1G106 사우(김포시청)",
+        "MTRGMG1G107 풍무",
+        "MTRGMG1G108 고촌",
+        "MTRGMG1G109 김포공항"
+      ]
+    },
+    "에버라인": {
+      "group": "에버라인",
+      "label": "에버라인",
+      "kric": [
+        "경기도 용인경전철:에버라인"
+      ],
+      "stations": [
+        "MTREVE1Y110 기흥(백남준아트센터)",
+        "MTREVE1Y111 강남대",
+        "MTREVE1Y112 지석",
+        "MTREVE1Y113 어정",
+        "MTREVE1Y114 동백",
+        "MTREVE1Y115 초당",
+        "MTREVE1Y116 삼가",
+        "MTREVE1Y117 시청.용인대",
+        "MTREVE1Y118 명지대",
+        "MTREVE1Y119 김량장",
+        "MTREVE1Y120 용인중앙시장(용인예술과학대)",
+        "MTREVE1Y121 고진",
+        "MTREVE1Y122 보평",
+        "MTREVE1Y123 둔전",
+        "MTREVE1Y124 전대.에버랜드"
+      ]
+    },
+    "의정부": {
+      "group": "의정부",
+      "label": "의정부경전철",
+      "kric": [
+        "의정부경량전철㈜:의정부"
+      ],
+      "stations": [
+        "MTRULU10110 발곡",
+        "MTRULU10111 회룡",
+        "MTRULU10112 범골",
+        "MTRULU10113 경전철의정부",
+        "MTRULU10114 의정부시청",
+        "MTRULU10115 흥선",
+        "MTRULU10117 의정부중앙",
+        "MTRULU10118 동오",
+        "MTRULU10119 새말",
+        "MTRULU10120 경기도청북부청사",
+        "MTRULU10121 효자",
+        "MTRULU10122 곤제",
+        "MTRULU10123 어룡(용현산업단지)",
+        "MTRULU10124 송산",
+        "MTRULU10125 탑석"
+      ]
+    },
+    "경의중앙공동": {
+      "group": "경의중앙",
+      "label": "경의중앙선 공동 구간 가좌~문산(용산·서울역 열차 모두)",
+      "trunk": true,
+      "kric": [
+        "한국철도공사:경의중앙선",
+        "한국철도공사:경원선"
+      ],
+      "stations": [
+        "MTRKRK4K315 가좌",
+        "MTRKRK4K316 디지털미디어시티",
+        "MTRKRK4K317 수색",
+        "MTRKRK4K318 한국항공대",
+        "MTRKRK4K319 강매",
+        "MTRKRK4K320 행신",
+        "MTRKRK4K321 능곡",
+        "MTRKRK4K322 대곡",
+        "MTRKRK4K323 곡산",
+        "MTRKRK4K324 백마",
+        "MTRKRK4K325 풍산",
+        "MTRKRK4K326 일산",
+        "MTRKRK4K327 탄현",
+        "MTRKRK4K328 야당",
+        "MTRKRK4K329 운정",
+        "MTRKRK4K330 금릉",
+        "MTRKRK4K331 금촌",
+        "MTRKRK4K333 월롱(서영대학교)",
+        "MTRKRK4K334 파주(두원대학)",
+        "MTRKRK4K335 문산"
+      ]
+    }
+  },
+  "nameAliases": {
+    "서해구청": {
+      "kric": "서구청",
+      "basis": "인천 서구가 2026-07-01 서해구로 바뀌며 역명 변경. S1에는 옛 이름 서구청으로 남아 있다"
+    }
+  },
+  "explicitStations": {
+    "MTRGXAX103": {
+      "name": "대곡",
+      "basis": "GTX-A 대곡역은 3호선·경의중앙선·서해선 대곡역과 같은 역사(환승 통로)",
+      "kric": "한국철도공사:일산선"
+    },
+    "MTRGXAX105": {
+      "name": "연신내",
+      "basis": "GTX-A 연신내역은 3·6호선 연신내역과 환승 통로로 연결",
+      "kric": "서울교통공사:3호선"
+    },
+    "MTRGXAX106": {
+      "name": "서울역",
+      "basis": "GTX-A 서울역은 1·4호선·공항철도·경의선 서울역과 환승 통로로 연결",
+      "kric": "서울교통공사:4호선"
+    },
+    "MTRGXAX108": {
+      "name": "수서",
+      "basis": "GTX-A 수서역은 3호선·수인분당선·SRT 수서역과 같은 역사",
+      "kric": "서울교통공사:3호선"
+    },
+    "MTRGXAX109": {
+      "name": "성남",
+      "basis": "GTX-A 성남역은 경강선 성남역과 같은 역사",
+      "kric": "한국철도공사:경강선"
+    },
+    "MTRGXAX110": {
+      "name": "구성",
+      "basis": "GTX-A 구성역은 수인분당선 구성역과 환승 통로로 연결",
+      "kric": "한국철도공사:분당선"
+    }
+  },
+  "newStations": {
+    "MTRGXAX101": {
+      "name": "운정중앙",
+      "lines": [
+        "GTX-A"
+      ],
+      "lat": 37.71661,
+      "lng": 126.728354,
+      "source": "wikidata:Q125895818"
+    },
+    "MTRGXAX102": {
+      "name": "킨텍스",
+      "lines": [
+        "GTX-A"
+      ],
+      "lat": 37.665117,
+      "lng": 126.748133,
+      "source": "wikidata:Q125695849"
+    },
+    "MTRSRAX111": {
+      "name": "동탄",
+      "lines": [
+        "GTX-A"
+      ],
+      "lat": 37.199301,
+      "lng": 127.097039,
+      "source": "wikidata:Q23954759"
+    },
+    "MTRKRK4K122": {
+      "name": "양원",
+      "lines": [
+        "경의중앙선"
+      ],
+      "lat": 37.606539,
+      "lng": 127.107889,
+      "source": "wikidata:Q482940"
+    }
+  },
+  "newStationsBasis": "S1에 없는 TAGO 역. 좌표는 Wikidata(CC0) P625. 이름은 TAGO 역명의 괄호 앞부분",
+  "lineNames": {
+    "GTX-A": "GTX-A"
+  },
+  "transfers": {
+    "s4LineGroups": {
+      "1호선": "1",
+      "2호선": "2",
+      "3호선": "3",
+      "4호선": "4",
+      "5호선": "5",
+      "6호선": "6",
+      "7호선": "7",
+      "8호선": "8",
+      "9호선": "9",
+      "경의중앙선": "경의중앙",
+      "공항철도": "공항",
+      "수인분당선": "수인분당",
+      "우이신설선": "우이신설",
+      "신분당선": "신분당",
+      "경춘선": "경춘",
+      "신림선": "신림",
+      "김포골드라인": "김포골드",
+      "서해선": "서해",
+      "경원선": "1",
+      "국철": "수인분당"
+    },
+    "s4LineGroupsBasis": "S4 환승노선 이름 → 계통 group. 석계 '경원선'은 1호선, 수서 '국철'은 수인분당선(분당선)이다",
+    "defaultWalkSeconds": 89,
+    "defaultBasis": "S4(서울교통공사 환승역거리 소요시간, 2025-03-31) 140건 환승소요시간의 중앙값 89초(p25 64초, p75 151초). S4에 없는 group 쌍에 양방향으로 적용한다",
+    "groupWalkSeconds": {
+      "GTX-A": 296
+    },
+    "groupWalkBasis": "GTX-A는 지하 40m 이상 대심도 역이라 일반 중앙값을 쓰지 않고 S4 최댓값(홍대입구 2호선→공항철도 4분56초)을 보수적 상한으로 쓴다. 공식 환승시간 확인 전 임시값",
+    "overrides": [
+      {
+        "stations": [
+          "금정"
+        ],
+        "groups": [
+          "1",
+          "4"
+        ],
+        "walkSeconds": 89,
+        "basis": "1·4호선 상행끼리, 하행끼리 같은 승강장을 쓰는 평면환승(맞은편 열차). 반대 방향 환승은 따로 두지 않는다(같은 방향이 주 용도). 같은 방향끼리만 같은 승강장이고 반대 방향은 통로를 건너야 한다. 그래프가 열차 방향을 구분하지 못하므로 0초를 쓰지 않고 기본값(89초)을 보수적으로 둔다",
+        "source": "https://www.korea.kr/news/policyNewsView.do?newsId=100083345",
+        "sameDirectionWalkSeconds": 0
+      },
+      {
+        "stations": [
+          "한대앞",
+          "중앙",
+          "고잔",
+          "초지",
+          "안산",
+          "능길",
+          "정왕",
+          "오이도"
+        ],
+        "groups": [
+          "4",
+          "수인분당"
+        ],
+        "walkSeconds": 89,
+        "basis": "한대앞~오이도는 4호선과 수인분당선의 공용구간으로 같은 승강장을 쓴다. 같은 방향끼리만 같은 승강장이고 반대 방향은 통로를 건너야 한다. 그래프가 열차 방향을 구분하지 못하므로 0초를 쓰지 않고 기본값(89초)을 보수적으로 둔다",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=3552",
+        "sameDirectionWalkSeconds": 0
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "9",
+          "공항"
+        ],
+        "walkSeconds": 60,
+        "basis": "9호선 승강장에서 공항철도 일반열차 승강장까지 '1층만 올라가면 1분 이내'(개통 당시 보도). 상한 60초를 쓴다",
+        "source": "https://www.yna.co.kr/view/AKR20090722076600065"
+      },
+      {
+        "stations": [
+          "노량진"
+        ],
+        "groups": [
+          "1",
+          "9"
+        ],
+        "walkSeconds": 180,
+        "basis": "9호선↔국철 1호선 환승통로 개통으로 '이동 시간도 5분에서 3분으로' 단축",
+        "source": "https://news.seoul.go.kr/citybuild/archives/229570"
+      },
+      {
+        "stations": [
+          "공덕"
+        ],
+        "groups": [
+          "경의중앙",
+          "공항"
+        ],
+        "walkSeconds": 180,
+        "basis": "시속 5km 걸음으로 '경의중앙선↔공항철도 3분'(현장 측정 보도)",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=3985"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "9",
+          "서해"
+        ],
+        "walkSeconds": 510,
+        "basis": "시속 5km 걸음으로 '9호선·공항철도-서해선 환승에 8~9분'(현장 측정 보도), 중간값",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=6094"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "공항",
+          "서해"
+        ],
+        "walkSeconds": 510,
+        "basis": "같은 보도의 '9호선·공항철도-서해선 8~9분', 중간값",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=6094"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "김포골드",
+          "서해"
+        ],
+        "walkSeconds": 420,
+        "basis": "같은 보도의 '김포골드라인-서해선은 7분'",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=6094"
+      },
+      {
+        "stations": [
+          "서울역"
+        ],
+        "groups": [
+          "경의중앙",
+          "공항"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "서울시 공식 안내 '환승거리가 긴 환승역' 목록(서울역 1·4호선-공항철도-경의중앙선, 경의중앙선-공항철도 디지털미디어시티) 또는 대심도 수직 이동이 긴 역. 공개 수치가 없어 S4 환승소요시간 p90(221초)을 '긴 환승' 등급 값으로 쓴다",
+        "source": "https://mediahub.seoul.go.kr/archives/1054109"
+      },
+      {
+        "stations": [
+          "디지털미디어시티"
+        ],
+        "groups": [
+          "경의중앙",
+          "공항"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "서울시 공식 안내 '환승거리가 긴 환승역' 목록(서울역 1·4호선-공항철도-경의중앙선, 경의중앙선-공항철도 디지털미디어시티) 또는 대심도 수직 이동이 긴 역. 공개 수치가 없어 S4 환승소요시간 p90(221초)을 '긴 환승' 등급 값으로 쓴다",
+        "source": "https://mediahub.seoul.go.kr/archives/1054109"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "9",
+          "김포골드"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "김포골드라인은 9호선·공항철도와 승강장을 공유하지 않고 세 노선 모두 승강장이 깊다(김포공항역 지하 4층→2층→4층 동선). 공개 수치가 없어 '긴 환승' 등급(S4 p90 221초)",
+        "source": "https://www.gimpo.go.kr/portal/contents.do?key=1483"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "공항",
+          "김포골드"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "위와 같다",
+        "source": "https://www.gimpo.go.kr/portal/contents.do?key=1483"
+      }
+    ],
+    "overridesBasis": "S4에 없는 환승 가운데 공식·공개 출처로 확인되는 것만 보정한다. 출처가 없는 쌍은 기본값을 유지하고 tago-report.json의 transfers(status=default)와 d1-notes에 목록으로 남긴다",
+    "longTransferBasis": "'긴 환승' 등급: 공개 수치가 없지만 긴 환승으로 공식 안내되거나 구조상 수직 이동이 긴 쌍에 S4 환승소요시간 p90(221초)을 쓴다. p75는 151초, 최댓값은 296초다"
+  }
+}

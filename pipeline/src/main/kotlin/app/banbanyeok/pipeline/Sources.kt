@@ -227,7 +227,19 @@ internal fun fetch(
                 "estimated" to false,
             )
         }
-    root.resolve("data/config/source-manifest.json").writeJson(jsonValue(manifests).toString())
+    // Keep receipts of other sources (S6 TAGO cache) that this public fetch does not touch.
+    val path = root.resolve("data/config/source-manifest.json")
+    val others =
+        if (path.toFile().exists()) {
+            kotlinx.serialization.json.Json
+                .parseToJsonElement(path.readText())
+                .jsonArray
+                .map { it.jsonObject }
+                .filter { receipt -> sources.none { it.id == receipt.text("id") } }
+        } else {
+            emptyList()
+        }
+    path.writeJson(jsonValue(manifests + others).toString())
     println("Fetched and validated S1/S3/S4")
 }
 

@@ -14,13 +14,9 @@ internal fun readSeoHubs(
 ): List<String> {
     val names = csv(root.resolve("data/config/seo-hubs.csv").readText()).drop(1).map { it[0] }
     require(names.size == names.distinct().size) { "Duplicate SEO hub names" }
-    return names.map { name ->
-        registry.stations
-            .single {
-                it.status == StationStatus.ACTIVE && it.name == name &&
-                    it.sources.keys.any { key -> key.startsWith("kric:서울교통공사:") }
-            }.code
-    }
+    // Any active station may be a hub since D1; a same-name pair (신촌) resolves to the Seoul Metro station as before.
+    val active = registry.stations.filter { it.status == StationStatus.ACTIVE }
+    return names.map { stationNamed(active, it).code }
 }
 
 internal fun validateSeo(

@@ -50,7 +50,7 @@ internal fun spotcheck(
     val results =
         representativePairs.map { (from, to) ->
             val own =
-                costs[net.origins.indexOfFirst { it.name == from }][net.origins.indexOfFirst { it.name == to }]
+                costs[originIndex(net, from)][originIndex(net, to)]
                     .seconds
             try {
                 fun encode(value: String) = URLEncoder.encode(value, Charsets.UTF_8).replace("+", "%20")

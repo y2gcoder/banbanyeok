@@ -5,6 +5,7 @@ import app.banbanyeok.schema.DataSetLoader
 import app.banbanyeok.schema.RegistryCodec
 import app.banbanyeok.schema.RegistryCompatibility
 import app.banbanyeok.schema.StationStatus
+import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readBytes
@@ -19,6 +20,10 @@ fun main(args: Array<String>) {
         // 발행 디렉터리(기본 build/release). 업로드는 scripts/publish-artifacts.sh.
         require(args.size <= 2) { "Usage: stage-release [outDir]" }
         stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
+        return
+    }
+    if (args.firstOrNull() == "tago-fetch") {
+        tagoCommand(root, args.drop(1))
         return
     }
     when (args.singleOrNull()) {
@@ -66,16 +71,20 @@ fun main(args: Array<String>) {
     }
 }
 
+/** 130 since D1: 97 Seoul Metro candidates + 30 metropolitan ones adopted after user review. */
+private val CANDIDATE_RANGE = 50..130
+
 private fun build(root: Path) {
     val net = network(root)
-    val candidateReasons =
-        csv(root.resolve("data/config/candidate-places.csv").readText()).drop(1).associate {
-            it[0] to
-                it[1]
-        }
-    val candidates = net.origins.filter { it.name in candidateReasons }.sortedBy { it.code }
-    require(candidates.size == candidateReasons.size) { "Candidate seed contains unavailable/ambiguous names" }
-    require(candidates.size in 50..100) { "Candidate count ${candidates.size}" }
+    // name,reason,reviewed: reviewed is the human review state carried into candidate-review.json.
+    val seeds = csv(root.resolve("data/config/candidate-places.csv").readText()).drop(1)
+    require(
+        seeds.all { it.size == 3 && it[2] in setOf("true", "false") },
+    ) { "candidate-places.csv: name,reason,reviewed" }
+    val candidateReasons = seeds.associate { it[0] to it[1] }
+    val reviewed = seeds.associate { it[0] to (it[2] == "true") }
+    val candidates = candidateStations(net.origins, candidateReasons.keys)
+    require(candidates.size in CANDIDATE_RANGE) { "Candidate count ${candidates.size}" }
     val candidateList = CandidateList(1, net.registry.registryVersion, candidates.map { it.code })
     RegistryCodec.validateAgainst(candidateList, net.registry)
     val costs = matrixCosts(net)
@@ -102,6 +111,7 @@ private fun build(root: Path) {
         ).toString(),
     )
     writeCoverage(root, net)
+    writeOfficialComparison(root, net)
     writeRegistryAudit(root, net.registry)
     // Registry and review draft are control-plane inputs, not published travel artifacts.
     root.resolve("data/registry/stations.json").writeJson(RegistryCodec.encode(net.registry))
@@ -113,7 +123,7 @@ private fun build(root: Path) {
                     "code" to station.code,
                     "name" to station.name,
                     "reason" to candidateReasons.getValue(station.name),
-                    "reviewed" to false,
+                    "reviewed" to reviewed.getValue(station.name),
                 )
             },
         ).toString(),
@@ -167,17 +177,51 @@ private fun writeCoverage(
     net: Network,
 ) {
     val origins = net.origins.map { it.code }.toSet()
+    val physical =
+        requireNotNull(NetworkRules(parseObject(root.resolve("data/config/network-rules.json").readText())).physical)
     val excluded = net.registry.stations.filter { it.status == StationStatus.ACTIVE && it.code !in origins }
+    val (metro, outside) = excluded.partition { physical.inScope(it) }
+    val services = net.nodes.groupBy({ it.second }, { it.first }).mapValues { (_, codes) -> codes.distinct().size }
     root.resolve("data/config/coverage-report.json").writeJson(
         obj(
-            "scope" to "서울교통공사 1~8호선 S3 운영 구간",
+            "scope" to "수도권 도시·광역철도: 서울교통공사 1~8호선 S3 구간 + TAGO 시간표 노선(metro-lines.json)",
             "includedPhysicalStations" to net.origins.size,
             "stateNodes" to net.nodes.size,
             "rideEdges" to net.graph.sumOf { edges -> edges.count { it.changes == 0 } },
             "transferEdges" to net.graph.sumOf { edges -> edges.count { it.changes > 0 } },
-            "excludedActiveStationCodes" to excluded.map { it.code },
-            "excludedSourceLineNames" to excluded.flatMap { it.lines }.distinct().sorted(),
-            "missingFromS1" to listOf("GTX-A"),
+            "stationsPerService" to JsonObject(services.toSortedMap().mapValues { jsonValue(it.value) }),
+            "excludedMetroActive" to
+                metro.sortedBy { it.code }.map { obj("code" to it.code, "name" to it.name, "lines" to it.lines) },
+            "excludedOutsideMetroCount" to outside.size,
+            "excludedOutsideMetroLineNames" to outside.flatMap { it.lines }.distinct().sorted(),
+            "addedFromTago" to
+                net.registry.stations
+                    .filter { "wikidata" in it.sources }
+                    .sortedBy { it.code }
+                    .map { obj("code" to it.code, "name" to it.name, "lines" to it.lines) },
         ).toString(),
     )
+    net.tagoReport?.let { root.resolve("data/config/tago-report.json").writeJson(it.toString()) }
 }
+
+/** The only command that needs TAGO_SERVICE_KEY; everything else reads the cache offline. */
+private fun tagoCommand(
+    root: Path,
+    args: List<String>,
+) {
+    require(args.size <= 1) { "Usage: tago-fetch [probe]" }
+    when (args.firstOrNull()) {
+        null -> kotlin.system.exitProcess(tagoFetch(root))
+        "probe" -> tagoProbe(root)
+        else -> error("Usage: tago-fetch [probe]")
+    }
+}
+
+/**
+ * Candidate seeds are names chosen for Seoul Metro stations (P2). Since D1 a name can also match a different
+ * operator's station (신촌 경의중앙선), so the Seoul Metro station wins and the 97 codes stay as reviewed.
+ */
+internal fun candidateStations(
+    origins: List<app.banbanyeok.schema.Station>,
+    names: Set<String>,
+): List<app.banbanyeok.schema.Station> = names.map { stationNamed(origins, it) }.sortedBy { it.code }

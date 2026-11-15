@@ -41,11 +41,11 @@ describe("입력 화면", () => {
     );
   });
 
-  it("수도권 밖 역은 고를 수 없다고 알려 준다", async () => {
+  it("계산 범위 밖 역은 고를 수 없다고 알려 준다", async () => {
     const user = userEvent.setup();
     render(<HomeForm />);
-    await user.type(screen.getByRole("combobox", { name: "나의 출발역" }), "서면");
-    const option = await screen.findByRole("option", { name: /서면.*아직 수도권 지하철역만 계산할 수 있어요/ });
+    await user.type(screen.getByRole("combobox", { name: "나의 출발역" }), "임진강");
+    const option = await screen.findByRole("option", { name: /임진강.*이 노선의 역은 아직 계산하지 못해요/ });
     expect(option).toHaveAttribute("aria-disabled", "true");
   });
 

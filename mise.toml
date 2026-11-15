@@ -96,6 +96,10 @@ run = ["./gradlew :pipeline:run --args=all", "pnpm --filter web gen:stations"]
 description = "배차 간격 실제 값 갱신(키 필요: op) → pipeline refresh → 웹 생성물(pnpm --filter web gen). data/raw가 없으면 fetch로 먼저 받는다"
 run = "bash scripts/refresh-headways.sh"
 
+[tasks."data:fetch-tago"]
+description = "TAGO 지하철정보 수도권 시간표를 data/raw/tago에 이어받기 캐시(키 필요: op). 한도에 닿으면 종료코드 2, 다시 실행하면 이어받는다. 이후 data:refresh로 빌드"
+run = "bash scripts/fetch-tago.sh"
+
 # --- P8a 배포 보조 (docs/setup/p8a-notes.md) ---
 [tasks."release:stage"]
 description = "dev 산출물을 발행 형식(versions/<버전>/<종류>.<해시16>.<확장자> + manifest)으로 build/release에 만든다. 업로드는 scripts/publish-artifacts.sh"

@@ -1,7 +1,8 @@
 /**
  * 웹 역 검색용 가벼운 인덱스를 만든다(원본 stations.json 374KB를 그대로 번들하지 않는다).
  *
- * 입력: data/artifacts/dev/{stations.json, od.bin, manifest.json} (형식: contracts/data-format.md §3~5)
+ * 입력: data/artifacts/dev/{stations.json, od.bin, manifest.json} (형식: contracts/data-format.md §3~5),
+ *       data/config/network-rules.json(수도권 좌표 창)
  * 출력: src/lib/stations/index.gen.json — 활성 역의 [코드, 이름, 노선 번호들, 별칭들, 출발 가능 여부, 위도, 경도]
  *
  * "출발 가능"은 od.bin 출발역 축에 있는 역이다. 서버가 계산할 수 있는 출발역만 고르게 하고,
@@ -58,6 +59,7 @@ const LINE_LABELS: Record<string, string> = {
   우이신설선: "우이신설선",
   "수도권 경량도시철도 신림선": "신림선",
   김포도시철도: "김포골드라인",
+  "GTX-A": "GTX-A",
   자기부상철도: "인천자기부상",
   "부산 도시철도 1호선": "부산1호선",
   "부산 도시철도 2호선": "부산2호선",
@@ -126,8 +128,22 @@ function lineIndex(raw: string): number {
   return i;
 }
 
+/**
+ * 수도권 좌표 창(파이프라인 network-rules.json의 physicalStations.scope) 밖에 있고 출발역도 후보도 아닌 역은 색인에서 뺀다.
+ * 출발역이 될 수 없는 비수도권 역(부산·대구 등, 원본이 경의중앙선으로 잘못 적은 영동선 양원)이 검색에 섞이지 않게 한다.
+ */
+const scope = (
+  JSON.parse(readFileSync(resolve(root, "data/config/network-rules.json"), "utf8")) as {
+    physicalStations: { scope: { minLat: number; maxLat: number; minLng: number; maxLng: number } };
+  }
+).physicalStations.scope;
+function searchable(s: RegistryStation): boolean {
+  const inScope = s.lat >= scope.minLat && s.lat <= scope.maxLat && s.lng >= scope.minLng && s.lng <= scope.maxLng;
+  return inScope || origins.has(s.code) || candidates.has(s.code);
+}
+
 const stations = registry.stations
-  .filter((s) => s.status === "active")
+  .filter((s) => s.status === "active" && searchable(s))
   .map((s) => {
     const lines = [...new Set(s.lines.map(lineIndex))].sort((a, b) => lineOrder(a) - lineOrder(b) || a - b);
     // "신내역"처럼 이름에 "역"만 붙인 별칭은 검색이 접미사를 직접 처리하므로 뺀다.
@@ -151,8 +167,12 @@ function activeCode(start: RegistryStation): string {
   }
   return station.code;
 }
+const indexed = new Set(stations.map((s) => s[0]));
 const replaced = Object.fromEntries(
-  registry.stations.filter((s) => s.status === "deprecated" && s.replacedBy).map((s) => [s.code, activeCode(s)]),
+  registry.stations
+    .filter((s) => s.status === "deprecated" && s.replacedBy)
+    .map((s) => [s.code, activeCode(s)])
+    .filter(([, target]) => indexed.has(target as string)),
 );
 
 const body = {

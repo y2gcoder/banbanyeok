@@ -13,19 +13,8 @@ internal fun writeHeadwayComparison(
     val newCosts = matrixCosts(after)
     val comparison =
         representativePairs.map { (from, to) ->
-            val old =
-                oldCosts[
-                    before.origins.indexOfFirst {
-                        it.name == from
-                    },
-                ][before.origins.indexOfFirst { it.name == to }]
-            val new =
-                newCosts[after.origins.indexOfFirst { it.name == from }][
-                    after.origins.indexOfFirst {
-                        it.name ==
-                            to
-                    },
-                ]
+            val old = oldCosts[originIndex(before, from)][originIndex(before, to)]
+            val new = newCosts[originIndex(after, from)][originIndex(after, to)]
             obj(
                 "from" to from,
                 "to" to to,

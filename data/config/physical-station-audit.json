@@ -1,6 +1,6 @@
 {
-  "multipleLineStations": 118,
-  "registryVersion": 4,
+  "multipleLineStations": 120,
+  "registryVersion": 5,
   "remainingSameNames": [
     {
       "codes": [
@@ -32,7 +32,7 @@
     }
   ],
   "replacementChainsChecked": 40,
-  "scopedActiveStations": 657,
+  "scopedActiveStations": 661,
   "stations": [
     {
       "code": "02f",
@@ -42,7 +42,7 @@
       ],
       "multipleLines": true,
       "name": "신내",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "034",
@@ -70,7 +70,7 @@
       ],
       "multipleLines": false,
       "name": "성균관대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "071",
@@ -88,7 +88,7 @@
       ],
       "multipleLines": false,
       "name": "구반포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "07a",
@@ -97,7 +97,7 @@
       ],
       "multipleLines": false,
       "name": "석천사거리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0a9",
@@ -106,7 +106,7 @@
       ],
       "multipleLines": false,
       "name": "서울대벤처타운",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0c7",
@@ -115,7 +115,7 @@
       ],
       "multipleLines": false,
       "name": "동두천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0ca",
@@ -124,7 +124,7 @@
       ],
       "multipleLines": false,
       "name": "귤현",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0gf",
@@ -151,7 +151,7 @@
       ],
       "multipleLines": false,
       "name": "서동탄",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0pt",
@@ -160,7 +160,7 @@
       ],
       "multipleLines": false,
       "name": "신검단중앙",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0qx",
@@ -169,7 +169,7 @@
       ],
       "multipleLines": false,
       "name": "운서",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0r0",
@@ -178,7 +178,7 @@
       ],
       "multipleLines": false,
       "name": "제물포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "0v2",
@@ -188,7 +188,7 @@
       ],
       "multipleLines": true,
       "name": "석촌",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "0yd",
@@ -206,7 +206,7 @@
       ],
       "multipleLines": false,
       "name": "한성백제",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "10t",
@@ -215,7 +215,7 @@
       ],
       "multipleLines": false,
       "name": "의정부",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "119",
@@ -225,7 +225,7 @@
       ],
       "multipleLines": true,
       "name": "효창공원앞",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "144",
@@ -235,7 +235,7 @@
       ],
       "multipleLines": true,
       "name": "미금",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "151",
@@ -245,7 +245,7 @@
       ],
       "multipleLines": true,
       "name": "샛강",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "15a",
@@ -254,7 +254,7 @@
       ],
       "multipleLines": false,
       "name": "임학",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "15d",
@@ -272,7 +272,7 @@
       ],
       "multipleLines": false,
       "name": "서현",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "1b1",
@@ -290,7 +290,7 @@
       ],
       "multipleLines": false,
       "name": "안양",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "1f1",
@@ -309,7 +309,7 @@
       ],
       "multipleLines": true,
       "name": "금정",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "1kf",
@@ -318,7 +318,7 @@
       ],
       "multipleLines": false,
       "name": "송내",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "1kt",
@@ -336,7 +336,7 @@
       ],
       "multipleLines": false,
       "name": "북한산보국문",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "1mx",
@@ -383,7 +383,7 @@
       ],
       "multipleLines": true,
       "name": "광운대",
-      "sourceCount": 3
+      "sourceCount": 4
     },
     {
       "code": "21t",
@@ -392,16 +392,17 @@
       ],
       "multipleLines": false,
       "name": "매교",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "22h",
       "lines": [
+        "GTX-A",
         "분당선"
       ],
-      "multipleLines": false,
+      "multipleLines": true,
       "name": "구성",
-      "sourceCount": 1
+      "sourceCount": 3
     },
     {
       "code": "24v",
@@ -410,7 +411,7 @@
       ],
       "multipleLines": false,
       "name": "광교중앙",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "263",
@@ -419,7 +420,7 @@
       ],
       "multipleLines": false,
       "name": "상현",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "26m",
@@ -428,7 +429,7 @@
       ],
       "multipleLines": false,
       "name": "배방",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "27v",
@@ -437,7 +438,7 @@
       ],
       "multipleLines": false,
       "name": "금천구청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "2bw",
@@ -446,7 +447,7 @@
       ],
       "multipleLines": false,
       "name": "신반포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "2c2",
@@ -455,7 +456,7 @@
       ],
       "multipleLines": false,
       "name": "국회의사당",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "2ew",
@@ -466,7 +467,7 @@
       ],
       "multipleLines": true,
       "name": "디지털미디어시티",
-      "sourceCount": 3
+      "sourceCount": 5
     },
     {
       "code": "2gf",
@@ -476,7 +477,7 @@
       ],
       "multipleLines": true,
       "name": "고잔",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "2gg",
@@ -485,7 +486,7 @@
       ],
       "multipleLines": false,
       "name": "주안국가산단",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "2gq",
@@ -505,7 +506,7 @@
       ],
       "multipleLines": true,
       "name": "옥수",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "2je",
@@ -523,7 +524,7 @@
       ],
       "multipleLines": false,
       "name": "정부과천청사",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "2qb",
@@ -532,7 +533,7 @@
       ],
       "multipleLines": false,
       "name": "평촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "2rz",
@@ -542,7 +543,7 @@
       ],
       "multipleLines": true,
       "name": "정자",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "2tw",
@@ -551,7 +552,7 @@
       ],
       "multipleLines": false,
       "name": "독정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "307",
@@ -560,7 +561,7 @@
       ],
       "multipleLines": false,
       "name": "상천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "30q",
@@ -596,7 +597,7 @@
       ],
       "multipleLines": false,
       "name": "운정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "376",
@@ -606,7 +607,7 @@
       ],
       "multipleLines": true,
       "name": "선정릉",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "390",
@@ -615,7 +616,7 @@
       ],
       "multipleLines": false,
       "name": "인천가좌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "393",
@@ -624,7 +625,7 @@
       ],
       "multipleLines": false,
       "name": "삼양",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3cr",
@@ -633,7 +634,7 @@
       ],
       "multipleLines": false,
       "name": "삼양사거리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3g2",
@@ -652,7 +653,7 @@
       ],
       "multipleLines": false,
       "name": "삼가",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3jc",
@@ -661,7 +662,7 @@
       ],
       "multipleLines": false,
       "name": "오빈",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3mp",
@@ -679,7 +680,7 @@
       ],
       "multipleLines": false,
       "name": "센트럴파크",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3qj",
@@ -697,7 +698,7 @@
       ],
       "multipleLines": false,
       "name": "직산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3rt",
@@ -706,7 +707,7 @@
       ],
       "multipleLines": false,
       "name": "원흥",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3s7",
@@ -725,7 +726,7 @@
       ],
       "multipleLines": true,
       "name": "판교",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "3v6",
@@ -734,7 +735,7 @@
       ],
       "multipleLines": false,
       "name": "사리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "3vr",
@@ -743,7 +744,7 @@
       ],
       "multipleLines": false,
       "name": "운양",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "401",
@@ -753,7 +754,7 @@
       ],
       "multipleLines": true,
       "name": "대방",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "40c",
@@ -762,7 +763,7 @@
       ],
       "multipleLines": false,
       "name": "어룡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "42x",
@@ -771,7 +772,7 @@
       ],
       "multipleLines": false,
       "name": "신둔도예촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "48k",
@@ -780,7 +781,7 @@
       ],
       "multipleLines": false,
       "name": "작전",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "492",
@@ -789,7 +790,7 @@
       ],
       "multipleLines": false,
       "name": "전대·에버랜드",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "49g",
@@ -817,7 +818,7 @@
       ],
       "multipleLines": true,
       "name": "안산",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "4cb",
@@ -853,7 +854,7 @@
       ],
       "multipleLines": false,
       "name": "가정중앙시장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "4k9",
@@ -862,7 +863,7 @@
       ],
       "multipleLines": false,
       "name": "당정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "4mq",
@@ -881,7 +882,7 @@
       ],
       "multipleLines": true,
       "name": "창동",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "4q3",
@@ -917,7 +918,7 @@
       ],
       "multipleLines": false,
       "name": "부개",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "4wv",
@@ -926,7 +927,7 @@
       ],
       "multipleLines": false,
       "name": "동오",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "4x5",
@@ -944,7 +945,7 @@
       ],
       "multipleLines": false,
       "name": "지평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "501",
@@ -953,7 +954,7 @@
       ],
       "multipleLines": false,
       "name": "언주",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "51c",
@@ -962,7 +963,7 @@
       ],
       "multipleLines": false,
       "name": "양평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "51q",
@@ -971,7 +972,7 @@
       ],
       "multipleLines": false,
       "name": "아라",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "52d",
@@ -980,7 +981,7 @@
       ],
       "multipleLines": false,
       "name": "캠퍼스타운",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "58a",
@@ -1000,7 +1001,7 @@
       ],
       "multipleLines": true,
       "name": "고속터미널",
-      "sourceCount": 3
+      "sourceCount": 4
     },
     {
       "code": "5bv",
@@ -1018,7 +1019,7 @@
       ],
       "multipleLines": false,
       "name": "송도달빛축제공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "5rt",
@@ -1028,7 +1029,7 @@
       ],
       "multipleLines": true,
       "name": "부평구청",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "5th",
@@ -1038,7 +1039,7 @@
       ],
       "multipleLines": true,
       "name": "기흥",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "5ys",
@@ -1047,7 +1048,7 @@
       ],
       "multipleLines": false,
       "name": "파주",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "60d",
@@ -1056,7 +1057,7 @@
       ],
       "multipleLines": false,
       "name": "응봉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "60j",
@@ -1065,7 +1066,7 @@
       ],
       "multipleLines": false,
       "name": "성환",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "62d",
@@ -1074,7 +1075,7 @@
       ],
       "multipleLines": false,
       "name": "가양",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "62p",
@@ -1083,7 +1084,7 @@
       ],
       "multipleLines": false,
       "name": "걸포북변",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "63a",
@@ -1092,7 +1093,7 @@
       ],
       "multipleLines": false,
       "name": "부천시청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "642",
@@ -1111,7 +1112,7 @@
       ],
       "multipleLines": true,
       "name": "오이도",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "660",
@@ -1120,7 +1121,7 @@
       ],
       "multipleLines": false,
       "name": "효자",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "66h",
@@ -1129,7 +1130,7 @@
       ],
       "multipleLines": false,
       "name": "김유정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "67a",
@@ -1138,7 +1139,7 @@
       ],
       "multipleLines": false,
       "name": "인천터미널",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "67k",
@@ -1147,7 +1148,7 @@
       ],
       "multipleLines": false,
       "name": "경기도청북부청사",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "68d",
@@ -1156,7 +1157,7 @@
       ],
       "multipleLines": false,
       "name": "소요산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "68y",
@@ -1174,7 +1175,7 @@
       ],
       "multipleLines": false,
       "name": "봉명",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6cf",
@@ -1183,7 +1184,7 @@
       ],
       "multipleLines": false,
       "name": "삼산체육관",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6dc",
@@ -1192,7 +1193,7 @@
       ],
       "multipleLines": false,
       "name": "장기",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6fd",
@@ -1201,7 +1202,7 @@
       ],
       "multipleLines": false,
       "name": "서울숲",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6jk",
@@ -1228,7 +1229,7 @@
       ],
       "multipleLines": false,
       "name": "4.19민주묘지",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6sc",
@@ -1237,7 +1238,7 @@
       ],
       "multipleLines": false,
       "name": "오산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6td",
@@ -1246,7 +1247,7 @@
       ],
       "multipleLines": false,
       "name": "선부",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6vb",
@@ -1255,7 +1256,7 @@
       ],
       "multipleLines": false,
       "name": "경기광주",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "6yr",
@@ -1274,7 +1275,7 @@
       ],
       "multipleLines": true,
       "name": "백마",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "70e",
@@ -1284,7 +1285,7 @@
       ],
       "multipleLines": true,
       "name": "도봉산",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "70x",
@@ -1331,7 +1332,7 @@
       ],
       "multipleLines": true,
       "name": "능곡",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "786",
@@ -1340,7 +1341,7 @@
       ],
       "multipleLines": false,
       "name": "보라매병원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "7am",
@@ -1360,7 +1361,7 @@
       ],
       "multipleLines": true,
       "name": "인천시청",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "7e2",
@@ -1369,7 +1370,7 @@
       ],
       "multipleLines": false,
       "name": "초월",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "7gf",
@@ -1388,7 +1389,7 @@
       ],
       "multipleLines": false,
       "name": "중앙보훈병원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "7hm",
@@ -1397,7 +1398,7 @@
       ],
       "multipleLines": false,
       "name": "동구릉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "7k4",
@@ -1406,7 +1407,7 @@
       ],
       "multipleLines": false,
       "name": "인천대공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "7m0",
@@ -1435,7 +1436,7 @@
       ],
       "multipleLines": true,
       "name": "종로3가",
-      "sourceCount": 3
+      "sourceCount": 4
     },
     {
       "code": "7sf",
@@ -1457,7 +1458,7 @@
       ],
       "multipleLines": true,
       "name": "김포공항",
-      "sourceCount": 5
+      "sourceCount": 9
     },
     {
       "code": "7wc",
@@ -1466,7 +1467,7 @@
       ],
       "multipleLines": false,
       "name": "개봉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "7xd",
@@ -1475,7 +1476,7 @@
       ],
       "multipleLines": false,
       "name": "서울지방병무청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "7y1",
@@ -1493,7 +1494,7 @@
       ],
       "multipleLines": false,
       "name": "가평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "80m",
@@ -1502,7 +1503,7 @@
       ],
       "multipleLines": false,
       "name": "노들",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "81y",
@@ -1511,7 +1512,7 @@
       ],
       "multipleLines": false,
       "name": "가오리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "826",
@@ -1520,7 +1521,7 @@
       ],
       "multipleLines": false,
       "name": "녹천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "82b",
@@ -1547,7 +1548,7 @@
       ],
       "multipleLines": false,
       "name": "정릉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "847",
@@ -1556,7 +1557,7 @@
       ],
       "multipleLines": false,
       "name": "서빙고",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "84e",
@@ -1565,7 +1566,7 @@
       ],
       "multipleLines": false,
       "name": "증미",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8a7",
@@ -1583,7 +1584,7 @@
       ],
       "multipleLines": false,
       "name": "영종",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8bz",
@@ -1592,7 +1593,7 @@
       ],
       "multipleLines": false,
       "name": "솔밭공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8e5",
@@ -1601,7 +1602,7 @@
       ],
       "multipleLines": false,
       "name": "대화",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8g9",
@@ -1610,7 +1611,7 @@
       ],
       "multipleLines": false,
       "name": "태평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8gc",
@@ -1621,7 +1622,7 @@
       ],
       "multipleLines": true,
       "name": "상봉",
-      "sourceCount": 3
+      "sourceCount": 5
     },
     {
       "code": "8gy",
@@ -1630,7 +1631,7 @@
       ],
       "multipleLines": false,
       "name": "수지구청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8jt",
@@ -1640,7 +1641,7 @@
       ],
       "multipleLines": true,
       "name": "논현",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "8kk",
@@ -1650,7 +1651,7 @@
       ],
       "multipleLines": true,
       "name": "마곡나루",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "8km",
@@ -1659,7 +1660,7 @@
       ],
       "multipleLines": false,
       "name": "과천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8pc",
@@ -1677,7 +1678,7 @@
       ],
       "multipleLines": false,
       "name": "신원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8sp",
@@ -1686,7 +1687,7 @@
       ],
       "multipleLines": false,
       "name": "솔샘",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8tc",
@@ -1695,7 +1696,7 @@
       ],
       "multipleLines": false,
       "name": "인천공항2터미널",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "8v0",
@@ -1713,7 +1714,7 @@
       ],
       "multipleLines": false,
       "name": "검단호수공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "98k",
@@ -1722,7 +1723,7 @@
       ],
       "multipleLines": false,
       "name": "숭의",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "98x",
@@ -1732,7 +1733,7 @@
       ],
       "multipleLines": true,
       "name": "부천종합운동장",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "999",
@@ -1760,7 +1761,7 @@
       ],
       "multipleLines": true,
       "name": "이매",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "9am",
@@ -1769,7 +1770,7 @@
       ],
       "multipleLines": false,
       "name": "아시아드경기장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "9ce",
@@ -1778,7 +1779,7 @@
       ],
       "multipleLines": false,
       "name": "인덕원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "9cw",
@@ -1787,7 +1788,7 @@
       ],
       "multipleLines": false,
       "name": "한남",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "9ds",
@@ -1796,7 +1797,7 @@
       ],
       "multipleLines": false,
       "name": "염창",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "9f4",
@@ -1805,7 +1806,7 @@
       ],
       "multipleLines": false,
       "name": "보산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "9fy",
@@ -1815,7 +1816,7 @@
       ],
       "multipleLines": true,
       "name": "동대문",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "9k5",
@@ -1833,7 +1834,7 @@
       ],
       "multipleLines": false,
       "name": "춘천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "9tm",
@@ -1843,7 +1844,7 @@
       ],
       "multipleLines": true,
       "name": "석계",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "9yf",
@@ -1852,7 +1853,7 @@
       ],
       "multipleLines": false,
       "name": "이천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "9zw",
@@ -1880,7 +1881,7 @@
       ],
       "multipleLines": false,
       "name": "녹양",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "a2r",
@@ -1889,7 +1890,7 @@
       ],
       "multipleLines": false,
       "name": "금곡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "a4j",
@@ -1904,11 +1905,12 @@
     {
       "code": "a5z",
       "lines": [
+        "GTX-A",
         "경강선"
       ],
-      "multipleLines": false,
+      "multipleLines": true,
       "name": "성남",
-      "sourceCount": 1
+      "sourceCount": 3
     },
     {
       "code": "a6g",
@@ -1917,7 +1919,7 @@
       ],
       "multipleLines": false,
       "name": "수원시청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "a78",
@@ -1926,7 +1928,7 @@
       ],
       "multipleLines": false,
       "name": "고색",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "a95",
@@ -1944,7 +1946,7 @@
       ],
       "multipleLines": false,
       "name": "동춘",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "aeb",
@@ -1953,7 +1955,7 @@
       ],
       "multipleLines": false,
       "name": "한티",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "aev",
@@ -1971,7 +1973,7 @@
       ],
       "multipleLines": false,
       "name": "갈산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ak3",
@@ -1980,7 +1982,16 @@
       ],
       "multipleLines": false,
       "name": "반월",
-      "sourceCount": 1
+      "sourceCount": 2
+    },
+    {
+      "code": "amm",
+      "lines": [
+        "GTX-A"
+      ],
+      "multipleLines": false,
+      "name": "킨텍스",
+      "sourceCount": 2
     },
     {
       "code": "and",
@@ -1990,7 +2001,7 @@
       ],
       "multipleLines": true,
       "name": "원인재",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "anr",
@@ -2000,7 +2011,7 @@
       ],
       "multipleLines": true,
       "name": "주안",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "apx",
@@ -2018,7 +2029,7 @@
       ],
       "multipleLines": false,
       "name": "팔당",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "aty",
@@ -2028,7 +2039,7 @@
       ],
       "multipleLines": true,
       "name": "보라매",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "avc",
@@ -2038,7 +2049,7 @@
       ],
       "multipleLines": true,
       "name": "소사",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "awc",
@@ -2047,7 +2058,7 @@
       ],
       "multipleLines": false,
       "name": "가천대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "aym",
@@ -2056,7 +2067,7 @@
       ],
       "multipleLines": false,
       "name": "백양리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "b2w",
@@ -2074,7 +2085,7 @@
       ],
       "multipleLines": false,
       "name": "세류",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "b4d",
@@ -2084,7 +2095,7 @@
       ],
       "multipleLines": true,
       "name": "신사",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "b57",
@@ -2093,7 +2104,7 @@
       ],
       "multipleLines": false,
       "name": "화서",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "b58",
@@ -2102,7 +2113,7 @@
       ],
       "multipleLines": false,
       "name": "신현",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "b62",
@@ -2120,7 +2131,7 @@
       ],
       "multipleLines": false,
       "name": "춘의",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "b9t",
@@ -2129,7 +2140,7 @@
       ],
       "multipleLines": false,
       "name": "오류동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "b9x",
@@ -2156,7 +2167,7 @@
       ],
       "multipleLines": false,
       "name": "신이문",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "bap",
@@ -2166,7 +2177,7 @@
       ],
       "multipleLines": true,
       "name": "모란",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "bcc",
@@ -2203,7 +2214,7 @@
       ],
       "multipleLines": false,
       "name": "탑석",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "bfa",
@@ -2233,7 +2244,7 @@
       ],
       "multipleLines": true,
       "name": "인천",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "bjr",
@@ -2260,7 +2271,7 @@
       ],
       "multipleLines": false,
       "name": "인천논현",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "bne",
@@ -2270,7 +2281,7 @@
       ],
       "multipleLines": true,
       "name": "계양",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "bsj",
@@ -2279,7 +2290,7 @@
       ],
       "multipleLines": false,
       "name": "양천향교",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "bvq",
@@ -2297,7 +2308,7 @@
       ],
       "multipleLines": false,
       "name": "곤지암",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "bya",
@@ -2306,7 +2317,7 @@
       ],
       "multipleLines": false,
       "name": "운길산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "c1p",
@@ -2315,7 +2326,7 @@
       ],
       "multipleLines": false,
       "name": "경마공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "c3n",
@@ -2342,7 +2353,7 @@
       ],
       "multipleLines": false,
       "name": "세종대왕릉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "c65",
@@ -2351,7 +2362,7 @@
       ],
       "multipleLines": false,
       "name": "원시",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "c6a",
@@ -2360,7 +2371,7 @@
       ],
       "multipleLines": false,
       "name": "인천대입구",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "c6g",
@@ -2369,7 +2380,7 @@
       ],
       "multipleLines": false,
       "name": "의정부중앙",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "c78",
@@ -2378,7 +2389,7 @@
       ],
       "multipleLines": false,
       "name": "서부여성회관",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "c8b",
@@ -2396,7 +2407,7 @@
       ],
       "multipleLines": false,
       "name": "상갈",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ca8",
@@ -2405,7 +2416,7 @@
       ],
       "multipleLines": false,
       "name": "어정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "caz",
@@ -2424,7 +2435,7 @@
       ],
       "multipleLines": true,
       "name": "선릉",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "cex",
@@ -2433,7 +2444,16 @@
       ],
       "multipleLines": false,
       "name": "외대앞",
-      "sourceCount": 1
+      "sourceCount": 2
+    },
+    {
+      "code": "cgx",
+      "lines": [
+        "경의중앙선"
+      ],
+      "multipleLines": false,
+      "name": "양원",
+      "sourceCount": 2
     },
     {
       "code": "cjd",
@@ -2442,7 +2462,7 @@
       ],
       "multipleLines": false,
       "name": "명학",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "cjw",
@@ -2462,7 +2482,7 @@
       ],
       "multipleLines": true,
       "name": "부평",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "cms",
@@ -2472,7 +2492,7 @@
       ],
       "multipleLines": true,
       "name": "올림픽공원",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "cpf",
@@ -2481,7 +2501,7 @@
       ],
       "multipleLines": false,
       "name": "대성리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "cpw",
@@ -2499,7 +2519,7 @@
       ],
       "multipleLines": false,
       "name": "굴봉산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "cs2",
@@ -2509,7 +2529,7 @@
       ],
       "multipleLines": true,
       "name": "노량진",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "ct5",
@@ -2521,7 +2541,7 @@
       ],
       "multipleLines": true,
       "name": "왕십리",
-      "sourceCount": 4
+      "sourceCount": 6
     },
     {
       "code": "cvb",
@@ -2539,7 +2559,7 @@
       ],
       "multipleLines": false,
       "name": "까치울",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "cw4",
@@ -2548,7 +2568,7 @@
       ],
       "multipleLines": false,
       "name": "초당",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "cye",
@@ -2557,7 +2577,7 @@
       ],
       "multipleLines": false,
       "name": "금촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "d10",
@@ -2575,7 +2595,7 @@
       ],
       "multipleLines": false,
       "name": "부발",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "d6d",
@@ -2584,7 +2604,7 @@
       ],
       "multipleLines": false,
       "name": "다산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "d7s",
@@ -2593,7 +2613,7 @@
       ],
       "multipleLines": false,
       "name": "모래내시장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "d97",
@@ -2602,17 +2622,18 @@
       ],
       "multipleLines": false,
       "name": "간석오거리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dd9",
       "lines": [
         "3호선",
+        "GTX-A",
         "분당선"
       ],
       "multipleLines": true,
       "name": "수서",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "dgn",
@@ -2621,7 +2642,7 @@
       ],
       "multipleLines": false,
       "name": "테크노파크",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "djn",
@@ -2630,7 +2651,7 @@
       ],
       "multipleLines": false,
       "name": "오남",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "djw",
@@ -2649,7 +2670,7 @@
       ],
       "multipleLines": true,
       "name": "신림",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "dkx",
@@ -2658,7 +2679,7 @@
       ],
       "multipleLines": false,
       "name": "예술회관",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dm3",
@@ -2667,7 +2688,7 @@
       ],
       "multipleLines": false,
       "name": "역곡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dsf",
@@ -2685,7 +2706,7 @@
       ],
       "multipleLines": false,
       "name": "구룡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dtz",
@@ -2694,7 +2715,7 @@
       ],
       "multipleLines": false,
       "name": "가재울",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dvh",
@@ -2703,7 +2724,7 @@
       ],
       "multipleLines": false,
       "name": "백운",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dvy",
@@ -2712,7 +2733,7 @@
       ],
       "multipleLines": false,
       "name": "소새울",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dw8",
@@ -2721,7 +2742,7 @@
       ],
       "multipleLines": false,
       "name": "양재시민의숲",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dx1",
@@ -2730,7 +2751,7 @@
       ],
       "multipleLines": false,
       "name": "별내별가람",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dxy",
@@ -2749,7 +2770,7 @@
       ],
       "multipleLines": false,
       "name": "발곡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "dyp",
@@ -2759,7 +2780,7 @@
       ],
       "multipleLines": true,
       "name": "회기",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "dzc",
@@ -2768,7 +2789,7 @@
       ],
       "multipleLines": false,
       "name": "광교",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "e08",
@@ -2787,7 +2808,7 @@
       ],
       "multipleLines": true,
       "name": "중앙",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "e55",
@@ -2796,7 +2817,7 @@
       ],
       "multipleLines": false,
       "name": "등촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "e5c",
@@ -2806,7 +2827,7 @@
       ],
       "multipleLines": true,
       "name": "능길",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "e5n",
@@ -2815,7 +2836,7 @@
       ],
       "multipleLines": false,
       "name": "죽전",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "e6n",
@@ -2824,7 +2845,7 @@
       ],
       "multipleLines": false,
       "name": "달월",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "e6t",
@@ -2833,7 +2854,7 @@
       ],
       "multipleLines": false,
       "name": "범골",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "e87",
@@ -2843,7 +2864,7 @@
       ],
       "multipleLines": true,
       "name": "가산디지털단지",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "e8y",
@@ -2852,7 +2873,7 @@
       ],
       "multipleLines": false,
       "name": "둔촌오륜",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ea2",
@@ -2870,7 +2891,7 @@
       ],
       "multipleLines": false,
       "name": "쌍용",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ekd",
@@ -2896,12 +2917,13 @@
       "lines": [
         "1호선",
         "4호선",
+        "GTX-A",
         "경의중앙선",
         "인천국제공항선"
       ],
       "multipleLines": true,
       "name": "서울역",
-      "sourceCount": 4
+      "sourceCount": 8
     },
     {
       "code": "ep4",
@@ -2920,7 +2942,7 @@
       ],
       "multipleLines": false,
       "name": "원종",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "esy",
@@ -2929,7 +2951,7 @@
       ],
       "multipleLines": false,
       "name": "진위",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "evj",
@@ -2938,7 +2960,7 @@
       ],
       "multipleLines": false,
       "name": "간석",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ey8",
@@ -2947,7 +2969,7 @@
       ],
       "multipleLines": false,
       "name": "완정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "eyq",
@@ -2956,7 +2978,7 @@
       ],
       "multipleLines": false,
       "name": "화정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "eyv",
@@ -2965,7 +2987,7 @@
       ],
       "multipleLines": false,
       "name": "국제업무지구",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "eyw",
@@ -2974,7 +2996,7 @@
       ],
       "multipleLines": false,
       "name": "탕정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ez1",
@@ -2983,7 +3005,7 @@
       ],
       "multipleLines": false,
       "name": "상동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ez2",
@@ -2992,7 +3014,7 @@
       ],
       "multipleLines": false,
       "name": "청라국제도시",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ez7",
@@ -3002,7 +3024,7 @@
       ],
       "multipleLines": true,
       "name": "풍산",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "eza",
@@ -3012,7 +3034,7 @@
       ],
       "multipleLines": true,
       "name": "신도림",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "f3j",
@@ -3021,7 +3043,7 @@
       ],
       "multipleLines": false,
       "name": "한국항공대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "f46",
@@ -3039,7 +3061,7 @@
       ],
       "multipleLines": false,
       "name": "산곡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "f8w",
@@ -3048,7 +3070,7 @@
       ],
       "multipleLines": false,
       "name": "영통",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fae",
@@ -3058,7 +3080,7 @@
       ],
       "multipleLines": true,
       "name": "신길",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "fav",
@@ -3067,7 +3089,7 @@
       ],
       "multipleLines": false,
       "name": "오리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fb1",
@@ -3076,7 +3098,7 @@
       ],
       "multipleLines": false,
       "name": "신연수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fcc",
@@ -3094,7 +3116,7 @@
       ],
       "multipleLines": false,
       "name": "검단사거리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fhc",
@@ -3103,7 +3125,7 @@
       ],
       "multipleLines": false,
       "name": "지석",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fj1",
@@ -3112,7 +3134,7 @@
       ],
       "multipleLines": false,
       "name": "신창",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fjf",
@@ -3121,7 +3143,7 @@
       ],
       "multipleLines": false,
       "name": "흥선",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fjk",
@@ -3130,7 +3152,7 @@
       ],
       "multipleLines": false,
       "name": "연천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fjq",
@@ -3139,7 +3161,7 @@
       ],
       "multipleLines": false,
       "name": "여주",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fk1",
@@ -3148,7 +3170,7 @@
       ],
       "multipleLines": false,
       "name": "수리산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fkn",
@@ -3158,7 +3180,7 @@
       ],
       "multipleLines": true,
       "name": "양재",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "fm1",
@@ -3167,7 +3189,7 @@
       ],
       "multipleLines": false,
       "name": "소래포구",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fm2",
@@ -3176,7 +3198,7 @@
       ],
       "multipleLines": false,
       "name": "가능",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fm4",
@@ -3185,7 +3207,7 @@
       ],
       "multipleLines": false,
       "name": "양주",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fm7",
@@ -3205,7 +3227,7 @@
       ],
       "multipleLines": true,
       "name": "곡산",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "fnh",
@@ -3223,7 +3245,7 @@
       ],
       "multipleLines": false,
       "name": "동두천중앙",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fwf",
@@ -3232,7 +3254,7 @@
       ],
       "multipleLines": false,
       "name": "서강대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "fxj",
@@ -3242,7 +3264,7 @@
       ],
       "multipleLines": true,
       "name": "도곡",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "g0v",
@@ -3251,7 +3273,7 @@
       ],
       "multipleLines": false,
       "name": "남태령",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "g11",
@@ -3261,7 +3283,7 @@
       ],
       "multipleLines": true,
       "name": "복정",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "g3m",
@@ -3270,7 +3292,7 @@
       ],
       "multipleLines": false,
       "name": "사우",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "g48",
@@ -3281,7 +3303,7 @@
       ],
       "multipleLines": true,
       "name": "초지",
-      "sourceCount": 3
+      "sourceCount": 6
     },
     {
       "code": "g6h",
@@ -3290,7 +3312,7 @@
       ],
       "multipleLines": false,
       "name": "송탄",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "g74",
@@ -3299,7 +3321,7 @@
       ],
       "multipleLines": false,
       "name": "신방화",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "g7y",
@@ -3326,7 +3348,7 @@
       ],
       "multipleLines": false,
       "name": "어천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gea",
@@ -3335,7 +3357,7 @@
       ],
       "multipleLines": false,
       "name": "평택지제",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gf9",
@@ -3345,7 +3367,7 @@
       ],
       "multipleLines": true,
       "name": "시청",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "ggj",
@@ -3354,7 +3376,7 @@
       ],
       "multipleLines": false,
       "name": "신목동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gnb",
@@ -3363,7 +3385,7 @@
       ],
       "multipleLines": false,
       "name": "청산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gnx",
@@ -3382,7 +3404,7 @@
       ],
       "multipleLines": false,
       "name": "종각",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gqt",
@@ -3391,7 +3413,7 @@
       ],
       "multipleLines": false,
       "name": "지행",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gr7",
@@ -3400,7 +3422,7 @@
       ],
       "multipleLines": false,
       "name": "남춘천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "grq",
@@ -3410,7 +3432,7 @@
       ],
       "multipleLines": true,
       "name": "석남",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "gwf",
@@ -3419,7 +3441,7 @@
       ],
       "multipleLines": false,
       "name": "망포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gxq",
@@ -3428,7 +3450,7 @@
       ],
       "multipleLines": false,
       "name": "송도",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gxx",
@@ -3437,7 +3459,7 @@
       ],
       "multipleLines": false,
       "name": "동인천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gyf",
@@ -3446,7 +3468,7 @@
       ],
       "multipleLines": false,
       "name": "박촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gyt",
@@ -3455,7 +3477,7 @@
       ],
       "multipleLines": false,
       "name": "서원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "gzb",
@@ -3491,7 +3513,7 @@
       ],
       "multipleLines": false,
       "name": "지식정보단지",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "h8d",
@@ -3501,7 +3523,7 @@
       ],
       "multipleLines": true,
       "name": "한대앞",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "ha9",
@@ -3510,7 +3532,7 @@
       ],
       "multipleLines": false,
       "name": "보라매공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hbf",
@@ -3529,7 +3551,7 @@
       ],
       "multipleLines": false,
       "name": "도봉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hed",
@@ -3548,7 +3570,7 @@
       ],
       "multipleLines": false,
       "name": "신천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hh6",
@@ -3557,7 +3579,7 @@
       ],
       "multipleLines": false,
       "name": "병점",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hhr",
@@ -3566,7 +3588,7 @@
       ],
       "multipleLines": false,
       "name": "압구정로데오",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hj0",
@@ -3584,7 +3606,7 @@
       ],
       "multipleLines": false,
       "name": "가정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hmg",
@@ -3593,7 +3615,7 @@
       ],
       "multipleLines": false,
       "name": "월롱",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hmh",
@@ -3602,7 +3624,7 @@
       ],
       "multipleLines": false,
       "name": "야목",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hqd",
@@ -3620,7 +3642,7 @@
       ],
       "multipleLines": false,
       "name": "공항시장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "hsx",
@@ -3629,7 +3651,7 @@
       ],
       "multipleLines": false,
       "name": "영등포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "j0b",
@@ -3638,7 +3660,7 @@
       ],
       "multipleLines": false,
       "name": "강매",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "j2x",
@@ -3647,7 +3669,7 @@
       ],
       "multipleLines": false,
       "name": "관악산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "j3y",
@@ -3666,7 +3688,7 @@
       ],
       "multipleLines": true,
       "name": "종합운동장",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "j7v",
@@ -3684,7 +3706,7 @@
       ],
       "multipleLines": false,
       "name": "운연",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "j8f",
@@ -3693,7 +3715,7 @@
       ],
       "multipleLines": false,
       "name": "동암",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jae",
@@ -3702,7 +3724,7 @@
       ],
       "multipleLines": false,
       "name": "봉은사",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jc9",
@@ -3712,7 +3734,7 @@
       ],
       "multipleLines": true,
       "name": "성신여대입구",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "jd6",
@@ -3721,7 +3743,7 @@
       ],
       "multipleLines": false,
       "name": "서정리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jdm",
@@ -3758,7 +3780,7 @@
       ],
       "multipleLines": false,
       "name": "세마",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jkz",
@@ -3767,7 +3789,7 @@
       ],
       "multipleLines": false,
       "name": "시청·용인대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jne",
@@ -3776,7 +3798,7 @@
       ],
       "multipleLines": false,
       "name": "청계산입구",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jra",
@@ -3785,7 +3807,7 @@
       ],
       "multipleLines": false,
       "name": "계산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jrc",
@@ -3794,7 +3816,7 @@
       ],
       "multipleLines": false,
       "name": "시우",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jt3",
@@ -3803,7 +3825,7 @@
       ],
       "multipleLines": false,
       "name": "삼성중앙",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jvd",
@@ -3821,7 +3843,7 @@
       ],
       "multipleLines": false,
       "name": "대야미",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "jyy",
@@ -3830,7 +3852,7 @@
       ],
       "multipleLines": false,
       "name": "진접",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "k14",
@@ -3857,7 +3879,7 @@
       ],
       "multipleLines": false,
       "name": "호구포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "k3a",
@@ -3867,7 +3889,7 @@
       ],
       "multipleLines": true,
       "name": "강남",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "k3b",
@@ -3885,7 +3907,7 @@
       ],
       "multipleLines": false,
       "name": "용인중앙시장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "k5r",
@@ -3894,7 +3916,7 @@
       ],
       "multipleLines": false,
       "name": "두정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "k71",
@@ -3903,7 +3925,7 @@
       ],
       "multipleLines": false,
       "name": "시흥능곡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "k7d",
@@ -3921,7 +3943,7 @@
       ],
       "multipleLines": false,
       "name": "월계",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "k91",
@@ -3933,13 +3955,22 @@
       "sourceCount": 1
     },
     {
+      "code": "kb3",
+      "lines": [
+        "GTX-A"
+      ],
+      "multipleLines": false,
+      "name": "동탄",
+      "sourceCount": 2
+    },
+    {
       "code": "kcm",
       "lines": [
         "서울 도시철도 9호선"
       ],
       "multipleLines": false,
       "name": "선유도",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "kdf",
@@ -3968,7 +3999,7 @@
       ],
       "multipleLines": true,
       "name": "신설동",
-      "sourceCount": 3
+      "sourceCount": 5
     },
     {
       "code": "kjt",
@@ -3986,7 +4017,7 @@
       ],
       "multipleLines": false,
       "name": "명지대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ksw",
@@ -4022,7 +4053,7 @@
       ],
       "multipleLines": false,
       "name": "개포동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "kz4",
@@ -4031,7 +4062,7 @@
       ],
       "multipleLines": false,
       "name": "남동구청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "m3q",
@@ -4040,7 +4071,7 @@
       ],
       "multipleLines": false,
       "name": "시민공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "m3r",
@@ -4049,7 +4080,7 @@
       ],
       "multipleLines": false,
       "name": "덕정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "m5r",
@@ -4067,7 +4098,7 @@
       ],
       "multipleLines": false,
       "name": "양수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "mbk",
@@ -4076,7 +4107,7 @@
       ],
       "multipleLines": false,
       "name": "신갈",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "md7",
@@ -4094,7 +4125,7 @@
       ],
       "multipleLines": false,
       "name": "사평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "mj0",
@@ -4105,7 +4136,7 @@
       ],
       "multipleLines": true,
       "name": "청량리",
-      "sourceCount": 3
+      "sourceCount": 6
     },
     {
       "code": "mjh",
@@ -4114,7 +4145,7 @@
       ],
       "multipleLines": false,
       "name": "고진",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "mkh",
@@ -4124,7 +4155,7 @@
       ],
       "multipleLines": true,
       "name": "당산",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "mky",
@@ -4139,11 +4170,12 @@
       "code": "mmp",
       "lines": [
         "3호선",
-        "6호선"
+        "6호선",
+        "GTX-A"
       ],
       "multipleLines": true,
       "name": "연신내",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "mnc",
@@ -4161,7 +4193,7 @@
       ],
       "multipleLines": false,
       "name": "수색",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "mt4",
@@ -4197,7 +4229,7 @@
       ],
       "multipleLines": false,
       "name": "보정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "n4x",
@@ -4207,7 +4239,7 @@
       ],
       "multipleLines": true,
       "name": "구리",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "nbj",
@@ -4217,7 +4249,7 @@
       ],
       "multipleLines": true,
       "name": "강남구청",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "nn9",
@@ -4229,7 +4261,7 @@
       ],
       "multipleLines": true,
       "name": "공덕",
-      "sourceCount": 4
+      "sourceCount": 6
     },
     {
       "code": "np5",
@@ -4238,7 +4270,7 @@
       ],
       "multipleLines": false,
       "name": "의정부시청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "nqj",
@@ -4247,7 +4279,7 @@
       ],
       "multipleLines": false,
       "name": "김량장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "nr0",
@@ -4257,7 +4289,7 @@
       ],
       "multipleLines": true,
       "name": "온수",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "nr6",
@@ -4267,7 +4299,7 @@
       ],
       "multipleLines": true,
       "name": "검암",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "nss",
@@ -4303,7 +4335,7 @@
       ],
       "multipleLines": false,
       "name": "마석",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "nwk",
@@ -4340,7 +4372,7 @@
       ],
       "multipleLines": false,
       "name": "사릉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "p5t",
@@ -4349,7 +4381,7 @@
       ],
       "multipleLines": false,
       "name": "의왕",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "pea",
@@ -4367,7 +4399,7 @@
       ],
       "multipleLines": false,
       "name": "수내",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "pjy",
@@ -4395,7 +4427,7 @@
       ],
       "multipleLines": false,
       "name": "동백",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "psk",
@@ -4404,7 +4436,7 @@
       ],
       "multipleLines": false,
       "name": "시흥시청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "pt9",
@@ -4431,7 +4463,7 @@
       ],
       "multipleLines": false,
       "name": "굴포천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "pxn",
@@ -4440,7 +4472,7 @@
       ],
       "multipleLines": false,
       "name": "신촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "py2",
@@ -4449,7 +4481,7 @@
       ],
       "multipleLines": false,
       "name": "청명",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "pyh",
@@ -4458,7 +4490,7 @@
       ],
       "multipleLines": false,
       "name": "송파나루",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "q12",
@@ -4485,7 +4517,7 @@
       ],
       "multipleLines": false,
       "name": "백석",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "q59",
@@ -4494,7 +4526,7 @@
       ],
       "multipleLines": false,
       "name": "삼동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "q6j",
@@ -4512,7 +4544,7 @@
       ],
       "multipleLines": false,
       "name": "청평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "qbk",
@@ -4530,7 +4562,7 @@
       ],
       "multipleLines": false,
       "name": "덕소",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "qbz",
@@ -4548,7 +4580,7 @@
       ],
       "multipleLines": false,
       "name": "구일",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "qfw",
@@ -4566,7 +4598,7 @@
       ],
       "multipleLines": false,
       "name": "망월사",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "qk9",
@@ -4576,7 +4608,7 @@
       ],
       "multipleLines": true,
       "name": "보문",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "qm8",
@@ -4594,7 +4626,7 @@
       ],
       "multipleLines": false,
       "name": "전곡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "qqj",
@@ -4603,7 +4635,7 @@
       ],
       "multipleLines": false,
       "name": "부평시장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "qqr",
@@ -4622,7 +4654,7 @@
       ],
       "multipleLines": true,
       "name": "회룡",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "qwe",
@@ -4631,7 +4663,7 @@
       ],
       "multipleLines": false,
       "name": "도화",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r10",
@@ -4640,7 +4672,7 @@
       ],
       "multipleLines": false,
       "name": "주엽",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r18",
@@ -4649,7 +4681,7 @@
       ],
       "multipleLines": false,
       "name": "시흥대야",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r25",
@@ -4667,7 +4699,7 @@
       ],
       "multipleLines": false,
       "name": "남영",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r2q",
@@ -4686,7 +4718,7 @@
       ],
       "multipleLines": false,
       "name": "동막",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r4d",
@@ -4695,7 +4727,7 @@
       ],
       "multipleLines": false,
       "name": "선학",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r4v",
@@ -4704,7 +4736,7 @@
       ],
       "multipleLines": false,
       "name": "둔전",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r5z",
@@ -4722,7 +4754,7 @@
       ],
       "multipleLines": false,
       "name": "북한산우이",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r8e",
@@ -4731,7 +4763,7 @@
       ],
       "multipleLines": false,
       "name": "구로",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "r96",
@@ -4749,7 +4781,7 @@
       ],
       "multipleLines": false,
       "name": "양촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "rb2",
@@ -4767,7 +4799,7 @@
       ],
       "multipleLines": false,
       "name": "도농",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "rec",
@@ -4794,7 +4826,7 @@
       ],
       "multipleLines": false,
       "name": "새말",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "rk0",
@@ -4803,7 +4835,7 @@
       ],
       "multipleLines": false,
       "name": "원덕",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "rk8",
@@ -4812,7 +4844,7 @@
       ],
       "multipleLines": false,
       "name": "퇴계원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "rrt",
@@ -4821,7 +4853,7 @@
       ],
       "multipleLines": false,
       "name": "오목천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "rvv",
@@ -4839,7 +4871,7 @@
       ],
       "multipleLines": false,
       "name": "부천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ryf",
@@ -4850,7 +4882,7 @@
       ],
       "multipleLines": true,
       "name": "홍대입구",
-      "sourceCount": 3
+      "sourceCount": 5
     },
     {
       "code": "ryr",
@@ -4868,7 +4900,7 @@
       ],
       "multipleLines": false,
       "name": "가좌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "rzd",
@@ -4877,7 +4909,7 @@
       ],
       "multipleLines": false,
       "name": "마두",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "s1q",
@@ -4898,18 +4930,19 @@
       ],
       "multipleLines": true,
       "name": "여의도",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "s1y",
       "lines": [
+        "GTX-A",
         "경의중앙선",
         "서해선",
         "일산선"
       ],
       "multipleLines": true,
       "name": "대곡",
-      "sourceCount": 3
+      "sourceCount": 7
     },
     {
       "code": "s3y",
@@ -4918,7 +4951,7 @@
       ],
       "multipleLines": false,
       "name": "고촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "s5v",
@@ -4946,7 +4979,7 @@
       ],
       "multipleLines": true,
       "name": "동작",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "sfp",
@@ -4964,7 +4997,7 @@
       ],
       "multipleLines": false,
       "name": "종로5가",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "sr7",
@@ -4973,7 +5006,7 @@
       ],
       "multipleLines": false,
       "name": "선바위",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ssr",
@@ -4982,7 +5015,7 @@
       ],
       "multipleLines": false,
       "name": "평택",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "swc",
@@ -4991,7 +5024,7 @@
       ],
       "multipleLines": false,
       "name": "평내호평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "sz2",
@@ -5000,7 +5033,7 @@
       ],
       "multipleLines": false,
       "name": "흑석",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "t0d",
@@ -5009,7 +5042,7 @@
       ],
       "multipleLines": false,
       "name": "야당",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "t12",
@@ -5018,7 +5051,7 @@
       ],
       "multipleLines": false,
       "name": "산본",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "t1m",
@@ -5027,7 +5060,7 @@
       ],
       "multipleLines": false,
       "name": "상록수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "t2d",
@@ -5036,7 +5069,7 @@
       ],
       "multipleLines": false,
       "name": "송산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "t3r",
@@ -5054,7 +5087,7 @@
       ],
       "multipleLines": false,
       "name": "천안",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "tcj",
@@ -5063,7 +5096,7 @@
       ],
       "multipleLines": false,
       "name": "신포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "tds",
@@ -5073,7 +5106,7 @@
       ],
       "multipleLines": true,
       "name": "용산",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "tf6",
@@ -5082,7 +5115,7 @@
       ],
       "multipleLines": false,
       "name": "만수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "tfm",
@@ -5109,7 +5142,7 @@
       ],
       "multipleLines": false,
       "name": "경전철의정부",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "tnt",
@@ -5118,7 +5151,7 @@
       ],
       "multipleLines": false,
       "name": "군포",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "tq7",
@@ -5145,7 +5178,7 @@
       ],
       "multipleLines": false,
       "name": "야탑",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "txt",
@@ -5163,7 +5196,7 @@
       ],
       "multipleLines": false,
       "name": "인천공항1터미널",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "tzv",
@@ -5173,7 +5206,7 @@
       ],
       "multipleLines": true,
       "name": "동묘앞",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "v17",
@@ -5191,7 +5224,7 @@
       ],
       "multipleLines": false,
       "name": "서구청",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "v66",
@@ -5209,7 +5242,7 @@
       ],
       "multipleLines": false,
       "name": "금릉",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "v6j",
@@ -5218,7 +5251,7 @@
       ],
       "multipleLines": false,
       "name": "석촌고분",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "v6p",
@@ -5228,6 +5261,15 @@
       ],
       "multipleLines": true,
       "name": "정왕",
+      "sourceCount": 4
+    },
+    {
+      "code": "v7f",
+      "lines": [
+        "GTX-A"
+      ],
+      "multipleLines": false,
+      "name": "운정중앙",
       "sourceCount": 2
     },
     {
@@ -5246,7 +5288,7 @@
       ],
       "multipleLines": false,
       "name": "동수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "vdj",
@@ -5264,7 +5306,7 @@
       ],
       "multipleLines": false,
       "name": "왕길",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "vfz",
@@ -5273,7 +5315,7 @@
       ],
       "multipleLines": false,
       "name": "검바위",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "vgd",
@@ -5291,7 +5333,7 @@
       ],
       "multipleLines": false,
       "name": "인하대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "vsf",
@@ -5300,7 +5342,7 @@
       ],
       "multipleLines": false,
       "name": "달미",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "vsr",
@@ -5318,7 +5360,7 @@
       ],
       "multipleLines": false,
       "name": "도심",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "vwc",
@@ -5327,7 +5369,7 @@
       ],
       "multipleLines": false,
       "name": "석바위시장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "vyf",
@@ -5346,7 +5388,7 @@
       ],
       "multipleLines": true,
       "name": "별내",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "w2d",
@@ -5364,7 +5406,7 @@
       ],
       "multipleLines": false,
       "name": "원당",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "w3d",
@@ -5373,7 +5415,7 @@
       ],
       "multipleLines": false,
       "name": "문학경기장",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "w4h",
@@ -5382,7 +5424,7 @@
       ],
       "multipleLines": false,
       "name": "장자호수공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "w7g",
@@ -5391,7 +5433,7 @@
       ],
       "multipleLines": false,
       "name": "아신",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "w7n",
@@ -5400,7 +5442,7 @@
       ],
       "multipleLines": false,
       "name": "삼송",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "w7x",
@@ -5419,7 +5461,7 @@
       ],
       "multipleLines": true,
       "name": "수원",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "w9g",
@@ -5428,7 +5470,7 @@
       ],
       "multipleLines": false,
       "name": "석수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wa0",
@@ -5446,7 +5488,7 @@
       ],
       "multipleLines": false,
       "name": "화계",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wbz",
@@ -5455,7 +5497,7 @@
       ],
       "multipleLines": false,
       "name": "방학",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wcb",
@@ -5464,7 +5506,7 @@
       ],
       "multipleLines": false,
       "name": "매탄권선",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wdj",
@@ -5482,7 +5524,7 @@
       ],
       "multipleLines": false,
       "name": "국수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wg2",
@@ -5491,7 +5533,7 @@
       ],
       "multipleLines": false,
       "name": "오산대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wne",
@@ -5500,7 +5542,7 @@
       ],
       "multipleLines": false,
       "name": "개화",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wnj",
@@ -5509,7 +5551,7 @@
       ],
       "multipleLines": false,
       "name": "강촌",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wpy",
@@ -5518,7 +5560,7 @@
       ],
       "multipleLines": false,
       "name": "풍무",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wqy",
@@ -5536,7 +5578,7 @@
       ],
       "multipleLines": false,
       "name": "중동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wt8",
@@ -5545,7 +5587,7 @@
       ],
       "multipleLines": false,
       "name": "관악",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wws",
@@ -5554,7 +5596,7 @@
       ],
       "multipleLines": false,
       "name": "곤제",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "www",
@@ -5563,7 +5605,7 @@
       ],
       "multipleLines": false,
       "name": "탄현",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "wwy",
@@ -5600,7 +5642,7 @@
       ],
       "multipleLines": false,
       "name": "공항화물청사",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "x4g",
@@ -5609,7 +5651,7 @@
       ],
       "multipleLines": false,
       "name": "부평삼거리",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "x69",
@@ -5645,7 +5687,7 @@
       ],
       "multipleLines": false,
       "name": "도원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "x8q",
@@ -5654,7 +5696,7 @@
       ],
       "multipleLines": false,
       "name": "당곡",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "x9n",
@@ -5663,7 +5705,7 @@
       ],
       "multipleLines": false,
       "name": "대공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xan",
@@ -5672,7 +5714,7 @@
       ],
       "multipleLines": false,
       "name": "아산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xbr",
@@ -5690,7 +5732,7 @@
       ],
       "multipleLines": false,
       "name": "제기동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xfx",
@@ -5699,7 +5741,7 @@
       ],
       "multipleLines": false,
       "name": "대모산입구",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xgj",
@@ -5708,7 +5750,7 @@
       ],
       "multipleLines": false,
       "name": "범계",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xgn",
@@ -5717,7 +5759,7 @@
       ],
       "multipleLines": false,
       "name": "보평",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xgp",
@@ -5744,7 +5786,7 @@
       ],
       "multipleLines": false,
       "name": "온양온천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xn1",
@@ -5754,7 +5796,7 @@
       ],
       "multipleLines": true,
       "name": "신논현",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "xnc",
@@ -5764,7 +5806,7 @@
       ],
       "multipleLines": true,
       "name": "이촌",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "xqr",
@@ -5773,7 +5815,7 @@
       ],
       "multipleLines": false,
       "name": "강남대",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xqw",
@@ -5782,7 +5824,7 @@
       ],
       "multipleLines": false,
       "name": "경인교대입구",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xs3",
@@ -5791,7 +5833,7 @@
       ],
       "multipleLines": false,
       "name": "삼전",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xvw",
@@ -5801,7 +5843,7 @@
       ],
       "multipleLines": true,
       "name": "망우",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "xxa",
@@ -5810,7 +5852,7 @@
       ],
       "multipleLines": false,
       "name": "광명",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xy3",
@@ -5819,7 +5861,7 @@
       ],
       "multipleLines": false,
       "name": "갈매",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xym",
@@ -5828,7 +5870,7 @@
       ],
       "multipleLines": false,
       "name": "검단오류",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "xzd",
@@ -5837,7 +5879,7 @@
       ],
       "multipleLines": false,
       "name": "암사역사공원",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "y1n",
@@ -5846,7 +5888,7 @@
       ],
       "multipleLines": false,
       "name": "남동인더스파크",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "y39",
@@ -5855,7 +5897,7 @@
       ],
       "multipleLines": false,
       "name": "덕계",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "y5p",
@@ -5874,7 +5916,7 @@
       ],
       "multipleLines": true,
       "name": "중랑",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "ycs",
@@ -5883,7 +5925,7 @@
       ],
       "multipleLines": false,
       "name": "천마산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ygg",
@@ -5892,7 +5934,7 @@
       ],
       "multipleLines": false,
       "name": "연수",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "ygq",
@@ -5901,7 +5943,7 @@
       ],
       "multipleLines": false,
       "name": "신중동",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "yjc",
@@ -5919,7 +5961,7 @@
       ],
       "multipleLines": false,
       "name": "구래",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "yys",
@@ -5929,7 +5971,7 @@
       ],
       "multipleLines": true,
       "name": "일산",
-      "sourceCount": 2
+      "sourceCount": 4
     },
     {
       "code": "yz2",
@@ -5938,7 +5980,7 @@
       ],
       "multipleLines": false,
       "name": "정발산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "yzg",
@@ -5947,7 +5989,7 @@
       ],
       "multipleLines": false,
       "name": "독산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "z01",
@@ -5956,7 +5998,7 @@
       ],
       "multipleLines": false,
       "name": "불암산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "z2z",
@@ -5983,7 +6025,7 @@
       ],
       "multipleLines": false,
       "name": "용문",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zc4",
@@ -5993,7 +6035,7 @@
       ],
       "multipleLines": true,
       "name": "지축",
-      "sourceCount": 2
+      "sourceCount": 3
     },
     {
       "code": "zcz",
@@ -6011,7 +6053,7 @@
       ],
       "multipleLines": false,
       "name": "양정",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zew",
@@ -6020,7 +6062,7 @@
       ],
       "multipleLines": false,
       "name": "행신",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zn3",
@@ -6029,7 +6071,7 @@
       ],
       "multipleLines": false,
       "name": "동천",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zt0",
@@ -6047,7 +6089,7 @@
       ],
       "multipleLines": false,
       "name": "문산",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zwr",
@@ -6056,7 +6098,7 @@
       ],
       "multipleLines": false,
       "name": "마전",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zxc",
@@ -6065,7 +6107,7 @@
       ],
       "multipleLines": false,
       "name": "월곶",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zxd",
@@ -6074,7 +6116,7 @@
       ],
       "multipleLines": false,
       "name": "성복",
-      "sourceCount": 1
+      "sourceCount": 2
     },
     {
       "code": "zyr",
@@ -6083,7 +6125,7 @@
       ],
       "multipleLines": false,
       "name": "마산",
-      "sourceCount": 1
+      "sourceCount": 2
     }
   ],
   "violations": []

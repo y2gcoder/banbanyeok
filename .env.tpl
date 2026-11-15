@@ -12,8 +12,8 @@
 # --- 파이프라인 (웨이브 1, P2) ---
 # 서울 열린데이터광장 일반 인증키 (2026-11-14 등록)
 SEOUL_OPENAPI_KEY=op://banbanyeok/seoul-opendata/credential
-# 공공데이터포털 TAGO 지하철정보 서비스키 (accounts.md: 안 함)
-# TAGO_SERVICE_KEY=op://banbanyeok/data-go-kr-tago/credential
+# 공공데이터포털 TAGO 지하철정보 서비스키 (D1: 수도권 전 노선 시간표, 키가 필요한 명령은 tago-fetch뿐)
+TAGO_SERVICE_KEY=op://banbanyeok/data-go-kr-tago/credential
 
 # --- 서버 (웨이브 1, P3) ---
 # 로컬 DB는 compose.yaml의 공개된 개발 전용 비밀번호를 사용한다. 운영 DB URL·토큰 해시 페퍼는 Secret Manager에서 주입한다.
