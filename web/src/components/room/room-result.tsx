@@ -8,6 +8,7 @@ import { ModeTabs } from "@/components/result/mode-tabs";
 import { Notices } from "@/components/result/notices";
 import { Candidates, LoadingCard } from "@/components/result/result-screen";
 import { Button } from "@/components/ui/button";
+import { TimeBasisNote } from "@/components/when/time-basis";
 import { track, trackResultViewed } from "@/lib/analytics";
 import type { Mode, Room } from "@/lib/api/types";
 import type { ResultView } from "@/lib/result/view-model";
@@ -125,6 +126,7 @@ export function RoomResult({
           <LoadingCard />
         )}
       </div>
+      <TimeBasisNote basis={data ? (data.timeBasis ?? null) : undefined} requested={null} />
       {view && top && renderAfter ? renderAfter(view) : null}
     </section>
   );

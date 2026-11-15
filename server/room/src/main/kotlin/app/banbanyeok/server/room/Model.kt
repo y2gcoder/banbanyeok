@@ -2,6 +2,7 @@ package app.banbanyeok.server.room
 
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 
 public enum class RoomMode { FAIR, FAST, FAVOR }
 
@@ -33,6 +34,8 @@ public data class Room(
     val favorParticipantId: String?,
     val dataVersion: String,
     val meetingDate: LocalDate?,
+    /** 약속 시각(선택, 분 단위). 결과를 어느 시간대 기준으로 계산할지 정한다(contracts/time-slots.json). */
+    val meetingTime: LocalTime? = null,
     val expectedCount: Int?,
     val locked: Boolean,
     val outcome: Outcome?,
@@ -83,6 +86,7 @@ public data class CreateRoomCommand(
     val host: ParticipantInput,
     val expectedCount: Int?,
     val deviceToken: String?,
+    val meetingTime: LocalTime? = null,
 ) {
     public companion object {
         public const val HOST_TARGET: String = "host"
@@ -107,6 +111,7 @@ public data class RoomPatch(
     val favorTarget: String? = null,
     val locked: Boolean? = null,
     val meetingDate: Change<LocalDate> = Change.Unchanged,
+    val meetingTime: Change<LocalTime> = Change.Unchanged,
 )
 
 /**
@@ -130,6 +135,7 @@ public data class RoomView(
     val expiresAt: Instant,
     val dataVersion: String,
     val participants: List<ParticipantView>,
+    val meetingTime: LocalTime? = null,
 )
 
 /** 결과 계산에 필요한 방의 원본 정보(마스킹 전). room 모듈 밖으로 나가는 유일한 원본 출발역이다. */

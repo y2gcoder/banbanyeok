@@ -61,7 +61,10 @@ function summary(room: Room): string {
   const parts = [
     modeLabel(room.mode, room.participants.find((p) => p.participantId === room.favorTarget)?.label ?? null),
   ];
-  if (room.meetingDate) parts.push(`약속 ${formatMeetingDate(room.meetingDate)}`);
+  if (room.meetingDate || room.meetingTime) {
+    const when = [room.meetingDate ? formatMeetingDate(room.meetingDate) : null, room.meetingTime ?? null];
+    parts.push(`약속 ${when.filter(Boolean).join(" ")}`);
+  }
   return parts.join(" · ");
 }
 

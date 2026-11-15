@@ -1,7 +1,9 @@
 package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.DataSet
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
+import app.banbanyeok.server.recommendation.SlotMatrices
 import app.banbanyeok.server.recommendation.StationNames
 import app.banbanyeok.server.recommendation.TravelMatrix
 import app.banbanyeok.server.recommendation.TravelTimeProvider
@@ -13,6 +15,8 @@ import app.banbanyeok.server.room.StationCatalog
  */
 class StationDirectory(
     dataSet: DataSet,
+    /** 기본 구분을 뺀 구분 행렬. 서버는 [BackgroundSlots], 테스트는 이미 읽은 데이터 세트의 행렬. */
+    private val slots: SlotMatrices = SlotMatrices { dataSet.odSlots[it] },
 ) : StationCatalog,
     StationNames {
     private val names: Map<String, String> = dataSet.registry.stations.associate { it.code to it.name }
@@ -20,7 +24,8 @@ class StationDirectory(
         dataSet.registry.stations
             .mapNotNull { station -> station.replacedBy?.let { station.code to it } }
             .toMap()
-    private val travelTimes: TravelTimeProvider = OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion)
+    private val travelTimes: TravelTimeProvider =
+        OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion, slots)
     val travel: TravelTimeProvider get() = travelTimes
 
     override val dataVersion: String = dataSet.manifest.dataVersion
@@ -38,6 +43,11 @@ class StationDirectory(
      */
     override fun canonical(code: String): String =
         generateSequence(code) { replacements[it] }.take(replacements.size + 1).last()
+
+    /** 구분 행렬 검사가 아직 뒤에서 도는 중이면 잠깐 기다린다(기본 구분 요청은 기다리지 않는다). 요청 스레드를 붙잡지 않는다. */
+    suspend fun awaitSlots(slot: TimeSlot) {
+        if (slot != TimeSlot.DEFAULT) (slots as? BackgroundSlots)?.awaitReady()
+    }
 
     /** 출발역 표시 이름. 레지스트리에 없으면 null. */
     fun displayName(code: String?): String? = code?.let(names::get)

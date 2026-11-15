@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Station
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.StationStatus
@@ -120,7 +121,10 @@ internal data class TagoInput(
     val lines: MetroLines,
     /** TAGO id → (station name, route name) from the keyword-less station list. */
     val stations: Map<String, Pair<String, String>>,
+    /** Weekday rows: run times, dwell and direction learning always use the weekday timetable. */
     val timetable: TagoTimetable,
+    /** Rows per day type for slot headways. Weekday is [timetable]; others are empty until fetched. */
+    val timetables: Map<DayType, TagoTimetable> = mapOf(DayType.WEEKDAY to timetable),
 )
 
 /** Name key used only to pair a TAGO row with an S1 row of the same operator line (never across lines). */

@@ -4,8 +4,11 @@
  * 웹은 KMP를 쓰지 않으므로 같은 규칙을 TypeScript로 따로 구현한다.
  */
 import type { Mode } from "@/lib/api/types";
+import { DEFAULT_SLOT, isTimeSlot, type TimeSlot } from "@/lib/when/time-slot";
 
-const URL_VERSION = "1";
+const URL_VERSION = "2";
+/** 구분(t)이 생기기 전의 링크. 평일 낮으로 읽는다(옛 공유 링크가 같은 결과를 보이게). */
+const LEGACY_VERSION = "1";
 export const MIN_PEOPLE = 2;
 export const MAX_PEOPLE = 4;
 export const MAX_NICKNAME_CODE_POINTS = 20;
@@ -22,14 +25,19 @@ export type LinkErrorCode =
   | "BAD_STATION_CODE"
   | "BAD_MODE"
   | "FAVOR_INDEX_OUT_OF_RANGE"
+  | "BAD_TIME_SLOT"
   | "BAD_NICKNAMES";
 
-/** 링크가 담는 상태. `favorIndex`는 mode가 favor일 때만 숫자다. 별칭이 없으면 `nicknames`는 null. */
+/**
+ * 링크가 담는 상태. `favorIndex`는 mode가 favor일 때만 숫자다. 별칭이 없으면 `nicknames`는 null.
+ * `timeSlot`은 언제 만나나(`t`, contracts/time-slots.json). 옛 링크(v=1)는 평일 낮이다.
+ */
 export type ShareState = {
   origins: string[];
   mode: Mode;
   favorIndex: number | null;
   nicknames: (string | null)[] | null;
+  timeSlot: TimeSlot;
 };
 
 export type DecodeResult = { ok: true; state: ShareState } | { ok: false; error: LinkErrorCode };
@@ -90,7 +98,7 @@ export function modeFromParam(m: string, count: number): Pick<ShareState, "mode"
   }
 }
 
-/** 정규형 쿼리(앞의 `?` 없음). 순서 v, o, m, n. 별칭이 하나도 없으면 n을 생략한다. 규칙 위반은 RangeError. */
+/** 정규형 쿼리(앞의 `?` 없음). 순서 v, o, m, t, n. 별칭이 하나도 없으면 n을 생략한다. 규칙 위반은 RangeError. */
 export function encodeShareQuery(state: ShareState): string {
   const { origins, nicknames } = state;
   if (origins.length < MIN_PEOPLE || origins.length > MAX_PEOPLE || !origins.every(isStationCode)) {
@@ -101,6 +109,8 @@ export function encodeShareQuery(state: ShareState): string {
     `o=${origins.join(".")}`,
     `m=${modeToParam(state.mode, state.favorIndex, origins.length)}`,
   ];
+  if (!isTimeSlot(state.timeSlot)) throw new RangeError("timeSlot");
+  parts.push(`t=${state.timeSlot}`);
   if (nicknames?.some((name) => name)) {
     if (nicknames.length !== origins.length) throw new RangeError("nicknames");
     for (const name of nicknames) {
@@ -127,17 +137,30 @@ function percentDecode(raw: string): string {
   }
 }
 
-function readParams(query: string): Map<string, string> {
+/** 값들과, 버전을 안 뒤에 읽을 `t`의 원문들. v=1이면 `t`는 읽지 않는다(중복·깨진 인코딩으로 옛 링크가 새로 실패하지 않게). */
+function readParams(query: string): { values: Map<string, string>; rawSlots: string[] } {
   const values = new Map<string, string>();
+  const rawSlots: string[] = [];
   const body = query.startsWith("?") ? query.slice(1) : query;
   for (const pair of body ? body.split("&") : []) {
     const eq = pair.indexOf("=");
     const key = eq < 0 ? pair : pair.slice(0, eq);
-    if (key !== "v" && key !== "o" && key !== "m" && key !== "n") continue; // 알 수 없는 키는 무시
-    if (values.has(key)) throw new LinkError("DUPLICATE_PARAM");
-    values.set(key, percentDecode(eq < 0 ? "" : pair.slice(eq + 1)));
+    const raw = eq < 0 ? "" : pair.slice(eq + 1);
+    if (key === "t") rawSlots.push(raw);
+    else if (key === "v" || key === "o" || key === "m" || key === "n") {
+      if (values.has(key)) throw new LinkError("DUPLICATE_PARAM");
+      values.set(key, percentDecode(raw));
+    } // 알 수 없는 키는 무시
   }
-  return values;
+  return { values, rawSlots };
+}
+
+/** v=2의 `t`: 꼭 하나, 퍼센트 디코딩. */
+function readSlot(rawSlots: readonly string[]): string {
+  const [raw, ...rest] = rawSlots;
+  if (raw === undefined) throw new LinkError("MISSING_PARAM");
+  if (rest.length > 0) throw new LinkError("DUPLICATE_PARAM");
+  return percentDecode(raw);
 }
 
 function readMode(m: string, count: number): Pick<ShareState, "mode" | "favorIndex"> {
@@ -163,20 +186,24 @@ function readNicknames(n: string | undefined, count: number): (string | null)[] 
   return names;
 }
 
-/** 쿼리 문자열(앞의 `?`는 있어도 된다)을 해석한다. 오류는 검사 순서 v→o→m→n의 첫 번째 하나만. */
+/** 쿼리 문자열(앞의 `?`는 있어도 된다)을 해석한다. 오류는 검사 순서 v→o→m→t→n의 첫 번째 하나만. */
 export function decodeShareQuery(query: string): DecodeResult {
   try {
-    const values = readParams(query);
+    const { values, rawSlots } = readParams(query);
     const v = values.get("v");
     const o = values.get("o");
     const m = values.get("m");
     if (v === undefined || o === undefined || m === undefined) throw new LinkError("MISSING_PARAM");
-    if (v !== URL_VERSION) throw new LinkError("UNSUPPORTED_VERSION");
+    if (v !== URL_VERSION && v !== LEGACY_VERSION) throw new LinkError("UNSUPPORTED_VERSION");
+    // v=1에는 t가 없다: 있어도 알 수 없는 키처럼 읽지 않고 평일 낮으로 읽는다.
+    const t = v === LEGACY_VERSION ? DEFAULT_SLOT : readSlot(rawSlots);
     const origins = o.split(".");
     if (origins.length < MIN_PEOPLE || origins.length > MAX_PEOPLE) throw new LinkError("BAD_ORIGIN_COUNT");
     if (!origins.every(isStationCode)) throw new LinkError("BAD_STATION_CODE");
     const mode = readMode(m, origins.length);
-    return { ok: true, state: { origins, ...mode, nicknames: readNicknames(values.get("n"), origins.length) } };
+    if (!isTimeSlot(t)) throw new LinkError("BAD_TIME_SLOT");
+    const nicknames = readNicknames(values.get("n"), origins.length);
+    return { ok: true, state: { origins, ...mode, nicknames, timeSlot: t } };
   } catch (error) {
     if (error instanceof LinkError) return { ok: false, error: error.code };
     throw error;

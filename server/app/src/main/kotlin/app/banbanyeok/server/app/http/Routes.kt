@@ -7,6 +7,8 @@ import app.banbanyeok.server.artifact.PublishedArtifacts
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
 import app.banbanyeok.server.recommendation.RecommendationService
+import app.banbanyeok.server.recommendation.TimeBasis
+import app.banbanyeok.server.recommendation.TimeSlotLabels
 import app.banbanyeok.server.room.AnonUserService
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.Outcome
@@ -152,7 +154,15 @@ private fun Route.resultRoutes(services: ApiServices) {
                 ->
                 RecommendParticipant(index.toString(), nicknames[index], code)
             }
-        val request = RecommendRequest(people, requireRecommendMode(body.mode), body.favorIndex?.toString())
+        val slot = requireTimeSlot(body.timeSlot)
+        services.directory.awaitSlots(slot)
+        val request =
+            RecommendRequest(
+                people,
+                requireRecommendMode(body.mode),
+                body.favorIndex?.toString(),
+                TimeBasis(slot, TimeSlotLabels.of(slot)),
+            )
         val result = services.recommendation.recommend(request)
         call.respond(result.toStatelessDto(origins, nicknames, services.directory))
     }

@@ -56,7 +56,14 @@ private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {
 
         it("stores the room with its host participant and returns every field") {
             val rooms = repos().rooms
-            val room = aRoom(freshId()) { it.copy(expectedCount = 3, meetingDate = LocalDate.parse("2026-12-01")) }
+            val room =
+                aRoom(freshId()) {
+                    it.copy(
+                        expectedCount = 3,
+                        meetingDate = LocalDate.parse("2026-12-01"),
+                        meetingTime = java.time.LocalTime.of(19, 30),
+                    )
+                }
             val host = aParticipant("host01") { it.copy(nickname = "민수", hidden = true, originCode = "130") }
             rooms.create(room, host)
             val stored = rooms.find(room.id).shouldNotBeNull()
@@ -178,6 +185,7 @@ private fun DescribeSpecRootScope.changingRooms(repos: () -> RepositoryPair) {
                     favorParticipantId = Change.Set("host01"),
                     locked = true,
                     meetingDate = Change.Set(LocalDate.parse("2026-11-20")),
+                    meetingTime = Change.Set(java.time.LocalTime.of(8, 0)),
                 )
             rooms.updateRoom(room.id, change, activity(10, expiresInDays = 3)) shouldBe true
             val changed = rooms.find(room.id)!!.room
@@ -185,6 +193,7 @@ private fun DescribeSpecRootScope.changingRooms(repos: () -> RepositoryPair) {
             changed.favorParticipantId shouldBe "host01"
             changed.locked shouldBe true
             changed.meetingDate shouldBe LocalDate.parse("2026-11-20")
+            changed.meetingTime shouldBe java.time.LocalTime.of(8, 0)
             changed.expiresAt shouldBe activity(10, expiresInDays = 3).expiresAt
 
             rooms.updateRoom(room.id, RoomChange(locked = false), activity(20)) shouldBe true
@@ -192,14 +201,20 @@ private fun DescribeSpecRootScope.changingRooms(repos: () -> RepositoryPair) {
             partial.locked shouldBe false
             partial.mode shouldBe RoomMode.FAVOR
             partial.meetingDate shouldBe LocalDate.parse("2026-11-20")
+            partial.meetingTime shouldBe java.time.LocalTime.of(8, 0)
 
             rooms.updateRoom(
                 room.id,
-                RoomChange(meetingDate = Change.Set(null), favorParticipantId = Change.Set(null)),
+                RoomChange(
+                    meetingDate = Change.Set(null),
+                    favorParticipantId = Change.Set(null),
+                    meetingTime = Change.Set(null),
+                ),
                 activity(30),
             )
             val cleared = rooms.find(room.id)!!.room
             cleared.meetingDate.shouldBeNull()
+            cleared.meetingTime.shouldBeNull()
             cleared.favorParticipantId.shouldBeNull()
             rooms.updateRoom(freshId(), RoomChange(), activity(1)) shouldBe false
         }

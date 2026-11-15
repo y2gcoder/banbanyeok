@@ -74,13 +74,7 @@ class SeoPairsTest :
         it("matches the committed SEO artifact with three fair results and no temporal or person placeholders") {
             val root = Path.of("..")
             val output = root.resolve("data/artifacts/dev")
-            val dataset =
-                DataSetLoader.load(
-                    output.resolve("manifest.json").readText(),
-                    output.resolve("stations.json").readBytes(),
-                    output.resolve("candidates.json").readBytes(),
-                    output.resolve("od.bin").readBytes(),
-                )
+            val dataset = loadDevArtifacts(output)
             val stored = parseObject(output.resolve("seo-pairs.json").readText())
             assertEquals(
                 seoPairs(

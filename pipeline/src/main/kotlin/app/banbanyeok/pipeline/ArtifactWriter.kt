@@ -1,15 +1,21 @@
 package app.banbanyeok.pipeline
 
 import app.banbanyeok.schema.CandidateList
+import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
+import app.banbanyeok.schema.MANIFEST_SCHEMA_VERSION
 import app.banbanyeok.schema.Manifest
 import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.ManifestFile
 import app.banbanyeok.schema.ManifestFiles
+import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.OdBinCodec
 import app.banbanyeok.schema.OdMatrix
 import app.banbanyeok.schema.RegistryCodec
+import app.banbanyeok.schema.Sha256
 import app.banbanyeok.schema.StationCode
+import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.schema.generationOne
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import java.time.Clock
@@ -22,35 +28,65 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
+/** Reads and fully validates the dev artifact set (manifest, registry, candidates, every slot matrix). */
+internal fun loadDevArtifacts(output: Path): app.banbanyeok.schema.DataSet {
+    val manifestText = latestManifest(output).readText()
+    val manifest = ManifestCodec.parse(manifestText)
+    return DataSetLoader.load(
+        DataSetBytes(
+            manifestText,
+            output.resolve(manifest.files.registry.path).readBytes(),
+            output.resolve(manifest.files.candidates.path).readBytes(),
+            output.resolve(manifest.files.od.path).readBytes(),
+            manifest.files.odSlots
+                .orEmpty()
+                .mapValues { output.resolve(it.value.path).readBytes() },
+        ),
+    )
+}
+
+/** The newest manifest generation present in [dir] (generation 2 first, then the generation-1 `manifest.json`). */
+internal fun latestManifest(dir: Path): Path =
+    dir.resolve(ManifestNames.GENERATION_TWO).takeIf { it.exists() } ?: dir.resolve(ManifestNames.GENERATION_ONE)
+
+/** Dev file name of a slot matrix: `od.bin` for the default slot, `od-<slot>.bin` for the others. */
+internal fun odFileName(slot: TimeSlot): String = if (slot == TimeSlot.DEFAULT) "od.bin" else "od-${slot.id}.bin"
+
 internal fun publish(
     root: Path,
     net: Network,
     candidates: CandidateList,
-    matrix: Pair<IntArray, IntArray>,
+    matrices: Map<TimeSlot, Pair<IntArray, IntArray>>,
     clock: Clock = Clock.systemUTC(),
 ) {
-    val od =
-        OdMatrix(
-            net.registry.registryVersion,
-            net.origins.map { StationCode.parse(it.code).value }.toIntArray(),
-            candidates.candidates.map { StationCode.parse(it).value }.toIntArray(),
-            matrix.first,
-            matrix.second,
-        )
-    ArtifactWriter(root, net, candidates, od, clock).write()
+    require(matrices.keys == TimeSlot.ALL.toSet()) { "Every time slot needs a matrix" }
+    val ods =
+        matrices.mapValues { (_, matrix) ->
+            OdMatrix(
+                net.registry.registryVersion,
+                net.origins.map { StationCode.parse(it.code).value }.toIntArray(),
+                candidates.candidates.map { StationCode.parse(it).value }.toIntArray(),
+                matrix.first,
+                matrix.second,
+            )
+        }
+    ArtifactWriter(root, net, candidates, ods, clock).write()
 }
 
 private class ArtifactWriter(
     private val root: Path,
     private val net: Network,
     private val candidates: CandidateList,
-    private val od: OdMatrix,
+    ods: Map<TimeSlot, OdMatrix>,
     private val clock: Clock = Clock.systemUTC(),
 ) {
+    /** SEO pages stay on the default slot (weekday daytime): static pages carry no time choice. */
+    private val od = ods.getValue(TimeSlot.DEFAULT)
+    private val slots = TimeSlot.ALL.filter { it != TimeSlot.DEFAULT }
+
     private val output = root.resolve("data/artifacts/dev").createDirectories()
     private val previous =
-        output
-            .resolve("manifest.json")
+        latestManifest(output)
             .takeIf {
                 it.exists()
             }?.let { ManifestCodec.parse(it.readText()) }
@@ -62,6 +98,20 @@ private class ArtifactWriter(
             "od.bin" to OdBinCodec.encode(od),
             "seo-pairs.json" to jsonText(seo).toByteArray(),
         )
+
+    /**
+     * Slot → dev file name. A slot whose matrix is byte-identical to an earlier slot's (Saturday and Sunday/holiday
+     * run the same weekend timetables) shares that file: one upload, one matrix in server memory.
+     */
+    private val slotFiles: Map<TimeSlot, String> =
+        buildMap {
+            val byContent = mutableMapOf(Sha256.hex(files.getValue("od.bin")) to "od.bin")
+            slots.forEach { slot ->
+                val bytes = OdBinCodec.encode(ods.getValue(slot))
+                val name = byContent.getOrPut(Sha256.hex(bytes)) { odFileName(slot).also { files[it] = bytes } }
+                put(slot, name)
+            }
+        }
 
     fun write() {
         writeGlyphs()
@@ -84,13 +134,13 @@ private class ArtifactWriter(
         require(files.getValue("seo-pairs.json").size <= 1_048_576) { "SEO pairs exceed 1 MiB; reduce selected hubs" }
         val manifest =
             Manifest(
-                1,
-                1,
+                MANIFEST_SCHEMA_VERSION,
+                MANIFEST_SCHEMA_VERSION,
                 version,
                 previousDataVersion = previous?.dataVersion,
                 generatedAt = now.toString(),
                 registryVersion = net.registry.registryVersion,
-                timeModel = "weekday-offpeak-half-headway",
+                timeModel = "slot-half-headway",
                 originCount = od.originCount,
                 candidateCount = od.candidateCount,
                 files =
@@ -99,17 +149,24 @@ private class ArtifactWriter(
                         receipt("candidates.json"),
                         receipt("od.bin"),
                         receipt("seo-pairs.json"),
+                        slots.associate { it.id to receipt(slotFiles.getValue(it)) },
                     ),
             )
         val manifestText = jsonText(ManifestCodec.encode(manifest))
         DataSetLoader.load(
-            manifestText,
-            files.getValue("stations.json"),
-            files.getValue("candidates.json"),
-            files.getValue("od.bin"),
+            DataSetBytes(
+                manifestText,
+                files.getValue("stations.json"),
+                files.getValue("candidates.json"),
+                files.getValue("od.bin"),
+                slots.associate { it.id to files.getValue(slotFiles.getValue(it)) },
+            ),
         )
         files.forEach { (name, bytes) -> output.resolve(name).writeBytes(bytes) }
-        output.resolve("manifest.json").writeText(manifestText)
+        removeStaleSlotFiles()
+        // Generation 2 first, then the generation-1 pointer that older readers keep using (same files, no slots).
+        output.resolve(ManifestNames.GENERATION_TWO).writeText(manifestText)
+        output.resolve(ManifestNames.GENERATION_ONE).writeText(jsonText(ManifestCodec.encode(manifest.generationOne())))
         println(
             "Published dev artifacts: ${files.values.sumOf { it.size }} bytes; SEO ${files.getValue(
                 "seo-pairs.json",
@@ -121,21 +178,34 @@ private class ArtifactWriter(
         files.getValue(name).let {
             ManifestFile(
                 name,
-                app.banbanyeok.schema.Sha256
-                    .hex(it),
+                Sha256.hex(it),
                 it.size.toLong(),
             )
         }
 
+    /** Slot files no longer referenced (content now shared) must not linger next to the manifest. */
+    private fun removeStaleSlotFiles() =
+        output
+            .toFile()
+            .listFiles { file -> file.name.startsWith("od-") && file.name.endsWith(".bin") && file.name !in files }
+            .orEmpty()
+            .forEach { it.delete() }
+
     private fun unchanged(): Boolean {
+        if (!output.resolve(ManifestNames.GENERATION_TWO).exists()) return false
         val old = previous?.files ?: return false
+        if (old.odSlots?.mapValues { it.value.path } !=
+            slots.associate { it.id to slotFiles.getValue(it) }
+        ) {
+            return false
+        }
         val receipts =
             mapOf(
                 "stations.json" to old.registry,
                 "candidates.json" to old.candidates,
                 "od.bin" to old.od,
                 "seo-pairs.json" to old.seoPages,
-            )
+            ) + slots.associate { slotFiles.getValue(it) to old.odSlots?.get(it.id) }
         return files.all { (name, bytes) ->
             val path = output.resolve(name)
             receipts[name]?.matches(bytes) == true && path.exists() && path.readBytes().contentEquals(bytes)

@@ -17,6 +17,14 @@ const result: RecommendResult = {
   status: "ok",
   mode: "fair",
   dataVersion: "20261112.6",
+  timeBasis: {
+    timeSlot: "weekday-day",
+    requestedTimeSlot: "weekday-day",
+    dayType: "weekday",
+    band: "day",
+    label: "평일 낮",
+    holidayName: null,
+  },
   participants: [
     {
       participantId: "0",

@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app
 
+import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.config.AppConfig
@@ -68,7 +69,7 @@ object CompositionRoot {
             val db = (database ?: requireNotNull(owned)).database
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
-            val directory = StationDirectory(loaded.dataSet)
+            val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
 
             val clock = Clock.systemUTC()
             val ids = SecureRandomIdGenerator()
@@ -81,7 +82,12 @@ object CompositionRoot {
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
                     rooms = rooms,
-                    results = RoomResultService(rooms, recommendation),
+                    results =
+                        RoomResultService(
+                            rooms,
+                            recommendation,
+                            awaitSlots = directory::awaitSlots,
+                        ),
                     recommendation = recommendation,
                     directory = directory,
                     published = PublishedArtifacts(store, loaded),

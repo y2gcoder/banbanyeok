@@ -26,11 +26,17 @@ public class PublishedArtifacts(
         if (!SAFE_NAME.matches(file) || !VERSION.matches(version)) return null
         val files = loaded.dataSet.manifest.files
         val current =
-            listOfNotNull(files.registry, files.candidates, files.od, files.seoPages)
-                .firstOrNull { entry ->
-                    entry.path.substringAfterLast('/') == file &&
-                        (entry.path.startsWith("versions/$version/") || version == loaded.dataVersion)
-                }?.path
+            (
+                listOfNotNull(
+                    files.registry,
+                    files.candidates,
+                    files.od,
+                    files.seoPages,
+                ) + files.odSlots?.values.orEmpty()
+            ).firstOrNull { entry ->
+                entry.path.substringAfterLast('/') == file &&
+                    (entry.path.startsWith("versions/$version/") || version == loaded.dataVersion)
+            }?.path
         val key = current ?: "versions/$version/$file"
         val stored = store.get(ArtifactKey(key)) ?: return null
         return PublishedFile(stored.content, contentTypeOf(file), etagOf(stored.content))

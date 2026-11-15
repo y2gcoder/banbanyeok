@@ -18,9 +18,14 @@ from urllib.parse import unquote
 from gen_fixtures import ALPHABET, encode_code, station_value
 
 VECTORS_PATH = Path(__file__).resolve().parent.parent / 'contracts' / 'golden' / 'link-vectors.json'
-URL_VERSION = '1'
+SLOTS_PATH = Path(__file__).resolve().parent.parent / 'contracts' / 'time-slots.json'
+URL_VERSION = '2'
+LEGACY_VERSION = '1'  # 구분(t)이 없던 옛 링크. 평일 낮(기본 구분)으로 읽는다
 MAX_NICKNAME_CODE_POINTS = 20
 B64URL = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_')
+_SLOTS = json.loads(SLOTS_PATH.read_text(encoding='utf-8'))
+TIME_SLOTS = [f"{d['id']}-{b['id']}" for d in _SLOTS['dayTypes'] for b in _SLOTS['bands']]
+DEFAULT_SLOT = _SLOTS['default']
 
 
 class LinkError(Exception):
@@ -50,8 +55,8 @@ def _b64url_decode(segment):
     return text
 
 
-def encode_query(origins, mode, favor_index=None, nicknames=None):
-    """정규형 쿼리 문자열(앞의 '?' 없음). 파라미터 순서 v, o, m, n. n은 별칭이 하나도 없으면 생략."""
+def encode_query(origins, mode, favor_index=None, nicknames=None, time_slot=DEFAULT_SLOT):
+    """정규형 쿼리 문자열(앞의 '?' 없음). 파라미터 순서 v, o, m, t, n. n은 별칭이 하나도 없으면 생략. t는 늘 쓴다."""
     if not 2 <= len(origins) <= 4 or not all(_valid_code(c) for c in origins):
         raise ValueError('origins')
     if mode == 'fair':
@@ -62,7 +67,9 @@ def encode_query(origins, mode, favor_index=None, nicknames=None):
         m = f'p{favor_index}'
     else:
         raise ValueError('mode')
-    parts = [f'v={URL_VERSION}', f"o={'.'.join(origins)}", f'm={m}']
+    if time_slot not in TIME_SLOTS:
+        raise ValueError('time slot')
+    parts = [f'v={URL_VERSION}', f"o={'.'.join(origins)}", f'm={m}', f't={time_slot}']
     if nicknames and any(nicknames):
         if len(nicknames) != len(origins):
             raise ValueError('nicknames')
@@ -76,8 +83,12 @@ def encode_query(origins, mode, favor_index=None, nicknames=None):
 def decode_query(query):
     """쿼리 문자열을 해석한다. 알 수 없는 키는 무시. 성공 시 dict, 실패 시 LinkError."""
     values = {}
+    raw_t = []  # t는 버전을 안 뒤에만 읽는다(v=1이면 아예 읽지 않는다: 중복·깨진 t로 옛 링크가 새로 실패하지 않게)
     for pair in query.split('&') if query else []:
         key, _, raw = pair.partition('=')
+        if key == 't':
+            raw_t.append(raw)
+            continue
         if key not in ('v', 'o', 'm', 'n'):
             continue
         if key in values:
@@ -91,8 +102,20 @@ def decode_query(query):
     for key in ('v', 'o', 'm'):
         if key not in values:
             raise LinkError('MISSING_PARAM')
-    if values['v'] != URL_VERSION:
+    if values['v'] not in (URL_VERSION, LEGACY_VERSION):
         raise LinkError('UNSUPPORTED_VERSION')
+    legacy = values['v'] == LEGACY_VERSION
+    if not legacy:  # v=1에는 t가 없다: 있어도 알 수 없는 키처럼 읽지 않는다
+        if not raw_t:
+            raise LinkError('MISSING_PARAM')
+        if len(raw_t) > 1:
+            raise LinkError('DUPLICATE_PARAM')
+        if re.search(r'%(?![0-9A-Fa-f]{2})', raw_t[0]):
+            raise LinkError('MALFORMED_QUERY')
+        try:
+            values['t'] = unquote(raw_t[0], errors='strict')
+        except UnicodeDecodeError:
+            raise LinkError('MALFORMED_QUERY')
     origins = values['o'].split('.')
     if not 2 <= len(origins) <= 4:
         raise LinkError('BAD_ORIGIN_COUNT')
@@ -110,6 +133,9 @@ def decode_query(query):
             raise LinkError('FAVOR_INDEX_OUT_OF_RANGE')
     else:
         raise LinkError('BAD_MODE')
+    time_slot = DEFAULT_SLOT if legacy else values['t']
+    if time_slot not in TIME_SLOTS:
+        raise LinkError('BAD_TIME_SLOT')
     nicknames = None
     if 'n' in values:
         segments = values['n'].split('.')
@@ -123,16 +149,18 @@ def decode_query(query):
             nicknames.append(text or None)
         if not any(nicknames):
             raise LinkError('BAD_NICKNAMES')  # 정규형은 별칭이 하나도 없으면 n을 생략한다
-    return {'origins': origins, 'mode': mode, 'favorIndex': favor_index, 'nicknames': nicknames}
+    return {'origins': origins, 'mode': mode, 'favorIndex': favor_index, 'nicknames': nicknames, 'timeSlot': time_slot}
 
 
 def build_vectors():
     c = [encode_code(station_value(i)) for i in range(5)]
     enc = []
 
-    def add_encode(vid, origins, mode, favor_index=None, nicknames=None, note=None):
-        item = {'id': vid, 'input': {'origins': origins, 'mode': mode, 'favorIndex': favor_index, 'nicknames': nicknames},
-                'expectedQuery': encode_query(origins, mode, favor_index, nicknames)}
+    def add_encode(vid, origins, mode, favor_index=None, nicknames=None, note=None, time_slot=DEFAULT_SLOT):
+        item = {'id': vid,
+                'input': {'origins': origins, 'mode': mode, 'favorIndex': favor_index, 'nicknames': nicknames,
+                          'timeSlot': time_slot},
+                'expectedQuery': encode_query(origins, mode, favor_index, nicknames, time_slot)}
         if note:
             item['note'] = note
         enc.append(item)
@@ -147,6 +175,8 @@ def build_vectors():
     add_encode('nickname_emoji_20_code_points', c[:2], 'fair', None, ['\U0001F642' * 20, None],
                '길이는 UTF-16 단위가 아니라 코드포인트로 센다(JS의 String.length와 다르다)')
     add_encode('nickname_base64_with_url_chars', c[:2], 'fair', None, ['??>>', 'ÿÿ'], 'base64url의 - 와 _ 가 나오는 입력')
+    add_encode('saturday_night', c[:2], 'fair', time_slot='saturday-night', note='언제 만나나: 구분 id를 그대로 쓴다')
+    add_encode('holiday_morning_favor_with_names', c[:3], 'favor', 2, ['민수', None, '지연'], time_slot='holiday-morning')
 
     dec = []
 
@@ -168,11 +198,24 @@ def build_vectors():
     add_decode('unknown_params_ignored', f'v=1&o={c[0]}.{c[1]}&m=q&utm_source=kakao&x=%ED%95%9C', '알 수 없는 키는 무시한다')
     add_decode('percent_encoded_separator_accepted', f'v=1&o={c[0]}.{c[1]}&m=f&n=66-87IiY%2E7KeA7Jew', '`.`가 %2E로 와도 값을 먼저 퍼센트 디코딩한다')
     add_decode('percent_encoded_dot_accepted', f'v=1&o={c[0]}%2E{c[1]}&m=f')
+    # 옛 링크(v=1): 구분이 없으므로 평일 낮. 계속 같은 결과가 나와야 한다
+    add_decode('legacy_v1_is_weekday_day', f'v=1&o={c[0]}.{c[1]}&m=f', '구분이 생기기 전의 링크(v=1)는 평일 낮이다')
+    add_decode('legacy_v1_with_names', f'v=1&o={c[0]}.{c[1]}&m=f&n=66-87IiY.7KeA7Jew')
+    add_decode('legacy_v1_ignores_t', f'v=1&o={c[0]}.{c[1]}&m=f&t=saturday-night', 'v=1에는 t가 없다: 알 수 없는 키처럼 무시한다')
+    add_decode('legacy_v1_ignores_duplicate_t', f'v=1&o={c[0]}.{c[1]}&m=f&t=a&t=b', 'v=1은 t를 읽지 않으므로 중복도 오류가 아니다')
+    add_decode('legacy_v1_ignores_malformed_t', f'v=1&o={c[0]}.{c[1]}&m=f&t=%ZZ', 'v=1은 t를 읽지 않으므로 깨진 인코딩도 오류가 아니다')
+    add_decode('time_slot_param_order_is_free', f't=weekday-evening&m=q&o={c[0]}.{c[1]}&v=2')
     # 거부
     add_decode('missing_version', f'o={c[0]}.{c[1]}&m=f')
     add_decode('missing_origins', 'v=1&m=f')
     add_decode('missing_mode', f'v=1&o={c[0]}.{c[1]}')
-    add_decode('unsupported_version', f'v=2&o={c[0]}.{c[1]}&m=f')
+    add_decode('unsupported_version', f'v=3&o={c[0]}.{c[1]}&m=f&t=weekday-day')
+    add_decode('v2_missing_time_slot', f'v=2&o={c[0]}.{c[1]}&m=f', 'v=2는 t가 꼭 있어야 한다')
+    add_decode('bad_time_slot', f'v=2&o={c[0]}.{c[1]}&m=f&t=sunday-dawn')
+    add_decode('time_slot_case_sensitive', f'v=2&o={c[0]}.{c[1]}&m=f&t=Weekday-Day')
+    add_decode('duplicate_time_slot', f'v=2&o={c[0]}.{c[1]}&m=f&t=weekday-day&t=weekday-night')
+    add_decode('malformed_time_slot', f'v=2&o={c[0]}.{c[1]}&m=f&t=%ZZ')
+    add_decode('percent_encoded_time_slot_accepted', f'v=2&o={c[0]}.{c[1]}&m=f&t=saturday%2Dnight', '값은 먼저 퍼센트 디코딩한다')
     add_decode('one_origin', f'v=1&o={c[0]}&m=f')
     add_decode('five_origins', 'v=1&o=' + '.'.join(c[:5]) + '&m=f')
     add_decode('uppercase_code_rejected', f'v=1&o={c[0].upper()}.{c[1]}&m=f', '대문자·혼동 문자 치환은 허용하지 않는다')
@@ -195,8 +238,8 @@ def build_vectors():
     add_decode('malformed_percent_escape', f'v=1&o={c[0]}.{c[1]}&m=%ZZ')
 
     return {
-        'formatVersion': 1,
-        'description': '공유 URL(/s) 링크 코덱 테스트 벡터. 기준 구현은 prototype/gen_link_vectors.py. 직접 고치지 말고 재생성한다. 규칙: contracts/data-format.md §7',
+        'formatVersion': 2,
+        'description': '공유 URL(/s) 링크 코덱 테스트 벡터. 기준 구현은 prototype/gen_link_vectors.py. 직접 고치지 말고 재생성한다. 규칙: contracts/data-format.md §7. 2판: 구분(t, v=2), v=1은 평일 낮',
         'path': '/s',
         'encode': enc,
         'decode': dec,

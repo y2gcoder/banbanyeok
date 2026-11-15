@@ -34,5 +34,91 @@
   "origins": 653,
   "passed": true,
   "reachability": 1.0,
-  "registryStations": 988
+  "registryStations": 988,
+  "timeSlots": {
+    "holiday-day": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "holiday-evening": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "holiday-morning": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "holiday-night": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "saturday-day": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "saturday-evening": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "saturday-morning": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "saturday-night": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "weekday-day": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "weekday-evening": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "weekday-morning": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    },
+    "weekday-night": {
+      "abnormal": 0,
+      "passed": true,
+      "physicalTriangleBoundViolations": 0,
+      "reachability": 1.0,
+      "stateTriangleViolations": 0
+    }
+  }
 }

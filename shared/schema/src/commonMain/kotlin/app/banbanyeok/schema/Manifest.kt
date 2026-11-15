@@ -18,8 +18,11 @@ public data class ManifestFile(
 public data class ManifestFiles(
     val registry: ManifestFile,
     val candidates: ManifestFile,
+    /** 기본 구분([TimeSlot.DEFAULT], 평일 낮)의 행렬. */
     val od: ManifestFile,
     val seoPages: ManifestFile? = null,
+    /** 세대 2: 기본 구분을 뺀 구분 11개의 행렬(키 = 구분 id). 세대 1에는 없다. */
+    val odSlots: Map<String, ManifestFile>? = null,
 )
 
 /** manifest.json — 발행 포인터. 필드 의미는 contracts/data-format.md §5. */
@@ -69,7 +72,9 @@ public object ManifestCodec {
 
     /** 구조 규칙만 검사한다(파일 내용 대조는 [DataSetLoader]). */
     public fun validate(manifest: Manifest) {
-        schemaCheck(manifest.schemaVersion >= 1) { "schemaVersion은 1 이상이어야 합니다" }
+        schemaCheck(manifest.schemaVersion in 1..MANIFEST_SCHEMA_VERSION) {
+            "지원하지 않는 manifest schemaVersion=${manifest.schemaVersion} (지원: 1..$MANIFEST_SCHEMA_VERSION)"
+        }
         schemaCheck(manifest.minClientSchema in 1..manifest.schemaVersion) {
             "minClientSchema=${manifest.minClientSchema}는 1..schemaVersion(${manifest.schemaVersion}) 이어야 합니다"
         }
@@ -97,6 +102,32 @@ public object ManifestCodec {
             "od" to files.od,
             "seoPages" to files.seoPages,
         ).forEach { (key, file) -> if (file != null) validateFile(key, file) }
+        validateSlots(manifest)
+    }
+
+    /** 세대 1은 구분 행렬이 없고, 세대 2는 기본 구분을 뺀 11개가 빠짐없이 있어야 한다. */
+    private fun validateSlots(manifest: Manifest) {
+        val slots = manifest.files.odSlots
+        if (manifest.schemaVersion == 1) {
+            schemaCheck(slots == null) { "schemaVersion 1 manifest에는 files.odSlots가 없어야 합니다" }
+            return
+        }
+        val expected =
+            TimeSlot.ALL
+                .filter { it != TimeSlot.DEFAULT }
+                .map { it.id }
+                .toSet()
+        schemaCheck(slots?.keys == expected) {
+            "files.odSlots는 기본 구분(${TimeSlot.DEFAULT})을 뺀 구분 ${expected.size}개를 모두 가져야 합니다"
+        }
+        requireNotNull(slots)
+        slots.forEach { (id, file) -> validateFile("odSlots.$id", file) }
+        // 내용이 같은 구분(예: 토요일과 일요일·공휴일)은 한 파일을 함께 가리킬 수 있다. 같은 경로면 해시·길이도 같아야 한다.
+        (slots.values + manifest.files.od).groupBy { it.path }.forEach { (path, entries) ->
+            schemaCheck(entries.map { it.sha256 to it.bytes }.toSet().size == 1) {
+                "같은 경로('$path')를 가리키는 구분 행렬의 sha256/bytes가 다릅니다"
+            }
+        }
     }
 
     /** `YYYYMMDD.N`을 비교 가능한 수로 바꾼다(문자열 비교는 N이 두 자리일 때 틀린다). */
@@ -128,18 +159,72 @@ public class DataSet(
     public val manifest: Manifest,
     public val registry: Registry,
     public val candidates: CandidateList,
+    /** 기본 구분(평일 낮)의 행렬. */
     public val od: OdMatrix,
+    /** 기본 구분을 뺀 구분별 행렬. 세대 1 데이터면 비어 있다. 모든 행렬은 [od]와 축이 같다. */
+    public val odSlots: Map<TimeSlot, OdMatrix> = emptyMap(),
+) {
+    /** [slot]의 행렬. 기본 구분은 [od], 그 밖에는 [odSlots]. 세대 1 데이터에 없는 구분이면 null. */
+    public fun odFor(slot: TimeSlot): OdMatrix? = if (slot == TimeSlot.DEFAULT) od else odSlots[slot]
+}
+
+/**
+ * 세대별 manifest 객체 이름(data-format §5). 발행은 두 개를 함께 쓴다: [GENERATION_ONE]은 세대 1(평일 낮 행렬만)이라 세대 2를 모르는
+ * 옛 서버·클라이언트가 계속 읽고, [GENERATION_TWO]는 구분 행렬까지 담는다. 세대 2를 아는 reader는 [GENERATION_TWO]를 먼저 읽고
+ * 없으면 [GENERATION_ONE]을 읽는다. 둘은 같은 dataVersion과 같은 해시 파일을 가리킨다.
+ */
+public object ManifestNames {
+    public const val GENERATION_ONE: String = "manifest.json"
+    public const val GENERATION_TWO: String = "manifest.v2.json"
+}
+
+/** 세대 1 timeModel(평일 낮 행렬, 배차/2 대기). */
+public const val GENERATION_ONE_TIME_MODEL: String = "weekday-offpeak-half-headway"
+
+/** 세대 2 manifest에서 구분 행렬을 뺀 세대 1 manifest(같은 dataVersion·같은 파일). 옛 reader용으로 함께 발행한다. */
+public fun Manifest.generationOne(): Manifest =
+    copy(
+        schemaVersion = 1,
+        minClientSchema = 1,
+        timeModel = GENERATION_ONE_TIME_MODEL,
+        files = files.copy(odSlots = null),
+    )
+
+/** 데이터 세트를 이루는 파일 내용. [odSlots]는 세대 2 manifest의 `files.odSlots` 파일(키 = 구분 id), 세대 1이면 비어 있다. */
+public class DataSetBytes(
+    public val manifestJson: String,
+    public val registry: ByteArray,
+    public val candidates: ByteArray,
+    public val od: ByteArray,
+    public val odSlots: Map<String, ByteArray> = emptyMap(),
 )
 
 /** data-format.md §5의 검증 순서 ①~⑥. 하나라도 어긋나면 [SchemaException] — 호출자는 직전 정상 버전을 유지한다. */
 public object DataSetLoader {
+    /** 구분 행렬이 없는 세트(manifest 세대 1, 또는 구분을 읽지 않는 쪽)를 읽는다. */
     public fun load(
         manifestJson: String,
         registryBytes: ByteArray,
         candidatesBytes: ByteArray,
         odBytes: ByteArray,
-        supportedSchema: Int = SCHEMA_VERSION,
+        supportedSchema: Int = MANIFEST_SCHEMA_VERSION,
+    ): DataSet = load(DataSetBytes(manifestJson, registryBytes, candidatesBytes, odBytes), supportedSchema)
+
+    /**
+     * @param supportedSchema 이 클라이언트가 읽을 수 있는 최신 manifest 세대.
+     * @param deferSlots true면 구분 행렬은 검사하지 않고 비워 둔다(`files.odSlots`도 비워서 넘긴다). 서버가 기본 행렬만으로 먼저
+     *   기동하고 구분 행렬은 뒤에서 [slotMatrices]로 검사할 때 쓴다(콜드스타트). manifest의 구조 검사(구분 목록 포함)는 그대로 한다.
+     */
+    public fun load(
+        files: DataSetBytes,
+        supportedSchema: Int = MANIFEST_SCHEMA_VERSION,
+        deferSlots: Boolean = false,
     ): DataSet {
+        val manifestJson = files.manifestJson
+        val registryBytes = files.registry
+        val candidatesBytes = files.candidates
+        val odBytes = files.od
+        val odSlotBytes = files.odSlots
         val manifest = ManifestCodec.parse(manifestJson)
         schemaCheck(manifest.minClientSchema <= supportedSchema) {
             "이 데이터는 클라이언트 schema ${manifest.minClientSchema} 이상이 필요합니다 (지원: $supportedSchema). 업데이트가 필요합니다"
@@ -152,10 +237,9 @@ public object DataSetLoader {
         val candidates = RegistryCodec.parseCandidates(candidatesBytes.decodeToString(throwOnInvalidSequence = true))
         val od = OdBinCodec.decode(odBytes)
 
-        schemaCheck(
-            manifest.schemaVersion == registry.schemaVersion && manifest.schemaVersion == candidates.schemaVersion,
-        ) {
-            "manifest.schemaVersion=${manifest.schemaVersion}과 레지스트리/후보의 schemaVersion이 다릅니다"
+        // 구성 형식(레지스트리·후보 JSON, od.bin)은 manifest 세대 1·2 모두 1판이다(data-format §1).
+        schemaCheck(registry.schemaVersion == SCHEMA_VERSION && candidates.schemaVersion == SCHEMA_VERSION) {
+            "manifest 세대 ${manifest.schemaVersion}의 레지스트리/후보 schemaVersion은 $SCHEMA_VERSION 이어야 합니다"
         }
         schemaCheck(
             manifest.registryVersion == registry.registryVersion && manifest.registryVersion == od.registryVersion,
@@ -176,6 +260,40 @@ public object DataSetLoader {
             val code = od.originCode(i).toString()
             schemaCheck(registry.station(code) != null) { "od.bin 출발역 '$code'가 레지스트리에 없습니다" }
         }
-        return DataSet(manifest, registry, candidates, od)
+        if (deferSlots) {
+            schemaCheck(odSlotBytes.isEmpty()) { "deferSlots면 구분 행렬 파일을 넘기지 않습니다" }
+            return DataSet(manifest, registry, candidates, od)
+        }
+        return DataSet(manifest, registry, candidates, od, slotMatrices(manifest, od, odSlotBytes))
+    }
+
+    /** [load]에서 미룬 구분 행렬을 검사해 읽는다. 규칙은 [load]와 같다(해시·길이, 헤더, 레지스트리 버전, 기본 행렬과 같은 축). */
+    public fun slotMatrices(
+        core: DataSet,
+        odSlotBytes: Map<String, ByteArray>,
+    ): Map<TimeSlot, OdMatrix> = slotMatrices(core.manifest, core.od, odSlotBytes)
+
+    /** 구분 행렬마다 ③ 해시·길이, ④ 헤더·길이, ⑤ 레지스트리 버전, 그리고 기본 행렬과 같은 축인지 검사한다. */
+    private fun slotMatrices(
+        manifest: Manifest,
+        od: OdMatrix,
+        bytes: Map<String, ByteArray>,
+    ): Map<TimeSlot, OdMatrix> {
+        val files = manifest.files.odSlots.orEmpty()
+        schemaCheck(bytes.keys == files.keys) { "구분 행렬 파일이 manifest의 files.odSlots와 다릅니다" }
+        // 같은 파일을 가리키는 구분은 한 번만 읽어 같은 행렬 객체를 함께 쓴다(메모리·시작 시간).
+        val decoded = mutableMapOf<String, OdMatrix>()
+        return files.entries.associate { (id, file) ->
+            val content = bytes.getValue(id)
+            schemaCheck(file.matches(content)) { "구분 $id od.bin의 길이/SHA-256이 manifest와 다릅니다" }
+            val matrix = decoded.getOrPut(file.sha256) { OdBinCodec.decode(content) }
+            schemaCheck(matrix.registryVersion == od.registryVersion) { "구분 $id od.bin의 registryVersion이 다릅니다" }
+            schemaCheck(
+                matrix.rawOrigins.contentEquals(od.rawOrigins) && matrix.rawCandidates.contentEquals(od.rawCandidates),
+            ) {
+                "구분 $id od.bin의 출발역·후보 축이 기본 행렬과 다릅니다"
+            }
+            requireNotNull(TimeSlot.parseOrNull(id)) to matrix
+        }
     }
 }

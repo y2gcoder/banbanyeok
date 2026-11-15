@@ -36,7 +36,7 @@ class LinkVectorTests(unittest.TestCase):
         vectors = json.loads(gen_link_vectors.VECTORS_PATH.read_text(encoding='utf-8'))
         errors = {v['expectedError'] for v in vectors['decode'] if 'expectedError' in v}
         self.assertEqual({'MISSING_PARAM', 'UNSUPPORTED_VERSION', 'BAD_ORIGIN_COUNT', 'BAD_STATION_CODE', 'BAD_MODE',
-                          'FAVOR_INDEX_OUT_OF_RANGE', 'DUPLICATE_PARAM', 'BAD_NICKNAMES', 'MALFORMED_QUERY'}, errors)
+                          'FAVOR_INDEX_OUT_OF_RANGE', 'BAD_TIME_SLOT', 'DUPLICATE_PARAM', 'BAD_NICKNAMES', 'MALFORMED_QUERY'}, errors)
 
     def test_canonical_decode_reencodes_to_same_query(self):
         vectors = json.loads(gen_link_vectors.VECTORS_PATH.read_text(encoding='utf-8'))
@@ -44,7 +44,7 @@ class LinkVectorTests(unittest.TestCase):
             with self.subTest(item=item['id']):
                 decoded = gen_link_vectors.decode_query(item['expectedQuery'])
                 again = gen_link_vectors.encode_query(decoded['origins'], decoded['mode'], decoded['favorIndex'],
-                                                      decoded['nicknames'])
+                                                      decoded['nicknames'], decoded['timeSlot'])
                 self.assertEqual(item['expectedQuery'], again)
 
     def test_nickname_separator_is_dot_and_encoded_queries_are_rfc3986_safe(self):

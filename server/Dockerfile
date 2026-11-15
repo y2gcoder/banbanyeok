@@ -32,7 +32,7 @@ RUN bash -c 'set -eu; \
     if (exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /healthz HTTP/1.0\r\n\r\n" >&3; read -r line <&3; [[ "$line" == *200* ]]) 2>/dev/null; then ready=1; break; fi; sleep 1; done; \
   test $ready -eq 1; \
   req() { (exec 3<>/dev/tcp/127.0.0.1/8080; printf "%s" "$1" >&3; timeout 30 cat <&3 > /dev/null) || true; }; \
-  body="{\"origins\":[\"02f\",\"dd9\"],\"mode\":\"fair\"}"; \
+  body="{\"origins\":[\"02f\",\"dd9\"],\"mode\":\"fair\",\"timeSlot\":\"saturday-night\"}"; \
   req "GET /v1/manifest HTTP/1.0\r\n\r\n"; \
   req "POST /v1/recommend HTTP/1.0\r\nContent-Type: application/json\r\nContent-Length: ${#body}\r\n\r\n$body"; \
   req "POST /v1/rooms HTTP/1.0\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}"; \

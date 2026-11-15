@@ -42,17 +42,31 @@
     "source_url": "https://datafile.seoul.go.kr/bigfile/iot/inf/nio_download.do?useCache=false"
   },
   {
-    "bytes": 39893721,
+    "bytes": 74197777,
     "content_type": "application/json",
-    "effective_date": "timetable revision date not supplied; weekday (dailyTypeCode 01)",
+    "effective_date": "timetable revision date not supplied; dailyTypeCode 01/02/03 (01 weekday, 02 Saturday, 03 Sunday/holiday)",
     "estimated": false,
-    "fetched_at": "2026-11-14T19:23:03.378385Z",
+    "fetched_at": "2026-11-15T16:06:45.968428Z",
     "file": "data/raw/tago",
     "id": "S6",
     "license": "이용허락범위 제한 없음 (data.go.kr/15098554)",
     "request_body": null,
-    "rows": 1120,
-    "sha256": "2fc57c3a1c5aab86fb02c3c280b30cacca3f24652a70221984234f5c5ae9736d",
+    "rows": 3356,
+    "sha256": "75a4db5714844b8d9b2838fcb449f45c22d6576ab45ea3677f202f9a62d56d7a",
     "source_url": "https://apis.data.go.kr/1613000/SubwayInfo (GetKwrdFndSubwaySttnList, GetSubwaySttnAcctoSchdulList)"
+  },
+  {
+    "bytes": 95065673,
+    "content_type": "application/json",
+    "effective_date": "timetable revision date not supplied; WEEK_TAG 1 weekday, 2 Saturday, 3 Sunday/holiday",
+    "estimated": false,
+    "fetched_at": "2026-11-15T16:08:47.743900Z",
+    "file": "data/raw/seoul",
+    "id": "S5",
+    "license": "공공누리 제1유형 (서울교통공사, 서울 열린데이터광장 OA-101)",
+    "request_body": null,
+    "rows": 1663,
+    "sha256": "c9ea8c0f941b8b9e2cb3ab4752bef36466420042e288437cdcaebc61b33e5bcb",
+    "source_url": "https://data.seoul.go.kr/dataList/OA-101/A/1/datasetView.do (SearchInfoBySubwayNameService, SearchSTNTimeTableByIDService)"
   }
 ]

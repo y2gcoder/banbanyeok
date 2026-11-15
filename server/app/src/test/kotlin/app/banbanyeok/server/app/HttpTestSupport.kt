@@ -2,6 +2,7 @@
 
 package app.banbanyeok.server.app
 
+import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.config.AppConfig
@@ -34,7 +35,7 @@ object DevArtifacts {
     val dir: Path = Path.of(requireNotNull(System.getProperty("artifacts.dev.dir")))
     val store = LocalFileArtifactStore(dir, UnconfinedTestDispatcher())
     private val loaded by lazy { runBlocking { ArtifactLoader(store).load() } }
-    val directory: StationDirectory by lazy { StationDirectory(loaded.dataSet) }
+    val directory: StationDirectory by lazy { StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots)) }
     val published: PublishedArtifacts by lazy { PublishedArtifacts(store, loaded) }
     val origins: List<String> get() = directory.originCodes
 }

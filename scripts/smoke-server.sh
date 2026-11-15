@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 배포된 서버(또는 태그 붙은 후보 리비전)의 스모크 테스트. 사용: bash scripts/smoke-server.sh <base-url> [expected-dataVersion]
-# 확인: /v1/healthz → /v1/manifest(데이터 버전) → 추천 1건 → DB 읽기(없는 방 404) → 방 생성·조회·삭제 한 번(DB 쓰기·pepper 경로).
+# 확인: /v1/healthz → /v1/manifest(데이터 버전) → 추천 1건 → 구분(토요일 밤) 추천 1건 → DB 읽기(없는 방 404) → 방 생성·조회·삭제 한 번(DB 쓰기·pepper 경로).
 # 방 토큰은 출력하지 않는다. 만든 방은 방장 토큰으로 바로 지운다. 콜드스타트 때문에 첫 /healthz는 재시도한다.
 set -euo pipefail
 
@@ -43,6 +43,18 @@ import json, sys
 r = json.load(open(sys.argv[1]))
 assert r["status"] == "ok" and len(r["candidates"]) > 0, r.get("status")
 print("   후보 %d개, 1위 %s" % (len(r["candidates"]), r["candidates"][0]["stationName"]))
+PY
+
+echo "3b) 구분 추천 (토요일 밤): 응답 기준이 요청과 같아야 한다(다르면 구분 행렬을 못 읽고 평일 낮으로 계산한 것)"
+code="$(http "$tmp/s" -X POST "$base/v1/recommend" -H 'Content-Type: application/json' \
+  -d '{"origins":["02f","dd9"],"mode":"fair","timeSlot":"saturday-night"}')"
+[[ "$code" == 200 ]] || fail "/v1/recommend(saturday-night) 상태 $code"
+python3 -I - "$tmp/s" <<'PY' || fail "구분 추천의 timeBasis가 saturday-night가 아님(구분 행렬 장애)"
+import json, sys
+r = json.load(open(sys.argv[1]))
+basis = r.get("timeBasis") or {}
+assert basis.get("timeSlot") == "saturday-night", basis.get("timeSlot")
+print("   기준 %s, 1위 %s" % (basis.get("label"), r["candidates"][0]["stationName"]))
 PY
 
 echo "4) DB 읽기: 없는 방은 404 ROOM_NOT_FOUND여야 한다(DB 연결 실패면 500)"

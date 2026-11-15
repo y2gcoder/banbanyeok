@@ -5,6 +5,7 @@ import app.banbanyeok.schema.StationCode
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 
 /**
  * 방 유스케이스. Ktor를 모르는 일반 클래스이고 오류는 [RoomException]으로 알린다(HTTP 상태 변환은 app 몫).
@@ -38,6 +39,7 @@ public class RoomService(
                 favorParticipantId = if (command.mode == RoomMode.FAVOR) hostParticipantId else null,
                 dataVersion = stations.dataVersion,
                 meetingDate = command.meetingDate,
+                meetingTime = command.meetingTime?.withSecond(0)?.withNano(0),
                 expectedCount = command.expectedCount,
                 locked = false,
                 outcome = null,
@@ -158,6 +160,7 @@ public class RoomService(
                 favorParticipantId = favorChange(stored, patch),
                 locked = patch.locked,
                 meetingDate = patch.meetingDate,
+                meetingTime = minutes(patch.meetingTime),
             )
         val expiresAt = ExpiryPolicy.expiresAt(stored.room.createdAt, now, meetingDate)
         if (!rooms.updateRoom(roomId, change, Activity(now, expiresAt))) {
@@ -253,6 +256,7 @@ public class RoomService(
             favorParticipantId = room.favorParticipantId,
             locked = room.locked || full,
             meetingDate = room.meetingDate,
+            meetingTime = room.meetingTime,
             expiresAt = room.expiresAt,
             dataVersion = room.dataVersion,
             participants =
@@ -304,6 +308,13 @@ public class RoomService(
             }
         }
     }
+
+    /** 약속 시각은 분 단위로 저장한다(초는 버린다). */
+    private fun minutes(change: Change<LocalTime>): Change<LocalTime> =
+        when (change) {
+            Change.Unchanged -> change
+            is Change.Set -> Change.Set(change.value?.withSecond(0)?.withNano(0))
+        }
 
     private fun checkMeetingDate(
         date: LocalDate,

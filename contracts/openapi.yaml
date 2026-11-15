@@ -26,6 +26,14 @@ info:
 
     **데이터 버전**: 방은 생성 시점의 `dataVersion`(manifest의 값)을 기록하고, 결과 응답은 계산에 쓴 버전을 돌려준다.
 
+    **언제 만나나(계산 기준)**: 시간은 요일 유형(평일·토요일·일요일/공휴일) × 시간대(아침·낮·저녁·밤) 구분마다 다르다(배차가 달라
+    탑승·환승 대기가 바뀐다. 정의 contracts/time-slots.json, data-format §9). `/recommend`는 구분 id(`timeSlot`)를 직접 받고,
+    방은 약속 날짜(`meetingDate`)와 시각(`meetingTime`)으로 서버가 구분을 정한다(공휴일 목록 contracts/holidays.json). 둘 다 없으면
+    기본 구분 `weekday-day`(평일 낮)이다 — 구분이 없던 옛 공유 링크(v=1)도 같은 결과가 나온다. 결과 응답의 `timeBasis`는 **실제로 계산한**
+    구분과 화면 문구(`label`, 예: "토요일 저녁")이며 클라이언트는 문구를 다시 만들지 않는다. `requestedTimeSlot`은 요청한(방은 날짜·시각에서
+    정한) 구분이다. 다음 경우에는 평일 낮으로 대신 계산하고 `timeSlot`이 `weekday-day`가 된다(= `requestedTimeSlot`과 다르다): 데이터에 그
+    구분의 행렬이 없을 때(manifest 1세대), 서버가 기동 뒤 구분 행렬 검증에 실패했을 때, 기동 직후 검증이 10초 안에 끝나지 않았을 때.
+
     **공통 규칙**: 요청 크기 제한(16 KiB, 초과 시 413), IP·기기 단위 속도 제한(초과 시 429와 `Retry-After`), 방 생성과
     참여에 선택적 `Idempotency-Key` 헤더(서버 인스턴스 메모리에서 10분간 같은 응답 재생), 오류는 항상 `{code, message}`.
 servers:
@@ -112,7 +120,7 @@ paths:
     patch:
       tags: [rooms]
       operationId: updateRoom
-      summary: 모드·잠금·약속일 변경 (방장)
+      summary: 모드·잠금·약속일·약속 시각 변경 (방장)
       security: [{hostToken: []}]
       requestBody:
         required: true
@@ -305,6 +313,11 @@ paths:
                     `null`로 보내고, 아무도 넣지 않았으면 필드를 생략한다. 응답의 `participants[].nickname`에 그대로 실리고, 표시
                     이름(`participants[].label`)과 `reason` 문장은 이 이름을 쓴다. 없는 사람은 "{출발역}에서 오는 분"이다(data-format §8).
                   items: {type: [string, 'null'], maxLength: 20}
+                timeSlot:
+                  description: '언제 만나는가. 생략하거나 null이면 `weekday-day`(평일 낮). 문자열이 아니거나 모르는 id면 400 `INVALID_TIME_SLOT`'
+                  oneOf:
+                    - {$ref: '#/components/schemas/TimeSlot'}
+                    - {type: 'null'}
       responses:
         '200':
           description: 순위 결과 (참가자는 입력 순서의 인덱스로 구분)
@@ -406,7 +419,7 @@ components:
         | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정) |
         | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
         | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
-        | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
+        | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
         | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
         | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
         | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
@@ -431,6 +444,47 @@ components:
       type: string
       enum: [fair, fast, favor]
       description: 공평하게 / 빨리 만나기 / 오늘은 ○○ 쪽으로
+
+    TimeSlot:
+      type: string
+      description: '구분 id = `{요일 유형}-{시간대}` (contracts/time-slots.json). 기본 `weekday-day`'
+      enum:
+        - weekday-morning
+        - weekday-day
+        - weekday-evening
+        - weekday-night
+        - saturday-morning
+        - saturday-day
+        - saturday-evening
+        - saturday-night
+        - holiday-morning
+        - holiday-day
+        - holiday-evening
+        - holiday-night
+
+    MeetingTime:
+      type: string
+      pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+      description: 약속 시각 `HH:MM`(24시간, 서울 시각). 03:00 전은 전날 운행일의 밤으로 계산한다
+      examples: ['19:30']
+
+    TimeBasis:
+      type: object
+      required: [timeSlot, requestedTimeSlot, dayType, band, label, holidayName]
+      description: |
+        결과를 계산한 기준(실제로 쓴 구분). 화면의 "○○ 기준" 문구는 `label`을 그대로 쓴다. `timeSlot`이 `requestedTimeSlot`과 다르면 평일 낮으로
+        대신 계산한 것이다(조건은 API 설명의 "언제 만나나").
+      properties:
+        timeSlot: {$ref: '#/components/schemas/TimeSlot'}
+        requestedTimeSlot:
+          $ref: '#/components/schemas/TimeSlot'
+          description: 요청한 구분(`/recommend`의 `timeSlot`, 방은 약속 날짜·시각에서 서버가 정한 구분)
+        dayType: {type: string, enum: [weekday, saturday, holiday]}
+        band: {type: string, enum: [morning, day, evening, night]}
+        label: {type: string, examples: [평일 낮, 토요일 저녁, 일요일·공휴일 밤]}
+        holidayName:
+          type: [string, 'null']
+          description: 방의 약속일이 공휴일이면 그 이름(예 "추석"). 그 밖에는 null
 
     ParticipantInput:
       type: object
@@ -479,7 +533,15 @@ components:
         favorTarget:
           type: string
           description: '`mode=favor`일 때 우대 대상. 방장은 `host`, 이후 참여자는 participantId'
-        meetingDate: {type: string, format: date, description: 약속일(선택). 만료와 "실제로 만났나" 질문 시점에 쓴다}
+        meetingDate:
+          type: string
+          format: date
+          description: '약속일(선택). 만료와 "실제로 만났나" 질문 시점, 계산 구분(요일 유형)에 쓴다'
+        meetingTime:
+          description: '약속 시각(선택). 계산 구분(시간대)에 쓴다. 생략하거나 null이면 없음(낮). 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME`'
+          oneOf:
+            - {$ref: '#/components/schemas/MeetingTime'}
+            - {type: 'null'}
         host: {$ref: '#/components/schemas/ParticipantInput'}
         expectedCount: {type: integer, minimum: 2, maximum: 4}
 
@@ -500,6 +562,11 @@ components:
         favorTarget: {type: string}
         locked: {type: boolean}
         meetingDate: {type: [string, 'null'], format: date}
+        meetingTime:
+          description: '약속 시각. null이면 지운다. 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME`'
+          oneOf:
+            - {$ref: '#/components/schemas/MeetingTime'}
+            - {type: 'null'}
 
     Room:
       type: object
@@ -510,6 +577,10 @@ components:
         favorTarget: {type: [string, 'null']}
         locked: {type: boolean}
         meetingDate: {type: [string, 'null'], format: date}
+        meetingTime:
+          oneOf:
+            - {$ref: '#/components/schemas/MeetingTime'}
+            - {type: 'null'}
         expiresAt: {type: string, format: date-time}
         dataVersion: {type: string, description: 방이 기록한 manifest dataVersion}
         participants:
@@ -557,7 +628,7 @@ components:
 
     Result:
       type: object
-      required: [status, mode, dataVersion, participants, candidates]
+      required: [status, mode, dataVersion, participants, candidates, timeBasis]
       properties:
         status:
           type: string
@@ -570,6 +641,7 @@ components:
         participants:
           type: array
           items: {$ref: '#/components/schemas/Participant'}
+        timeBasis: {$ref: '#/components/schemas/TimeBasis'}
         baselineStationCode:
           description: 엄밀한 공평 1위. favor 상한의 기준
           oneOf:

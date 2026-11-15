@@ -26,7 +26,9 @@ test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
   await page.getByRole("button", { name: "만날 역 찾기" }).click();
 
-  await expect(page).toHaveURL(/\/result\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f$/);
+  await expect(page).toHaveURL(
+    /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)$/,
+  );
   const top = page.getByRole("article").first();
   await expect(top.getByText("강남에서 오는 분", { exact: true })).toBeVisible();
   await expect(top.getByText("홍대입구에서 오는 분", { exact: true })).toBeVisible();
@@ -36,7 +38,9 @@ test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 
 
   await page.getByRole("button", { name: "링크 복사" }).click();
   const shared = await page.evaluate(() => navigator.clipboard.readText());
-  expect(shared).toMatch(/\/s\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f$/);
+  expect(shared).toMatch(
+    /\/s\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)$/,
+  );
 
   const friend = await context.newPage();
   await friend.goto(shared);

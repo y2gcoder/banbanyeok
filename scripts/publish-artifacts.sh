@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # 파이프라인 산출물을 GCS 버킷에 발행한다. 입력은 `./gradlew :pipeline:run --args="stage-release build/release"`의 출력 디렉터리.
-# 순서: ① 해시 이름 파일(versions/<dataVersion>/…, 불변) 업로드 → ② manifest.json 업로드(마지막, 객체 덮어쓰기는 원자적)
-#       → ③ 올라간 manifest 대조 → ④ 최근 N개 버전만 남기고 정리.
-# 서버는 시작할 때 manifest.json을 읽고 그 경로의 파일을 검증하므로, manifest가 마지막에 바뀌는 한 중간 상태는 보이지 않는다.
+# 순서: ① 해시 이름 파일(versions/<dataVersion>/…, 불변) 업로드 → ② manifest.v2.json(세대 2, 구분 행렬 포함, 있으면)
+#       → manifest.json(세대 1, 마지막, 객체 덮어쓰기는 원자적) → ③ 올라간 manifest 대조 → ④ 최근 N개 버전만 남기고 정리.
+# 서버는 시작할 때 manifest(세대 2를 아는 서버는 manifest.v2.json 먼저)를 읽고 그 경로의 파일을 검증하므로, manifest가 마지막에
+# 바뀌는 한 중간 상태는 보이지 않는다. 세대 1을 늘 함께 올려 세대 2를 모르는 옛 리비전도 계속 기동한다(배포 틈·되돌리기, t2-notes 8절).
 # 사용: bash scripts/publish-artifacts.sh <bucket> [stage_dir=build/release] [keep=10]
 # 환경: FORCE=1이면 버킷의 manifest보다 오래된 dataVersion으로도 발행한다(롤백 용도).
 set -euo pipefail
@@ -24,9 +25,14 @@ dest="gs://$bucket"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+v2_same() {
+  [[ ! -f "$stage/manifest.v2.json" ]] && return 0
+  gcloud storage cat "$dest/manifest.v2.json" 2>/dev/null | cmp -s - "$stage/manifest.v2.json"
+}
+
 if gcloud storage cat "$dest/manifest.json" > "$tmp/remote.json" 2>/dev/null; then
   remote_version="$(json_field "$tmp/remote.json" dataVersion)"
-  if cmp -s "$tmp/remote.json" "$stage/manifest.json"; then
+  if cmp -s "$tmp/remote.json" "$stage/manifest.json" && v2_same; then
     echo "이미 발행됨: $version (변경 없음)"
     published_same=1
   elif (( $(version_key "$remote_version") > $(version_key "$version") )) && [[ "${FORCE:-}" != 1 ]]; then
@@ -41,10 +47,20 @@ if [[ "${published_same:-}" != 1 ]]; then
   echo "① 해시 이름 파일 업로드 (기존 파일은 건너뜀)"
   (cd "$stage" && gcloud storage cp --no-clobber --recursive \
     --cache-control="public, max-age=31536000, immutable" versions "$dest/")
-  echo "② manifest.json 업로드(마지막)"
+  if [[ -f "$stage/manifest.v2.json" ]]; then
+    echo "② manifest.v2.json 업로드(세대 2)"
+    gcloud storage cp --cache-control="no-cache" "$stage/manifest.v2.json" "$dest/manifest.v2.json"
+  else
+    # 세대 1만 있는 데이터(T2 이전으로 되돌리기)면 남은 세대 2를 지운다. 서버도 dataVersion이 다른 세대 2는 쓰지 않는다.
+    gcloud storage rm "$dest/manifest.v2.json" 2>/dev/null || true
+  fi
+  echo "② manifest.json 업로드(세대 1, 마지막)"
   gcloud storage cp --cache-control="no-cache" "$stage/manifest.json" "$dest/manifest.json"
   echo "③ 대조"
   gcloud storage cat "$dest/manifest.json" | cmp - "$stage/manifest.json"
+  if [[ -f "$stage/manifest.v2.json" ]]; then
+    gcloud storage cat "$dest/manifest.v2.json" | cmp - "$stage/manifest.v2.json"
+  fi
   expected="$(find "$stage/versions/$version" -type f | wc -l | tr -d ' ')"
   actual="$(gcloud storage ls "$dest/versions/$version/" | grep -c . || true)"
   [[ "$expected" == "$actual" ]] || { echo "버전 디렉터리 파일 수가 다릅니다($expected != $actual)" >&2; exit 1; }

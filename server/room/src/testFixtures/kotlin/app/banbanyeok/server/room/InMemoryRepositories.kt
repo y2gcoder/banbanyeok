@@ -103,6 +103,9 @@ class InMemoryRoomRepository : RoomRepository {
                     meetingDate =
                         (change.meetingDate as? Change.Set)?.value
                             ?: room.meetingDate.takeIf { change.meetingDate is Change.Unchanged },
+                    meetingTime =
+                        (change.meetingTime as? Change.Set)?.value
+                            ?: room.meetingTime.takeIf { change.meetingTime is Change.Unchanged },
                     lastActivityAt = activity.at,
                     expiresAt = activity.expiresAt,
                 )

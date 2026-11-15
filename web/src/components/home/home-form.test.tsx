@@ -37,8 +37,33 @@ describe("입력 화면", () => {
     expect(button).toBeEnabled();
     await user.click(button);
     expect(push).toHaveBeenCalledWith(
-      expect.stringMatching(/^\/result\?v=1&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&n=66-87IiY\.$/),
+      expect.stringMatching(
+        /^\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(weekday|saturday|holiday)-(morning|day|evening|night)&n=66-87IiY\.$/,
+      ),
     );
+  });
+
+  it("언제 만나요?는 지금(서울) 시각으로 골라 두고, 고른 요일·시간대를 링크에 담는다", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-11-18T03:00:00Z") }); // 서울 수요일 12:00
+    try {
+      const user = userEvent.setup();
+      render(<HomeForm />);
+      expect(screen.getByRole("radio", { name: "평일" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: /^낮/ })).toBeChecked();
+      expect(screen.getByText(/지금 시각으로 골라 뒀어요/)).toBeInTheDocument();
+
+      await user.click(screen.getByRole("radio", { name: "토요일" }));
+      await user.click(screen.getByRole("radio", { name: /^밤/ }));
+      expect(screen.queryByText(/지금 시각으로 골라 뒀어요/)).toBeNull();
+      await user.type(screen.getByRole("combobox", { name: "나의 출발역" }), "강남");
+      await user.click(await screen.findByRole("option", { name: /^강남\s?2호선/ }));
+      await user.type(screen.getByRole("combobox", { name: "친구1의 출발역" }), "잠실");
+      await user.click(await screen.findByRole("option", { name: /^잠실\s?2호선/ }));
+      await user.click(screen.getByRole("button", { name: "만날 역 찾기" }));
+      expect(push).toHaveBeenCalledWith(expect.stringMatching(/&m=f&t=saturday-night$/));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("계산 범위 밖 역은 고를 수 없다고 알려 준다", async () => {

@@ -178,6 +178,15 @@ if [ "${SERVER_CONNECTED:-0}" = "1" ] && [ -n "${pair_path:-}" ]; then
     fi
   done
 
+  # 구분(토요일 밤): 응답 기준이 요청과 같아야 한다. 다르면 서버가 구분 행렬을 못 읽고 평일 낮으로 계산한 것이다.
+  api POST /api/v1/recommend "{\"origins\":[\"$a\",\"$b\"],\"mode\":\"fair\",\"timeSlot\":\"saturday-night\"}"
+  basis="$(jq -r '.timeBasis.timeSlot // empty' "$api_body" 2>/dev/null)"
+  if [ "$status" = "200" ] && [ "$basis" = "saturday-night" ]; then
+    pass "/api/v1/recommend(timeSlot saturday-night) → 같은 기준으로 계산"
+  else
+    bad "/api/v1/recommend(timeSlot saturday-night) status=$status timeBasis=${basis:-없음}"
+  fi
+
   # 방 흐름(브라우저와 같은 Origin): 만들기 → 참여 → 결과 → 방장 토큰으로 삭제. 스모크용 방이라 바로 지운다.
   api POST /api/v1/rooms "{\"mode\":\"fair\",\"expectedCount\":2,\"host\":{\"originCode\":\"$a\"}}"
   if [ "$status" = "201" ] || [ "$status" = "200" ]; then

@@ -72,7 +72,9 @@ test("받은 링크 화면 하단에 처리방침 링크가 있다", async ({ pa
   const [a, b] = (href ?? "").replace("/meet/", "").split("-");
   if (!a || !b) throw new Error("허브에 조합 링크가 없습니다");
 
-  await page.goto(`/s?${encodeShareQuery({ origins: [a, b], mode: "fair", favorIndex: null, nicknames: null })}`);
+  await page.goto(
+    `/s?${encodeShareQuery({ origins: [a, b], mode: "fair", favorIndex: null, nicknames: null, timeSlot: "weekday-day" })}`,
+  );
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   const link = footerLink(page);
   await link.scrollIntoViewIfNeeded();

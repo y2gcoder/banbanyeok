@@ -1,8 +1,11 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Registry
 import app.banbanyeok.schema.RegistryCompatibility
 import app.banbanyeok.schema.StationStatus
+import app.banbanyeok.schema.TimeBand
+import app.banbanyeok.schema.TimeSlot
 import io.kotest.core.spec.style.DescribeSpec
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -41,12 +44,13 @@ private fun departure(
     time: String,
     direction: String = "1",
     branch: String = "",
+    week: String = "1",
 ): JsonObject =
     obj(
         "LINE_NUM" to "01호선",
         "STATION_CD" to "0150",
         "INOUT_TAG" to direction,
-        "WEEK_TAG" to "1",
+        "WEEK_TAG" to week,
         "LEFTTIME" to time,
         "TRAIN_NO" to time,
         "BRANCH_LINE" to branch,
@@ -187,11 +191,55 @@ class StagesTest :
                 assertTrue(graphGate(net, costs).passed)
             }
         }
+        describe("time slot networks") {
+            it("re-weights only boarding waits, exactly like rebuilding the graph with the slot headways") {
+                val rules =
+                    NetworkRules(
+                        parseObject(
+                            """{"aliases":{},"predecessors":{"2:X":"A"},"oneWay":{},
+                "services":{"2branch":{"line":"2","stations":["X"],"root":"A"}},"sourceLineOverrides":{}}""",
+                        ),
+                    )
+
+                fun input(headway: Int) =
+                    PipelineInput(
+                        Registry(1, 1, emptyList()),
+                        listOf(record("A", "2호선"), record("B", "2호선"), record("X", "2호선")),
+                        listOf(
+                            listOf("0", "2", "A", "00:00"),
+                            listOf("1", "2", "B", "01:00"),
+                            listOf("2", "2", "X", "01:30"),
+                        ),
+                        listOf(listOf("0", "2", "A", "2호선", "72", "01:00")),
+                        rules,
+                        mapOf("2" to 120),
+                        slotHeadways =
+                            TimeSlot.ALL.associateWith {
+                                mapOf("2" to if (it == TimeSlot.DEFAULT) 120 else headway)
+                            },
+                    )
+
+                fun codes() = listOf(1, 2, 3).iterator().let { next -> CodeSource { next.next() } }
+                val base = network(input(480), codes())
+                val slots = slotNetworks(input(480), base)
+                assertEquals(12, slots.size)
+                assertTrue(slots.getValue(TimeSlot.DEFAULT) === base)
+                assertEquals(base.graph, base.withWaits(base.waits).graph)
+                val night = slots.getValue(TimeSlot(DayType.SATURDAY, TimeBand.NIGHT))
+                val rebuilt = network(input(480).copy(headways = mapOf("2" to 480)), codes())
+                assertEquals(rebuilt.graph, night.graph)
+                assertEquals(matrixCosts(rebuilt), matrixCosts(night))
+                // A → X: first wait 60 → 240 s, branch transfer wait 60 → 240 s; riding and walking unchanged.
+                assertEquals(Cost(150, 0), matrixCosts(base)[0][2])
+                assertEquals(Cost(330, 0), matrixCosts(night)[0][2])
+                assertTrue(graphGate(night, matrixCosts(night)).passed)
+            }
+        }
         describe("explicit network commands") {
             it("fails clearly on missing credentials without filesystem or HTTP") {
                 val failure =
                     assertFailsWith<IllegalArgumentException> {
-                        refreshHeadways(
+                        seoulFetch(
                             Path.of("missing-root"),
                             key = null,
                             http =
@@ -248,29 +296,79 @@ class StagesTest :
                 assertTrue(empty.rows.isEmpty())
                 assertFailsWith<IllegalArgumentException> { timetablePage("""{"RESULT":{"CODE":"ERROR-300"}}""") }
             }
-            it("preserves estimates for incomplete directions and computes complete line means") {
+            it("preserves values for incomplete directions and computes complete line means per slot") {
                 val original = parseObject(Path.of("../data/config/headways.json").readText())
                 val rows =
-                    listOf(
-                        departure("10:00:00"),
-                        departure("10:10:00"),
-                        departure("10:00:00", "2"),
-                        departure("10:20:00", "2"),
+                    mapOf(
+                        DayType.WEEKDAY to
+                            listOf(
+                                departure("10:00:00"),
+                                departure("10:10:00"),
+                                departure("10:00:00", "2"),
+                                departure("10:20:00", "2"),
+                                departure("21:00:00"),
+                                departure("21:30:00"),
+                                departure("21:00:00", "2"),
+                                departure("21:20:00", "2"),
+                            ),
+                        DayType.SATURDAY to
+                            listOf(departure("10:00:00", week = "2"), departure("10:12:00", week = "2")),
                     )
-                val updated = updatedHeadways(original, rows, "2026-11-14T00:00:00Z")
-                assertEquals(
-                    "900",
+                val updated = slotHeadways(original, rows, "2026-11-16T00:00:00Z")
+
+                fun line(
+                    slot: String,
+                    line: String,
+                ) = updated
+                    .getValue("slots")
+                    .jsonObject
+                    .getValue(slot)
+                    .jsonObject
+                    .getValue("lines")
+                    .jsonObject
+                    .getValue(line)
+                    .jsonObject
+                assertEquals("900", line("weekday-day", "1").text("seconds"))
+                assertEquals("1500", line("weekday-night", "1").text("seconds"))
+                val defaultSlot =
                     updated
+                        .getValue("slots")
+                        .jsonObject
+                        .getValue("weekday-day")
+                        .jsonObject
+                assertEquals(updated.getValue("lines"), defaultSlot["lines"])
+                // Saturday has one direction only: the previous (default) value is kept and flagged as estimated.
+                assertEquals("true", line("saturday-day", "1").text("estimated"))
+                assertEquals(
+                    original
                         .getValue("lines")
                         .jsonObject
-                        .getValue("1")
+                        .getValue("8")
                         .jsonObject
                         .text("seconds"),
+                    line("weekday-day", "8").text("seconds"),
                 )
-                assertEquals(2, updated.getValue("directions").jsonArray.size)
+                assertEquals("true", updated.text("estimated"))
+                assertEquals(12, slotLineHeadways(updated).size)
+            }
+            it("measures each slot inside its own window and day type only") {
+                val rows =
+                    listOf(
+                        departure("07:00:00"),
+                        departure("07:05:00"),
+                        departure("10:30:00"),
+                        departure("10:40:00"),
+                        departure("07:00:00", week = "3"),
+                        departure("07:20:00", week = "3"),
+                    )
                 assertEquals(
-                    original.getValue("lines").jsonObject.getValue("8"),
-                    updated.getValue("lines").jsonObject.getValue("8"),
+                    listOf("300"),
+                    stationHeadways(rows, "1", TimeBand.MORNING.window).map { it.text("seconds") },
+                )
+                assertEquals(listOf("600"), stationHeadways(rows, "1", TimeBand.DAY.window).map { it.text("seconds") })
+                assertEquals(
+                    listOf("1200"),
+                    stationHeadways(rows, "3", TimeBand.MORNING.window).map { it.text("seconds") },
                 )
             }
         }

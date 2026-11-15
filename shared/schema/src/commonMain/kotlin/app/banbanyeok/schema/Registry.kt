@@ -15,8 +15,14 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonUnquotedLiteral
 import kotlin.math.roundToLong
 
-/** 이 모듈이 읽고 쓰는 형식 세대. manifest·레지스트리·후보·od.bin이 함께 쓴다(contracts/data-format.md §1). */
+/** 레지스트리·후보 JSON과 od.bin의 형식 판(contracts/data-format.md §1). manifest 세대는 [MANIFEST_SCHEMA_VERSION]. */
 public const val SCHEMA_VERSION: Int = 1
+
+/**
+ * 이 모듈이 읽고 쓰는 manifest의 최신 세대. 2: 구분별 od 행렬(`files.odSlots`). 구성 형식(레지스트리·후보·od.bin)은 두 세대 모두
+ * [SCHEMA_VERSION]이다(data-format §1·§5).
+ */
+public const val MANIFEST_SCHEMA_VERSION: Int = 2
 
 @Serializable
 public enum class StationStatus {

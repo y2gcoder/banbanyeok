@@ -1,10 +1,16 @@
 package app.banbanyeok.server.recommendation
 
-/** 출발역 N개 × 후보 M개. 도달 불가는 [times]와 [transfers]의 같은 칸이 함께 null이다. 행은 요청한 출발역 순서다. */
+import app.banbanyeok.schema.TimeSlot
+
+/**
+ * 출발역 N개 × 후보 M개. 도달 불가는 [times]와 [transfers]의 같은 칸이 함께 null이다. 행은 요청한 출발역 순서다.
+ * [slot]은 실제로 읽은 구분이다(요청한 구분의 행렬이 없는 데이터면 기본 구분).
+ */
 public class TravelMatrix(
     public val candidates: List<String>,
     public val times: List<List<Int?>>,
     public val transfers: List<List<Int?>>,
+    public val slot: TimeSlot = TimeSlot.DEFAULT,
 )
 
 /** 출발역에서 모든 후보역까지의 시간·환승(정수 초, 횟수). 지금 구현은 od.bin 기반이다. */
@@ -14,8 +20,14 @@ public interface TravelTimeProvider {
 
     public fun isOrigin(code: String): Boolean
 
-    /** 모든 [origins]가 [isOrigin]이어야 한다. */
-    public fun measure(origins: List<String>): TravelMatrix
+    /**
+     * 모든 [origins]가 [isOrigin]이어야 한다. [slot]의 행렬이 없으면(manifest 1세대 데이터) 기본 구분으로 계산하고
+     * [TravelMatrix.slot]에 그 사실을 남긴다. 모든 구분은 같은 출발역·후보 축이다.
+     */
+    public fun measure(
+        origins: List<String>,
+        slot: TimeSlot = TimeSlot.DEFAULT,
+    ): TravelMatrix
 }
 
 /** 역 코드의 표시 이름. */

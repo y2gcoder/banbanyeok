@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -32,7 +33,8 @@ internal fun tagoDailyTypes(scope: JsonObject): List<String> =
     scope.getValue("dailyTypes").jsonArray.map { it.jsonPrimitive.content }
 
 /**
- * Resumable cache fill: station list (2 calls), then weekday U/D timetables for every scoped station.
+ * Resumable cache fill: station list (2 calls), then U/D timetables of every configured day type for every scoped
+ * station (`dailyTypes` in tago-scope.json: 01 weekday, 02 Saturday, 03 Sunday/holiday).
  * Completed pages are never re-requested; quota exhaustion stops with exit status 2 so the next day resumes.
  */
 internal fun tagoFetch(
@@ -172,7 +174,9 @@ internal fun writeTagoReceipt(
             "content_type" to "application/json",
             "rows" to files.size,
             "license" to "이용허락범위 제한 없음 (data.go.kr/15098554)",
-            "effective_date" to "timetable revision date not supplied; weekday (dailyTypeCode 01)",
+            "effective_date" to
+                "timetable revision date not supplied; dailyTypeCode ${tagoDailyTypes(scope).joinToString("/")} " +
+                "(01 weekday, 02 Saturday, 03 Sunday/holiday)",
             "estimated" to false,
         )
     path.writeJson(jsonValue(receipts.filter { it.text("id") != "S6" } + receipt).toString())
@@ -195,13 +199,46 @@ internal fun readTago(root: Path): TagoInput {
     requireNotNull(receipt) { "S6 (TAGO) receipt missing; run tago-fetch" }
     val files = tagoFiles(root, scoped, tagoDailyTypes(scope))
     require(receipt.text("sha256") == tagoDigest(root, files)) { "S6: TAGO cache digest mismatch; run tago-fetch" }
-    val timetable =
-        scoped.associateWith { id ->
-            listOf("U", "D").associateWith { direction -> api.schedule(id, "01", direction).map(::tagoTrain) }
+    val days = tagoDailyTypes(scope)
+    val raw =
+        DayType.entries.filter { it.tagoDailyType in days }.associateWith { day ->
+            scoped.associateWith { id ->
+                listOf("U", "D").associateWith { direction ->
+                    api.schedule(id, day.tagoDailyType, direction).map(::tagoTrain)
+                }
+            }
         }
     return TagoInput(
         lines,
         list.associate { it.text("subwayStationId") to (it.text("subwayStationName") to it.text("subwayRouteName")) },
-        timetable,
+        raw.getValue(DayType.WEEKDAY),
+        weekendFallback(raw),
     )
+}
+
+/**
+ * TAGO leaves Saturday (02) empty for almost every operator (2026-11 cache: only 우이신설 has its own Saturday rows):
+ * they run the Sunday/holiday timetable on Saturdays. A station whose Saturday rows are empty in both directions
+ * therefore uses its 03 rows, and one whose 03 rows are empty uses 02. A station empty on both days stays empty
+ * (the service headway is a median over stations, so it is just not counted).
+ */
+internal fun weekendFallback(raw: Map<DayType, TagoTimetable>): Map<DayType, TagoTimetable> {
+    fun empty(station: Map<String, List<TagoTrain>>?) = station == null || station.values.all { it.isEmpty() }
+    val saturday = raw[DayType.SATURDAY] ?: return raw
+    val holiday = raw[DayType.HOLIDAY] ?: return raw
+
+    fun filled(
+        own: TagoTimetable,
+        other: TagoTimetable,
+    ): TagoTimetable =
+        own.mapValues { (id, rows) ->
+            if (empty(rows) &&
+                !empty(other[id])
+            ) {
+                other.getValue(id)
+            } else {
+                rows
+            }
+        }
+    return raw + mapOf(DayType.SATURDAY to filled(saturday, holiday), DayType.HOLIDAY to filled(holiday, saturday))
 }

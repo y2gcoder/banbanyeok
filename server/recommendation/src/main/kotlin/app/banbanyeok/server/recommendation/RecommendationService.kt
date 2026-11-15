@@ -13,6 +13,7 @@ import app.banbanyeok.applogic.ReasonMode
 import app.banbanyeok.core.RankInput
 import app.banbanyeok.core.RankResult
 import app.banbanyeok.core.rank
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.core.Candidate as CoreCandidate
 
 public enum class RecommendMode { FAIR, FAST, FAVOR }
@@ -33,6 +34,8 @@ public class RecommendRequest(
     public val mode: RecommendMode,
     /** [RecommendMode.FAVOR]일 때 우대할 사람의 [RecommendParticipant.id]. */
     public val favorId: String? = null,
+    /** 언제 만나는가. 무상태 추천은 요청의 구분, 방은 약속 날짜·시각에서 정한 구분([TimeSlotResolver]). */
+    public val time: TimeBasis = TimeBasis(TimeSlot.DEFAULT, TimeSlotLabels.of(TimeSlot.DEFAULT)),
 )
 
 public data class ParticipantTime(
@@ -63,6 +66,10 @@ public data class Recommendation(
     public val candidates: List<RecommendedStation>,
     /** 요청 참가자 순서의 표시 이름(contracts/data-format.md §8). 문장도 이 이름을 쓴다. */
     public val labels: List<ParticipantLabel>,
+    /** 실제로 계산한 구분. 요청한 구분의 행렬이 데이터에 없으면 기본 구분(평일 낮)이며 표시 이름도 그것을 따른다. */
+    public val timeBasis: TimeBasis = TimeBasis(TimeSlot.DEFAULT, TimeSlotLabels.of(TimeSlot.DEFAULT)),
+    /** 요청한(방은 약속 날짜·시각에서 정한) 구분. [timeBasis]와 다르면 기본 구분으로 대신 계산한 것이다. */
+    public val requestedSlot: TimeSlot = TimeSlot.DEFAULT,
 )
 
 public enum class RecommendationError {
@@ -91,7 +98,7 @@ public class RecommendationService(
     public fun recommend(request: RecommendRequest): Recommendation {
         val people = request.participants
         validate(request)
-        val matrix = travelTimes.measure(people.map { it.originCode })
+        val matrix = travelTimes.measure(people.map { it.originCode }, request.time.slot)
         val ids = people.map { it.id }
         val favorIndex = if (request.mode == RecommendMode.FAVOR) ids.indexOf(request.favorId) else -1
         val result =
@@ -114,6 +121,13 @@ public class RecommendationService(
             dataVersion = travelTimes.dataVersion,
             baselineStationCode = result.baselineStationCode,
             labels = ParticipantLabels.of(refs),
+            requestedSlot = request.time.slot,
+            timeBasis =
+                if (matrix.slot == request.time.slot) {
+                    request.time
+                } else {
+                    TimeBasis(matrix.slot, TimeSlotLabels.of(matrix.slot))
+                },
             candidates =
                 top.mapIndexed { index, card ->
                     val input = reasonInput(CardContext(request.mode, result, top, refs, favor), index)

@@ -18,6 +18,7 @@ import { type ParticipantFormValue, toCreateRoomRequest } from "@/lib/room/input
 import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
 import { stationByCode } from "@/lib/stations";
 import { cn } from "@/lib/utils";
+import { slotForMeeting, slotLabel } from "@/lib/when/time-slot";
 import { ParticipantFields } from "./participant-fields";
 import { ROOM_MAIN, ROOM_SIDE, RoomShell } from "./room-states";
 import { useIdempotencyKey } from "./use-idempotency-key";
@@ -39,6 +40,7 @@ export function CreateRoomForm() {
   const [host, setHost] = useState<ParticipantFormValue>({ nickname: "", station: null, hidden: false });
   const [mode, setMode] = useState<Mode>("fair");
   const [meetingDate, setMeetingDate] = useState("");
+  const [meetingTime, setMeetingTime] = useState("");
   const [expectedCount, setExpectedCount] = useState<number | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [storable, setStorable] = useState(true);
@@ -78,7 +80,10 @@ export function CreateRoomForm() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const checked = toCreateRoomRequest({ host, mode, meetingDate, expectedCount }, today || todayInSeoul());
+    const checked = toCreateRoomRequest(
+      { host, mode, meetingDate, meetingTime, expectedCount },
+      today || todayInSeoul(),
+    );
     if (!checked.ok) {
       setProblem(checked.message);
       return;
@@ -155,13 +160,11 @@ export function CreateRoomForm() {
             </label>
           ))}
         </fieldset>
-        <details className="rounded-xl border border-rule bg-surface p-3.5">
-          <summary className="-my-3 cursor-pointer py-3 text-[15px] font-bold text-ink">
-            약속일·인원 정하기 (선택)
-          </summary>
-          <div className="mt-3 flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${id}-date`} className="text-[15px] font-semibold text-ink">
+        <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-when-basis`}>
+          <legend className="mb-1 text-[15px] font-bold text-ink">언제 만나요? (선택)</legend>
+          <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor={`${id}-date`} className="text-[13px] font-semibold text-ink-soft">
                 약속일
               </label>
               <input
@@ -174,12 +177,36 @@ export function CreateRoomForm() {
                   setProblem(null);
                   setMeetingDate(e.target.value);
                 }}
-                className="h-11 rounded-lg border border-input bg-surface px-3 text-[16px]"
+                className="h-11 w-full min-w-0 rounded-lg border border-input bg-surface px-3 text-[16px]"
               />
-              <p className="text-[13px] text-muted-foreground">
-                정하면 약속 다음 날 방이 사라져요. 안 정하면 마지막 변경 후 7일(최대 30일) 뒤에 사라져요.
-              </p>
             </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <label htmlFor={`${id}-time`} className="text-[13px] font-semibold text-ink-soft">
+                시각
+              </label>
+              <input
+                id={`${id}-time`}
+                type="time"
+                value={meetingTime}
+                onChange={(e) => {
+                  setProblem(null);
+                  setMeetingTime(e.target.value.slice(0, 5));
+                }}
+                className="h-11 w-full min-w-0 rounded-lg border border-input bg-surface px-3 text-[16px]"
+              />
+            </div>
+          </div>
+          <p id={`${id}-when-basis`} role="status" className="text-[14px] font-semibold text-ink">
+            {slotLabel(slotForMeeting(meetingDate || null, meetingTime || null))} 기준으로 계산해요
+          </p>
+          <p className="text-[13px] leading-snug text-muted-foreground">
+            요일·시간대마다 열차 간격이 달라 기다리는 시간이 바뀌어요. 안 정하면 평일 낮 기준이에요. 약속일을 정하면
+            약속 다음 날 방이 사라지고, 안 정하면 마지막 변경 후 7일(최대 30일) 뒤에 사라져요.
+          </p>
+        </fieldset>
+        <details className="rounded-xl border border-rule bg-surface p-3.5">
+          <summary className="-my-3 cursor-pointer py-3 text-[15px] font-bold text-ink">인원 정하기 (선택)</summary>
+          <div className="mt-3 flex flex-col gap-4">
             <fieldset className="flex flex-col gap-1.5">
               <legend className="mb-1 text-[15px] font-semibold text-ink">예상 인원</legend>
               <div className="flex flex-wrap gap-2">

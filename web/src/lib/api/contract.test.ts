@@ -86,17 +86,47 @@ describe("가짜 서버가 계약을 지킨다", () => {
 
 describe("웹이 보내는 요청이 계약을 지킨다", () => {
   it.each([
-    [{ origins: ["03v", "130"], mode: "fair" as const, favorIndex: null, nicknames: null }],
-    [{ origins: ["03v", "130", "225"], mode: "fast" as const, favorIndex: null, nicknames: null }],
-    [{ origins: ["03v", "130"], mode: "favor" as const, favorIndex: 1, nicknames: ["민수", null] }],
+    [
+      {
+        origins: ["03v", "130"],
+        mode: "fair" as const,
+        favorIndex: null,
+        nicknames: null,
+        timeSlot: "weekday-day" as const,
+      },
+    ],
+    [
+      {
+        origins: ["03v", "130", "225"],
+        mode: "fast" as const,
+        favorIndex: null,
+        nicknames: null,
+        timeSlot: "saturday-night" as const,
+      },
+    ],
+    [
+      {
+        origins: ["03v", "130"],
+        mode: "favor" as const,
+        favorIndex: 1,
+        nicknames: ["민수", null],
+        timeSlot: "holiday-morning" as const,
+      },
+    ],
   ])("%o", (query) => {
     const body = recommendBody(query);
     expect(requestSchema(body), JSON.stringify(requestSchema.errors)).toBe(true);
     expect("favorIndex" in body).toBe(query.mode === "favor");
+    expect(body.timeSlot).toBe(query.timeSlot);
   });
 
   it("사람이 넣은 이름만 보낸다: 없는 사람은 null, 아무도 없으면 필드 생략", () => {
-    const base = { origins: ["03v", "130", "225"], mode: "fair" as const, favorIndex: null };
+    const base = {
+      origins: ["03v", "130", "225"],
+      mode: "fair" as const,
+      favorIndex: null,
+      timeSlot: "weekday-day" as const,
+    };
     expect(recommendBody({ ...base, nicknames: null })).not.toHaveProperty("nicknames");
     expect(recommendBody({ ...base, nicknames: [null, " ", null] })).not.toHaveProperty("nicknames");
     expect(recommendBody({ ...base, nicknames: [" 민수 ", null, ""] }).nicknames).toEqual(["민수", null, null]);
@@ -120,6 +150,7 @@ describe("방 요청이 계약을 지킨다", () => {
     host: { nickname: "민수", station: gangnam, hidden: true },
     mode: "fair",
     meetingDate: "",
+    meetingTime: "",
     expectedCount: null,
     ...patch,
   });
@@ -129,6 +160,7 @@ describe("방 요청이 계약을 지킨다", () => {
       {},
       { mode: "favor" as const },
       { meetingDate: "2026-11-20", expectedCount: 3 },
+      { meetingDate: "2026-11-21", meetingTime: "19:30" },
       { mode: "fast" as const, expectedCount: 4 },
     ]) {
       const checked = toCreateRoomRequest(form(patch), "2026-11-15");

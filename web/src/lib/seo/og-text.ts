@@ -40,6 +40,9 @@ export const OG_TEXT = {
   modeFavorSuffix: " 쪽으로 고름",
   ellipsis: "…",
   middleDot: "·",
+  /** "{토요일 저녁} 기준". 구분 라벨은 서버가 주지만 글자는 여기서 서브셋에 넣는다(contracts/time-slots.json의 label). */
+  basisSuffix: " 기준",
+  whenWords: "평일 토요일 일요일·공휴일 아침 낮 저녁 밤",
 } as const;
 
 /** 한 줄로 다 못 쓰는 별칭은 이만큼 자르고 말줄임표를 붙인다(코드 포인트 수). */

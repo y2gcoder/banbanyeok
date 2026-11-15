@@ -2,6 +2,7 @@ package app.banbanyeok.links
 
 import app.banbanyeok.contracts.ContractFiles
 import app.banbanyeok.schema.StationCode
+import app.banbanyeok.schema.TimeSlot
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -24,7 +25,7 @@ class LinkVectorsTest {
 
     @Test
     fun vectorFileHasExpectedShape() {
-        assertEquals(1, vectors.getValue("formatVersion").jsonPrimitive.int)
+        assertEquals(2, vectors.getValue("formatVersion").jsonPrimitive.int)
         assertEquals(ShareLinkCodec.PATH, vectors.getValue("path").jsonPrimitive.content)
         assertTrue(encodeVectors.size >= 9, "encode 벡터 수: ${encodeVectors.size}")
         assertTrue(decodeVectors.size >= 36, "decode 벡터 수: ${decodeVectors.size}")
@@ -103,6 +104,7 @@ class LinkVectorsTest {
                     }
                 }
             }
-        return ShareLink(origins, mode, nicknames)
+        val slot = requireNotNull(TimeSlot.parseOrNull(obj.getValue("timeSlot").jsonPrimitive.content))
+        return ShareLink(origins, mode, nicknames, slot)
     }
 }

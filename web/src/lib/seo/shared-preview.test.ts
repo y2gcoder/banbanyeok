@@ -7,7 +7,13 @@ import { loadSharedView, modeSentence, sharedCardData, sharedImagePath, sharedPr
 const recommend = vi.fn();
 vi.mock("../api/client", () => ({ recommend: (...args: unknown[]) => recommend(...args) }));
 
-const state: ShareState = { origins: ["1qs", "70x"], mode: "fair", favorIndex: null, nicknames: ["지훈🎂", null] };
+const state: ShareState = {
+  origins: ["1qs", "70x"],
+  mode: "fair",
+  favorIndex: null,
+  nicknames: ["지훈🎂", null],
+  timeSlot: "weekday-day",
+};
 
 function result(overrides: Partial<RecommendResult> = {}): RecommendResult {
   const time = (seconds: number, transfers: number) => ({ seconds, transfers });
@@ -15,6 +21,14 @@ function result(overrides: Partial<RecommendResult> = {}): RecommendResult {
     status: "ok",
     mode: "fair",
     dataVersion: "20261112.6",
+    timeBasis: {
+      timeSlot: "weekday-day",
+      requestedTimeSlot: "weekday-day",
+      dayType: "weekday",
+      band: "day",
+      label: "평일 낮",
+      holidayName: null,
+    },
     participants: [
       { participantId: "0", originCode: "1qs", originName: "신촌", hidden: false, label: "지훈🎂", labelKind: "name" },
       {
@@ -97,7 +111,7 @@ describe("이미지에 그릴 값", () => {
 describe("og:image 주소", () => {
   it("링크 상태 그대로에 데이터 버전을 붙여 캐시를 비켜 간다", () => {
     const path = sharedImagePath(state, "20261112.6");
-    expect(path.startsWith("/s/og?v=1&o=1qs.70x&m=f&n=")).toBe(true);
+    expect(path.startsWith("/s/og?v=2&o=1qs.70x&m=f&t=weekday-day&n=")).toBe(true);
     expect(path.endsWith("&dv=20261112.6")).toBe(true);
   });
 
@@ -107,15 +121,52 @@ describe("og:image 주소", () => {
   });
 });
 
+describe("계산 기준", () => {
+  it("평일 낮이 아니면 설명과 그림에 기준을 덧붙이고, 평일 낮은 옛 문구 그대로다", () => {
+    const night = toResultView(
+      result({
+        timeBasis: {
+          timeSlot: "saturday-night",
+          requestedTimeSlot: "saturday-night",
+          dayType: "saturday",
+          band: "night",
+          label: "토요일 밤",
+          holidayName: null,
+        },
+      }),
+    );
+    expect(sharedPreview(night, state)?.description.endsWith(" · 공평하게 고름 · 토요일 밤 기준")).toBe(true);
+    expect(sharedCardData(night, state)?.modeLine).toBe("공평하게 고름 · 토요일 밤 기준");
+    const day = toResultView(result());
+    expect(sharedPreview(day, state)?.description.endsWith(" · 공평하게 고름")).toBe(true);
+  });
+});
+
 describe("결과 불러오기(서버 호출)", () => {
   it("성공하면 화면 값으로", async () => {
     recommend.mockResolvedValue(result());
     const view = await loadSharedView(state);
     expect(view?.candidates[0]?.stationName).toBe("왕십리");
     expect(recommend).toHaveBeenCalledWith(
-      { origins: ["1qs", "70x"], mode: "fair", favorIndex: null, nicknames: ["지훈🎂", null] },
+      { origins: ["1qs", "70x"], mode: "fair", favorIndex: null, nicknames: ["지훈🎂", null], timeSlot: "weekday-day" },
       expect.any(AbortSignal),
     );
+  });
+
+  it("링크와 다른 기준(평일 낮 대체)으로 계산된 결과는 null — 틀린 기준의 미리보기를 메신저 캐시에 남기지 않는다", async () => {
+    recommend.mockResolvedValue(
+      result({
+        timeBasis: {
+          timeSlot: "weekday-day",
+          requestedTimeSlot: "saturday-night",
+          dayType: "weekday",
+          band: "day",
+          label: "평일 낮",
+          holidayName: null,
+        },
+      }),
+    );
+    expect(await loadSharedView({ ...state, timeSlot: "saturday-night", origins: ["1qs", "2je"] })).toBeNull();
   });
 
   it("실패하거나 시간이 지나면 null — 호출한 쪽이 기본 미리보기로 대체한다", async () => {

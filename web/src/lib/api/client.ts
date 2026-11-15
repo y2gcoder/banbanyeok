@@ -42,12 +42,12 @@ async function trustedServerHeaders(): Promise<Headers | undefined> {
   }
 }
 
-/** 추천에 필요한 상태. 별칭은 서버가 표시 이름(label)과 문장에 쓴다. */
-export type RecommendQuery = Pick<ShareState, "origins" | "mode" | "favorIndex" | "nicknames">;
+/** 추천에 필요한 상태. 별칭은 서버가 표시 이름(label)과 문장에 쓴다. 구분(timeSlot)이 계산 기준을 정한다. */
+export type RecommendQuery = Pick<ShareState, "origins" | "mode" | "favorIndex" | "nicknames" | "timeSlot">;
 
 /**
  * `POST /recommend` 본문. favorIndex는 배려 모드일 때만 보낸다. 별칭은 사람이 넣은 것만 보낸다: 넣지 않은 사람은 `null`,
- * 아무도 넣지 않았으면 필드를 생략한다.
+ * 아무도 넣지 않았으면 필드를 생략한다. 구분은 늘 보낸다(서버 기본값도 평일 낮이지만 요청이 기준을 스스로 말하게).
  */
 export function recommendBody(query: RecommendQuery): RecommendBody {
   const nicknames = query.origins.map((_, i) => query.nicknames?.[i]?.trim() || null);
@@ -56,6 +56,7 @@ export function recommendBody(query: RecommendQuery): RecommendBody {
     mode: query.mode,
     ...(query.mode === "favor" && query.favorIndex !== null ? { favorIndex: query.favorIndex } : {}),
     ...(nicknames.some((name) => name !== null) ? { nicknames } : {}),
+    timeSlot: query.timeSlot,
   };
 }
 

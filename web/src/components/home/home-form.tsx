@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { personColor } from "@/components/common/person-color";
 import { Button } from "@/components/ui/button";
+import { WhenPicker } from "@/components/when/when-picker";
 import { track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
 import { toShareState } from "@/lib/form/input";
@@ -15,6 +16,7 @@ import { MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/cod
 import { resultPath } from "@/lib/result/share-url";
 import { NEW_ROOM_PATH } from "@/lib/room/id";
 import { type Station, stationByCode } from "@/lib/stations";
+import { DEFAULT_SLOT, slotNow, type TimeSlot } from "@/lib/when/time-slot";
 import { StationField } from "./station-field";
 
 /**
@@ -42,9 +44,14 @@ export function HomeForm() {
   const [rows, setRows] = useState<Row[]>(() => [emptyRow(0), emptyRow(1)]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // 기본값은 지금(서울) 시각의 구분이다. 서버 렌더에는 시각이 없으므로 평일 낮으로 그리고, 열리자마자 지금으로 바꾼다.
+  const [slot, setSlot] = useState<TimeSlot>(DEFAULT_SLOT);
+  const [slotIsNow, setSlotIsNow] = useState(false);
 
   useEffect(() => {
     startedAt.current = performance.now();
+    setSlot(slotNow());
+    setSlotIsNow(true);
     // 서버(Cloud Run min 0)를 미리 깨운다. 입력하는 동안 콜드스타트가 끝난다.
     void warmUpServer();
     // SEO 페이지가 보낸 `/?o=<코드>.<코드>`가 있으면 그 역으로 채운다(기억해 둔 "나"보다 우선).
@@ -70,7 +77,10 @@ export function HomeForm() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const result = toShareState(rows.map((row) => ({ nickname: row.nickname, code: row.station?.code ?? null })));
+    const result = toShareState(
+      rows.map((row) => ({ nickname: row.nickname, code: row.station?.code ?? null })),
+      slot,
+    );
     if (!result.ok) {
       setError(result.message);
       return;
@@ -150,6 +160,20 @@ export function HomeForm() {
           <PlusIcon className="size-4" aria-hidden="true" />한 명 더 (최대 {MAX_PEOPLE}명)
         </button>
       ) : null}
+
+      <WhenPicker
+        id={`${formId}-when`}
+        value={slot}
+        onChange={(next) => {
+          setSlot(next);
+          setSlotIsNow(false);
+        }}
+        note={
+          slotIsNow
+            ? "지금 시각으로 골라 뒀어요. 약속 때와 다르면 바꿔 주세요. 요일·시간대마다 열차 간격이 달라 시간이 바뀌어요."
+            : "요일·시간대마다 열차 간격이 달라 기다리는 시간이 바뀌어요."
+        }
+      />
 
       {error ? (
         <p role="alert" className="text-sm font-semibold text-destructive">

@@ -10,6 +10,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isTimeSlot, type TimeSlot } from "../src/lib/when/time-slot.ts";
 import { type MockData, type MockStation, mockRecommend, type RecommendBody } from "./recommend.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -60,7 +61,7 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
 export function validateRecommend(data: MockData, input: unknown): RecommendBody | { code: string; message: string } {
   if (typeof input !== "object" || input === null)
     return { code: "BAD_REQUEST", message: "본문이 JSON 객체가 아니에요." };
-  const { origins, mode, favorIndex, nicknames } = input as Record<string, unknown>;
+  const { origins, mode, favorIndex, nicknames, timeSlot } = input as Record<string, unknown>;
   if (!Array.isArray(origins) || origins.length < 2 || origins.length > 4) {
     return { code: "BAD_ORIGIN_COUNT", message: "출발역은 2~4개여야 해요." };
   }
@@ -86,6 +87,9 @@ export function validateRecommend(data: MockData, input: unknown): RecommendBody
   ) {
     return { code: "INVALID_REQUEST", message: "nicknames는 origins와 같은 길이여야 해요." };
   }
+  if (timeSlot !== undefined && (typeof timeSlot !== "string" || !isTimeSlot(timeSlot))) {
+    return { code: "INVALID_TIME_SLOT", message: "timeSlot이 올바르지 않아요." };
+  }
   const unknown = origins.find((o) => !data.origins.has(o));
   if (unknown) return { code: "UNSUPPORTED_ORIGIN", message: "아직 수도권 지하철역만 계산할 수 있어요." };
   return {
@@ -93,6 +97,7 @@ export function validateRecommend(data: MockData, input: unknown): RecommendBody
     mode,
     ...(favorIndex === undefined ? {} : { favorIndex }),
     ...(nicknames === undefined ? {} : { nicknames: nicknames as (string | null)[] }),
+    ...(timeSlot === undefined ? {} : { timeSlot: timeSlot as TimeSlot }),
   };
 }
 

@@ -65,3 +65,9 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER participants_limit BEFORE INSERT ON participants
     FOR EACH ROW EXECUTE FUNCTION enforce_participant_limit();
 --rollback DROP TRIGGER participants_limit ON participants; DROP FUNCTION enforce_participant_limit();
+
+--changeset banbanyeok:20261116-meeting-time
+-- 약속 시각(선택, 분 단위, 서울 시각). 방 결과를 어느 시간대(아침·낮·저녁·밤) 기준으로 계산할지 정한다(contracts/time-slots.json).
+-- 약속일(meeting_date)과 같이 방이 지워질 때 함께 지워진다.
+ALTER TABLE rooms ADD COLUMN meeting_time time;
+--rollback ALTER TABLE rooms DROP COLUMN meeting_time;

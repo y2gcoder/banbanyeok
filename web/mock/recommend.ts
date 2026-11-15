@@ -6,12 +6,15 @@
  * - 환승 = 노선을 공유하면 0, 아니면 1(18km 넘으면 2).
  * - 공평: (최장, 차이, 합계, 코드) / 빨리: (합계, 최장, 코드) / 배려: 공평 1위 대비 다른 사람 +min(15분, 50%) 상한 안에서
  *   우대 대상 시간이 짧은 순. 문장은 p6-notes 4.2 템플릿의 일부만 흉내 낸다.
+ * - 구분(timeSlot): 대기를 구분마다 다르게 해(아침 −1분, 저녁 −30초, 밤 +3분, 토·휴일 +1분) 화면이 기준에 따라 바뀌는지 볼 수 있게 한다.
+ *   응답의 timeBasis는 요청한 구분 그대로다.
  * - 표시 이름(label)은 실제 규칙(contracts/data-format.md §8, shared/app-logic)을 흉내 내지 않는다. 받은 이름이 있으면 그 이름,
  *   없으면 "참가자 N"이다. 웹은 label을 그대로 쓰므로 규칙이 어떻든 화면 동작은 같다.
  */
 import type { components } from "../src/lib/api/schema.gen.ts";
 import { withJosa } from "../src/lib/display/korean.ts";
 import { formatMinutes, minutesFromSeconds } from "../src/lib/display/minutes.ts";
+import { DEFAULT_SLOT, slotLabel, splitSlot, type TimeSlot } from "../src/lib/when/time-slot.ts";
 
 type Result = components["schemas"]["Result"];
 type Candidate = components["schemas"]["Candidate"];
@@ -19,9 +22,21 @@ type Mode = components["schemas"]["Mode"];
 
 export type MockStation = { code: string; name: string; lines: string[]; lat: number; lng: number };
 export type MockData = { origins: Map<string, MockStation>; candidates: MockStation[]; dataVersion: string };
-export type RecommendBody = { origins: string[]; mode: Mode; favorIndex?: number; nicknames?: (string | null)[] };
+export type RecommendBody = {
+  origins: string[];
+  mode: Mode;
+  favorIndex?: number;
+  nicknames?: (string | null)[];
+  timeSlot?: TimeSlot;
+};
 
 const WAIT = 240;
+const BAND_WAIT = { morning: -60, day: 0, evening: -30, night: 180 } as const;
+
+function waitFor(slot: TimeSlot): number {
+  const { day, band } = splitSlot(slot);
+  return WAIT + BAND_WAIT[band] + (day === "weekday" ? 0 : 60);
+}
 const TRANSFER = 240;
 
 function km(a: MockStation, b: MockStation): number {
@@ -32,12 +47,12 @@ function km(a: MockStation, b: MockStation): number {
   return 12742 * Math.asin(Math.sqrt(h));
 }
 
-function travel(from: MockStation, to: MockStation): { seconds: number; transfers: number } {
+function travel(from: MockStation, to: MockStation, wait: number): { seconds: number; transfers: number } {
   if (from.code === to.code) return { seconds: 0, transfers: 0 };
   const distance = km(from, to);
   const shared = from.lines.some((line) => to.lines.includes(line));
   const transfers = shared ? 0 : distance > 18 ? 2 : 1;
-  return { seconds: Math.round(WAIT + (distance / 0.42) * 60 + transfers * TRANSFER), transfers };
+  return { seconds: Math.round(wait + (distance / 0.42) * 60 + transfers * TRANSFER), transfers };
 }
 
 type Row = {
@@ -48,8 +63,8 @@ type Row = {
   total: number;
 };
 
-function row(station: MockStation, people: MockStation[]): Row {
-  const times = people.map((p) => travel(p, station));
+function row(station: MockStation, people: MockStation[], wait: number): Row {
+  const times = people.map((p) => travel(p, station, wait));
   const seconds = times.map((t) => t.seconds);
   const max = Math.max(...seconds);
   return { station, times, max, spread: max - Math.min(...seconds), total: seconds.reduce((a, b) => a + b, 0) };
@@ -130,7 +145,8 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
   const favorIndex = body.mode === "favor" ? (body.favorIndex ?? 0) : -1;
   const nicknames = people.map((_, i) => body.nicknames?.[i]?.trim() || null);
   const names = nicknames.map((name, i) => name ?? `참가자 ${i + 1}`);
-  const rows = data.candidates.map((c) => row(c, people)).filter((r) => r.max <= 4 * 3600);
+  const slot = body.timeSlot ?? DEFAULT_SLOT;
+  const rows = data.candidates.map((c) => row(c, people, waitFor(slot))).filter((r) => r.max <= 4 * 3600);
   const { ranked, baseline } = rank(rows, body.mode, favorIndex);
   const top = ranked.slice(0, 3);
   const [firstCode, restCode] = REASON_CODES[body.mode];
@@ -148,6 +164,14 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
       labelKind: nicknames[i] ? ("name" as const) : ("ordinal" as const),
     })),
     baselineStationCode: baseline?.station.code ?? null,
+    timeBasis: {
+      timeSlot: slot,
+      requestedTimeSlot: slot,
+      dayType: splitSlot(slot).day,
+      band: splitSlot(slot).band,
+      label: slotLabel(slot),
+      holidayName: null,
+    },
     candidates: top.map((r, i) => ({
       rank: i + 1,
       stationCode: r.station.code,
