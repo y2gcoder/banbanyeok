@@ -4,7 +4,10 @@
 #   REDIRECT_FROM      공백으로 구분한 주소들: BASE_URL로 301 이동해야 한다(선택)
 #   SERVER_CONNECTED   1이면 /api/healthz가 200 ok여야 한다. 0이면 503 UPSTREAM_NOT_CONFIGURED여야 한다
 #   SITE_INDEXABLE     1이면 robots.txt가 sitemap을 안내해야 하고, 0이면 전체 차단이어야 한다
-# 새 도메인·인증서는 몇 분 걸릴 수 있어 첫 요청은 재시도한다. 비밀값은 다루지 않는다.
+# 새 도메인·인증서는 몇 분 걸릴 수 있어 첫 요청은 재시도한다.
+# /api/v1/* 쓰기 요청(POST·DELETE)은 브라우저처럼 `Origin: <BASE_URL의 출처>`를 붙여 보낸다. 브라우저는 같은 출처 POST에도 Origin을 붙이고
+# 서버(CORS)는 허용되지 않은 Origin을 403으로 거절하므로, 붙이지 않으면 그 실패를 놓친다(B1). 서버가 연결된 배포에서는 스모크가 방을 하나
+# 만들었다가 지운다(실패해도 종료 때 삭제를 시도한다). 방장 토큰·응답 본문은 출력하지 않는다.
 set -uo pipefail
 
 BASE_URL="${BASE_URL:?BASE_URL이 필요합니다}"
@@ -15,7 +18,30 @@ pass() { echo "ok   $*"; }
 bad() { echo "FAIL $*"; fail=1; }
 
 body_file="$(mktemp)"
-trap 'rm -f "$body_file"' EXIT
+api_body="$(mktemp)"
+auth_file="$(mktemp)"   # 방장 토큰 헤더. 명령줄(ps)에 토큰이 보이지 않게 파일로 넘긴다.
+chmod 600 "$auth_file"
+room_id=""
+host_token=""
+origin_header="Origin: $(sed -E 's#^(https?://[^/]+).*#\1#' <<<"$BASE_URL")"
+
+# 종료 때: 만든 방이 남아 있으면 지운다(실패·중단 포함). 못 지우면 실패로 끝낸다.
+cleanup() {
+  local code=$?
+  if [ -n "$room_id" ] && [ -n "$host_token" ]; then
+    local del
+    del="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' -X DELETE -H "$origin_header" -H @"$auth_file" "$BASE_URL/api/v1/rooms/$room_id" 2>/dev/null || echo 000)"
+    if [ "$del" = "204" ] || [ "$del" = "404" ]; then
+      echo "ok   스모크 방 정리(종료 시)"
+    else
+      echo "FAIL 스모크 방 정리 실패 status=$del (방 $room_id 를 직접 지워야 합니다)"
+      code=1
+    fi
+  fi
+  rm -f "$body_file" "$api_body" "$auth_file"
+  exit "$code"
+}
+trap cleanup EXIT
 
 # fetch <path> -> 본문은 $body, 헤더는 $headers, 상태는 $status.
 # 이미지·글꼴 같은 바이너리 응답은 변수에 담지 않는다(셸 변수는 NUL을 담지 못해 'ignored null byte' 경고가 난다).
@@ -34,6 +60,23 @@ fetch() {
 
 # 첫 줄만 남긴다. `| head -1`은 앞 명령이 쓰는 도중 파이프를 닫아 'grep: write error: Broken pipe'를 낸다.
 first() { sed -n 1p; }
+
+# api <METHOD> <path> [json] -> 상태는 $status, 본문은 파일 $api_body(출력하지 않는다). GET 외(쓰기)에는 Origin을 붙인다.
+# 방장 토큰이 있으면(host_token) Authorization을 파일 헤더로 붙인다.
+api() {
+  local method="$1" path="$2" data="${3:-}"
+  local args=(-sS --max-time 40 -o "$api_body" -w '%{http_code}' -X "$method")
+  [ "$method" != "GET" ] && args+=(-H "$origin_header")   # 브라우저는 같은 출처 GET에는 Origin을 붙이지 않는다
+  [ -n "$data" ] && args+=(-H 'content-type: application/json' --data-binary "$data")
+  [ -n "${use_host_token:-}" ] && args+=(-H @"$auth_file")
+  status="$(curl "${args[@]}" "$BASE_URL$path" 2>/dev/null || echo 000)"
+}
+# 응답의 오류 code만(있으면) 돌려준다. 본문 전체·메시지는 보이지 않는다.
+err_code() {
+  local code
+  code="$(jq -r 'if type=="object" and (.code|type=="string") then .code else "-" end' "$api_body" 2>/dev/null)"
+  echo "${code:--}"
+}
 
 echo "== 대기: $BASE_URL"
 for attempt in $(seq 1 36); do
@@ -124,15 +167,45 @@ fi
 if [ "${SERVER_CONNECTED:-0}" = "1" ] && [ -n "${pair_path:-}" ]; then
   codes="${pair_path#/meet/}"
   a="${codes%%-*}"; b="${codes##*-}"
-  rec="$(curl -sS --max-time 40 -o /tmp/smoke-rec.$$ -w '%{http_code}' -X POST -H 'content-type: application/json' \
-    -d "{\"origins\":[\"$a\",\"$b\"],\"mode\":\"fair\"}" "$BASE_URL/api/v1/recommend" 2>/dev/null || echo 000)"
-  if [ "$rec" = "200" ] && grep -q '"candidates"' /tmp/smoke-rec.$$; then
-    pass "/api/v1/recommend → 후보 응답"
+  # 세 모드를 브라우저 조건(Origin 포함)으로 부른다. favor는 첫 사람 쪽(favorIndex 0).
+  for mode_body in '"mode":"fair"' '"mode":"fast"' '"mode":"favor","favorIndex":0'; do
+    mode_name="${mode_body#\"mode\":\"}"; mode_name="${mode_name%%\"*}"
+    api POST /api/v1/recommend "{\"origins\":[\"$a\",\"$b\"],$mode_body}"
+    if [ "$status" = "200" ] && grep -q '"candidates"' "$api_body"; then
+      pass "/api/v1/recommend($mode_name, Origin 포함) → 후보 응답"
+    else
+      bad "/api/v1/recommend($mode_name, Origin 포함) status=$status code=$(err_code)"
+    fi
+  done
+
+  # 방 흐름(브라우저와 같은 Origin): 만들기 → 참여 → 결과 → 방장 토큰으로 삭제. 스모크용 방이라 바로 지운다.
+  api POST /api/v1/rooms "{\"mode\":\"fair\",\"expectedCount\":2,\"host\":{\"originCode\":\"$a\"}}"
+  if [ "$status" = "201" ] || [ "$status" = "200" ]; then
+    room_id="$(jq -r '.roomId // empty' "$api_body" 2>/dev/null)"
+    host_token="$(jq -r '.hostToken // empty' "$api_body" 2>/dev/null)"
+    if [ -n "$room_id" ] && [ -n "$host_token" ]; then
+      printf 'Authorization: Bearer %s\n' "$host_token" > "$auth_file"
+      pass "POST /api/v1/rooms(Origin 포함) → 방 만들기"
+    else
+      bad "POST /api/v1/rooms 응답에 roomId·hostToken이 없습니다"
+      room_id=""; host_token=""
+    fi
   else
-    # 오류 코드(예: 서버가 모르는 역 코드)를 보이도록 응답 앞부분만 남긴다. 요청·응답에 비밀값은 없다.
-    bad "/api/v1/recommend status=$rec $(tr -d '\0' < /tmp/smoke-rec.$$ | cut -c1-300)"
+    bad "POST /api/v1/rooms(Origin 포함) status=$status code=$(err_code)"
   fi
-  rm -f /tmp/smoke-rec.$$
+  if [ -n "$room_id" ]; then
+    api POST "/api/v1/rooms/$room_id/participants" "{\"originCode\":\"$b\"}"
+    if [ "$status" = "201" ] || [ "$status" = "200" ]; then pass "POST /rooms/{id}/participants(Origin 포함) → 참여"; else bad "참여 status=$status code=$(err_code)"; fi
+    api GET "/api/v1/rooms/$room_id/result"
+    if [ "$status" = "200" ] && grep -q '"candidates"' "$api_body"; then pass "GET /rooms/{id}/result → 후보 응답"; else bad "방 결과 status=$status code=$(err_code)"; fi
+    use_host_token=1 api DELETE "/api/v1/rooms/$room_id"
+    if [ "$status" = "204" ]; then
+      pass "DELETE /rooms/{id}(방장 토큰, Origin 포함) → 방 정리"
+      room_id=""; host_token=""
+    else
+      bad "방 삭제 status=$status code=$(err_code)"   # 종료 때 다시 삭제를 시도한다
+    fi
+  fi
   fetch "$BASE_URL/s/og?v=1&o=$a.$b&m=f"
   if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "동적 OG /s/og"; else bad "동적 OG /s/og status=$status"; fi
   fetch "$BASE_URL/s?v=1&o=$a.$b&m=f"
