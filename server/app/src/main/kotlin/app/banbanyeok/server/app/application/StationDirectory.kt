@@ -20,7 +20,8 @@ class StationDirectory(
         dataSet.registry.stations
             .mapNotNull { station -> station.replacedBy?.let { station.code to it } }
             .toMap()
-    private val travelTimes: TravelTimeProvider = OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion)
+    private val travelTimes: TravelTimeProvider =
+        OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion, dataSet.odSlots)
     val travel: TravelTimeProvider get() = travelTimes
 
     override val dataVersion: String = dataSet.manifest.dataVersion

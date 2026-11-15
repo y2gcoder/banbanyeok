@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app.http
 
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.room.Change
@@ -15,6 +16,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeParseException
 
 // 요청 DTO를 서비스 입력으로 옮긴다. 문자열 검증 실패는 계약의 400 오류가 된다.
@@ -37,8 +39,28 @@ fun RoomCreateRequestDto.toCommand(deviceToken: String?): CreateRoomCommand {
         host.toInput(),
         expectedCount,
         deviceToken,
+        meetingTime?.let(::parseTime),
     )
 }
+
+private val MEETING_TIME = Regex("^([01][0-9]|2[0-3]):[0-5][0-9]$")
+
+/** 약속 시각 `HH:MM`(24시간, 서울 시각). 초는 받지 않는다. */
+fun parseTime(text: String): LocalTime {
+    if (!MEETING_TIME.matches(text)) {
+        throw AppException(ErrorKind.INVALID, "INVALID_MEETING_TIME", "meetingTime은 HH:MM(00:00~23:59) 형식이어야 합니다")
+    }
+    return LocalTime.parse(text)
+}
+
+/** `timeSlot` 값. 없으면 기본 구분(평일 낮). */
+fun requireTimeSlot(text: String?): TimeSlot =
+    if (text == null) {
+        TimeSlot.DEFAULT
+    } else {
+        TimeSlot.parseOrNull(text)
+            ?: throw AppException(ErrorKind.INVALID, "INVALID_TIME_SLOT", "timeSlot은 weekday-day 같은 구분 id여야 합니다")
+    }
 
 fun ParticipantInputDto.toInput() = ParticipantInput(nickname, originCode, hidden)
 
@@ -63,7 +85,13 @@ fun JsonObject.toRoomPatch(): RoomPatch {
         } else {
             Change.Unchanged
         }
-    return RoomPatch(mode, this["favorTarget"]?.stringValue("favorTarget"), locked, meetingDate)
+    val meetingTime =
+        if ("meetingTime" in this) {
+            Change.Set(this["meetingTime"]?.takeIf { it !is JsonNull }?.stringValue("meetingTime")?.let(::parseTime))
+        } else {
+            Change.Unchanged
+        }
+    return RoomPatch(mode, this["favorTarget"]?.stringValue("favorTarget"), locked, meetingDate, meetingTime)
 }
 
 private fun JsonElement.stringValue(field: String): String =

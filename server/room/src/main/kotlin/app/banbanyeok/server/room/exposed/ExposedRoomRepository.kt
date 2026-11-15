@@ -45,6 +45,7 @@ public class ExposedRoomRepository(
             it[favorPid] = room.favorParticipantId
             it[dataVersion] = room.dataVersion
             it[meetingDate] = room.meetingDate
+            it[meetingTime] = room.meetingTime
             it[expectedCount] = room.expectedCount?.toShort()
             it[status] = statusOf(room.locked)
             it[createdAt] = room.createdAt
@@ -158,6 +159,7 @@ public class ExposedRoomRepository(
                     (change.favorParticipantId as? Change.Set)?.let { set -> it[favorPid] = set.value }
                     change.locked?.let { locked -> it[status] = statusOf(locked) }
                     (change.meetingDate as? Change.Set)?.let { set -> it[meetingDate] = set.value }
+                    (change.meetingTime as? Change.Set)?.let { set -> it[meetingTime] = set.value }
                     it[expiresAt] = activity.expiresAt
                     it[lastActivityAt] = activity.at
                 }
@@ -239,6 +241,7 @@ public class ExposedRoomRepository(
             favorParticipantId = this[RoomsTable.favorPid],
             dataVersion = this[RoomsTable.dataVersion],
             meetingDate = this[RoomsTable.meetingDate],
+            meetingTime = this[RoomsTable.meetingTime],
             expectedCount = this[RoomsTable.expectedCount]?.toInt(),
             locked = this[RoomsTable.status] == LOCKED,
             outcome =

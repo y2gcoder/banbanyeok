@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
 import app.banbanyeok.schema.Manifest
 import app.banbanyeok.schema.ManifestCodec
@@ -82,14 +83,15 @@ internal fun stageRelease(
     }
     // 발행 형식 그대로 다시 읽어 검증한다(서버가 시작할 때 하는 일과 같다).
     DataSetLoader.load(
-        publishedText,
-        out.resolve(published.files.registry.path).readBytes(),
-        out.resolve(published.files.candidates.path).readBytes(),
-        out.resolve(published.files.od.path).readBytes(),
-        odSlotBytes =
+        DataSetBytes(
+            publishedText,
+            out.resolve(published.files.registry.path).readBytes(),
+            out.resolve(published.files.candidates.path).readBytes(),
+            out.resolve(published.files.od.path).readBytes(),
             published.files.odSlots
                 .orEmpty()
                 .mapValues { out.resolve(it.value.path).readBytes() },
+        ),
     )
     out.resolve("manifest.json").writeText(publishedText)
     println("Staged release $version: ${staged.size} files + manifest.json")

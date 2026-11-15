@@ -32,6 +32,7 @@ public data class RoomChange(
     val favorParticipantId: Change<String> = Change.Unchanged,
     val locked: Boolean? = null,
     val meetingDate: Change<java.time.LocalDate> = Change.Unchanged,
+    val meetingTime: Change<java.time.LocalTime> = Change.Unchanged,
 )
 
 /**

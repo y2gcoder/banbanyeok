@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app.application
 
+import app.banbanyeok.server.recommendation.HolidayCalendar
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
@@ -7,6 +8,7 @@ import app.banbanyeok.server.recommendation.Recommendation
 import app.banbanyeok.server.recommendation.RecommendationError
 import app.banbanyeok.server.recommendation.RecommendationException
 import app.banbanyeok.server.recommendation.RecommendationService
+import app.banbanyeok.server.recommendation.TimeSlotResolver
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.ParticipantView
 import app.banbanyeok.server.room.RoomMode
@@ -33,6 +35,8 @@ class RoomResult(
 class RoomResultService(
     private val rooms: RoomService,
     private val recommendation: RecommendationService,
+    /** 약속 날짜·시각 → 계산 구분. 없으면 평일 낮. */
+    private val times: TimeSlotResolver = TimeSlotResolver(HolidayCalendar.bundled()),
 ) {
     suspend fun result(
         roomId: String,
@@ -55,6 +59,7 @@ class RoomResultService(
                     },
                 mode = resolvedMode,
                 favorId = favor,
+                time = times.resolve(view.meetingDate, view.meetingTime),
             )
         return RoomResult(compute(request), view.participants)
     }

@@ -1,10 +1,14 @@
 package app.banbanyeok.server.app
 
+import app.banbanyeok.schema.DayType
+import app.banbanyeok.schema.TimeBand
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendationService
+import app.banbanyeok.server.recommendation.TimeBasis
 import app.banbanyeok.server.recommendation.codeNames
 import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.room.CreateRoomCommand
@@ -19,6 +23,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import kotlinx.coroutines.test.runTest
+import java.time.LocalDate
+import java.time.LocalTime
 
 private fun resultTest(body: suspend (RoomFixture, RoomResultService) -> Unit) =
     runTest {
@@ -36,6 +42,43 @@ private fun create(
 
 class RoomResultServiceTest :
     DescribeSpec({
+        describe("the time basis of a room") {
+            it("computes the slot of the meeting date and time, weekday daytime when the room has neither") {
+                runTest {
+                    val fixture = RoomFixture()
+                    val everySlot = TimeSlot.ALL.filter { it != TimeSlot.DEFAULT }.associateWith { sampleOd }
+                    val recommendation =
+                        RecommendationService(OdTravelTimeProvider(sampleOd, "20261112.1", everySlot), codeNames)
+                    val results = RoomResultService(fixture.service, recommendation)
+
+                    suspend fun basis(
+                        date: String?,
+                        time: String?,
+                    ): TimeBasis {
+                        val created =
+                            fixture.service.create(
+                                CreateRoomCommand(
+                                    RoomMode.FAIR,
+                                    null,
+                                    date?.let(LocalDate::parse),
+                                    ParticipantInput(null, "03v", false),
+                                    null,
+                                    null,
+                                    time?.let(LocalTime::parse),
+                                ),
+                            )
+                        fixture.service.join(created.roomId, ParticipantInput(null, "130", false), null)
+                        return results.result(created.roomId, null, null, null).recommendation.timeBasis
+                    }
+                    basis(null, null) shouldBe TimeBasis(TimeSlot.DEFAULT, "평일 낮")
+                    basis("2026-12-26", "22:00").label shouldBe "토요일 밤"
+                    basis("2026-12-26", "01:00") shouldBe
+                        TimeBasis(TimeSlot(DayType.HOLIDAY, TimeBand.NIGHT), "일요일·공휴일 밤", "기독탄신일")
+                    basis(null, "08:30").slot shouldBe TimeSlot(DayType.WEEKDAY, TimeBand.MORNING)
+                }
+            }
+        }
+
         describe("computing a room's result") {
             it("uses hidden participants' real stations for the times but hides their station in the participants") {
                 resultTest { fixture, results ->

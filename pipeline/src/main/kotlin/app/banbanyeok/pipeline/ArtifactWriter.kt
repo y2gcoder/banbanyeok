@@ -1,6 +1,7 @@
 package app.banbanyeok.pipeline
 
 import app.banbanyeok.schema.CandidateList
+import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
 import app.banbanyeok.schema.MANIFEST_SCHEMA_VERSION
 import app.banbanyeok.schema.Manifest
@@ -30,14 +31,15 @@ internal fun loadDevArtifacts(output: Path): app.banbanyeok.schema.DataSet {
     val manifestText = output.resolve("manifest.json").readText()
     val manifest = ManifestCodec.parse(manifestText)
     return DataSetLoader.load(
-        manifestText,
-        output.resolve(manifest.files.registry.path).readBytes(),
-        output.resolve(manifest.files.candidates.path).readBytes(),
-        output.resolve(manifest.files.od.path).readBytes(),
-        odSlotBytes =
+        DataSetBytes(
+            manifestText,
+            output.resolve(manifest.files.registry.path).readBytes(),
+            output.resolve(manifest.files.candidates.path).readBytes(),
+            output.resolve(manifest.files.od.path).readBytes(),
             manifest.files.odSlots
                 .orEmpty()
                 .mapValues { output.resolve(it.value.path).readBytes() },
+        ),
     )
 }
 
@@ -147,11 +149,13 @@ private class ArtifactWriter(
             )
         val manifestText = jsonText(ManifestCodec.encode(manifest))
         DataSetLoader.load(
-            manifestText,
-            files.getValue("stations.json"),
-            files.getValue("candidates.json"),
-            files.getValue("od.bin"),
-            odSlotBytes = slots.associate { it.id to files.getValue(slotFiles.getValue(it)) },
+            DataSetBytes(
+                manifestText,
+                files.getValue("stations.json"),
+                files.getValue("candidates.json"),
+                files.getValue("od.bin"),
+                slots.associate { it.id to files.getValue(slotFiles.getValue(it)) },
+            ),
         )
         files.forEach { (name, bytes) -> output.resolve(name).writeBytes(bytes) }
         removeStaleSlotFiles()

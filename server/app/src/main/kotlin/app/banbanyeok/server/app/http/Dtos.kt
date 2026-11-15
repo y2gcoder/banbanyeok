@@ -29,6 +29,7 @@ data class RoomCreateRequestDto(
     val mode: String,
     val favorTarget: String? = null,
     val meetingDate: String? = null,
+    val meetingTime: String? = null,
     val host: ParticipantInputDto,
     val expectedCount: Int? = null,
 )
@@ -70,6 +71,7 @@ data class RoomDto(
     val favorTarget: String?,
     val locked: Boolean,
     val meetingDate: String?,
+    val meetingTime: String?,
     val expiresAt: String,
     val dataVersion: String,
     val participants: List<ParticipantDto>,
@@ -81,12 +83,24 @@ data class RecommendRequestDto(
     val mode: String,
     val favorIndex: Int? = null,
     val nicknames: List<String?>? = null,
+    /** 언제 만나는가(`weekday-day` 형식). 없으면 기본 구분(평일 낮). */
+    val timeSlot: String? = null,
 )
 
 @Serializable
 data class OutcomeRequestDto(
     val outcome: String,
     val stationCode: String? = null,
+)
+
+/** 계산 기준. `label`은 화면 문구("토요일 저녁")이고 클라이언트는 그대로 쓴다. */
+@Serializable
+data class TimeBasisDto(
+    val timeSlot: String,
+    val dayType: String,
+    val band: String,
+    val label: String,
+    val holidayName: String?,
 )
 
 @Serializable
@@ -98,4 +112,5 @@ data class ResultDto(
     val baselineStationCode: String?,
     /** 카드. `favoredSeconds`는 정수 필드라 값이 없으면 키를 생략하므로 [candidateJson]으로 직접 만든다. */
     val candidates: List<JsonObject>,
+    val timeBasis: TimeBasisDto,
 )

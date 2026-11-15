@@ -1,6 +1,7 @@
 package app.banbanyeok.server.artifact
 
 import app.banbanyeok.schema.DataSet
+import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
 import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.SchemaException
@@ -35,16 +36,29 @@ public class ArtifactLoader(
         try {
             val parsed = ManifestCodec.parse(manifestText)
             val files = parsed.files
-            // 세 파일은 서로 독립이라 동시에 읽는다(원격 저장소에서 왕복이 직렬로 쌓이지 않게).
-            val (registry, candidates, od) =
+            // 파일들은 서로 독립이라 동시에 읽는다(원격 저장소에서 왕복이 직렬로 쌓이지 않게). 구분 행렬은 내용이 같은 구분이
+            // 한 파일을 함께 가리키므로(토요일·일요일) 경로마다 한 번만 읽는다.
+            val slotPaths = files.odSlots.orEmpty().mapValues { it.value.path }
+            val (core, slotFiles) =
                 coroutineScope {
                     val registry = async { read(files.registry.path) }
                     val candidates = async { read(files.candidates.path) }
                     val od = async { read(files.od.path) }
-                    Triple(registry.await(), candidates.await(), od.await())
+                    val slots = slotPaths.values.distinct().associateWith { async { read(it) } }
+                    Triple(registry.await(), candidates.await(), od.await()) to slots.mapValues { it.value.await() }
                 }
             onPhase("artifact-files-read")
-            val dataSet = DataSetLoader.load(manifestText, registry, candidates, od)
+            val (registry, candidates, od) = core
+            val dataSet =
+                DataSetLoader.load(
+                    DataSetBytes(
+                        manifestText,
+                        registry,
+                        candidates,
+                        od,
+                        slotPaths.mapValues { slotFiles.getValue(it.value) },
+                    ),
+                )
             onPhase("artifact-validated")
             return LoadedArtifacts(dataSet, manifest.content, manifest.version)
         } catch (e: SchemaException) {

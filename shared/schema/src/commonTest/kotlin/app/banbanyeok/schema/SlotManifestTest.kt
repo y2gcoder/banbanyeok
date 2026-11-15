@@ -30,7 +30,7 @@ class SlotManifestTest {
     private fun load(
         manifest: Manifest = v2,
         slots: Map<String, ByteArray> = others.associate { it.id to od },
-    ) = DataSetLoader.load(ManifestCodec.encode(manifest), registry, candidates, od, odSlotBytes = slots)
+    ) = DataSetLoader.load(DataSetBytes(ManifestCodec.encode(manifest), registry, candidates, od, slots))
 
     @Test
     fun loadsEverySlotWithTheSameAxes() {
@@ -129,7 +129,10 @@ class SlotManifestTest {
     @Test
     fun clientThatOnlyReadsGenerationOneRefusesGenerationTwo() {
         assertFailsWith<SchemaException> {
-            DataSetLoader.load(ManifestCodec.encode(v2), registry, candidates, od, supportedSchema = 1)
+            DataSetLoader.load(
+                DataSetBytes(ManifestCodec.encode(v2), registry, candidates, od, others.associate { it.id to od }),
+                supportedSchema = 1,
+            )
         }
     }
 }

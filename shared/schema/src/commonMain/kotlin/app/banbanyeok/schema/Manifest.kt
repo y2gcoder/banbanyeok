@@ -168,20 +168,36 @@ public class DataSet(
     public fun odFor(slot: TimeSlot): OdMatrix? = if (slot == TimeSlot.DEFAULT) od else odSlots[slot]
 }
 
+/** 데이터 세트를 이루는 파일 내용. [odSlots]는 세대 2 manifest의 `files.odSlots` 파일(키 = 구분 id), 세대 1이면 비어 있다. */
+public class DataSetBytes(
+    public val manifestJson: String,
+    public val registry: ByteArray,
+    public val candidates: ByteArray,
+    public val od: ByteArray,
+    public val odSlots: Map<String, ByteArray> = emptyMap(),
+)
+
 /** data-format.md §5의 검증 순서 ①~⑥. 하나라도 어긋나면 [SchemaException] — 호출자는 직전 정상 버전을 유지한다. */
 public object DataSetLoader {
-    /**
-     * @param odSlotBytes 세대 2 manifest의 `files.odSlots` 파일 내용(키 = 구분 id). 세대 1이면 비워 둔다.
-     * @param supportedSchema 이 클라이언트가 읽을 수 있는 최신 manifest 세대.
-     */
+    /** 구분 행렬이 없는 세트(manifest 세대 1, 또는 구분을 읽지 않는 쪽)를 읽는다. */
     public fun load(
         manifestJson: String,
         registryBytes: ByteArray,
         candidatesBytes: ByteArray,
         odBytes: ByteArray,
         supportedSchema: Int = MANIFEST_SCHEMA_VERSION,
-        odSlotBytes: Map<String, ByteArray> = emptyMap(),
+    ): DataSet = load(DataSetBytes(manifestJson, registryBytes, candidatesBytes, odBytes), supportedSchema)
+
+    /** @param supportedSchema 이 클라이언트가 읽을 수 있는 최신 manifest 세대. */
+    public fun load(
+        files: DataSetBytes,
+        supportedSchema: Int = MANIFEST_SCHEMA_VERSION,
     ): DataSet {
+        val manifestJson = files.manifestJson
+        val registryBytes = files.registry
+        val candidatesBytes = files.candidates
+        val odBytes = files.od
+        val odSlotBytes = files.odSlots
         val manifest = ManifestCodec.parse(manifestJson)
         schemaCheck(manifest.minClientSchema <= supportedSchema) {
             "이 데이터는 클라이언트 schema ${manifest.minClientSchema} 이상이 필요합니다 (지원: $supportedSchema). 업데이트가 필요합니다"

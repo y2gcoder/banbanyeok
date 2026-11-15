@@ -2,6 +2,7 @@ package app.banbanyeok.server.room.exposed
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.date
+import org.jetbrains.exposed.v1.javatime.time
 import org.jetbrains.exposed.v1.javatime.timestamp
 
 // 스키마의 원본은 server/db/changelog(Liquibase). 이 정의는 쿼리를 쓰기 위한 매핑일 뿐이고 DDL을 만들지 않는다.
@@ -22,6 +23,7 @@ internal object RoomsTable : Table("rooms") {
     val favorPid = text("favor_pid").nullable()
     val dataVersion = text("data_version")
     val meetingDate = date("meeting_date").nullable()
+    val meetingTime = time("meeting_time").nullable()
     val expectedCount = short("expected_count").nullable()
     val status = text("status")
     val outcome = text("outcome").nullable()

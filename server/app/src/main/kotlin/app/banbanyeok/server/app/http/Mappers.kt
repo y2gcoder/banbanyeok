@@ -72,6 +72,7 @@ fun RoomView.toDto(directory: StationDirectory) =
         favorTarget = favorParticipantId,
         locked = locked,
         meetingDate = meetingDate?.toString(),
+        meetingTime = meetingTime?.let { "%02d:%02d".format(java.util.Locale.ROOT, it.hour, it.minute) },
         expiresAt = expiresAt.toString(),
         dataVersion = dataVersion,
         participants = participantDtos(directory),
@@ -110,6 +111,14 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
         participants = participants,
         baselineStationCode = baselineStationCode,
         candidates = candidates.map { it.candidateJson() },
+        timeBasis =
+            TimeBasisDto(
+                timeSlot = timeBasis.slot.id,
+                dayType = timeBasis.slot.day.id,
+                band = timeBasis.slot.band.id,
+                label = timeBasis.label,
+                holidayName = timeBasis.holidayName,
+            ),
     )
 
 fun RoomResult.toDto(directory: StationDirectory): ResultDto =
