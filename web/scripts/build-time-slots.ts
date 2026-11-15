@@ -6,6 +6,7 @@
  *
  * 사용: pnpm gen:time-slots  (CI는 재생성 후 git diff로 커밋본과 비교한다)
  */
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,10 +31,10 @@ const out = {
 };
 const header =
   "// 생성 파일: contracts/time-slots.json·contracts/holidays.json에서 만든다(pnpm gen:time-slots). 직접 고치지 않는다.\n";
-writeFileSync(
-  resolve(root, "web/src/lib/when/time-slots.gen.ts"),
-  `${header}export const TIME_SLOTS = ${JSON.stringify(out, null, 2)} as const;\n`,
-);
+const target = resolve(root, "web/src/lib/when/time-slots.gen.ts");
+writeFileSync(target, `${header}export const TIME_SLOTS = ${JSON.stringify(out, null, 2)} as const;\n`);
+// 커밋본과 같은 모양이 되게 저장소의 포매터로 정리한다(check:contracts가 diff로 비교한다).
+execFileSync("pnpm", ["exec", "biome", "format", "--write", target], { stdio: "inherit" });
 process.stdout.write(
   `time-slots.gen.ts: 구분 ${out.dayTypes.length * out.bands.length}개, 공휴일 ${holidays.holidays.length}일\n`,
 );
