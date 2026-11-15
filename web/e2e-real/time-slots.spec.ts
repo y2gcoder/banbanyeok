@@ -76,7 +76,11 @@ test("입력 화면에서 고른 요일·시간대가 결과·공유 링크에 �
   );
 });
 
-test("방은 약속 날짜·시각으로 구분을 정한다(토요일 22:00 → 토요일 밤)", async ({ page, request }) => {
+test("방은 약속 날짜·시각으로 구분을 정한다(토요일 22:00 → 토요일 밤)", async ({
+  page,
+  request,
+  browser,
+}, testInfo) => {
   // 30일 안의 다음 토요일.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
   const date = new Date(`${today}T00:00:00Z`);
@@ -102,8 +106,24 @@ test("방은 약속 날짜·시각으로 구분을 정한다(토요일 22:00 →
   const room = await (await request.get(`/api/v1/rooms/${roomId}`)).json();
   expect(room.meetingDate).toBe(saturday);
   expect(room.meetingTime).toBe("22:00");
+  // 서버가 방 응답에 계산 기준(label)을 준다. 결과가 생기기 전에도.
+  expect(room.timeBasis).toMatchObject({ timeSlot: "saturday-night", label: "토요일 밤", holidayName: null });
   const result = await (await request.get(`/api/v1/rooms/${roomId}/result`)).json();
   expect(result.timeBasis).toMatchObject({ timeSlot: "saturday-night", label: "토요일 밤" });
+
+  // 링크로 들어온 친구(참여 전)의 화면에도 방장 화면과 같은 기준 문구가 서버 label로 나온다.
+  const guest = await browser.newContext({
+    ...(testInfo.project.use.baseURL ? { baseURL: testInfo.project.use.baseURL } : {}),
+    locale: "ko-KR",
+  });
+  try {
+    const guestPage = await guest.newPage();
+    await guestPage.goto(`/r/${roomId}`);
+    await expect(guestPage.getByRole("form", { name: "나도 출발역 넣기" })).toBeVisible();
+    await expect(guestPage.getByText("토요일 밤 기준으로 계산해요")).toBeVisible();
+  } finally {
+    await guest.close();
+  }
 
   await page.reload();
   await expect(page.getByText("역에서 역까지, 토요일 밤 기준 시간이에요.")).toBeVisible();
