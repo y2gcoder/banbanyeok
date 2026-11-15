@@ -1,6 +1,6 @@
 {
   "candidateCount": 127,
-  "dataVersion": "20261115.1",
+  "dataVersion": "20261115.5",
   "files": {
     "candidates": {
       "bytes": 1468,
@@ -10,7 +10,7 @@
     "od": {
       "bytes": 250385,
       "path": "od.bin",
-      "sha256": "c965b90e3c9aa72ecd36bd4e79e6a4529cf85ede6b880c7db30af25ca4c460fd"
+      "sha256": "88cc5ae6b9371597dcb45db95cd10e51fc614dd7e3dbf572ade0bed1587a0512"
     },
     "registry": {
       "bytes": 398209,
@@ -18,15 +18,15 @@
       "sha256": "44e649369b6d7efbd04f92e647cc0990e99ecf9898bc7e00fb07ab25c4805cfa"
     },
     "seoPages": {
-      "bytes": 947562,
+      "bytes": 947497,
       "path": "seo-pairs.json",
-      "sha256": "3493cc0f446c074cb8d2eaedc1c2db0f075d384fb763e6ab60e46da6ad9bca65"
+      "sha256": "fa8acd5f1e268905e336f3bf51d8f7bfa219057f92702bbb2f76e4debcfaf6f1"
     }
   },
-  "generatedAt": "2026-11-15T01:23:07Z",
+  "generatedAt": "2026-11-15T14:42:55Z",
   "minClientSchema": 1,
   "originCount": 653,
-  "previousDataVersion": "20261114.8",
+  "previousDataVersion": "20261115.4",
   "registryVersion": 5,
   "schemaVersion": 1,
   "timeModel": "weekday-offpeak-half-headway"

@@ -166,8 +166,8 @@ private fun branchValid(
     costs: List<List<Cost>>,
 ): Boolean =
     net.branchChecks.all { names ->
-        val indexes = names.map { name -> net.origins.indexOfFirst { it.name == name } }
-        require(indexes.size == 3 && indexes.all { it >= 0 }) { "Missing configured branch check station" }
+        require(names.size == 3) { "Branch check needs junction, branch and main stations" }
+        val indexes = names.map { name -> originIndex(net, name) }
         val (junction, branch, main) = indexes
         costs[branch][main].changes >= 1 && costs[main][branch].changes >= 1 && costs[junction][branch].changes == 0
     }

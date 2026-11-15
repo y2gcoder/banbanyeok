@@ -61,6 +61,7 @@ private fun median(values: List<Int>): Int = values.sorted().let { it[it.size / 
 internal fun estimateRun(
     from: List<TagoTrain>,
     to: List<TagoTrain>,
+    ordinaryDwell: Int? = null,
 ): RunEstimate? {
     val departures = from.mapNotNull { it.departure }.distinct().sorted()
     // Some operators send arrTime "0" at intermediate stations: then match departures, which already include dwell.
@@ -85,7 +86,7 @@ internal fun estimateRun(
     if (matches.isEmpty()) return null
     val offpeak = matches.filter { it.first in OFFPEAK_START..OFFPEAK_END }.map { it.second }
     val run = median(if (offpeak.size >= 3) offpeak else matches.map { it.second })
-    val dwell = if (useArrivals) dwellAt(to) else 0
+    val dwell = if (useArrivals) dwellAt(to, ordinaryDwell) else 0
     return RunEstimate(
         run + dwell,
         run,
@@ -111,15 +112,41 @@ private fun offsetBins(
     return bins
 }
 
-/** Median departure − arrival at a station (0 when no row has both). */
-private fun dwellAt(trains: List<TagoTrain>): Int {
-    val dwells =
-        trains.mapNotNull { train -> train.departure?.let { d -> train.arrival?.let { d - it } } }.filter {
-            it in
-                0..300
-        }
-    return if (dwells.isEmpty()) 0 else median(dwells)
+/** Through trains (arrival and departure) needed before a station's own dwell is trusted. */
+private const val MIN_THROUGH = 5
+
+/**
+ * Dwell added at the arrival station: the median departure − arrival of trains that continue, trusted only when
+ * at least [MIN_THROUGH] trains continue and they are at least half of the station's trains in that direction.
+ * Where most trains terminate or start (수인분당 왕십리: 159 of 168 northbound end there), the few through trains
+ * can wait 150–180 s for timing, which a rider getting off never pays; then the service's [ordinary] dwell is used.
+ */
+internal fun dwellAt(
+    trains: List<TagoTrain>,
+    ordinary: Int? = null,
+): Int {
+    val dwells = throughDwells(trains)
+    val all = maxOf(trains.count { it.arrival != null }, trains.count { it.departure != null })
+    val trusted = dwells.size >= MIN_THROUGH && dwells.size * 2 >= all
+    return when {
+        trusted -> median(dwells)
+        ordinary != null -> ordinary
+        dwells.isEmpty() -> 0
+        else -> median(dwells)
+    }
 }
+
+private fun throughDwells(trains: List<TagoTrain>): List<Int> =
+    trains.mapNotNull { train -> train.departure?.let { d -> train.arrival?.let { d - it } } }.filter { it in 0..300 }
+
+/** Ordinary dwell of a service: median of the per-station dwells where enough trains continue. */
+internal fun ordinaryDwell(stations: List<List<TagoTrain>>): Int? =
+    stations
+        .map(::throughDwells)
+        .filter { it.size >= MIN_THROUGH }
+        .map(::median)
+        .takeIf { it.isNotEmpty() }
+        ?.let(::median)
 
 /**
  * Bin of the first peak whose ±1-bin (45 s) count reaches [ALIAS_SHARE] of the strongest: larger offsets of similar

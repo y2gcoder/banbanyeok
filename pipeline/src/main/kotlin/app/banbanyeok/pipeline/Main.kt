@@ -224,13 +224,4 @@ private fun tagoCommand(
 internal fun candidateStations(
     origins: List<app.banbanyeok.schema.Station>,
     names: Set<String>,
-): List<app.banbanyeok.schema.Station> =
-    names
-        .map { name ->
-            val matches = origins.filter { it.name == name }
-            val preferred =
-                matches.singleOrNull() ?: matches.singleOrNull { station ->
-                    station.sources.keys.any { it.startsWith("kric:서울교통공사:") }
-                }
-            requireNotNull(preferred) { "Candidate seed $name is unavailable or ambiguous (${matches.size})" }
-        }.sortedBy { it.code }
+): List<app.banbanyeok.schema.Station> = names.map { stationNamed(origins, it) }.sortedBy { it.code }

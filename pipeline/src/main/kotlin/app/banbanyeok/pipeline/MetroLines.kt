@@ -22,6 +22,8 @@ internal data class MetroService(
     /** TAGO id → existing S3 service whose node is used at that station. */
     val joins: Map<String, String>,
     val s3Line: String?,
+    /** Shared section of several services: boards any of their trains, so its headway counts all of them. */
+    val trunk: Boolean = false,
 )
 
 internal data class NewStation(
@@ -49,6 +51,7 @@ internal class MetroLines(
                 rule.getValue("kric").jsonArray.map { it.jsonPrimitive.content },
                 rule["joins"]?.jsonObject?.mapValues { it.value.jsonPrimitive.content }.orEmpty(),
                 rule["s3Line"]?.jsonPrimitive?.content,
+                rule["trunk"]?.jsonPrimitive?.content == "true",
             )
         }
     val nameAliases: Map<String, String> =

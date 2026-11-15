@@ -1,6 +1,7 @@
 package app.banbanyeok.pipeline
 
 import kotlinx.serialization.json.JsonObject
+import kotlin.math.sign
 
 internal const val MIN_MATCHED = 3
 internal const val MIN_RATIO = 0.4
@@ -16,12 +17,14 @@ internal fun tagoNodes(
         service.stations.map { id -> codes.getValue(id) to (service.joins[id] ?: service.id) }
     }
 
-/** Boarding headway of a TAGO service from the stations no other service of its group stops at. */
+/** Boarding headway of a TAGO service (branch: its exclusive stations; trunk: every non-join station). */
 internal fun tagoServiceHeadways(tago: TagoInput): Map<String, Int> =
     tago.lines.services.associate { service ->
+        // A branch service waits for its own trains, counted where no other service of the group stops; a trunk
+        // service counts every train of its section.
         val shared =
             tago.lines.services
-                .filter { it.group == service.group && it.id != service.id }
+                .filter { it.group == service.group && it.id != service.id && !service.trunk }
                 .flatMap { it.stations }
                 .toSet()
         val own = service.stations.filter { it !in shared && it !in service.joins }
@@ -38,28 +41,37 @@ internal data class TagoEdgeResult(
     val json: JsonObject,
 )
 
+/** A run more than this many times its reverse (and [ASYMMETRY_MIN_GAP] s longer) is a headway alias. */
+internal const val ASYMMETRY_FACTOR = 2
+internal const val ASYMMETRY_MIN_GAP = 120
+
 /**
- * Directed run time between consecutive TAGO stations [from] → [to] of [service]. A row heads towards [to] when its
- * terminus sits at or beyond [to] in the service order (termini resolved to physical stations, so another
- * operator's id for the same station counts); rows with an unknown terminus are kept for both directions.
- * Falls back to the reverse direction (mirrored) when one direction does not pass the match gate.
+ * Directed run time between consecutive TAGO stations [from] → [to] of [heading]'s service. Rows are split by
+ * direction with [TagoHeading]. Falls back to the reverse direction (mirrored) when one direction does not pass
+ * the match gate. When both pass but one is over [ASYMMETRY_FACTOR]× the other, the longer one is a headway
+ * alias of mis-split rows (별내선 north, whose termini all read 구리): the shorter value is used both ways and
+ * the edge is flagged `asymmetryCorrected` in the report.
  */
 internal fun tagoRunTimes(
-    tago: TagoInput,
-    service: MetroService,
-    codes: Map<String, String>,
+    heading: TagoHeading,
     from: String,
     to: String,
 ): TagoRun {
-    val heading = TagoHeading(tago, service, codes)
-    val i = service.stations.indexOf(from)
-    val j = service.stations.indexOf(to)
-    val rawForward = estimateRun(heading.rows(from, i, j), heading.rows(to, i, j))
-    val rawReverse = estimateRun(heading.rows(to, j, i), heading.rows(from, j, i))
-    val forward = rawForward?.takeIf(::acceptable)
-    val reverse = rawReverse?.takeIf(::acceptable)
+    val i = heading.service.stations.indexOf(from)
+    val j = heading.service.stations.indexOf(to)
+    val dwell = heading.ordinaryDwell
+    val rawForward = estimateRun(heading.rows(from, i, j), heading.rows(to, i, j), dwell)
+    val rawReverse = estimateRun(heading.rows(to, j, i), heading.rows(from, j, i), dwell)
+    var forward = rawForward?.takeIf(::acceptable)
+    var reverse = rawReverse?.takeIf(::acceptable)
     if (forward == null && reverse == null) {
         return TagoRun(null, null, listOfNotNull(rawForward, rawReverse).map(::describe))
+    }
+    val corrected = asymmetric(forward, reverse)
+    if (corrected) {
+        val shorter = minOf(requireNotNull(forward), requireNotNull(reverse), compareBy { it.seconds })
+        if (forward.seconds > shorter.seconds) forward = null
+        if (reverse.seconds > shorter.seconds) reverse = null
     }
 
     fun result(
@@ -68,16 +80,38 @@ internal fun tagoRunTimes(
     ) = estimate?.let {
         TagoEdgeResult(
             it.seconds,
-            JsonObject(describe(it) + ("mirrored" to jsonValue(mirrored))),
+            JsonObject(
+                describe(it) + ("mirrored" to jsonValue(mirrored)) + ("asymmetryCorrected" to jsonValue(corrected)),
+            ),
         )
     }
-    return TagoRun(result(forward, false) ?: result(reverse, true), result(reverse, false) ?: result(forward, true))
+    val rejected = if (corrected) listOfNotNull(rawForward, rawReverse).map(::describe) else emptyList()
+    return TagoRun(
+        result(forward, false) ?: result(reverse, true),
+        result(reverse, false) ?: result(forward, true),
+        rejected,
+    )
 }
 
-/** Rows of a station heading from position [origin] towards [target] of the service order, judged by terminus. */
-private class TagoHeading(
+internal fun asymmetric(
+    a: RunEstimate?,
+    b: RunEstimate?,
+): Boolean {
+    if (a == null || b == null) return false
+    val (short, long) = listOf(a.seconds, b.seconds).sorted()
+    return long > short * ASYMMETRY_FACTOR && long - short > ASYMMETRY_MIN_GAP
+}
+
+/**
+ * Splits a service's timetable rows by direction. A row's terminus (endSubwayStationId) decides when it is
+ * trustworthy; a terminus that the same U/D code claims at stations on both sides of it (별내선: every U row from
+ * 별내 to 암사역사공원 "ends" at 구리) is a data error and is ignored. Rows without a usable terminus fall back
+ * to the direction of their U/D code, learnt from the trustworthy rows or, failing that, from the service's end
+ * stations (a code that only arrives at the first station runs towards it). Unknown rows stay in both directions.
+ */
+internal class TagoHeading(
     private val tago: TagoInput,
-    private val service: MetroService,
+    val service: MetroService,
     private val codes: Map<String, String>,
 ) {
     private val order = service.stations.map { codes.getValue(it) }
@@ -89,16 +123,105 @@ private class TagoHeading(
         return codes[id]?.let { order.indexOf(it) }?.takeIf { it >= 0 }
     }
 
+    private val rowsByCode: Map<String, List<Pair<Int, TagoTrain>>> =
+        service.stations
+            .flatMapIndexed { index, id ->
+                tago.timetable.getValue(id).flatMap { (code, trains) -> trains.map { code to (index to it) } }
+            }.groupBy({ it.first }, { it.second })
+
+    /** (code, terminus) pairs claimed by a majority of a station's rows on both sides of that terminus. */
+    val bogusTermini: Set<Pair<String, String>> =
+        rowsByCode
+            .flatMap { (code, rows) ->
+                rows
+                    .groupBy { it.first }
+                    .flatMap { (station, here) ->
+                        here
+                            .groupingBy { it.second.end }
+                            .eachCount()
+                            .filter { (end, count) -> end != null && count * 2 >= here.size }
+                            .keys
+                            .mapNotNull { end ->
+                                position(end)?.let { Triple(code, requireNotNull(end), it - station) }
+                            }
+                    }.groupBy({ it.first to it.second }, { it.third })
+                    .filterValues { sides -> sides.any { it > 0 } && sides.any { it < 0 } }
+                    .keys
+            }.toSet()
+
+    private fun trusted(
+        code: String,
+        train: TagoTrain,
+    ): Int? = train.end?.takeIf { (code to it) !in bogusTermini }?.let(::position)
+
+    /** +1: code runs towards higher service positions, −1: lower, 0: mixed or unknown. */
+    val codeDirections: Map<String, Int> =
+        rowsByCode
+            .mapValues { (code, rows) ->
+                votedDirection(code, rows) ?: endStationDirection(rows) ?: 0
+            }.let { known ->
+                known.mapValues { (code, direction) ->
+                    if (direction != 0) direction else -(known.filterKeys { it != code }.values.singleOrNull() ?: 0)
+                }
+            }
+
+    private fun votedDirection(
+        code: String,
+        rows: List<Pair<Int, TagoTrain>>,
+    ): Int? {
+        val votes =
+            rows.mapNotNull { (station, train) -> trusted(code, train)?.let { (it - station).sign } }.filter {
+                it !=
+                    0
+            }
+        if (votes.size < MIN_VOTES) return null
+        val up = votes.count { it > 0 }
+        return when {
+            up * VOTE_SHARE_DIVISOR >= votes.size * VOTE_SHARE -> 1
+            (votes.size - up) * VOTE_SHARE_DIVISOR >= votes.size * VOTE_SHARE -> -1
+            else -> 0
+        }
+    }
+
+    private fun endStationDirection(rows: List<Pair<Int, TagoTrain>>): Int? {
+        val last = service.stations.lastIndex
+        val first = rows.filter { it.first == 0 }.map { it.second }
+        val end = rows.filter { it.first == last }.map { it.second }
+        return when {
+            first.isNotEmpty() && first.all { it.departure == null } -> -1
+            first.isNotEmpty() && first.all { it.arrival == null } -> 1
+            end.isNotEmpty() && end.all { it.departure == null } -> 1
+            end.isNotEmpty() && end.all { it.arrival == null } -> -1
+            else -> null
+        }
+    }
+
+    /** Ordinary dwell of the service, used where a station's own through trains are too few. */
+    val ordinaryDwell: Int? = ordinaryDwell(service.stations.flatMap { tago.timetable.getValue(it).values })
+
     fun rows(
         station: String,
         origin: Int,
         target: Int,
-    ): List<TagoTrain> =
-        tago.timetable.getValue(station).values.flatten().filter { train ->
-            val p = position(train.end) ?: return@filter true
-            if (target > origin) p >= target else p <= target
+    ): List<TagoTrain> {
+        val way = (target - origin).sign
+        return tago.timetable.getValue(station).flatMap { (code, trains) ->
+            trains.filter { train ->
+                val p = trusted(code, train)
+                val direction = codeDirections[code] ?: 0
+                when {
+                    p != null -> if (way > 0) p >= target else p <= target
+                    direction != 0 -> direction == way
+                    else -> true
+                }
+            }
         }
+    }
 }
+
+private const val MIN_VOTES = 10
+private const val VOTE_SHARE = 8
+private const val VOTE_SHARE_DIVISOR = 10
 
 internal data class TagoRun(
     val forward: TagoEdgeResult?,

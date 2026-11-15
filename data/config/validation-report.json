@@ -8,20 +8,20 @@
     "dataIssues": [],
     "physicalTriangleBoundViolations": 0,
     "physicalTriangleExcessSeconds": {
-      "count": 1100190,
-      "max": 296,
+      "count": 1151906,
+      "max": 420,
       "min": 1,
       "p50": 89,
-      "p95": 232
+      "p95": 258
     },
     "stateTriangleViolations": 0,
-    "symmetryNonzero": 127705,
+    "symmetryNonzero": 123850,
     "symmetrySeconds": {
       "count": 212878,
-      "max": 2303,
+      "max": 843,
       "min": 0,
-      "p50": 16,
-      "p95": 190
+      "p50": 13,
+      "p95": 176
     },
     "triangleExamples": [
       "신내 -> 오금 via 상봉: excess=83, bound=603",

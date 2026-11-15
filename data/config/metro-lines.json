@@ -1,5 +1,5 @@
 {
-  "basis": "수도권 TAGO 운행계통. stations는 열차가 실제로 이어 달리는 순서(TAGO 역 ID + TAGO 역명)다. 역 순서는 공식 역번호(ID 뒷부분) 순서를 기본으로, 분기·직통 연결은 운영 계통에 맞춰 손으로 정했고, 빌드가 인접역 시간표 맞춤(일치율·소요시간 범위)으로 모든 인접 쌍을 검사한다. 같은 group의 계통이 같은 역에 서면 같은 승강장 갈아타기(보행 0초 + 다음 열차 대기, 환승 1)로 잇는다(5호선 마천계통과 같은 규칙). joins의 역은 기존 서울교통공사 계통(S3)의 노드를 쓴다. s3Line이 있는 계통은 서울교통공사 구간의 주행시간을 S3에서 복사한다. kric는 TAGO 역을 S1 행과 잇는 운영기관:노선 목록이다. 경의중앙선 용산~청량리와 수인분당선 청량리는 S1에 경원선(같은 코레일 선로)으로만 실려 있어 경원선을 함께 둔다.",
+  "basis": "수도권 TAGO 운행계통. stations는 열차가 실제로 이어 달리는 순서(TAGO 역 ID + TAGO 역명)다. 역 순서는 공식 역번호(ID 뒷부분) 순서를 기본으로, 분기·직통 연결은 운영 계통에 맞춰 손으로 정했고, 빌드가 인접역 시간표 맞춤(일치율·소요시간 범위)으로 모든 인접 쌍을 검사한다. 같은 group의 계통이 같은 역에 서면 같은 승강장 갈아타기(보행 0초 + 다음 열차 대기, 환승 1)로 잇는다(5호선 마천계통과 같은 규칙). joins의 역은 기존 서울교통공사 계통(S3)의 노드를 쓴다. s3Line이 있는 계통은 서울교통공사 구간의 주행시간을 S3에서 복사한다. kric는 TAGO 역을 S1 행과 잇는 운영기관:노선 목록이다. 경의중앙선 용산~청량리와 수인분당선 청량리는 S1에 경원선(같은 코레일 선로)으로만 실려 있어 경원선을 함께 둔다. trunk=true 계통은 여러 계통이 함께 달리는 공동 구간을 하나로 묶은 것이다. 공동 구간 안에서만 타고 내리면 어느 열차든 타므로, 대기는 그 구간 역들의 전체 출발 간격으로 계산한다(분기 계통으로는 같은 승강장 갈아타기로 이어짐).",
   "services": {
     "1경인": {
       "group": "1",
@@ -192,6 +192,77 @@
       "stations": [
         "MTRKR1P157 병점",
         "MTRKR1P157-1 서동탄"
+      ]
+    },
+    "1공동북": {
+      "group": "1",
+      "trunk": true,
+      "s3Line": "1",
+      "kric": [
+        "한국철도공사:경원선",
+        "한국철도공사:경부선",
+        "한국철도공사:경인선",
+        "서울교통공사:1호선"
+      ],
+      "label": "1호선 공동 구간 연천~청량리(경원선, 경인·경부 열차 모두)",
+      "joins": {
+        "MTRS11158": "1"
+      },
+      "stations": [
+        "MTRKR1100-3 연천",
+        "MTRKR1100-2 전곡",
+        "MTRKR1100-1 청산",
+        "MTRKR1100 소요산",
+        "MTRKR1101 동두천",
+        "MTRKR1102 보산",
+        "MTRKR1103 동두천중앙",
+        "MTRKR1104 지행",
+        "MTRKR1105 덕정",
+        "MTRKR1106 덕계",
+        "MTRKR1107 양주",
+        "MTRKR1108 녹양",
+        "MTRKR1109 가능",
+        "MTRKR1110 의정부",
+        "MTRKR1111 회룡",
+        "MTRKR1112 망월사",
+        "MTRKR1113 도봉산",
+        "MTRKR1114 도봉",
+        "MTRKR1115 방학",
+        "MTRKR1116 창동",
+        "MTRKR1117 녹천",
+        "MTRKR1118 월계",
+        "MTRKR1119 광운대",
+        "MTRKR1120 석계",
+        "MTRKR1121 신이문",
+        "MTRKR1122 외대앞",
+        "MTRKR1123 회기",
+        "MTRS11158 청량리(서울시립대입구)"
+      ]
+    },
+    "1공동남": {
+      "group": "1",
+      "trunk": true,
+      "s3Line": "1",
+      "kric": [
+        "한국철도공사:경원선",
+        "한국철도공사:경부선",
+        "한국철도공사:경인선",
+        "서울교통공사:1호선"
+      ],
+      "label": "1호선 공동 구간 서울역~구로(경인·경부 열차 모두)",
+      "joins": {
+        "MTRS11150": "1"
+      },
+      "stations": [
+        "MTRS11150 서울역",
+        "MTRKR1134 남영",
+        "MTRKR1135 용산",
+        "MTRKR1136 노량진",
+        "MTRKR1137 대방",
+        "MTRKR1138 신길",
+        "MTRKR1139 영등포",
+        "MTRKR1140 신도림",
+        "MTRKR1141 구로"
       ]
     },
     "3일산": {
@@ -872,6 +943,37 @@
         "MTRULU10124 송산",
         "MTRULU10125 탑석"
       ]
+    },
+    "경의중앙공동": {
+      "group": "경의중앙",
+      "label": "경의중앙선 공동 구간 가좌~문산(용산·서울역 열차 모두)",
+      "trunk": true,
+      "kric": [
+        "한국철도공사:경의중앙선",
+        "한국철도공사:경원선"
+      ],
+      "stations": [
+        "MTRKRK4K315 가좌",
+        "MTRKRK4K316 디지털미디어시티",
+        "MTRKRK4K317 수색",
+        "MTRKRK4K318 한국항공대",
+        "MTRKRK4K319 강매",
+        "MTRKRK4K320 행신",
+        "MTRKRK4K321 능곡",
+        "MTRKRK4K322 대곡",
+        "MTRKRK4K323 곡산",
+        "MTRKRK4K324 백마",
+        "MTRKRK4K325 풍산",
+        "MTRKRK4K326 일산",
+        "MTRKRK4K327 탄현",
+        "MTRKRK4K328 야당",
+        "MTRKRK4K329 운정",
+        "MTRKRK4K330 금릉",
+        "MTRKRK4K331 금촌",
+        "MTRKRK4K333 월롱(서영대학교)",
+        "MTRKRK4K334 파주(두원대학)",
+        "MTRKRK4K335 문산"
+      ]
     }
   },
   "nameAliases": {
@@ -993,9 +1095,10 @@
           "1",
           "4"
         ],
-        "walkSeconds": 0,
-        "basis": "1·4호선 상행끼리, 하행끼리 같은 승강장을 쓰는 평면환승(맞은편 열차). 반대 방향 환승은 따로 두지 않는다(같은 방향이 주 용도)",
-        "source": "https://www.korea.kr/news/policyNewsView.do?newsId=100083345"
+        "walkSeconds": 89,
+        "basis": "1·4호선 상행끼리, 하행끼리 같은 승강장을 쓰는 평면환승(맞은편 열차). 반대 방향 환승은 따로 두지 않는다(같은 방향이 주 용도). 같은 방향끼리만 같은 승강장이고 반대 방향은 통로를 건너야 한다. 그래프가 열차 방향을 구분하지 못하므로 0초를 쓰지 않고 기본값(89초)을 보수적으로 둔다",
+        "source": "https://www.korea.kr/news/policyNewsView.do?newsId=100083345",
+        "sameDirectionWalkSeconds": 0
       },
       {
         "stations": [
@@ -1012,9 +1115,10 @@
           "4",
           "수인분당"
         ],
-        "walkSeconds": 0,
-        "basis": "한대앞~오이도는 4호선과 수인분당선의 공용구간으로 같은 승강장을 쓴다",
-        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=3552"
+        "walkSeconds": 89,
+        "basis": "한대앞~오이도는 4호선과 수인분당선의 공용구간으로 같은 승강장을 쓴다. 같은 방향끼리만 같은 승강장이고 반대 방향은 통로를 건너야 한다. 그래프가 열차 방향을 구분하지 못하므로 0초를 쓰지 않고 기본값(89초)을 보수적으로 둔다",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=3552",
+        "sameDirectionWalkSeconds": 0
       },
       {
         "stations": [
@@ -1027,8 +1131,121 @@
         "walkSeconds": 60,
         "basis": "9호선 승강장에서 공항철도 일반열차 승강장까지 '1층만 올라가면 1분 이내'(개통 당시 보도). 상한 60초를 쓴다",
         "source": "https://www.yna.co.kr/view/AKR20090722076600065"
+      },
+      {
+        "stations": [
+          "노량진"
+        ],
+        "groups": [
+          "1",
+          "9"
+        ],
+        "walkSeconds": 180,
+        "basis": "9호선↔국철 1호선 환승통로 개통으로 '이동 시간도 5분에서 3분으로' 단축",
+        "source": "https://news.seoul.go.kr/citybuild/archives/229570"
+      },
+      {
+        "stations": [
+          "공덕"
+        ],
+        "groups": [
+          "경의중앙",
+          "공항"
+        ],
+        "walkSeconds": 180,
+        "basis": "시속 5km 걸음으로 '경의중앙선↔공항철도 3분'(현장 측정 보도)",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=3985"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "9",
+          "서해"
+        ],
+        "walkSeconds": 510,
+        "basis": "시속 5km 걸음으로 '9호선·공항철도-서해선 환승에 8~9분'(현장 측정 보도), 중간값",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=6094"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "공항",
+          "서해"
+        ],
+        "walkSeconds": 510,
+        "basis": "같은 보도의 '9호선·공항철도-서해선 8~9분', 중간값",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=6094"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "김포골드",
+          "서해"
+        ],
+        "walkSeconds": 420,
+        "basis": "같은 보도의 '김포골드라인-서해선은 7분'",
+        "source": "https://www.redaily.co.kr/news/articleView.html?idxno=6094"
+      },
+      {
+        "stations": [
+          "서울역"
+        ],
+        "groups": [
+          "경의중앙",
+          "공항"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "서울시 공식 안내 '환승거리가 긴 환승역' 목록(서울역 1·4호선-공항철도-경의중앙선, 경의중앙선-공항철도 디지털미디어시티) 또는 대심도 수직 이동이 긴 역. 공개 수치가 없어 S4 환승소요시간 p90(221초)을 '긴 환승' 등급 값으로 쓴다",
+        "source": "https://mediahub.seoul.go.kr/archives/1054109"
+      },
+      {
+        "stations": [
+          "디지털미디어시티"
+        ],
+        "groups": [
+          "경의중앙",
+          "공항"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "서울시 공식 안내 '환승거리가 긴 환승역' 목록(서울역 1·4호선-공항철도-경의중앙선, 경의중앙선-공항철도 디지털미디어시티) 또는 대심도 수직 이동이 긴 역. 공개 수치가 없어 S4 환승소요시간 p90(221초)을 '긴 환승' 등급 값으로 쓴다",
+        "source": "https://mediahub.seoul.go.kr/archives/1054109"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "9",
+          "김포골드"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "김포골드라인은 9호선·공항철도와 승강장을 공유하지 않고 세 노선 모두 승강장이 깊다(김포공항역 지하 4층→2층→4층 동선). 공개 수치가 없어 '긴 환승' 등급(S4 p90 221초)",
+        "source": "https://www.gimpo.go.kr/portal/contents.do?key=1483"
+      },
+      {
+        "stations": [
+          "김포공항"
+        ],
+        "groups": [
+          "공항",
+          "김포골드"
+        ],
+        "walkSeconds": 221,
+        "longTransfer": true,
+        "basis": "위와 같다",
+        "source": "https://www.gimpo.go.kr/portal/contents.do?key=1483"
       }
     ],
-    "overridesBasis": "S4에 없는 환승 가운데 공식·공개 출처로 확인되는 것만 보정한다. 출처가 없는 쌍은 기본값을 유지하고 tago-report.json의 transfers(status=default)와 d1-notes에 목록으로 남긴다"
+    "overridesBasis": "S4에 없는 환승 가운데 공식·공개 출처로 확인되는 것만 보정한다. 출처가 없는 쌍은 기본값을 유지하고 tago-report.json의 transfers(status=default)와 d1-notes에 목록으로 남긴다",
+    "longTransferBasis": "'긴 환승' 등급: 공개 수치가 없지만 긴 환승으로 공식 안내되거나 구조상 수직 이동이 긴 쌍에 S4 환승소요시간 p90(221초)을 쓴다. p75는 151초, 최댓값은 296초다"
   }
 }

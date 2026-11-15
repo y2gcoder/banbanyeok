@@ -294,6 +294,8 @@ internal class NetworkBuilder(
 
     private fun stationName(code: String) = registry.stations.first { it.code == code }.name
 
+    private val headings = mutableMapOf<String, TagoHeading>()
+
     private fun tagoRideEdges(tago: TagoInput) {
         tago.lines.services.forEach { service ->
             service.stations.zipWithNext().forEach { (a, b) -> tagoRide(tago, service, a, b) }
@@ -314,7 +316,8 @@ internal class NetworkBuilder(
             edge(to, from, copied.second)
             return
         }
-        val (forward, reverse, rejected) = tagoRunTimes(tago, service, tagoCodes, a, b)
+        val heading = headings.getOrPut(service.id) { TagoHeading(tago, service, tagoCodes) }
+        val (forward, reverse, rejected) = tagoRunTimes(heading, a, b)
         if (forward == null || reverse == null) {
             issues.add("TAGO run time unmatched: ${service.id} $a→$b")
         } else {

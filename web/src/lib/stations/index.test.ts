@@ -19,9 +19,11 @@ describe("역 검색", () => {
     expect(names("ghdeo")[0]).toBe("홍대입구");
   });
 
-  it("수도권 밖 역은 보이되 계산할 수 없다고 표시한다", () => {
-    const busan = searchStations("서면").find((s) => s.lines.some((l) => l.startsWith("부산")));
-    expect(busan?.supported).toBe(false);
+  it("수도권 밖 역은 색인에 없고, 수도권 안의 계산 밖 역은 보이되 계산할 수 없다고 표시한다", () => {
+    expect(searchStations("서면").filter((s) => s.lines.some((l) => l.startsWith("부산")))).toEqual([]);
+    // 영동선 양원(KRIC가 경의중앙선으로 잘못 적은 봉화 역)은 빠지고 경의중앙선 양원 하나만 남는다.
+    expect(searchStations("양원").filter((s) => s.name === "양원")).toHaveLength(1);
+    expect(searchStations("임진강")[0]?.supported).toBe(false);
     expect(searchStations("강남")[0]?.supported).toBe(true);
   });
 
