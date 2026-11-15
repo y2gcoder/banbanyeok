@@ -14,14 +14,26 @@ fail=0
 pass() { echo "ok   $*"; }
 bad() { echo "FAIL $*"; fail=1; }
 
-# fetch <path> -> 본문은 $body, 헤더는 $headers, 상태는 $status
+body_file="$(mktemp)"
+trap 'rm -f "$body_file"' EXIT
+
+# fetch <path> -> 본문은 $body, 헤더는 $headers, 상태는 $status.
+# 이미지·글꼴 같은 바이너리 응답은 변수에 담지 않는다(셸 변수는 NUL을 담지 못해 'ignored null byte' 경고가 난다).
+# 그때 $body는 비고, 검사는 헤더와 상태로 한다.
 fetch() {
   local out
-  out="$(curl -sS --max-time 30 -D - -o /tmp/smoke-body.$$ -w '\n__STATUS__%{http_code}' "$1" 2>/dev/null)" || { status=000; headers=""; body=""; return; }
+  out="$(curl -sS --max-time 30 -D - -o "$body_file" -w '\n__STATUS__%{http_code}' "$1" 2>/dev/null)" || { status=000; headers=""; body=""; return; }
   status="${out##*__STATUS__}"
   headers="${out%__STATUS__*}"
-  body="$(cat /tmp/smoke-body.$$ 2>/dev/null || true)"
+  if grep -qiE '^content-type: *(image/|font/|audio/|video/|application/(octet-stream|pdf|zip|wasm))' <<<"$headers"; then
+    body=""
+  else
+    body="$(cat "$body_file")"
+  fi
 }
+
+# 첫 줄만 남긴다. `| head -1`은 앞 명령이 쓰는 도중 파이프를 닫아 'grep: write error: Broken pipe'를 낸다.
+first() { sed -n 1p; }
 
 echo "== 대기: $BASE_URL"
 for attempt in $(seq 1 36); do
@@ -43,12 +55,12 @@ check_page "/sitemap.xml" "<urlset"
 
 # 조합 SEO 페이지(정적 캐시)와 정적 OG 이미지
 fetch "$BASE_URL/sitemap.xml"
-pair_url="$(grep -oE "<loc>[^<]*/meet/[^<]+</loc>" <<<"$body" | head -1 | sed -E 's#</?loc>##g')"
+pair_url="$(grep -oE "<loc>[^<]*/meet/[^<]+</loc>" <<<"$body" | first | sed -E 's#</?loc>##g')"
 if [ -n "$pair_url" ]; then
   pair_path="/${pair_url#*://*/}"
   check_page "$pair_path" "<h1"
   fetch "$BASE_URL$pair_path"
-  og_path="$(grep -oE 'content="[^"]*/meet/[^"]*opengraph-image[^"]*"' <<<"$body" | head -1 | sed -E 's#content="https?://[^/]+##; s#"$##')"
+  og_path="$(grep -oE 'content="[^"]*/meet/[^"]*opengraph-image[^"]*"' <<<"$body" | first | sed -E 's#content="https?://[^/]+##; s#"$##')"
   if [ -n "$og_path" ]; then
     fetch "$BASE_URL$og_path"
     if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "정적 OG $og_path"; else bad "정적 OG status=$status"; fi
@@ -83,7 +95,7 @@ else
   bad "/manifest.webmanifest status=$status"
 fi
 fetch "$BASE_URL/"
-apple="$(grep -oE '<link rel="apple-touch-icon" href="[^"]+"' <<<"$body" | head -1 | sed -E 's/.*href="([^"]+)"/\1/')"
+apple="$(grep -oE '<link rel="apple-touch-icon" href="[^"]+"' <<<"$body" | first | sed -E 's/.*href="([^"]+)"/\1/')"
 if [ -n "$apple" ]; then
   fetch "$BASE_URL$apple"
   if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "apple-touch-icon $apple"; else bad "apple-touch-icon status=$status"; fi
@@ -114,7 +126,12 @@ if [ "${SERVER_CONNECTED:-0}" = "1" ] && [ -n "${pair_path:-}" ]; then
   a="${codes%%-*}"; b="${codes##*-}"
   rec="$(curl -sS --max-time 40 -o /tmp/smoke-rec.$$ -w '%{http_code}' -X POST -H 'content-type: application/json' \
     -d "{\"origins\":[\"$a\",\"$b\"],\"mode\":\"fair\"}" "$BASE_URL/api/v1/recommend" 2>/dev/null || echo 000)"
-  if [ "$rec" = "200" ] && grep -q '"candidates"' /tmp/smoke-rec.$$; then pass "/api/v1/recommend → 후보 응답"; else bad "/api/v1/recommend status=$rec"; fi
+  if [ "$rec" = "200" ] && grep -q '"candidates"' /tmp/smoke-rec.$$; then
+    pass "/api/v1/recommend → 후보 응답"
+  else
+    # 오류 코드(예: 서버가 모르는 역 코드)를 보이도록 응답 앞부분만 남긴다. 요청·응답에 비밀값은 없다.
+    bad "/api/v1/recommend status=$rec $(tr -d '\0' < /tmp/smoke-rec.$$ | cut -c1-300)"
+  fi
   rm -f /tmp/smoke-rec.$$
   fetch "$BASE_URL/s/og?v=1&o=$a.$b&m=f"
   if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "동적 OG /s/og"; else bad "동적 OG /s/og status=$status"; fi
@@ -129,5 +146,4 @@ for from in ${REDIRECT_FROM:-}; do
   if [ "$code" = "301 $BASE_URL/meet?x=1" ]; then pass "리디렉트 $from → $BASE_URL"; else bad "리디렉트 $from → '$code'"; fi
 done
 
-rm -f /tmp/smoke-body.$$
 exit $fail
