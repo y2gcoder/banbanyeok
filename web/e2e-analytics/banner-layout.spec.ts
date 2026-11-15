@@ -61,13 +61,13 @@ for (const vp of CASES) {
 }
 
 /**
- * U2: 폰에서 배너가 화면 아래를 크게 가리지 않는다. 안내는 짧게, 두 버튼은 한 줄로 같은 크기, 체크박스 설명은 눈에서만 숨긴다.
+ * U2: 폰에서 배너가 화면 아래를 크게 가리지 않는다. 안내는 짧게, 두 버튼은 한 줄로 같은 크기, 체크박스 설명·철회 안내는 폰에서도 보인다.
  * 맨 아래까지 스크롤하면 본문의 마지막 줄이 배너 위에 온다(배너는 문서 끝에 있어 본문 아래에 자기 자리가 있다).
  */
 const u2ShotsDir = resolve(import.meta.dirname, "../../docs/setup/u2-screens");
 const U2_CASES = [
-  { id: "phone-390x844", width: 390, height: 844, touch: true, maxShare: 0.3 },
-  { id: "fold-cover-344", width: 344, height: 882, touch: true, maxShare: 0.4 },
+  { id: "phone-390x844", width: 390, height: 844, touch: true, maxShare: 0.4 },
+  { id: "fold-cover-344", width: 344, height: 882, touch: true, maxShare: 0.45 },
   { id: "fold-open-690", width: 690, height: 829, touch: true, maxShare: 0.3 },
   { id: "desktop-1280", width: 1280, height: 800, touch: false, maxShare: 0.35 },
 ] as const;

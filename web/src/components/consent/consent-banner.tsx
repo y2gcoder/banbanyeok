@@ -38,8 +38,7 @@ function ScopeCheckbox({
         >
           {label}
         </label>
-        {/* 폰에서는 화면을 줄이려고 눈에는 숨긴다(스크린 리더는 읽는다). 항목·목적·보유 기간은 처리방침 링크와 두 칸 폭 화면에 있다. */}
-        <p id={detailId} className="text-[12px] leading-snug text-ink-soft max-wide:sr-only">
+        <p id={detailId} className="text-[12px] leading-snug text-ink-soft">
           {detail}
         </p>
       </div>
@@ -56,8 +55,8 @@ function ScopeCheckbox({
  * - 문서 끝에 `sticky bottom-0`으로 둔다: 스크롤 중에는 아래에 붙어 있고, 맨 아래에서는 본문을 가리지 않고 제자리에 놓인다.
  * - 키가 없는 빌드(통계 꺼짐)나 브라우저 추적 거부(DNT·GPC)에서는 묻지 않는다.
  * - 반응형(U1·U2): 폰에서는 화면을 적게 가린다(390×844에서 약 4분의 1). 안내는 짧게(고지 문장은 그대로), 두 체크박스를 나란히 두고
- *   그 아래 같은 크기의 두 버튼을 한 줄로 둔다. 체크박스 설명(항목·목적·보유 기간)과 철회 안내는 폰에서는 눈에서만 숨기고(스크린 리더는 읽는다)
- *   처리방침 링크로 이어 준다. 두 칸 폭(wide)부터는 모두 보이고 안내와 체크박스를 나란히 둔다. 높이가 짧은 화면(가로로 눕힌 폰)에서도
+ *   그 아래 같은 크기의 두 버튼을 한 줄로 둔다. 체크박스 설명(항목·목적·보유 기간·국외 이전)과 철회 안내는 폰에서도
+ *   눈에 보인다(구분·국외 이전 동의는 동의 화면에서 중요 내용을 알기 쉽게 보여야 해 링크로 대체하지 않는다). 두 칸 폭(wide)부터는 모두 보이고 안내와 체크박스를 나란히 둔다. 높이가 짧은 화면(가로로 눕힌 폰)에서도
  *   화면의 60%를 넘게 가리지 않는다(안내·체크박스는 그 안에서 스크롤, 버튼은 늘 보임). 배너는 문서 끝의 `sticky`라 맨 아래까지 스크롤하면
  *   본문 아래에 배너 자리가 따로 있어 마지막 줄을 가리지 않는다. 화면 키보드로 글자를 치는 동안에는 잠시 숨겨 입력 칸을 가리지 않는다
  *   (고른 체크 상태는 그대로 남는다).
@@ -86,7 +85,7 @@ export function ConsentBanner() {
               <Link href="/privacy" className="font-semibold text-ink underline underline-offset-4">
                 개인정보 처리방침
               </Link>
-              에서 자세히 볼 수 있어요. <span className="max-wide:sr-only">{CONSENT_COPY.later}</span>
+              에서 자세히 볼 수 있어요. {CONSENT_COPY.later}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 min-[360px]:gap-x-3 wide:row-span-2 wide:grid-cols-1 wide:gap-3">
