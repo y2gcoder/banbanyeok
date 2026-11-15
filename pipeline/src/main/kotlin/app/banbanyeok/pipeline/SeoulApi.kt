@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject

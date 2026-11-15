@@ -1,7 +1,10 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Station
 import app.banbanyeok.schema.StationStatus
+import app.banbanyeok.schema.TimeBand
+import app.banbanyeok.schema.TimeSlot
 import io.kotest.core.spec.style.DescribeSpec
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
@@ -164,6 +167,48 @@ class ReviewFixesTest :
                 val headways = tagoServiceHeadways(input(metro, timetable))
                 assertEquals(600, headways["bx"])
                 assertEquals(300, headways["trunk"])
+            }
+        }
+        describe("T2. slot headways from the day type's timetable") {
+            it("measures each service inside the band window of its day type") {
+                fun every(
+                    seconds: Int,
+                    from: Int,
+                    count: Int,
+                ) = (0 until count).map { TagoTrain(from + it * seconds, null, null) }
+                val weekday: TagoTimetable = mapOf("A" to mapOf("U" to every(300, 25_200, 36) + every(600, 36_000, 36)))
+                val saturday: TagoTimetable = mapOf("A" to mapOf("U" to every(480, 25_200, 120)))
+                val metro = lines(Triple("x", listOf("A"), false))
+                val tago =
+                    TagoInput(
+                        metro,
+                        emptyMap(),
+                        weekday,
+                        mapOf(DayType.WEEKDAY to weekday, DayType.SATURDAY to saturday),
+                    )
+                assertEquals(600, tagoServiceHeadways(tago)["x"])
+                assertEquals(300, tagoServiceHeadways(tago, TimeSlot(DayType.WEEKDAY, TimeBand.MORNING))["x"])
+                assertEquals(480, tagoServiceHeadways(tago, TimeSlot(DayType.SATURDAY, TimeBand.NIGHT))["x"])
+                assertFailsWith<IllegalArgumentException> {
+                    tagoServiceHeadways(tago, TimeSlot(DayType.HOLIDAY, TimeBand.DAY))
+                }
+            }
+            it("keeps the pipeline windows equal to contracts/time-slots.json") {
+                val contract = parseObject(Path.of("../contracts/time-slots.json").readText())
+                val bands = contract.getValue("bands").jsonArray.map { it.jsonObject }
+                assertEquals(TimeBand.entries.map { it.id }, bands.map { it.text("id") })
+                bands.forEach { band ->
+                    val window = TimeBand.entries.single { it.id == band.text("id") }.window
+                    val (from, to) = band.getValue("headwayWindow").jsonArray.map { it.jsonPrimitive.content }
+                    assertEquals(windowText(window), "$from–$to")
+                }
+                val days = contract.getValue("dayTypes").jsonArray.map { it.jsonObject }
+                assertEquals(DayType.entries.map { it.id }, days.map { it.text("id") })
+                days.forEach { day ->
+                    val type = DayType.entries.single { it.id == day.text("id") }
+                    assertEquals(type.seoulWeekTag, day.text("seoulWeekTag"))
+                    assertEquals(type.tagoDailyType, day.text("tagoDailyTypeCode"))
+                }
             }
         }
         describe("6. names resolve to codes") {

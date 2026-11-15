@@ -57,11 +57,20 @@ internal fun stageRelease(
     val candidates = stage(entries.candidates)
     val od = stage(entries.od)
     val seoPages = entries.seoPages?.let(::stage)
-    val staged = listOfNotNull(registry, candidates, od, seoPages)
-    require(staged.map { it.key }.toSet().size == staged.size) { "발행 파일 이름이 겹칩니다" }
+    val odSlots = entries.odSlots?.mapValues { stage(it.value) }
+    // 내용이 같은 구분 행렬은 한 파일을 함께 가리킨다(같은 해시 = 같은 발행 이름). 한 번만 쓴다.
+    val staged = (listOfNotNull(registry, candidates, od, seoPages) + odSlots?.values.orEmpty()).distinctBy { it.key }
+    require(staged.map { it.sourceName }.toSet().size == staged.size) { "발행 파일 이름이 겹칩니다" }
     val published =
         manifest.copy(
-            files = ManifestFiles(registry.published(), candidates.published(), od.published(), seoPages?.published()),
+            files =
+                ManifestFiles(
+                    registry.published(),
+                    candidates.published(),
+                    od.published(),
+                    seoPages?.published(),
+                    odSlots?.mapValues { it.value.published() },
+                ),
         )
     val publishedText = jsonText(ManifestCodec.encode(published))
     if (out.exists()) out.deleteRecursively()
@@ -77,6 +86,10 @@ internal fun stageRelease(
         out.resolve(published.files.registry.path).readBytes(),
         out.resolve(published.files.candidates.path).readBytes(),
         out.resolve(published.files.od.path).readBytes(),
+        odSlotBytes =
+            published.files.odSlots
+                .orEmpty()
+                .mapValues { out.resolve(it.value.path).readBytes() },
     )
     out.resolve("manifest.json").writeText(publishedText)
     println("Staged release $version: ${staged.size} files + manifest.json")

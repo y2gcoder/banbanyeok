@@ -1,5 +1,8 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
+import app.banbanyeok.schema.TimeBand
+import app.banbanyeok.schema.TimeSlot
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -45,7 +48,7 @@ internal fun timetablePage(
 internal fun stationHeadways(
     rows: List<JsonObject>,
     weekTag: String = DayType.WEEKDAY.seoulWeekTag,
-    window: IntRange = Band.DAY.window,
+    window: IntRange = TimeBand.DAY.window,
 ): List<JsonObject> =
     rows
         .filter { it.text("WEEK_TAG") == weekTag && it.text("EXPRESS_YN") == "G" }

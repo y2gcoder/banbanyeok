@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Station
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.StationStatus

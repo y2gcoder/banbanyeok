@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.TimeSlot
 import kotlinx.serialization.json.JsonObject
 import kotlin.math.sign
 

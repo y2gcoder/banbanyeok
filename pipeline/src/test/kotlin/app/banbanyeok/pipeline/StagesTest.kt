@@ -1,8 +1,11 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Registry
 import app.banbanyeok.schema.RegistryCompatibility
 import app.banbanyeok.schema.StationStatus
+import app.banbanyeok.schema.TimeBand
+import app.banbanyeok.schema.TimeSlot
 import io.kotest.core.spec.style.DescribeSpec
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -188,6 +191,50 @@ class StagesTest :
                 assertTrue(graphGate(net, costs).passed)
             }
         }
+        describe("time slot networks") {
+            it("re-weights only boarding waits, exactly like rebuilding the graph with the slot headways") {
+                val rules =
+                    NetworkRules(
+                        parseObject(
+                            """{"aliases":{},"predecessors":{"2:X":"A"},"oneWay":{},
+                "services":{"2branch":{"line":"2","stations":["X"],"root":"A"}},"sourceLineOverrides":{}}""",
+                        ),
+                    )
+
+                fun input(headway: Int) =
+                    PipelineInput(
+                        Registry(1, 1, emptyList()),
+                        listOf(record("A", "2호선"), record("B", "2호선"), record("X", "2호선")),
+                        listOf(
+                            listOf("0", "2", "A", "00:00"),
+                            listOf("1", "2", "B", "01:00"),
+                            listOf("2", "2", "X", "01:30"),
+                        ),
+                        listOf(listOf("0", "2", "A", "2호선", "72", "01:00")),
+                        rules,
+                        mapOf("2" to 120),
+                        slotHeadways =
+                            TimeSlot.ALL.associateWith {
+                                mapOf("2" to if (it == TimeSlot.DEFAULT) 120 else headway)
+                            },
+                    )
+
+                fun codes() = listOf(1, 2, 3).iterator().let { next -> CodeSource { next.next() } }
+                val base = network(input(480), codes())
+                val slots = slotNetworks(input(480), base)
+                assertEquals(12, slots.size)
+                assertTrue(slots.getValue(TimeSlot.DEFAULT) === base)
+                assertEquals(base.graph, base.withWaits(base.waits).graph)
+                val night = slots.getValue(TimeSlot(DayType.SATURDAY, TimeBand.NIGHT))
+                val rebuilt = network(input(480).copy(headways = mapOf("2" to 480)), codes())
+                assertEquals(rebuilt.graph, night.graph)
+                assertEquals(matrixCosts(rebuilt), matrixCosts(night))
+                // A → X: first wait 60 → 240 s, branch transfer wait 60 → 240 s; riding and walking unchanged.
+                assertEquals(Cost(150, 0), matrixCosts(base)[0][2])
+                assertEquals(Cost(330, 0), matrixCosts(night)[0][2])
+                assertTrue(graphGate(night, matrixCosts(night)).passed)
+            }
+        }
         describe("explicit network commands") {
             it("fails clearly on missing credentials without filesystem or HTTP") {
                 val failure =
@@ -314,9 +361,15 @@ class StagesTest :
                         departure("07:00:00", week = "3"),
                         departure("07:20:00", week = "3"),
                     )
-                assertEquals(listOf("300"), stationHeadways(rows, "1", Band.MORNING.window).map { it.text("seconds") })
-                assertEquals(listOf("600"), stationHeadways(rows, "1", Band.DAY.window).map { it.text("seconds") })
-                assertEquals(listOf("1200"), stationHeadways(rows, "3", Band.MORNING.window).map { it.text("seconds") })
+                assertEquals(
+                    listOf("300"),
+                    stationHeadways(rows, "1", TimeBand.MORNING.window).map { it.text("seconds") },
+                )
+                assertEquals(listOf("600"), stationHeadways(rows, "1", TimeBand.DAY.window).map { it.text("seconds") })
+                assertEquals(
+                    listOf("1200"),
+                    stationHeadways(rows, "3", TimeBand.MORNING.window).map { it.text("seconds") },
+                )
             }
         }
     })

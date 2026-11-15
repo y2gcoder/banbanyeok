@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -199,7 +200,7 @@ internal fun readTago(root: Path): TagoInput {
     val files = tagoFiles(root, scoped, tagoDailyTypes(scope))
     require(receipt.text("sha256") == tagoDigest(root, files)) { "S6: TAGO cache digest mismatch; run tago-fetch" }
     val days = tagoDailyTypes(scope)
-    val timetables =
+    val raw =
         DayType.entries.filter { it.tagoDailyType in days }.associateWith { day ->
             scoped.associateWith { id ->
                 listOf("U", "D").associateWith { direction ->
@@ -210,7 +211,34 @@ internal fun readTago(root: Path): TagoInput {
     return TagoInput(
         lines,
         list.associate { it.text("subwayStationId") to (it.text("subwayStationName") to it.text("subwayRouteName")) },
-        timetables.getValue(DayType.WEEKDAY),
-        timetables,
+        raw.getValue(DayType.WEEKDAY),
+        weekendFallback(raw),
     )
+}
+
+/**
+ * TAGO leaves Saturday (02) empty for almost every operator (2026-11 cache: only 우이신설 has its own Saturday rows):
+ * they run the Sunday/holiday timetable on Saturdays. A station whose Saturday rows are empty in both directions
+ * therefore uses its 03 rows, and one whose 03 rows are empty uses 02. A station empty on both days stays empty
+ * (the service headway is a median over stations, so it is just not counted).
+ */
+internal fun weekendFallback(raw: Map<DayType, TagoTimetable>): Map<DayType, TagoTimetable> {
+    fun empty(station: Map<String, List<TagoTrain>>?) = station == null || station.values.all { it.isEmpty() }
+    val saturday = raw[DayType.SATURDAY] ?: return raw
+    val holiday = raw[DayType.HOLIDAY] ?: return raw
+
+    fun filled(
+        own: TagoTimetable,
+        other: TagoTimetable,
+    ): TagoTimetable =
+        own.mapValues { (id, rows) ->
+            if (empty(rows) &&
+                !empty(other[id])
+            ) {
+                other.getValue(id)
+            } else {
+                rows
+            }
+        }
+    return raw + mapOf(DayType.SATURDAY to filled(saturday, holiday), DayType.HOLIDAY to filled(holiday, saturday))
 }

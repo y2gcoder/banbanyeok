@@ -5,6 +5,7 @@ import app.banbanyeok.schema.DataSetLoader
 import app.banbanyeok.schema.RegistryCodec
 import app.banbanyeok.schema.RegistryCompatibility
 import app.banbanyeok.schema.StationStatus
+import app.banbanyeok.schema.TimeSlot
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -83,7 +84,8 @@ fun main(args: Array<String>) {
 private val CANDIDATE_RANGE = 50..130
 
 private fun build(root: Path) {
-    val net = network(root)
+    val slots = slotNetworks(root)
+    val net = slots.getValue(TimeSlot.DEFAULT)
     // name,reason,reviewed: reviewed is the human review state carried into candidate-review.json.
     val seeds = csv(root.resolve("data/config/candidate-places.csv").readText()).drop(1)
     require(
@@ -95,32 +97,15 @@ private fun build(root: Path) {
     require(candidates.size in CANDIDATE_RANGE) { "Candidate count ${candidates.size}" }
     val candidateList = CandidateList(1, net.registry.registryVersion, candidates.map { it.code })
     RegistryCodec.validateAgainst(candidateList, net.registry)
-    val costs = matrixCosts(net)
     val candidateIndexes = candidates.map { net.origins.indexOf(it) }
-    val times = costs.flatMap { row -> candidateIndexes.map { row[it].seconds } }.toIntArray()
-    val transfers = costs.flatMap { row -> candidateIndexes.map { row[it].changes } }.toIntArray()
-    val unreachable = times.count { it >= infinity.seconds }
-    val gate = graphGate(net, costs)
+    val results = slots.mapValues { (_, slotNet) -> slotResult(slotNet, candidateIndexes) }
     val appendOnly =
         RegistryCompatibility.checkAppendOnly(net.previous, net.registry) + baselineViolations(root, net.registry)
-    val report = root.resolve("data/config/validation-report.json")
-    val reach = 1.0 - unreachable.toDouble() / times.size
-    val passed = unreachable == 0 && gate.passed && appendOnly.isEmpty()
-    report.writeJson(
-        obj(
-            "passed" to passed,
-            "registryStations" to net.registry.stations.size,
-            "origins" to net.origins.size,
-            "candidates" to candidates.size,
-            "reachability" to reach,
-            "appendOnlyViolations" to appendOnly,
-            "graph" to gate.json,
-            "excludedSeoulRecords" to net.excluded,
-        ).toString(),
-    )
+    val passed = writeValidationReport(root, net, candidates.size, results, appendOnly)
     writeCoverage(root, net)
     writeOfficialComparison(root, net)
     writeRegistryAudit(root, net.registry)
+    writeSlotReport(root, slots, results, candidates)
     // Registry and review draft are control-plane inputs, not published travel artifacts.
     root.resolve("data/registry/stations.json").writeJson(RegistryCodec.encode(net.registry))
     root.resolve("data/registry/candidates.json").writeJson(RegistryCodec.encodeCandidates(candidateList))
@@ -137,47 +122,109 @@ private fun build(root: Path) {
         ).toString(),
     )
     println(
-        "Registry ${net.registry.stations.size}; origins ${net.origins.size}; candidates ${candidates.size}; reachability $reach; graph gate ${gate.passed}",
+        "Registry ${net.registry.stations.size}; origins ${net.origins.size}; candidates ${candidates.size}; " +
+            "slots ${results.size}; gates ${results.count { it.value.passed }}/${results.size} passed",
     )
     require(passed) { "Validation gate failed; no travel artifacts written. See data/config/validation-report.json" }
-    publish(root, net, candidateList, times to transfers)
+    publish(root, net, candidateList, results.mapValues { it.value.times to it.value.transfers })
+}
+
+private fun writeValidationReport(
+    root: Path,
+    net: Network,
+    candidateCount: Int,
+    results: Map<TimeSlot, SlotResult>,
+    appendOnly: List<String>,
+): Boolean {
+    val passed = results.values.all { it.passed } && appendOnly.isEmpty()
+    val defaultResult = results.getValue(TimeSlot.DEFAULT)
+    root.resolve("data/config/validation-report.json").writeJson(
+        obj(
+            "passed" to passed,
+            "registryStations" to net.registry.stations.size,
+            "origins" to net.origins.size,
+            "candidates" to candidateCount,
+            "reachability" to defaultResult.reachability,
+            "appendOnlyViolations" to appendOnly,
+            "graph" to defaultResult.gate.json,
+            "timeSlots" to
+                JsonObject(
+                    results.entries.associate { (slot, result) ->
+                        slot.id to
+                            obj(
+                                "passed" to result.passed,
+                                "reachability" to result.reachability,
+                                "stateTriangleViolations" to result.gate.json["stateTriangleViolations"],
+                                "physicalTriangleBoundViolations" to
+                                    result.gate.json["physicalTriangleBoundViolations"],
+                                "abnormal" to result.gate.json["abnormal"],
+                            )
+                    },
+                ),
+            "excludedSeoulRecords" to net.excluded,
+        ).toString(),
+    )
+    return passed
+}
+
+/** One slot's origin × candidate matrix and graph gate. */
+internal class SlotResult(
+    val costs: List<List<Cost>>,
+    val times: IntArray,
+    val transfers: IntArray,
+    val gate: Gate,
+) {
+    val unreachable = times.count { it >= infinity.seconds }
+    val reachability = 1.0 - unreachable.toDouble() / times.size
+    val passed = unreachable == 0 && gate.passed
+}
+
+internal fun slotResult(
+    net: Network,
+    candidateIndexes: List<Int>,
+): SlotResult {
+    val costs = matrixCosts(net)
+    return SlotResult(
+        costs,
+        costs.flatMap { row -> candidateIndexes.map { row[it].seconds } }.toIntArray(),
+        costs.flatMap { row -> candidateIndexes.map { row[it].changes } }.toIntArray(),
+        graphGate(net, costs),
+    )
 }
 
 private fun validate(root: Path) {
-    val output = root.resolve("data/artifacts/dev")
-    val dataset =
-        DataSetLoader.load(
-            output.resolve("manifest.json").readText(),
-            output.resolve("stations.json").readBytes(),
-            output.resolve("candidates.json").readBytes(),
-            output.resolve("od.bin").readBytes(),
-        )
+    val dataset = loadDevArtifacts(root.resolve("data/artifacts/dev"))
     validateSeo(root, dataset.registry, dataset.od, dataset.manifest)
     val registry = RegistryCodec.parse(root.resolve("data/registry/stations.json").readText())
     require(RegistryCompatibility.checkAppendOnly(dataset.registry, registry).isEmpty())
     require(registry == dataset.registry) { "Artifact registry differs from control registry; rebuild required" }
-    val net = network(root)
+    val slots = slotNetworks(root)
+    val net = slots.getValue(TimeSlot.DEFAULT)
     require(net.registry == registry) { "Raw sources require a registry rebuild" }
-    val costs = matrixCosts(net)
-    require(graphGate(net, costs).passed) { "Graph validation gate failed" }
     require(baselineViolations(root, registry).isEmpty()) { "Committed registry append-only gate failed" }
     require(dataset.od.originCount == net.origins.size) { "Origin axis incomplete" }
     require(
         dataset.candidates == RegistryCodec.parseCandidates(root.resolve("data/registry/candidates.json").readText()),
     )
-    for (i in 0 until dataset.od.originCount) {
-        val origin = net.origins.indexOfFirst { it.code == dataset.od.originCode(i).toString() }
-        require(origin >= 0)
-        for (j in 0 until dataset.od.candidateCount) {
-            val candidate = net.origins.indexOfFirst { it.code == dataset.od.candidateCode(j).toString() }
-            require(candidate >= 0)
-            require(
-                dataset.od.timeSeconds(i, j) == costs[origin][candidate].seconds &&
-                    dataset.od.transfers(i, j) == costs[origin][candidate].changes,
-            ) { "Artifact differs from current graph" }
+    val index = net.origins.withIndex().associate { (i, station) -> station.code to i }
+    val rows = List(dataset.od.originCount) { index.getValue(dataset.od.originCode(it).toString()) }
+    val columns = List(dataset.od.candidateCount) { index.getValue(dataset.od.candidateCode(it).toString()) }
+    slots.forEach { (slot, slotNet) ->
+        val costs = matrixCosts(slotNet)
+        require(graphGate(slotNet, costs).passed) { "Graph validation gate failed ($slot)" }
+        val od = requireNotNull(dataset.odFor(slot)) { "Artifact has no $slot matrix" }
+        for (i in 0 until od.originCount) {
+            val origin = rows[i]
+            for (j in 0 until od.candidateCount) {
+                val candidate = columns[j]
+                require(
+                    od.timeSeconds(i, j) == costs[origin][candidate].seconds &&
+                        od.transfers(i, j) == costs[origin][candidate].changes,
+                ) { "Artifact differs from current graph ($slot)" }
+            }
         }
     }
-    println("Validated artifact hashes, contract, append-only registry and recomputed OD cells")
+    println("Validated artifact hashes, contract, append-only registry and recomputed OD cells of ${slots.size} slots")
 }
 
 private fun writeCoverage(
