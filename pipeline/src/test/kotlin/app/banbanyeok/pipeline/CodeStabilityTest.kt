@@ -50,10 +50,10 @@ class CodeStabilityTest :
                 }
                 val candidates: CandidateList =
                     RegistryCodec.parseCandidates(Path.of("../data/registry/candidates.json").readText())
-                assertEquals(
-                    stable.getValue("candidates").jsonArray.map { it.jsonPrimitive.content },
-                    candidates.candidates,
-                )
+                // D1 adopted 30 more candidates; every pre-D1 candidate code must still be on the axis.
+                val previous = stable.getValue("candidates").jsonArray.map { it.jsonPrimitive.content }
+                assertTrue(candidates.candidates.containsAll(previous), "a pre-D1 candidate was dropped")
+                previous.forEach { assertTrue(od.indexOfCandidate(StationCode.parse(it)) >= 0, it) }
             }
             it("are never reissued by a rebuild that adds stations") {
                 val rules = NetworkRules(parseObject(Path.of("../data/config/network-rules.json").readText()))

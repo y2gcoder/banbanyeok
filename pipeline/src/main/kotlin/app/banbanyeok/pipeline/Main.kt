@@ -71,15 +71,20 @@ fun main(args: Array<String>) {
     }
 }
 
+/** 130 since D1: 97 Seoul Metro candidates + 30 metropolitan ones adopted after user review. */
+private val CANDIDATE_RANGE = 50..130
+
 private fun build(root: Path) {
     val net = network(root)
-    val candidateReasons =
-        csv(root.resolve("data/config/candidate-places.csv").readText()).drop(1).associate {
-            it[0] to
-                it[1]
-        }
+    // name,reason,reviewed: reviewed is the human review state carried into candidate-review.json.
+    val seeds = csv(root.resolve("data/config/candidate-places.csv").readText()).drop(1)
+    require(
+        seeds.all { it.size == 3 && it[2] in setOf("true", "false") },
+    ) { "candidate-places.csv: name,reason,reviewed" }
+    val candidateReasons = seeds.associate { it[0] to it[1] }
+    val reviewed = seeds.associate { it[0] to (it[2] == "true") }
     val candidates = candidateStations(net.origins, candidateReasons.keys)
-    require(candidates.size in 50..100) { "Candidate count ${candidates.size}" }
+    require(candidates.size in CANDIDATE_RANGE) { "Candidate count ${candidates.size}" }
     val candidateList = CandidateList(1, net.registry.registryVersion, candidates.map { it.code })
     RegistryCodec.validateAgainst(candidateList, net.registry)
     val costs = matrixCosts(net)
@@ -118,7 +123,7 @@ private fun build(root: Path) {
                     "code" to station.code,
                     "name" to station.name,
                     "reason" to candidateReasons.getValue(station.name),
-                    "reviewed" to false,
+                    "reviewed" to reviewed.getValue(station.name),
                 )
             },
         ).toString(),
