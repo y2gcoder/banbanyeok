@@ -34,7 +34,7 @@ test("계약 밖의 403(빈 HTML 본문)이어도 짧은 안내 문구가 보이
     route.fulfill({ status: 403, contentType: "text/html", body: "" }),
   );
   await page.getByRole("tab", { name: "빨리 만나기" }).click();
-  const alert = page.getByRole("alert");
+  const alert = page.getByRole("tabpanel").getByRole("alert");
   await expect(alert).toContainText("이 기준으로는 결과를 받지 못했어요.");
   await expect(alert).not.toContainText(/403|HTTP|UNKNOWN/);
   await expect(page.getByRole("button", { name: "다시 시도" })).toBeVisible();
