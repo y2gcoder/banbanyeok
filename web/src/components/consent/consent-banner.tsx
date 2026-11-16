@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 import { useOnScreenKeyboardOpen } from "@/components/common/use-on-screen-keyboard";
 import { Button } from "@/components/ui/button";
 import { setAnalyticsConsent } from "@/lib/analytics";
+import { parenSafe } from "@/lib/text/paren-safe";
 import { cn } from "@/lib/utils";
 import { CONSENT_COPY } from "./consent-text";
 import { useConsentState } from "./use-consent";
+
+/** 통계 설정 카드가 있는 화면. 배너의 "통계 설정" 링크(`/privacy#analytics-settings`)가 여기로 온다. */
+const ANALYTICS_SETTINGS_PATH = "/privacy";
 
 function ScopeCheckbox({
   label,
@@ -35,10 +40,10 @@ function ScopeCheckbox({
       />
       <span className="flex min-w-0 flex-col">
         <span id={labelId} className="text-[13px] leading-snug font-semibold text-ink wide:text-[14px]">
-          {label}
+          {parenSafe(label)}
         </span>
         <span id={detailId} className="text-[12px] leading-snug text-ink-soft">
-          {detail}
+          {parenSafe(detail)}
         </span>
       </span>
     </label>
@@ -55,7 +60,7 @@ function ScopeCheckbox({
  * - 정확히 하나만 체크하면 버튼 위에 "두 가지 모두 체크해야 통계를 모아요."를 알린다(aria-live polite).
  * - 문서 끝에 `sticky bottom-0`으로 둔다: 문서 안(in-flow)에 자기 자리를 차지하므로 맨 아래까지 스크롤하면 어떤 입력·버튼도
  *   배너 뒤에 숨지 않고 닿는다(= 배너 높이만큼의 하단 여백). `fixed`로 바꾸면 이 여백이 사라지니 바꾸지 않는다.
- * - 키가 없는 빌드(통계 꺼짐)나 브라우저 추적 거부(DNT·GPC)에서는 묻지 않는다.
+ * - 키가 없는 빌드(통계 꺼짐)나 브라우저 추적 거부(DNT·GPC)에서는 묻지 않는다. /privacy에서도 띄우지 않는다(같은 동의를 고르는 '통계 설정' 카드가 있다).
  * - 반응형: 폰에서는 화면을 적게 가린다(390×844에서 약 4분의 1 이하). 안내는 두 문장과 링크 하나, 체크박스는 위아래 한 줄씩(좌우 2칸 금지).
  *   두 칸 폭(wide)부터는 안내와 체크박스를 나란히 둔다. 높이가 짧은 화면(가로로 눕힌 폰)에서도 화면의 60%를 넘게 가리지 않는다
  *   (안내·체크박스는 그 안에서 스크롤, 버튼은 늘 보임). 화면 키보드로 글자를 치는 동안(역 검색 포함)에는 잠시 보이지 않게 해(`invisible` + aria-hidden;
@@ -67,7 +72,9 @@ export function ConsentBanner() {
   const [collect, setCollect] = useState(false);
   const [transfer, setTransfer] = useState(false);
   const typing = useOnScreenKeyboardOpen();
-  if (state !== "ask") return null;
+  // /privacy에는 같은 두 동의를 고르는 '통계 설정' 카드가 있다. 같은 화면에 같은 동의 UI가 둘이면 헷갈리고 배너가 카드를 덮으므로 여기서는 띄우지 않는다.
+  const pathname = usePathname();
+  if (state !== "ask" || pathname === ANALYTICS_SETTINGS_PATH) return null;
   const both = collect && transfer;
   const onlyOne = collect !== transfer;
   return (
@@ -83,10 +90,10 @@ export function ConsentBanner() {
         <div className="scroll-shadow-y -mx-1 flex min-h-0 flex-col gap-1.5 overflow-y-auto px-1 wide:grid wide:grid-cols-2 wide:gap-x-6 wide:gap-y-3">
           <div className="flex flex-col gap-1 wide:row-span-2">
             <h2 id={titleId} className="text-[14px] leading-snug font-bold text-ink wide:text-[15px]">
-              {CONSENT_COPY.question}
+              {parenSafe(CONSENT_COPY.question)}
             </h2>
             <p className="text-[12px] leading-snug text-ink-soft">
-              {CONSENT_COPY.intro} {CONSENT_COPY.moreBefore}
+              {parenSafe(CONSENT_COPY.intro)} {parenSafe(CONSENT_COPY.moreBefore)}
               <Link href="/privacy#analytics-settings" className="font-semibold text-ink underline underline-offset-4">
                 {CONSENT_COPY.policyLink}
               </Link>
@@ -111,7 +118,7 @@ export function ConsentBanner() {
           {/* 안내 줄 자리는 늘 잡아 둔다: 하나만 체크해도 배너 높이가 변하지 않아 체크박스가 밀리지 않는다. */}
           <div aria-live="polite">
             <p className="min-h-[17px] pb-1 text-[12px] leading-[17px] font-semibold text-ink box-content">
-              {onlyOne ? CONSENT_COPY.bothNeeded : null}
+              {onlyOne ? parenSafe(CONSENT_COPY.bothNeeded) : null}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2">

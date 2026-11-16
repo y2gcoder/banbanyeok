@@ -27,6 +27,9 @@ vi.mock("@/lib/analytics", async () => {
   };
 });
 
+const nav = vi.hoisted(() => ({ pathname: "/" as string | null }));
+vi.mock("next/navigation", () => ({ usePathname: () => nav.pathname }));
+
 const BOTH = { collect: true, transfer: true };
 const NONE = { collect: false, transfer: false };
 const collectBox = () => screen.getByRole("checkbox", { name: /이용 통계 수집·이용에 동의/ });
@@ -37,6 +40,7 @@ const rejectAll = () => screen.getByRole("button", { name: "모두 거부" });
 
 beforeEach(() => {
   window.localStorage.clear();
+  nav.pathname = "/";
   env.available = true;
   env.declined = false;
   env.id = null;
@@ -70,6 +74,19 @@ describe("동의 배너", () => {
     expect(save().className).toBe(rejectAll().className);
     expect(save().parentElement).toBe(rejectAll().parentElement);
     expect(screen.getAllByRole("button")).toHaveLength(2); // X·나중에·모두 동의 같은 다른 길이 없다
+  });
+
+  it("/privacy에서는 띄우지 않는다(같은 동의를 고르는 통계 설정 카드가 있다). 다른 경로에서는 그대로 뜬다", () => {
+    nav.pathname = "/privacy";
+    const { unmount } = render(<ConsentBanner />);
+    expect(screen.queryByRole("region", { name: /이용 통계를 모아도 될까요/ })).toBeNull();
+    unmount();
+    for (const pathname of ["/", "/result", "/privacy-policy", "/r/abc"]) {
+      nav.pathname = pathname;
+      const view = render(<ConsentBanner />);
+      expect(screen.getByRole("region", { name: /이용 통계를 모아도 될까요/ })).toBeInTheDocument();
+      view.unmount();
+    }
   });
 
   it("체크박스는 위아래 한 줄씩이고, 줄 전체를 눌러도 체크된다(좌우 2칸이 아니다)", async () => {
@@ -263,6 +280,27 @@ describe("동의 배너", () => {
 });
 
 describe("통계 설정(/privacy)", () => {
+  it("배너를 대신하므로 동의 요건을 모두 채운다: 두 항목 분리·기본 해제, 알릴 사항, 거부해도 불이익 없음", () => {
+    render(<ConsentSettings />);
+    const switches = screen.getAllByRole("switch");
+    expect(switches).toHaveLength(2); // 수집·이용, 국외 이전을 따로 받는다
+    for (const toggle of switches) expect(toggle).toHaveAttribute("aria-checked", "false"); // 기본 해제
+    expect(screen.getByText("아직 고르지 않음 — 이용 통계를 모으지 않아요.")).toBeInTheDocument();
+    const card = document.body;
+    for (const text of [
+      "출발역과 이름은 모으지 않아요", // 모으지 않는 것
+      "만 14세 이상", // 연령
+      "동의 안 해도 모든 기능을 쓸 수 있어요", // 거부해도 불이익 없음
+      "서비스 개선용 · 기능별 이용 기록, 무작위 식별자", // 목적·항목
+      "미국, PostHog, Inc.", // 국외 이전받는 자·국가
+      "암호화해 미국으로 보내 분석해요", // 방법·목적
+      "보유 기간은 처리방침 참고", // 보유 기간
+      "하나라도 끄면 바로 통계를 멈추고", // 철회는 한 번에
+    ]) {
+      expect(card).toHaveTextContent(text);
+    }
+  });
+
   const collectSwitch = () => screen.getByRole("switch", { name: "이용 통계 수집·이용 동의" });
   const transferSwitch = () => screen.getByRole("switch", { name: /국외 이전 동의/ });
 
