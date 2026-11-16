@@ -39,15 +39,16 @@ body의 `word-break: keep-all`(globals.css)이 iOS WebKit에서 "(" 뒤에 줄�
 
 ## 5. 고른 수정: `parenSafe` (web/src/lib/text/paren-safe.tsx)
 
-`(`부터 다음 공백 앞까지(괄호가 붙은 말마디)를 span 하나로 묶는다. 24자 이하는 인라인 `whitespace-nowrap`, 더 길면(주소) `inline-block max-w-full [word-break:normal]`.
-  (inline-block만 쓰면 Chromium이 접근성 이름에 앞뒤 공백을 넣어 heading 이름이 달라진다 → 짧은 것은 인라인으로. 시뮬레이터 재측정 0/61.)
+"("가 든 **말마디 전체**(공백 사이 덩어리, 정규식 `/\S*\(\S*/gu`)를 인라인 span 하나로 묶는다. 처음에는 `(`부터 묶어 "서울"+"(asia-northeast3)"처럼 단어가 쪼개졌고(문구의 묶음 163개 중 145개), 리뷰에서 지적돼 말마디 전체로 바꿨다.
+  너비 점수(한글·전각 2, 반각 1) 16 이하는 `whitespace-nowrap`, 더 길면(주소) `[word-break:normal]`만(인라인 유지: inline-block은 Chromium이 접근성 이름에 앞뒤 공백을 넣는다. nowrap은 긴 주소를 화면 밖으로 넘기므로 쓰지 않는다).
+  좁은 칸(스위치 라벨 약 176px @320px)에서 넘치지 않도록 e2e가 `[data-paren-safe]` 폭 ≤ 담은 블록 폭을 /·/privacy 320~430px에서 검사한다(상한을 크게 하면 실패하는 것을 확인).
 - 단어 중간을 자르지 않고 말마디 통째로 묶으므로 낭독·복사·찾기는 그대로다.
 - 한 줄보다 긴 덩어리(주소)는 블록 안에서 일반 규칙으로 접혀 가로로 넘치지 않는다(nowrap이면 넘친다). e2e가 320~430px에서 `scrollWidth <= innerWidth`를 확인한다.
 - 전역 CSS는 바꾸지 않았으므로 다른 화면의 줄바꿈은 변하지 않는다(괄호가 있는 문구만 영향).
 - 적용: /privacy 본문·표·통계 설정, 동의 배너 문구.
 - 한계: 문자열 안에서만 동작한다(요소가 괄호 안에 섞이면 못 묶는다).
 
-전/후 스크린샷: `w2-paren-screens/before-ios-privacy-summary.png`, `after-ios-privacy-summary.png`(시뮬레이터 Safari, 402pt).
+전/후 스크린샷: `w2-paren-screens/before-ios-privacy-summary.jpg`, `after-ios-privacy-summary.jpg`(요약 영역만 잘랐다)(시뮬레이터 Safari, 402pt).
 
 ## 6. /privacy에서는 배너를 띄우지 않는다
 
@@ -59,3 +60,10 @@ body의 `word-break: keep-all`(globals.css)이 iOS WebKit에서 "(" 뒤에 줄�
 ## 7. 같이 한 것
 
 홈의 방 입구 링크 문구: "방 만들어서 각자 입력하기 →" / "링크를 보내면 친구가 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요."(운영자 결정: 용어 '방' 유지).
+
+## 8. 리뷰 반영 후 재측정과 접근성 확인
+
+- 말마디 전체 묶음(`/\S*\(\S*/gu`)으로 바꾼 뒤 iOS 시뮬레이터(iPhone 17, Safari 27.2) 재측정: /privacy 0/61, 홈 0/61. 묶음을 푼 상태(수정 전)는 /privacy 61/61(한 폭 최대 22곳), 홈 13/61.
+- 접근성 이름: Accessibility Inspector(GUI)는 이 자동 작업에서 돌리지 못했다. 대신 Playwright(Chromium·WebKit)의 접근성 이름 계산으로
+  11항 목차 링크와 h2의 이름이 `exact: true`로 글자 그대로("…장치(쿠키 등)의…")이고 `textContent`도 같음을 e2e가 확인한다. 실기기 VoiceOver 확인은 남아 있다(수동).
+- 시뮬레이터 프록시는 127.0.0.1에만 열고 `/`로 시작하는 경로 요청만 받는다.

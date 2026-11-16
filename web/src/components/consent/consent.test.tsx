@@ -363,7 +363,7 @@ describe("통계 설정(/privacy)", () => {
     const { unmount } = render(<ConsentSettings />);
     expect(collectSwitch()).toBeDisabled();
     expect(transferSwitch()).toBeDisabled();
-    expect(screen.getByText(/추적 거부 신호/)).toBeInTheDocument();
+    expect(screen.getByText(/브라우저의 추적 거부/)).toBeInTheDocument();
     unmount();
 
     env.declined = false;

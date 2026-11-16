@@ -38,9 +38,10 @@ export function overlaps(page: Page): Promise<string[]> {
       const r = el.getBoundingClientRect();
       return r.width > 1 && r.height > 1 && el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
     };
-    const nodes = [...document.querySelectorAll(`${selector}, h1, h2, h3, p, li > span, dt, dd`)].filter(
-      (el) => visible(el) && !el.closest("[data-layout-overlay]"),
-    );
+    // [data-paren-safe]는 문장 속 글자 묶음(여러 줄로 접히면 사각형이 이웃과 겹쳐 보인다)이라 따로 재지 않는다.
+    const nodes = [
+      ...document.querySelectorAll(`${selector}, h1, h2, h3, p, li > span:not([data-paren-safe]), dt, dd`),
+    ].filter((el) => visible(el) && !el.closest("[data-layout-overlay]"));
     const name = (el: Element) =>
       `${el.tagName.toLowerCase()}「${(el.textContent ?? (el as HTMLInputElement).placeholder ?? "").trim().slice(0, 18)}」`;
     const problems: string[] = [];

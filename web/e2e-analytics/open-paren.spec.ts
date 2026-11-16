@@ -51,6 +51,19 @@ for (const width of WIDTHS) {
   });
 }
 
+test("괄호가 든 제목(11항)의 목차 링크·h2 접근성 이름이 글자 그대로다(묶음이 이름을 쪼개지 않는다)", async ({
+  page,
+}) => {
+  const title = "11. 개인정보 자동 수집 장치(쿠키 등)의 설치·운영 및 거부";
+  await page.goto("/privacy");
+  await expect(
+    page.getByRole("navigation", { name: "목차" }).getByRole("link", { name: title, exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: title, exact: true })).toBeVisible();
+  // 낭독 순서의 글자도 그대로다(WebKit·Chromium의 접근성 이름 계산 모두).
+  expect(await page.getByRole("heading", { level: 2, name: title }).evaluate((el) => el.textContent)).toBe(title);
+});
+
 test("/privacy에서는 동의 배너를 띄우지 않고, 같은 동의를 고르는 통계 설정 카드가 있다", async ({ page }) => {
   await page.goto("/privacy");
   const card = page.getByRole("region", { name: "통계 설정" });
