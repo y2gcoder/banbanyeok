@@ -81,20 +81,16 @@ test("방은 약속 날짜·시각으로 구분을 정한다(토요일 22:00 →
   request,
   browser,
 }, testInfo) => {
-  // 30일 안의 다음 토요일.
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
-  const date = new Date(`${today}T00:00:00Z`);
-  do date.setUTCDate(date.getUTCDate() + 1);
-  while (date.getUTCDay() !== 6);
-  const saturday = date.toISOString().slice(0, 10);
+  const saturday = upcomingSaturday();
 
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
   await page.goto("/r/new");
   await warmUp; // 수화가 끝나야 역 검색이 움직인다.
   await page.getByRole("combobox", { name: "내 출발역" }).fill("혜화");
   await page.getByRole("option", { name: /^혜화\s?4호선/ }).click();
-  await page.getByLabel("약속일").fill(saturday);
-  await page.getByLabel("시각").fill("22:00");
+  await page.getByRole("radio", { name: /이번 토요일/ }).check();
+  await page.getByRole("button", { name: "+ 정확한 시각 넣기" }).click();
+  await page.getByLabel("시각", { exact: true }).fill("22:00");
   await expect(page.getByText("토요일 밤 기준으로 계산해요")).toBeVisible();
   await shot(page, "3-room-create-when");
   await page.getByRole("button", { name: "방 만들기" }).click();
@@ -127,6 +123,43 @@ test("방은 약속 날짜·시각으로 구분을 정한다(토요일 22:00 →
 
   await page.reload();
   await expect(page.getByText("역에서 역까지, 토요일 밤 기준 시간이에요.")).toBeVisible();
-  await expect(page.getByText(/약속 \d+월 \d+일 22:00/)).toBeVisible();
+  await expect(page.getByText(/약속 \d+월 \d+일 \(토\) 22:00/)).toBeVisible();
   await shot(page, "4-room-result-when");
 });
+
+test("시간대만 고른 방은 시각 없이 시간대로 구분을 정한다(이번 토요일 저녁 → 토요일 저녁)", async ({
+  page,
+  request,
+}) => {
+  const saturday = upcomingSaturday();
+  const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
+  await page.goto("/r/new");
+  await warmUp;
+  await page.getByRole("combobox", { name: "내 출발역" }).fill("혜화");
+  await page.getByRole("option", { name: /^혜화\s?4호선/ }).click();
+  await page.getByRole("radio", { name: /이번 토요일/ }).check();
+  await page.getByRole("radio", { name: /저녁/ }).check();
+  await expect(page.getByText("토요일 저녁 기준으로 계산해요")).toBeVisible();
+  const created = page.waitForRequest((req) => req.url().endsWith("/api/v1/rooms") && req.method() === "POST");
+  await page.getByRole("button", { name: "방 만들기" }).click();
+  const body = (await created).postDataJSON();
+  expect(body).toMatchObject({ meetingDate: saturday, meetingBand: "evening" });
+  expect(body).not.toHaveProperty("meetingTime");
+  await expect(page).toHaveURL(/\/r\/[0-9a-hjkmnp-tv-z]{10}$/);
+  const roomId = new URL(page.url()).pathname.split("/").pop() ?? "";
+
+  const room = await (await request.get(`/api/v1/rooms/${roomId}`)).json();
+  expect(room.meetingDate).toBe(saturday);
+  expect(room.meetingTime).toBeNull();
+  expect(room.meetingBand).toBe("evening");
+  expect(room.timeBasis).toMatchObject({ timeSlot: "saturday-evening", label: "토요일 저녁" });
+  await expect(page.getByText(/약속 \d+월 \d+일 \(토\) 저녁/)).toBeVisible();
+});
+
+/** "이번 토요일"(서울 기준, 오늘이 토요일이면 오늘). 화면의 칩과 같은 규칙이다. */
+function upcomingSaturday(): string {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+  const date = new Date(`${today}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + ((6 - date.getUTCDay() + 7) % 7));
+  return date.toISOString().slice(0, 10);
+}

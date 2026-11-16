@@ -46,6 +46,7 @@ describe("방 만들기 본문", () => {
     mode: "fair",
     meetingDate: "",
     meetingTime: "",
+    meetingBand: null,
     expectedCount: null,
     ...patch,
   });
@@ -90,6 +91,15 @@ describe("방 만들기 본문", () => {
     expect(toCreateRoomRequest(form(), TODAY)).not.toHaveProperty("value.meetingTime");
     expect(toCreateRoomRequest(form({ meetingTime: "24:00" }), TODAY).ok).toBe(false);
     expect(toCreateRoomRequest(form({ meetingTime: "7:30" }), TODAY).ok).toBe(false);
+  });
+
+  it("시간대만 고르면 meetingBand만 보내고, 시각이 있으면 시각만 보낸다(가짜 시각을 만들지 않는다)", () => {
+    const banded = toCreateRoomRequest(form({ meetingDate: TODAY, meetingBand: "evening" }), TODAY);
+    expect(banded).toMatchObject({ ok: true, value: { meetingDate: TODAY, meetingBand: "evening" } });
+    expect(banded).not.toHaveProperty("value.meetingTime");
+    const timed = toCreateRoomRequest(form({ meetingTime: "19:30", meetingBand: "evening" }), TODAY);
+    expect(timed).toMatchObject({ ok: true, value: { meetingTime: "19:30" } });
+    expect(timed).not.toHaveProperty("value.meetingBand");
   });
 
   it("예상 인원은 2~4명", () => {

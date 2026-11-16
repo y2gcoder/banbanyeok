@@ -77,15 +77,29 @@ function dayTypeOf(date: string): DayType {
   return day === 6 ? "saturday" : "weekday";
 }
 
+/** 운행일: 03:00 전의 시각은 전날이다. 시각 없이 시간대만 고르면 날짜 그대로다. */
+function serviceDayOf(date: string, time: string | null): string {
+  return time !== null && time < SERVICE_DAY_START ? previousDate(date) : date;
+}
+
 /**
- * 약속 날짜(`YYYY-MM-DD`)·시각(`HH:MM`) → 구분(contracts/time-slots.json rules). 시각이 없으면 낮, 날짜가 없으면 평일이다.
- * 03:00 전의 시각은 전날 운행일로 요일 유형을 정한다.
+ * 약속 날짜(`YYYY-MM-DD`)·시각(`HH:MM`)·시간대 → 구분(contracts/time-slots.json rules). 시각이 있으면 시각으로, 없으면 고른
+ * 시간대로, 둘 다 없으면 낮이다. 날짜가 없으면 평일이다. 03:00 전의 시각은 전날 운행일로 요일 유형을 정한다.
  */
-export function slotForMeeting(date: string | null, time: string | null): TimeSlot {
-  const band = time === null ? "day" : bandOfTime(time);
-  if (date === null) return slotOf("weekday", band);
-  const serviceDay = time !== null && time < SERVICE_DAY_START ? previousDate(date) : date;
-  return slotOf(dayTypeOf(serviceDay), band);
+export function slotForMeeting(date: string | null, time: string | null, band: Band | null = null): TimeSlot {
+  const resolved = time === null ? (band ?? "day") : bandOfTime(time);
+  if (date === null) return slotOf("weekday", resolved);
+  return slotOf(dayTypeOf(serviceDayOf(date, time)), resolved);
+}
+
+/** 그 약속의 운행일이 공휴일이면 이름(서버 `timeBasis.holidayName`과 같은 규칙). */
+export function meetingHolidayName(date: string | null, time: string | null): string | null {
+  return date === null ? null : holidayName(serviceDayOf(date, time));
+}
+
+/** 시간대 이름("저녁"). */
+export function bandName(band: Band): string {
+  return bandLabel(band);
 }
 
 /** 서울 시각의 지금(`YYYY-MM-DD`, `HH:MM`). 기기 시간대와 상관없이 서울 기준이다. */

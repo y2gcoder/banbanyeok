@@ -9,7 +9,7 @@ import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom 
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
-import { formatMeetingDate, isMeetingDayReached, todayInSeoul } from "@/lib/room/dates";
+import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/room/dates";
 import { errorCode, isRoomGone, isTokenRejected, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId, roomPath } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
@@ -68,10 +68,9 @@ function modeText(room: Room): string {
 
 function summary(room: Room): string {
   const parts = [modeText(room)];
-  if (room.meetingDate || room.meetingTime) {
-    const when = [room.meetingDate ? formatMeetingDate(room.meetingDate) : null, room.meetingTime ?? null];
-    parts.push(`약속 ${when.filter(Boolean).join(" ")}`);
-  }
+  // 시간대만 고른 방은 시각이 없다: "11월 21일 (토) 저녁". 시간대를 모르는 옛 서버는 meetingBand를 보내지 않는다.
+  const when = meetingWhenText(room.meetingDate ?? null, room.meetingTime ?? null, room.meetingBand ?? null);
+  if (when) parts.push(`약속 ${when}`);
   return parts.join(" · ");
 }
 

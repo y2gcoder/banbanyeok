@@ -6,6 +6,7 @@
 import type { Mode, OutcomeAnswer, ParticipantInput, RoomCreateRequest } from "@/lib/api/types";
 import { codePointLength, MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/codec";
 import type { Station } from "@/lib/stations";
+import type { Band } from "@/lib/when/time-slot";
 import { isMeetingDateInRange } from "./dates";
 
 export type Checked<T> = { ok: true; value: T } | { ok: false; message: string };
@@ -50,6 +51,11 @@ export type CreateRoomForm = {
   meetingDate: string;
   /** `HH:MM` 또는 빈 문자열(약속 시각 없음). 결과를 어느 시간대 기준으로 계산할지 정한다. */
   meetingTime: string;
+  /**
+   * 시각 없이 고른 시간대(아침·낮·저녁·밤) 또는 null. 시각이 있으면 보내지 않는다(서버가 시각에서 정한다).
+   * 가짜 시각(예: 저녁 → 19:00)을 만들어 보내지 않으려고 따로 둔다.
+   */
+  meetingBand: Band | null;
   /** 예상 인원(2~4) 또는 null(정하지 않음). */
   expectedCount: number | null;
 };
@@ -72,6 +78,7 @@ export function toCreateRoomRequest(form: CreateRoomForm, today: string): Checke
       ...(form.mode === "favor" ? { favorTarget: "host" } : {}),
       ...(form.meetingDate !== "" ? { meetingDate: form.meetingDate } : {}),
       ...(form.meetingTime !== "" ? { meetingTime: form.meetingTime } : {}),
+      ...(form.meetingTime === "" && form.meetingBand !== null ? { meetingBand: form.meetingBand } : {}),
       ...(form.expectedCount !== null ? { expectedCount: form.expectedCount } : {}),
     },
   };

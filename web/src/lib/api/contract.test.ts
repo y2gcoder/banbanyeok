@@ -151,6 +151,7 @@ describe("방 요청이 계약을 지킨다", () => {
     mode: "fair",
     meetingDate: "",
     meetingTime: "",
+    meetingBand: null,
     expectedCount: null,
     ...patch,
   });
@@ -161,6 +162,8 @@ describe("방 요청이 계약을 지킨다", () => {
       { mode: "favor" as const },
       { meetingDate: "2026-11-20", expectedCount: 3 },
       { meetingDate: "2026-11-21", meetingTime: "19:30" },
+      { meetingDate: "2026-11-21", meetingBand: "night" as const },
+      { meetingBand: "morning" as const },
       { mode: "fast" as const, expectedCount: 4 },
     ]) {
       const checked = toCreateRoomRequest(form(patch), "2026-11-15");

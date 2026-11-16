@@ -30,7 +30,7 @@ describe("참여 폼", () => {
     // 숨기기는 역 이름만 가리고 시간은 보인다는 고지가 그 자리에 있다.
     expect(screen.getByText(/소요시간과 환승 횟수는 모두에게 보이니/)).toBeInTheDocument();
 
-    await user.type(screen.getByRole("textbox", { name: "내 이름(선택)" }), "  지연 ");
+    await user.type(screen.getByRole("textbox", { name: "내 이름 (선택)" }), "  지연 ");
     await user.type(screen.getByRole("combobox", { name: "내 출발역" }), "강남");
     await user.click(await screen.findByRole("option", { name: /^강남\s?2호선/ }));
     await user.click(screen.getByRole("checkbox", { name: /출발역 이름 숨기기/ }));
@@ -53,7 +53,7 @@ describe("참여 폼", () => {
         onSubmit={onSubmit}
       />,
     );
-    await user.type(screen.getByRole("textbox", { name: "내 이름(선택)" }), "가".repeat(21));
+    await user.type(screen.getByRole("textbox", { name: "내 이름 (선택)" }), "가".repeat(21));
     await user.click(screen.getByRole("button", { name: "저장하기" }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent("20자까지");
