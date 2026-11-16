@@ -64,7 +64,7 @@ for (const scenario of SCENARIOS) {
     if (scenario.name === "2명") await shot(page, "after-2-fast");
     if ("topIsOrigin" in scenario) {
       // 한 사람의 출발역이 만날 역이다: 그 사람의 시간(0분)도 화면에 있어야 한다.
-      await expect(top.getByText(/^(광화문|마포)에서 오는 분$/)).toHaveCount(2);
+      await expect(top.getByRole("listitem").getByText(/^(광화문|마포)$/)).toHaveCount(2);
     }
 
     // 누구 쪽으로: 대상을 고르는 줄이 나오고, 요청에 대상(favorIndex)이 실린다.

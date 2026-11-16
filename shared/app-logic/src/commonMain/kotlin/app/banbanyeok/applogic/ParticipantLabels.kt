@@ -3,10 +3,14 @@ package app.banbanyeok.applogic
 /** 표시 이름을 무엇으로 만들었는가. 응답의 `labelKind`(소문자)와 같다. */
 public enum class LabelKind { NAME, ORIGIN, ORDINAL }
 
-/** 참가자 한 명의 표시 이름. */
+/**
+ * 참가자 한 명의 표시 이름. [text]는 문장 속 이름("홍대입구에서 오는 분"), [short]는 좁은 칸(시간 행·알약·미리보기)용 짧은 이름
+ * ("홍대입구")이다. 이름을 넣은 사람과 숨긴 사람은 둘이 같다.
+ */
 public data class ParticipantLabel(
     val text: String,
     val kind: LabelKind,
+    val short: String,
 )
 
 /**
@@ -17,6 +21,8 @@ public data class ParticipantLabel(
  * 2. 없으면 "{출발역 이름}에서 오는 분"([LabelKind.ORIGIN]). 같은 출발역 이름이 이 규칙을 쓰는 사람 중에 여럿이면 입력 순서대로
  *    " 1", " 2"를 붙인다. 이름을 넣은 사람과 숨긴 사람은 세지 않는다(숨긴 사람의 출발역이 번호로 드러나지 않게).
  * 3. 출발역을 숨긴 참가자(또는 출발역 이름을 모르는 참가자)는 "참가자 {목록 안 순번}"([LabelKind.ORDINAL]). 순번은 1부터다.
+ *
+ * 짧은 이름([ParticipantLabel.short])은 2번에서 "에서 오는 분"만 뺀 "{출발역 이름}"(번호는 그대로, "강남 1")이고 1·3번은 [ParticipantLabel.text]와 같다.
  *
  * 익명 사용자 ID·참가자 ID 같은 내부 식별자는 쓰지 않는다(여러 방에 걸쳐 같은 사람을 이어 볼 수 있게 되므로).
  * "나/너" 같은 시점 표현도 쓰지 않는다. 보는 사람 표시("(나)")는 클라이언트가 붙인다.
@@ -38,13 +44,19 @@ public object ParticipantLabels {
             if (name != null) {
                 val nth = if (names.count { it == name } > 1) seenNames.getOrElse(name) { 0 } + 1 else null
                 nth?.let { seenNames[name] = it }
-                ParticipantLabel(listOfNotNull(name, nth).joinToString(" "), LabelKind.NAME)
+                val text = listOfNotNull(name, nth).joinToString(" ")
+                ParticipantLabel(text, LabelKind.NAME, short = text)
             } else if (origin == null) {
-                ParticipantLabel("참가자 ${i + 1}", LabelKind.ORDINAL)
+                val text = "참가자 ${i + 1}"
+                ParticipantLabel(text, LabelKind.ORDINAL, short = text)
             } else {
                 val nth = if (origins.count { it == origin } > 1) seen.getOrElse(origin) { 0 } + 1 else null
                 nth?.let { seen[origin] = it }
-                ParticipantLabel(listOfNotNull("${origin}에서 오는 분", nth).joinToString(" "), LabelKind.ORIGIN)
+                ParticipantLabel(
+                    text = listOfNotNull("${origin}에서 오는 분", nth).joinToString(" "),
+                    kind = LabelKind.ORIGIN,
+                    short = listOfNotNull(origin, nth).joinToString(" "),
+                )
             }
         }
     }

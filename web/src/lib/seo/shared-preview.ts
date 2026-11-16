@@ -1,13 +1,14 @@
 /**
  * 공유 링크(`/s?...`)의 미리보기: 제목·설명(`generateMetadata`)과 이미지 데이터(`/s/og`)가 같은 문구를 쓰게 한 곳에서 만든다.
- * 제목은 제안하는 말투("{1위역}에서 볼까?"), 설명은 각자 시간("민수 34분 · 홍대입구에서 오는 분 38분 · 공평하게 고름",
- * product-ux 4.4). 이름은 서버 label이다.
+ * 제목은 제안하는 말투("{1위역}에서 볼까?"), 설명은 각자 시간("민수 34분 · 홍대입구 38분 · 공평하게 고름", product-ux 4.4).
+ * 이름은 서버 짧은 이름(shortLabel)이다: 미리보기는 좁은 칸이라 "홍대입구에서 오는 분" 대신 "홍대입구"(V1).
  */
 import { cache } from "react";
 import { recommend } from "@/lib/api/client";
 import type { Mode, RecommendResult } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
 import { encodeShareQuery, type ShareState } from "@/lib/link/codec";
+import { modeSentence } from "@/lib/result/mode-sentence";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
 import { DEFAULT_SLOT, type TimeSlot } from "@/lib/when/time-slot";
 import { ogSafeName } from "./og-coverage";
@@ -18,18 +19,6 @@ const RECOMMEND_TIMEOUT_MS = 3000;
 
 const SHARED_OG_PATH = "/s/og";
 
-/** "공평하게 고름" / "가장 빠른 만남으로 고름" / "{이름} 쪽으로 고름". */
-export function modeSentence(mode: Mode, favorName: string | null): string {
-  switch (mode) {
-    case "fair":
-      return OG_TEXT.modeFair;
-    case "fast":
-      return OG_TEXT.modeFast;
-    case "favor":
-      return `${favorName ?? ""}${OG_TEXT.modeFavorSuffix}`.trim();
-  }
-}
-
 /** 평일 낮이 아닌 기준이면 " · 토요일 저녁 기준"(시간이 그 기준이라서). 평일 낮은 덧붙이지 않는다(옛 링크와 같은 문구). */
 function basisSuffix(view: ResultView): string {
   const basis = view.timeBasis as ResultView["timeBasis"] | undefined; // 구분을 모르는 옛 서버는 보내지 않는다
@@ -37,15 +26,27 @@ function basisSuffix(view: ResultView): string {
 }
 
 function favorName(view: ResultView, state: ShareState): string | null {
-  return state.favorIndex === null ? null : (view.people[state.favorIndex]?.name ?? null);
+  return state.favorIndex === null ? null : (view.people[state.favorIndex]?.shortName ?? null);
 }
+
+/** 공유 링크 그림(`SharedCard`)에 넘기는 값. */
+export type SharedCardData = {
+  stationName: string;
+  /**
+   * 입력 순서. 이름은 서버 짧은 이름(shortLabel)을 글꼴에 있는 글자만으로 정리한 값(`ogSafeName`)이다. 출발역을 숨긴 사람은 서버가
+   * "참가자 N"으로 주므로 숨긴 출발역은 그림에 나올 수 없다. `favored`는 "누구 쪽으로"에서 고른 사람.
+   */
+  people: { name: string; minutes: number; favored: boolean }[];
+  /** "공평하게 고름" 같은 기준 한 마디(+ " · 토요일 밤 기준"). */
+  modeLine: string;
+};
 
 export type SharedPreview = { title: string; description: string };
 
 export function sharedPreview(view: ResultView, state: ShareState): SharedPreview | null {
   const top = view.candidates[0];
   if (!top) return null;
-  const times = top.people.map((p) => `${p.name} ${formatMinutes(p.minutes)}`).join(" · ");
+  const times = top.people.map((p) => `${p.shortName} ${formatMinutes(p.minutes)}`).join(" · ");
   return {
     title: `${top.stationName}${OG_TEXT.sharedSuffix}`,
     description: `${times} · ${modeSentence(view.mode, favorName(view, state))}${basisSuffix(view)}`,
@@ -53,21 +54,24 @@ export function sharedPreview(view: ResultView, state: ShareState): SharedPrevie
 }
 
 /**
- * 이미지에 그릴 값. 이름은 서버 label이고, 글꼴에 없는 글자는 거른다(`ogSafeName`). 이모지만으로 된 별칭처럼 남는 글자가 없으면
+ * 이미지에 그릴 값. 이름은 서버 짧은 이름이고, 글꼴에 없는 글자는 거른다(`ogSafeName`). 이모지만으로 된 별칭처럼 남는 글자가 없으면
  * 순번("참가자 N")으로 그린다(시점 표현 "나/친구1"은 쓰지 않는다).
  */
-export function sharedCardData(view: ResultView, state: ShareState) {
+export function sharedCardData(view: ResultView, state: ShareState): SharedCardData | null {
   const top = view.candidates[0];
   if (!top) return null;
   const safe = (name: string, index: number) => ogSafeName(name, `참가자 ${index + 1}`);
+  const favored = view.mode === "favor" ? state.favorIndex : null;
   return {
     stationName: top.stationName,
-    people: top.people.map((p, index) => ({ name: safe(p.name, index), minutes: p.minutes })),
+    people: top.people.map((p, index) => ({
+      name: safe(p.shortName, index),
+      minutes: p.minutes,
+      favored: index === favored,
+    })),
     modeLine:
-      modeSentence(
-        view.mode,
-        state.favorIndex === null ? null : safe(view.people[state.favorIndex]?.name ?? "", state.favorIndex),
-      ) + basisSuffix(view),
+      modeSentence(view.mode, favored === null ? null : safe(view.people[favored]?.shortName ?? "", favored)) +
+      basisSuffix(view),
   };
 }
 

@@ -1,13 +1,21 @@
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { describe, expect, it } from "vitest";
+import { toResultView } from "@/lib/result/view-model";
 import { ogFonts } from "@/lib/seo/og-font";
 import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
 import { buildPairPages } from "@/lib/seo/pair-pages";
 import { parseSeoPairs } from "@/lib/seo/pairs";
+import { sharedCardData, sharedPreview } from "@/lib/seo/shared-preview";
 import fixture from "../../../fixtures/seo-pairs.json";
 import { PairCard } from "./pair-card";
 import { SharedCard } from "./shared-card";
+import { HIDDEN_ORIGIN, SHARED_CASES } from "./shared-card.cases";
 import { SiteCard } from "./site-card";
+
+/** 있으면 공유 링크 그림을 이 폴더에 PNG로 남긴다(PR 화면 캡처용: OG_SCREENS_DIR=../docs/setup/v1-screens pnpm exec vitest run og-render). */
+const screensDir = process.env.OG_SCREENS_DIR;
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -36,37 +44,17 @@ describe("OG 이미지 그리기(satori)", () => {
     expectPng(await render(<SiteCard />));
   });
 
-  it("공유 링크 이미지: 사람 둘, 넷, 긴 역 이름", async () => {
-    expectPng(
-      await render(
-        <SharedCard
-          data={{
-            stationName: "신촌",
-            people: [
-              { name: "나", minutes: 34 },
-              { name: "지훈", minutes: 38 },
-            ],
-            modeLine: "공평하게 고름",
-          }}
-        />,
-      ),
-    );
-    expectPng(
-      await render(
-        <SharedCard
-          data={{
-            stationName: "동대문역사문화공원",
-            people: [
-              { name: "나", minutes: 61 },
-              { name: "친구1", minutes: 5 },
-              { name: "가나다라마바사…", minutes: 0 },
-              { name: "친구3", minutes: 125 },
-            ],
-            modeLine: "가나다라마바사… 쪽으로 고름",
-          }}
-        />,
-      ),
-    );
+  it("공유 링크 이미지: 정해 둔 경우 전부(2·3·4명, 긴 별칭, 숨김, 같은 역, 0분, 빠른·누구 쪽으로, 기준 문구, 긴 역 이름, 1시간 넘음)", async () => {
+    for (const c of SHARED_CASES) {
+      const view = toResultView(c.result);
+      const data = sharedCardData(view, c.state);
+      if (!data) throw new Error(`${c.id}: 그림 데이터 없음`);
+      // 숨긴 출발역은 그림 값·미리보기 설명 어디에도 없다.
+      expect(JSON.stringify([data, sharedPreview(view, c.state)])).not.toContain(HIDDEN_ORIGIN);
+      const drawn = await render(<SharedCard data={data} />);
+      expectPng(drawn);
+      if (screensDir) writeFileSync(join(screensDir, `og-${c.id}.png`), drawn.bytes);
+    }
   });
 
   it("같은 내용은 같은 그림이다(정적 생성이 결정적)", async () => {

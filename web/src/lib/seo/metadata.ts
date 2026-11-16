@@ -11,7 +11,7 @@ import { formatMinutes } from "@/lib/display/minutes";
 import { APP_NAME } from "./app-manifest";
 import { OG_HEIGHT, OG_WIDTH } from "./og-text";
 import { PAIR_PATH_PREFIX, type PairPage } from "./pair-pages";
-import { absoluteUrl, isIndexableSite, siteUrl } from "./site";
+import { absoluteUrl, isIndexableSite, siteEnv, siteUrl } from "./site";
 
 type Env = Record<string, string | undefined>;
 
@@ -24,7 +24,7 @@ type Social = {
   description: string;
   /** 사이트 안 경로(`/meet/…`). canonical과 og:url이 된다. */
   path: string;
-  images?: string[];
+  images?: NonNullable<Metadata["openGraph"]>["images"];
 };
 
 /** 색인해도 되는 사이트(SITE_URL이 localhost가 아님)가 아니면 noindex. */
@@ -54,7 +54,7 @@ function social(
 }
 
 /** 루트 레이아웃의 기본 메타. `metadataBase`가 있어야 상대 경로(OG 이미지 등)가 절대 주소가 된다. */
-export function siteMetadata(env: Env = process.env): Metadata {
+export function siteMetadata(env: Env = siteEnv()): Metadata {
   return {
     metadataBase: new URL(siteUrl(env)),
     applicationName: SITE_NAME,
@@ -86,7 +86,7 @@ export function pairDescription(page: PairPage): string {
 }
 
 /** 조합 페이지. */
-export function pairMetadata(page: PairPage, env: Env = process.env): Metadata {
+export function pairMetadata(page: PairPage, env: Env = siteEnv()): Metadata {
   return {
     title: pairTitle(page),
     description: pairDescription(page),
@@ -99,7 +99,7 @@ const HUB_TITLE = "인기 역 조합별 만날 곳 추천";
 const HUB_DESCRIPTION =
   "강남·홍대입구·잠실처럼 자주 만나는 두 역을 골라, 각자 지하철 시간으로 계산한 공평한 만날 곳 3곳을 비교해 보세요.";
 
-export function hubMetadata(env: Env = process.env): Metadata {
+export function hubMetadata(env: Env = siteEnv()): Metadata {
   return {
     title: HUB_TITLE,
     description: HUB_DESCRIPTION,
@@ -108,28 +108,39 @@ export function hubMetadata(env: Env = process.env): Metadata {
   };
 }
 
-/** 공유 링크(`/s`): 색인하지 않는다(개인이 만든 링크). 미리보기 제목·설명·이미지만 링크별로 다르다. */
+/** 사이트 기본 미리보기 이미지(빌드 때 만든 정적 PNG). `openGraph`를 하위 페이지가 정의하면 부모의 이미지가 사라지므로 직접 가리킨다. */
+const DEFAULT_IMAGES = [
+  { url: "/opengraph-image", width: OG_WIDTH, height: OG_HEIGHT, alt: `${SITE_NAME}: 우리 어디서 만나야 덜 억울할까?` },
+];
+
+/**
+ * 링크마다 다른, 색인하지 않는 페이지(`/s`, `/result`, `/r/[방 ID]`)의 공통 부분. 레이아웃의 canonical·og:url(홈)을 물려받지 않게
+ * canonical을 지우고 og:url을 두지 않는다(메신저는 공유한 링크 그대로 연다).
+ */
+function linkPageMetadata(title: string, description: string, images: NonNullable<Metadata["openGraph"]>["images"]) {
+  const fullTitle = `${title} | ${SITE_NAME}`;
+  return {
+    robots: { index: false, follow: false },
+    alternates: { canonical: null },
+    title,
+    description,
+    openGraph: { type: "website", siteName: SITE_NAME, locale: "ko_KR", title: fullTitle, description, images },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images },
+  } satisfies Metadata;
+}
+
+const LINK_FALLBACK_TITLE = "만날 역 후보";
+
+/**
+ * 공유 링크(`/s`): 색인하지 않는다(개인이 만든 링크). 미리보기 제목·설명·이미지만 링크별로 다르다.
+ * 결과를 못 가져왔으면(잘못된 링크·서버 지연) 기본 제목·설명과 사이트 기본 이미지. `/result`도 이 기본값을 쓴다.
+ */
 export function sharedLinkMetadata(
   preview: { title: string; description: string; imagePath: string } | null,
 ): Metadata {
-  const base = { robots: { index: false, follow: false } } satisfies Metadata;
-  if (!preview) return { ...base, title: "만날 역 후보" };
-  const fullTitle = `${preview.title} | ${SITE_NAME}`;
+  if (!preview) return linkPageMetadata(LINK_FALLBACK_TITLE, SITE_DESCRIPTION, DEFAULT_IMAGES);
   const images = [{ url: preview.imagePath, width: OG_WIDTH, height: OG_HEIGHT, alt: preview.title }];
-  return {
-    ...base,
-    title: preview.title,
-    description: preview.description,
-    openGraph: {
-      type: "website",
-      siteName: SITE_NAME,
-      locale: "ko_KR",
-      title: fullTitle,
-      description: preview.description,
-      images,
-    },
-    twitter: { card: "summary_large_image", title: fullTitle, description: preview.description, images },
-  };
+  return linkPageMetadata(preview.title, preview.description, images);
 }
 
 const ROOM_TITLE = "같이 만날 역 정해요";
@@ -141,28 +152,24 @@ const ROOM_DESCRIPTION =
  * 어떤 방인지 알 수 없게), 숨기기를 지키며(이름·출발역 없음), 요청마다 이미지를 그리지 않는다(Workers CPU). 색인하지 않는다.
  */
 export function roomLinkMetadata(): Metadata {
-  const fullTitle = `${ROOM_TITLE} | ${SITE_NAME}`;
-  // 사이트 기본 미리보기 이미지(빌드 때 만든 정적 PNG). `openGraph`를 하위 페이지가 정의하면 부모의 이미지가 사라지므로 직접 가리킨다.
-  const images = [
-    {
-      url: "/opengraph-image",
-      width: OG_WIDTH,
-      height: OG_HEIGHT,
-      alt: `${SITE_NAME}: 우리 어디서 만나야 덜 억울할까?`,
-    },
-  ];
+  return linkPageMetadata(ROOM_TITLE, ROOM_DESCRIPTION, DEFAULT_IMAGES);
+}
+
+/** 방 만들기(`/r/new`): 방 링크와 같은 문구·이미지이고 색인하지 않지만, 링크마다 다르지 않아 canonical·og:url은 자기 주소다. */
+export function newRoomMetadata(env: Env = siteEnv()): Metadata {
   return {
+    ...plainPageMetadata({ title: ROOM_TITLE, description: ROOM_DESCRIPTION, path: "/r/new" }, env),
     robots: { index: false, follow: false },
-    title: ROOM_TITLE,
-    description: ROOM_DESCRIPTION,
-    openGraph: {
-      type: "website",
-      siteName: SITE_NAME,
-      locale: "ko_KR",
-      title: fullTitle,
-      description: ROOM_DESCRIPTION,
-      images,
-    },
-    twitter: { card: "summary_large_image", title: fullTitle, description: ROOM_DESCRIPTION, images },
   };
+}
+
+/**
+ * 링크마다 다르지 않은 일반 페이지(`/privacy`, `/r/new`): canonical·og:url을 자기 주소로(레이아웃의 홈 주소를 물려받지 않게).
+ * 이미지는 사이트 기본 미리보기.
+ */
+export function plainPageMetadata(
+  { title, description, path }: { title: string; description: string; path: string },
+  env: Env = siteEnv(),
+): Metadata {
+  return { title, description, ...social({ title, description, path, images: DEFAULT_IMAGES }, env) };
 }

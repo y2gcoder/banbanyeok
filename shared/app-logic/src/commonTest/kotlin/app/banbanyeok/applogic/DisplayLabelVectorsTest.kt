@@ -20,7 +20,7 @@ class DisplayLabelVectorsTest {
 
     @Test
     fun vectorFileHasExpectedShape() {
-        assertEquals(1, file.getValue("formatVersion").jsonPrimitive.int)
+        assertEquals(2, file.getValue("formatVersion").jsonPrimitive.int)
         assertTrue(vectors.size >= 12, "벡터 수: ${vectors.size}")
         assertEquals(vectors.size, vectors.map { it.getValue("id").jsonPrimitive.content }.toSet().size, "id 중복")
     }
@@ -50,6 +50,7 @@ class DisplayLabelVectorsTest {
                                 .jsonPrimitive.content
                                 .uppercase(),
                         ),
+                        label.getValue("shortLabel").jsonPrimitive.content,
                     )
                 }
             assertEquals(expected, ParticipantLabels.of(people), id)

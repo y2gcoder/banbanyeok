@@ -162,6 +162,7 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
       originName: p.name,
       label: names[i] ?? "",
       labelKind: nicknames[i] ? ("name" as const) : ("ordinal" as const),
+      shortLabel: names[i] ?? "",
     })),
     baselineStationCode: baseline?.station.code ?? null,
     timeBasis: {

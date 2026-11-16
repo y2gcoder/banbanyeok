@@ -64,6 +64,8 @@ data class ParticipantDto(
     val label: String,
     /** `name` / `origin` / `ordinal`. */
     val labelKind: String,
+    /** 좁은 칸용 짧은 이름(출발역이면 "{출발역}", 그 밖에는 label과 같다). */
+    val shortLabel: String,
 )
 
 @Serializable

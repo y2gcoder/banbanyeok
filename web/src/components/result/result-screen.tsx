@@ -22,7 +22,7 @@ import { type ResultView, toResultView } from "@/lib/result/view-model";
 import { cn } from "@/lib/utils";
 import { OtherCandidateRow, TopCandidateCard } from "./candidate-card";
 import type { ChoiceContext } from "./directions";
-import { ModeTabs, modeLabel } from "./mode-tabs";
+import { ModeTabs } from "./mode-tabs";
 import { Notices } from "./notices";
 
 export type ResultVariant = "creator" | "received";
@@ -117,7 +117,7 @@ function WhoAmI({
 
 /**
  * 결과(화면 2)와 받은 링크(화면 4). 모드·"나는 누구?"는 URL 상태(nuqs)이고 결과는 서버가 계산한다.
- * 사람 이름은 서버 label만 쓴다. "(나)"는 받은 링크에서 고른 사람에게만 붙인다(만든 사람 화면에는 없다).
+ * 사람 이름은 서버 label·shortLabel만 쓴다. "(나)"는 받은 링크에서 고른 사람에게만 붙인다(만든 사람 화면에는 없다).
  */
 export function ResultScreen({
   initial,
@@ -144,7 +144,8 @@ export function ResultScreen({
   const view = useMemo(() => (data ? toResultView(data) : null), [data]);
   // 표시 이름은 모드와 무관하므로 모드를 바꾸는 동안 보이는 이전 결과의 이름을 그대로 써도 같다.
   // 첫 결과가 오기 전에는 이름을 모르니 "나는 누구?"와 배려 대상 고르기를 그리지 않는다.
-  const people = view?.people.map(({ index, name }) => ({ index, name })) ?? [];
+  // 알약(나는 누구?·배려 대상)은 좁은 칸이라 짧은 이름(shortLabel)을 쓴다.
+  const people = view?.people.map(({ index, shortName }) => ({ index, name: shortName })) ?? [];
 
   // 통계: 새 결과가 화면에 나올 때마다(모드를 바꿔 다시 받은 결과 포함) 한 번. 이전 결과를 자리표시로 보여 주는 동안은 세지 않는다.
   const viewedData = useRef<unknown>(null);
@@ -263,10 +264,7 @@ export function ResultScreen({
       {view && top ? (
         <div className={SIDE}>
           {variant === "creator" ? (
-            <ShareActions
-              path={sharePath(state)}
-              {...shareMessage(top, modeLabel(state.mode, favorName), data?.timeBasis)}
-            />
+            <ShareActions path={sharePath(state)} {...shareMessage(top, state.mode, favorName, data?.timeBasis)} />
           ) : (
             <Link
               href="/"

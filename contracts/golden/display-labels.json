@@ -1,6 +1,6 @@
 {
-  "formatVersion": 1,
-  "description": "참가자 표시 이름(label) 테스트 벡터. 규칙: contracts/data-format.md §8. 구현은 shared/app-logic ParticipantLabels 한 곳(서버가 응답에 넣고 웹·앱은 그대로 쓴다). 사람이 고친 규칙 파일이며 생성기가 없다.",
+  "formatVersion": 2,
+  "description": "참가자 표시 이름(label)과 짧은 이름(shortLabel) 테스트 벡터. 2판: shortLabel 추가. 규칙: contracts/data-format.md §8. 구현은 shared/app-logic ParticipantLabels 한 곳(서버가 응답에 넣고 웹·앱은 그대로 쓴다). 사람이 고친 규칙 파일이며 생성기가 없다.",
   "vectors": [
     {
       "id": "names_given",
@@ -19,11 +19,13 @@
       "expected": [
         {
           "label": "민수",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수"
         },
         {
           "label": "지연",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "지연"
         }
       ]
     },
@@ -44,11 +46,13 @@
       "expected": [
         {
           "label": "강남에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남"
         },
         {
           "label": "홍대입구에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "홍대입구"
         }
       ],
       "note": "이름이 없는 링크가 기본이다"
@@ -70,11 +74,13 @@
       "expected": [
         {
           "label": "강남에서 오는 분 1",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 1"
         },
         {
           "label": "강남에서 오는 분 2",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 2"
         }
       ]
     },
@@ -105,19 +111,23 @@
       "expected": [
         {
           "label": "강남에서 오는 분 1",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 1"
         },
         {
           "label": "홍대입구에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "홍대입구"
         },
         {
           "label": "강남에서 오는 분 2",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 2"
         },
         {
           "label": "강남에서 오는 분 3",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 3"
         }
       ]
     },
@@ -138,11 +148,13 @@
       "expected": [
         {
           "label": "민수",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수"
         },
         {
           "label": "강남에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남"
         }
       ],
       "note": "번호는 출발역 이름을 쓰는 사람끼리만 센다"
@@ -169,15 +181,18 @@
       "expected": [
         {
           "label": "신촌에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "신촌"
         },
         {
           "label": "지연",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "지연"
         },
         {
           "label": "잠실에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "잠실"
         }
       ]
     },
@@ -198,11 +213,13 @@
       "expected": [
         {
           "label": "서울역에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "서울역"
         },
         {
           "label": "사당에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "사당"
         }
       ],
       "note": "역 이름은 레지스트리의 표시 이름 그대로 쓴다"
@@ -224,11 +241,13 @@
       "expected": [
         {
           "label": "강남에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남"
         },
         {
           "label": "참가자 2",
-          "kind": "ordinal"
+          "kind": "ordinal",
+          "shortLabel": "참가자 2"
         }
       ],
       "note": "숨긴 사람의 출발역 이름은 표시 이름에 쓰지 않는다"
@@ -250,11 +269,13 @@
       "expected": [
         {
           "label": "강남에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남"
         },
         {
           "label": "참가자 2",
-          "kind": "ordinal"
+          "kind": "ordinal",
+          "shortLabel": "참가자 2"
         }
       ],
       "note": "숨긴 사람을 번호에 세면 같은 역에서 온다는 사실이 드러난다"
@@ -286,19 +307,23 @@
       "expected": [
         {
           "label": "강남에서 오는 분 1",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 1"
         },
         {
           "label": "참가자 2",
-          "kind": "ordinal"
+          "kind": "ordinal",
+          "shortLabel": "참가자 2"
         },
         {
           "label": "강남에서 오는 분 2",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 2"
         },
         {
           "label": "강남에서 오는 분 3",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남 3"
         }
       ]
     },
@@ -319,11 +344,13 @@
       "expected": [
         {
           "label": "민수",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수"
         },
         {
           "label": "홍대입구에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "홍대입구"
         }
       ]
     },
@@ -349,15 +376,18 @@
       "expected": [
         {
           "label": "참가자 1",
-          "kind": "ordinal"
+          "kind": "ordinal",
+          "shortLabel": "참가자 1"
         },
         {
           "label": "참가자 2",
-          "kind": "ordinal"
+          "kind": "ordinal",
+          "shortLabel": "참가자 2"
         },
         {
           "label": "참가자 3",
-          "kind": "ordinal"
+          "kind": "ordinal",
+          "shortLabel": "참가자 3"
         }
       ],
       "note": "순번은 방 안 순서(1부터)다"
@@ -379,11 +409,13 @@
       "expected": [
         {
           "label": "참가자 1",
-          "kind": "ordinal"
+          "kind": "ordinal",
+          "shortLabel": "참가자 1"
         },
         {
           "label": "강남에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "강남"
         }
       ],
       "note": "출발역 이름을 모르면 숨긴 것과 같이 다룬다"
@@ -405,11 +437,13 @@
       "expected": [
         {
           "label": "🎂🎂",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "🎂🎂"
         },
         {
           "label": "👩‍👩‍👧",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "👩‍👩‍👧"
         }
       ],
       "note": "별칭은 바꾸지 않는다(코드포인트 20자 검사는 입력 검증의 몫)"
@@ -436,15 +470,18 @@
       "expected": [
         {
           "label": "민수",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수"
         },
         {
           "label": "홍대입구에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "홍대입구"
         },
         {
           "label": "잠실에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "잠실"
         }
       ],
       "note": "공백만 있는 이름은 없는 것으로 본다"
@@ -466,11 +503,13 @@
       "expected": [
         {
           "label": "민수 1",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수 1"
         },
         {
           "label": "민수 2",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수 2"
         }
       ],
       "note": "같은 이름은 입력 순서대로 번호를 붙인다"
@@ -502,19 +541,23 @@
       "expected": [
         {
           "label": "민수 1",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수 1"
         },
         {
           "label": "민수에서 오는 분",
-          "kind": "origin"
+          "kind": "origin",
+          "shortLabel": "민수"
         },
         {
           "label": "지연",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "지연"
         },
         {
           "label": "민수 2",
-          "kind": "name"
+          "kind": "name",
+          "shortLabel": "민수 2"
         }
       ]
     }

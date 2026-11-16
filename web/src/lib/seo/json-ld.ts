@@ -1,11 +1,11 @@
 /**
  * 구조화 데이터(JSON-LD)는 빵부스러기(BreadcrumbList)만 쓴다. 후기·FAQ·평점 같은 근거 없는 마크업은 넣지 않는다.
  */
-import { absoluteUrl } from "./site";
+import { absoluteUrl, siteEnv } from "./site";
 
 type Env = Record<string, string | undefined>;
 
-export function breadcrumbJsonLd(items: readonly { name: string; path: string }[], env: Env = process.env) {
+export function breadcrumbJsonLd(items: readonly { name: string; path: string }[], env: Env = siteEnv()) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",

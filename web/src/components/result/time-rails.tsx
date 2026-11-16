@@ -2,15 +2,79 @@ import { personColor } from "@/components/common/person-color";
 import { formatMinutes, transferLabel } from "@/lib/display/minutes";
 import type { PersonTimeView } from "@/lib/result/view-model";
 
-/** 이름 아래 줄. 이름이 이미 "{역}에서 오는 분"이면 같은 말을 되풀이하지 않는다. */
-function originLine(person: PersonTimeView): string {
+/** 이름 옆 보조 줄. 이름이 출발역 이름이면 같은 말을 되풀이하지 않는다. */
+function originNote(person: PersonTimeView): string | null {
   if (!person.originName) return "출발역 비공개";
-  return person.labelKind === "origin" ? "" : `${person.originName}에서`;
+  return person.labelKind === "origin" ? null : `${person.originName}에서`;
 }
 
 /**
- * 사람별 시간. 각자의 노선이 만날 역(오른쪽 끝 고리)으로 들어오는 모습이며, 선 길이는 같은 카드의 최장 시간 기준이다.
- * 숫자는 표시 분 규칙(30초 올림)을 따른다.
+ * 눈금. 모든 사람의 트랙이 같은 눈금(0분 ~ `end`분)을 쓴다. 끝은 최장 시간을 눈금 간격으로 올린 값이라
+ * "가장 오래 걸리는 사람 = 끝"이 아니라 자처럼 읽힌다(31분 → 0·10·20·30·40분). 길면 간격을 넓혀 숫자가 겹치지 않게 한다.
+ */
+export function railScale(maxMinutes: number): { end: number; step: number } {
+  const step = maxMinutes <= 60 ? 10 : maxMinutes <= 120 ? 20 : 30;
+  return { end: Math.max(step, Math.ceil(maxMinutes / step) * step), step };
+}
+
+function percent(minutes: number, end: number): string {
+  return `${(Math.min(minutes, end) / end) * 100}%`;
+}
+
+function Ticks({ end, step }: { end: number; step: number }) {
+  const ticks: number[] = [];
+  for (let value = step; value < end; value += step) ticks.push(value);
+  return ticks.map((value) => (
+    <span
+      key={value}
+      className="absolute top-[3px] h-2 w-0.5 -translate-x-1/2 rounded-full bg-rule-strong"
+      style={{ left: percent(value, end) }}
+    />
+  ));
+}
+
+/** 한 사람의 트랙: 0분에서 시작하는 같은 길이의 줄 위에, 그 사람의 분까지 색 막대와 점. */
+function Track({ person, end, step }: { person: PersonTimeView; end: number; step: number }) {
+  const color = personColor(person.index);
+  const at = percent(person.minutes, end);
+  return (
+    <span aria-hidden="true" className="relative block h-3.5">
+      <span className="absolute inset-x-0 top-[5.5px] h-[3px] rounded-full bg-rule" />
+      <Ticks end={end} step={step} />
+      <span
+        className="absolute top-[4.5px] left-0 h-[5px] rounded-full"
+        style={{ width: at, backgroundColor: color }}
+      />
+      <span
+        className="absolute top-px size-3 -translate-x-1/2 rounded-full border-[3px] bg-surface"
+        style={{ left: at, borderColor: color }}
+      />
+    </span>
+  );
+}
+
+/** 트랙 아래 눈금 숫자. 트랙과 같은 가로 범위에 그린다. */
+function Axis({ end, step }: { end: number; step: number }) {
+  const values: number[] = [];
+  for (let value = 0; value <= end; value += step) values.push(value);
+  return (
+    <div aria-hidden="true" className="tabular relative h-4 text-[11px] leading-4 text-muted-foreground">
+      {values.map((value) => (
+        <span
+          key={value}
+          className={value === 0 ? "absolute left-0" : value === end ? "absolute right-0" : "absolute -translate-x-1/2"}
+          style={value === 0 || value === end ? undefined : { left: percent(value, end) }}
+        >
+          {value === end ? `${value}분` : value}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * 사람별 시간. 한 사람이 두 줄이다: 위 줄은 이름·환승·분, 아래 줄은 트랙. 트랙은 모든 사람이 카드 폭 전체로 시작·끝·길이가 같고,
+ * 맨 아래 눈금(0·10·20…분)이 기준이다(이름 길이와 무관, V1). 이름은 서버 짧은 이름(shortLabel). 숫자는 표시 분 규칙(30초 올림)을 따른다.
  */
 export function TimeRails({
   people,
@@ -25,48 +89,43 @@ export function TimeRails({
 }) {
   const ordered =
     meIndex === null ? people : [...people].sort((a, b) => Number(b.index === meIndex) - Number(a.index === meIndex));
+  const { end, step } = railScale(maxMinutes);
   return (
-    <ul className="flex flex-col gap-3.5">
-      {ordered.map((person) => {
-        const ratio = maxMinutes === 0 ? 1 : Math.max(person.minutes / maxMinutes, 0.06);
-        const isMe = person.index === meIndex;
-        return (
-          <li
-            key={person.index}
-            // 이름 칸은 이름 길이만큼, 다만 40%까지만(긴 이름은 말줄임). 막대가 너무 짧아지지 않게 한다.
-            className="grid grid-cols-[fit-content(40%)_1fr_auto] items-center gap-x-3 gap-y-0.5"
-          >
-            <span className="truncate text-[15px] font-bold text-ink">
-              {person.name}
-              {isMe ? <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span> : null}
-            </span>
-            <span aria-hidden="true" className="relative flex h-3 items-center">
-              <span className="absolute inset-x-0 h-[3px] rounded-full bg-rule" />
-              <span
-                className="relative h-[5px] rounded-full"
-                style={{ width: `${ratio * 100}%`, backgroundColor: personColor(person.index) }}
-              />
-              <span
-                className="relative -ml-1 size-3 shrink-0 rounded-full border-[3px] bg-surface"
-                style={{ borderColor: personColor(person.index) }}
-              />
-            </span>
-            <span
-              className={
-                size === "large"
-                  ? "tabular text-right text-[22px] leading-none font-extrabold tracking-tight text-ink"
-                  : "tabular text-right text-[17px] leading-none font-bold text-ink"
-              }
-            >
-              {formatMinutes(person.minutes)}
-            </span>
-            <span className="col-start-2 col-end-4 flex justify-between text-[13px] text-muted-foreground">
-              <span className="truncate">{originLine(person)}</span>
-              <span className="shrink-0">{transferLabel(person.transfers)}</span>
-            </span>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-3.5">
+        {ordered.map((person) => {
+          const note = originNote(person);
+          return (
+            <li key={person.index} className="flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+                  <span className="text-[15px] font-bold break-all text-ink">
+                    {person.shortName}
+                    {person.index === meIndex ? (
+                      <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
+                    ) : null}
+                  </span>
+                  <span className="text-[13px] text-muted-foreground">
+                    {note ? `${note} · ` : ""}
+                    {transferLabel(person.transfers)}
+                  </span>
+                </p>
+                <span
+                  className={
+                    size === "large"
+                      ? "tabular shrink-0 text-[22px] leading-none font-extrabold tracking-tight text-ink"
+                      : "tabular shrink-0 text-[17px] leading-none font-bold text-ink"
+                  }
+                >
+                  {formatMinutes(person.minutes)}
+                </span>
+              </div>
+              <Track person={person} end={end} step={step} />
+            </li>
+          );
+        })}
+      </ul>
+      <Axis end={end} step={step} />
+    </div>
   );
 }

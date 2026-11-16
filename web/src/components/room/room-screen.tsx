@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { modeLabel } from "@/components/result/mode-tabs";
 import { ShareActions } from "@/components/share/share-actions";
 import { track } from "@/lib/analytics";
 import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
@@ -57,10 +56,18 @@ function rememberedValue(): ParticipantFormValue {
   return me && station?.supported ? { nickname: me.nickname, station, hidden: false } : emptyValue();
 }
 
+/** 방 설정 요약의 기준: "공평하게" / "빨리 만나기" / "{짧은 이름} 쪽으로"(배려 대상을 아직 모르면 "누구 쪽으로"). */
+function modeText(room: Room): string {
+  if (room.mode === "fair") return "공평하게";
+  if (room.mode === "fast") return "빨리 만나기";
+  const target = room.participants.find((p) => p.participantId === room.favorTarget);
+  // shortLabel을 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로 쓴다.
+  const name = target ? ((target.shortLabel as string | undefined) ?? target.label) : "누구";
+  return `${name} 쪽으로`;
+}
+
 function summary(room: Room): string {
-  const parts = [
-    modeLabel(room.mode, room.participants.find((p) => p.participantId === room.favorTarget)?.label ?? null),
-  ];
+  const parts = [modeText(room)];
   if (room.meetingDate || room.meetingTime) {
     const when = [room.meetingDate ? formatMeetingDate(room.meetingDate) : null, room.meetingTime ?? null];
     parts.push(`약속 ${when.filter(Boolean).join(" ")}`);

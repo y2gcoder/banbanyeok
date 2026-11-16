@@ -4,6 +4,7 @@
 #   REDIRECT_FROM      공백으로 구분한 주소들: BASE_URL로 301 이동해야 한다(선택)
 #   SERVER_CONNECTED   1이면 /api/healthz가 200 ok여야 한다. 0이면 503 UPSTREAM_NOT_CONFIGURED여야 한다
 #   SITE_INDEXABLE     1이면 robots.txt가 sitemap을 안내해야 하고, 0이면 전체 차단이어야 한다
+#   SITE_URL           정식 주소(선택). 있으면 /s의 og:image가 이 주소로 시작하고 그 주소가 200 image/png여야 한다
 # 새 도메인·인증서는 몇 분 걸릴 수 있어 첫 요청은 재시도한다.
 # /api/v1/* 쓰기 요청(POST·DELETE)은 브라우저처럼 `Origin: <BASE_URL의 출처>`를 붙여 보낸다. 브라우저는 같은 출처 POST에도 Origin을 붙이고
 # 서버(CORS)는 허용되지 않은 Origin을 403으로 거절하므로, 붙이지 않으면 그 실패를 놓친다(B1). 서버가 연결된 배포에서는 스모크가 방을 하나
@@ -219,6 +220,17 @@ if [ "${SERVER_CONNECTED:-0}" = "1" ] && [ -n "${pair_path:-}" ]; then
   if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "동적 OG /s/og"; else bad "동적 OG /s/og status=$status"; fi
   fetch "$BASE_URL/s?v=1&o=$a.$b&m=f"
   if [ "$status" = "200" ] && grep -q 'og:image' <<<"$body" && grep -q '/s/og?' <<<"$body"; then pass "/s 미리보기 메타(og:image → /s/og)"; else bad "/s 미리보기 메타 status=$status"; fi
+  # og:image는 메신저가 그대로 내려받는 절대 주소다. 요청 때 렌더되는 /s에서도 정식 주소(SITE_URL)여야 한다(V1: localhost로 나가 카카오 그림이 비었다).
+  og_image="$(grep -oE '<meta property="og:image" content="[^"]*"' <<<"$body" | first | sed -E 's#.*content="##; s#"$##; s#&amp;#\&#g')"
+  if [ -z "${SITE_URL:-}" ]; then
+    echo "warn /s og:image 정식 주소 검사 건너뜀(SITE_URL 없음): ${og_image:-없음}"
+  elif [[ "$og_image" == "${SITE_URL%/}/s/og?"* ]]; then
+    pass "/s og:image가 정식 주소(${SITE_URL%/}/s/og?…)"
+    fetch "$og_image"
+    if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "/s og:image 주소 → 200 image/png"; else bad "/s og:image 주소 status=$status"; fi
+  else
+    bad "/s og:image가 정식 주소가 아님: ${og_image:-없음} (기대: ${SITE_URL%/}/s/og?…)"
+  fi
 fi
 
 # 정식 주소로의 리디렉트

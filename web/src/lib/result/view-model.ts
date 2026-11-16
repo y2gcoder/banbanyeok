@@ -1,6 +1,7 @@
 /**
  * 서버 결과(Result)를 화면용 값으로 바꾼다. 계산(순위)은 하지 않고 표시 규칙만 적용한다.
- * 사람 이름은 서버가 만든 `participants[].label`을 그대로 쓴다(contracts/data-format.md §8). 웹은 이름 규칙을 다시 만들지 않는다.
+ * 사람 이름은 서버가 만든 `participants[].label`·`shortLabel`을 그대로 쓴다(contracts/data-format.md §8). 웹은 이름 규칙을 다시 만들지 않는다.
+ * `label`(name)은 문장에, `shortLabel`(shortName)은 좁은 칸(시간 행·알약·미리보기·공유 문구의 시간 나열)에 쓴다.
  */
 import type { Mode, RecommendResult } from "@/lib/api/types";
 import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "@/lib/display/minutes";
@@ -12,6 +13,8 @@ type PersonView = {
   index: number;
   /** 서버가 만든 표시 이름(label). "(나)" 같은 보는 사람 표시는 화면이 따로 붙인다. */
   name: string;
+  /** 서버가 만든 짧은 이름(shortLabel). 출발역이면 "홍대입구", 그 밖에는 name과 같다. */
+  shortName: string;
   labelKind: RecommendResult["participants"][number]["labelKind"];
   originName: string | null;
   originCode: string | null;
@@ -58,6 +61,8 @@ export function toResultView(result: RecommendResult): ResultView {
   const people: PersonView[] = result.participants.map((p, index) => ({
     index,
     name: p.label,
+    // shortLabel을 모르는 옛 서버(웹이 먼저 배포된 사이)는 보내지 않는다. 그동안은 label로 그린다.
+    shortName: (p.shortLabel as string | undefined) ?? p.label,
     labelKind: p.labelKind,
     originName: p.originName ?? null,
     originCode: p.originCode ?? null,

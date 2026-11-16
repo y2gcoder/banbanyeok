@@ -48,6 +48,7 @@ fun ParticipantView.toDto(
     isSelf = isSelf,
     label = label.text,
     labelKind = label.kind.name.lowercase(),
+    shortLabel = label.short,
 )
 
 /**
@@ -154,6 +155,7 @@ fun Recommendation.toStatelessDto(
                 isSelf = false,
                 label = label.text,
                 labelKind = label.kind.name.lowercase(),
+                shortLabel = label.short,
             )
         },
     )

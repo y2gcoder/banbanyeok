@@ -8,6 +8,7 @@ const person = (patch: Partial<RoomParticipant> & { participantId: string }): Ro
   originName: "강남",
   label: "강남에서 오는 분",
   labelKind: "origin",
+  shortLabel: "강남",
   isHost: false,
   isSelf: false,
   ...patch,
