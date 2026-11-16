@@ -327,6 +327,16 @@ export interface components {
              * @enum {string}
              */
             labelKind: "name" | "origin" | "ordinal";
+            /**
+             * @description 좁은 칸(시간 행·사람 선택 알약·미리보기 그림·미리보기 설명·공유 문구)에 쓰는 짧은 이름. **서버가 만들고 클라이언트는 그대로
+             *     쓴다**(contracts/data-format.md §8). `labelKind`가 `origin`이면 "에서 오는 분"을 뺀 "{출발역 이름}"(번호는 그대로),
+             *     그 밖에는 `label`과 같다. 문장(추천 이유 등)에는 `label`을 쓴다.
+             * @example 민수
+             * @example 강남
+             * @example 강남 2
+             * @example 참가자 3
+             */
+            shortLabel: string;
             hidden: boolean;
             /** @description 숨긴 참가자는 요청자 본인이 아니면 `null` */
             originCode: components["schemas"]["StationCode"] | null;

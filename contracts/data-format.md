@@ -213,24 +213,26 @@ manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.
 
 벡터 JSON 형식(2판): `encode[]`는 `{id, input:{origins, mode, favorIndex, nicknames, timeSlot}, expectedQuery}`, `decode[]`는 `{id, query, expected:{origins, mode, favorIndex, nicknames, timeSlot}}` 또는 `{id, query, expectedError}`. `nicknames`는 `null`(별칭 없음) 또는 길이가 `origins`와 같은 배열(빈 별칭은 `null`).
 
-## 8. 참가자 표시 이름 (`label`)
+## 8. 참가자 표시 이름 (`label`, `shortLabel`)
 
-화면과 추천 이유 문장에서 사람을 부르는 이름이다. **서버가 만들어** 응답의 `participants[].label`·`labelKind`에 넣고, 웹·앱은 다시 만들지 않고 그대로 쓴다. 구현은 `shared/app-logic`의 `ParticipantLabels` 한 곳이며(파이프라인의 SEO 문장도 같은 구현을 쓴다), 벡터 [`golden/display-labels.json`](golden/display-labels.json)이 기준이다.
+화면과 추천 이유 문장에서 사람을 부르는 이름이다. **서버가 만들어** 응답의 `participants[].label`·`labelKind`·`shortLabel`에 넣고, 웹·앱은 다시 만들지 않고 그대로 쓴다. 구현은 `shared/app-logic`의 `ParticipantLabels` 한 곳이며(파이프라인의 SEO 문장도 같은 구현을 쓴다), 벡터 [`golden/display-labels.json`](golden/display-labels.json)이 기준이다.
 
 참가자 목록의 순서(`/recommend`는 입력 순서, 방은 참여 순서)대로 한 사람씩 정한다.
 
-| 순서 | 조건 | `label` | `labelKind` |
-|---|---|---|---|
-| 1 | 사람이 이름(별칭)을 넣었다(앞뒤 공백을 빼고 비어 있지 않음) | 그 이름(앞뒤 공백 제거, 나머지는 그대로. 이모지 포함). 같은 이름이면 입력 순서대로 ` 1`, ` 2`, …를 붙인다 | `name` |
-| 2 | 이름이 없고 출발역이 보인다 | `{출발역 이름}에서 오는 분`. 이 규칙을 쓰는 사람 중 같은 출발역 이름이 둘 이상이면 입력 순서대로 ` 1`, ` 2`, …를 붙인다 | `origin` |
-| 3 | 이름이 없고 출발역을 숨겼다(또는 출발역 이름을 모른다) | `참가자 {목록 안 순번}`(1부터) | `ordinal` |
+| 순서 | 조건 | `label` | `labelKind` | `shortLabel` |
+|---|---|---|---|---|
+| 1 | 사람이 이름(별칭)을 넣었다(앞뒤 공백을 빼고 비어 있지 않음) | 그 이름(앞뒤 공백 제거, 나머지는 그대로. 이모지 포함). 같은 이름이면 입력 순서대로 ` 1`, ` 2`, …를 붙인다 | `name` | `label`과 같다 |
+| 2 | 이름이 없고 출발역이 보인다 | `{출발역 이름}에서 오는 분`. 이 규칙을 쓰는 사람 중 같은 출발역 이름이 둘 이상이면 입력 순서대로 ` 1`, ` 2`, …를 붙인다 | `origin` | `{출발역 이름}`(번호는 같게, 예 `강남 2`) |
+| 3 | 이름이 없고 출발역을 숨겼다(또는 출발역 이름을 모른다) | `참가자 {목록 안 순번}`(1부터) | `ordinal` | `label`과 같다 |
+
+- **어디에 무엇을**: `label`은 문장(추천 이유, 극단 상황 문구)에, `shortLabel`은 좁은 칸(결과 카드의 시간 행, 배려할 사람을 고르는 알약, 미리보기 그림, 미리보기 설명·공유 문구의 시간 나열)에 쓴다. 입력한 것이 출발역이라 칸 안의 "홍대입구"는 맥락상 사람으로 읽힌다(V1, docs/setup/v1-notes.md).
 
 - **번호 세기**: 2번 규칙의 번호는 2번 규칙을 쓰는 사람끼리만 센다. 이름을 넣은 사람과 숨긴 사람은 세지 않는다(숨긴 사람이 같은 역에서 온다는 사실이 번호로 드러나지 않게).
 - **보는 사람과 무관**: 같은 방이면 누가 보든 같은 값이다. 출발역을 숨긴 사람은 본인이 볼 때도 `참가자 N`이다.
 - **쓰지 않는 것**: 익명 사용자 ID, 참가자 ID, 토큰 같은 내부 식별자(여러 방에 걸쳐 같은 사람을 이어 볼 수 있게 되므로). "나/너/친구1" 같은 시점 표현. 보는 사람 표시 "(나)"는 클라이언트가 자기 화면에서만 붙인다.
 - 이름 번호는 앞뒤 공백 제거 후 같은 이름끼리만 센다. 숨긴 사람도 이름을 넣었으면 포함하고, 출발역 번호와는 별도로 센다. 입력 화면의 "나/친구1" 같은 문구는 입력 칸 안내(placeholder)일 뿐 이름이 아니다.
 
-벡터 JSON 형식: `vectors[]`는 `{id, people:[{name, originName, hidden}], expected:[{label, kind}], note?}`. `name`이 `null`이면 이름 없음, `hidden=true`이면 `originName`을 알아도 쓰지 않는다.
+벡터 JSON 형식(2판): `vectors[]`는 `{id, people:[{name, originName, hidden}], expected:[{label, kind, shortLabel}], note?}`. `name`이 `null`이면 이름 없음, `hidden=true`이면 `originName`을 알아도 쓰지 않는다.
 
 ## 9. 구분: 요일 유형 × 시간대 ("언제 만나요?")
 

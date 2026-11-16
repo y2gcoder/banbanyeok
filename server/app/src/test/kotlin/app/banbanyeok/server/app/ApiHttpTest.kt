@@ -211,6 +211,9 @@ class ApiHttpTest :
                         listOf("${originName}에서 오는 분 1", "${originName}에서 오는 분 2", "참가자 3", "지연")
                     participants.map { it.jsonObject["labelKind"]!!.jsonPrimitive.content } shouldBe
                         listOf("origin", "origin", "ordinal", "name")
+                    // 짧은 이름: 출발역이면 "{역} N", 숨긴 사람은 출발역 없이 "참가자 N"(숨긴 역이 드러나지 않는다)
+                    participants.map { it.jsonObject["shortLabel"]!!.jsonPrimitive.content } shouldBe
+                        listOf("$originName 1", "$originName 2", "참가자 3", "지연")
                 }
             }
 
@@ -335,6 +338,7 @@ class ApiHttpTest :
                     // 본인이 숨겼으면 본인에게도 "참가자 N"(순번은 방 안 순서)
                     updated.bodyAsText() shouldContain "\"label\":\"참가자 2\""
                     updated.bodyAsText() shouldContain "\"labelKind\":\"ordinal\""
+                    updated.bodyAsText() shouldContain "\"shortLabel\":\"참가자 2\""
 
                     coEvery { services.rooms.removeParticipant(ROOM_ID, "p00002", "part-tok") } returns Unit
                     val removed = client.json(HttpMethod.Delete, path, token = "part-tok")
