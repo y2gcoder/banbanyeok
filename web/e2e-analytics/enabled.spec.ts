@@ -532,7 +532,7 @@ test("방: 만들기·참여·만났나 이벤트는 동의한 뒤에만, 방 ID
 
   // 동의 전에 방을 만들고 참여해도 요청 0건
   await page.goto("/r/new");
-  await page.getByRole("textbox", { name: "내 이름(선택)" }).fill("민수");
+  await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
   await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
   await page.getByRole("button", { name: "방 만들기" }).click();
   await expect(page).toHaveURL(new RegExp(`/r/${FAKE_ROOM}$`));
