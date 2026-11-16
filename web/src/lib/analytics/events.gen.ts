@@ -112,6 +112,11 @@ export interface EventProperties {
     days_since_result: number;
     room_hash?: string;
   };
+  people_limit_hit: {
+    surface: "home" | "room_full";
+    attempted?: number;
+    room_hash?: string;
+  };
   analytics_consent_changed: {
     granted: boolean;
   };
@@ -187,6 +192,11 @@ export const EVENT_SPECS = {
     outcome: { type: "enum", required: true, values: ["top1", "top3", "other", "none"] },
     meeting_station_code: { type: "string", required: false },
     days_since_result: { type: "integer", required: true, min: 0 },
+    room_hash: { type: "string", required: false },
+  },
+  people_limit_hit: {
+    surface: { type: "enum", required: true, values: ["home", "room_full"] },
+    attempted: { type: "integer", required: false, min: 5, max: 6 },
     room_hash: { type: "string", required: false },
   },
   analytics_consent_changed: {

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShareActions } from "@/components/share/share-actions";
 import { roomHashProperty, secondsSinceRoomCreated, track } from "@/lib/analytics";
 import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
@@ -238,6 +238,16 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   });
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
+
+  // 정원이 찬 방에 들어오려던 사람(참여하지 않았고 방장도 아님): 인원 상한 수요로 한 번만 센다. 방장이 예상 인원을 4로 고르는 것은 세지 않는다.
+  const cannotJoinFull = room !== undefined && !record?.hostToken && joinState(room) === "full";
+  const fullReported = useRef(false);
+  const roomHash = room?.roomHash;
+  useEffect(() => {
+    if (!cannotJoinFull || fullReported.current) return;
+    fullReported.current = true;
+    track("people_limit_hit", { surface: "room_full", ...roomHashProperty({ roomId, roomHash }) });
+  }, [cannotJoinFull, roomId, roomHash]);
 
   if (record === undefined || (query.isPending && !room)) return <RoomLoading />;
   if (gone) return <RoomGone />;

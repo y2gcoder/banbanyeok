@@ -2,7 +2,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { track } from "@/lib/analytics";
 import { HomeForm } from "./home-form";
+
+vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
@@ -10,6 +13,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 describe("입력 화면", () => {
   beforeEach(() => {
     push.mockReset();
+    vi.mocked(track).mockClear();
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve(new Response("ok"))),
@@ -80,8 +84,57 @@ describe("입력 화면", () => {
     await user.click(screen.getByRole("button", { name: /한 명 더/ }));
     await user.click(screen.getByRole("button", { name: /한 명 더/ }));
     expect(screen.getAllByRole("combobox")).toHaveLength(4);
+    // 4명이 차면 '한 명 더'는 사라지고, 같은 자리에 눈에 덜 띄는 안내 버튼이 온다.
     expect(screen.queryByRole("button", { name: /한 명 더/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "4명까지 돼요 · 더 필요해요?" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "친구2 빼기" }));
     expect(screen.getAllByRole("combobox")).toHaveLength(3);
+    expect(screen.queryByRole("button", { name: /더 필요해요/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /한 명 더/ })).toBeInTheDocument();
+  });
+
+  describe("인원 상한(4명) 수요 측정", () => {
+    const fillToLimit = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.click(screen.getByRole("button", { name: /한 명 더/ }));
+      await user.click(screen.getByRole("button", { name: /한 명 더/ }));
+    };
+
+    it("4명이 아니면 안내 버튼이 없고, 4명이 차기만 해서는 아무것도 보내지 않는다", async () => {
+      const user = userEvent.setup();
+      render(<HomeForm />);
+      expect(screen.queryByRole("button", { name: /더 필요해요/ })).toBeNull();
+      await fillToLimit(user);
+      expect(screen.queryByText(/지금은 4명까지예요/)).toBeNull();
+      expect(track).not.toHaveBeenCalled();
+    });
+
+    it("안내 버튼은 터치 영역 44px 이상이고, 누르면 안내만 보이며 people_limit_hit(home, 5)을 한 번 보낸다", async () => {
+      const user = userEvent.setup();
+      render(<HomeForm />);
+      await fillToLimit(user);
+      const button = screen.getByRole("button", { name: "4명까지 돼요 · 더 필요해요?" });
+      expect(button).toHaveClass("min-h-11");
+      expect(button).toHaveAttribute("aria-expanded", "false");
+
+      await user.click(button);
+      expect(screen.getByRole("status")).toHaveTextContent("지금은 4명까지예요. 더 필요하다는 의견을 모으고 있어요.");
+      expect(button).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getAllByRole("combobox")).toHaveLength(4); // 줄은 늘지 않는다
+      expect(push).not.toHaveBeenCalled();
+      expect(track).toHaveBeenCalledTimes(1);
+      expect(track).toHaveBeenCalledWith("people_limit_hit", { surface: "home", attempted: 5 });
+    });
+
+    it("같은 화면에서 여러 번 눌러도(줄을 뺐다 다시 채운 뒤에도) 한 번만 보낸다", async () => {
+      const user = userEvent.setup();
+      render(<HomeForm />);
+      await fillToLimit(user);
+      await user.click(screen.getByRole("button", { name: /더 필요해요/ }));
+      await user.click(screen.getByRole("button", { name: /더 필요해요/ }));
+      await user.click(screen.getByRole("button", { name: "친구2 빼기" }));
+      await user.click(screen.getByRole("button", { name: /한 명 더/ }));
+      await user.click(screen.getByRole("button", { name: /더 필요해요/ }));
+      expect(track).toHaveBeenCalledTimes(1);
+    });
   });
 });

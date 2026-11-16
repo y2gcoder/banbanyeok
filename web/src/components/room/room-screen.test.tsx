@@ -3,12 +3,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { track } from "@/lib/analytics";
 import * as api from "@/lib/api/rooms";
 import type { Room } from "@/lib/api/types";
 import { RoomScreen } from "./room-screen";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/lib/api/rooms");
+vi.mock("@/lib/analytics", async (importOriginal) => ({ ...(await importOriginal<object>()), track: vi.fn() }));
 
 const ROOM = "qt7yvmsht3";
 let members: { id: string; token: string }[] = [];
@@ -72,6 +74,7 @@ async function joinAsFriend(user: ReturnType<typeof userEvent.setup>) {
 }
 
 beforeEach(() => {
+  vi.mocked(track).mockClear();
   window.localStorage.clear();
   members = [];
   tokenSeq = 0;
@@ -223,5 +226,42 @@ describe("방 화면", () => {
     renderScreen();
     expect(await screen.findByText("(나)")).toBeInTheDocument();
     expect(window.localStorage.getItem(`bby.room.${ROOM}`)).toContain("host-tok");
+  });
+
+  describe("인원 상한(4명) 수요 측정", () => {
+    const HASH = "0123456789abcdef";
+    const fullRoom = () => {
+      members = [1, 2, 3].map((n) => ({ id: `m${n}`, token: `other-${n}` }));
+      vi.mocked(api.getRoom).mockImplementation(async (_id, token) => ({ ...roomFor(token), roomHash: HASH }));
+    };
+
+    it("정원이 찬 방을 연 사람은 안내를 보고, people_limit_hit(room_full, room_hash)을 한 번만 보낸다", async () => {
+      fullRoom();
+      const { client } = renderScreen();
+      expect(await screen.findByRole("heading", { name: "방이 가득 찼어요" })).toBeInTheDocument();
+      expect(track).toHaveBeenCalledTimes(1);
+      expect(track).toHaveBeenCalledWith("people_limit_hit", { surface: "room_full", room_hash: HASH });
+      // 다시 불러와도 같은 화면에서는 더 보내지 않는다.
+      await client.invalidateQueries({ queryKey: ["room", ROOM] });
+      await screen.findByRole("heading", { name: "방이 가득 찼어요" });
+      expect(track).toHaveBeenCalledTimes(1);
+    });
+
+    it("아직 자리가 있어 들어올 수 있는 방에서는 보내지 않는다", async () => {
+      renderScreen();
+      await screen.findByRole("heading", { name: "나도 출발역 넣기" });
+      expect(track).not.toHaveBeenCalledWith("people_limit_hit", expect.anything());
+    });
+
+    it("방장이 예상 인원을 4로 정한 방(자리가 남음)이나, 방장 기기로 연 가득 찬 방은 세지 않는다", async () => {
+      fullRoom();
+      window.localStorage.setItem(
+        `bby.room.${ROOM}`,
+        JSON.stringify({ v: 1, hostToken: "host-tok", expectedCount: 4, keepUntil: "2999-01-01T00:00:00Z" }),
+      );
+      renderScreen();
+      await screen.findByRole("heading", { name: "방이 가득 찼어요" });
+      expect(track).not.toHaveBeenCalledWith("people_limit_hit", expect.anything());
+    });
   });
 });

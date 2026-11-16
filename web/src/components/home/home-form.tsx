@@ -28,6 +28,9 @@ const INPUT_PLACEHOLDERS = ["나", "친구1", "친구2", "친구3"] as const;
 
 type Row = { key: number; nickname: string; station: Station | null; favored?: boolean };
 
+const LIMIT_BUTTON = `${MAX_PEOPLE}명까지 돼요 · 더 필요해요?`;
+const LIMIT_NOTE = `지금은 ${MAX_PEOPLE}명까지예요. 더 필요하다는 의견을 모으고 있어요.`;
+
 const emptyRow = (key: number): Row => ({ key, nickname: "", station: null });
 // 줄 키는 서버·클라이언트 렌더에서 같아야 한다(수화 일치). 새 줄은 지금 가장 큰 키 + 1.
 /** 미리 채울 역으로 줄을 만든다(최소 인원까지는 빈 줄로 채운다). */
@@ -50,6 +53,9 @@ export function HomeForm() {
   const [slotIsNow, setSlotIsNow] = useState(false);
   // 입력 화면에는 모드를 고르는 곳이 없다. 결과에서 "다시 입력"으로 돌아왔을 때 그 모드(와 배려하던 사람)를 이어 가려고만 들고 있다.
   const [mode, setMode] = useState<Mode>("fair");
+  // 인원 상한 안내: 같은 화면에서 여러 번 눌러도 통계는 한 번만 보낸다.
+  const [limitNoteShown, setLimitNoteShown] = useState(false);
+  const limitReported = useRef(false);
 
   useEffect(() => {
     startedAt.current = performance.now();
@@ -85,6 +91,13 @@ export function HomeForm() {
   const update = (key: number, patch: Partial<Row>) => {
     setError(null);
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  };
+
+  const wantMorePeople = () => {
+    setLimitNoteShown(true);
+    if (limitReported.current) return;
+    limitReported.current = true;
+    track("people_limit_hit", { surface: "home", attempted: MAX_PEOPLE + 1 });
   };
 
   const submit = (event: FormEvent) => {
@@ -172,7 +185,29 @@ export function HomeForm() {
         >
           <PlusIcon className="size-4" aria-hidden="true" />한 명 더 (최대 {MAX_PEOPLE}명)
         </button>
-      ) : null}
+      ) : (
+        // 4명이 차도 자리를 비우지 않는다: 더 넣으려던 사람이 있었는지(인원 상한 수요)를 한 번 센다. 눈에 덜 띄게 둔다.
+        <div className="ml-8 flex flex-col items-start">
+          <button
+            type="button"
+            onClick={wantMorePeople}
+            aria-expanded={limitNoteShown}
+            aria-controls={`${formId}-limit-note`}
+            className="inline-flex min-h-11 w-fit items-center rounded-md px-1 text-[14px] text-muted-foreground underline-offset-4 hover:text-ink hover:underline"
+          >
+            {LIMIT_BUTTON}
+          </button>
+          {limitNoteShown ? (
+            <p
+              id={`${formId}-limit-note`}
+              role="status"
+              className="px-1 text-[13px] leading-snug text-muted-foreground"
+            >
+              {LIMIT_NOTE}
+            </p>
+          ) : null}
+        </div>
+      )}
 
       <WhenPicker
         id={`${formId}-when`}
