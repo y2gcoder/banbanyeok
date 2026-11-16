@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import * as api from "@/lib/api/rooms";
 import type { Room } from "@/lib/api/types";
@@ -47,8 +47,9 @@ const room: Room = {
   ],
 };
 
-function renderResult(target: Room, onRoomGone: () => void = () => {}) {
-  vi.mocked(api.getRoomResult).mockImplementation(() => new Promise(() => {}));
+/** 결과 응답은 기본이 대기(결과 없음). 오류를 주려면 `reject`에 넣는다. */
+function renderResult(target: Room, onRoomGone: () => void = () => {}, reject?: Error) {
+  vi.mocked(api.getRoomResult).mockImplementation(() => (reject ? Promise.reject(reject) : new Promise(() => {})));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -86,27 +87,20 @@ describe("방 결과의 배려 대상 알약", () => {
 });
 
 describe("방 결과가 방 없음을 받으면", () => {
-  it("방 화면에 알린다(방이 지워진 것이라 다시 시도는 두지 않는다)", async () => {
+  it("방 화면에 알리고, 되살릴 수 없으므로 오류 카드와 다시 시도는 그리지 않는다", async () => {
     const { ApiRequestError } = await import("@/lib/api/client");
     const onRoomGone = vi.fn();
-    renderResult(room, onRoomGone);
-    // renderResult가 걸어 둔 대기 응답을 404로 바꾼 뒤 다시 그린다.
-    cleanup();
-    vi.mocked(api.getRoomResult).mockRejectedValue(new ApiRequestError(404, "ROOM_NOT_FOUND", "없음"));
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <RoomResult
-          roomId={room.roomId}
-          room={room}
-          participantToken={null}
-          participantId={null}
-          isHost={false}
-          onRoomGone={onRoomGone}
-          onResultSeen={() => {}}
-        />
-      </QueryClientProvider>,
-    );
+    renderResult(room, onRoomGone, new ApiRequestError(404, "ROOM_NOT_FOUND", "없음"));
     await waitFor(() => expect(onRoomGone).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다시 시도" })).not.toBeInTheDocument();
+  });
+
+  it("방이 아닌 다른 404(참여자 없음)는 알리지 않고 오류 카드와 다시 시도를 보인다", async () => {
+    const { ApiRequestError } = await import("@/lib/api/client");
+    const onRoomGone = vi.fn();
+    renderResult(room, onRoomGone, new ApiRequestError(404, "PARTICIPANT_NOT_FOUND", "없음"));
+    expect(await screen.findByRole("button", { name: "다시 시도" })).toBeInTheDocument();
+    expect(onRoomGone).not.toHaveBeenCalled();
   });
 });

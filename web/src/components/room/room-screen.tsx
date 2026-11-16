@@ -105,13 +105,19 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   useEffect(() => {
     // 방 조회는 이 효과 다음 렌더에서 바로 나간다(그 요청이 서버를 깨운다). 따로 미리 깨우지 않는다.
     setRecord(loadRoomRecord(roomId));
+    setResultGone(false);
     setJoinValue(rememberedValue());
     setStorable(canStoreRoomTokens());
   }, [roomId]);
 
   const token = record?.participantToken ?? null;
   const participantId = record?.participantId ?? null;
-  const query = useQuery({ ...roomQueryOptions(roomId, token, participantId), enabled: record !== undefined });
+  // 방이 없다는 답이 오면 되살릴 수 없으므로 더는 다시 불러오지 않는다. 방 쿼리 자신의 404는 queries.ts가 폴링·포커스 재요청을
+  // 멈추고, 결과 쿼리가 먼저 받은 404는 여기서 방 쿼리를 끈다.
+  const query = useQuery({
+    ...roomQueryOptions(roomId, token, participantId),
+    enabled: record !== undefined && !resultGone,
+  });
   const room = query.data;
   // TanStack은 다시 불러오기가 실패해도 이전 data를 유지한다. 방이 없다는 답은 이전 화면을 남기지 않고 곧바로 안내로 바꾼다.
   const gone = resultGone || (query.isError && isRoomGone(query.error));
@@ -173,7 +179,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       refresh();
     },
     onError: (error) => {
-      if (isTokenRejected(error)) refresh();
+      if (isTokenRejected(error) || isRoomGone(error)) refresh();
     },
   });
 
@@ -414,7 +420,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         ) : null}
 
         <p className="text-center text-xs text-muted-foreground">
-          방은 마지막 변경 후 7일이 지나거나 만든 지 30일이 지나면 사라져요.
+          약속일을 정했다면 약속 다음 날, 아니면 마지막 변경 후 7일 뒤에 방이 사라져요(만든 뒤 최대 30일).
         </p>
       </div>
     </RoomShell>

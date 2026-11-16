@@ -81,8 +81,7 @@ export function RoomGone() {
       <section role="alert" className="flex flex-col gap-3 rounded-2xl border border-rule bg-surface p-5">
         <h1 className="text-[22px] font-extrabold text-ink">찾을 수 없는 방이에요</h1>
         <p className="text-[15px] text-ink-soft">
-          링크가 잘못됐거나, 방장이 방을 지웠거나, 기간이 끝나 사라진 방이에요. 방은 마지막 변경 후 7일이 지나면
-          사라져요.
+          링크가 잘못됐거나, 방장이 방을 지웠거나, 기간이 끝나 사라진 방이에요.
         </p>
         <div className="flex flex-col gap-2 pt-1">
           <Link

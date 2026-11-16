@@ -6,10 +6,12 @@ import { ChipText, ChoiceChips, chipClass } from "@/components/when/when-picker"
 import {
   dayAfter,
   earlyMorningNote,
+  formatMeetingDate,
   formatMeetingDay,
   MAX_MEETING_DAYS,
   todayInSeoul,
   upcomingSaturday,
+  weekdayOf,
 } from "@/lib/room/dates";
 import { cn } from "@/lib/utils";
 import {
@@ -22,7 +24,7 @@ import {
   slotLabel,
 } from "@/lib/when/time-slot";
 
-/** 날짜 칩: 오늘 · 내일 · 이번 토요일 · 날짜 고르기(달력). 같은 날짜라도 누른 칩이 골라져 보이게 어느 칩인지 함께 둔다. */
+/** 날짜 칩: 오늘 · 내일 · 이번 토요일 · 날짜 선택(달력). 같은 날짜라도 누른 칩이 골라져 보이게 어느 칩인지 함께 둔다. */
 export type DayChoice = "today" | "tomorrow" | "saturday" | "pick";
 
 /**
@@ -51,7 +53,7 @@ function presetDate(choice: Exclude<DayChoice, "pick">, today: string): string {
 
 /**
  * 날이 바뀌었을 때(자정 넘김) 프리셋 칩으로 고른 날짜를 지킨다: "오늘"로 고른 11월 16일은 다음 날에도 11월 16일이다. 칩의 뜻이 바뀌었으면
- * "날짜 고르기"로 고른 날짜로 옮겨 그 날짜를 그대로 보인다(조용히 다른 날로 바꾸지 않는다). 지난 날짜면 제출할 때 검증이 알린다.
+ * "날짜 선택"으로 고른 날짜로 옮겨 그 날짜를 그대로 보인다(조용히 다른 날로 바꾸지 않는다). 지난 날짜면 제출할 때 검증이 알린다.
  */
 export function keepDayAcrossMidnight(value: MeetingWhen, today: string): MeetingWhen {
   const day = value.day;
@@ -151,7 +153,7 @@ export function MeetingWhenFields({
             >
               <input
                 type="date"
-                aria-label="날짜 고르기"
+                aria-label="날짜 선택"
                 value={picked ?? ""}
                 min={today || undefined}
                 max={today ? dayAfter(today, MAX_MEETING_DAYS) : undefined}
@@ -169,8 +171,9 @@ export function MeetingWhenFields({
                 className="absolute inset-0 m-0 size-full min-w-0 cursor-pointer appearance-none rounded-xl text-[16px] opacity-0"
               />
               <ChipText
-                label={picked ? formatMeetingDay(picked) : "날짜 선택…"}
-                hint={picked && holidayName(picked) ? "공휴일" : undefined}
+                // 좁은 칸(폼 2열)에서도 한 줄이 되게 날짜는 글자로, 요일(·공휴일)은 아래 작은 줄로 둔다.
+                label={picked ? formatMeetingDate(picked) : "날짜 선택…"}
+                hint={picked ? `${weekdayOf(picked)}요일${holidayName(picked) ? " · 공휴일" : ""}` : undefined}
                 checked={picked !== null}
               />
             </label>

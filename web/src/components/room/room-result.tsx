@@ -128,7 +128,7 @@ export function RoomResult({
             <Notices notices={view.notices} onFavor={(index) => change("favor", index)} />
             <Candidates view={view} meIndex={meIndex >= 0 ? meIndex : null} choice={choice} />
           </>
-        ) : query.isError ? (
+        ) : query.isError && !roomGone ? (
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
             <p className="text-[15px] text-ink">{roomErrorMessage(query.error)}</p>
             <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-11">
@@ -137,6 +137,7 @@ export function RoomResult({
             </Button>
           </div>
         ) : (
+          // 방 없음(404)이면 방 화면이 곧 안내로 바꾸므로 한 프레임이라도 오류 카드를 그리지 않는다.
           <LoadingCard />
         )}
       </div>
