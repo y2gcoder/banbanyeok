@@ -45,6 +45,8 @@ data class RoomCreatedDto(
     val participantId: String,
     val participantToken: String,
     val expiresAt: String,
+    /** 통계용 방 해시(contracts/events.json `room_hash`). 방 ID를 되돌릴 수 없는 값이다. */
+    val roomHash: String,
 )
 
 @Serializable
@@ -85,6 +87,10 @@ data class RoomDto(
     val participants: List<ParticipantDto>,
     /** 방이 계산할 기준(약속 날짜·시각에서 서버가 정한 구분과 화면 문구). 참여자 화면의 "○○ 기준으로 계산해요"가 이 `label`을 쓴다. */
     val timeBasis: TimeBasisDto,
+    /** 통계용 방 해시(contracts/events.json `room_hash`). 방 ID를 되돌릴 수 없는 값이다. */
+    val roomHash: String,
+    /** 방을 만든 시각(통계의 `seconds_since_room_created`). */
+    val createdAt: String,
 )
 
 @Serializable

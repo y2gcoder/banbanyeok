@@ -8,6 +8,7 @@ import {
   type EventProperties,
   FORBIDDEN_NAME_FRAGMENTS,
   FORBIDDEN_PROPERTY_NAMES,
+  SDK_EVENT_NAMES,
 } from "./events.gen";
 import { AnalyticsContractError, buildEventProperties, isForbiddenPropertyName, propertyProblems } from "./properties";
 
@@ -63,6 +64,12 @@ describe("contracts/events.json 개인정보 규칙", () => {
       }
     }
     expect(Object.keys(COMMON_PROPERTY_SPECS).sort()).toEqual(doc.commonProperties.map((p) => p.name).sort());
+  });
+
+  it("SDK 자동 이벤트는 계약의 sdkEvents($exception·$web_vitals)뿐이고 우리 이벤트와 겹치지 않는다", () => {
+    expect([...SDK_EVENT_NAMES]).toEqual(doc.sdkEvents.map((event) => event.name));
+    expect([...SDK_EVENT_NAMES].sort()).toEqual(["$exception", "$web_vitals"]);
+    for (const name of SDK_EVENT_NAMES) expect(Object.keys(EVENT_SPECS)).not.toContain(name);
   });
 
   it("웹이 쓰는 모든 이벤트·속성의 이름이 금지 규칙을 통과한다", () => {

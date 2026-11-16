@@ -24,7 +24,7 @@ server/
 | 영역 | 내용 |
 |---|---|
 | 엔드포인트 | openapi.yaml의 전부: `POST /anon`, 방 생성·조회·수정(PATCH)·삭제, 참여, 참여자 수정·삭제(본인 또는 방장 강퇴), 결과, outcome, `POST /recommend`, `/manifest`(ETag·304·max-age=60), `/data/{version}/{file}`(immutable), `/healthz` |
-| 신원 | 익명 사용자 ID(`u_`+128비트 이상). 방 관리 토큰·참여자 토큰·기기 토큰은 256비트 무작위. **저장은 `HMAC-SHA256(pepper, token)` 해시만**, 비교는 상수 시간. pepper는 설정(`TOKEN_PEPPER`). 토큰은 `Authorization: Bearer`로만 받는다 |
+| 신원 | 익명 사용자 ID(`u_`+128비트 이상). 방 관리 토큰·참여자 토큰·기기 토큰은 256비트 무작위. **저장은 `HMAC-SHA256(pepper, token)` 해시만**, 비교는 상수 시간. pepper는 설정(`TOKEN_PEPPER`). 토큰은 `Authorization: Bearer`로만 받는다. **결정 변경(R1/W4)**: `POST /v1/anon`(익명 사용자·기기 토큰 발급)은 `ANON_ENABLED`(기본 `false`)일 때만 열린다. 웹은 쓰지 않고 앱 출시 때 켠다. 꺼져 있으면 404 `NOT_FOUND`. 테이블·정리 작업은 그대로 |
 | 권한 | 토큰이 없거나 이 방 것이 아니면 401, 유효하지만 권한이 없으면 403(남의 항목 수정, 방장 전용 작업을 참여자 토큰으로 시도 등). 선택 인증(방·결과 조회)에서 잘못된 토큰은 익명으로 본다 |
 | 숨기기 | 숨긴 참가자의 **`originCode`·`originName`만 null**. 시간·환승은 그대로 보인다. 본인 participantToken이면 본인 항목은 보인다. 방장 토큰만으로는 자기 숨김 출발역도 가려진다(participantToken을 같이 보내야 한다) |
 | 만료 | 마지막 쓰기 후 7일(슬라이딩), 생성 후 최대 30일, 약속일이 있으면 약속일 다음 날 0시(한국 시간, 최대 30일). **읽을 때 판정**(만료된 방은 없는 방, 404 `ROOM_NOT_FOUND`)하고 **정리 명령**(`cleanup`)이 실제로 지운다. 익명 사용자는 90일 무활동·참조 없음일 때 지운다 |

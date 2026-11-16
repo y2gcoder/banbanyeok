@@ -5,7 +5,7 @@ import { CheckIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { StationField } from "@/components/home/station-field";
 import { Button } from "@/components/ui/button";
-import { track } from "@/lib/analytics";
+import { roomHashProperty, track } from "@/lib/analytics";
 import { answerOutcome } from "@/lib/api/rooms";
 import { daysSince } from "@/lib/room/dates";
 import { roomErrorMessage } from "@/lib/room/errors";
@@ -27,6 +27,8 @@ type Props = {
   participantToken: string;
   /** 1위 후보 역 코드(통계의 만난 역 코드에만 쓴다. 장소이므로 보내도 된다). */
   topStationCode: string;
+  /** 서버가 준 통계용 방 해시(없으면 생략). 방 ID는 통계에 보내지 않는다. */
+  roomHash?: string | undefined;
   resultSeenAt: string | undefined;
   answered: boolean;
   onAnswered: () => void;
@@ -39,6 +41,7 @@ export function OutcomeCard({
   roomId,
   participantToken,
   topStationCode,
+  roomHash,
   resultSeenAt,
   answered,
   onAnswered,
@@ -62,6 +65,7 @@ export function OutcomeCard({
       track("outcome_answered", {
         outcome: choice.kind,
         days_since_result: daysSince(resultSeenAt),
+        ...roomHashProperty({ roomId, roomHash }),
         ...(meeting ? { meeting_station_code: meeting } : {}),
       });
       onAnswered();

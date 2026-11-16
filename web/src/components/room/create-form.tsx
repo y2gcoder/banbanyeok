@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { track } from "@/lib/analytics";
+import { roomHashProperty, track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
 import { createRoom } from "@/lib/api/rooms";
 import type { Mode, RoomCreateRequest } from "@/lib/api/types";
@@ -91,6 +91,7 @@ export function CreateRoomForm() {
       if (host.station) saveRememberedMe({ code: host.station.code, nickname: host.nickname.trim() });
       track("room_created", {
         hidden_used: body.host.hidden === true,
+        ...roomHashProperty({ roomId: created.roomId, roomHash: created.roomHash }),
         ...(body.expectedCount ? { participant_count_expected: body.expectedCount } : {}),
       });
       router.push(roomPath(created.roomId));

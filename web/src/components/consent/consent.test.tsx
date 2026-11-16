@@ -61,7 +61,7 @@ describe("동의 배너", () => {
     expect(links[0]).toHaveTextContent("개인정보 처리방침의 통계 설정");
     expect(region).toHaveTextContent("자세히·언제든 변경:");
     // 항목·목적·이전받는 자·국가·방법·보유 기간은 줄여도 빠지지 않는다.
-    expect(region).toHaveTextContent("기능별 이용 기록");
+    expect(region).toHaveTextContent("기능·오류·속도 기록");
     expect(region).toHaveTextContent("무작위 식별자");
     expect(region).toHaveTextContent("미국 PostHog, Inc.");
     expect(region).toHaveTextContent("암호화해 미국으로 보내 분석해요"); // 목적(분석)·방법(암호화)·국가(미국)
@@ -97,7 +97,7 @@ describe("동의 배너", () => {
     expect(rows[0]?.parentElement).toBe(rows[1]?.parentElement);
     expect(rows[0]?.parentElement?.className).toContain("flex-col");
     expect(rows[0]?.parentElement?.className).not.toMatch(/\bgrid/);
-    await user.click(screen.getByText("서비스 개선용 · 기능별 이용 기록, 무작위 식별자")); // 설명 글자를 눌러도
+    await user.click(screen.getByText("서비스 개선용 · 기능·오류·속도 기록, 무작위 식별자")); // 설명 글자를 눌러도
     expect(collectBox()).toBeChecked();
   });
 
@@ -291,7 +291,7 @@ describe("통계 설정(/privacy)", () => {
       "출발역과 이름은 모으지 않아요", // 모으지 않는 것
       "만 14세 이상", // 연령
       "동의 안 해도 모든 기능을 쓸 수 있어요", // 거부해도 불이익 없음
-      "서비스 개선용 · 기능별 이용 기록, 무작위 식별자", // 목적·항목
+      "서비스 개선용 · 기능·오류·속도 기록, 무작위 식별자", // 목적·항목
       "미국, PostHog, Inc.", // 국외 이전받는 자·국가
       "암호화해 미국으로 보내 분석해요", // 방법·목적
       "보유 기간은 처리방침 참고", // 보유 기간

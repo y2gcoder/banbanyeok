@@ -107,6 +107,8 @@ public data class CreatedRoom(
     val participantId: String,
     val participantToken: String,
     val expiresAt: Instant,
+    /** 통계용 방 해시([TokenService.roomHash]). 방 ID를 되돌릴 수 없다. */
+    val roomHash: String,
 )
 
 public data class JoinedRoom(
@@ -144,6 +146,10 @@ public data class RoomView(
     val expiresAt: Instant,
     val dataVersion: String,
     val participants: List<ParticipantView>,
+    /** 통계용 방 해시([TokenService.roomHash]). 방 ID를 되돌릴 수 없다. */
+    val roomHash: String,
+    /** 방을 만든 시각. 클라이언트가 통계의 `seconds_since_room_created`를 셀 때 쓴다. */
+    val createdAt: Instant,
     val meetingTime: LocalTime? = null,
     /** 약속 시간대: 시각이 있으면 그 시각의 시간대, 없으면 고른 시간대, 둘 다 없으면 null. */
     val meetingBand: TimeBand? = null,

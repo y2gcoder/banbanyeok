@@ -2,6 +2,7 @@ package app.banbanyeok.server.room
 
 import java.security.SecureRandom
 import java.util.Base64
+import java.util.HexFormat
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -51,10 +52,23 @@ public class TokenService(
 
     public fun issue(): IssuedToken = ids.token().let { IssuedToken(it, hash(it)) }
 
-    public fun hash(token: String): TokenHash =
-        TokenHash(Mac.getInstance(ALGORITHM).apply { init(key) }.doFinal(token.toByteArray(Charsets.UTF_8)))
+    public fun hash(token: String): TokenHash = TokenHash(mac(token))
+
+    /**
+     * 통계 이벤트의 `room_hash`(contracts/events.json): HMAC-SHA256(pepper, "room_hash:v1:" + 방 ID)의 앞 8바이트(16 hex).
+     * 방 ID는 10자 base32(50비트)라 키 없는 해시는 전수 대입으로 되돌릴 수 있으므로 서버 비밀(pepper)로 키를 건다. 통계 도구(PostHog)는
+     * 이 값으로 방 ID를 알아낼 수 없고, 운영자도 데이터베이스에서 방이 지워지면 맞춰 볼 방 ID가 없다. 접두사로 토큰 해시와 입력 공간을 나눈다.
+     * pepper를 바꾸면 같은 방의 해시도 바뀐다(통계에서 바꾸기 전후 방을 잇지 못할 뿐 기능에는 영향 없음).
+     */
+    public fun roomHash(roomId: String): String =
+        HexFormat.of().formatHex(mac(ROOM_HASH_PREFIX + roomId), 0, ROOM_HASH_BYTES)
+
+    private fun mac(input: String): ByteArray =
+        Mac.getInstance(ALGORITHM).apply { init(key) }.doFinal(input.toByteArray(Charsets.UTF_8))
 
     private companion object {
         const val ALGORITHM = "HmacSHA256"
+        const val ROOM_HASH_PREFIX = "room_hash:v1:"
+        const val ROOM_HASH_BYTES = 8
     }
 }

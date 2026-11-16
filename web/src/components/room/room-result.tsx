@@ -91,8 +91,9 @@ export function RoomResult({
       topStationCode: view.candidates[0]?.stationCode,
       dataVersion: view.dataVersion,
       responseMs: undefined,
+      room: { roomId, roomHash: room.roomHash },
     });
-  }, [data, view, isPlaceholder]);
+  }, [data, view, isPlaceholder, roomId, room.roomHash]);
 
   const choice: ChoiceContext = {
     mode: pick.mode,

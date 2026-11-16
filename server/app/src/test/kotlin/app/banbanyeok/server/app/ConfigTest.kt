@@ -166,4 +166,18 @@ class ConfigTest :
                 e.problems.size shouldBe 4
             }
         }
+
+        describe("the anonymous user endpoint flag") {
+            it("is off by default in both profiles until the app ships") {
+                AppConfig.load(emptyMap()).anonEnabled shouldBe false
+                AppConfig.load(prodEnv).anonEnabled shouldBe false
+            }
+
+            it("turns on only for an explicit true and rejects anything else") {
+                AppConfig.load(mapOf("ANON_ENABLED" to "TRUE")).anonEnabled shouldBe true
+                AppConfig.load(mapOf("ANON_ENABLED" to "false")).anonEnabled shouldBe false
+                val e = shouldThrow<ConfigException> { AppConfig.load(mapOf("ANON_ENABLED" to "yes")) }
+                e.problems shouldContainExactly listOf("ANON_ENABLED 은 true 또는 false여야 합니다")
+            }
+        }
     })

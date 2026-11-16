@@ -116,6 +116,15 @@ class EventsPrivacyTests(unittest.TestCase):
                 self.assertIn(prop['type'], ('string', 'integer', 'boolean', 'enum'))
                 self.assertEqual(prop['type'] == 'enum', 'enum' in prop, f"{event['name']}.{prop['name']}")
 
+    def test_sdk_events_are_dollar_named_and_separate(self):
+        # SDK가 스스로 만드는 이벤트(오류·웹 바이탈)는 따로 적는다. 우리 이벤트와 이름이 겹치지 않는다.
+        names = {e['name'] for e in self.doc['events']}
+        sdk = [e['name'] for e in self.doc.get('sdkEvents', [])]
+        self.assertEqual(sorted(sdk), ['$exception', '$web_vitals'])
+        for name in sdk:
+            self.assertTrue(name.startswith('$'))
+            self.assertNotIn(name, names)
+
 
 class OpenApiSmokeTests(unittest.TestCase):
     """YAML 파서가 표준 라이브러리에 없으므로 경로·보안 규칙만 텍스트로 확인한다."""

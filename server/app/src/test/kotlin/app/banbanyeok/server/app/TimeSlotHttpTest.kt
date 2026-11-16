@@ -221,7 +221,14 @@ class TimeSlotHttpTest :
                 withMockedApi { services ->
                     val command = slot<CreateRoomCommand>()
                     coEvery { services.rooms.create(capture(command)) } returns
-                        CreatedRoom(ROOM, "host-tok", "p00001", "part-tok", Instant.parse("2026-11-22T15:00:00Z"))
+                        CreatedRoom(
+                            ROOM,
+                            "host-tok",
+                            "p00001",
+                            "part-tok",
+                            Instant.parse("2026-11-22T15:00:00Z"),
+                            "0123456789abcdef",
+                        )
                     val body =
                         """{"mode":"fair","meetingDate":"2026-11-21","meetingTime":"19:30",""" +
                             """"host":{"originCode":"$gangnam"}}"""
@@ -250,6 +257,8 @@ class TimeSlotHttpTest :
                             Instant.parse("2026-11-22T15:00:00Z"),
                             "20261116.1",
                             emptyList(),
+                            "0123456789abcdef",
+                            Instant.EPOCH,
                             LocalTime.of(19, 30),
                         )
                     val room = client.json(HttpMethod.Get, "/v1/rooms/$ROOM")
@@ -281,6 +290,8 @@ class TimeSlotHttpTest :
                         Instant.parse("2026-11-22T15:00:00Z"),
                         "20261116.1",
                         emptyList(),
+                        "0123456789abcdef",
+                        Instant.EPOCH,
                         time,
                     )
                     coEvery { services.rooms.get(ROOM, null) } returns room(null, null)
@@ -305,7 +316,14 @@ class TimeSlotHttpTest :
                 withMockedApi { services ->
                     val command = slot<CreateRoomCommand>()
                     coEvery { services.rooms.create(capture(command)) } returns
-                        CreatedRoom(ROOM, "host-tok", "p00001", "part-tok", Instant.parse("2026-11-22T15:00:00Z"))
+                        CreatedRoom(
+                            ROOM,
+                            "host-tok",
+                            "p00001",
+                            "part-tok",
+                            Instant.parse("2026-11-22T15:00:00Z"),
+                            "0123456789abcdef",
+                        )
                     val body =
                         """{"mode":"fair","meetingDate":"2026-11-21","meetingBand":"evening",""" +
                             """"host":{"originCode":"$gangnam"}}"""
@@ -336,6 +354,8 @@ class TimeSlotHttpTest :
                             Instant.parse("2026-11-22T15:00:00Z"),
                             "20261116.1",
                             emptyList(),
+                            "0123456789abcdef",
+                            Instant.EPOCH,
                             meetingTime = null,
                             meetingBand = TimeBand.NIGHT,
                         )
@@ -360,7 +380,18 @@ class TimeSlotHttpTest :
                 withMockedApi { services ->
                     val patches = mutableListOf<RoomPatch>()
                     coEvery { services.rooms.updateRoom(ROOM, "host-tok", capture(patches)) } returns
-                        RoomView(ROOM, RoomMode.FAIR, null, false, null, Instant.EPOCH, "20261116.1", emptyList())
+                        RoomView(
+                            ROOM,
+                            RoomMode.FAIR,
+                            null,
+                            false,
+                            null,
+                            Instant.EPOCH,
+                            "20261116.1",
+                            emptyList(),
+                            "0123456789abcdef",
+                            Instant.EPOCH,
+                        )
                     client.json(
                         HttpMethod.Patch,
                         "/v1/rooms/$ROOM",
@@ -391,7 +422,18 @@ class TimeSlotHttpTest :
                 withMockedApi { services ->
                     val patches = mutableListOf<RoomPatch>()
                     coEvery { services.rooms.updateRoom(ROOM, "host-tok", capture(patches)) } returns
-                        RoomView(ROOM, RoomMode.FAIR, null, false, null, Instant.EPOCH, "20261116.1", emptyList())
+                        RoomView(
+                            ROOM,
+                            RoomMode.FAIR,
+                            null,
+                            false,
+                            null,
+                            Instant.EPOCH,
+                            "20261116.1",
+                            emptyList(),
+                            "0123456789abcdef",
+                            Instant.EPOCH,
+                        )
                     client.json(HttpMethod.Patch, "/v1/rooms/$ROOM", """{"meetingTime":"08:05"}""", token = "host-tok")
                     client.json(HttpMethod.Patch, "/v1/rooms/$ROOM", """{"meetingTime":null}""", token = "host-tok")
                     client.json(HttpMethod.Patch, "/v1/rooms/$ROOM", """{"locked":false}""", token = "host-tok")

@@ -104,7 +104,7 @@ e2e-real `rooms.spec.ts`(모바일 Pixel 7, 컨텍스트 2~3개): ① 방 만들
 ## 10. 결정 필요 / 한계
 
 1. **방 ID가 들어간 경로의 서버 렌더링 CPU**(위 4절): 실제 Workers 계정에서 측정 필요. 무료 플랜 유지 여부 결정(P8b 결정 1)과 함께 본다.
-2. **서버 계약 요청 1건(작은 것)**: `Room` 응답에 `createdAt`(또는 `room_hash`)을 넣어 주면 `participant_joined.seconds_since_room_created`·`room_hash`를 웹이 채울 수 있다. 지금은 생략한다.
+2. ~~**서버 계약 요청 1건(작은 것)**: `Room` 응답에 `createdAt`(또는 `room_hash`)을 넣어 주면 `participant_joined.seconds_since_room_created`·`room_hash`를 웹이 채울 수 있다. 지금은 생략한다.~~ → W4에서 `Room.roomHash`·`Room.createdAt`·`RoomCreated.roomHash`를 넣고 웹이 채운다(docs/setup/w4-notes.md).
 3. **`room_created`·`participant_joined`는 웹이 보낸다**(events.json의 source 변경). 서버가 통계를 붙이면 웹 쪽 전송을 끄거나 서버 쪽을 끌지 정해야 중복이 없다.
 4. **가짜 서버(`web/mock`)는 방을 구현하지 않는다**(501). `mise run dev:web:mock`에서 방 화면은 "서버에 연결하지 못했어요"가 된다. 방 화면 개발은 실제 서버(`mise run dev`)를 쓴다. 방을 가짜 서버에 넣을지는 필요할 때 정한다.
 5. **방 설정을 PATCH하지 않는다**: 추천 기준·배려 대상은 방 생성 때 정한 기본값이고, 이후 모드 탭은 보는 사람의 화면 설정이다(방장이 모두의 기본값을 바꾸는 기능은 없다). 방 생성 때 배려 대상은 계약상 방장뿐이다("내 쪽으로").

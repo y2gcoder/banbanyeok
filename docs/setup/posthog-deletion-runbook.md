@@ -1,0 +1,16 @@
+# PostHog 통계 삭제 요청 처리 (runbook)
+
+처리방침 2·4·8항: 이용자가 통계 식별자(`/privacy` "통계 설정"에 보이는 값, PostHog `distinct_id`)로 삭제를 요청하면 지체 없이 삭제를 요청·진행하고,
+완전히 지워지기까지 몇 주가 걸릴 수 있다고 알린다. 키·계정 정보는 이 문서에 적지 않는다(PostHog 콘솔·개인 1Password).
+
+**배경**: 웹은 `person_profiles: "identified_only"`로 보내고 `identify`를 부르지 않으므로 PostHog에 person이 만들어지지 않는다. 그래서 person 기준 삭제
+(UI의 "Delete person", API `bulk_delete`)가 이벤트를 찾지 못할 수 있다(`persons_found=0`). PostHog의 이벤트 삭제는 주간 배치로 돌며 끝나기까지 최대 2~3주 걸린다.
+
+1. **확인**: 요청받은 식별자로 이벤트가 있는지 본다(PostHog SQL 편집기).
+   `SELECT count() FROM events WHERE distinct_id = '<식별자>'` — 0이면 "보관 중인 통계가 없다"고 회신하고 끝낸다.
+2. **일괄 삭제 시도**: 프로젝트 Persons API의 `bulk_delete`를 `distinct_ids=[<식별자>]`, 이벤트 삭제 켬으로 부른다. 응답의 `persons_found`가 1 이상이면 4로.
+3. **`persons_found=0`이면 지원 요청**: PostHog 지원(앱의 Help → Support)에 프로젝트 ID와 `distinct_id` 기준 이벤트 삭제를 요청한다. 이용자 정보는 식별자 외에 보내지 않는다.
+4. **재확인**: 다음 주간 배치 뒤(1~3주) 1의 SQL을 다시 돌려 0인지 본다. 0이 아니면 지원 요청을 이어 간다.
+5. **회신**: 요청받은 날부터 10일 안에 처리 상황(요청함·완료 예정 시기)을, 끝나면 완료를 `privacy@banbanyeok.app`에서 회신한다. 요청·회신 날짜만 기록한다.
+
+**콘솔 로그·성능 수집(네트워크 타이밍)·세션 녹화는 꺼 두었다.** 켜려면 처리방침의 통계 항목과 동의 문구(`consent-text.ts`, `CONSENT_VERSION`)를 먼저 갱신해야 한다(콘솔 로그·네트워크 타이밍에는 주소·방 ID가 들어갈 수 있다).

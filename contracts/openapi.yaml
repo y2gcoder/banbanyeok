@@ -66,7 +66,13 @@ paths:
     post:
       tags: [anon]
       operationId: createAnonymousUser
-      summary: 익명 사용자 발급 (첫 방 작업 때 자동 호출)
+      summary: 익명 사용자 발급 — **현재 비활성(앱 출시 때 켬)**
+      description: |
+        **현재 비활성(앱 출시 때 켬).** 서버 설정 `ANON_ENABLED`(기본 `false`)가 켜져 있을 때만 이 경로가 있고, 꺼져 있으면 없는 경로처럼
+        404 `NOT_FOUND`다(웹의 `/api/v1/anon` 프록시도 서버의 404를 그대로 돌려준다). 웹은 이 API를 쓰지 않는다(R1 결정: 웹 방은 기기 토큰
+        없이 방별 토큰만 쓴다). 앱이 방 기능을 내놓을 때 켜고, 그때 처리방침의 익명 사용자 ID·기기 토큰 항목을 함께 갱신한다(W4).
+
+        결정 변경(R1/W4): 처음 설계는 "첫 방 작업 때 자동 호출"이었다.
       responses:
         '201':
           description: 발급됨
@@ -78,6 +84,11 @@ paths:
                 properties:
                   anonUserId: {type: string}
                   deviceToken: {type: string, description: 기기에 보관하는 비밀 토큰}
+        '404':
+          description: 비활성(`ANON_ENABLED=false`, 기본)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
         '429': {$ref: '#/components/responses/Error'}
 
   /rooms:
@@ -576,6 +587,15 @@ components:
         participantId: {type: string}
         participantToken: {type: string}
         expiresAt: {type: string, format: date-time}
+        roomHash: {$ref: '#/components/schemas/RoomHash'}
+
+    RoomHash:
+      type: string
+      pattern: '^[0-9a-f]{16}$'
+      description: |
+        통계 이벤트의 `room_hash`(contracts/events.json)로 그대로 쓰는 값. 방 ID를 되돌릴 수 없다: HMAC-SHA256(서버 비밀 pepper,
+        `room_hash:v1:` + 방 ID)의 앞 8바이트를 16자리 소문자 hex로 쓴다. 키가 서버에만 있어 통계 도구나 값을 본 사람이 방 ID를 전수 대입으로
+        찾을 수 없다. 이 필드를 모르는 옛 서버는 보내지 않으므로 클라이언트는 없으면 `room_hash`를 생략한다
 
     RoomPatch:
       type: object
@@ -623,6 +643,11 @@ components:
           type: array
           maxItems: 4
           items: {$ref: '#/components/schemas/Participant'}
+        roomHash: {$ref: '#/components/schemas/RoomHash'}
+        createdAt:
+          type: string
+          format: date-time
+          description: 방을 만든 시각. 클라이언트가 통계의 `seconds_since_room_created`를 셀 때만 쓴다. 이 필드를 모르는 옛 서버는 보내지 않는다
         timeBasis:
           description: |
             방이 계산할 기준: 약속 날짜(`meetingDate`)·시각(`meetingTime`)·시간대(`meetingBand`)에서 서버가 정한 구분과 화면 문구(`label`). 결과를 계산하기 전(참여자가

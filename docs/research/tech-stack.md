@@ -276,9 +276,11 @@ participants(
 | `participantToken` | 참여 응답에 1회 | **본인** 출발역·별칭 수정·삭제 | 위와 동일 | 해당 한 사람의 항목만 변경 가능 |
 | `deviceToken` | 첫 방 작업 때 `POST /v1/anon` | 익명 사용자 식별(내 방 목록, 계정 연결) | 웹: 같은 출처 `httpOnly; Secure; SameSite=Lax` 쿠키(API를 Next.js 같은 출처로 노출하는 경우, 6.4), iOS Keychain, Android Keystore | 해당 익명 사용자의 방 목록 열람 정도. 편집 권한은 방별 토큰이 따로 필요 |
 
+> **결정 변경(R1/W4, 2026-11-16)**: 웹은 `deviceToken`을 쓰지 않는다(쿠키 없음, `/v1/anon` 호출 없음, 웹 방은 방별 토큰만 localStorage에 둔다. docs/setup/r1-notes.md 2절). 서버의 `POST /v1/anon`은 `ANON_ENABLED`(기본 끔)로 닫아 두고 앱(iOS Keychain·Android Keystore)이 방 기능을 낼 때 켠다(docs/setup/w4-notes.md). 위 표의 웹 쿠키 행은 원래 계획이다.
+
 - **방 링크만으로 남의 출발역을 고칠 수 없다**: 수정 API는 항상 `participantToken`(그 참여자) 또는 `hostToken`(강퇴·삭제만)을 요구하고, 조회 응답에 토큰을 절대 싣지 않는다. 토큰은 링크·OG·로그에 넣지 않는다(`Authorization` 헤더만, 서버 로그 필터링).
 - **기기를 바꾸거나 토큰을 잃으면** 본인 항목을 수정할 수 없다. MVP에서는 방장이 강퇴하고 다시 참여시키는 우회로를 둔다. 로그인 연결 후 같은 계정이면 복원(후속).
-- **웹 저장소 위험**: localStorage는 XSS에 취약하다. CSP·`Trusted Types`로 완화하고, 토큰의 가치(방 하나의 한 사람 수정 권한)가 낮다는 점에서 허용한다. `deviceToken`은 쿠키로 둔다 [추정, 판단].
+- **웹 저장소 위험**: localStorage는 XSS에 취약하다. CSP·`Trusted Types`로 완화하고, 토큰의 가치(방 하나의 한 사람 수정 권한)가 낮다는 점에서 허용한다. `deviceToken`은 쿠키로 둔다 [추정, 판단]. — **결정 변경(R1/W4)**: 웹은 `deviceToken`을 쓰지 않으므로 쿠키도 두지 않는다.
 - **익명 사용자 ID를 서버에 두는 이유**: 후속 소셜 로그인 때 `accounts` 테이블을 추가하고 `anon_users.account_id`만 채우면, 웹·iOS·Android에서 각각 만든 익명 사용자들을 한 계정으로 **데이터 이전 없이** 연결할 수 있다(방은 `anon_id`로 참조). `POST /v1/auth/link`가 deviceToken과 OAuth id 토큰을 받아 연결한다. 한 `anon_user`는 최대 한 계정에 속한다.
 - **Apple 가이드라인(후속 로그인 때) [확인: https://developer.apple.com/app-store/review/guidelines/]**: ① 4.8 — 소셜 로그인(카카오·구글 등)으로 계정을 만들거나 인증하는 앱은, 이름·이메일만 수집하고 이메일 비공개를 허용하며 광고용 상호작용 수집을 하지 않는 **동등한 로그인 옵션**(사실상 Apple로 로그인)을 함께 제공해야 한다(자체 계정만 쓰는 앱 등은 예외). ② 5.1.1(v) — 앱이 큰 계정 기반 기능이 없으면 로그인 없이 쓰게 하고, 계정 생성을 지원하면 **앱 안에서 계정 삭제**를 제공해야 한다. 이는 로그인을 필수로 만들지 않는 현재 설계와 부합한다.
 - **iOS 앱 지금(로그인 없이)도 필요한 것 [확인: 같은 문서 5.1.1(i)(ii)]**: 앱 안과 App Store Connect에 **개인정보처리방침 링크**, 데이터 보존·삭제 정책, 삭제 요청 방법, 그리고 분석 수집에 대한 **동의 취득**(익명이어도). → 앱의 PostHog는 동의 전 `optOut` 상태로 시작한다(7.4).
@@ -354,6 +356,8 @@ participants(
 ### 7.3 이벤트 설계 초안
 
 모든 이벤트에 공통 속성: `platform`(web/ios/android/server), `app_version`, `data_version`, `anon_user_id`. **출발역·별칭·방 ID 원문은 넣지 않는다**(방 ID는 해시 `room_hash`).
+
+> **결정 변경(R1/W4, 2026-11-16)**: `anon_user_id`는 앱이 방 기능을 쓸 때만 붙인다(웹은 익명 사용자를 쓰지 않아 보내지 않는다). `room_hash`는 서버가 `HMAC-SHA256(pepper, "room_hash:v1:" + 방 ID)` 앞 16 hex로 계산해 방 응답(`Room.roomHash`)에 실어 주고, 웹은 그 값을 그대로 쓴다. `room_created`·`participant_joined`는 서버가 통계를 보내기 전까지 웹이 보낸다(`client_or_server`). SDK 자동 이벤트는 `$exception`·`$web_vitals`만 켠다(contracts/events.json `sdkEvents`).
 
 | 이벤트 | 발생 위치 | 속성 | 목적 |
 |---|---|---|---|

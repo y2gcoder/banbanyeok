@@ -19,5 +19,5 @@ fun Application.apiModule(
 ) {
     installErrorHandling()
     installCommonPlugins(config, RateLimiting(config.rateLimit, clock))
-    routing { apiRoutes(services, IdempotencyCache(clock)) }
+    routing { apiRoutes(services, IdempotencyCache(clock), anonEnabled = config.anonEnabled) }
 }

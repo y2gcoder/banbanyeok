@@ -4,6 +4,7 @@ import { isServer, QueryClient, QueryClientProvider } from "@tanstack/react-quer
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { type ReactNode, useEffect } from "react";
 import { ConsentBanner } from "@/components/consent/consent-banner";
+import { startAnalytics } from "@/lib/analytics";
 import { pruneExpiredRooms } from "@/lib/room/tokens";
 
 function makeQueryClient() {
@@ -26,8 +27,10 @@ function getQueryClient() {
 export function Providers({ children }: { children: ReactNode }) {
   const queryClient = getQueryClient();
   // 만료된 방의 토큰을 이 기기에서 지운다(어느 화면을 열어도 한 번).
+  // 동의한 기기면 통계(오류 추적·웹 바이탈 포함)를 시작한다. 동의 전에는 아무것도 하지 않는다.
   useEffect(() => {
     pruneExpiredRooms();
+    startAnalytics();
   }, []);
   return (
     <NuqsAdapter>

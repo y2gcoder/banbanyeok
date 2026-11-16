@@ -14,11 +14,15 @@ type RawProperty = {
 
 type RawEvent = { name: string; source: "client" | "server" | "client_or_server"; properties: RawProperty[] };
 
+/** SDK(posthog-js)가 스스로 만드는 이벤트. 속성은 SDK가 정하고, 보내기 직전(before_send)에 가린다. */
+type SdkEvent = { name: string; description: string; knownProperties: string[] };
+
 export type EventsDocument = {
   schemaVersion: number;
   privacy: { forbiddenPropertyNames: string[]; forbiddenNameFragments: string[] };
   commonProperties: RawProperty[];
   events: RawEvent[];
+  sdkEvents: SdkEvent[];
 };
 
 /** 금지된 속성 이름·조각을 쓴 곳("이벤트.속성")을 모두 돌려준다. 비어 있어야 한다. */
@@ -109,6 +113,10 @@ ${events.map((event) => `${event.name}: {\n${interfaceBody(event.properties)}\n}
 }
 
 export type EventName = keyof EventProperties;
+
+/** SDK가 스스로 보내도 되는 이벤트(오류·웹 바이탈). 그 밖의 $ 이벤트는 before_send가 버린다. */
+export const SDK_EVENT_NAMES = ${JSON.stringify(doc.sdkEvents.map((event) => event.name))} as const;
+export type SdkEventName = (typeof SDK_EVENT_NAMES)[number];
 
 export const EVENT_SPECS = {
 ${events.map((event) => `${event.name}: {\n${specTable(event.properties)}\n},`).join("\n")}

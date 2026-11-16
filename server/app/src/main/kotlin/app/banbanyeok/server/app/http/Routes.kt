@@ -40,12 +40,14 @@ import kotlinx.serialization.serializer
 fun Route.apiRoutes(
     services: ApiServices,
     idempotency: IdempotencyCache,
+    anonEnabled: Boolean = false,
 ) {
     // Cloud Run 점검과 웹의 서버 깨우기용. 계약에서는 /v1/healthz로 문서화돼 있고 루트 경로는 같은 응답이다.
     get("/healthz") { call.respondText("ok", ContentType.Text.Plain) }
     route("/v1") {
         get("/healthz") { call.respondText("ok", ContentType.Text.Plain) }
-        anonRoutes(services)
+        // 익명 사용자 발급은 앱이 방 기능을 내놓을 때까지 닫아 둔다(ANON_ENABLED, 기본 끔). 닫으면 등록하지 않아 404다.
+        if (anonEnabled) anonRoutes(services)
         roomRoutes(services, idempotency)
         resultRoutes(services)
         dataRoutes(services)
@@ -72,6 +74,7 @@ private fun Route.roomRoutes(
                 created.participantId,
                 created.participantToken,
                 created.expiresAt.toString(),
+                created.roomHash,
             )
         }
     }
