@@ -30,8 +30,11 @@ test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 
     /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)$/,
   );
   const top = page.getByRole("article").first();
-  await expect(top.getByText("강남에서 오는 분", { exact: true })).toBeVisible();
-  await expect(top.getByText("홍대입구에서 오는 분", { exact: true })).toBeVisible();
+  // 시간 행은 서버 짧은 이름(shortLabel), 추천 이유 문장은 label("…에서 오는 분")이다.
+  const rows = top.getByRole("listitem");
+  await expect(rows.getByText("강남", { exact: true })).toBeVisible();
+  await expect(rows.getByText("홍대입구", { exact: true })).toBeVisible();
+  await expect(top.getByText(/에서 오는 분/).first()).toBeVisible();
   // 결과·문장에 시점 표현이 없다. 만든 사람 화면에는 (나)가 없다.
   await expect(page.getByRole("main")).not.toContainText(/나는 |나가 |친구1|\(나\)/);
   await shot(page, "1-result-no-names");
@@ -47,30 +50,36 @@ test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 
   await expect(friend.getByRole("heading", { name: "친구가 보낸 만날 역 후보" })).toBeVisible();
   const card = friend.getByRole("article").first();
   await expect(card.getByText("(나)")).toHaveCount(0);
-  await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "홍대입구에서 오는 분" }).click();
+  await friend
+    .getByRole("group", { name: "나는 누구?" })
+    .getByRole("button", { name: "홍대입구", exact: true })
+    .click();
   await expect(friend).toHaveURL(/me=1/);
-  await expect(card.getByText("홍대입구에서 오는 분(나)")).toBeVisible();
-  await expect(card.getByText("강남에서 오는 분(나)")).toHaveCount(0);
+  await expect(card.getByText("홍대입구(나)")).toBeVisible();
+  await expect(card.getByText("강남(나)")).toHaveCount(0);
   await shot(friend, "2-received-pick-friend");
 
   // 다른 사람으로 바꾸면 (나)도 옮겨 간다(예전 버그: "나"가 다른 사람을 가리킴).
-  await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "강남에서 오는 분" }).click();
-  await expect(card.getByText("강남에서 오는 분(나)")).toBeVisible();
-  await expect(card.getByText("홍대입구에서 오는 분(나)")).toHaveCount(0);
+  await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "강남", exact: true }).click();
+  await expect(card.getByText("강남(나)")).toBeVisible();
+  await expect(card.getByText("홍대입구(나)")).toHaveCount(0);
 });
 
 test("폐기된 역 코드가 든 옛 공유 링크도 열린다(공덕 194 → nn9)", async ({ page }) => {
   await page.goto("/s?v=1&o=194.ve5&m=f");
   const top = page.getByRole("article").first();
-  await expect(top.getByText("공덕에서 오는 분", { exact: true })).toBeVisible();
-  await expect(top.getByText("홍대입구에서 오는 분", { exact: true })).toBeVisible();
+  const rows = top.getByRole("listitem");
+  await expect(rows.getByText("공덕", { exact: true })).toBeVisible();
+  await expect(rows.getByText("홍대입구", { exact: true })).toBeVisible();
 });
 
 test("이름을 넣은 사람은 그 이름, 같은 역 둘은 번호", async ({ page }) => {
   // n = base64url("민수"), 두 번째 사람은 이름 없음. 세 번째도 홍대입구.
   await page.goto("/s?v=1&o=ryf.ryf.k3a&m=f&n=66-87IiY..");
   const top = page.getByRole("article").first();
-  await expect(top.getByText("민수", { exact: true })).toBeVisible();
-  await expect(top.getByText("홍대입구에서 오는 분", { exact: true })).toBeVisible();
-  await expect(top.getByText("강남에서 오는 분", { exact: true })).toBeVisible();
+  const rows = top.getByRole("listitem");
+  await expect(rows.getByText("민수", { exact: true })).toBeVisible();
+  // 이름 없는 홍대입구는 하나뿐이라 번호 없이 짧은 이름 "홍대입구"
+  await expect(rows.getByText("홍대입구", { exact: true })).toBeVisible();
+  await expect(rows.getByText("강남", { exact: true })).toBeVisible();
 });
