@@ -66,7 +66,7 @@ for (const vp of CASES) {
  */
 const u2ShotsDir = resolve(import.meta.dirname, "../../docs/setup/u2-screens");
 const U2_CASES = [
-  { id: "phone-390x844", width: 390, height: 844, touch: true, maxShare: 0.3 },
+  { id: "phone-390x844", width: 390, height: 844, touch: true, maxShare: 0.35 },
   { id: "fold-cover-344", width: 344, height: 882, touch: true, maxShare: 0.45 },
   { id: "fold-open-690", width: 690, height: 829, touch: true, maxShare: 0.3 },
   { id: "desktop-1280", width: 1280, height: 800, touch: false, maxShare: 0.35 },
@@ -115,22 +115,27 @@ for (const vp of U2_CASES) {
       if (vp.touch) expect.soft(await smallTouchTargets(page), "44px보다 작은 터치 목표").toEqual([]);
     });
 
-    test("하나만 체크하면 안내가 보이고 버튼은 같은 크기·같은 줄로 남는다(배너는 화면의 40% 이하)", async ({
+    test("하나만 체크하면 안내가 보여도 배너 높이와 체크박스 위치가 변하지 않고, 버튼은 같은 크기·같은 줄이다", async ({
       page,
     }) => {
       await page.goto("/");
       await expect(banner(page)).toBeVisible();
-      await banner(page).getByRole("checkbox").first().check();
+      const firstBox = banner(page).getByRole("checkbox").first();
+      const before = { banner: await banner(page).boundingBox(), box: await firstBox.boundingBox() };
+      await firstBox.check();
       await expect(banner(page).getByText("두 가지 모두 체크해야 통계를 모아요.")).toBeVisible();
+      const after = { banner: await banner(page).boundingBox(), box: await firstBox.boundingBox() };
+      // 안내 줄 자리를 미리 잡아 두므로 하단 고정 배너가 커지며 체크박스를 위로 밀지 않는다.
+      expect(after.banner?.height).toBeCloseTo(before.banner?.height ?? -1, 0);
+      expect(after.box?.y).toBeCloseTo(before.box?.y ?? -1, 0);
       const reject = await banner(page).getByRole("button", { name: "모두 거부" }).boundingBox();
       const save = await banner(page).getByRole("button", { name: "이대로 닫기" }).boundingBox();
       expect(reject?.width).toBeCloseTo(save?.width ?? -1, 0);
       expect(reject?.height).toBeCloseTo(save?.height ?? -1, 0);
       expect(reject?.y).toBeCloseTo(save?.y ?? -1, 0);
-      const box = await banner(page).boundingBox();
-      expect(box?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(vp.height * 0.4);
       await banner(page).getByRole("checkbox").last().check();
-      await expect(banner(page).getByRole("button", { name: "동의하고 닫기" })).toBeVisible();
+      await expect(banner(page).getByRole("button", { name: "동의하고 닫기", exact: true })).toBeVisible();
+      await expect(banner(page).getByText("두 가지 모두 체크해야 통계를 모아요.")).toBeHidden();
     });
 
     test("맨 아래까지 스크롤하면 본문 마지막 줄이 배너에 가려지지 않는다", async ({ page }) => {

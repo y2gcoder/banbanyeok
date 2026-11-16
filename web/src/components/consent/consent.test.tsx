@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readChoice, readScopes, writeChoice } from "@/lib/analytics/consent";
 import { ConsentBanner } from "./consent-banner";
 import { ConsentSettings } from "./consent-settings";
+import { CONSENT_COPY } from "./consent-text";
 
 // 통계가 켜진 빌드·브라우저 추적 거부 여부만 바꿔 가며 실제 동의 저장소(localStorage)를 쓴다.
 const env = vi.hoisted(() => ({ available: true, declined: false, id: null as string | null }));
@@ -48,17 +49,19 @@ describe("동의 배너", () => {
     expect(region).toHaveTextContent("서비스 개선을 위해");
     expect(region).toHaveTextContent("출발역과 이름은 모으지 않아요");
     expect(region).toHaveTextContent("만 14세 이상");
-    expect(region).toHaveTextContent("안 해도 모든 기능을 쓸 수 있어요");
+    expect(region).toHaveTextContent("동의 안 해도 모든 기능을 쓸 수 있어요");
     // 처리방침 링크는 한 번만, 철회·변경 방법(통계 설정)을 함께 알린다.
     const links = screen.getAllByRole("link");
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute("href", "/privacy#analytics-settings");
     expect(links[0]).toHaveTextContent("개인정보 처리방침의 통계 설정");
+    expect(region).toHaveTextContent("자세히·언제든 변경:");
     // 항목·목적·이전받는 자·국가·방법·보유 기간은 줄여도 빠지지 않는다.
     expect(region).toHaveTextContent("기능별 이용 기록");
     expect(region).toHaveTextContent("무작위 식별자");
     expect(region).toHaveTextContent("미국 PostHog, Inc.");
-    expect(region).toHaveTextContent("암호화해 전송");
+    expect(region).toHaveTextContent("암호화해 미국으로 보내 분석해요"); // 목적(분석)·방법(암호화)·국가(미국)
+    expect(region).toHaveTextContent("위 정보를");
     expect(region).toHaveTextContent("보유 기간은 처리방침 참고");
     expect(collectBox()).not.toBeChecked();
     expect(transferBox()).not.toBeChecked();
@@ -104,7 +107,7 @@ describe("동의 배너", () => {
     const { container, unmount } = render(<ConsentBanner />);
     const live = container.querySelector('[aria-live="polite"]');
     expect(live).not.toBeNull();
-    expect(live).toBeEmptyDOMElement();
+    expect(live?.textContent).toBe(""); // 하나만 체크하기 전에는 안내 글자가 없다
 
     await user.click(collectBox()); // 수집·이용만 체크
     expect(live).toHaveTextContent("두 가지 모두 체크해야 통계를 모아요.");
@@ -121,6 +124,24 @@ describe("동의 배너", () => {
     await user.click(save());
     expect(readScopes()).toEqual({ collect: false, transfer: true });
     expect(readChoice()).toBe("denied");
+  });
+
+  it("국외 이전 설명은 이용 통계 '분석' 목적을 포함한다(방침 7항의 '이용 통계 분석'과 일치)", () => {
+    expect(CONSENT_COPY.transfer.detail).toContain("분석");
+    expect(CONSENT_COPY.transfer.detail).toContain("암호화해");
+    expect(CONSENT_COPY.transfer.detail).toContain("미국");
+  });
+
+  it("안내 줄 자리는 늘 잡혀 있어(하나만 체크해도 높이가 같다) 체크박스가 밀리지 않는다", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ConsentBanner />);
+    const hint = container.querySelector('[aria-live="polite"] > p');
+    expect(hint).not.toBeNull();
+    expect(hint?.className).toContain("min-h-[17px]");
+    expect(hint).toBeEmptyDOMElement();
+    await user.click(collectBox());
+    expect(hint).toHaveTextContent("두 가지 모두 체크해야 통계를 모아요.");
+    expect(container.querySelector('[aria-live="polite"] > p')).toBe(hint); // 같은 요소를 그대로 쓴다
   });
 
   it("체크를 다시 풀거나 둘 다 체크하면 안내가 사라진다", async () => {
@@ -223,7 +244,11 @@ describe("동의 배너", () => {
         vv.height = 380; // 키보드가 올라와 보이는 영역이 줄었다
         vv.dispatchEvent(new Event("resize"));
       });
-      expect(screen.queryByRole("region")).toBeNull(); // hidden이라 접근성 트리에서도 빠진다
+      expect(screen.queryByRole("region")).toBeNull(); // aria-hidden이라 접근성 트리에서도 빠진다
+      const hiddenBanner = document.querySelector("section") as HTMLElement;
+      expect(hiddenBanner).toHaveAttribute("aria-hidden", "true");
+      expect(hiddenBanner).toHaveClass("invisible"); // hidden이 아니라 자리는 그대로(높이가 변하지 않는다)
+      expect(hiddenBanner).not.toHaveAttribute("hidden");
       act(() => {
         screen.getByRole("textbox", { name: "역 이름" }).blur();
         vv.height = 800;

@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useState } from "react";
-import { keepParens } from "@/components/common/keep-parens";
 import { Button } from "@/components/ui/button";
 import { setAnalyticsConsent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -36,7 +35,7 @@ function ScopeSwitch({
     <div className="flex items-center justify-between gap-4 rounded-xl border border-rule bg-platform/60 p-4">
       <div className="flex min-w-0 flex-col gap-1">
         <span id={labelId} className="font-bold text-ink">
-          {keepParens(label)}
+          {label}
         </span>
         <span id={detailId} className="text-[14px] text-ink-soft">
           {detail}
@@ -157,7 +156,7 @@ export function ConsentSettings() {
         onToggle={() => toggle("collect")}
       />
       <ScopeSwitch
-        label="통계 정보의 국외 이전 동의(미국, PostHog, Inc.)"
+        label="통계 정보의 국외 이전 동의 (미국, PostHog, Inc.)"
         detail={CONSENT_COPY.transfer.detail}
         checked={scopes.transfer}
         disabled={!adjustable}
@@ -179,7 +178,7 @@ export function ConsentSettings() {
       ) : null}
       <p className="text-[14px]">
         하나라도 끄면 바로 통계를 멈추고, 이 기기에 저장된 통계 식별자를 지워요. 이미 모은 통계는 보유 기간이 지나면
-        파기하고, 요청하면 지체 없이 삭제해요(개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.
+        파기하고, 요청하면 지체 없이 삭제해요 (개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.
       </p>
     </div>
   );

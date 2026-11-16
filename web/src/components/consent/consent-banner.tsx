@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { keepParens } from "@/components/common/keep-parens";
 import { useOnScreenKeyboardOpen } from "@/components/common/use-on-screen-keyboard";
 import { Button } from "@/components/ui/button";
 import { setAnalyticsConsent } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 import { CONSENT_COPY } from "./consent-text";
 import { useConsentState } from "./use-consent";
 
@@ -24,7 +24,7 @@ function ScopeCheckbox({
   const detailId = useId();
   // 줄 전체가 하나의 라벨이라 어디를 눌러도 체크되고, 누르는 영역은 44px 이상이다.
   return (
-    <label className="flex min-h-11 cursor-pointer items-start gap-2.5 py-1 wide:gap-3">
+    <label className="flex min-h-11 cursor-pointer items-start gap-2.5 py-0.5 wide:gap-3">
       <input
         type="checkbox"
         checked={checked}
@@ -35,10 +35,10 @@ function ScopeCheckbox({
       />
       <span className="flex min-w-0 flex-col">
         <span id={labelId} className="text-[13px] leading-snug font-semibold text-ink wide:text-[14px]">
-          {keepParens(label)}
+          {label}
         </span>
         <span id={detailId} className="text-[12px] leading-snug text-ink-soft">
-          {keepParens(detail)}
+          {detail}
         </span>
       </span>
     </label>
@@ -58,8 +58,8 @@ function ScopeCheckbox({
  * - 키가 없는 빌드(통계 꺼짐)나 브라우저 추적 거부(DNT·GPC)에서는 묻지 않는다.
  * - 반응형: 폰에서는 화면을 적게 가린다(390×844에서 약 4분의 1 이하). 안내는 두 문장과 링크 하나, 체크박스는 위아래 한 줄씩(좌우 2칸 금지).
  *   두 칸 폭(wide)부터는 안내와 체크박스를 나란히 둔다. 높이가 짧은 화면(가로로 눕힌 폰)에서도 화면의 60%를 넘게 가리지 않는다
- *   (안내·체크박스는 그 안에서 스크롤, 버튼은 늘 보임). 화면 키보드로 글자를 치는 동안(역 검색 포함)에는 잠시 숨겨 입력 칸과
- *   자동완성 목록을 가리지 않는다(고른 체크 상태는 그대로 남는다).
+ *   (안내·체크박스는 그 안에서 스크롤, 버튼은 늘 보임). 화면 키보드로 글자를 치는 동안(역 검색 포함)에는 잠시 보이지 않게 해(`invisible` + aria-hidden;
+ *   `hidden`이 아니라 자리는 그대로라 높이가 변하지 않는다) 입력 칸과 자동완성 목록을 가리지 않는다(고른 체크 상태는 그대로 남는다).
  */
 export function ConsentBanner() {
   const state = useConsentState();
@@ -73,9 +73,11 @@ export function ConsentBanner() {
   return (
     <section
       aria-labelledby={titleId}
-      hidden={typing}
-      data-consent-banner=""
-      className="sticky bottom-0 z-40 mx-auto w-full max-w-md pt-2 pb-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] [padding-left:max(0.75rem,env(safe-area-inset-left))] [padding-right:max(0.75rem,env(safe-area-inset-right))] wide:max-w-3xl"
+      aria-hidden={typing || undefined}
+      className={cn(
+        typing && "invisible",
+        "sticky bottom-0 z-40 mx-auto w-full max-w-md pt-1 pb-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] [padding-left:max(0.75rem,env(safe-area-inset-left))] [padding-right:max(0.75rem,env(safe-area-inset-right))] wide:max-w-3xl",
+      )}
     >
       <div className="flex max-h-[60dvh] flex-col gap-2 rounded-2xl border border-rule-strong bg-surface p-3 shadow-lg wide:gap-3 wide:p-4">
         <div className="scroll-shadow-y -mx-1 flex min-h-0 flex-col gap-1.5 overflow-y-auto px-1 wide:grid wide:grid-cols-2 wide:gap-x-6 wide:gap-y-3">
@@ -106,10 +108,11 @@ export function ConsentBanner() {
           </div>
         </div>
         <div className="flex shrink-0 flex-col wide:ml-auto wide:w-full wide:max-w-sm">
+          {/* 안내 줄 자리는 늘 잡아 둔다: 하나만 체크해도 배너 높이가 변하지 않아 체크박스가 밀리지 않는다. */}
           <div aria-live="polite">
-            {onlyOne ? (
-              <p className="pb-1.5 text-[12px] leading-snug font-semibold text-ink">{CONSENT_COPY.bothNeeded}</p>
-            ) : null}
+            <p className="min-h-[17px] pb-1 text-[12px] leading-[17px] font-semibold text-ink box-content">
+              {onlyOne ? CONSENT_COPY.bothNeeded : null}
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Button
