@@ -23,7 +23,6 @@ function block(b: Block): string {
 export function policyMarkdown(policy: Policy): string {
   const parts = [
     `# ${policy.title}`,
-    `> **${policy.draftWarning}**`,
     "<!-- 이 파일은 web/src/app/privacy/policy.ts에서 만든다. 직접 고치지 말고 policy.ts를 고친 뒤 `UPDATE_PRIVACY_MD=1 pnpm test src/app/privacy`를 실행한다. -->",
     ...policy.intro,
     "## 한눈에 보기",

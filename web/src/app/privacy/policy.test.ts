@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { policyMarkdown } from "./markdown";
-import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS, REQUIRED_PLACEHOLDERS } from "./policy";
+import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS } from "./policy";
 
 const mdPath = resolve(import.meta.dirname, "../../../../docs/legal/privacy-policy.md");
 const markdown = policyMarkdown(POLICY);
@@ -39,12 +39,16 @@ describe("개인정보 처리방침", () => {
     }
   });
 
-  it("시행일은 자리표시로 남고, 다른 자리표시는 하나도 남지 않는다", () => {
-    for (const placeholder of REQUIRED_PLACEHOLDERS) expect(markdown).toContain(placeholder);
-    const leftovers = (markdown.match(/\{[^{}\n]+\}/g) ?? []).filter(
-      (found) => !(REQUIRED_PLACEHOLDERS as readonly string[]).includes(found),
-    );
-    expect(leftovers).toEqual([]);
+  it("시행 중이라 {자리표시}가 하나도 남지 않고, 시행일이 적혀 있다", () => {
+    expect(markdown.match(/\{[^{}\n]+\}/g) ?? []).toEqual([]);
+    expect(markdown).toContain("이 개인정보 처리방침은 2026년 11월 17일부터 적용됩니다.");
+  });
+
+  it("초안·검토 안내 상자를 싣지 않는다", () => {
+    expect(markdown).not.toContain("초안");
+    expect(markdown).not.toContain("변호사");
+    expect(markdown.startsWith("# ")).toBe(true);
+    expect(markdown.split("\n")[2]).not.toMatch(/^>/);
   });
 
   it("이메일은 운영자 전용 연락 주소와 수탁자의 공식 문의 주소만 쓴다(개인 메일을 넣지 않는다)", () => {

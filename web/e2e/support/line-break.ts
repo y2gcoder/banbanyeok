@@ -4,7 +4,7 @@
  */
 
 /**
- * 여는 괄호 "(" 바로 뒤에서 줄이 바뀐 곳(그 앞뒤 글자). `(`와 다음 글자가 같은 글자 마디 안에 있을 때 둘의 줄(y)을 비교한다.
+ * 여는 괄호 "(" 「 『 등 바로 뒤에서 줄이 바뀐 곳(그 앞뒤 글자). 괄호와 다음 글자가 같은 글자 마디 안에 있을 때 둘의 줄(y)을 비교한다.
  * 글꼴이 불러와진 뒤에 불러야 한다. 빈 배열이면 통과다.
  */
 export function orphanedOpenParens(rootSelector: string): string[] {
@@ -17,7 +17,8 @@ export function orphanedOpenParens(rootSelector: string): string[] {
     const text = node.textContent ?? "";
     const parent = node.parentElement;
     if (!parent || parent.closest("script, style, noscript, [aria-hidden=true]")) continue;
-    for (let i = text.indexOf("("); i !== -1 && i < text.length - 1; i = text.indexOf("(", i + 1)) {
+    for (let i = 0; i < text.length - 1; i++) {
+      if (!"(「『（［【〈《〔｛".includes(text.charAt(i))) continue;
       range.setStart(node, i);
       range.setEnd(node, i + 1);
       const open = range.getClientRects()[0];
@@ -45,7 +46,8 @@ export function unguardedOpenParens(rootSelector: string): string[] {
     const text = node.textContent ?? "";
     const parent = node.parentElement;
     if (!parent || parent.closest("script, style, noscript, [aria-hidden=true], [data-paren-safe]")) continue;
-    for (let i = text.indexOf("("); i !== -1 && i < text.length - 1; i = text.indexOf("(", i + 1)) {
+    for (let i = 0; i < text.length - 1; i++) {
+      if (!"(「『（［【〈《〔｛".includes(text.charAt(i))) continue;
       found.push(text.slice(Math.max(0, i - 8), i + 8));
     }
   }
