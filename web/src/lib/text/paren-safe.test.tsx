@@ -21,4 +21,13 @@ describe("parenSafe", () => {
     const groups = [...container.querySelectorAll("[data-paren-safe]")].map((el) => el.textContent);
     expect(groups).toEqual(["(Cloudflare,", "(보호법"]);
   });
+
+  it("짧은 덩어리는 인라인 nowrap, 긴 덩어리(주소)는 접히는 블록으로 묶는다", () => {
+    const url = "(https://support.example.com/very/long/address/path)";
+    const { container } = render(<p>{parenSafe(`짧음 (7항) 긴 ${url}`)}</p>);
+    const [short, long] = [...container.querySelectorAll("[data-paren-safe]")];
+    expect(short?.className).toContain("whitespace-nowrap");
+    expect(long?.className).toContain("inline-block");
+    expect(long?.className).not.toContain("whitespace-nowrap");
+  });
 });

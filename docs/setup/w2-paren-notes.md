@@ -39,7 +39,8 @@ body의 `word-break: keep-all`(globals.css)이 iOS WebKit에서 "(" 뒤에 줄�
 
 ## 5. 고른 수정: `parenSafe` (web/src/lib/text/paren-safe.tsx)
 
-`(`부터 다음 공백 앞까지(괄호가 붙은 말마디)를 `inline-block max-w-full [word-break:normal]` span 하나로 묶는다.
+`(`부터 다음 공백 앞까지(괄호가 붙은 말마디)를 span 하나로 묶는다. 24자 이하는 인라인 `whitespace-nowrap`, 더 길면(주소) `inline-block max-w-full [word-break:normal]`.
+  (inline-block만 쓰면 Chromium이 접근성 이름에 앞뒤 공백을 넣어 heading 이름이 달라진다 → 짧은 것은 인라인으로. 시뮬레이터 재측정 0/61.)
 - 단어 중간을 자르지 않고 말마디 통째로 묶으므로 낭독·복사·찾기는 그대로다.
 - 한 줄보다 긴 덩어리(주소)는 블록 안에서 일반 규칙으로 접혀 가로로 넘치지 않는다(nowrap이면 넘친다). e2e가 320~430px에서 `scrollWidth <= innerWidth`를 확인한다.
 - 전역 CSS는 바꾸지 않았으므로 다른 화면의 줄바꿈은 변하지 않는다(괄호가 있는 문구만 영향).
