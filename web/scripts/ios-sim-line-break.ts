@@ -19,6 +19,9 @@ import { orphanedOpenParens } from "../e2e/support/line-break.ts";
 const [, , baseArg, pathsArg] = process.argv;
 const base = baseArg ?? "http://127.0.0.1:3100";
 const paths = (pathsArg ?? "/privacy,/").split(",");
+/** 실험용(환경변수): LB_UNWRAP=1이면 괄호 묶음을 풀어 수정 전 상태를 만들고, LB_CSS로 후보 CSS를 덧붙인다. */
+const unwrap = process.env.LB_UNWRAP === "1";
+const extraCss = process.env.LB_CSS ?? "";
 const RESULT_PATH = "/__line-break-result";
 const TIMEOUT_MS = 120_000;
 
@@ -28,8 +31,11 @@ type Result = { path: string; userAgent: string; viewport: number; byWidth: Reco
 const probe = `
 ${orphanedOpenParens.toString()}
 addEventListener("load", async () => {
+  if (${JSON.stringify(extraCss)}) document.head.insertAdjacentHTML("beforeend", "<style>" + ${JSON.stringify(extraCss)} + "</style>");
   await document.fonts.ready;
   await new Promise((resolve) => setTimeout(resolve, 1500));
+  // 수화(hydration)가 끝난 뒤에 푼다: 먼저 풀면 React가 서버 HTML과 달라진 걸 되돌린다.
+  if (${JSON.stringify(unwrap)}) for (const el of [...document.querySelectorAll("[data-paren-safe]")]) el.replaceWith(el.textContent ?? "");
   const byWidth = {};
   for (let width = 320; width <= 440; width += 2) {
     document.body.style.width = width + "px";

@@ -26,6 +26,8 @@ for (const width of WIDTHS) {
       await settle(page);
       expect(await page.evaluate(orphanedOpenParens, "main")).toEqual([]);
       expect(await page.evaluate(unguardedOpenParens, "main")).toEqual([]);
+      // 괄호 묶음 안의 긴 주소(처리방침 URL 등)가 화면 밖으로 넘치지 않는다.
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
 
     test("동의 배너 문구의 '(' 뒤에서 줄이 바뀌지 않는다", async ({ page }) => {
