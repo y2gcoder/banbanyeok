@@ -357,7 +357,7 @@ participants(
 
 모든 이벤트에 공통 속성: `platform`(web/ios/android/server), `app_version`, `data_version`, `anon_user_id`. **출발역·별칭·방 ID 원문은 넣지 않는다**(방 ID는 해시 `room_hash`).
 
-> **결정 변경(R1/W4, 2026-11-16)**: `anon_user_id`는 앱이 방 기능을 쓸 때만 붙인다(웹은 익명 사용자를 쓰지 않아 보내지 않는다). `room_hash`는 서버가 `HMAC-SHA256(pepper, "room_hash:v1:" + 방 ID)` 앞 16 hex로 계산해 방 응답(`Room.roomHash`)에 실어 주고, 웹은 그 값을 그대로 쓴다. `room_created`·`participant_joined`는 서버가 통계를 보내기 전까지 웹이 보낸다(`client_or_server`). SDK 자동 이벤트는 `$exception`·`$web_vitals`만 켠다(contracts/events.json `sdkEvents`).
+> **결정 변경(R1/W4, 2026-11-16)**: `anon_user_id`는 앱이 방 기능을 쓸 때만 붙인다(웹은 익명 사용자를 쓰지 않아 보내지 않는다). `room_hash`는 서버가 `HMAC-SHA256(HMAC-SHA256(pepper, "banbanyeok/room_hash/v1"), 방 ID)` 앞 16 hex로 계산해 방 응답(`Room.roomHash`)에 실어 주고, 웹은 그 값을 그대로 쓴다. `room_created`·`participant_joined`는 서버가 통계를 보내기 전까지 웹이 보낸다(`client_or_server`). SDK 자동 이벤트는 `$exception`·`$web_vitals`만 켠다(contracts/events.json `sdkEvents`).
 
 | 이벤트 | 발생 위치 | 속성 | 목적 |
 |---|---|---|---|

@@ -669,6 +669,8 @@ test("오류 추적: 동의 전 오류는 요청 0건, 동의한 뒤 오류 1건
   await expect.poll(() => roomVitals().length, { timeout: 25_000 }).toBeGreaterThan(0);
   const vitals = probe.events.filter((e) => e.event === "$web_vitals");
   const vitalsText = JSON.stringify(vitals);
+  // 동의한 페이지(/r/new에서 동의)의 수치는 보내지 않는다: 동의 전에 찍힌 LCP·FCP가 버퍼에서 나가지 않게.
+  expect(vitals.filter((e) => String(e.properties.$current_url).endsWith("/r/new"))).toEqual([]);
   for (const needle of [FAKE_ROOM, ...Object.values(FAKE_TOKENS), "o="]) expect(vitalsText).not.toContain(needle);
   expect(roomVitals()[0]?.properties).toMatchObject({ platform: "web" });
   expect(Object.keys(roomVitals()[0]?.properties ?? {}).some((key) => /^\$web_vitals_[A-Z]+_value$/.test(key))).toBe(

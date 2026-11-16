@@ -593,8 +593,8 @@ components:
       type: string
       pattern: '^[0-9a-f]{16}$'
       description: |
-        통계 이벤트의 `room_hash`(contracts/events.json)로 그대로 쓰는 값. 방 ID를 되돌릴 수 없다: HMAC-SHA256(서버 비밀 pepper,
-        `room_hash:v1:` + 방 ID)의 앞 8바이트를 16자리 소문자 hex로 쓴다. 키가 서버에만 있어 통계 도구나 값을 본 사람이 방 ID를 전수 대입으로
+        통계 이벤트의 `room_hash`(contracts/events.json)로 그대로 쓰는 값. 방 ID를 되돌릴 수 없다: 하위 키 roomKey = HMAC-SHA256(서버
+        비밀 pepper, `banbanyeok/room_hash/v1`)로 HMAC-SHA256(roomKey, 방 ID)의 앞 8바이트를 16자리 소문자 hex로 쓴다(토큰 해시 키와 분리). 키가 서버에만 있어 통계 도구나 값을 본 사람이 방 ID를 전수 대입으로
         찾을 수 없다. 이 필드를 모르는 옛 서버는 보내지 않으므로 클라이언트는 없으면 `room_hash`를 생략한다
 
     RoomPatch:

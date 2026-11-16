@@ -50,25 +50,32 @@ public class TokenService(
         require(pepper.isNotEmpty()) { "pepper가 비어 있습니다" }
     }
 
+    /** 방 해시 전용 하위 키 = HMAC(pepper, [ROOM_HASH_KEY_LABEL]). 토큰 해시와 같은 키를 쓰지 않도록 한 번 유도해 둔다. */
+    private val roomKey = SecretKeySpec(mac(key, ROOM_HASH_KEY_LABEL), ALGORITHM)
+
     public fun issue(): IssuedToken = ids.token().let { IssuedToken(it, hash(it)) }
 
     public fun hash(token: String): TokenHash = TokenHash(mac(token))
 
     /**
-     * 통계 이벤트의 `room_hash`(contracts/events.json): HMAC-SHA256(pepper, "room_hash:v1:" + 방 ID)의 앞 8바이트(16 hex).
-     * 방 ID는 10자 base32(50비트)라 키 없는 해시는 전수 대입으로 되돌릴 수 있으므로 서버 비밀(pepper)로 키를 건다. 통계 도구(PostHog)는
-     * 이 값으로 방 ID를 알아낼 수 없고, 운영자도 데이터베이스에서 방이 지워지면 맞춰 볼 방 ID가 없다. 접두사로 토큰 해시와 입력 공간을 나눈다.
-     * pepper를 바꾸면 같은 방의 해시도 바뀐다(통계에서 바꾸기 전후 방을 잇지 못할 뿐 기능에는 영향 없음).
+     * 통계 이벤트의 `room_hash`(contracts/events.json): HMAC-SHA256(roomKey, 방 ID)의 앞 8바이트(16 hex). roomKey는 pepper에서
+     * 라벨 "banbanyeok/room_hash/v1"로 유도한 하위 키라 토큰 해시 키와 분리된다(방 해시 값이 토큰 해시 키에 대한 HMAC 출력이 되지 않는다).
+     * 방 ID는 10자 base32(50비트)라 키 없는 해시는 전수 대입으로 되돌릴 수 있으므로 서버 비밀로 키를 건다. 통계 도구(PostHog)는
+     * 이 값으로 방 ID를 알아낼 수 없고, 운영자도 데이터베이스에서 방이 지워지면 맞춰 볼 방 ID가 없다.
+     * pepper나 라벨을 바꾸면 같은 방의 해시도 바뀐다(통계에서 바꾸기 전후 방을 잇지 못할 뿐 기능에는 영향 없음).
      */
-    public fun roomHash(roomId: String): String =
-        HexFormat.of().formatHex(mac(ROOM_HASH_PREFIX + roomId), 0, ROOM_HASH_BYTES)
+    public fun roomHash(roomId: String): String = HexFormat.of().formatHex(mac(roomKey, roomId), 0, ROOM_HASH_BYTES)
 
-    private fun mac(input: String): ByteArray =
-        Mac.getInstance(ALGORITHM).apply { init(key) }.doFinal(input.toByteArray(Charsets.UTF_8))
+    private fun mac(input: String): ByteArray = mac(key, input)
+
+    private fun mac(
+        with: SecretKeySpec,
+        input: String,
+    ): ByteArray = Mac.getInstance(ALGORITHM).apply { init(with) }.doFinal(input.toByteArray(Charsets.UTF_8))
 
     private companion object {
         const val ALGORITHM = "HmacSHA256"
-        const val ROOM_HASH_PREFIX = "room_hash:v1:"
+        const val ROOM_HASH_KEY_LABEL = "banbanyeok/room_hash/v1"
         const val ROOM_HASH_BYTES = 8
     }
 }

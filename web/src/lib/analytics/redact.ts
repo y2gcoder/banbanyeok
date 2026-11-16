@@ -19,6 +19,9 @@ const PAIR_PATH = /\/meet\/[0-9a-z]{3}-[0-9a-z]{3}(?![0-9a-z-])/gi;
 /** 방 경로 `/r/<방 ID 10자>`: 방 ID는 방 링크 그 자체(방을 보고 참여할 수 있는 권한)라서 속성에 남기지 않는다. `/r/new`는 그대로 둔다. */
 const ROOM_PATH = /\/r\/[0-9a-z]{10}(?![0-9a-z])/gi;
 
+/** 방 API 경로 `/rooms/<방 ID 10자>`(`/api/v1/rooms/…`, 오류 메시지·요청 주소에 나온다). */
+const ROOM_API_PATH = /\/rooms\/[0-9a-z]{10}(?![0-9a-z])/gi;
+
 /** 글 안의 절대 주소(스킴://…). 괄호·따옴표·공백에서 끝난다(스택 줄 "at f (https://…/a.js:1:2)"). */
 const ABSOLUTE_URL = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'`<>()[\]{}]+/gi;
 
@@ -61,7 +64,10 @@ function stripQueryAndHash(value: string): string {
 
 /** 쿼리·해시를 떼고 조합 페이지 경로의 역 코드와 방 경로의 방 ID를 가린다. 주소로 읽히지 않는 값(`$direct`, `/s?o=…`)도 같은 규칙을 쓴다. */
 export function redactUrl(value: string): string {
-  return stripQueryAndHash(value).replace(PAIR_PATH, "/meet/[pair]").replace(ROOM_PATH, "/r/[room]");
+  return stripQueryAndHash(value)
+    .replace(PAIR_PATH, "/meet/[pair]")
+    .replace(ROOM_PATH, "/r/[room]")
+    .replace(ROOM_API_PATH, "/rooms/[room]");
 }
 
 function escapeRegExp(value: string): string {
@@ -78,6 +84,7 @@ export function redactText(value: string, secrets: readonly string[] = []): stri
     .replace(TRAILING_QUERY, "$1")
     .replace(PAIR_PATH, "/meet/[pair]")
     .replace(ROOM_PATH, "/r/[room]")
+    .replace(ROOM_API_PATH, "/rooms/[room]")
     .replace(BEARER, "Bearer [token]")
     .replace(TOKEN_SHAPE, "[token]");
   for (const secret of secrets) {
@@ -94,7 +101,8 @@ function redactDeep(value: unknown, secrets: readonly string[], depth = 0): unkn
   if (depth >= MAX_DEPTH) return undefined;
   if (Array.isArray(value)) return value.map((item) => redactDeep(item, secrets, depth + 1));
   const out: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value)) out[key] = redactDeep(item, secrets, depth + 1);
+  // 키도 가린다(SDK가 주소·메시지를 키로 쓰는 경우가 있어도 남지 않게).
+  for (const [key, item] of Object.entries(value)) out[redactText(key, secrets)] = redactDeep(item, secrets, depth + 1);
   return out;
 }
 

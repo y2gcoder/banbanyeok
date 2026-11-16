@@ -515,19 +515,17 @@
     {
       "name": "$exception",
       "source": "client",
-      "description": "처리하지 못한 오류(window.onerror·unhandledrejection)를 posthog-js 오류 추적이 보낸다. 콘솔 오류는 보내지 않는다. 오류 종류·메시지·스택(파일 경로·줄·함수 이름)이 들어 있어 before_send에서 주소·방 ID·역 조합·토큰을 가린다.",
+      "description": "처리하지 못한 오류(window.onerror·unhandledrejection)를 posthog-js 오류 추적이 보낸다. 콘솔 오류는 보내지 않는다. 오류 종류·메시지·스택(파일 경로·줄·함수 이름)이 들어 있어 before_send에서 주소·방 ID·역 조합·토큰을 가린다. $exception_types·$exception_values는 PostHog 서버가 $exception_list에서 계산하는 값이라 클라이언트가 보내지 않는다(가린 $exception_list에서 나오므로 같이 가려진다).",
       "knownProperties": [
         "$exception_list",
         "$exception_level",
-        "$exception_types",
-        "$exception_values",
         "$exception_steps"
       ]
     },
     {
       "name": "$web_vitals",
       "source": "client",
-      "description": "화면 로딩·반응 속도 수치(LCP·CLS·FCP·INP)를 posthog-js 웹 바이탈이 보낸다. 원인 요소(attribution)는 끈다. 각 수치의 $current_url·navigationURL은 before_send에서 같은 규칙으로 가린다.",
+      "description": "화면 로딩·반응 속도 수치(LCP·CLS·FCP·INP)를 posthog-js 웹 바이탈이 보낸다. 원인 요소(attribution)는 끈다. 각 수치의 $current_url·navigationURL은 before_send에서 같은 규칙으로 가린다. 동의한 바로 그 페이지에서는 켜지 않는다(동의 전에 찍힌 수치가 버퍼에서 나가지 않게). 다음 페이지 로드부터 잰다.",
       "knownProperties": [
         "$current_url",
         "$web_vitals_LCP_value",

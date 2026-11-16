@@ -29,6 +29,13 @@ describe("redactUrl", () => {
     expect(redactUrl("/r/abc")).toBe("/r/abc");
   });
 
+  it("방 API 경로(/rooms/<방 ID>)의 방 ID도 가린다", () => {
+    expect(redactUrl("https://banbanyeok.example/api/v1/rooms/qt7yvmsht3/result?mode=fair")).toBe(
+      "https://banbanyeok.example/api/v1/rooms/[room]/result",
+    );
+    expect(redactUrl("/api/v1/rooms")).toBe("/api/v1/rooms");
+  });
+
   it("주소가 아닌 값은 문자열만 자른다", () => {
     expect(redactUrl("$direct")).toBe("$direct");
     expect(redactUrl("/s?o=ABC")).toBe("/s");
@@ -100,9 +107,12 @@ describe("redactText(오류 메시지·스택 같은 자유 글)", () => {
     expect(redactText("fetch failed: https://banbanyeok.example/meet/e87-k3a?x=1")).toBe(
       "fetch failed: https://banbanyeok.example/meet/[pair]",
     );
-    expect(redactText("GET /api/v1/rooms/qt7yvmsht3/result?mode=fair 500")).toBe(
-      "GET /api/v1/rooms/qt7yvmsht3/result 500",
+    expect(redactText("GET /api/v1/rooms/qt7yvmsht3/result?mode=fair 500")).toBe("GET /api/v1/rooms/[room]/result 500");
+    expect(redactText("https://banbanyeok.example/api/v1/rooms/QT7YVMSHT3/participants")).toBe(
+      "https://banbanyeok.example/api/v1/rooms/[room]/participants",
     );
+    // 10자가 아니면 방 ID가 아니다.
+    expect(redactText("/api/v1/rooms/abc")).toBe("/api/v1/rooms/abc");
     expect(redactText("bad link /result?v=2&o=abc.def&n=민지")).toBe("bad link /result");
   });
 
@@ -185,6 +195,19 @@ describe("redactCapture: SDK 자동 이벤트($exception·$web_vitals)", () => {
       lineno: 1,
       colno: 2,
     });
+  });
+
+  it("중첩 객체의 키에 든 방 ID·주소도 가린다", () => {
+    const result = redactCapture(
+      {
+        uuid: "u",
+        event: "$exception",
+        properties: { $exception_steps: [{ [`/r/${ROOM}?o=ABC`]: 1, [STORED_TOKEN]: "x" }] },
+      } as unknown as CaptureResult,
+      { secrets },
+    );
+    expect(JSON.stringify(result)).not.toMatch(/qt7yvmsht3|ABC|ptok-host/);
+    expect(result?.properties.$exception_steps).toEqual([{ "/r/[room]": 1, "[redacted]": "x" }]);
   });
 
   it("공통 속성(platform·app_version)을 붙인다", () => {

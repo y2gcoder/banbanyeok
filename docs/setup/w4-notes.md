@@ -13,10 +13,10 @@
 
 ## 2. 방 해시(`room_hash`)와 `seconds_since_room_created`
 
-- 계약(events.json)이 이미 "서버가 계산해 응답에 실어 주는 값을 그대로 쓴다"였으므로 서버가 계산한다: `HMAC-SHA256(TOKEN_PEPPER, "room_hash:v1:" + 방 ID)`의 앞 8바이트(16 hex). `TokenService.roomHash`.
+- 계약(events.json)이 이미 "서버가 계산해 응답에 실어 주는 값을 그대로 쓴다"였으므로 서버가 계산한다: 하위 키 `roomKey = HMAC-SHA256(TOKEN_PEPPER, "banbanyeok/room_hash/v1")`를 한 번 유도하고 `HMAC-SHA256(roomKey, 방 ID)`의 앞 8바이트(16 hex). `TokenService.roomHash`.
   - 방 ID는 10자 base32(50비트)라 키 없는 SHA-256은 전수 대입으로 되돌릴 수 있다. 키를 서버 비밀로 두어 클라이언트에 솔트를 두는 한계를 피했다. 통계 도구(PostHog)·값을 본 사람은 방 ID를 알 수 없다.
   - 운영자는 pepper와 방 ID가 있으면 맞춰 볼 수 있으므로 여전히 개인정보로 다룬다(가명정보 아님, docs/legal/privacy-policy-review.md의 `room_hash` 행과 같음). 방이 지워지면 맞춰 볼 방 ID가 없다.
-  - 접두사로 토큰 해시와 입력 공간을 나눴다. pepper를 바꾸면 해시도 바뀐다(바꾸기 전후 방을 통계에서 잇지 못할 뿐).
+  - 하위 키로 토큰 해시 키와 나눴다(리뷰 반영: 처음엔 같은 pepper에 접두사만 붙였다. 운영에 쌓인 해시가 없을 때 바꿔 비용이 없다). pepper나 라벨을 바꾸면 해시도 바뀐다(바꾸기 전후 방을 통계에서 잇지 못할 뿐).
 - 계약: `Room.roomHash`, `Room.createdAt`, `RoomCreated.roomHash`(선택 필드, 옛 서버는 없음). 웹은 16자리 hex가 아니거나 방 ID를 담은 값이면 보내지 않는다(`lib/analytics/room.ts`).
 - 붙이는 이벤트: `room_created`, `participant_joined`(+`seconds_since_room_created`), `outcome_answered`, 방 링크의 `share_clicked`, 방 결과의 `result_viewed`. `link_opened(room)`은 웹이 보내지 않는다(계약상 서버 몫).
 - `seconds_since_room_created`는 방 응답의 `createdAt`과 기기 시계로 센다(느리면 0). 서버가 통계를 보내기 시작하면 서버 값으로 바꾼다.
@@ -33,9 +33,10 @@
   `capture_performance: {web_vitals: true, web_vitals_attribution: false, network_timing: false}`, `logs.captureConsoleLogs: false`. 근거: `@posthog/types` 1.421.1 `posthog-config.d.ts`(`ExceptionAutoCaptureConfig`, `PerformanceCaptureConfig`).
 - `no-external` 빌드는 확장을 CDN에서 받지 않으므로 `posthog-js/dist/exception-autocapture`·`posthog-js/dist/web-vitals`를 SDK와 함께 동적 import한다(init 전에 `__PosthogExtensions__` 등록). 원인 요소(attribution)를 끈 기본 web-vitals 판이다.
 - 동의 전에는 그대로 아무것도 없다: SDK를 불러오지 않으니 오류 처리기도 붙지 않는다. 동의한 기기는 페이지를 열 때(`Providers` → `startAnalytics`) SDK를 불러와 이벤트가 없는 페이지의 오류도 잡는다.
-- before_send(`redact.ts`): `$` 이벤트는 계약 `sdkEvents`의 `$exception`·`$web_vitals`만 남기고 버린다. 이 둘은 모든 문자열(메시지, 스택의 파일 경로·함수, 중첩된 `$web_vitals_*_event`의 주소)에서 쿼리·해시 삭제, `/r/[room]`·`/meet/[pair]`, Bearer 토큰, 43자 토큰 모양, 이 기기가 아는 방 ID·토큰(보는 방 + `bby.room.*`)을 가린다. 공통 속성(platform·app_version)을 붙인다.
+- before_send(`redact.ts`, 객체 키 포함, 방 API 경로 `/rooms/[room]`도 가림): `$` 이벤트는 계약 `sdkEvents`의 `$exception`·`$web_vitals`만 남기고 버린다. 이 둘은 모든 문자열(메시지, 스택의 파일 경로·함수, 중첩된 `$web_vitals_*_event`의 주소)에서 쿼리·해시 삭제, `/r/[room]`·`/meet/[pair]`, Bearer 토큰, 43자 토큰 모양, 이 기기가 아는 방 ID·토큰(보는 방 + `bby.room.*`)을 가린다. 공통 속성(platform·app_version)을 붙인다.
 - 한계: 오류 메시지에 주소 밖의 역 이름·별명이 평문으로 들어가면 가리지 못한다(우리 코드는 그런 메시지를 만들지 않는다). 3자 역 코드는 너무 짧아 주소 규칙으로만 가린다.
-- 무료 한도: 오류 추적 월 100,000건, 이벤트(웹 바이탈 포함) 월 1,000,000건, 넘으면 무료 플랜에서는 버려진다. 출처 https://posthog.com/pricing , https://posthog.com/error-tracking/pricing (2026-11-16 확인).
+- 무료 한도: 오류 추적 월 100,000건, 이벤트(웹 바이탈 포함) 월 1,000,000건(매월 초기화). 출처 https://posthog.com/pricing , https://posthog.com/error-tracking/pricing (2026-11-16 확인). 한도를 넘었을 때 무료 플랜의 처리(수집 중단 여부)는 이 두 쪽에서 확인하지 못했으므로, 운영자가 결제 설정에서 사용량 알림을 켜 둔다.
+- 웹 바이탈은 동의한 바로 그 페이지에서는 켜지 않는다(리뷰 반영). SDK는 페이지가 열린 뒤 찍힌 LCP·FCP를 버퍼에서 꺼내 보내므로 그 페이지에서 켜면 동의 전 수치가 나간다. 그 페이지(클라이언트 이동 포함)는 건너뛰고 다음 페이지 로드부터 잰다. 오류 추적은 동의 직후부터 켠다(동의 전 오류는 처리기가 없어 남지 않는다).
 - 콘솔 로그·네트워크 타이밍·세션 녹화·autocapture·pageview는 계속 끔. **켜려면 처리방침 통계 항목과 동의 문구를 먼저 갱신해야 한다**(콘솔 로그·네트워크 타이밍에 주소·방 ID가 들어갈 수 있다).
 
 ## 남은 일

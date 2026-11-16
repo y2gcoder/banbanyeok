@@ -48,7 +48,12 @@ const MAX_QUEUE = 50;
  * 네트워크 타이밍, 설문, 플래그)은 모두 끈다. 콘솔 로그와 네트워크 타이밍에는 주소·방 ID가 들어갈 수 있어, 켜려면 처리방침의 통계
  * 항목과 동의 문구(consent-text.ts)를 먼저 고쳐야 한다.
  */
-export function posthogOptions(config: AnalyticsConfig, context?: CaptureContext): Partial<PostHogConfig> {
+export function posthogOptions(
+  config: AnalyticsConfig,
+  context?: CaptureContext,
+  /** 웹 바이탈을 켤지. 동의한 바로 그 페이지에서는 끈다(동의 전에 이미 찍힌 LCP·FCP가 버퍼에서 나가지 않게). */
+  { webVitals = true }: { webVitals?: boolean } = {},
+): Partial<PostHogConfig> {
   return {
     api_host: config.host,
     // 자동 수집 전부 끔: 클릭·입력창 텍스트·페이지뷰(URL 쿼리에 출발역이 있다)를 모으지 않는다.
@@ -65,7 +70,7 @@ export function posthogOptions(config: AnalyticsConfig, context?: CaptureContext
       capture_console_errors: false,
     },
     // 웹 바이탈(LCP·CLS·FCP·INP 수치)만. 원인 요소(attribution: 요소 선택자·리소스 주소)는 보내지 않고, 네트워크 타이밍(녹화용)은 끈다.
-    capture_performance: { web_vitals: true, web_vitals_attribution: false, network_timing: false },
+    capture_performance: { web_vitals: webVitals, web_vitals_attribution: false, network_timing: false },
     // 콘솔 출력을 로그로 보내는 기능은 끈다(메시지에 주소·방 ID가 들어갈 수 있다).
     logs: { captureConsoleLogs: false },
     // 세션 녹화·설문·실험 등 부가 기능과 외부 스크립트 로딩 끔.
@@ -81,6 +86,8 @@ export function posthogOptions(config: AnalyticsConfig, context?: CaptureContext
     person_profiles: "identified_only",
     // 쿠키 없이 localStorage에만 익명 ID를 둔다. 리퍼러는 저장하지 않는다.
     persistence: "localStorage",
+    // 철회가 저장을 끈다(revoke). 같은 페이지에서 다시 동의하면 set_config로 이 값이 들어가 다시 켜진다.
+    disable_persistence: false,
     save_referrer: false,
     respect_dnt: true,
     // SDK가 자동으로 붙이는 속성 중 가장 식별력이 큰 원문 사용자 에이전트는 보내지 않는다($browser·$os 같은 분류는 남는다).
@@ -99,7 +106,8 @@ export type Tracker = {
   enabled(): boolean;
   /**
    * 켜져 있으면 PostHog를 미리 불러와 오류 추적·웹 바이탈을 시작한다(이벤트가 없는 페이지의 오류도 잡도록). 꺼져 있으면(동의 전·거부·
-   * 추적 거부) 아무것도 하지 않는다: 불러오지도 않고 오류 처리기도 붙지 않는다.
+   * 추적 거부) 아무것도 하지 않는다: 불러오지도 않고 오류 처리기도 붙지 않는다. 페이지를 열 때 처음 부른다(그때의 동의 여부로
+   * 이 페이지의 웹 바이탈을 정한다).
    */
   start(): void;
   /** 동의 철회: 대기 중인 이벤트를 버리고, PostHog를 끄고, 저장된 식별자를 지운다. 이후 동의하면 새로 시작한다. */
@@ -120,6 +128,9 @@ export function createTracker(deps: TrackerDeps): Tracker {
   // 철회·재동의 사이에 늦게 끝난 불러오기가 초기화하지 않도록 세대를 센다.
   let generation = 0;
   const queue: Queued[] = [];
+  // 이 페이지를 열 때(첫 start) 이미 동의해 있었는지. 그때만 웹 바이탈을 켠다: 웹 바이탈은 페이지가 열린 뒤 찍힌 수치를 버퍼에서
+  // 꺼내 보내므로, 이 페이지에서 동의했다면 동의 전의 LCP·FCP가 나간다. 그런 페이지는 건너뛰고 다음 페이지 로드부터 잰다.
+  let consentedAtOpen: boolean | undefined;
   const common = (): CommonProperties => ({
     platform: "web",
     app_version: deps.appVersion,
@@ -141,12 +152,16 @@ export function createTracker(deps: TrackerDeps): Tracker {
       .loadPostHog()
       .then((posthog) => {
         if (mine !== generation || !enabled()) return; // 그 사이 철회됐다.
-        const options = posthogOptions(config, {
-          secrets: deps.secrets ?? (() => []),
-          common,
-          // 철회한 뒤에는(세대가 바뀜) SDK에 남은 처리기가 무엇을 만들어도 보내지 않는다.
-          active: () => mine === generation && enabled(),
-        });
+        const options = posthogOptions(
+          config,
+          {
+            secrets: deps.secrets ?? (() => []),
+            common,
+            // 철회한 뒤에는(세대가 바뀜) SDK에 남은 처리기가 무엇을 만들어도 보내지 않는다.
+            active: () => mine === generation && enabled(),
+          },
+          { webVitals: consentedAtOpen === true },
+        );
         posthog.init(config.key, options);
         // 철회 뒤 다시 동의하면 같은 SDK 객체라 init이 설정을 다시 넣지 않는다. 철회 때 끈 기능·저장을 여기서 되돌린다.
         posthog.set_config(options);
@@ -166,6 +181,7 @@ export function createTracker(deps: TrackerDeps): Tracker {
   return {
     enabled,
     start() {
+      consentedAtOpen ??= enabled();
       if (enabled()) ensureLoaded();
     },
     setDataVersion(version) {

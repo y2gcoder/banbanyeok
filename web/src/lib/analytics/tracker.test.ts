@@ -73,6 +73,16 @@ describe("키가 없으면 완전히 꺼진다", () => {
 });
 
 describe("동의 전에는 켜지지 않는다(옵트인)", () => {
+  it("이미 동의한 채로 연 페이지에서는 웹 바이탈도 켠다", async () => {
+    const { tracker, init } = setup();
+    tracker.start();
+    await vi.waitFor(() => expect(init).toHaveBeenCalledTimes(1));
+    expect(init.mock.calls[0]?.[1]).toMatchObject({
+      capture_performance: { web_vitals: true },
+      disable_persistence: false,
+    });
+  });
+
   it("start(): 동의 전·추적 거부면 PostHog를 불러오지 않는다(오류 처리기도 붙지 않는다), 동의하면 불러와 초기화한다", async () => {
     let consented = false;
     const { tracker, loadPostHog, init, capture } = setup({ consented: () => consented });
@@ -89,8 +99,12 @@ describe("동의 전에는 켜지지 않는다(옵트인)", () => {
     consented = true;
     tracker.start();
     await vi.waitFor(() => expect(init).toHaveBeenCalledTimes(1));
-    // 오류 추적·웹 바이탈 옵션은 init 때만 들어간다 = 동의한 뒤에만 처리기가 붙는다.
-    expect(init.mock.calls[0]?.[1]).toMatchObject({ capture_exceptions: { capture_unhandled_errors: true } });
+    // 오류 추적·웹 바이탈 옵션은 init 때만 들어간다 = 동의한 뒤에만 처리기가 붙는다. 이 페이지에서 동의했으므로 웹 바이탈은 끈다
+    // (동의 전에 찍힌 수치가 버퍼에서 나가지 않게). 오류 추적은 바로 켠다.
+    expect(init.mock.calls[0]?.[1]).toMatchObject({
+      capture_exceptions: { capture_unhandled_errors: true },
+      capture_performance: { web_vitals: false },
+    });
     expect(capture).not.toHaveBeenCalled(); // 시작만 하고 이벤트를 만들어 보내지는 않는다
     tracker.start();
     await Promise.resolve();
@@ -174,8 +188,12 @@ describe("동의 전에는 켜지지 않는다(옵트인)", () => {
     await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
     expect(loadPostHog).toHaveBeenCalledTimes(2);
     expect(init).toHaveBeenCalledTimes(2);
-    // 같은 SDK 객체라 init은 설정을 다시 넣지 않으므로, 켜는 설정 전체를 set_config로 되돌린다.
-    expect(setConfig.mock.calls.at(-1)?.[0]).toMatchObject({ capture_performance: { web_vitals: true } });
+    // 같은 SDK 객체라 init은 설정을 다시 넣지 않으므로, 켜는 설정 전체를 set_config로 되돌린다(철회가 끈 저장도 다시 켠다:
+    // 그래야 /privacy에 식별자가 다시 보인다).
+    expect(setConfig.mock.calls.at(-1)?.[0]).toMatchObject({
+      disable_persistence: false,
+      capture_exceptions: { capture_unhandled_errors: true },
+    });
   });
 });
 
@@ -263,6 +281,7 @@ describe("posthogOptions(개인정보 설정)", () => {
 
   it("익명으로 시작하고(identified_only) 쿠키·리퍼러를 저장하지 않으며 DNT를 존중한다", () => {
     expect(options).toMatchObject({
+      disable_persistence: false,
       person_profiles: "identified_only",
       persistence: "localStorage",
       save_referrer: false,
