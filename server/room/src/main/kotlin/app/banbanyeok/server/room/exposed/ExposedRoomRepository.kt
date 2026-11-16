@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
@@ -156,7 +157,13 @@ public class ExposedRoomRepository(
     ): Boolean =
         inTransaction {
             val updated =
-                RoomsTable.update({ RoomsTable.id eq roomId }) {
+                RoomsTable.update({
+                    if (change.onlyWithoutMeetingTime) {
+                        (RoomsTable.id eq roomId) and RoomsTable.meetingTime.isNull()
+                    } else {
+                        RoomsTable.id eq roomId
+                    }
+                }) {
                     change.mode?.let { mode -> it[RoomsTable.mode] = mode.name.lowercase() }
                     (change.favorParticipantId as? Change.Set)?.let { set -> it[favorPid] = set.value }
                     change.locked?.let { locked -> it[status] = statusOf(locked) }

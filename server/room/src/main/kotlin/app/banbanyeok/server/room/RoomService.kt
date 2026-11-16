@@ -156,6 +156,7 @@ public class RoomService(
                 Change.Unchanged -> stored.room.meetingDate
                 is Change.Set -> requested.value?.also { checkMeetingDate(it, now) }
             }
+        val band = bandChange(stored.room, patch)
         val change =
             RoomChange(
                 mode = patch.mode,
@@ -163,10 +164,16 @@ public class RoomService(
                 locked = patch.locked,
                 meetingDate = patch.meetingDate,
                 meetingTime = minutes(patch.meetingTime),
-                meetingBand = bandChange(stored.room, patch),
+                meetingBand = band,
+                // 시각은 그대로 두고 시간대를 넣으면, 읽은 뒤 다른 요청이 시각을 넣었을 때 둘이 어긋난다. 저장 때 다시 확인한다.
+                onlyWithoutMeetingTime =
+                    patch.meetingTime == Change.Unchanged && (band as? Change.Set)?.value != null,
             )
         val expiresAt = ExpiryPolicy.expiresAt(stored.room.createdAt, now, meetingDate)
         if (!rooms.updateRoom(roomId, change, Activity(now, expiresAt))) {
+            if (change.onlyWithoutMeetingTime && rooms.find(roomId) != null) {
+                reject(RoomError.INVALID_MEETING_BAND, "meetingBand가 meetingTime의 시간대와 다릅니다")
+            }
             reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
         }
         return viewOf(loadActive(roomId, now), null)

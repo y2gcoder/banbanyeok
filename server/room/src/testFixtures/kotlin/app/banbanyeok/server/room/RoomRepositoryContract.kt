@@ -259,6 +259,22 @@ private fun DescribeSpecRootScope.meetingBands(repos: () -> RepositoryPair) {
                 .room.meetingBand
                 .shouldBeNull()
         }
+
+        it("changes a band only while the room has no meeting time when asked to") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId()) { it.copy(meetingTime = java.time.LocalTime.of(19, 0)) }
+            rooms.create(room, aParticipant("host01"))
+            val bandOnly = RoomChange(meetingBand = Change.Set(TimeBand.NIGHT), onlyWithoutMeetingTime = true)
+            rooms.updateRoom(room.id, bandOnly, activity(5)) shouldBe false
+            rooms
+                .find(room.id)!!
+                .room.meetingBand
+                .shouldBeNull()
+            rooms.find(room.id)!!.room.lastActivityAt shouldBe room.lastActivityAt
+            rooms.updateRoom(room.id, RoomChange(meetingTime = Change.Set(null)), activity(6)) shouldBe true
+            rooms.updateRoom(room.id, bandOnly, activity(7)) shouldBe true
+            rooms.find(room.id)!!.room.meetingBand shouldBe TimeBand.NIGHT
+        }
     }
 }
 

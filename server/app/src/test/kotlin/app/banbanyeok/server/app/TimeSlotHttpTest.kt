@@ -173,6 +173,49 @@ class TimeSlotHttpTest :
             }
         }
 
+        describe("contracts/time-slots.json vectors with both a time and a band") {
+            it("are accepted by the room service unless the vector names an apiError") {
+                val vectors =
+                    Json
+                        .parseToJsonElement(
+                            java.nio.file.Path
+                                .of(System.getProperty("contracts.dir"), "time-slots.json")
+                                .toFile()
+                                .readText(),
+                        ).jsonObject
+                        .getValue("vectors")
+                        .jsonArray
+                        .map { it.jsonObject }
+                        .filter { it["time"] !is kotlinx.serialization.json.JsonNull && it["band"] != null }
+                vectors.size shouldNotBe 0
+                vectors.forEach { vector ->
+                    val fixture =
+                        app.banbanyeok.server.room
+                            .RoomFixture()
+                    val command =
+                        CreateRoomCommand(
+                            mode = RoomMode.FAIR,
+                            favorTarget = null,
+                            meetingDate = null,
+                            host =
+                                app.banbanyeok.server.room
+                                    .ParticipantInput("민수", "03v"),
+                            expectedCount = null,
+                            deviceToken = null,
+                            meetingTime = LocalTime.parse(vector.getValue("time").jsonPrimitive.content),
+                            meetingBand = TimeBand.parseOrNull(vector.getValue("band").jsonPrimitive.content),
+                        )
+                    val error = vector["apiError"]?.jsonPrimitive?.content
+                    val result = runBlocking { runCatching { fixture.service.create(command) } }
+                    io.kotest.assertions.withClue(vector.getValue("id").jsonPrimitive.content) {
+                        (result.exceptionOrNull() as? app.banbanyeok.server.room.RoomException)?.error?.name shouldBe
+                            error
+                        result.isSuccess shouldBe (error == null)
+                    }
+                }
+            }
+        }
+
         describe("room meetingTime") {
             it("passes the meeting time on creation and returns it on the room") {
                 withMockedApi { services ->

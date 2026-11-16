@@ -55,6 +55,20 @@ class TimeSlotTest :
                 slots.text("default") shouldBe TimeSlot.DEFAULT.id
                 TimeSlotLabels.of(TimeSlot(DayType.SATURDAY, TimeBand.EVENING)) shouldBe "토요일 저녁"
             }
+            it("TimeBand.ofClock agrees with bands[].from/to for every minute of the day") {
+                val bands = slots.getValue("bands").jsonArray.map { it.jsonObject }
+                for (minute in 0 until 24 * 60) {
+                    val text = "%02d:%02d".format(java.util.Locale.ROOT, minute / 60, minute % 60)
+                    // [from, to)이고 to <= from이면 자정을 넘는다(밤 21:00~03:00).
+                    val expected =
+                        bands.single { band ->
+                            val from = band.text("from")!!
+                            val to = band.text("to")!!
+                            if (from < to) text >= from && text < to else text >= from || text < to
+                        }
+                    withClue(text) { TimeBand.ofClock(minute / 60, minute % 60).id shouldBe expected.text("id") }
+                }
+            }
             it("names the holiday of the service day") {
                 resolver.resolve(LocalDate.parse("2026-12-25"), LocalTime.parse("19:00")).holidayName shouldBe "기독탄신일"
                 // 12/26 01:00 belongs to the Christmas service day.

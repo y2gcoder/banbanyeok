@@ -93,6 +93,7 @@ class InMemoryRoomRepository : RoomRepository {
     ): Boolean =
         lock.withLock {
             val room = rooms[roomId] ?: return@withLock false
+            if (change.onlyWithoutMeetingTime && room.meetingTime != null) return@withLock false
             rooms[roomId] =
                 room.copy(
                     mode = change.mode ?: room.mode,

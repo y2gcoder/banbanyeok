@@ -473,6 +473,41 @@ class RoomServiceTest :
             }
         }
 
+        describe("meeting band races") {
+            it("rejects a band-only change when another request set a meeting time after it was read") {
+                roomTest {
+                    // 서비스가 방을 읽은 뒤, 저장하기 전에 다른 요청이 시각(19:00)을 넣는다.
+                    val racing =
+                        object : RoomRepository by rooms {
+                            override suspend fun updateRoom(
+                                roomId: String,
+                                change: RoomChange,
+                                activity: Activity,
+                            ): Boolean {
+                                rooms.updateRoom(
+                                    roomId,
+                                    RoomChange(meetingTime = Change.Set(LocalTime.of(19, 0))),
+                                    activity,
+                                )
+                                return rooms.updateRoom(roomId, change, activity)
+                            }
+                        }
+                    val raced = RoomService(racing, anonUsers, tokens, ids, stations, clock)
+                    val created = service.create(command())
+                    shouldFailWith(RoomError.INVALID_MEETING_BAND) {
+                        raced.updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(meetingBand = Change.Set(TimeBand.MORNING)),
+                        )
+                    }
+                    val stored = rooms.find(created.roomId)!!.room
+                    stored.meetingTime shouldBe LocalTime.of(19, 0)
+                    stored.meetingBand.shouldBeNull()
+                }
+            }
+        }
+
         describe("recording the outcome") {
             it("accepts a participant's answer and rejects the host token and bad station codes") {
                 roomTest {
