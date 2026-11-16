@@ -24,6 +24,7 @@ const HOST = {
   originName: "강남",
   label: "민수",
   labelKind: "name",
+  shortLabel: "민수",
   nickname: "민수",
   isHost: true,
 };
@@ -34,6 +35,7 @@ const HIDDEN_FRIEND = {
   originName: null,
   label: "참가자 2",
   labelKind: "ordinal",
+  shortLabel: "참가자 2",
   nickname: null,
   isHost: false,
 };
@@ -44,6 +46,7 @@ const NAMED_FRIEND = {
   originName: "신촌",
   label: "지연이와 함께 오는 아주 긴 이름",
   labelKind: "name",
+  shortLabel: "지연이와 함께 오는 아주 긴 이름",
   nickname: "지연이와 함께 오는 아주 긴 이름",
   isHost: false,
 };

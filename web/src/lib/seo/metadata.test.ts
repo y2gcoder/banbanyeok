@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import fixture from "../../../fixtures/seo-pairs.json";
 import {
   hubMetadata,
+  newRoomMetadata,
   pairDescription,
   pairMetadata,
   pairTitle,
+  plainPageMetadata,
   roomLinkMetadata,
   sharedLinkMetadata,
   siteMetadata,
@@ -112,11 +114,19 @@ describe("공유 링크 메타데이터", () => {
     });
   });
 
-  it("결과를 못 가져왔으면 기본 제목으로(이미지는 사이트 기본 미리보기가 맡는다)", () => {
+  it("결과를 못 가져왔으면 기본 제목과 사이트 기본 이미지(레이아웃의 홈 og:url·canonical은 물려받지 않는다)", () => {
     const meta = sharedLinkMetadata(null);
     expect(meta.title).toBe("만날 역 후보");
     expect(meta.robots).toEqual({ index: false, follow: false });
-    expect(meta.openGraph).toBeUndefined();
+    expect(og(meta)).toMatchObject({ images: [{ url: "/opengraph-image", width: 1200, height: 630 }] });
+    expect(og(meta)).not.toHaveProperty("url");
+    expect(meta.alternates).toEqual({ canonical: null });
+  });
+
+  it("링크별 미리보기도 canonical을 지우고 og:url을 두지 않는다(메신저가 공유한 링크 그대로 열게)", () => {
+    const meta = sharedLinkMetadata({ title: "신촌에서 볼까?", description: "…", imagePath: "/s/og?v=2" });
+    expect(meta.alternates).toEqual({ canonical: null });
+    expect(og(meta)).not.toHaveProperty("url");
   });
 });
 
@@ -130,6 +140,23 @@ describe("방 링크 메타데이터", () => {
       images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
     });
     expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: "/opengraph-image" }] });
+  });
+
+  it("방 링크는 canonical을 지우고, 방 만들기(/r/new)는 자기 주소를 canonical·og:url로 쓴다", () => {
+    expect(roomLinkMetadata().alternates).toEqual({ canonical: null });
+    const meta = newRoomMetadata({ SITE_URL: "https://banban.example" });
+    expect(meta.alternates?.canonical).toBe("https://banban.example/r/new");
+    expect(og(meta)).toMatchObject({ url: "https://banban.example/r/new", images: [{ url: "/opengraph-image" }] });
+    expect(meta.robots).toEqual({ index: false, follow: false });
+  });
+
+  it("일반 페이지(/privacy)는 canonical·og:url이 홈이 아니라 자기 주소다", () => {
+    const meta = plainPageMetadata(
+      { title: "개인정보 처리방침", description: "…", path: "/privacy" },
+      { SITE_URL: "https://banban.example" },
+    );
+    expect(meta.alternates?.canonical).toBe("https://banban.example/privacy");
+    expect(og(meta)).toMatchObject({ url: "https://banban.example/privacy" });
   });
 
   it("함수가 인자를 받지 않아 방 ID·이름·출발역이 문구에 들어갈 길이 없다", () => {

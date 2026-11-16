@@ -52,11 +52,13 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   await expect(page).toHaveURL(/m=q/);
   await expect(top.getByText(/합쳐/)).toBeVisible();
 
-  await page.getByRole("tab", { name: /쪽으로/ }).click();
+  await page.getByRole("tab", { name: "누구 쪽으로" }).click();
   await expect(page).toHaveURL(/m=p[01]/);
   await page.getByRole("button", { name: "민수" }).click();
   await expect(page).toHaveURL(/m=p0/);
-  await expect(page.getByRole("tab", { name: "민수 쪽으로" })).toHaveAttribute("aria-selected", "true");
+  // 탭 이름은 고정이고(폰 폭에서 잘리지 않게), 고른 사람은 알약이 보여 준다.
+  await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("button", { name: "민수" })).toHaveAttribute("aria-pressed", "true");
   await shot(page, "2b-result-favor");
 
   // 화면 3: 공유(링크 복사)

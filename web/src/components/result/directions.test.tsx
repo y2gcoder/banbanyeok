@@ -34,6 +34,7 @@ const result: RecommendResult = {
       nickname: "민지",
       label: "민지",
       labelKind: "name",
+      shortLabel: "민지",
     },
     {
       participantId: "1",
@@ -43,6 +44,7 @@ const result: RecommendResult = {
       nickname: null,
       label: "홍대입구에서 오는 분",
       labelKind: "origin",
+      shortLabel: "홍대입구",
     },
   ],
   candidates: [

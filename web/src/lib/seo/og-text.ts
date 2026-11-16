@@ -34,7 +34,10 @@ export const OG_TEXT = {
   minute: "분",
   hour: "시간",
   sharedSuffix: "에서 볼까?",
-  sharedCandidates: "후보 3곳 보기",
+  /** 공유 링크 그림의 요약: "가장 오래 걸려도 31분 · 차이 11분". 0분인 사람(만날 역이 바로 출발역)은 "바로 여기". */
+  longestPrefix: "가장 오래 걸려도 ",
+  spreadPrefix: "차이 ",
+  zeroMinutes: "바로 여기",
   modeFair: "공평하게 고름",
   modeFast: "가장 빠른 만남으로 고름",
   modeFavorSuffix: " 쪽으로 고름",
@@ -45,8 +48,11 @@ export const OG_TEXT = {
   whenWords: "평일 토요일 일요일·공휴일 아침 낮 저녁 밤",
 } as const;
 
-/** 한 줄로 다 못 쓰는 별칭은 이만큼 자르고 말줄임표를 붙인다(코드 포인트 수). */
-export const OG_NAME_MAX = 7;
+/**
+ * 한 줄로 다 못 쓰는 이름은 이만큼 자르고 말줄임표를 붙인다(코드 포인트 수). 공유 링크 그림의 노선 이름 줄(32px, 약 490px 폭)에
+ * "{이름} 1시간 59분"이 들어가는 길이다. 가장 긴 역 이름("동대문역사문화공원", 9자)은 자르지 않는다.
+ */
+export const OG_NAME_MAX = 10;
 
 /** 서브셋에 반드시 들어가는 글자: 고정 문구 전부. */
 export function ogFixedChars(): string[] {

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RecommendResult } from "../api/types";
 import { decodeShareQuery, type ShareState } from "../link/codec";
+import { modeSentence } from "../result/mode-sentence";
 import { toResultView } from "../result/view-model";
-import { loadSharedView, modeSentence, sharedCardData, sharedImagePath, sharedPreview } from "./shared-preview";
+import { loadSharedView, sharedCardData, sharedImagePath, sharedPreview } from "./shared-preview";
 
 const recommend = vi.fn();
 vi.mock("../api/client", () => ({ recommend: (...args: unknown[]) => recommend(...args) }));
@@ -30,7 +31,15 @@ function result(overrides: Partial<RecommendResult> = {}): RecommendResult {
       holidayName: null,
     },
     participants: [
-      { participantId: "0", originCode: "1qs", originName: "신촌", hidden: false, label: "지훈🎂", labelKind: "name" },
+      {
+        participantId: "0",
+        originCode: "1qs",
+        originName: "신촌",
+        hidden: false,
+        label: "지훈🎂",
+        labelKind: "name",
+        shortLabel: "지훈🎂",
+      },
       {
         participantId: "1",
         originCode: "70x",
@@ -38,6 +47,7 @@ function result(overrides: Partial<RecommendResult> = {}): RecommendResult {
         hidden: false,
         label: "잠실에서 오는 분",
         labelKind: "origin",
+        shortLabel: "잠실",
       },
     ],
     candidates: [
@@ -67,7 +77,8 @@ describe("공유 링크 미리보기 문구", () => {
   it("제목은 제안하는 말투, 설명은 각자 시간과 모드", () => {
     expect(sharedPreview(view, state)).toEqual({
       title: "왕십리에서 볼까?",
-      description: "지훈🎂 34분 · 잠실에서 오는 분 30분 · 공평하게 고름",
+      // 미리보기는 좁은 칸이라 짧은 이름(shortLabel): "잠실에서 오는 분" 대신 "잠실"
+      description: "지훈🎂 34분 · 잠실 30분 · 공평하게 고름",
     });
   });
 
@@ -91,6 +102,7 @@ describe("이미지에 그릴 값", () => {
       ...base.participants[1],
       label: "🎉",
       labelKind: "name",
+      shortLabel: "🎉",
     } as RecommendResult["participants"][number];
     const withEmoji = toResultView({ ...base, participants: [base.participants[0], emojiOnly] } as RecommendResult);
     const data = sharedCardData(withEmoji, { ...state, nicknames: ["지훈🎂", "🎉"] });

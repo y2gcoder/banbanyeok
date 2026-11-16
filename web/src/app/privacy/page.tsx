@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { Wordmark } from "@/components/common/wordmark";
 import { ConsentSettings } from "@/components/consent/consent-settings";
+import { plainPageMetadata } from "@/lib/seo/metadata";
 import { type Block, POLICY } from "./policy";
 
 // 초안이라 검색 색인에서 뺀다. 운영자 검토 후 공개할 때 robots를 지운다(docs/setup/l1-notes.md).
 export const metadata: Metadata = {
-  title: "개인정보 처리방침",
-  description: "반반역이 처리하는 개인정보 항목, 보유 기간, 국외 이전, 이용자 권리를 안내합니다.",
+  ...plainPageMetadata({
+    title: "개인정보 처리방침",
+    description: "반반역이 처리하는 개인정보 항목, 보유 기간, 국외 이전, 이용자 권리를 안내합니다.",
+    path: "/privacy",
+  }),
   robots: { index: false },
 };
 

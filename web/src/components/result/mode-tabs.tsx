@@ -6,16 +6,11 @@ import { cn } from "@/lib/utils";
 
 const MODES: readonly Mode[] = ["fair", "fast", "favor"];
 
-export function modeLabel(mode: Mode, favorName: string | null): string {
-  switch (mode) {
-    case "fair":
-      return "공평하게";
-    case "fast":
-      return "빨리 만나기";
-    case "favor":
-      return favorName ? `${favorName} 쪽으로` : "누구 쪽으로";
-  }
-}
+/**
+ * 탭 이름은 고정이다. 배려 탭은 누구를 골라도 "누구 쪽으로"이고, 바로 아래 줄 "오늘은 [이름] 쪽으로"가 답한다
+ * (이름을 넣으면 폰 3등분 폭에서 잘려 보이지 않았다, V1).
+ */
+const MODE_LABELS: Record<Mode, string> = { fair: "공평하게", fast: "빨리 만나기", favor: "누구 쪽으로" };
 
 type Props = {
   mode: Mode;
@@ -28,9 +23,8 @@ type Props = {
   panelId: string;
 };
 
-/** 모드 탭(공평하게 / 빨리 만나기 / ○○ 쪽으로)과, 배려 모드일 때 누구 쪽인지 고르는 줄. */
+/** 모드 탭(공평하게 / 빨리 만나기 / 누구 쪽으로)과, 배려 모드일 때 누구 쪽인지 고르는 줄. 사람 이름은 짧은 이름이다. */
 export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex, label, panelId }: Props) {
-  const favorName = people.find((p) => p.index === favorIndex)?.name ?? null;
   return (
     <div className="flex flex-col gap-3">
       <Tabs
@@ -45,7 +39,7 @@ export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex
               aria-controls={panelId}
               className="h-full truncate rounded-lg text-[15px] font-bold text-ink-soft data-active:bg-surface data-active:text-ink data-active:shadow-sm"
             >
-              {modeLabel(value, value === "favor" ? favorName : null)}
+              {MODE_LABELS[value]}
             </TabsTrigger>
           ))}
         </TabsList>

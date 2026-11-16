@@ -28,7 +28,7 @@ describe("모드 탭", () => {
     expect(onChange).toHaveBeenCalledWith("favor", 1);
   });
 
-  it("배려 모드에서는 탭 이름에 이름이 들어가고 대상을 바꿀 수 있다", async () => {
+  it("배려 모드에서도 탭 이름은 고정이고(폰 폭에서 잘리지 않게) 아래 알약으로 대상을 바꾼다", async () => {
     const onChange = vi.fn();
     render(
       <ModeTabs
@@ -41,7 +41,8 @@ describe("모드 탭", () => {
         panelId="p"
       />,
     );
-    expect(screen.getByRole("tab", { name: "지훈 쪽으로" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("tab", { name: /지훈/ })).toBeNull();
     expect(screen.getByRole("button", { name: "지훈" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(screen.getByRole("button", { name: "민지" }));
     expect(onChange).toHaveBeenCalledWith("favor", 0);

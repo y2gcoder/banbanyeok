@@ -51,12 +51,13 @@ describe("글꼴에 없는 글자 대체(ogSafeName)", () => {
   });
 
   it("길면 자르고 말줄임표를 붙인다(코드 포인트 기준)", () => {
-    const long = "가나다라마바사아자차";
+    const long = "가나다라마바사아자차카타";
     const out = ogSafeName(long, "나");
     expect(Array.from(out)).toHaveLength(OG_NAME_MAX + 1);
     expect(out.endsWith("…")).toBe(true);
-    expect(out.startsWith("가나다라마바사")).toBe(true);
-    expect(ogSafeName("가나다라마바사", "나")).toBe("가나다라마바사"); // 정확히 최대 길이는 그대로
+    expect(out.startsWith("가나다라마바사아자차")).toBe(true);
+    expect(ogSafeName("가나다라마바사아자차", "나")).toBe("가나다라마바사아자차"); // 정확히 최대 길이는 그대로
+    expect(ogSafeName("동대문역사문화공원", "나")).toBe("동대문역사문화공원"); // 가장 긴 역 이름은 자르지 않는다
   });
 
   it("제어 문자와 한자(서브셋에 없는 글자)도 걸러낸다", () => {

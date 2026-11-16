@@ -6,6 +6,7 @@ import { toResultView } from "@/lib/result/view-model";
 import { searchStations } from "@/lib/stations";
 import { OtherCandidateRow, TopCandidateCard } from "./candidate-card";
 import type { ChoiceContext } from "./directions";
+import { railScale } from "./time-rails";
 
 const code = (name: string) => searchStations(name)[0]?.code ?? "000";
 
@@ -30,6 +31,7 @@ const result: RecommendResult = {
       nickname: "민지",
       label: "민지",
       labelKind: "name",
+      shortLabel: "민지",
     },
     {
       participantId: "1",
@@ -39,6 +41,7 @@ const result: RecommendResult = {
       nickname: null,
       label: "홍대입구에서 오는 분",
       labelKind: "origin",
+      shortLabel: "홍대입구",
     },
   ],
   candidates: [
@@ -85,12 +88,14 @@ describe("결과 카드", () => {
     const card = screen.getByRole("article", { name: "신촌" });
     expect(within(card).getByText("37분")).toBeInTheDocument();
     expect(within(card).getAllByText("38분").length).toBeGreaterThanOrEqual(2); // 홍대입구에서 오는 분 + 최장
-    // 이름은 서버 label 그대로이고, "{역}에서 오는 분"이면 아래 줄에 출발역을 되풀이하지 않는다.
+    // 시간 행 이름은 서버 짧은 이름(shortLabel) 그대로이고, 출발역 이름이면 옆에 출발역을 되풀이하지 않는다.
     expect(within(card).getByText("민지")).toBeInTheDocument();
-    expect(within(card).getByText("강남에서")).toBeInTheDocument();
-    expect(within(card).queryByText("홍대입구에서")).toBeNull();
-    expect(within(card).getByText("환승 1번")).toBeInTheDocument();
+    expect(within(card).getByText("강남에서 · 환승 1번")).toBeInTheDocument();
+    expect(within(card).getByText("홍대입구")).toBeInTheDocument();
+    expect(within(card).queryByText(/홍대입구에서 ·/)).toBeNull();
     expect(within(card).getByText("환승 없음")).toBeInTheDocument();
+    // 모든 트랙이 같은 눈금: 최장 38분 → 0~40분 자
+    expect(within(card).getByText("40분")).toBeInTheDocument();
     expect(within(card).getByText("1분")).toBeInTheDocument(); // 차이
     expect(within(card).getByText("1시간 15분")).toBeInTheDocument(); // 합계 37 + 38
     expect(within(card).getByText("가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요.")).toBeInTheDocument();
@@ -119,11 +124,21 @@ describe("결과 카드", () => {
     if (!top) throw new Error("후보 없음");
     render(<TopCandidateCard candidate={top} choice={choice} meIndex={1} />);
     const rows = screen.getAllByRole("listitem");
-    expect(rows[0]).toHaveTextContent("홍대입구에서 오는 분(나)");
+    expect(rows[0]).toHaveTextContent("홍대입구(나)");
     expect(rows[1]).not.toHaveTextContent("(나)");
     expect(screen.getByRole("link", { name: "내 길찾기" })).toHaveAttribute(
       "href",
       expect.stringMatching(/^https:\/\/map\.kakao\.com\/link\/by\/traffic\//),
     );
+  });
+});
+
+describe("시간 행 눈금", () => {
+  it("끝 눈금은 최장 시간을 눈금 간격으로 올린 값이다(가장 오래 걸리는 사람 = 끝이 아니다)", () => {
+    expect(railScale(31)).toEqual({ end: 40, step: 10 });
+    expect(railScale(30)).toEqual({ end: 30, step: 10 });
+    expect(railScale(0)).toEqual({ end: 10, step: 10 });
+    expect(railScale(75)).toEqual({ end: 80, step: 20 });
+    expect(railScale(130)).toEqual({ end: 150, step: 30 });
   });
 });

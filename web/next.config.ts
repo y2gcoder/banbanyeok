@@ -13,6 +13,9 @@ const analytics = analyticsConfig({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // 사이트 주소는 빌드 값으로 번들에 박는다(src/lib/seo/site.ts `siteEnv`). Worker 런타임 환경에는 없어서, 요청 때 렌더되는
+  // 페이지(/s 등)의 og:image·canonical이 localhost로 나가던 문제를 막는다. 비밀값이 아니다(공개 주소).
+  env: { SITE_URL: process.env.SITE_URL ?? "", SITE_NOINDEX: process.env.SITE_NOINDEX ?? "" },
   poweredByHeader: false,
   // 같은 출처 rewrite: 브라우저는 /api/* 로 부르고 서버(Ktor 또는 mock)로 넘긴다(contracts/openapi.yaml servers).
   async rewrites() {

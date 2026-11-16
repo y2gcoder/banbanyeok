@@ -23,6 +23,7 @@ function roomFor(token: string | null): Room {
     originName: "강남",
     label: "민수",
     labelKind: "name" as const,
+    shortLabel: "민수",
     isHost: true,
     isSelf: false,
   };
@@ -42,6 +43,7 @@ function roomFor(token: string | null): Room {
         originName: m.token === token ? "홍대입구" : null,
         label: "참가자 2",
         labelKind: "ordinal" as const,
+        shortLabel: "참가자 2",
         isHost: false,
         isSelf: m.token === token,
       })),
