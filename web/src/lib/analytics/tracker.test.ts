@@ -127,6 +127,29 @@ describe("동의 전에는 켜지지 않는다(옵트인)", () => {
     expect(loadPostHog).toHaveBeenCalledTimes(1);
   });
 
+  it("people_limit_hit도 동의 전·추적 거부에서는 아무것도 보내지 않고, 동의하면 계약대로(방은 room_hash만) 보낸다", async () => {
+    let consented = false;
+    const { tracker, loadPostHog, capture } = setup({ consented: () => consented });
+    tracker.track("people_limit_hit", { surface: "home", attempted: 5 });
+    tracker.track("people_limit_hit", { surface: "room_full", room_hash: "0123456789abcdef" });
+    await Promise.resolve();
+    expect(loadPostHog).not.toHaveBeenCalled();
+    expect(capture).not.toHaveBeenCalled();
+
+    const declined = setup({ declined: () => true });
+    declined.tracker.track("people_limit_hit", { surface: "home", attempted: 5 });
+    await Promise.resolve();
+    expect(declined.capture).not.toHaveBeenCalled();
+
+    consented = true;
+    tracker.track("people_limit_hit", { surface: "room_full", room_hash: "0123456789abcdef" });
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
+    expect(capture).toHaveBeenCalledWith(
+      "people_limit_hit",
+      expect.objectContaining({ surface: "room_full", room_hash: "0123456789abcdef", platform: "web" }),
+    );
+  });
+
   it("초기화한 뒤 옵트인을 호출해 이전 철회의 옵트아웃 표시를 푼다(옵트인 이벤트는 보내지 않는다)", async () => {
     const { tracker, optIn, capture } = setup();
     tracker.track("input_completed", inputCompleted);

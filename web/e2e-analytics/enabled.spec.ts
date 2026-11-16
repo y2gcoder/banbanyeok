@@ -227,6 +227,47 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
   });
 });
 
+test("인원 상한: 동의 전에는 안내 버튼을 눌러도 요청 0건, 동의한 뒤에는 people_limit_hit 한 번만(출발역·이름 없이)", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const probe = await attachProbe(context, baseURL ?? "");
+  const fillToLimit = async () => {
+    await page.getByRole("button", { name: /한 명 더/ }).click();
+    await page.getByRole("button", { name: /한 명 더/ }).click();
+  };
+  const limitButton = page.getByRole("button", { name: "4명까지 돼요 · 더 필요해요?" });
+
+  await page.goto("/");
+  await fillToLimit();
+  await limitButton.click();
+  await limitButton.click();
+  await expect(page.getByText("지금은 4명까지예요. 더 필요하다는 의견을 모으고 있어요.")).toBeVisible();
+  await page.waitForTimeout(BATCH_WAIT_MS);
+  expect(probe.outside).toEqual([]); // 동의 전: 아무것도 보내지 않는다
+
+  await acceptAll(page);
+  await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
+  // 동의 전에 누른 화면에서는 이미 지나간 일이라 보내지 않는다. 새 화면(새로 연 페이지)에서 누르면 그때부터 센다.
+  await page.goto("/");
+  await expect(banner(page)).toHaveCount(0);
+  await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
+  await fillToLimit();
+  await limitButton.click();
+  await limitButton.click();
+  await limitButton.click();
+  await expect
+    .poll(() => probe.events.filter((e) => e.event === "people_limit_hit").length, { timeout: 15_000 })
+    .toBe(1);
+  await page.waitForTimeout(BATCH_WAIT_MS);
+
+  const hits = probe.events.filter((e) => e.event === "people_limit_hit");
+  expect(hits).toHaveLength(1);
+  expect(hits[0]?.properties).toMatchObject({ surface: "home", attempted: 5, platform: "web" });
+  expect(JSON.stringify(hits[0]?.properties)).not.toContain("민수");
+});
+
 test("철회: /privacy에서 끄면 바로 멈추고 저장된 식별자를 지운다, 다시 켜면 그때부터 다시 보낸다", async ({
   page,
   context,

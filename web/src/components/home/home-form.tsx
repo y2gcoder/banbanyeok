@@ -28,6 +28,9 @@ const INPUT_PLACEHOLDERS = ["나", "친구1", "친구2", "친구3"] as const;
 
 type Row = { key: number; nickname: string; station: Station | null; favored?: boolean };
 
+const LIMIT_BUTTON = `${MAX_PEOPLE}명까지 돼요 · 더 필요해요?`;
+const LIMIT_NOTE = `지금은 ${MAX_PEOPLE}명까지예요. 더 필요하다는 의견을 모으고 있어요.`;
+
 const emptyRow = (key: number): Row => ({ key, nickname: "", station: null });
 // 줄 키는 서버·클라이언트 렌더에서 같아야 한다(수화 일치). 새 줄은 지금 가장 큰 키 + 1.
 /** 미리 채울 역으로 줄을 만든다(최소 인원까지는 빈 줄로 채운다). */
@@ -36,7 +39,6 @@ function rowsFor(stations: readonly Station[]): Row[] {
   while (rows.length < MIN_PEOPLE) rows.push(emptyRow(rows.length));
   return rows;
 }
-const withNewRow = (rows: Row[]): Row[] => [...rows, emptyRow(Math.max(-1, ...rows.map((r) => r.key)) + 1)];
 
 export function HomeForm() {
   const router = useRouter();
@@ -50,6 +52,10 @@ export function HomeForm() {
   const [slotIsNow, setSlotIsNow] = useState(false);
   // 입력 화면에는 모드를 고르는 곳이 없다. 결과에서 "다시 입력"으로 돌아왔을 때 그 모드(와 배려하던 사람)를 이어 가려고만 들고 있다.
   const [mode, setMode] = useState<Mode>("fair");
+  // 인원 상한 안내: 같은 화면에서 여러 번 눌러도 통계는 한 번만 보낸다.
+  const [limitNoteShown, setLimitNoteShown] = useState(false);
+  const limitReported = useRef(false);
+  const [focusKey, setFocusKey] = useState<number | null>(null);
 
   useEffect(() => {
     startedAt.current = performance.now();
@@ -81,10 +87,30 @@ export function HomeForm() {
     }
   }, []);
 
+  useEffect(() => {
+    if (focusKey === null) return;
+    document.getElementById(`${formId}-name-${focusKey}`)?.focus();
+    setFocusKey(null);
+  }, [focusKey, formId]);
+
   const filled = rows.filter((row) => row.station).length;
   const update = (key: number, patch: Partial<Row>) => {
     setError(null);
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  };
+
+  // 줄을 더하면 그 줄의 이름 칸으로 포커스를 옮긴다(4번째 줄에서는 누른 버튼이 안내 버튼으로 바뀌어 포커스가 body로 떨어진다).
+  const addRow = () => {
+    const key = Math.max(-1, ...rows.map((r) => r.key)) + 1;
+    setRows((current) => [...current, emptyRow(key)]);
+    setFocusKey(key);
+  };
+
+  const wantMorePeople = () => {
+    setLimitNoteShown(true);
+    if (limitReported.current) return;
+    limitReported.current = true;
+    track("people_limit_hit", { surface: "home", attempted: MAX_PEOPLE + 1 });
   };
 
   const submit = (event: FormEvent) => {
@@ -146,7 +172,10 @@ export function HomeForm() {
                   {index >= MIN_PEOPLE ? (
                     <button
                       type="button"
-                      onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}
+                      onClick={() => {
+                        setLimitNoteShown(false);
+                        setRows((current) => current.filter((r) => r.key !== row.key));
+                      }}
                       className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-ink"
                     >
                       <XIcon className="size-4" aria-hidden="true" />
@@ -167,12 +196,27 @@ export function HomeForm() {
       {rows.length < MAX_PEOPLE ? (
         <button
           type="button"
-          onClick={() => setRows(withNewRow)}
+          onClick={addRow}
           className="ml-8 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-md px-1 text-[15px] font-semibold text-ink-soft hover:text-ink"
         >
           <PlusIcon className="size-4" aria-hidden="true" />한 명 더 (최대 {MAX_PEOPLE}명)
         </button>
-      ) : null}
+      ) : (
+        // 4명이 차도 자리를 비우지 않는다: 더 넣으려던 사람이 있었는지(인원 상한 수요)를 한 번 센다. 눈에 덜 띄게 둔다.
+        <div className="ml-8 flex flex-col items-start">
+          <button
+            type="button"
+            onClick={wantMorePeople}
+            className="inline-flex min-h-11 w-fit items-center rounded-md px-1 text-[14px] text-muted-foreground underline-offset-4 hover:text-ink hover:underline"
+          >
+            {LIMIT_BUTTON}
+          </button>
+          {/* 안내는 닫히지 않는다: 버튼 상태가 아니라 알림 영역으로만 전한다. 영역은 항상 그려 두고 내용만 채워야 스크린리더가 읽는다. */}
+          <p role="status" className="px-1 text-[13px] leading-snug text-muted-foreground">
+            {limitNoteShown ? LIMIT_NOTE : null}
+          </p>
+        </div>
+      )}
 
       <WhenPicker
         id={`${formId}-when`}

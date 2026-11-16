@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "description": "분석 이벤트 정의(tech-stack 7.3)의 단일 원천. 웹 TS 타입·검증표는 web/scripts/build-analytics-events.ts가 여기서 생성한다(pnpm gen:events). Kotlin 상수는 서버·앱이 이벤트를 보내기 시작할 때 같은 방식으로 생성한다. 출발역·별칭·방 ID 원문은 어떤 속성에도 넣지 않는다. SDK가 스스로 만드는 이벤트는 sdkEvents에 적은 것만 허용한다.",
   "privacy": {
     "forbiddenPropertyNames": [
@@ -488,6 +488,37 @@
           "required": true,
           "description": "결과를 본 뒤 경과 일수.",
           "min": 0
+        },
+        {
+          "name": "room_hash",
+          "type": "string",
+          "required": false,
+          "description": "방 ID 원문 대신 쓰는 해시. 서버가 계산해 방 응답(Room.roomHash, RoomCreated.roomHash)에 실어 주는 값을 그대로 쓴다. 방 링크가 아니거나 응답에 없으면(옛 서버) 생략."
+        }
+      ]
+    },
+    {
+      "name": "people_limit_hit",
+      "source": "client",
+      "description": "인원 상한(4명)에 닿았다: 홈 입력에서 4명이 찬 뒤 \"더 필요해요?\"를 눌렀거나(home), 정원이 찬 방을 열어 들어올 수 없었다(room_full). 5~6명으로 늘릴지 판단하는 수요 측정용이며 누가·어느 역인지는 보내지 않는다. 같은 화면에서는 한 번만 보내고, 동의 전에 누른 화면에서는 동의한 뒤에도 보내지 않는다. 방장이 예상 인원을 4로 고르는 것은 상한에 닿은 것이 아니라 보내지 않는다. room_full에는 다른 기기에서 연 방장, 정리 중인 내보내진 참여자 등 실제로 참여하려던 사람이 아닌 경우도 섞일 수 있어(잡음) 수요의 상한선으로 읽는다.",
+      "properties": [
+        {
+          "name": "surface",
+          "type": "enum",
+          "required": true,
+          "description": "어디서 닿았나.",
+          "enum": [
+            "home",
+            "room_full"
+          ]
+        },
+        {
+          "name": "attempted",
+          "type": "integer",
+          "required": false,
+          "description": "넣으려던 인원(홈에서는 5). 방에서는 알 수 없어 생략.",
+          "min": 5,
+          "max": 6
         },
         {
           "name": "room_hash",

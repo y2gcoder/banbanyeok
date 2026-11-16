@@ -21,6 +21,28 @@ async function pickStation(page: Page, field: string, query: string, option: Reg
   await page.getByRole("option", { name: option }).click();
 }
 
+test("입력 4명이 차면 '한 명 더' 대신 눈에 덜 띄는 안내 버튼이 있고, 누르면 안내만 보인다", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /한 명 더/ }).click();
+  await page.getByRole("button", { name: /한 명 더/ }).click();
+  await expect(page.getByRole("combobox")).toHaveCount(4);
+  await expect(page.getByRole("button", { name: /한 명 더/ })).toHaveCount(0);
+
+  const limit = page.getByRole("button", { name: "4명까지 돼요 · 더 필요해요?" });
+  await expect(limit).toBeVisible();
+  expect((await limit.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await limit.click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "지금은 4명까지예요. 더 필요하다는 의견을 모으고 있어요." }),
+  ).toBeVisible();
+  await expect(page.getByRole("combobox")).toHaveCount(4); // 줄은 늘지 않는다
+  await expectAccessible(page);
+
+  await page.getByRole("button", { name: "친구2 빼기" }).click();
+  await expect(page.getByRole("button", { name: /한 명 더/ })).toBeVisible();
+  await expect(limit).toHaveCount(0);
+});
+
 test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크 열기", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
