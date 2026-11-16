@@ -20,7 +20,8 @@
   `/s?v=2&o=ryf.4q3.dxy.bvq&m=f&t=weekday-day`의 og:image = `https://banbanyeok.app/s/og?v=2&o=ryf.4q3.dxy.bvq&m=f&t=weekday-day&dv=20261115.8`,
   그 경로 200 image/png 1200×630(캐시 1일). `/s?bad`, `/r/…`, `/result?…`의 og:image = `https://banbanyeok.app/opengraph-image`,
   `/privacy`·`/r/new`의 canonical·og:url = 자기 주소.
-- **스모크**(`web/scripts/smoke-deploy.sh`): 서버가 연결된 배포에서 `/s`의 og:image가 `${SITE_URL}/s/og?…`로 시작하고 그 주소가 200 image/png인지 본다.
+- **스모크**(`web/scripts/smoke-deploy.sh`): 서버 연결과 무관하게 `/r/new`·`/r/<가짜 ID>`·`/result?…` HTML에 localhost가 없고 og:image가 `${SITE_URL}/…`로
+  시작하는지(V1 후속), 서버가 연결된 배포에서 `/s`의 og:image가 `${SITE_URL}/s/og?…`로 시작하고 그 주소가 200 image/png인지 본다.
   `SITE_URL`이 없으면(workers.dev 단계) 경고만. 지금 운영 HTML로 돌리면 localhost라서 실패한다(검사가 버그를 잡는다).
 - **robots.txt**(`Disallow: /`): 같은 robots 아래에서 카카오가 제목·설명을 가져갔으므로 스크랩 봇이 robots로 HTML을 거르지 않는다. 이미지에만 따로 적용된다는 근거는 없다.
   **배포 후 할 일(사용자)**: 카카오 공유 디버거에서 기존 링크의 캐시를 지우고 다시 스크랩해 그림이 나오는지 확인.
@@ -42,8 +43,11 @@
 | 평일 낮이 아닌 기준 | 아래 줄 끝에 "· 토요일 밤 기준". 한국어도 낱말 단위 줄바꿈(`word-break: keep-all`) | `og-two-saturday-night`, `og-long-station-over-hour` |
 | 긴 역 이름·1시간 넘음 | 제목 크기를 글자 수에 맞춤, "1시간 7분" | `og-long-station-over-hour` |
 
-- **시간 예산(사용자 결정)**: `/s/og`는 서버 결과 받기 + 그리기 전체를 1.5초 안에 끝내야 한다. 넘거나 실패하면 기본 카드(`SiteCard`)를 짧은 캐시(60초)로 준다.
-  그리기 실패도 잡히게 PNG 바이트를 다 만든 뒤 응답한다. 테스트: `src/app/s/og/route.test.tsx`(성공 1일 캐시, 예산 초과·실패·잘못된 링크는 60초).
+- **시간 예산(사용자 결정)**: `/s/og`는 서버 결과 받기 + 그리기 전체를 1.5초 안에 끝내야 한다. 넘거나 실패하면 기본 카드(`SiteCard`)를 0.5초 예산 안에 그려
+  짧은 캐시(60초)로 주고, 그것도 안 되면 정적 기본 이미지(`/opengraph-image`)로 302 보낸다(500 없음, V1 후속). 예산을 넘기면 `AbortController`로
+  서버 호출(`recommend`)을 끊고, 그리기는 단계 사이(글꼴 뒤·그리기 전)에 신호를 봐 새로 시작하지 않는다(진행 중인 satori·resvg 계산은 끊을 수 없다).
+  그리기 실패도 잡히게 PNG 바이트를 다 만든 뒤 응답한다. 테스트: `src/app/s/og/route.test.tsx`(성공 1일 캐시, 예산 초과 시 신호 중단, 실패·잘못된 링크는 60초,
+  기본 그림까지 실패하면 302).
 - **방 링크(`/r/[방 ID]`)는 기본 카드 유지(사용자 확정)**. 근거: 방 결과는 보는 사람마다 공개 범위가 다르고(숨긴 출발역은 본인만 봄), 참여 중에는 결과가 계속 바뀌며,
   방 ID만으로 서버를 부르면 링크를 가진 크롤러에게 참여자 이름·시간을 넘기게 된다. 방 ID·참여자 정보를 쓰지 않는 일반 문구와 사이트 기본 이미지다(기존 원칙 그대로).
 
@@ -70,6 +74,7 @@ Workers 실측은 배포 키가 필요해 하지 않았다: 병합·배포 후 `
   (번호는 같게 "강남 2"), 이름을 넣은 사람·숨긴 사람("참가자 N")은 둘이 같다. 서버(`shared/app-logic ParticipantLabels`)가 만들고 웹·앱은 그대로 쓴다.
 - **어디에 무엇을**: `shortLabel` = 결과 카드 시간 행, 배려 대상·"나는 누구?" 알약, 미리보기 그림, 미리보기 설명(og:description)·공유 버튼 문구의 시간 나열, 방 설정 요약의 "○○ 쪽으로".
   `label` = 추천 이유 등 문장(서버가 만든다, 그대로). 방 참여자 목록·길찾기 목록은 넓은 줄이라 그대로 `label`.
+  방 결과 화면의 배려 대상 알약도 짧은 이름이다(V1 후속, `room-result.tsx`).
 - **배포 순서**: 웹(main 병합 시 자동)이 서버(수동 배포)보다 먼저 나갈 수 있어, 웹은 `shortLabel`이 없으면 `label`로 그린다. 서버가 배포되면 짧은 이름이 나온다.
 - 테스트: `DisplayLabelVectorsTest`(벡터 전부), `ApiHttpTest`(방 응답의 shortLabel, 숨긴 사람 "참가자 N"), 웹 단위·e2e 픽스처.
 

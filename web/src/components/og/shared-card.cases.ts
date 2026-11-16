@@ -10,9 +10,11 @@ type Person = {
   label: string;
   shortLabel: string;
   kind: "name" | "origin" | "ordinal";
-  /** 출발역 이름. 숨긴 사람은 서버가 null로 준다. */
+  /** 출발역 이름. 숨긴 사람은 서버가 null로 준다(본인이 보는 방 화면에서만 본인 출발역이 온다). */
   origin: string | null;
   seconds: number;
+  /** 출발역을 숨겼는가. 없으면 `origin`이 null일 때 숨긴 것으로 본다. */
+  hidden?: boolean;
 };
 
 type Basis = { slot: TimeSlot; label: string };
@@ -49,7 +51,7 @@ function build(
     },
     participants: people.map((p, i) => ({
       participantId: String(i),
-      hidden: p.origin === null,
+      hidden: p.hidden ?? p.origin === null,
       originCode: p.origin === null ? null : "000",
       originName: p.origin,
       label: p.label,
@@ -119,6 +121,18 @@ export const SHARED_CASES = [
       // 방에서 출발역을 숨긴 사람: 서버가 출발역 이름을 주지 않고 이름은 "참가자 N"이다. HIDDEN_ORIGIN은 응답 어디에도 없다.
       { label: "참가자 2", shortLabel: "참가자 2", kind: "ordinal", origin: null, seconds: 1500 },
       person("잠실", 1800),
+    ],
+    { mode: "favor", favorIndex: 1 },
+  ),
+  // 출발역을 숨긴 사람 본인이 보는 경우: 서버가 본인에게만 출발역 이름(HIDDEN_ORIGIN)을 주지만 이름은 여전히 "참가자 N"이다.
+  // 미리보기는 링크를 받는 모두가 보므로 이 출발역이 그림·설명에 나오면 안 된다.
+  build(
+    "hidden-self-view",
+    "역삼",
+    [
+      person("강남", 300),
+      { label: "참가자 2", shortLabel: "참가자 2", kind: "ordinal", origin: HIDDEN_ORIGIN, hidden: true, seconds: 240 },
+      person("홍대입구", 2100),
     ],
     { mode: "favor", favorIndex: 1 },
   ),
