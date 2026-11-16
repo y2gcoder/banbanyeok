@@ -89,6 +89,8 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const [joinValue, setJoinValue] = useState<ParticipantFormValue>(emptyValue);
   const [storable, setStorable] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
+  // 결과 쿼리가 방 없음(404)을 먼저 받았을 때(방 쿼리는 이전 data를 유지한다). 방이 지워지면 되살릴 수 없다.
+  const [resultGone, setResultGone] = useState(false);
 
   // 화면의 기록(상태)과 기기 저장소를 같이 바꾼다. 저장소가 막혀 있어도 상태에는 남아 이번 방문 동안은 방금 받은 토큰을 쓴다
   // (참여는 성공했는데 실패처럼 보여 다시 제출하면 중복 참가자가 생기는 일을 막는다).
@@ -103,20 +105,28 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   useEffect(() => {
     // 방 조회는 이 효과 다음 렌더에서 바로 나간다(그 요청이 서버를 깨운다). 따로 미리 깨우지 않는다.
     setRecord(loadRoomRecord(roomId));
+    setResultGone(false);
     setJoinValue(rememberedValue());
     setStorable(canStoreRoomTokens());
   }, [roomId]);
 
   const token = record?.participantToken ?? null;
   const participantId = record?.participantId ?? null;
-  const query = useQuery({ ...roomQueryOptions(roomId, token, participantId), enabled: record !== undefined });
+  // 방이 없다는 답이 오면 되살릴 수 없으므로 더는 다시 불러오지 않는다. 방 쿼리 자신의 404는 queries.ts가 폴링·포커스 재요청을
+  // 멈추고, 결과 쿼리가 먼저 받은 404는 여기서 방 쿼리를 끈다.
+  const query = useQuery({
+    ...roomQueryOptions(roomId, token, participantId),
+    enabled: record !== undefined && !resultGone,
+  });
   const room = query.data;
+  // TanStack은 다시 불러오기가 실패해도 이전 data를 유지한다. 방이 없다는 답은 이전 화면을 남기지 않고 곧바로 안내로 바꾼다.
+  const gone = resultGone || (query.isError && isRoomGone(query.error));
 
   // 방 응답으로 기기 기록을 맞춘다: 서버가 방이 없다고 하면 기록 삭제, 내보내졌으면 참여자 토큰 정리.
   // 저장해 둔 시각만 보고 지우지 않는다(서버는 활동마다 만료를 미룬다).
   useEffect(() => {
     if (record === undefined) return;
-    if (query.isError && isRoomGone(query.error)) {
+    if (gone) {
       removeRoomRecord(roomId);
       return;
     }
@@ -125,7 +135,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       commit(withoutParticipant(record));
       keys.renew(); // 같은 입력으로 다시 참여할 때 지난 응답(죽은 토큰)을 재생받지 않게
     }
-  }, [record, room, query.isError, query.error, query.isPlaceholderData, roomId, commit, keys]);
+  }, [record, room, gone, query.isPlaceholderData, roomId, commit, keys]);
 
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["room", roomId] });
@@ -169,7 +179,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       refresh();
     },
     onError: (error) => {
-      if (isTokenRejected(error)) refresh();
+      if (isTokenRejected(error) || isRoomGone(error)) refresh();
     },
   });
 
@@ -225,8 +235,8 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
 
   if (record === undefined || (query.isPending && !room)) return <RoomLoading />;
+  if (gone) return <RoomGone />;
   if (query.isError && !room) {
-    if (isRoomGone(query.error)) return <RoomGone />;
     return <RoomLoadError message={roomErrorMessage(query.error)} onRetry={() => void query.refetch()} />;
   }
   if (!room) return <RoomLoading />;
@@ -365,6 +375,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             participantToken={token}
             participantId={participantId}
             isHost={isHost}
+            onRoomGone={() => setResultGone(true)}
             onResultSeen={() => {
               if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
             }}
@@ -409,7 +420,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         ) : null}
 
         <p className="text-center text-xs text-muted-foreground">
-          방은 마지막 변경 후 7일이 지나거나 만든 지 30일이 지나면 사라져요.
+          약속일을 정했다면 약속 다음 날, 아니면 마지막 변경 후 7일 뒤에 방이 사라져요(만든 뒤 최대 30일).
         </p>
       </div>
     </RoomShell>

@@ -46,7 +46,7 @@ for (const size of SIZES) {
       const when = whenGroup(page);
       const chips = [
         ...(await when.getByRole("radio").all()),
-        when.getByLabel("날짜 고르기"),
+        when.getByLabel("날짜 선택"),
         when.getByRole("button", { name: "+ 정확한 시각 넣기" }),
       ];
       for (const chip of chips) {

@@ -6,10 +6,12 @@ import { ChipText, ChoiceChips, chipClass } from "@/components/when/when-picker"
 import {
   dayAfter,
   earlyMorningNote,
+  formatMeetingDate,
   formatMeetingDay,
   MAX_MEETING_DAYS,
   todayInSeoul,
   upcomingSaturday,
+  weekdayOf,
 } from "@/lib/room/dates";
 import { cn } from "@/lib/utils";
 import {
@@ -22,7 +24,7 @@ import {
   slotLabel,
 } from "@/lib/when/time-slot";
 
-/** 날짜 칩: 오늘 · 내일 · 이번 토요일 · 날짜 고르기(달력). 같은 날짜라도 누른 칩이 골라져 보이게 어느 칩인지 함께 둔다. */
+/** 날짜 칩: 오늘 · 내일 · 이번 토요일 · 날짜 선택(달력). 같은 날짜라도 누른 칩이 골라져 보이게 어느 칩인지 함께 둔다. */
 export type DayChoice = "today" | "tomorrow" | "saturday" | "pick";
 
 /**
@@ -51,7 +53,7 @@ function presetDate(choice: Exclude<DayChoice, "pick">, today: string): string {
 
 /**
  * 날이 바뀌었을 때(자정 넘김) 프리셋 칩으로 고른 날짜를 지킨다: "오늘"로 고른 11월 16일은 다음 날에도 11월 16일이다. 칩의 뜻이 바뀌었으면
- * "날짜 고르기"로 고른 날짜로 옮겨 그 날짜를 그대로 보인다(조용히 다른 날로 바꾸지 않는다). 지난 날짜면 제출할 때 검증이 알린다.
+ * "날짜 선택"으로 고른 날짜로 옮겨 그 날짜를 그대로 보인다(조용히 다른 날로 바꾸지 않는다). 지난 날짜면 제출할 때 검증이 알린다.
  */
 export function keepDayAcrossMidnight(value: MeetingWhen, today: string): MeetingWhen {
   const day = value.day;
@@ -67,7 +69,7 @@ function dayHint(date: string): string {
 /**
  * 방 만들기의 "언제 만나요? (선택)". 폰에서는 날짜 칩 → 시간대 칩 → 정확한 시각(접힘) 순서로 위아래로 쌓고, 칸이 넓으면(@sm,
  * 24rem 이상) 날짜 묶음과 시간대 묶음을 좌우에 둔다. 칩은 높이 44px 이상의 라디오이고, 고른 칩을 다시 누르면 지워진다(= 정하지 않음).
- * "날짜 고르기…"는 칩 모양 아래 투명한 진짜 date 입력 하나라 iOS에서 누르면 날짜 휠이 뜬다. 날짜는 서울 기준이다.
+ * "날짜 선택…"은 칩 모양 아래 투명한 진짜 date 입력 하나라 iOS에서 누르면 날짜 휠이 뜬다. 날짜는 서울 기준이다.
  */
 export function MeetingWhenFields({
   id,
@@ -144,12 +146,14 @@ export function MeetingWhenFields({
             <label
               className={cn(
                 chipClass(picked !== null),
+                // 넓은 폼(2열)에서 글자가 칩 가장자리에 붙지 않게 안쪽 여백을 더 둔다.
+                "px-3",
                 "has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-ink",
               )}
             >
               <input
                 type="date"
-                aria-label="날짜 고르기"
+                aria-label="날짜 선택"
                 value={picked ?? ""}
                 min={today || undefined}
                 max={today ? dayAfter(today, MAX_MEETING_DAYS) : undefined}
@@ -167,8 +171,9 @@ export function MeetingWhenFields({
                 className="absolute inset-0 m-0 size-full min-w-0 cursor-pointer appearance-none rounded-xl text-[16px] opacity-0"
               />
               <ChipText
-                label={picked ? formatMeetingDay(picked) : "날짜 고르기…"}
-                hint={picked && holidayName(picked) ? "공휴일" : undefined}
+                // 좁은 칸(폼 2열)에서도 한 줄이 되게 날짜는 글자로, 요일(·공휴일)은 아래 작은 줄로 둔다.
+                label={picked ? formatMeetingDate(picked) : "날짜 선택…"}
+                hint={picked ? `${weekdayOf(picked)}요일${holidayName(picked) ? " · 공휴일" : ""}` : undefined}
                 checked={picked !== null}
               />
             </label>
@@ -244,9 +249,7 @@ export function MeetingWhenFields({
         {holiday ? `(${holiday})` : ""} 기준으로 계산해요
       </p>
       <p className="text-[13px] leading-snug text-muted-foreground">
-        요일·시간대마다 열차 간격이 달라 기다리는 시간이 바뀌어요. 안 정하면 평일 낮 기준이에요. 오늘·내일·이번 토요일과
-        시간대 칩은 다시 누르면 지워져요. 약속일을 정하면 약속 다음 날 방이 사라지고, 안 정하면 마지막 변경 후 7일(최대
-        30일) 뒤에 사라져요.
+        요일·시간대마다 기다리는 시간이 달라요. 안 정하면 평일 낮 기준이에요. 고른 칩은 다시 누르면 지워져요.
       </p>
     </fieldset>
   );

@@ -68,7 +68,7 @@ describe("방 만들기: 화면을 연 채로 자정을 넘기면(가짜 시계)
     expect(createRoom).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent("약속일은 오늘부터 30일 안에서 골라 주세요.");
     // 고른 날짜(11월 16일)는 조용히 바꾸지 않고 '고른 날짜'로 그대로 보인다.
-    expect(screen.getByRole("group", { name: "날짜" })).toHaveTextContent("11월 16일 (월)");
+    expect(screen.getByRole("group", { name: "날짜" })).toHaveTextContent("11월 16일월요일");
     expect(screen.getByRole("radio", { name: /^오늘\s*11월 17일 \(화\)/ })).not.toBeChecked();
   });
 });

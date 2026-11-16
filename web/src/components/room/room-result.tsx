@@ -13,7 +13,7 @@ import { track, trackResultViewed } from "@/lib/analytics";
 import type { Mode, Room } from "@/lib/api/types";
 import type { ResultView } from "@/lib/result/view-model";
 import { toResultView } from "@/lib/result/view-model";
-import { roomErrorMessage } from "@/lib/room/errors";
+import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
 import { favorIndexOf } from "@/lib/room/view";
 
@@ -23,6 +23,8 @@ type Props = {
   participantToken: string | null;
   participantId: string | null;
   isHost: boolean;
+  /** 결과 쿼리가 방 없음(404)을 받았을 때. 방 화면이 전체를 "방이 없어요" 안내로 바꾼다(되살릴 수 없으므로 다시 시도는 두지 않는다). */
+  onRoomGone: () => void;
   /** 결과가 처음 나왔을 때(이 기기 기준) 한 번. 통계의 경과 일수 기준 시각을 저장하는 데 쓴다. */
   onResultSeen: (view: ResultView) => void;
   /** 결과 화면 아래에 붙일 것(예: "실제로 어디서 만났나"). 1위 후보가 있을 때만 그린다. */
@@ -41,6 +43,7 @@ export function RoomResult({
   participantToken,
   participantId,
   isHost,
+  onRoomGone,
   onResultSeen,
   renderAfter,
 }: Props) {
@@ -64,6 +67,13 @@ export function RoomResult({
   const data = query.data;
   const view = useMemo(() => (data ? toResultView(data) : null), [data]);
   const meIndex = data ? data.participants.findIndex((p) => p.isSelf === true) : -1;
+
+  const roomGone = query.isError && isRoomGone(query.error);
+  const reportGone = useRef(onRoomGone);
+  reportGone.current = onRoomGone;
+  useEffect(() => {
+    if (roomGone) reportGone.current();
+  }, [roomGone]);
 
   const viewed = useRef<unknown>(null);
   const isPlaceholder = query.isPlaceholderData;
@@ -118,7 +128,7 @@ export function RoomResult({
             <Notices notices={view.notices} onFavor={(index) => change("favor", index)} />
             <Candidates view={view} meIndex={meIndex >= 0 ? meIndex : null} choice={choice} />
           </>
-        ) : query.isError ? (
+        ) : query.isError && !roomGone ? (
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
             <p className="text-[15px] text-ink">{roomErrorMessage(query.error)}</p>
             <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-11">
@@ -127,6 +137,7 @@ export function RoomResult({
             </Button>
           </div>
         ) : (
+          // 방 없음(404)이면 방 화면이 곧 안내로 바꾸므로 한 프레임이라도 오류 카드를 그리지 않는다.
           <LoadingCard />
         )}
       </div>

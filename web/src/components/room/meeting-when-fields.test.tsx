@@ -56,21 +56,22 @@ describe("언제 만나요? (방 만들기)", () => {
     expect(status()).toHaveTextContent("토요일 낮 기준으로 계산해요");
   });
 
-  it("날짜 고르기는 date 입력 하나이고, 고르면 칩에 요일과 공휴일을 보인다", async () => {
+  it("날짜 선택은 date 입력 하나이고, 고르면 칩에 요일과 공휴일을 보인다", async () => {
     render(<Harness />);
-    const picker = screen.getByLabelText("날짜 고르기");
+    const picker = screen.getByLabelText("날짜 선택");
     expect(picker).toHaveAttribute("type", "date");
     expect(picker).toHaveAttribute("min", TODAY);
     expect(picker).toHaveAttribute("max", "2026-12-16");
     fireEvent.change(picker, { target: { value: "2026-12-25" } });
-    expect(days()).toHaveTextContent("12월 25일 (금)");
+    expect(days()).toHaveTextContent("12월 25일");
+    expect(days()).toHaveTextContent("금요일 · 공휴일");
     expect(days()).toHaveTextContent("공휴일");
     expect(status()).toHaveTextContent("일요일·공휴일 낮(기독탄신일) 기준으로 계산해요");
     for (const radio of screen.getAllByRole("radio", { name: /오늘|내일|이번 토요일/ }))
       expect(radio).not.toBeChecked();
     // iOS 휠의 "지우기"는 빈 값을 보낸다 = 날짜 없음.
     fireEvent.change(picker, { target: { value: "" } });
-    expect(days()).toHaveTextContent("날짜 고르기…");
+    expect(days()).toHaveTextContent("날짜 선택…");
     expect(status()).toHaveTextContent("평일 낮 기준으로 계산해요");
   });
 
@@ -126,9 +127,9 @@ describe("언제 만나요? (방 만들기)", () => {
     const user = userEvent.setup();
     render(<Harness />);
     expect(screen.queryByRole("button", { name: /날짜 지우기/ })).toBeNull();
-    fireEvent.change(screen.getByLabelText("날짜 고르기"), { target: { value: "2026-11-25" } });
+    fireEvent.change(screen.getByLabelText("날짜 선택"), { target: { value: "2026-11-25" } });
     await user.click(screen.getByRole("button", { name: "날짜 지우기: 11월 25일 (수)" }));
-    expect(days()).toHaveTextContent("날짜 고르기…");
+    expect(days()).toHaveTextContent("날짜 선택…");
     expect(status()).toHaveTextContent("평일 낮 기준으로 계산해요");
     expect(screen.queryByRole("button", { name: /날짜 지우기/ })).toBeNull();
   });
