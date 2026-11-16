@@ -10,7 +10,7 @@
  * - 브라우저의 추적 거부 신호(DNT·GPC)가 있으면 묻지 않고 미동의로 둔다.
  */
 export const CONSENT_KEY = "bby.analytics.consent";
-export const CONSENT_VERSION = 2;
+export const CONSENT_VERSION = 3;
 
 export type StoredChoice = "granted" | "denied" | "unset";
 

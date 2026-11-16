@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { keepParens } from "@/components/common/keep-parens";
 import { Wordmark } from "@/components/common/wordmark";
 import { ConsentSettings } from "@/components/consent/consent-settings";
 import { plainPageMetadata } from "@/lib/seo/metadata";
@@ -17,12 +18,12 @@ export const metadata: Metadata = {
 function PolicyBlock({ block }: { block: Block }) {
   switch (block.kind) {
     case "p":
-      return <p>{block.text}</p>;
+      return <p>{keepParens(block.text)}</p>;
     case "list":
       return (
         <ul className="flex list-disc flex-col gap-1.5 pl-5">
           {block.items.map((item) => (
-            <li key={item}>{item}</li>
+            <li key={item}>{keepParens(item)}</li>
           ))}
         </ul>
       );
@@ -49,7 +50,7 @@ function PolicyTable({ block }: { block: TableBlock }) {
               {values.map((value, i) => (
                 <div key={restHead[i]} className="flex flex-col">
                   <dt className="text-[13px] font-semibold text-muted-foreground">{restHead[i]}</dt>
-                  <dd>{value}</dd>
+                  <dd>{keepParens(value)}</dd>
                 </div>
               ))}
             </dl>
@@ -75,7 +76,7 @@ function PolicyTable({ block }: { block: TableBlock }) {
               </th>
               {values.map((value, i) => (
                 <td key={restHead[i]} className="px-3 py-2 text-ink-soft">
-                  {value}
+                  {keepParens(value)}
                 </td>
               ))}
             </tr>
@@ -107,10 +108,10 @@ export default function PrivacyPage() {
             {POLICY.title}
           </h1>
           <p role="note" className="rounded-xl border-2 border-safety bg-surface p-4 font-semibold text-ink">
-            {POLICY.draftWarning}
+            {keepParens(POLICY.draftWarning)}
           </p>
           {POLICY.intro.map((text) => (
-            <p key={text}>{text}</p>
+            <p key={text}>{keepParens(text)}</p>
           ))}
         </section>
 
@@ -120,7 +121,7 @@ export default function PrivacyPage() {
           </h2>
           <ul className="flex list-disc flex-col gap-1.5 pl-5">
             {POLICY.summary.map((line) => (
-              <li key={line}>{line}</li>
+              <li key={line}>{keepParens(line)}</li>
             ))}
           </ul>
         </section>

@@ -53,8 +53,8 @@ async function disableBotSignals(context: BrowserContext) {
 
 const banner = (page: Page) => page.getByRole("region", { name: /이용 통계를 모아도 될까요/ });
 const collectBox = (page: Page) => banner(page).getByRole("checkbox", { name: /이용 통계 수집·이용에 동의/ });
-const transferBox = (page: Page) => banner(page).getByRole("checkbox", { name: /PostHog, Inc.로 보내는 데 동의/ });
-const saveButton = (page: Page) => banner(page).getByRole("button", { name: "선택한 대로 저장" });
+const transferBox = (page: Page) => banner(page).getByRole("checkbox", { name: /PostHog, Inc.로 통계 전송에 동의/ });
+const saveButton = (page: Page) => banner(page).getByRole("button", { name: /^(동의하고 닫기|이대로 닫기)$/ });
 const collectSwitch = (page: Page) => page.getByRole("switch", { name: "이용 통계 수집·이용 동의" });
 const transferSwitch = (page: Page) => page.getByRole("switch", { name: /국외 이전 동의/ });
 
@@ -129,7 +129,7 @@ test("거부: 배너가 사라지고 요청 0건, 새로 고쳐도 다시 묻지
   expect(probe.outside).toEqual([]);
   expect(await analyticsKeys(page)).toEqual([]);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("bby.analytics.consent") ?? "{}"))).toMatchObject({
-    v: 2,
+    v: 3,
     collect: false,
     transfer: false,
   });
@@ -286,7 +286,7 @@ for (const signal of ["doNotTrack", "globalPrivacyControl"] as const) {
       Object.defineProperty(navigator, name, { get: () => (name === "doNotTrack" ? "1" : true) });
       localStorage.setItem(
         "bby.analytics.consent",
-        JSON.stringify({ v: 2, collect: true, transfer: true, at: "2026-11-14T00:00:00Z" }),
+        JSON.stringify({ v: 3, collect: true, transfer: true, at: "2026-11-14T00:00:00Z" }),
       );
     }, signal);
     const probe = await attachProbe(context, baseURL ?? "");

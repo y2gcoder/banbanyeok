@@ -41,7 +41,7 @@ for (const vp of CASES) {
       expect(box?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(vp.height * 0.6 + 24); // 카드 60dvh + 바깥 여백
       const buttons = [
         banner(page).getByRole("button", { name: "모두 거부" }),
-        banner(page).getByRole("button", { name: "선택한 대로 저장" }),
+        banner(page).getByRole("button", { name: "이대로 닫기" }),
       ];
       for (const button of buttons) {
         await expect(button).toBeInViewport({ ratio: 1 });
@@ -66,7 +66,7 @@ for (const vp of CASES) {
  */
 const u2ShotsDir = resolve(import.meta.dirname, "../../docs/setup/u2-screens");
 const U2_CASES = [
-  { id: "phone-390x844", width: 390, height: 844, touch: true, maxShare: 0.4 },
+  { id: "phone-390x844", width: 390, height: 844, touch: true, maxShare: 0.3 },
   { id: "fold-cover-344", width: 344, height: 882, touch: true, maxShare: 0.45 },
   { id: "fold-open-690", width: 690, height: 829, touch: true, maxShare: 0.3 },
   { id: "desktop-1280", width: 1280, height: 800, touch: false, maxShare: 0.35 },
@@ -94,7 +94,7 @@ for (const vp of U2_CASES) {
 
       // 선택 동등성: 거부와 저장은 같은 크기·같은 줄이다.
       const reject = await banner(page).getByRole("button", { name: "모두 거부" }).boundingBox();
-      const save = await banner(page).getByRole("button", { name: "선택한 대로 저장" }).boundingBox();
+      const save = await banner(page).getByRole("button", { name: "이대로 닫기" }).boundingBox();
       expect(reject?.width).toBeCloseTo(save?.width ?? -1, 0);
       expect(reject?.height).toBeCloseTo(save?.height ?? -1, 0);
       expect(reject?.y).toBeCloseTo(save?.y ?? -1, 0);
@@ -103,8 +103,34 @@ for (const vp of U2_CASES) {
         await expect(box).not.toBeChecked();
         await expect(box).toBeInViewport({ ratio: 1 });
       }
+      // W1: 체크박스는 위아래 한 줄씩이다(같은 x, 아래 것이 더 아래).
+      if (vp.width < 690) {
+        const [first, second] = await Promise.all(
+          (await banner(page).getByRole("checkbox").all()).map((box) => box.boundingBox()),
+        );
+        expect(first?.x).toBeCloseTo(second?.x ?? -1, 0);
+        expect(second?.y ?? 0).toBeGreaterThan((first?.y ?? 0) + (first?.height ?? 0));
+      }
       expect.soft(await horizontalOverflow(page), "가로 넘침").toEqual([]);
       if (vp.touch) expect.soft(await smallTouchTargets(page), "44px보다 작은 터치 목표").toEqual([]);
+    });
+
+    test("하나만 체크하면 안내가 보이고 버튼은 같은 크기·같은 줄로 남는다(배너는 화면의 40% 이하)", async ({
+      page,
+    }) => {
+      await page.goto("/");
+      await expect(banner(page)).toBeVisible();
+      await banner(page).getByRole("checkbox").first().check();
+      await expect(banner(page).getByText("두 가지 모두 체크해야 통계를 모아요.")).toBeVisible();
+      const reject = await banner(page).getByRole("button", { name: "모두 거부" }).boundingBox();
+      const save = await banner(page).getByRole("button", { name: "이대로 닫기" }).boundingBox();
+      expect(reject?.width).toBeCloseTo(save?.width ?? -1, 0);
+      expect(reject?.height).toBeCloseTo(save?.height ?? -1, 0);
+      expect(reject?.y).toBeCloseTo(save?.y ?? -1, 0);
+      const box = await banner(page).boundingBox();
+      expect(box?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(vp.height * 0.4);
+      await banner(page).getByRole("checkbox").last().check();
+      await expect(banner(page).getByRole("button", { name: "동의하고 닫기" })).toBeVisible();
     });
 
     test("맨 아래까지 스크롤하면 본문 마지막 줄이 배너에 가려지지 않는다", async ({ page }) => {

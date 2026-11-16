@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { keepParens } from "@/components/common/keep-parens";
 import { Button } from "@/components/ui/button";
 import { setAnalyticsConsent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ function ScopeSwitch({
     <div className="flex items-center justify-between gap-4 rounded-xl border border-rule bg-platform/60 p-4">
       <div className="flex min-w-0 flex-col gap-1">
         <span id={labelId} className="font-bold text-ink">
-          {label}
+          {keepParens(label)}
         </span>
         <span id={detailId} className="text-[14px] text-ink-soft">
           {detail}
