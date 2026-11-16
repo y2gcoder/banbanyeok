@@ -24,6 +24,9 @@ internal object RoomsTable : Table("rooms") {
     val dataVersion = text("data_version")
     val meetingDate = date("meeting_date").nullable()
     val meetingTime = time("meeting_time").nullable()
+
+    /** 시각 없이 고른 약속 시간대(`morning`·`day`·`evening`·`night`). 시각이 있으면 null. */
+    val meetingBand = text("meeting_band").nullable()
     val expectedCount = short("expected_count").nullable()
     val status = text("status")
     val outcome = text("outcome").nullable()

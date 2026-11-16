@@ -93,6 +93,7 @@ class InMemoryRoomRepository : RoomRepository {
     ): Boolean =
         lock.withLock {
             val room = rooms[roomId] ?: return@withLock false
+            if (change.onlyWithoutMeetingTime && room.meetingTime != null) return@withLock false
             rooms[roomId] =
                 room.copy(
                     mode = change.mode ?: room.mode,
@@ -106,6 +107,9 @@ class InMemoryRoomRepository : RoomRepository {
                     meetingTime =
                         (change.meetingTime as? Change.Set)?.value
                             ?: room.meetingTime.takeIf { change.meetingTime is Change.Unchanged },
+                    meetingBand =
+                        (change.meetingBand as? Change.Set)?.value
+                            ?: room.meetingBand.takeIf { change.meetingBand is Change.Unchanged },
                     lastActivityAt = activity.at,
                     expiresAt = activity.expiresAt,
                 )

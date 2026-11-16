@@ -69,7 +69,6 @@ export function JoinForm({
           setValue(next);
         }}
         personIndex={personIndex}
-        namePlaceholder="이름 (선택, 예: 민수)"
       />
       {timeBasis ? (
         <p id={`${id}-basis`} role="status" className="text-[14px] font-semibold text-ink">

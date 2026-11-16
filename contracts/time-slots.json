@@ -18,7 +18,8 @@
     "시간대: 시각 HH:MM이 [from, to)에 들면 그 시간대다. 밤은 21:00~다음 날 03:00이다.",
     "운행일: 03:00 전의 시각은 전날 운행일의 밤이다(심야 열차는 전날 시간표로 달린다). 요일 유형은 운행일로 정한다.",
     "요일 유형: 운행일이 공휴일(holidays.json)이거나 일요일이면 holiday, 토요일이면 saturday, 그 밖에는 weekday다. 토요일인 공휴일은 holiday다.",
-    "시각이 없으면 낮, 날짜가 없으면 평일이다(둘 다 없으면 기본 구분 weekday-day)."
+    "시각이 없으면 낮, 날짜가 없으면 평일이다(둘 다 없으면 기본 구분 weekday-day).",
+    "시각 없이 시간대(band)만 고르면 그 시간대이고 운행일은 날짜 그대로다(밤을 골랐으면 그날 밤). 시각이 있으면 시간대는 시각에서 나오며, 함께 온 band가 다르면 방 API가 400으로 거절한다(벡터의 apiError). 계산(resolve)은 시각만 본다."
   ],
   "vectors": [
     {"id": "weekday_noon", "date": "2026-11-18", "time": "12:00", "expected": "weekday-day"},
@@ -39,6 +40,17 @@
     {"id": "date_only_is_day", "date": "2026-11-21", "time": null, "expected": "saturday-day"},
     {"id": "time_only_is_weekday", "date": null, "time": "22:00", "expected": "weekday-night"},
     {"id": "nothing_is_default", "date": null, "time": null, "expected": "weekday-day"},
-    {"id": "time_only_after_midnight_is_weekday_night", "date": null, "time": "01:00", "expected": "weekday-night"}
+    {"id": "time_only_after_midnight_is_weekday_night", "date": null, "time": "01:00", "expected": "weekday-night"},
+    {"id": "band_only_saturday_evening", "date": "2026-11-21", "time": null, "band": "evening", "expected": "saturday-evening"},
+    {"id": "band_only_night_is_that_day", "date": "2026-11-21", "time": null, "band": "night", "expected": "saturday-night"},
+    {"id": "band_only_sunday_morning", "date": "2026-11-22", "time": null, "band": "morning", "expected": "holiday-morning"},
+    {"id": "band_only_holiday", "date": "2026-12-25", "time": null, "band": "night", "expected": "holiday-night"},
+    {"id": "band_without_date_is_weekday", "date": null, "time": null, "band": "evening", "expected": "weekday-evening"},
+    {"id": "time_decides_with_matching_band", "date": "2026-11-21", "time": "01:30", "band": "night", "expected": "weekday-night"},
+    {"id": "day_ends_at_1659", "date": "2026-11-18", "time": "16:59", "expected": "weekday-day"},
+    {"id": "evening_ends_at_2059", "date": "2026-11-18", "time": "20:59", "expected": "weekday-evening"},
+    {"id": "service_day_ends_at_0259", "date": "2026-11-22", "time": "02:59", "expected": "saturday-night"},
+    {"id": "contradicting_band_is_rejected", "date": "2026-11-21", "time": "19:30", "band": "morning", "expected": "saturday-evening", "apiError": "INVALID_MEETING_BAND"},
+    {"id": "contradicting_band_at_edge_is_rejected", "date": "2026-11-18", "time": "02:59", "band": "morning", "expected": "weekday-night", "apiError": "INVALID_MEETING_BAND"}
   ]
 }

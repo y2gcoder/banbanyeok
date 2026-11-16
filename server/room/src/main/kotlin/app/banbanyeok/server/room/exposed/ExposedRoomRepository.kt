@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room.exposed
 
+import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.server.room.Activity
 import app.banbanyeok.server.room.AddResult
 import app.banbanyeok.server.room.Change
@@ -18,6 +19,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
@@ -46,6 +48,7 @@ public class ExposedRoomRepository(
             it[dataVersion] = room.dataVersion
             it[meetingDate] = room.meetingDate
             it[meetingTime] = room.meetingTime
+            it[meetingBand] = room.meetingBand?.id
             it[expectedCount] = room.expectedCount?.toShort()
             it[status] = statusOf(room.locked)
             it[createdAt] = room.createdAt
@@ -154,12 +157,19 @@ public class ExposedRoomRepository(
     ): Boolean =
         inTransaction {
             val updated =
-                RoomsTable.update({ RoomsTable.id eq roomId }) {
+                RoomsTable.update({
+                    if (change.onlyWithoutMeetingTime) {
+                        (RoomsTable.id eq roomId) and RoomsTable.meetingTime.isNull()
+                    } else {
+                        RoomsTable.id eq roomId
+                    }
+                }) {
                     change.mode?.let { mode -> it[RoomsTable.mode] = mode.name.lowercase() }
                     (change.favorParticipantId as? Change.Set)?.let { set -> it[favorPid] = set.value }
                     change.locked?.let { locked -> it[status] = statusOf(locked) }
                     (change.meetingDate as? Change.Set)?.let { set -> it[meetingDate] = set.value }
                     (change.meetingTime as? Change.Set)?.let { set -> it[meetingTime] = set.value }
+                    (change.meetingBand as? Change.Set)?.let { set -> it[meetingBand] = set.value?.id }
                     it[expiresAt] = activity.expiresAt
                     it[lastActivityAt] = activity.at
                 }
@@ -242,6 +252,7 @@ public class ExposedRoomRepository(
             dataVersion = this[RoomsTable.dataVersion],
             meetingDate = this[RoomsTable.meetingDate],
             meetingTime = this[RoomsTable.meetingTime],
+            meetingBand = this[RoomsTable.meetingBand]?.let(TimeBand::parseOrNull),
             expectedCount = this[RoomsTable.expectedCount]?.toInt(),
             locked = this[RoomsTable.status] == LOCKED,
             outcome =

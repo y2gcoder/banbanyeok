@@ -2,10 +2,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  type Band,
   bandOfTime,
   DEFAULT_SLOT,
   holidayName,
   isTimeSlot,
+  meetingHolidayName,
   seoulNow,
   slotForMeeting,
   slotLabel,
@@ -14,7 +16,7 @@ import {
 
 type Vectors = {
   default: string;
-  vectors: { id: string; date: string | null; time: string | null; expected: string }[];
+  vectors: { id: string; date: string | null; time: string | null; band?: Band; expected: string }[];
   dayTypes: { id: string; label: string }[];
   bands: { id: string; label: string }[];
 };
@@ -24,7 +26,7 @@ const contract = JSON.parse(
 
 describe("구분 — contracts/time-slots.json", () => {
   it.each(contract.vectors)("$id", (vector) => {
-    expect(slotForMeeting(vector.date, vector.time)).toBe(vector.expected);
+    expect(slotForMeeting(vector.date, vector.time, vector.band ?? null)).toBe(vector.expected);
   });
 
   it("기본 구분과 라벨이 계약과 같다", () => {
@@ -43,6 +45,16 @@ describe("구분 — contracts/time-slots.json", () => {
     expect(isTimeSlot("Weekday-Day")).toBe(false);
     expect(isTimeSlot("sunday-dawn")).toBe(false);
     expect(isTimeSlot("weekday-day-x")).toBe(false);
+  });
+
+  it("시간대만 고르면 그날 운행일, 03:00 전 시각은 전날 운행일의 공휴일 이름을 쓴다", () => {
+    expect(slotForMeeting("2026-12-25", null, "night")).toBe("holiday-night");
+    expect(meetingHolidayName("2026-12-25", null)).toBe("기독탄신일");
+    expect(meetingHolidayName("2026-12-26", "01:00")).toBe("기독탄신일");
+    expect(meetingHolidayName("2026-12-26", "03:00")).toBeNull();
+    expect(meetingHolidayName(null, "01:00")).toBeNull();
+    // 시각이 있으면 시간대보다 시각이 정한다.
+    expect(slotForMeeting("2026-11-18", "08:00", "night")).toBe("weekday-morning");
   });
 
   it("시간대 경계", () => {

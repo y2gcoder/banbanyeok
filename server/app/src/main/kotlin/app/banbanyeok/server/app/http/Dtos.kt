@@ -32,6 +32,8 @@ data class RoomCreateRequestDto(
     val meetingDate: String? = null,
     /** 문자열이 아니면 INVALID_MEETING_TIME이 되도록 JSON 값 그대로 받는다. null은 없음. */
     val meetingTime: JsonElement? = null,
+    /** 시각 없이 고른 약속 시간대. 문자열이 아니거나 모르는 값이면 INVALID_MEETING_BAND. null은 없음. */
+    val meetingBand: JsonElement? = null,
     val host: ParticipantInputDto,
     val expectedCount: Int? = null,
 )
@@ -76,6 +78,8 @@ data class RoomDto(
     val locked: Boolean,
     val meetingDate: String?,
     val meetingTime: String?,
+    /** 약속 시간대: 시각이 있으면 그 시각의 시간대, 없으면 고른 시간대, 둘 다 없으면 null. */
+    val meetingBand: String?,
     val expiresAt: String,
     val dataVersion: String,
     val participants: List<ParticipantDto>,

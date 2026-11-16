@@ -2,11 +2,59 @@ import { describe, expect, it } from "vitest";
 import {
   dayAfter,
   daysSince,
+  earlyMorningNote,
   formatMeetingDate,
+  formatMeetingDay,
   isMeetingDateInRange,
   isMeetingDayReached,
+  meetingWhenText,
   todayInSeoul,
+  upcomingSaturday,
+  weekdayOf,
 } from "./dates";
+
+describe("요일과 이번 토요일", () => {
+  it("요일을 붙인다(서울 날짜 문자열 그대로, 기기 시간대와 무관)", () => {
+    expect(weekdayOf("2026-11-21")).toBe("토");
+    expect(weekdayOf("2026-11-22")).toBe("일");
+    expect(formatMeetingDay("2026-11-21")).toBe("11월 21일 (토)");
+    expect(formatMeetingDay("2027-01-01")).toBe("1월 1일 (금)");
+  });
+
+  it.each([
+    ["월요일이면 그 주 토요일", "2026-11-16", "2026-11-21"],
+    ["금요일이면 내일", "2026-11-20", "2026-11-21"],
+    ["토요일이면 오늘", "2026-11-21", "2026-11-21"],
+    ["일요일이면 다음 토요일(6일 뒤)", "2026-11-22", "2026-11-28"],
+    ["해·달을 넘긴다", "2026-12-28", "2027-01-02"],
+  ])("%s", (_, today, saturday) => {
+    expect(upcomingSaturday(today)).toBe(saturday);
+  });
+
+  it("03시 전 시각 안내는 고른 날짜의 요일로 말하고, 03:00부터는 없다", () => {
+    expect(earlyMorningNote("2026-11-21", "01:00")).toBe(
+      "03시 전은 전날 밤 열차로 계산해요. 지금은 금요일 밤 기준이에요. 토요일 밤 1시라면 날짜를 일요일로 골라 주세요.",
+    );
+    expect(earlyMorningNote("2026-11-23", "00:30")).toBe(
+      "03시 전은 전날 밤 열차로 계산해요. 지금은 일요일 밤 기준이에요. 월요일 밤 12시 30분이라면 날짜를 화요일로 골라 주세요.",
+    );
+    expect(earlyMorningNote("2026-11-21", "02:59")).toContain("토요일 밤 2시 59분이라면");
+    expect(earlyMorningNote(null, "01:00")).toBe(
+      "03시 전은 전날 밤 열차로 계산해요. 날짜를 고르면 그 전날 밤 기준이에요.",
+    );
+    expect(earlyMorningNote("2026-11-21", "03:00")).toBeNull();
+    expect(earlyMorningNote("2026-11-21", null)).toBeNull();
+  });
+
+  it("방 요약의 약속은 시각이 있을 때만 시각을, 없으면 시간대 이름을 쓴다", () => {
+    expect(meetingWhenText("2026-11-21", "19:00", null)).toBe("11월 21일 (토) 19:00");
+    expect(meetingWhenText("2026-11-21", "19:00", "evening")).toBe("11월 21일 (토) 19:00");
+    expect(meetingWhenText("2026-11-21", null, "evening")).toBe("11월 21일 (토) 저녁");
+    expect(meetingWhenText(null, null, "night")).toBe("밤");
+    expect(meetingWhenText("2026-11-21", null, null)).toBe("11월 21일 (토)");
+    expect(meetingWhenText(null, null, null)).toBeNull();
+  });
+});
 
 describe("약속일", () => {
   it("오늘은 한국 시간 기준이다(UTC 15시 이후는 다음 날)", () => {

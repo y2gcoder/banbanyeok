@@ -1,3 +1,5 @@
+import { type Band, bandName } from "@/lib/when/time-slot";
+
 /** 약속일 처리. 서버는 한국 시간(Asia/Seoul) 기준으로 약속일을 검사한다. 날짜는 `YYYY-MM-DD` 문자열로만 다룬다. */
 
 const ZONE = "Asia/Seoul";
@@ -36,6 +38,54 @@ export function isMeetingDayReached(meetingDate: string | null | undefined, toda
 export function formatMeetingDate(date: string): string {
   const [, month, day] = date.split("-");
   return `${Number(month)}월 ${Number(day)}일`;
+}
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+/** 운행일이 바뀌는 시각(contracts/time-slots.json rules). 이 전은 전날 밤이다. */
+const SERVICE_DAY_START = "03:00";
+const SATURDAY = 6;
+
+/** 요일 한 글자("토"). */
+export function weekdayOf(date: string): string {
+  return WEEKDAYS[new Date(toUtcMs(date)).getUTCDay()] ?? "";
+}
+
+/** 화면용 약속일과 요일: "11월 21일 (토)". */
+export function formatMeetingDay(date: string): string {
+  return `${formatMeetingDate(date)} (${weekdayOf(date)})`;
+}
+
+/**
+ * "이번 토요일": 오늘을 포함해 가장 가까운 토요일. 오늘이 토요일이면 오늘, 일요일이면 6일 뒤(다음 주 토요일)다.
+ * 오늘은 서울 기준 날짜(`todayInSeoul`)를 넘긴다.
+ */
+export function upcomingSaturday(today: string): string {
+  const day = new Date(toUtcMs(today)).getUTCDay();
+  return dayAfter(today, (SATURDAY - day + 7) % 7);
+}
+
+/**
+ * 03:00 전 시각을 넣었을 때의 한 줄 안내(03:00 전은 전날 운행일의 밤으로 계산한다). 고른 날짜가 있으면 그 요일로 말한다:
+ * 토요일 01:00 → "…지금은 금요일 밤 기준이에요. 토요일 밤 1시라면 날짜를 일요일로 골라 주세요." 03:00 이후거나 시각이 없으면 null.
+ */
+export function earlyMorningNote(date: string | null, time: string | null): string | null {
+  if (!time || time >= SERVICE_DAY_START) return null;
+  const [hour = 0, minute = 0] = time.split(":").map(Number);
+  const clock = minute === 0 ? `${hour === 0 ? 12 : hour}시라면` : `${hour === 0 ? 12 : hour}시 ${minute}분이라면`;
+  const lead = "03시 전은 전날 밤 열차로 계산해요.";
+  if (!date) return `${lead} 날짜를 고르면 그 전날 밤 기준이에요.`;
+  const previous = weekdayOf(dayAfter(date, -1));
+  return `${lead} 지금은 ${previous}요일 밤 기준이에요. ${weekdayOf(date)}요일 밤 ${clock} 날짜를 ${weekdayOf(dayAfter(date, 1))}요일로 골라 주세요.`;
+}
+
+/**
+ * 방 요약의 약속: "11월 21일 (토) 19:00", 시각 없이 시간대만 고른 방은 "11월 21일 (토) 저녁", 날짜만 있으면 "11월 21일 (토)".
+ * 화면에 없는 시각을 만들어 보이지 않는다. 아무것도 없으면 null.
+ */
+export function meetingWhenText(date: string | null, time: string | null, band: Band | null): string | null {
+  const parts = [date ? formatMeetingDay(date) : null, time ?? (band ? bandName(band) : null)];
+  const text = parts.filter(Boolean).join(" ");
+  return text === "" ? null : text;
 }
 
 /** 결과를 처음 본 뒤 지난 일수(음수는 0). 시각을 모르면 0. */

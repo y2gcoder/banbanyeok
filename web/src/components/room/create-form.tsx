@@ -4,21 +4,21 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
 import { createRoom } from "@/lib/api/rooms";
 import type { Mode, RoomCreateRequest } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
-import { dayAfter, MAX_MEETING_DAYS, todayInSeoul } from "@/lib/room/dates";
+import { todayInSeoul } from "@/lib/room/dates";
 import { roomErrorMessage } from "@/lib/room/errors";
 import { roomPath } from "@/lib/room/id";
 import { type ParticipantFormValue, toCreateRoomRequest } from "@/lib/room/input";
 import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
 import { stationByCode } from "@/lib/stations";
 import { cn } from "@/lib/utils";
-import { slotForMeeting, slotLabel } from "@/lib/when/time-slot";
+import { keepDayAcrossMidnight, type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
 import { ParticipantFields } from "./participant-fields";
 import { ROOM_MAIN, ROOM_SIDE, RoomShell } from "./room-states";
 import { useIdempotencyKey } from "./use-idempotency-key";
@@ -39,8 +39,7 @@ export function CreateRoomForm() {
   const keys = useIdempotencyKey();
   const [host, setHost] = useState<ParticipantFormValue>({ nickname: "", station: null, hidden: false });
   const [mode, setMode] = useState<Mode>("fair");
-  const [meetingDate, setMeetingDate] = useState("");
-  const [meetingTime, setMeetingTime] = useState("");
+  const [when, setWhen] = useState<MeetingWhen>(NO_MEETING_WHEN);
   const [expectedCount, setExpectedCount] = useState<number | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [storable, setStorable] = useState(true);
@@ -56,6 +55,27 @@ export function CreateRoomForm() {
     if (me && station?.supported)
       setHost((current) => (current.station ? current : { ...current, nickname: me.nickname, station }));
   }, []);
+
+  // 화면을 연 채로 자정을 넘길 수 있다. 칩을 누를 때·제출할 때·화면으로 돌아올 때·1분마다 서울 날짜를 다시 읽는다.
+  const refreshToday = useCallback((): string => {
+    const fresh = todayInSeoul();
+    setToday(fresh);
+    setWhen((current) => keepDayAcrossMidnight(current, fresh));
+    return fresh;
+  }, []);
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshToday();
+    };
+    const timer = window.setInterval(refreshToday, 60_000);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", refreshToday);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", refreshToday);
+    };
+  }, [refreshToday]);
 
   const create = useMutation({
     mutationFn: (body: RoomCreateRequest) => createRoom(body, keys.keyFor(body)),
@@ -80,9 +100,17 @@ export function CreateRoomForm() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    const now = refreshToday();
     const checked = toCreateRoomRequest(
-      { host, mode, meetingDate, meetingTime, expectedCount },
-      today || todayInSeoul(),
+      {
+        host,
+        mode,
+        meetingDate: when.day?.date ?? "",
+        meetingTime: when.time,
+        meetingBand: when.band,
+        expectedCount,
+      },
+      now,
     );
     if (!checked.ok) {
       setProblem(checked.message);
@@ -133,7 +161,6 @@ export function CreateRoomForm() {
             setHost(next);
           }}
           personIndex={0}
-          namePlaceholder="내 이름 (선택)"
         />
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[15px] font-bold text-ink">추천 기준</legend>
@@ -160,50 +187,17 @@ export function CreateRoomForm() {
             </label>
           ))}
         </fieldset>
-        <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-when-basis`}>
-          <legend className="mb-1 text-[15px] font-bold text-ink">언제 만나요? (선택)</legend>
-          <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-2">
-            <div className="flex min-w-0 flex-col gap-1">
-              <label htmlFor={`${id}-date`} className="text-[13px] font-semibold text-ink-soft">
-                약속일
-              </label>
-              <input
-                id={`${id}-date`}
-                type="date"
-                value={meetingDate}
-                min={today || undefined}
-                max={today ? dayAfter(today, MAX_MEETING_DAYS) : undefined}
-                onChange={(e) => {
-                  setProblem(null);
-                  setMeetingDate(e.target.value);
-                }}
-                className="h-11 w-full min-w-0 rounded-lg border border-input bg-surface px-3 text-[16px]"
-              />
-            </div>
-            <div className="flex min-w-0 flex-col gap-1">
-              <label htmlFor={`${id}-time`} className="text-[13px] font-semibold text-ink-soft">
-                시각
-              </label>
-              <input
-                id={`${id}-time`}
-                type="time"
-                value={meetingTime}
-                onChange={(e) => {
-                  setProblem(null);
-                  setMeetingTime(e.target.value.slice(0, 5));
-                }}
-                className="h-11 w-full min-w-0 rounded-lg border border-input bg-surface px-3 text-[16px]"
-              />
-            </div>
-          </div>
-          <p id={`${id}-when-basis`} role="status" className="text-[14px] font-semibold text-ink">
-            {slotLabel(slotForMeeting(meetingDate || null, meetingTime || null))} 기준으로 계산해요
-          </p>
-          <p className="text-[13px] leading-snug text-muted-foreground">
-            요일·시간대마다 열차 간격이 달라 기다리는 시간이 바뀌어요. 안 정하면 평일 낮 기준이에요. 약속일을 정하면
-            약속 다음 날 방이 사라지고, 안 정하면 마지막 변경 후 7일(최대 30일) 뒤에 사라져요.
-          </p>
-        </fieldset>
+        <MeetingWhenFields
+          id={`${id}-when`}
+          today={today}
+          value={when}
+          onChange={(next) => {
+            setProblem(null);
+            const fresh = todayInSeoul();
+            setToday(fresh);
+            setWhen(keepDayAcrossMidnight(next, fresh));
+          }}
+        />
         <details className="rounded-xl border border-rule bg-surface p-3.5">
           <summary className="-my-3 cursor-pointer py-3 text-[15px] font-bold text-ink">인원 정하기 (선택)</summary>
           <div className="mt-3 flex flex-col gap-4">

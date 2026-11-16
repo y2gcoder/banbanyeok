@@ -65,7 +65,7 @@ async function createRoom(page: Page, options: { shot?: boolean; expectedCount?:
   await page.getByRole("link", { name: /방 만들어서 각자 입력하기/ }).click();
   await expect(page).toHaveURL(/\/r\/new$/);
   await warmUp; // 방 만들기 화면이 열리면 서버를 깨운다.
-  await page.getByRole("textbox", { name: "내 이름(선택)" }).fill("민수");
+  await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
   await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
   if (options.shot) {
     await page.getByRole("heading", { name: /방 만들기/ }).click(); // 자동완성 목록을 닫고 찍는다

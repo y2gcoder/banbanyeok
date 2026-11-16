@@ -205,7 +205,7 @@ private val roomTimes: TimeSlotResolver by lazy { TimeSlotResolver(HolidayCalend
 private suspend fun ApplicationCall.respondRoom(
     services: ApiServices,
     room: RoomView,
-) = respond(room.toDto(services.directory, roomTimes.resolve(room.meetingDate, room.meetingTime)))
+) = respond(room.toDto(services.directory, roomTimes.resolve(room.meetingDate, room.meetingTime, room.meetingBand)))
 
 private fun ApplicationCall.roomId(): String = requireNotNull(parameters["roomId"])
 

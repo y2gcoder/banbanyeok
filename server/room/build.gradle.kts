@@ -4,7 +4,7 @@ plugins { id("banbanyeok.server-lib") }
 dependencies {
     api(libs.kotlinx.coroutines.core)
     implementation(project(":shared:links")) // 별칭 규칙(코드포인트 20자)
-    implementation(project(":shared:schema")) // StationCode 형식
+    api(project(":shared:schema")) // StationCode 형식, 공개 모델의 TimeBand(약속 시간대)
     api(libs.exposed.core)
     api(libs.exposed.jdbc)
     implementation(libs.exposed.java.time)

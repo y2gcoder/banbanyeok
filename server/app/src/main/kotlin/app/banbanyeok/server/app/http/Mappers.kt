@@ -78,6 +78,7 @@ fun RoomView.toDto(
     locked = locked,
     meetingDate = meetingDate?.toString(),
     meetingTime = meetingTime?.let { "%02d:%02d".format(java.util.Locale.ROOT, it.hour, it.minute) },
+    meetingBand = meetingBand?.id,
     expiresAt = expiresAt.toString(),
     dataVersion = dataVersion,
     participants = participantDtos(directory),

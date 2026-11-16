@@ -251,13 +251,13 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
   test("방 참여 폼: 넣던 이름·출발역·숨기기가 남는다", async ({ page }) => {
     await open(page, screen("room-friend-join"));
     const form = page.getByRole("form", { name: "나도 출발역 넣기" });
-    await form.getByRole("textbox", { name: "내 이름(선택)" }).fill("서연");
+    await form.getByRole("textbox", { name: "내 이름 (선택)" }).fill("서연");
     await pickStation(page, form.getByRole("combobox", { name: "내 출발역" }), "신촌", /^신촌\s?2호선/);
     await form.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
 
     for (const size of [UNFOLDED, FOLDED]) {
       await page.setViewportSize(size);
-      await expect(form.getByRole("textbox", { name: "내 이름(선택)" })).toHaveValue("서연");
+      await expect(form.getByRole("textbox", { name: "내 이름 (선택)" })).toHaveValue("서연");
       await expect(form.getByRole("combobox", { name: "내 출발역" })).toHaveValue("신촌");
       await expect(form.getByRole("checkbox", { name: /출발역 이름 숨기기/ })).toBeChecked();
       expect(await horizontalOverflow(page)).toEqual([]);

@@ -2,6 +2,7 @@ package app.banbanyeok.server.room
 
 import app.banbanyeok.links.NicknameRules
 import app.banbanyeok.schema.StationCode
+import app.banbanyeok.schema.TimeBand
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -40,6 +41,7 @@ public class RoomService(
                 dataVersion = stations.dataVersion,
                 meetingDate = command.meetingDate,
                 meetingTime = command.meetingTime?.withSecond(0)?.withNano(0),
+                meetingBand = storedBand(command.meetingTime, command.meetingBand),
                 expectedCount = command.expectedCount,
                 locked = false,
                 outcome = null,
@@ -154,6 +156,7 @@ public class RoomService(
                 Change.Unchanged -> stored.room.meetingDate
                 is Change.Set -> requested.value?.also { checkMeetingDate(it, now) }
             }
+        val band = bandChange(stored.room, patch)
         val change =
             RoomChange(
                 mode = patch.mode,
@@ -161,9 +164,16 @@ public class RoomService(
                 locked = patch.locked,
                 meetingDate = patch.meetingDate,
                 meetingTime = minutes(patch.meetingTime),
+                meetingBand = band,
+                // 시각은 그대로 두고 시간대를 넣으면, 읽은 뒤 다른 요청이 시각을 넣었을 때 둘이 어긋난다. 저장 때 다시 확인한다.
+                onlyWithoutMeetingTime =
+                    patch.meetingTime == Change.Unchanged && (band as? Change.Set)?.value != null,
             )
         val expiresAt = ExpiryPolicy.expiresAt(stored.room.createdAt, now, meetingDate)
         if (!rooms.updateRoom(roomId, change, Activity(now, expiresAt))) {
+            if (change.onlyWithoutMeetingTime && rooms.find(roomId) != null) {
+                reject(RoomError.INVALID_MEETING_BAND, "meetingBand가 meetingTime의 시간대와 다릅니다")
+            }
             reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
         }
         return viewOf(loadActive(roomId, now), null)
@@ -257,6 +267,7 @@ public class RoomService(
             locked = room.locked || full,
             meetingDate = room.meetingDate,
             meetingTime = room.meetingTime,
+            meetingBand = room.meetingTime?.let(::bandOf) ?: room.meetingBand,
             expiresAt = room.expiresAt,
             dataVersion = room.dataVersion,
             participants =
@@ -300,6 +311,7 @@ public class RoomService(
             reject(RoomError.INVALID_EXPECTED_COUNT, "예상 인원은 2~4명이어야 합니다")
         }
         command.meetingDate?.let { checkMeetingDate(it, now) }
+        checkMeetingBand(command.meetingTime, command.meetingBand)
         if (command.mode == RoomMode.FAVOR) {
             when (command.favorTarget) {
                 null -> reject(RoomError.FAVOR_TARGET_REQUIRED, "우대 대상이 필요합니다")
@@ -308,6 +320,45 @@ public class RoomService(
             }
         }
     }
+
+    /**
+     * 수정 뒤 저장할 시간대. 시각·시간대 어느 쪽도 바꾸지 않으면 그대로다. 결과 시각이 있으면 null(시각에서 나온다)이고,
+     * 시간대를 같이 보냈다면 그 시각의 시간대와 같아야 한다. 시각만 지우면 시간대도 없어진다(낮).
+     */
+    private fun bandChange(
+        room: Room,
+        patch: RoomPatch,
+    ): Change<TimeBand> {
+        if (patch.meetingTime == Change.Unchanged && patch.meetingBand == Change.Unchanged) return Change.Unchanged
+        val time =
+            when (val requested = patch.meetingTime) {
+                Change.Unchanged -> room.meetingTime
+                is Change.Set -> requested.value
+            }
+        val band =
+            when (val requested = patch.meetingBand) {
+                Change.Unchanged -> if (patch.meetingTime == Change.Unchanged) room.meetingBand else null
+                is Change.Set -> requested.value
+            }
+        checkMeetingBand(time, band)
+        return Change.Set(storedBand(time, band))
+    }
+
+    private fun storedBand(
+        time: LocalTime?,
+        band: TimeBand?,
+    ): TimeBand? = if (time == null) band else null
+
+    private fun checkMeetingBand(
+        time: LocalTime?,
+        band: TimeBand?,
+    ) {
+        if (time != null && band != null && bandOf(time) != band) {
+            reject(RoomError.INVALID_MEETING_BAND, "meetingBand가 meetingTime의 시간대와 다릅니다")
+        }
+    }
+
+    private fun bandOf(time: LocalTime): TimeBand = TimeBand.ofClock(time.hour, time.minute)
 
     /** 약속 시각은 분 단위로 저장한다(초는 버린다). */
     private fun minutes(change: Change<LocalTime>): Change<LocalTime> =

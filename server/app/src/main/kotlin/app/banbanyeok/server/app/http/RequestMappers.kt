@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app.http
 
+import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.recommendation.RecommendMode
@@ -40,6 +41,7 @@ fun RoomCreateRequestDto.toCommand(deviceToken: String?): CreateRoomCommand {
         expectedCount,
         deviceToken,
         meetingTime?.takeIf { it !is JsonNull }?.let { parseTime(it.timeText()) },
+        meetingBand?.let(::parseBand),
     )
 }
 
@@ -51,6 +53,18 @@ fun parseTime(text: String): LocalTime {
         throw AppException(ErrorKind.INVALID, "INVALID_MEETING_TIME", "meetingTime은 HH:MM(00:00~23:59) 형식이어야 합니다")
     }
     return LocalTime.parse(text)
+}
+
+/** 약속 시간대 JSON 값. null은 없음. 문자열이 아니거나 모르는 id면 INVALID_MEETING_BAND. */
+fun parseBand(value: JsonElement): TimeBand? {
+    if (value is JsonNull) return null
+    val text = (value as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
+    return text?.let(TimeBand::parseOrNull)
+        ?: throw AppException(
+            ErrorKind.INVALID,
+            "INVALID_MEETING_BAND",
+            "meetingBand는 morning, day, evening, night 중 하나여야 합니다",
+        )
 }
 
 /** `timeSlot` 값. 없거나 null이면 기본 구분(평일 낮). 문자열이 아니거나 모르는 id면 INVALID_TIME_SLOT. */
@@ -95,7 +109,16 @@ fun JsonObject.toRoomPatch(): RoomPatch {
         } else {
             Change.Unchanged
         }
-    return RoomPatch(mode, this["favorTarget"]?.stringValue("favorTarget"), locked, meetingDate, meetingTime)
+    val meetingBand =
+        if ("meetingBand" in this) Change.Set(this["meetingBand"]?.let(::parseBand)) else Change.Unchanged
+    return RoomPatch(
+        mode,
+        this["favorTarget"]?.stringValue("favorTarget"),
+        locked,
+        meetingDate,
+        meetingTime,
+        meetingBand,
+    )
 }
 
 private fun JsonElement.stringValue(field: String): String =

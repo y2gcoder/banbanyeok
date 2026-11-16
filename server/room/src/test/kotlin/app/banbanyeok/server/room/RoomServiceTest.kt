@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room
 
+import app.banbanyeok.schema.TimeBand
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
@@ -9,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 
 private fun roomTest(body: suspend RoomFixture.() -> Unit) = runTest { RoomFixture().body() }
 
@@ -394,6 +396,114 @@ class RoomServiceTest :
                             RoomPatch(meetingDate = Change.Set(LocalDate.parse("2026-01-01"))),
                         )
                     }
+                }
+            }
+
+            it("keeps a band without a time, derives it from a time, and rejects a contradicting pair") {
+                roomTest {
+                    val created = service.create(command().copy(meetingBand = TimeBand.EVENING))
+                    rooms.find(created.roomId)!!.room.meetingBand shouldBe TimeBand.EVENING
+                    service.get(created.roomId, null).meetingBand shouldBe TimeBand.EVENING
+
+                    // 시각을 넣으면 시간대는 시각에서 나오고, 따로 저장하지 않는다.
+                    val timed =
+                        service.updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(meetingTime = Change.Set(LocalTime.of(22, 0))),
+                        )
+                    timed.meetingBand shouldBe TimeBand.NIGHT
+                    rooms
+                        .find(created.roomId)!!
+                        .room.meetingBand
+                        .shouldBeNull()
+                    shouldFailWith(RoomError.INVALID_MEETING_BAND) {
+                        service.updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(meetingBand = Change.Set(TimeBand.MORNING)),
+                        )
+                    }
+                    // 시각을 지우면서 시간대를 남길 수 있다. 시각만 지우면 시간대도 없다(낮).
+                    val banded =
+                        service.updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(meetingTime = Change.Set(null), meetingBand = Change.Set(TimeBand.NIGHT)),
+                        )
+                    banded.meetingTime.shouldBeNull()
+                    banded.meetingBand shouldBe TimeBand.NIGHT
+                    service
+                        .updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(meetingTime = Change.Set(LocalTime.of(8, 0))),
+                        ).meetingBand shouldBe TimeBand.MORNING
+                    service
+                        .updateRoom(created.roomId, created.hostToken, RoomPatch(meetingTime = Change.Set(null)))
+                        .meetingBand
+                        .shouldBeNull()
+                    // 바꾸지 않는 수정은 시간대를 건드리지 않는다.
+                    service.updateRoom(
+                        created.roomId,
+                        created.hostToken,
+                        RoomPatch(meetingBand = Change.Set(TimeBand.DAY)),
+                    )
+                    service
+                        .updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(locked = false),
+                        ).meetingBand shouldBe
+                        TimeBand.DAY
+
+                    shouldFailWith(RoomError.INVALID_MEETING_BAND) {
+                        service.create(command().copy(meetingTime = LocalTime.of(19, 30), meetingBand = TimeBand.DAY))
+                    }
+                    val consistent =
+                        service.create(
+                            command().copy(meetingTime = LocalTime.of(19, 30), meetingBand = TimeBand.EVENING),
+                        )
+                    rooms
+                        .find(consistent.roomId)!!
+                        .room.meetingBand
+                        .shouldBeNull()
+                    service.get(consistent.roomId, null).meetingBand shouldBe TimeBand.EVENING
+                }
+            }
+        }
+
+        describe("meeting band races") {
+            it("rejects a band-only change when another request set a meeting time after it was read") {
+                roomTest {
+                    // 서비스가 방을 읽은 뒤, 저장하기 전에 다른 요청이 시각(19:00)을 넣는다.
+                    val racing =
+                        object : RoomRepository by rooms {
+                            override suspend fun updateRoom(
+                                roomId: String,
+                                change: RoomChange,
+                                activity: Activity,
+                            ): Boolean {
+                                rooms.updateRoom(
+                                    roomId,
+                                    RoomChange(meetingTime = Change.Set(LocalTime.of(19, 0))),
+                                    activity,
+                                )
+                                return rooms.updateRoom(roomId, change, activity)
+                            }
+                        }
+                    val raced = RoomService(racing, anonUsers, tokens, ids, stations, clock)
+                    val created = service.create(command())
+                    shouldFailWith(RoomError.INVALID_MEETING_BAND) {
+                        raced.updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(meetingBand = Change.Set(TimeBand.MORNING)),
+                        )
+                    }
+                    val stored = rooms.find(created.roomId)!!.room
+                    stored.meetingTime shouldBe LocalTime.of(19, 0)
+                    stored.meetingBand.shouldBeNull()
                 }
             }
         }

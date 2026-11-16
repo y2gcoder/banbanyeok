@@ -240,7 +240,7 @@ export interface components {
          *     | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정) |
          *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
-         *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
+         *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
@@ -277,6 +277,12 @@ export interface components {
          * @example 19:30
          */
         MeetingTime: string;
+        /**
+         * @description 약속 시간대(아침 10시 전·낮 10~17시·저녁 17~21시·밤 21시 이후, contracts/time-slots.json의 bands). 정확한 시각 없이 시간대만 고른
+         *     방이 쓴다(서버는 없는 시각을 만들어 저장하지 않는다). 시간대만 고르면 운행일은 약속일 그대로다(밤은 그날 밤).
+         * @enum {string}
+         */
+        MeetingBand: "morning" | "day" | "evening" | "night";
         /**
          * @description 결과를 계산한 기준(실제로 쓴 구분). 화면의 "○○ 기준" 문구는 `label`을 그대로 쓴다. `timeSlot`이 `requestedTimeSlot`과 다르면 평일 낮으로
          *     대신 계산한 것이다(조건은 API 설명의 "언제 만나나").
@@ -355,8 +361,13 @@ export interface components {
              * @description 약속일(선택). 만료와 "실제로 만났나" 질문 시점, 계산 구분(요일 유형)에 쓴다
              */
             meetingDate?: string;
-            /** @description 약속 시각(선택). 계산 구분(시간대)에 쓴다. 생략하거나 null이면 없음(낮). 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME` */
+            /** @description 약속 시각(선택). 계산 구분(시간대)에 쓴다. 생략하거나 null이면 없음(`meetingBand`, 그것도 없으면 낮). 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME` */
             meetingTime?: components["schemas"]["MeetingTime"] | null;
+            /**
+             * @description 약속 시간대(선택). 정확한 시각 없이 시간대만 고른 경우에 보낸다. `meetingTime`과 같이 보내면 그 시각의 시간대와 같아야 한다(다르면 400
+             *     `INVALID_MEETING_BAND`). 생략하거나 null이면 없음. 모르는 값이면 400 `INVALID_MEETING_BAND`
+             */
+            meetingBand?: components["schemas"]["MeetingBand"] | null;
             host: components["schemas"]["ParticipantInput"];
             expectedCount?: number;
         };
@@ -374,8 +385,13 @@ export interface components {
             locked?: boolean;
             /** Format: date */
             meetingDate?: string | null;
-            /** @description 약속 시각. null이면 지운다. 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME` */
+            /** @description 약속 시각. null이면 지운다(`meetingBand`를 같이 보내지 않으면 시간대도 없어진다). 문자열이 아니거나 형식이 틀리면 400 `INVALID_MEETING_TIME` */
             meetingTime?: components["schemas"]["MeetingTime"] | null;
+            /**
+             * @description 약속 시간대. null이면 지운다. 수정 뒤 약속 시각이 있으면 그 시각의 시간대와 같아야 한다(다르면 400 `INVALID_MEETING_BAND`).
+             *     시각을 새로 넣으면 시간대는 시각에서 나온다
+             */
+            meetingBand?: components["schemas"]["MeetingBand"] | null;
         };
         Room: {
             roomId: string;
@@ -385,13 +401,18 @@ export interface components {
             /** Format: date */
             meetingDate?: string | null;
             meetingTime?: components["schemas"]["MeetingTime"] | null;
+            /**
+             * @description 약속 시간대: 시각이 있으면 그 시각의 시간대, 없으면 고른 시간대, 둘 다 없으면 null(계산은 낮). 시간대만 고른 방은 `meetingTime`이
+             *     null이고 이 값만 있다. 이 필드를 모르는 옛 서버는 보내지 않는다
+             */
+            meetingBand?: components["schemas"]["MeetingBand"] | null;
             /** Format: date-time */
             expiresAt: string;
             /** @description 방이 기록한 manifest dataVersion */
             dataVersion: string;
             participants: components["schemas"]["Participant"][];
             /**
-             * @description 방이 계산할 기준: 약속 날짜(`meetingDate`)·시각(`meetingTime`)에서 서버가 정한 구분과 화면 문구(`label`). 결과를 계산하기 전(참여자가
+             * @description 방이 계산할 기준: 약속 날짜(`meetingDate`)·시각(`meetingTime`)·시간대(`meetingBand`)에서 서버가 정한 구분과 화면 문구(`label`). 결과를 계산하기 전(참여자가
              *     1명이어도)에 참여 화면의 "○○ 기준으로 계산해요"가 이 `label`을 그대로 쓴다. 클라이언트는 날짜로 공휴일·요일을 다시 계산하지 않는다.
              *     `timeSlot`과 `requestedTimeSlot`은 같다(대신 계산하는 경우는 결과 응답에서만 생긴다).
              */

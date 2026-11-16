@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room
 
+import app.banbanyeok.schema.TimeBand
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -36,6 +37,11 @@ public data class Room(
     val meetingDate: LocalDate?,
     /** 약속 시각(선택, 분 단위). 결과를 어느 시간대 기준으로 계산할지 정한다(contracts/time-slots.json). */
     val meetingTime: LocalTime? = null,
+    /**
+     * 약속 시간대(선택). 시각 없이 시간대만 고른 경우에만 저장한다(시각이 있으면 null, 시간대는 시각에서 나온다).
+     * 화면에 없는 시각을 만들어 저장하지 않으려는 것이다.
+     */
+    val meetingBand: TimeBand? = null,
     val expectedCount: Int?,
     val locked: Boolean,
     val outcome: Outcome?,
@@ -87,6 +93,8 @@ public data class CreateRoomCommand(
     val expectedCount: Int?,
     val deviceToken: String?,
     val meetingTime: LocalTime? = null,
+    /** 약속 시간대(선택). [meetingTime]과 같이 오면 그 시각의 시간대와 같아야 한다(다르면 INVALID_MEETING_BAND). */
+    val meetingBand: TimeBand? = null,
 ) {
     public companion object {
         public const val HOST_TARGET: String = "host"
@@ -112,6 +120,7 @@ public data class RoomPatch(
     val locked: Boolean? = null,
     val meetingDate: Change<LocalDate> = Change.Unchanged,
     val meetingTime: Change<LocalTime> = Change.Unchanged,
+    val meetingBand: Change<TimeBand> = Change.Unchanged,
 )
 
 /**
@@ -136,6 +145,8 @@ public data class RoomView(
     val dataVersion: String,
     val participants: List<ParticipantView>,
     val meetingTime: LocalTime? = null,
+    /** 약속 시간대: 시각이 있으면 그 시각의 시간대, 없으면 고른 시간대, 둘 다 없으면 null. */
+    val meetingBand: TimeBand? = null,
 )
 
 /** 결과 계산에 필요한 방의 원본 정보(마스킹 전). room 모듈 밖으로 나가는 유일한 원본 출발역이다. */

@@ -33,6 +33,13 @@ public data class RoomChange(
     val locked: Boolean? = null,
     val meetingDate: Change<java.time.LocalDate> = Change.Unchanged,
     val meetingTime: Change<java.time.LocalTime> = Change.Unchanged,
+    /** 저장할 시간대. 시각이 있는 방은 null(시각에서 나온다). */
+    val meetingBand: Change<app.banbanyeok.schema.TimeBand> = Change.Unchanged,
+    /**
+     * true면 약속 시각이 비어 있을 때만 바꾼다(아니면 아무 행도 바꾸지 않고 false). 시각을 건드리지 않고 시간대만 넣는 수정이,
+     * 읽은 뒤 다른 요청이 넣은 시각과 어긋난 채 저장되지 않게 한다.
+     */
+    val onlyWithoutMeetingTime: Boolean = false,
 )
 
 /**

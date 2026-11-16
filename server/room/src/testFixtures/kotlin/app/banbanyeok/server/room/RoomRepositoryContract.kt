@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room
 
+import app.banbanyeok.schema.TimeBand
 import io.kotest.core.spec.style.describeSpec
 import io.kotest.core.spec.style.scopes.DescribeSpecRootScope
 import io.kotest.matchers.collections.shouldContainExactly
@@ -44,6 +45,7 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
         addingParticipants(newRepositories)
         changingParticipants(newRepositories)
         changingRooms(newRepositories)
+        meetingBands(newRepositories)
         removingRooms(newRepositories)
         anonUsers(newRepositories)
     }
@@ -232,6 +234,46 @@ private fun DescribeSpecRootScope.changingRooms(repos: () -> RepositoryPair) {
             outcome.kind shouldBe OutcomeKind.OTHER
             outcome.stationCode shouldBe "130"
             rooms.recordOutcome(freshId(), Outcome(OutcomeKind.NONE, null), activity(5)) shouldBe false
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.meetingBands(repos: () -> RepositoryPair) {
+    describe("meeting band") {
+        it("stores a band-only meeting and clears it") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId()) { it.copy(meetingBand = TimeBand.EVENING) }
+            rooms.create(room, aParticipant("host01"))
+            rooms.find(room.id)!!.room.meetingBand shouldBe TimeBand.EVENING
+            rooms.updateRoom(room.id, RoomChange(locked = true), activity(5)) shouldBe true
+            rooms.find(room.id)!!.room.meetingBand shouldBe TimeBand.EVENING
+            rooms.updateRoom(
+                room.id,
+                RoomChange(meetingBand = Change.Set(TimeBand.NIGHT)),
+                activity(6),
+            ) shouldBe true
+            rooms.find(room.id)!!.room.meetingBand shouldBe TimeBand.NIGHT
+            rooms.updateRoom(room.id, RoomChange(meetingBand = Change.Set(null)), activity(7)) shouldBe true
+            rooms
+                .find(room.id)!!
+                .room.meetingBand
+                .shouldBeNull()
+        }
+
+        it("changes a band only while the room has no meeting time when asked to") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId()) { it.copy(meetingTime = java.time.LocalTime.of(19, 0)) }
+            rooms.create(room, aParticipant("host01"))
+            val bandOnly = RoomChange(meetingBand = Change.Set(TimeBand.NIGHT), onlyWithoutMeetingTime = true)
+            rooms.updateRoom(room.id, bandOnly, activity(5)) shouldBe false
+            rooms
+                .find(room.id)!!
+                .room.meetingBand
+                .shouldBeNull()
+            rooms.find(room.id)!!.room.lastActivityAt shouldBe room.lastActivityAt
+            rooms.updateRoom(room.id, RoomChange(meetingTime = Change.Set(null)), activity(6)) shouldBe true
+            rooms.updateRoom(room.id, bandOnly, activity(7)) shouldBe true
+            rooms.find(room.id)!!.room.meetingBand shouldBe TimeBand.NIGHT
         }
     }
 }
