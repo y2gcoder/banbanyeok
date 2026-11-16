@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { orphanedOpenParens, unguardedOpenParens } from "../e2e/support/line-break";
+import { orphanedOpenParens, overflowingParenGroups, unguardedOpenParens } from "../e2e/support/line-break";
 
 /**
  * W2: 여는 괄호 "("가 줄 끝에 홀로 남지 않는다(iOS Safari가 keep-all에서 "(" 바로 뒤에서 줄을 바꾼다. docs/setup/w2-paren-notes.md).
@@ -26,7 +26,8 @@ for (const width of WIDTHS) {
       await settle(page);
       expect(await page.evaluate(orphanedOpenParens, "main")).toEqual([]);
       expect(await page.evaluate(unguardedOpenParens, "main")).toEqual([]);
-      // 괄호 묶음 안의 긴 주소(처리방침 URL 등)가 화면 밖으로 넘치지 않는다.
+      // 괄호 묶음(스위치 라벨 같은 좁은 칸 포함)과 긴 주소(처리방침 URL 등)가 칸·화면 밖으로 넘치지 않는다.
+      expect(await page.evaluate(overflowingParenGroups, "main")).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
 
@@ -37,6 +38,15 @@ for (const width of WIDTHS) {
       const selector = "section[aria-labelledby]:has(input[type=checkbox])";
       expect(await page.evaluate(orphanedOpenParens, selector)).toEqual([]);
       expect(await page.evaluate(unguardedOpenParens, selector)).toEqual([]);
+      expect(await page.evaluate(overflowingParenGroups, selector)).toEqual([]);
+    });
+
+    test("홈: 괄호 묶음이 칸 밖으로 넘치지 않고 '(' 뒤에서 줄이 바뀌지 않는다", async ({ page }) => {
+      await page.goto("/");
+      await settle(page);
+      expect(await page.evaluate(orphanedOpenParens, "main")).toEqual([]);
+      expect(await page.evaluate(overflowingParenGroups, "main")).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
   });
 }
@@ -49,6 +59,9 @@ test("/privacy에서는 동의 배너를 띄우지 않고, 같은 동의를 고�
   await expect(banner(page)).toHaveCount(0);
   await page.waitForTimeout(500); // 늦게 뜨는 배너가 없는지(수화 뒤)
   await expect(banner(page)).toHaveCount(0);
+  // /privacy로 처음 들어와 선택하지 않고 홈으로 가면(전체 이동) 아직 안 골랐으니 그때는 배너가 뜬다.
+  await page.goto("/");
+  await expect(banner(page)).toBeVisible();
 });
 
 test("다른 화면의 배너 링크는 /privacy의 통계 설정으로 가고, 거기서 고른다", async ({ page }) => {

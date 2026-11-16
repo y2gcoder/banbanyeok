@@ -51,3 +51,29 @@ export function unguardedOpenParens(rootSelector: string): string[] {
   }
   return found;
 }
+
+/**
+ * 묶음(`[data-paren-safe]`)이 자기를 담은 블록(가장 가까운 inline이 아닌 조상)보다 넓은 곳(묶음 앞뒤 글자). nowrap 묶음이 좁은 칸에서
+ * 넘치지 않는지 본다. 한 줄에 못 들어 여러 줄로 접힌 묶음(긴 주소)은 줄별 사각형으로 재므로 걸리지 않는다.
+ */
+export function overflowingParenGroups(rootSelector: string): string[] {
+  const root = document.querySelector(rootSelector);
+  if (!root) return [`root not found: ${rootSelector}`];
+  const found: string[] = [];
+  for (const el of root.querySelectorAll("[data-paren-safe]")) {
+    if (el.closest(".sr-only")) continue; // 화면 밖에 두는 낭독 전용 글은 넘쳐도 보이지 않는다
+    let box: Element | null = el.parentElement;
+    while (box && getComputedStyle(box).display === "inline") box = box.parentElement;
+    if (!box) continue;
+    const limit = box.getBoundingClientRect();
+    const style = getComputedStyle(box);
+    const right = limit.right - Number.parseFloat(style.paddingRight) - Number.parseFloat(style.borderRightWidth);
+    for (const rect of el.getClientRects()) {
+      if (rect.right > right + 0.5 || rect.left < limit.left - 0.5) {
+        found.push((el.textContent ?? "").slice(0, 24));
+        break;
+      }
+    }
+  }
+  return found;
+}
