@@ -62,7 +62,13 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     res.end("ok");
     return;
   }
-  const upstream = await fetch(new URL(req.url ?? "/", base), { headers: { accept: req.headers.accept ?? "*/*" } });
+  // 열린 프록시가 되지 않게 경로만 받는다(절대 주소 요청은 거부).
+  if (!req.url?.startsWith("/") || req.url.startsWith("//")) {
+    res.statusCode = 400;
+    res.end("bad request");
+    return;
+  }
+  const upstream = await fetch(new URL(req.url, base), { headers: { accept: req.headers.accept ?? "*/*" } });
   const type = upstream.headers.get("content-type") ?? "";
   let body = Buffer.from(await upstream.arrayBuffer());
   if (type.includes("text/html")) {
@@ -78,7 +84,7 @@ const server = createServer((req, res) => {
     res.end(String(error));
   });
 });
-await new Promise<void>((resolve) => server.listen(0, "0.0.0.0", resolve));
+await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
 const port = (server.address() as AddressInfo).port;
 
 let failed = false;

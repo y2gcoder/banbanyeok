@@ -15,19 +15,26 @@ describe("parenSafe", () => {
     expect(groups).toEqual(["(미국·싱가포르)입니다", "(7항)."]);
   });
 
-  it("공백 없이 이어진 괄호(회사(주소))와 공백이 든 괄호는 첫 말마디만 묶는다", () => {
+  it("여는 괄호가 든 말마디 전체를 묶는다(앞 글자가 붙어 있어도 단어가 쪼개지지 않는다). 공백이 든 괄호는 첫 말마디만 묶는다", () => {
     const { container } = render(<p>{parenSafe("호스팅 회사(Cloudflare, Inc.) 및 (보호법 제22조)")}</p>);
     expect(container.textContent).toBe("호스팅 회사(Cloudflare, Inc.) 및 (보호법 제22조)");
     const groups = [...container.querySelectorAll("[data-paren-safe]")].map((el) => el.textContent);
-    expect(groups).toEqual(["(Cloudflare,", "(보호법"]);
+    expect(groups).toEqual(["회사(Cloudflare,", "(보호법"]);
   });
 
-  it("짧은 덩어리는 인라인 nowrap, 긴 덩어리(주소)는 접히는 블록으로 묶는다", () => {
+  it("앞 글자가 붙은 괄호는 단어째 묶는다(서울(asia-northeast3))", () => {
+    const { container } = render(<p>{parenSafe("Google Cloud 서울(asia-northeast3)에 저장")}</p>);
+    const groups = [...container.querySelectorAll("[data-paren-safe]")].map((el) => el.textContent);
+    expect(groups).toEqual(["서울(asia-northeast3)에"]);
+  });
+
+  it("짧은 말마디는 nowrap, 긴 말마디(주소)는 접힐 수 있게 word-break만 준다. 모두 인라인이다", () => {
     const url = "(https://support.example.com/very/long/address/path)";
     const { container } = render(<p>{parenSafe(`짧음 (7항) 긴 ${url}`)}</p>);
     const [short, long] = [...container.querySelectorAll("[data-paren-safe]")];
     expect(short?.className).toContain("whitespace-nowrap");
-    expect(long?.className).toContain("inline-block");
     expect(long?.className).not.toContain("whitespace-nowrap");
+    expect(long?.className).toContain("word-break:normal");
+    for (const el of [short, long]) expect(el?.className).not.toContain("inline-block");
   });
 });

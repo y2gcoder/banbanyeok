@@ -323,7 +323,7 @@ export const POLICY: Policy = {
           ],
         ),
         list(
-          "이전을 거부하는 방법과 효과: 이용 통계와 그 국외 이전은 처음 방문할 때 묻는 동의 화면에서 거부할 수 있고, 동의한 뒤에도 이 페이지의 '통계 설정'에서 언제든 철회할 수 있습니다. 거부하거나 철회해도 서비스를 모두 쓸 수 있으며, 철회하면 그때부터 PostHog로 보내지 않습니다.",
+          "이전을 거부하는 방법과 효과: 이용 통계와 그 국외 이전은 처음 방문할 때 묻는 동의 화면이나 이 페이지의 '통계 설정'에서 거부할 수 있고, 동의한 뒤에도 '통계 설정'에서 언제든 철회할 수 있습니다. 거부하거나 철회해도 서비스를 모두 쓸 수 있으며, 철회하면 그때부터 PostHog로 보내지 않습니다.",
           "Google·Cloudflare·Supabase·GitHub로의 이전은 서비스를 제공하는 데 꼭 필요해서, 이를 원하지 않으면 서비스를 이용하지 않아야 합니다. 이미 넣은 방 정보는 8항의 방법으로 바로 지울 수 있고, 방 기능 대신 서버에 저장하지 않는 링크 공유를 쓸 수도 있습니다.",
           "재수탁자(각 회사가 다시 맡기는 회사)는 각 회사가 공개한 재수탁자 목록에서 확인할 수 있습니다: Google Cloud(https://cloud.google.com/terms/subprocessors), Cloudflare(https://www.cloudflare.com/gdpr/subprocessors/cloudflare-services/), Supabase(https://supabase.com/legal/subprocessors), PostHog(https://posthog.com/subprocessors), GitHub(https://docs.github.com/en/site-policy/privacy-policies/github-subprocessors).",
         ),
