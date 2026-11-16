@@ -12,11 +12,12 @@ async function expectAccessible(page: Page) {
 const footerLink = (page: Page) =>
   page.getByRole("navigation", { name: "사이트 정보" }).getByRole("link", { name: "개인정보 처리방침" });
 
-test("처리방침: 열림, 초안 경고, 목차와 필수 제목, 접근성 위반 0", async ({ page }) => {
+test("처리방침: 열림, 초안 안내 없음, 목차와 필수 제목, 접근성 위반 0", async ({ page }) => {
   await page.goto("/privacy");
   await expect(page).toHaveTitle(/개인정보 처리방침/);
   await expect(page.getByRole("heading", { level: 1, name: "반반역 개인정보 처리방침" })).toBeVisible();
-  await expect(page.getByRole("note")).toContainText("변호사의 검토를 받아야 합니다");
+  await expect(page.getByRole("note")).toHaveCount(0);
+  await expect(page.getByText("초안")).toHaveCount(0);
   expect(await page.locator('meta[name="robots"]').first().getAttribute("content")).toContain("noindex");
 
   for (const name of [

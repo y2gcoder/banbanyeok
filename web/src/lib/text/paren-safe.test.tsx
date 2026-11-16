@@ -37,4 +37,16 @@ describe("parenSafe", () => {
     expect(long?.className).toContain("word-break:normal");
     for (const el of [short, long]) expect(el?.className).not.toContain("inline-block");
   });
+
+  it("여는 꺾쇠 「 『 와 전각 괄호도 말마디째 묶는다(iOS Safari에서 줄 끝에 홀로 남지 않게). 글자는 그대로다", () => {
+    const text = "개인정보보호위원회 「개인정보 처리방침 작성지침」(2026. 4.) 또는 『책』 （전각） ［대괄호］";
+    const { container } = render(<p>{parenSafe(text)}</p>);
+    expect(container.textContent).toBe(text);
+    const groups = [...container.querySelectorAll("[data-paren-safe]")].map((el) => el.textContent);
+    expect(groups).toEqual(["「개인정보", "작성지침」(2026.", "『책』", "（전각）", "［대괄호］"]);
+  });
+
+  it("닫는 꺾쇠만 있는 말마디는 묶지 않는다", () => {
+    expect(parenSafe("처리방침 작성지침」을 따른다")).toBe("처리방침 작성지침」을 따른다");
+  });
 });

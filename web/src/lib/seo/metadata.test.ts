@@ -159,6 +159,14 @@ describe("방 링크 메타데이터", () => {
     expect(og(meta)).toMatchObject({ url: "https://banban.example/privacy" });
   });
 
+  it("일반 페이지(/privacy)의 검색 노출은 사이트 전체 규칙(SITE_URL·SITE_NOINDEX)을 따른다", () => {
+    const page = { title: "개인정보 처리방침", description: "…", path: "/privacy" };
+    const site = { SITE_URL: "https://banban.example" };
+    expect(plainPageMetadata(page, site).robots).toBeUndefined();
+    expect(plainPageMetadata(page, { ...site, SITE_NOINDEX: "1" }).robots).toEqual({ index: false, follow: false });
+    expect(plainPageMetadata(page, {}).robots).toEqual({ index: false, follow: false });
+  });
+
   it("함수가 인자를 받지 않아 방 ID·이름·출발역이 문구에 들어갈 길이 없다", () => {
     expect(roomLinkMetadata.length).toBe(0);
     expect(JSON.stringify(roomLinkMetadata())).not.toContain("/r/");

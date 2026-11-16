@@ -171,5 +171,10 @@ export function plainPageMetadata(
   { title, description, path }: { title: string; description: string; path: string },
   env: Env = siteEnv(),
 ): Metadata {
-  return { title, description, ...social({ title, description, path, images: DEFAULT_IMAGES }, env) };
+  return {
+    title,
+    description,
+    robots: robots(env),
+    ...social({ title, description, path, images: DEFAULT_IMAGES }, env),
+  };
 }

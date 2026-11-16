@@ -5,15 +5,12 @@ import { plainPageMetadata } from "@/lib/seo/metadata";
 import { parenSafe } from "@/lib/text/paren-safe";
 import { type Block, POLICY } from "./policy";
 
-// 초안이라 검색 색인에서 뺀다. 운영자 검토 후 공개할 때 robots를 지운다(docs/setup/l1-notes.md).
-export const metadata: Metadata = {
-  ...plainPageMetadata({
-    title: "개인정보 처리방침",
-    description: "반반역이 처리하는 개인정보 항목, 보유 기간, 국외 이전, 이용자 권리를 안내합니다.",
-    path: "/privacy",
-  }),
-  robots: { index: false },
-};
+// 검색 노출은 사이트 전체 규칙(SITE_INDEX → isIndexableSite)을 따른다. 정식 출시 때 SITE_INDEX 하나로 함께 켜진다.
+export const metadata: Metadata = plainPageMetadata({
+  title: "개인정보 처리방침",
+  description: "반반역이 처리하는 개인정보 항목, 보유 기간, 국외 이전, 이용자 권리를 안내합니다.",
+  path: "/privacy",
+});
 
 function PolicyBlock({ block }: { block: Block }) {
   switch (block.kind) {
@@ -107,9 +104,6 @@ export default function PrivacyPage() {
           <h1 id="privacy-title" className="text-[28px] leading-tight font-extrabold tracking-[-0.02em] text-ink">
             {POLICY.title}
           </h1>
-          <p role="note" className="rounded-xl border-2 border-safety bg-surface p-4 font-semibold text-ink">
-            {parenSafe(POLICY.draftWarning)}
-          </p>
           {POLICY.intro.map((text) => (
             <p key={text}>{parenSafe(text)}</p>
           ))}
