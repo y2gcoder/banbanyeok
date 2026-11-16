@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
@@ -18,7 +18,7 @@ import { type ParticipantFormValue, toCreateRoomRequest } from "@/lib/room/input
 import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
 import { stationByCode } from "@/lib/stations";
 import { cn } from "@/lib/utils";
-import { type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
+import { keepDayAcrossMidnight, type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
 import { ParticipantFields } from "./participant-fields";
 import { ROOM_MAIN, ROOM_SIDE, RoomShell } from "./room-states";
 import { useIdempotencyKey } from "./use-idempotency-key";
@@ -56,6 +56,27 @@ export function CreateRoomForm() {
       setHost((current) => (current.station ? current : { ...current, nickname: me.nickname, station }));
   }, []);
 
+  // 화면을 연 채로 자정을 넘길 수 있다. 칩을 누를 때·제출할 때·화면으로 돌아올 때·1분마다 서울 날짜를 다시 읽는다.
+  const refreshToday = useCallback((): string => {
+    const fresh = todayInSeoul();
+    setToday(fresh);
+    setWhen((current) => keepDayAcrossMidnight(current, fresh));
+    return fresh;
+  }, []);
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshToday();
+    };
+    const timer = window.setInterval(refreshToday, 60_000);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", refreshToday);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", refreshToday);
+    };
+  }, [refreshToday]);
+
   const create = useMutation({
     mutationFn: (body: RoomCreateRequest) => createRoom(body, keys.keyFor(body)),
     onSuccess: (created, body) => {
@@ -79,6 +100,7 @@ export function CreateRoomForm() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    const now = refreshToday();
     const checked = toCreateRoomRequest(
       {
         host,
@@ -88,7 +110,7 @@ export function CreateRoomForm() {
         meetingBand: when.band,
         expectedCount,
       },
-      today || todayInSeoul(),
+      now,
     );
     if (!checked.ok) {
       setProblem(checked.message);
@@ -171,7 +193,9 @@ export function CreateRoomForm() {
           value={when}
           onChange={(next) => {
             setProblem(null);
-            setWhen(next);
+            const fresh = todayInSeoul();
+            setToday(fresh);
+            setWhen(keepDayAcrossMidnight(next, fresh));
           }}
         />
         <details className="rounded-xl border border-rule bg-surface p-3.5">

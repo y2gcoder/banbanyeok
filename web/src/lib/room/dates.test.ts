@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   dayAfter,
   daysSince,
+  earlyMorningNote,
   formatMeetingDate,
   formatMeetingDay,
   isMeetingDateInRange,
@@ -28,6 +29,21 @@ describe("요일과 이번 토요일", () => {
     ["해·달을 넘긴다", "2026-12-28", "2027-01-02"],
   ])("%s", (_, today, saturday) => {
     expect(upcomingSaturday(today)).toBe(saturday);
+  });
+
+  it("03시 전 시각 안내는 고른 날짜의 요일로 말하고, 03:00부터는 없다", () => {
+    expect(earlyMorningNote("2026-11-21", "01:00")).toBe(
+      "03시 전은 전날 밤 열차로 계산해요. 지금은 금요일 밤 기준이에요. 토요일 밤 1시라면 날짜를 일요일로 골라 주세요.",
+    );
+    expect(earlyMorningNote("2026-11-23", "00:30")).toBe(
+      "03시 전은 전날 밤 열차로 계산해요. 지금은 일요일 밤 기준이에요. 월요일 밤 12시 30분이라면 날짜를 화요일로 골라 주세요.",
+    );
+    expect(earlyMorningNote("2026-11-21", "02:59")).toContain("토요일 밤 2시 59분이라면");
+    expect(earlyMorningNote(null, "01:00")).toBe(
+      "03시 전은 전날 밤 열차로 계산해요. 날짜를 고르면 그 전날 밤 기준이에요.",
+    );
+    expect(earlyMorningNote("2026-11-21", "03:00")).toBeNull();
+    expect(earlyMorningNote("2026-11-21", null)).toBeNull();
   });
 
   it("방 요약의 약속은 시각이 있을 때만 시각을, 없으면 시간대 이름을 쓴다", () => {

@@ -1,9 +1,16 @@
 "use client";
 
-import { ClockIcon } from "lucide-react";
+import { ClockIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ChipText, ChoiceChips, chipClass } from "@/components/when/when-picker";
-import { dayAfter, formatMeetingDay, MAX_MEETING_DAYS, todayInSeoul, upcomingSaturday } from "@/lib/room/dates";
+import {
+  dayAfter,
+  earlyMorningNote,
+  formatMeetingDay,
+  MAX_MEETING_DAYS,
+  todayInSeoul,
+  upcomingSaturday,
+} from "@/lib/room/dates";
 import { cn } from "@/lib/utils";
 import {
   BANDS,
@@ -40,6 +47,16 @@ function presetDate(choice: Exclude<DayChoice, "pick">, today: string): string {
   if (choice === "today") return today;
   if (choice === "tomorrow") return dayAfter(today, 1);
   return upcomingSaturday(today);
+}
+
+/**
+ * 날이 바뀌었을 때(자정 넘김) 프리셋 칩으로 고른 날짜를 지킨다: "오늘"로 고른 11월 16일은 다음 날에도 11월 16일이다. 칩의 뜻이 바뀌었으면
+ * "날짜 고르기"로 고른 날짜로 옮겨 그 날짜를 그대로 보인다(조용히 다른 날로 바꾸지 않는다). 지난 날짜면 제출할 때 검증이 알린다.
+ */
+export function keepDayAcrossMidnight(value: MeetingWhen, today: string): MeetingWhen {
+  const day = value.day;
+  if (!day || day.choice === "pick" || presetDate(day.choice, today) === day.date) return value;
+  return { ...value, day: { choice: "pick", date: day.date } };
 }
 
 /** 칩 아래 작은 줄: "11월 21일 (토)", 공휴일이면 " · 공휴일". */
@@ -79,8 +96,10 @@ export function MeetingWhenFields({
   const holiday = meetingHolidayName(date, time);
   const picked = value.day?.choice === "pick" ? value.day.date : null;
 
+  // 누르는 순간의 서울 날짜로 정한다(화면을 연 뒤 자정을 넘겼어도 "오늘"은 오늘이다).
   const selectPreset = (choice: Exclude<DayChoice, "pick">) =>
-    onChange({ ...value, day: { choice, date: presetDate(choice, today || todayInSeoul()) } });
+    onChange({ ...value, day: { choice, date: presetDate(choice, todayInSeoul()) } });
+  const timeNote = earlyMorningNote(date, time);
   const selectBand = (next: Band) =>
     // 시각과 다른 시간대를 고르면 시각을 지운다(둘이 어긋난 채로 보내지 않는다).
     onChange({ ...value, band: next, time: time && bandOfTime(time) !== next ? "" : value.time });
@@ -154,6 +173,18 @@ export function MeetingWhenFields({
               />
             </label>
           </div>
+          {picked ? (
+            // 달력으로 고른 날짜는 칩을 다시 누르면 달력이 다시 열리므로, 지우는 길을 따로 둔다.
+            <button
+              type="button"
+              aria-label={`날짜 지우기: ${formatMeetingDay(picked)}`}
+              onClick={() => onChange({ ...value, day: null })}
+              className="inline-flex min-h-11 items-center gap-1 self-end rounded-md px-1 text-[13px] font-semibold text-ink-soft hover:text-ink"
+            >
+              <XIcon className="size-3.5" aria-hidden="true" />
+              날짜 지우기
+            </button>
+          ) : null}
         </fieldset>
         <div className="flex min-w-0 flex-col gap-1.5 @sm:flex-1">
           <p aria-hidden="true" className="text-[13px] font-semibold text-ink-soft">
@@ -198,8 +229,14 @@ export function MeetingWhenFields({
               const next = e.target.value.slice(0, 5);
               onChange({ ...value, time: next, band: next ? bandOfTime(next) : value.band });
             }}
+            aria-describedby={timeNote ? `${id}-time-note` : undefined}
             className="h-11 w-full max-w-48 min-w-0 rounded-lg border border-input bg-surface px-3 text-[16px]"
           />
+          {timeNote ? (
+            <p id={`${id}-time-note`} className="text-[13px] leading-snug text-ink-soft">
+              {timeNote}
+            </p>
+          ) : null}
         </div>
       </div>
       <p id={`${id}-basis`} role="status" className="text-[14px] font-semibold text-ink">
@@ -207,8 +244,9 @@ export function MeetingWhenFields({
         {holiday ? `(${holiday})` : ""} 기준으로 계산해요
       </p>
       <p className="text-[13px] leading-snug text-muted-foreground">
-        요일·시간대마다 열차 간격이 달라 기다리는 시간이 바뀌어요. 안 정하면 평일 낮 기준이에요. 고른 칩을 다시 누르면
-        지워져요. 약속일을 정하면 약속 다음 날 방이 사라지고, 안 정하면 마지막 변경 후 7일(최대 30일) 뒤에 사라져요.
+        요일·시간대마다 열차 간격이 달라 기다리는 시간이 바뀌어요. 안 정하면 평일 낮 기준이에요. 오늘·내일·이번 토요일과
+        시간대 칩은 다시 누르면 지워져요. 약속일을 정하면 약속 다음 날 방이 사라지고, 안 정하면 마지막 변경 후 7일(최대
+        30일) 뒤에 사라져요.
       </p>
     </fieldset>
   );

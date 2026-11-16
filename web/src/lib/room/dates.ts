@@ -41,6 +41,8 @@ export function formatMeetingDate(date: string): string {
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+/** 운행일이 바뀌는 시각(contracts/time-slots.json rules). 이 전은 전날 밤이다. */
+const SERVICE_DAY_START = "03:00";
 const SATURDAY = 6;
 
 /** 요일 한 글자("토"). */
@@ -60,6 +62,20 @@ export function formatMeetingDay(date: string): string {
 export function upcomingSaturday(today: string): string {
   const day = new Date(toUtcMs(today)).getUTCDay();
   return dayAfter(today, (SATURDAY - day + 7) % 7);
+}
+
+/**
+ * 03:00 전 시각을 넣었을 때의 한 줄 안내(03:00 전은 전날 운행일의 밤으로 계산한다). 고른 날짜가 있으면 그 요일로 말한다:
+ * 토요일 01:00 → "…지금은 금요일 밤 기준이에요. 토요일 밤 1시라면 날짜를 일요일로 골라 주세요." 03:00 이후거나 시각이 없으면 null.
+ */
+export function earlyMorningNote(date: string | null, time: string | null): string | null {
+  if (!time || time >= SERVICE_DAY_START) return null;
+  const [hour = 0, minute = 0] = time.split(":").map(Number);
+  const clock = minute === 0 ? `${hour === 0 ? 12 : hour}시라면` : `${hour === 0 ? 12 : hour}시 ${minute}분이라면`;
+  const lead = "03시 전은 전날 밤 열차로 계산해요.";
+  if (!date) return `${lead} 날짜를 고르면 그 전날 밤 기준이에요.`;
+  const previous = weekdayOf(dayAfter(date, -1));
+  return `${lead} 지금은 ${previous}요일 밤 기준이에요. ${weekdayOf(date)}요일 밤 ${clock} 날짜를 ${weekdayOf(dayAfter(date, 1))}요일로 골라 주세요.`;
 }
 
 /**

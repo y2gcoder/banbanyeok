@@ -86,6 +86,21 @@ Cloud Scheduler db-backup-weekly (월 03:17 KST) ─▶ Cloud Run Job db-backup 
 
 주의: 산출물을 발행(manifest 교체)한 뒤 배포가 실패하면, **이전 리비전의 새 인스턴스**가 새 manifest를 읽을 수 있다(시작 때 manifest를 읽기 때문). 형식 호환(`schemaVersion`)은 서버가 검증하고 실패하면 시작하지 않는다. 스모크 전에 발행하는 순서라서 생기는 틈이며, 위험이 작다고 보고 두었다 → 결정 필요 5.
 
+#### 리비전 롤백과 `meeting_band`(W3, changeset `20261116-meeting-band`)
+
+마이그레이션은 앞으로만 적용하고, 문제가 생기면 **리비전만** 이전으로 돌린다(아래 6절 명령). 이 changeset 뒤에 이전 리비전(W3 이전 서버)으로 돌리면
+이전 서버는 `rooms.meeting_band`를 모르므로 다음이 생긴다. 데이터는 그대로 남아 있어 새 리비전으로 다시 올리면 원래대로 돌아온다.
+
+1. **시간대만 고른 방**(`meeting_time` null, `meeting_band` 있음)을 이전 서버는 시간대 없이 읽어 **낮**으로 계산한다. 방 응답에도 `meetingBand`가 없어
+   웹 요약은 날짜만 보인다.
+2. 그런 방에 이전 서버로 `meetingTime`을 넣는 PATCH가 오면, 이전 서버는 `meeting_band`를 지우지 않는다. 그래서 CHECK
+   `rooms_meeting_band_without_time`에 걸려 **500**이 된다. 지금 웹에는 방 약속을 고치는 화면이 없어, 실제로는 API를 직접 부르는 경우뿐이다.
+   시간대 없는 방과 새 방 만들기에는 영향이 없다.
+3. 롤백 중에 새 웹이 `meetingBand`를 보내도 이전 서버는 모르는 키를 무시한다(`ignoreUnknownKeys`). 그래서 시간대만 고른 새 방은 낮으로 저장된다.
+
+롤백을 오래 둘 때 영향 범위: `SELECT count(*) FROM rooms WHERE meeting_band IS NOT NULL;`. Liquibase rollback(`DROP COLUMN meeting_band`)은 시간대
+정보를 지우고, CHECK를 잠시 내리면 어긋난 행이 생긴다. 그래서 둘 다 쓰지 않고, 고친 새 리비전으로 다시 올리는 것을 기본으로 한다.
+
 ### 3.4 산출물 발행
 
 `./gradlew :pipeline:run --args="stage-release build/release"`(`mise run release:stage`)가 `data/artifacts/dev`(검증을 통과한 dev 산출물)를 **계약 형식**(contracts/data-format.md §4.3, §5)으로 바꾼다: `versions/<dataVersion>/<종류>.<sha256 앞 16자>.<확장자>`(예: `od.7ba35164a95367c8.bin`) + 그 경로를 가리키는 `manifest.json`. dev manifest는 평평한 경로(`od.bin`)라서 이 변환 단계가 필요하다. 내용(해시·길이)은 그대로이고, 변환 결과를 서버와 같은 `DataSetLoader`로 다시 검증한 뒤 manifest를 **마지막에** 쓴다(단위 테스트 4개).
@@ -255,7 +270,7 @@ gcloud run jobs execute migrate --region asia-northeast3 --wait
 # 백업 수동 실행(Job 실행) / 목록
 gcloud run jobs execute db-backup --region asia-northeast3 --wait   # 또는 gh workflow run db-backup.yml
 gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/
-# 이전 리비전으로 즉시 롤백
+# 이전 리비전으로 즉시 롤백(스키마는 그대로 둔다. W3 meeting_band 뒤의 롤백 영향은 3.3절)
 gcloud run revisions list --service server --region asia-northeast3
 gcloud run services update-traffic server --region asia-northeast3 --to-revisions <리비전>=100
 # 데이터 롤백(이전 manifest 재발행): 이전 커밋에서 stage-release 후 FORCE=1 bash scripts/publish-artifacts.sh <버킷>
