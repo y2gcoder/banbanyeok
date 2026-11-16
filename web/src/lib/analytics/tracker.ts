@@ -11,11 +11,12 @@ import type { PostHogConfig } from "posthog-js";
 import type { AnalyticsConfig } from "./config";
 import type { CommonProperties, EventName, EventProperties } from "./events.gen";
 import { AnalyticsContractError, buildEventProperties } from "./properties";
-import { redactCapture } from "./redact";
+import { type CaptureContext, redactCapture } from "./redact";
 
 /** 쓰는 PostHog 메서드만(테스트 가짜가 구현하기 쉽게). */
 export type PostHogClient = {
   init(token: string, config: Partial<PostHogConfig>): unknown;
+  set_config(config: Partial<PostHogConfig>): unknown;
   capture(event: string, properties?: Record<string, unknown>): unknown;
   opt_in_capturing(options?: { captureEventName?: string | null | false }): unknown;
   opt_out_capturing(): unknown;
@@ -34,15 +35,25 @@ export type TrackerDeps = {
   clearStorage: () => void;
   /** PostHog를 초기화한 직후(식별자가 생긴 뒤)에 알린다. 화면이 식별자를 다시 읽는 데 쓴다. */
   onReady?: () => void;
+  /** 오류·속도 이벤트에서 가릴 이 기기의 방 ID·토큰(redact.ts). 없으면 주소 규칙만 쓴다. */
+  secrets?: () => readonly string[];
 };
 
 const MAX_QUEUE = 50;
 
 /**
  * PostHog 초기화 옵션. 개인정보 최소화 원칙(docs/setup/p7-notes.md)을 한 곳에 모았다.
- * 아래에 없는 기능(자동 수집, 세션 녹화, 설문, 플래그, 오류 수집, 웹 바이탈)은 모두 끈다.
+ * 켜는 자동 수집은 오류 추적(`$exception`)과 웹 바이탈(`$web_vitals`) 둘뿐이고(W4, contracts/events.json `sdkEvents`), 둘 다
+ * before_send([redactCapture])가 메시지·스택·주소를 가린 뒤에 나간다. 그 밖의 기능(클릭·페이지뷰 자동 수집, 세션 녹화, 콘솔 로그,
+ * 네트워크 타이밍, 설문, 플래그)은 모두 끈다. 콘솔 로그와 네트워크 타이밍에는 주소·방 ID가 들어갈 수 있어, 켜려면 처리방침의 통계
+ * 항목과 동의 문구(consent-text.ts)를 먼저 고쳐야 한다.
  */
-export function posthogOptions(config: AnalyticsConfig): Partial<PostHogConfig> {
+export function posthogOptions(
+  config: AnalyticsConfig,
+  context?: CaptureContext,
+  /** 웹 바이탈을 켤지. 동의한 바로 그 페이지에서는 끈다(동의 전에 이미 찍힌 LCP·FCP가 버퍼에서 나가지 않게). */
+  { webVitals = true }: { webVitals?: boolean } = {},
+): Partial<PostHogConfig> {
   return {
     api_host: config.host,
     // 자동 수집 전부 끔: 클릭·입력창 텍스트·페이지뷰(URL 쿼리에 출발역이 있다)를 모으지 않는다.
@@ -52,8 +63,16 @@ export function posthogOptions(config: AnalyticsConfig): Partial<PostHogConfig> 
     capture_pageleave: false,
     capture_dead_clicks: false,
     capture_heatmaps: false,
-    capture_exceptions: false,
-    capture_performance: false,
+    // 처리하지 못한 오류만(window.onerror·unhandledrejection). 콘솔 오류는 보내지 않는다. 확장 프로그램·브라우저가 넣은 스크립트의 오류는 SDK가 버린다.
+    capture_exceptions: {
+      capture_unhandled_errors: true,
+      capture_unhandled_rejections: true,
+      capture_console_errors: false,
+    },
+    // 웹 바이탈(LCP·CLS·FCP·INP 수치)만. 원인 요소(attribution: 요소 선택자·리소스 주소)는 보내지 않고, 네트워크 타이밍(녹화용)은 끈다.
+    capture_performance: { web_vitals: webVitals, web_vitals_attribution: false, network_timing: false },
+    // 콘솔 출력을 로그로 보내는 기능은 끈다(메시지에 주소·방 ID가 들어갈 수 있다).
+    logs: { captureConsoleLogs: false },
     // 세션 녹화·설문·실험 등 부가 기능과 외부 스크립트 로딩 끔.
     disable_session_recording: true,
     disable_surveys: true,
@@ -67,11 +86,13 @@ export function posthogOptions(config: AnalyticsConfig): Partial<PostHogConfig> 
     person_profiles: "identified_only",
     // 쿠키 없이 localStorage에만 익명 ID를 둔다. 리퍼러는 저장하지 않는다.
     persistence: "localStorage",
+    // 철회가 저장을 끈다(revoke). 같은 페이지에서 다시 동의하면 set_config로 이 값이 들어가 다시 켜진다.
+    disable_persistence: false,
     save_referrer: false,
     respect_dnt: true,
     // SDK가 자동으로 붙이는 속성 중 가장 식별력이 큰 원문 사용자 에이전트는 보내지 않는다($browser·$os 같은 분류는 남는다).
     property_denylist: ["$raw_user_agent"],
-    before_send: redactCapture,
+    before_send: (result) => redactCapture(result, context),
   };
 }
 
@@ -83,6 +104,12 @@ export type Tracker = {
   setDataVersion(version: string): void;
   /** 분석이 켜져 있는지(키가 있고, 동의했고, 추적 거부가 없음). */
   enabled(): boolean;
+  /**
+   * 켜져 있으면 PostHog를 미리 불러와 오류 추적·웹 바이탈을 시작한다(이벤트가 없는 페이지의 오류도 잡도록). 꺼져 있으면(동의 전·거부·
+   * 추적 거부) 아무것도 하지 않는다: 불러오지도 않고 오류 처리기도 붙지 않는다. 페이지를 열 때 처음 부른다(그때의 동의 여부로
+   * 이 페이지의 웹 바이탈을 정한다).
+   */
+  start(): void;
   /** 동의 철회: 대기 중인 이벤트를 버리고, PostHog를 끄고, 저장된 식별자를 지운다. 이후 동의하면 새로 시작한다. */
   revoke(): void;
 };
@@ -101,6 +128,14 @@ export function createTracker(deps: TrackerDeps): Tracker {
   // 철회·재동의 사이에 늦게 끝난 불러오기가 초기화하지 않도록 세대를 센다.
   let generation = 0;
   const queue: Queued[] = [];
+  // 이 페이지를 열 때(첫 start) 이미 동의해 있었는지. 그때만 웹 바이탈을 켠다: 웹 바이탈은 페이지가 열린 뒤 찍힌 수치를 버퍼에서
+  // 꺼내 보내므로, 이 페이지에서 동의했다면 동의 전의 LCP·FCP가 나간다. 그런 페이지는 건너뛰고 다음 페이지 로드부터 잰다.
+  let consentedAtOpen: boolean | undefined;
+  const common = (): CommonProperties => ({
+    platform: "web",
+    app_version: deps.appVersion,
+    ...(dataVersion ? { data_version: dataVersion } : {}),
+  });
 
   const enabled = () => deps.config !== null && !failed && !deps.declined() && deps.consented();
 
@@ -117,7 +152,19 @@ export function createTracker(deps: TrackerDeps): Tracker {
       .loadPostHog()
       .then((posthog) => {
         if (mine !== generation || !enabled()) return; // 그 사이 철회됐다.
-        posthog.init(config.key, posthogOptions(config));
+        const options = posthogOptions(
+          config,
+          {
+            secrets: deps.secrets ?? (() => []),
+            common,
+            // 철회한 뒤에는(세대가 바뀜) SDK에 남은 처리기가 무엇을 만들어도 보내지 않는다.
+            active: () => mine === generation && enabled(),
+          },
+          { webVitals: consentedAtOpen === true },
+        );
+        posthog.init(config.key, options);
+        // 철회 뒤 다시 동의하면 같은 SDK 객체라 init이 설정을 다시 넣지 않는다. 철회 때 끈 기능·저장을 여기서 되돌린다.
+        posthog.set_config(options);
         // 이전에 철회해 PostHog가 옵트아웃 표시를 남겼을 수 있다: 이번에는 동의했으므로 풀어 준다(옵트인 이벤트는 보내지 않는다).
         posthog.opt_in_capturing({ captureEventName: false });
         client = posthog;
@@ -133,6 +180,10 @@ export function createTracker(deps: TrackerDeps): Tracker {
 
   return {
     enabled,
+    start() {
+      consentedAtOpen ??= enabled();
+      if (enabled()) ensureLoaded();
+    },
     setDataVersion(version) {
       dataVersion = version;
     },
@@ -140,6 +191,9 @@ export function createTracker(deps: TrackerDeps): Tracker {
       generation += 1;
       queue.length = 0;
       if (client) {
+        // 오류 처리기를 떼고 웹 바이탈을 끄고 저장을 멈춘 뒤 옵트아웃한다. 웹 바이탈 관찰자는 SDK가 떼지 못하므로, 이후 페이지를 떠날 때
+        // 남은 수치를 비우더라도 저장소에 식별자를 다시 쓰거나 보내지 않게 한다(before_send도 막는다).
+        client.set_config({ capture_exceptions: false, capture_performance: false, disable_persistence: true });
         client.opt_out_capturing();
         client.reset();
       }
@@ -149,14 +203,9 @@ export function createTracker(deps: TrackerDeps): Tracker {
       deps.clearStorage();
     },
     track(name, properties) {
-      const common: CommonProperties = {
-        platform: "web",
-        app_version: deps.appVersion,
-        ...(dataVersion ? { data_version: dataVersion } : {}),
-      };
       let built: Record<string, unknown>;
       try {
-        built = buildEventProperties(name, properties, common);
+        built = buildEventProperties(name, properties, common());
       } catch (error) {
         if (error instanceof AnalyticsContractError) return reportViolation(error);
         throw error;

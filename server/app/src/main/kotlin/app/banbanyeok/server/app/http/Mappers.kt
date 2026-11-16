@@ -83,6 +83,8 @@ fun RoomView.toDto(
     dataVersion = dataVersion,
     participants = participantDtos(directory),
     timeBasis = timeBasis.toDto(requested = timeBasis.slot),
+    roomHash = roomHash,
+    createdAt = createdAt.toString(),
 )
 
 /** 계산 기준 DTO. [requested]는 요청한(방은 약속 날짜·시각에서 정한) 구분이고 `slot`과 다르면 기본 구분으로 대신 계산했다는 뜻이다. */

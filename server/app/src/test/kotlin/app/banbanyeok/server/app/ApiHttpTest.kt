@@ -39,6 +39,7 @@ import java.time.LocalDate
 
 private val expires = Instant.parse("2026-11-21T03:00:00Z")
 private const val ROOM_ID = "abcdefghjk"
+private const val ROOM_HASH = "0123456789abcdef"
 private val origin1 get() = DevArtifacts.origins.first()
 private val origin2 get() = DevArtifacts.origins.last()
 
@@ -52,6 +53,8 @@ private fun view(vararg participants: ParticipantView) =
         expiresAt = expires,
         dataVersion = "20261112.6",
         participants = participants.toList(),
+        roomHash = ROOM_HASH,
+        createdAt = Instant.parse("2026-11-14T03:00:00Z"),
     )
 
 private fun person(
@@ -72,8 +75,18 @@ private fun errorCode(body: String) =
 class ApiHttpTest :
     DescribeSpec({
         describe("anonymous users") {
-            it("issues an anonymous user and matches the contract") {
+            it("is closed by default: 404 like an unknown path, the service is never called") {
                 withMockedApi { services ->
+                    val response = client.json(HttpMethod.Post, "/v1/anon")
+                    response.status shouldBe HttpStatusCode.NotFound
+                    errorCode(response.bodyAsText()) shouldBe "NOT_FOUND"
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/anon", response)
+                    coVerify(exactly = 0) { services.anon.issue() }
+                }
+            }
+
+            it("issues an anonymous user and matches the contract when enabled") {
+                withMockedApi(testConfig(mapOf("ANON_ENABLED" to "true"))) { services ->
                     coEvery { services.anon.issue() } returns IssuedAnonUser("u_abc", "device-token")
                     val response = client.json(HttpMethod.Post, "/v1/anon")
                     response.status shouldBe HttpStatusCode.Created
@@ -93,7 +106,7 @@ class ApiHttpTest :
                 withMockedApi { services ->
                     val command = slot<CreateRoomCommand>()
                     coEvery { services.rooms.create(capture(command)) } returns
-                        CreatedRoom(ROOM_ID, "host-tok", "p00001", "part-tok", expires)
+                        CreatedRoom(ROOM_ID, "host-tok", "p00001", "part-tok", expires, ROOM_HASH)
                     val response = client.json(HttpMethod.Post, "/v1/rooms", body, token = "device-tok")
                     response.status shouldBe HttpStatusCode.Created
                     OpenApiContract.assertValid(HttpMethod.Post, "/v1/rooms", response)
@@ -101,6 +114,10 @@ class ApiHttpTest :
                     command.captured.meetingDate shouldBe LocalDate.parse("2026-12-01")
                     command.captured.expectedCount shouldBe 3
                     command.captured.deviceToken shouldBe "device-tok"
+                    Json
+                        .parseToJsonElement(response.bodyAsText())
+                        .jsonObject["roomHash"]!!
+                        .jsonPrimitive.content shouldBe ROOM_HASH
                     command.captured.host shouldBe ParticipantInput("민수", origin1, false)
                 }
             }
@@ -108,7 +125,7 @@ class ApiHttpTest :
             it("answers a retried request with the same Idempotency-Key from the first response") {
                 withMockedApi { services ->
                     coEvery { services.rooms.create(any()) } returns
-                        CreatedRoom(ROOM_ID, "host-tok", "p00001", "part-tok", expires)
+                        CreatedRoom(ROOM_ID, "host-tok", "p00001", "part-tok", expires, ROOM_HASH)
                     val first =
                         client.json(
                             HttpMethod.Post,
@@ -183,6 +200,10 @@ class ApiHttpTest :
                     participants shouldContain "\"originCode\":null"
                     participants shouldContain "\"originName\":null"
                     response.headers[HttpHeaders.CacheControl] shouldBe "no-store"
+                    // 통계용 방 해시와 생성 시각(웹이 room_hash·seconds_since_room_created에 쓴다)
+                    val room = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                    room["roomHash"]!!.jsonPrimitive.content shouldBe ROOM_HASH
+                    room["createdAt"]!!.jsonPrimitive.content shouldBe "2026-11-14T03:00:00Z"
                 }
             }
 

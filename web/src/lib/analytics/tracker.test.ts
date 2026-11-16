@@ -1,4 +1,4 @@
-import type { PostHogConfig } from "posthog-js";
+import type { CaptureResult, PostHogConfig } from "posthog-js";
 import { describe, expect, it, vi } from "vitest";
 import { POSTHOG_HOSTS } from "./config";
 import { AnalyticsContractError } from "./properties";
@@ -13,8 +13,16 @@ function fakePostHog() {
   const optIn = vi.fn();
   const optOut = vi.fn();
   const reset = vi.fn();
-  const client: PostHogClient = { init, capture, opt_in_capturing: optIn, opt_out_capturing: optOut, reset };
-  return { client, init, capture, optIn, optOut, reset };
+  const setConfig = vi.fn<(options: Partial<PostHogConfig>) => void>();
+  const client: PostHogClient = {
+    init,
+    set_config: setConfig,
+    capture,
+    opt_in_capturing: optIn,
+    opt_out_capturing: optOut,
+    reset,
+  };
+  return { client, init, capture, optIn, optOut, reset, setConfig };
 }
 
 function setup(overrides: Partial<TrackerDeps> = {}) {
@@ -65,6 +73,44 @@ describe("키가 없으면 완전히 꺼진다", () => {
 });
 
 describe("동의 전에는 켜지지 않는다(옵트인)", () => {
+  it("이미 동의한 채로 연 페이지에서는 웹 바이탈도 켠다", async () => {
+    const { tracker, init } = setup();
+    tracker.start();
+    await vi.waitFor(() => expect(init).toHaveBeenCalledTimes(1));
+    expect(init.mock.calls[0]?.[1]).toMatchObject({
+      capture_performance: { web_vitals: true },
+      disable_persistence: false,
+    });
+  });
+
+  it("start(): 동의 전·추적 거부면 PostHog를 불러오지 않는다(오류 처리기도 붙지 않는다), 동의하면 불러와 초기화한다", async () => {
+    let consented = false;
+    const { tracker, loadPostHog, init, capture } = setup({ consented: () => consented });
+    tracker.start();
+    await Promise.resolve();
+    expect(loadPostHog).not.toHaveBeenCalled();
+    expect(init).not.toHaveBeenCalled();
+
+    const declined = setup({ declined: () => true });
+    declined.tracker.start();
+    await Promise.resolve();
+    expect(declined.loadPostHog).not.toHaveBeenCalled();
+
+    consented = true;
+    tracker.start();
+    await vi.waitFor(() => expect(init).toHaveBeenCalledTimes(1));
+    // 오류 추적·웹 바이탈 옵션은 init 때만 들어간다 = 동의한 뒤에만 처리기가 붙는다. 이 페이지에서 동의했으므로 웹 바이탈은 끈다
+    // (동의 전에 찍힌 수치가 버퍼에서 나가지 않게). 오류 추적은 바로 켠다.
+    expect(init.mock.calls[0]?.[1]).toMatchObject({
+      capture_exceptions: { capture_unhandled_errors: true },
+      capture_performance: { web_vitals: false },
+    });
+    expect(capture).not.toHaveBeenCalled(); // 시작만 하고 이벤트를 만들어 보내지는 않는다
+    tracker.start();
+    await Promise.resolve();
+    expect(loadPostHog).toHaveBeenCalledTimes(1); // 두 번 불러오지 않는다
+  });
+
   it("동의하지 않았으면 불러오지도 초기화하지도 보내지도 않고, 대기열에도 쌓지 않는다", async () => {
     let consented = false;
     const { tracker, loadPostHog, init, capture } = setup({ consented: () => consented });
@@ -90,12 +136,22 @@ describe("동의 전에는 켜지지 않는다(옵트인)", () => {
 
   it("철회하면 즉시 끄고(opt-out·reset) 저장된 식별자를 지우며, 이후 이벤트는 보내지 않는다", async () => {
     let consented = true;
-    const { tracker, capture, optOut, reset, clearStorage } = setup({ consented: () => consented });
+    const { tracker, capture, optOut, reset, clearStorage, init, setConfig } = setup({ consented: () => consented });
     tracker.track("input_completed", inputCompleted);
     await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
+    const sendGate = init.mock.calls[0]?.[1].before_send as (result: CaptureResult | null) => CaptureResult | null;
 
     consented = false;
     tracker.revoke();
+    // SDK에 남는 오류 처리기·웹 바이탈·저장을 끄고 나서 옵트아웃한다.
+    expect(setConfig).toHaveBeenLastCalledWith({
+      capture_exceptions: false,
+      capture_performance: false,
+      disable_persistence: true,
+    });
+    expect(setConfig.mock.invocationCallOrder.at(-1)).toBeLessThan(optOut.mock.invocationCallOrder[0] ?? 0);
+    // 그래도 남은 관찰자가 만든 이벤트(예: 페이지를 떠날 때의 웹 바이탈)는 before_send가 버린다.
+    expect(sendGate({ uuid: "u", event: "$web_vitals", properties: {} } as unknown as CaptureResult)).toBeNull();
     expect(optOut).toHaveBeenCalledTimes(1);
     expect(reset).toHaveBeenCalledTimes(1);
     expect(clearStorage).toHaveBeenCalledTimes(1);
@@ -122,7 +178,7 @@ describe("동의 전에는 켜지지 않는다(옵트인)", () => {
 
   it("철회한 뒤 다시 동의하면 새로 불러와 시작한다", async () => {
     let consented = true;
-    const { tracker, loadPostHog, init, capture } = setup({ consented: () => consented });
+    const { tracker, loadPostHog, init, capture, setConfig } = setup({ consented: () => consented });
     tracker.track("input_completed", inputCompleted);
     await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
     consented = false;
@@ -132,6 +188,12 @@ describe("동의 전에는 켜지지 않는다(옵트인)", () => {
     await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
     expect(loadPostHog).toHaveBeenCalledTimes(2);
     expect(init).toHaveBeenCalledTimes(2);
+    // 같은 SDK 객체라 init은 설정을 다시 넣지 않으므로, 켜는 설정 전체를 set_config로 되돌린다(철회가 끈 저장도 다시 켠다:
+    // 그래야 /privacy에 식별자가 다시 보인다).
+    expect(setConfig.mock.calls.at(-1)?.[0]).toMatchObject({
+      disable_persistence: false,
+      capture_exceptions: { capture_unhandled_errors: true },
+    });
   });
 });
 
@@ -190,7 +252,7 @@ describe("켜져 있을 때", () => {
 describe("posthogOptions(개인정보 설정)", () => {
   const options = posthogOptions(config);
 
-  it("자동 수집·녹화·부가 기능·플래그를 모두 끈다", () => {
+  it("오류 추적·웹 바이탈 말고는 자동 수집·녹화·부가 기능·플래그를 모두 끈다", () => {
     expect(options).toMatchObject({
       api_host: POSTHOG_HOSTS.eu,
       autocapture: false,
@@ -199,8 +261,14 @@ describe("posthogOptions(개인정보 설정)", () => {
       capture_pageleave: false,
       capture_dead_clicks: false,
       capture_heatmaps: false,
-      capture_exceptions: false,
-      capture_performance: false,
+      // 오류: 처리하지 못한 오류만(콘솔 오류는 아님). 속도: 웹 바이탈만(원인 요소·네트워크 타이밍은 아님).
+      capture_exceptions: {
+        capture_unhandled_errors: true,
+        capture_unhandled_rejections: true,
+        capture_console_errors: false,
+      },
+      capture_performance: { web_vitals: true, web_vitals_attribution: false, network_timing: false },
+      logs: { captureConsoleLogs: false },
       disable_session_recording: true,
       disable_surveys: true,
       disable_product_tours: true,
@@ -213,6 +281,7 @@ describe("posthogOptions(개인정보 설정)", () => {
 
   it("익명으로 시작하고(identified_only) 쿠키·리퍼러를 저장하지 않으며 DNT를 존중한다", () => {
     expect(options).toMatchObject({
+      disable_persistence: false,
       person_profiles: "identified_only",
       persistence: "localStorage",
       save_referrer: false,
@@ -221,7 +290,16 @@ describe("posthogOptions(개인정보 설정)", () => {
     });
   });
 
-  it("보내기 직전에 URL의 쿼리를 지운다(before_send)", () => {
-    expect(options.before_send).toBe(redactCapture);
+  it("보내기 직전에 redactCapture로 가린다(before_send): 이 기기의 방 ID·토큰도 오류 이벤트에서 지운다", () => {
+    const withSecrets = posthogOptions(config, { secrets: () => ["qt7yvmsht3"] });
+    const send = withSecrets.before_send as (result: CaptureResult | null) => CaptureResult | null;
+    const exception = {
+      uuid: "u",
+      event: "$exception",
+      properties: { $exception_values: ["room qt7yvmsht3 failed"], $current_url: "https://x.example/r/qt7yvmsht3?o=a" },
+    } as unknown as CaptureResult;
+    expect(send(exception)).toEqual(redactCapture(structuredClone(exception), { secrets: () => ["qt7yvmsht3"] }));
+    expect(JSON.stringify(send(structuredClone(exception)))).not.toMatch(/qt7yvmsht3|o=a/);
+    expect(send({ uuid: "u", event: "$pageview", properties: {} } as unknown as CaptureResult)).toBeNull();
   });
 });

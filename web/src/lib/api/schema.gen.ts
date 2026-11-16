@@ -34,7 +34,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 익명 사용자 발급 (첫 방 작업 때 자동 호출) */
+        /**
+         * 익명 사용자 발급 — **현재 비활성(앱 출시 때 켬)**
+         * @description **현재 비활성(앱 출시 때 켬).** 서버 설정 `ANON_ENABLED`(기본 `false`)가 켜져 있을 때만 이 경로가 있고, 꺼져 있으면 없는 경로처럼
+         *     404 `NOT_FOUND`다(웹의 `/api/v1/anon` 프록시도 서버의 404를 그대로 돌려준다). 웹은 이 API를 쓰지 않는다(R1 결정: 웹 방은 기기 토큰
+         *     없이 방별 토큰만 쓴다). 앱이 방 기능을 내놓을 때 켜고, 그때 처리방침의 익명 사용자 ID·기기 토큰 항목을 함께 갱신한다(W4).
+         *
+         *     결정 변경(R1/W4): 처음 설계는 "첫 방 작업 때 자동 호출"이었다.
+         */
         post: operations["createAnonymousUser"];
         delete?: never;
         options?: never;
@@ -378,7 +385,14 @@ export interface components {
             participantToken: string;
             /** Format: date-time */
             expiresAt: string;
+            roomHash?: components["schemas"]["RoomHash"];
         };
+        /**
+         * @description 통계 이벤트의 `room_hash`(contracts/events.json)로 그대로 쓰는 값. 방 ID를 되돌릴 수 없다: 하위 키 roomKey = HMAC-SHA256(서버
+         *     비밀 pepper, `banbanyeok/room_hash/v1`)로 HMAC-SHA256(roomKey, 방 ID)의 앞 8바이트를 16자리 소문자 hex로 쓴다(토큰 해시 키와 분리). 키가 서버에만 있어 통계 도구나 값을 본 사람이 방 ID를 전수 대입으로
+         *     찾을 수 없다. 이 필드를 모르는 옛 서버는 보내지 않으므로 클라이언트는 없으면 `room_hash`를 생략한다
+         */
+        RoomHash: string;
         RoomPatch: {
             mode?: components["schemas"]["Mode"];
             favorTarget?: string;
@@ -411,6 +425,12 @@ export interface components {
             /** @description 방이 기록한 manifest dataVersion */
             dataVersion: string;
             participants: components["schemas"]["Participant"][];
+            roomHash?: components["schemas"]["RoomHash"];
+            /**
+             * Format: date-time
+             * @description 방을 만든 시각. 클라이언트가 통계의 `seconds_since_room_created`를 셀 때만 쓴다. 이 필드를 모르는 옛 서버는 보내지 않는다
+             */
+            createdAt?: string;
             /**
              * @description 방이 계산할 기준: 약속 날짜(`meetingDate`)·시각(`meetingTime`)·시간대(`meetingBand`)에서 서버가 정한 구분과 화면 문구(`label`). 결과를 계산하기 전(참여자가
              *     1명이어도)에 참여 화면의 "○○ 기준으로 계산해요"가 이 `label`을 그대로 쓴다. 클라이언트는 날짜로 공휴일·요일을 다시 계산하지 않는다.
@@ -530,6 +550,15 @@ export interface operations {
                         /** @description 기기에 보관하는 비밀 토큰 */
                         deviceToken: string;
                     };
+                };
+            };
+            /** @description 비활성(`ANON_ENABLED=false`, 기본) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
             429: components["responses"]["Error"];

@@ -51,7 +51,14 @@ public class RoomService(
             ),
             newParticipant(hostParticipantId, participantToken.hash, anonId, host, now),
         )
-        return CreatedRoom(roomId, hostToken.plain, hostParticipantId, participantToken.plain, expiresAt)
+        return CreatedRoom(
+            roomId,
+            hostToken.plain,
+            hostParticipantId,
+            participantToken.plain,
+            expiresAt,
+            tokens.roomHash(roomId),
+        )
     }
 
     public suspend fun join(
@@ -270,6 +277,8 @@ public class RoomService(
             meetingBand = room.meetingTime?.let(::bandOf) ?: room.meetingBand,
             expiresAt = room.expiresAt,
             dataVersion = room.dataVersion,
+            roomHash = tokens.roomHash(room.id),
+            createdAt = room.createdAt,
             participants =
                 stored.participants.map {
                     ParticipantView(

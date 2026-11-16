@@ -1,5 +1,5 @@
 // 생성 파일: contracts/events.json에서 만든다(pnpm gen:events). 직접 고치지 않는다.
-export const EVENTS_SCHEMA_VERSION = 2;
+export const EVENTS_SCHEMA_VERSION = 3;
 
 export type PropertySpec =
   | { readonly type: "string"; readonly required: boolean }
@@ -118,6 +118,10 @@ export interface EventProperties {
 }
 
 export type EventName = keyof EventProperties;
+
+/** SDK가 스스로 보내도 되는 이벤트(오류·웹 바이탈). 그 밖의 $ 이벤트는 before_send가 버린다. */
+export const SDK_EVENT_NAMES = ["$exception", "$web_vitals"] as const;
+export type SdkEventName = (typeof SDK_EVENT_NAMES)[number];
 
 export const EVENT_SPECS = {
   input_completed: {

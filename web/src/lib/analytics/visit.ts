@@ -1,4 +1,5 @@
 /** 브라우저 쪽 보조 판단: 추적 신호 존중, 첫 방문 여부, 유입 경로 분류. 분석이 켜져 있을 때만 호출한다. */
+import { ROOM_KEY_PREFIX } from "@/lib/room/tokens";
 import type { EventProperties } from "./events.gen";
 
 type ReferrerKind = EventProperties["link_opened"]["referrer_kind"];
@@ -84,4 +85,39 @@ export function isFirstVisit(): boolean {
     firstVisit = false; // 저장소를 쓸 수 없으면 첫 방문으로 부풀리지 않는다.
   }
   return firstVisit;
+}
+
+function parsedRecord(raw: string | null): Record<string, unknown> {
+  try {
+    const record: unknown = JSON.parse(raw ?? "null");
+    return typeof record === "object" && record !== null ? (record as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** 지금 보고 있는 방 경로 `/r/<방 ID>`의 방 ID. */
+const CURRENT_ROOM = /^\/r\/([0-9a-z]{10})(?:\/|$)/i;
+
+/**
+ * 이 기기가 아는 방 ID와 방 토큰: 보고 있는 방, 저장된 방 기록(`bby.room.<방 ID>`의 방 ID와 `…Token` 값). 오류·속도 이벤트를 보내기 직전에
+ * 이 값들이 메시지·스택 어디에도 남지 않게 가리는 데만 쓴다(redact.ts). 이 목록 자체는 어디에도 보내지 않는다.
+ */
+export function deviceSecrets(): string[] {
+  const found: string[] = [];
+  try {
+    const current = CURRENT_ROOM.exec(window.location.pathname)?.[1];
+    if (current) found.push(current);
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i) ?? "";
+      if (!key.startsWith(ROOM_KEY_PREFIX)) continue;
+      found.push(key.slice(ROOM_KEY_PREFIX.length));
+      for (const [name, value] of Object.entries(parsedRecord(window.localStorage.getItem(key)))) {
+        if (name.endsWith("Token") && typeof value === "string") found.push(value);
+      }
+    }
+  } catch {
+    // 저장소를 읽을 수 없으면 주소 규칙(redactText)만으로 가린다.
+  }
+  return found;
 }

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ShareActions } from "@/components/share/share-actions";
-import { track } from "@/lib/analytics";
+import { roomHashProperty, secondsSinceRoomCreated, track } from "@/lib/analytics";
 import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
@@ -159,7 +159,12 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         ...(record?.expectedCount ? { expectedCount: record.expectedCount } : {}),
       });
       keys.renew();
-      track("participant_joined", { hidden: input.hidden === true });
+      const seconds = secondsSinceRoomCreated(room?.createdAt);
+      track("participant_joined", {
+        hidden: input.hidden === true,
+        ...roomHashProperty({ roomId, roomHash: room?.roomHash }),
+        ...(seconds === undefined ? {} : { seconds_since_room_created: seconds }),
+      });
       refresh();
     },
     onError: (error) => {
@@ -282,7 +287,13 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             <p className="text-[14px] text-ink-soft">
               친구가 링크로 들어와 자기 출발역을 넣으면 여기에 나타나요. 두 명 이상 모이면 결과를 볼 수 있어요.
             </p>
-            <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
+            <ShareActions
+              path={roomPath(roomId)}
+              title={SHARE_TITLE}
+              text={SHARE_TEXT}
+              linkType="room"
+              room={{ roomId, roomHash: room.roomHash }}
+            />
           </section>
         ) : null}
 
@@ -361,7 +372,13 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
               링크 다시 보내기
             </h2>
-            <ShareActions path={roomPath(roomId)} title={SHARE_TITLE} text={SHARE_TEXT} linkType="room" />
+            <ShareActions
+              path={roomPath(roomId)}
+              title={SHARE_TITLE}
+              text={SHARE_TEXT}
+              linkType="room"
+              room={{ roomId, roomHash: room.roomHash }}
+            />
           </section>
         ) : null}
       </div>
@@ -385,6 +402,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
                   roomId={roomId}
                   participantToken={token}
                   topStationCode={view.candidates[0]?.stationCode ?? ""}
+                  roomHash={room.roomHash}
                   resultSeenAt={record?.resultSeenAt}
                   answered={Boolean(record?.outcomeAnswered)}
                   collapsed={!room.meetingDate}

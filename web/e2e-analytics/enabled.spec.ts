@@ -10,6 +10,8 @@ import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 const COLLECT = "https://eu.i.posthog.com/e/";
 const FORBIDDEN_KEY = /origin|nickname|room_id|token_|alias|^lat$|^lng$|address/i;
 const BATCH_WAIT_MS = 4000; // posthog-js 배치 전송 주기(약 3초)보다 길게
+/** SDK가 스스로 보내도 되는 이벤트(contracts/events.json `sdkEvents`): 오류 추적·웹 바이탈. */
+const SDK_EVENTS = ["$exception", "$web_vitals"];
 
 type Captured = { event: string; properties: Record<string, unknown> };
 
@@ -131,7 +133,7 @@ test("거부: 배너가 사라지고 요청 0건, 새로 고쳐도 다시 묻지
   expect(probe.outside).toEqual([]);
   expect(await analyticsKeys(page)).toEqual([]);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("bby.analytics.consent") ?? "{}"))).toMatchObject({
-    v: 3,
+    v: 4,
     collect: false,
     transfer: false,
   });
@@ -171,9 +173,13 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
   await friend.waitForTimeout(BATCH_WAIT_MS);
 
   expect(cspViolations).toEqual([]);
-  // 나간 요청은 수집 주소 하나뿐(/flags·원격 설정·녹화·설문 스크립트 없음).
+  // 나간 요청은 수집 주소 하나뿐(/flags·원격 설정·녹화·설문 스크립트·확장 스크립트 없음).
   expect([...new Set(probe.outside)]).toEqual([`POST ${COLLECT}`]);
-  expect(new Set(probe.events.map((e) => e.event))).toEqual(
+  // SDK 자동 이벤트는 오류·웹 바이탈만(있을 수도 없을 수도 있다). 나머지는 우리 이벤트.
+  const sdk = probe.events.filter((e) => e.event.startsWith("$"));
+  expect(sdk.filter((e) => !SDK_EVENTS.includes(e.event))).toEqual([]);
+  const ours = probe.events.filter((e) => !e.event.startsWith("$"));
+  expect(new Set(ours.map((e) => e.event))).toEqual(
     new Set([
       "analytics_consent_changed",
       "input_completed",
@@ -185,7 +191,7 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
       "seo_to_input_clicked",
     ]),
   ); // $pageview·$autocapture 등 자동 이벤트 없음
-  expect(probe.events[0]?.event).toBe("analytics_consent_changed"); // 동의한 순간이 첫 이벤트다(그 전 이벤트는 없다)
+  expect(ours[0]?.event).toBe("analytics_consent_changed"); // 동의한 순간이 첫 이벤트다(그 전 이벤트는 없다)
 
   for (const { event, properties } of probe.events) {
     expect(
@@ -288,7 +294,7 @@ for (const signal of ["doNotTrack", "globalPrivacyControl"] as const) {
       Object.defineProperty(navigator, name, { get: () => (name === "doNotTrack" ? "1" : true) });
       localStorage.setItem(
         "bby.analytics.consent",
-        JSON.stringify({ v: 3, collect: true, transfer: true, at: "2026-11-14T00:00:00Z" }),
+        JSON.stringify({ v: 4, collect: true, transfer: true, at: "2026-11-14T00:00:00Z" }),
       );
     }, signal);
     const probe = await attachProbe(context, baseURL ?? "");
@@ -393,6 +399,7 @@ test("삭제 요청용 식별자: /privacy에 이 브라우저의 식별자를 �
   await page.getByRole("link", { name: "통계 설정" }).click();
   const box = page.getByRole("textbox", { name: "이 브라우저의 통계 식별자" });
   await expect(box).toHaveValue(String(sentId));
+  await expect(page.getByText(/철회하기 전에 이 값을 복사해 privacy@banbanyeok\.app/)).toBeVisible();
   await page.getByRole("button", { name: "복사", exact: true }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(sentId);
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
@@ -402,19 +409,29 @@ test("삭제 요청용 식별자: /privacy에 이 브라우저의 식별자를 �
   await collectSwitch(page).click();
   const cleared = page.getByRole("textbox", { name: "방금 지운 통계 식별자" });
   await expect(cleared).toHaveValue(String(sentId)); // 삭제 요청에 쓰도록 이 화면에는 남는다
+  // 철회 직후에도 그 값을 복사할 수 있다(메모리에만, 저장소에는 없다).
+  await page.evaluate(() => navigator.clipboard.writeText(""));
+  await page.getByRole("button", { name: "복사", exact: true }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(sentId);
+  expect(
+    await page.evaluate((id) => JSON.stringify({ ...localStorage, ...sessionStorage }).includes(id), String(sentId)),
+  ).toBe(false);
   expect(await analyticsKeys(page)).toEqual([]); // 기기에서는 지워졌다
   await page.waitForTimeout(BATCH_WAIT_MS);
   // 식별자를 보이고 복사하고 철회하는 동안 만든 요청 중 외부로 나간 것도, 식별자를 담은 것도 없다.
   expect(probe.outside.filter((line) => !line.startsWith("POST "))).toEqual([]);
   expect(probe.allUrls.slice(requestsBefore).some((url) => url.includes(String(sentId)))).toBe(false);
 
-  await page.reload(); // 화면을 떠나면 사라진다
+  await page.reload(); // 새로 고치면(화면을 떠나면) 남지 않는다
   await expect(page.getByRole("textbox", { name: "방금 지운 통계 식별자" })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "이 브라우저의 통계 식별자" })).toHaveCount(0);
 });
 
 // 방 흐름의 통계. 방 API는 같은 출처 요청을 가로채 흉내 낸다(가짜 서버는 방을 구현하지 않는다). 방 ID·토큰은 이벤트 속성과
 // URL 속성 어디에도 없어야 하고, 방 이벤트 3종(room_created·participant_joined·outcome_answered)은 동의한 뒤에만 나간다.
 const FAKE_ROOM = "qt7yvmsht3";
+/** 서버가 주는 통계용 방 해시(형식만 맞춘 가짜). 방 ID와 다르다. */
+const FAKE_ROOM_HASH = "0f1e2d3c4b5a6978";
 const FAKE_TOKENS = {
   host: "ptok-host-secret-value",
   friend: "ptok-friend-secret-value",
@@ -470,6 +487,7 @@ async function fakeRoomApi(page: Page) {
           participantId: "h1",
           participantToken: FAKE_TOKENS.host,
           expiresAt,
+          roomHash: FAKE_ROOM_HASH,
         }),
       );
     }
@@ -514,6 +532,8 @@ async function fakeRoomApi(page: Page) {
           expiresAt,
           dataVersion: "20261114.5",
           participants: people(bearer),
+          roomHash: FAKE_ROOM_HASH,
+          createdAt: new Date(Date.now() - 90_000).toISOString(),
         }),
       );
     }
@@ -572,6 +592,15 @@ test("방: 만들기·참여·만났나 이벤트는 동의한 뒤에만, 방 ID
   expect(byName("outcome_answered")[0]?.properties).toMatchObject({ outcome: "top1", meeting_station_code: "1qs" });
   expect(byName("share_clicked")[0]?.properties).toMatchObject({ link_type: "room" });
   expect(byName("outcome_answered")[0]?.properties.days_since_result).toBe(0);
+  // 방은 서버가 준 room_hash로만 참조한다(방 ID 원문이 아니다). 참여까지 걸린 시간은 방 생성 시각에서 센다.
+  for (const name of ["room_created", "participant_joined", "outcome_answered", "share_clicked", "result_viewed"]) {
+    const properties = byName(name)[0]?.properties;
+    expect(properties?.room_hash, name).toBe(FAKE_ROOM_HASH);
+    expect(properties?.room_hash, name).not.toBe(FAKE_ROOM);
+  }
+  const waited = byName("participant_joined")[0]?.properties.seconds_since_room_created;
+  expect(typeof waited).toBe("number");
+  expect(waited).toBeGreaterThanOrEqual(90);
 
   // 방 ID·토큰·출발역·이름은 어떤 이벤트 어디에도 없다(속성 이름, 값, URL 속성 모두).
   const all = JSON.stringify(probe.events);
@@ -586,4 +615,78 @@ test("방: 만들기·참여·만났나 이벤트는 동의한 뒤에만, 방 ID
   }
   // 같은 출처 밖으로 나간 요청은 수집 주소 하나뿐
   expect([...new Set(probe.outside)]).toEqual([`POST ${COLLECT}`]);
+});
+
+test("오류 추적: 동의 전 오류는 요청 0건, 동의한 뒤 오류 1건은 방 ID·토큰·출발역·주소 뒷부분 없이 나간다", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  test.setTimeout(90_000); // 배치 대기와 페이지 이동이 여러 번 있다
+  const probe = await attachProbe(context, baseURL ?? "");
+  await fakeRoomApi(page);
+  // 방을 만들어 이 기기에 방 기록(방 ID·토큰)이 있고 지금 방 주소를 보고 있는 상태로 만든다.
+  await page.goto("/r/new");
+  await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
+  await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
+  await page.getByRole("button", { name: "방 만들기" }).click();
+  await expect(page).toHaveURL(new RegExp(`/r/${FAKE_ROOM}$`));
+
+  // 처리하지 못한 오류. 메시지에 방 ID·토큰·출발역이 담긴 공유 주소를 일부러 넣는다.
+  const throwError = (label: string) =>
+    page.evaluate(
+      ([room, token, tag]) => {
+        setTimeout(() => {
+          throw new Error(
+            `${tag} room ${room} failed at https://banbanyeok.example/result?v=2&o=k3a.ryf&n=%EB%AF%BC%EC%88%98 Bearer ${token}`,
+          );
+        }, 0);
+      },
+      [FAKE_ROOM, FAKE_TOKENS.host, label],
+    );
+  await throwError("before-consent");
+  await page.waitForTimeout(BATCH_WAIT_MS);
+  expect(probe.outside).toEqual([]); // 동의 전: 처리기도 없고 요청도 없다
+
+  await acceptAll(page);
+  await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
+  await throwError("after-consent");
+  await expect.poll(() => probe.events.filter((e) => e.event === "$exception").length, { timeout: 20_000 }).toBe(1);
+  await page.waitForTimeout(BATCH_WAIT_MS);
+
+  const exceptions = probe.events.filter((e) => e.event === "$exception");
+  expect(exceptions).toHaveLength(1); // 동의 전 오류는 나중에도 보내지 않는다
+  const [exception] = exceptions;
+  const text = JSON.stringify(exception);
+  expect(text).toContain("after-consent");
+  expect(text).not.toContain("before-consent");
+  for (const needle of [FAKE_ROOM, ...Object.values(FAKE_TOKENS), "k3a", "ryf", "o=", "%EB%AF%BC", "민수", "강남"]) {
+    expect(text, `$exception에 "${needle}"`).not.toContain(needle);
+  }
+  expect(exception?.properties).toMatchObject({ platform: "web", $geoip_disable: true });
+  expect(String(exception?.properties.$current_url)).toMatch(/\/r\/\[room\]$/);
+  const list = exception?.properties.$exception_list as { value?: string }[] | undefined;
+  expect(list?.[0]?.value).toMatch(
+    /after-consent room \[redacted\] failed at https:\/\/banbanyeok\.example\/result Bearer \[token\]/,
+  );
+  // 웹 바이탈: 방 주소로 새로 연 화면의 수치(첫 수치부터 5초 모아 보냄). 수치마다 붙은 주소도 방 ID 없이 나간다.
+  await page.reload();
+  await expect(page).toHaveURL(new RegExp(`/r/${FAKE_ROOM}$`));
+  await expect(page.getByRole("button", { name: "링크 복사" }).first()).toBeVisible();
+  const roomVitals = () =>
+    probe.events.filter((e) => e.event === "$web_vitals" && /\/r\/\[room\]$/.test(String(e.properties.$current_url)));
+  await expect.poll(() => roomVitals().length, { timeout: 25_000 }).toBeGreaterThan(0);
+  const vitals = probe.events.filter((e) => e.event === "$web_vitals");
+  const vitalsText = JSON.stringify(vitals);
+  // 동의한 페이지(/r/new에서 동의)의 수치는 보내지 않는다: 동의 전에 찍힌 LCP·FCP가 버퍼에서 나가지 않게.
+  expect(vitals.filter((e) => String(e.properties.$current_url).endsWith("/r/new"))).toEqual([]);
+  for (const needle of [FAKE_ROOM, ...Object.values(FAKE_TOKENS), "o="]) expect(vitalsText).not.toContain(needle);
+  expect(roomVitals()[0]?.properties).toMatchObject({ platform: "web" });
+  expect(Object.keys(roomVitals()[0]?.properties ?? {}).some((key) => /^\$web_vitals_[A-Z]+_value$/.test(key))).toBe(
+    true,
+  );
+
+  // 오류·속도 이벤트도 수집 주소 하나로만 나간다(확장 스크립트를 따로 받지 않는다).
+  expect([...new Set(probe.outside)]).toEqual([`POST ${COLLECT}`]);
+  expect(probe.events.filter((e) => e.event.startsWith("$") && !SDK_EVENTS.includes(e.event))).toEqual([]);
 });

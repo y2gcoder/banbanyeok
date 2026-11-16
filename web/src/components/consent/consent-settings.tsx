@@ -17,7 +17,11 @@ const STATUS = {
 } as const;
 
 const WITHDRAW_NOTE =
-  "하나라도 끄면 바로 통계를 멈추고, 이 기기에 저장된 통계 식별자를 지워요. 이미 모은 통계는 보유 기간이 지나면 파기하고, 요청하면 지체 없이 삭제해요 (개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.";
+  "하나라도 끄면 바로 통계를 멈추고, 이 기기에 저장된 통계 식별자를 지워요. 이미 모은 통계는 식별자를 보내 요청하면 삭제하고 (완전히 지워지기까지 몇 주 걸릴 수 있어요), 요청하지 않으면 보유 기간 (1년)이 지나 파기해요 (개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.";
+
+/** 철회 전 식별자 칸의 안내(운영자 결정 B안, W4). 철회하면 기기에서 지워지므로 그 전에 복사해 보내도록 한다. */
+const DELETE_REQUEST_NOTE =
+  "이미 모은 통계도 지우려면 철회하기 전에 이 값을 복사해 privacy@banbanyeok.app 으로 보내 주세요. 이 값은 화면에만 보이고 어디로도 보내지 않아요.";
 
 /** 항목 하나의 동의 스위치. 둘 다 켜져야 통계를 모으고, 하나라도 끄면 바로 멈춘다. */
 function ScopeSwitch({
@@ -166,18 +170,12 @@ export function ConsentSettings() {
         disabled={!adjustable}
         onToggle={() => toggle("transfer")}
       />
-      {granted && id ? (
-        <IdentifierBox
-          id={id}
-          heading="이 브라우저의 통계 식별자"
-          note="이미 모은 통계의 삭제를 요청할 때 이 값을 알려 주세요. 이 값은 화면에만 보이고 어디로도 보내지 않아요. 하나라도 끄면 이 기기에서 지워지니, 필요하면 먼저 복사해 두세요."
-        />
-      ) : null}
+      {granted && id ? <IdentifierBox id={id} heading="이 브라우저의 통계 식별자" note={DELETE_REQUEST_NOTE} /> : null}
       {!granted && clearedId ? (
         <IdentifierBox
           id={clearedId}
           heading="방금 지운 통계 식별자"
-          note="이 기기에서는 지웠어요. 이미 모은 통계의 삭제를 요청하려면 지금 복사해 두세요. 이 화면을 나가면 다시 볼 수 없어요."
+          note="이 기기에서는 지웠어요. 이미 모은 통계도 지우려면 지금 이 값을 복사해 privacy@banbanyeok.app 으로 보내 주세요. 저장하지 않으므로 이 화면을 나가거나 새로 고치면 다시 볼 수 없어요."
         />
       ) : null}
       <p className="text-[14px]">{parenSafe(WITHDRAW_NOTE)}</p>

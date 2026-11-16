@@ -59,7 +59,8 @@ class ApiIntegrationTest :
             val components =
                 runBlocking {
                     CompositionRoot.create(
-                        config = testConfig(mapOf("RATE_LIMIT_ENABLED" to "false")),
+                        // 앱용 익명 사용자 흐름(기기 토큰으로 방 만들기)도 검증하려고 켠다. 기본은 꺼져 있다(ConfigTest).
+                        config = testConfig(mapOf("RATE_LIMIT_ENABLED" to "false", "ANON_ENABLED" to "true")),
                         store = DevArtifacts.store,
                         database = ConnectedDatabase(TestDatabase.dataSource, TestDatabase.database),
                     )
@@ -130,6 +131,11 @@ class ApiIntegrationTest :
                             it.jsonObject["originCode"]?.jsonPrimitive?.contentOrNull
                         }
                     hiddenOrigins shouldContainExactly listOf(a, null)
+                    // 통계용 방 해시: 만들 때 받은 값과 같고, 방 ID 원문이 아니다.
+                    val roomHash = anonymousView.str("roomHash")
+                    roomHash shouldBe created.str("roomHash")
+                    (roomHash == roomId || roomHash.contains(roomId)) shouldBe false
+                    anonymousView.str("createdAt").isNotEmpty() shouldBe true
                     val selfView = parse(api.call(HttpMethod.Get, room, token = friendToken).bodyAsText())
                     selfView.jsonObject
                         .getValue("participants")

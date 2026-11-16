@@ -161,6 +161,26 @@ describe("proxyApiRequest", () => {
     expect(await response?.text()).toBe("ok");
   });
 
+  it("닫힌 /v1/anon(ANON_ENABLED 꺼짐)의 서버 404를 그대로 돌려준다(프록시가 따로 열어 주지 않는다)", async () => {
+    const seen: string[] = [];
+    const response = await proxyApiRequest(new Request("https://web.test/api/v1/anon", { method: "POST" }), {
+      origin: ORIGIN,
+      secret: "s",
+      fetchImpl: (request) => {
+        seen.push(`${request.method} ${new URL(request.url).pathname}`);
+        return Promise.resolve(
+          new Response(JSON.stringify({ code: "NOT_FOUND", message: "찾을 수 없습니다" }), {
+            status: 404,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      },
+    });
+    expect(seen).toEqual(["POST /v1/anon"]);
+    expect(response?.status).toBe(404);
+    expect(await response?.json()).toEqual({ code: "NOT_FOUND", message: "찾을 수 없습니다" });
+  });
+
   it("서버 주소가 없으면 503 JSON 오류", async () => {
     const response = await proxyApiRequest(new Request("https://web.test/api/healthz"), {
       origin: "",

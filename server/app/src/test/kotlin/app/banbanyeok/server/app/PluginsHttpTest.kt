@@ -97,7 +97,14 @@ class PluginsHttpTest :
             }
 
             it("limits room creation separately from other writes") {
-                val config = testConfig(mapOf("RATE_LIMIT_CREATE_BURST" to "2", "RATE_LIMIT_CREATE_PER_DAY" to "1"))
+                val config =
+                    testConfig(
+                        mapOf(
+                            "RATE_LIMIT_CREATE_BURST" to "2",
+                            "RATE_LIMIT_CREATE_PER_DAY" to "1",
+                            "ANON_ENABLED" to "true",
+                        ),
+                    )
                 withMockedApi(config) { services ->
                     coEvery { services.anon.issue() } returns
                         app.banbanyeok.server.room

@@ -64,6 +64,7 @@ web 잡이 돌지 않는다(md를 직접 고치면 다음 web 변경 때 테스�
 | 멱등성 캐시 10분(응답 재생) | `contracts/openapi.yaml` 공통 규칙 | 메모리 | 4 |
 | 로컬 저장소 `banbanyeok:me = {code, nickname}` | `web/src/lib/form/remember.ts` | 기기 | 2, 11 |
 | 방 토큰 localStorage, deviceToken HttpOnly 쿠키 | tech-stack 5.5(계획). **웹에 방 기능 아직 없음** | 기기 | 11('방 기능을 쓸 때') |
+| ↳ **결정 변경(R1/W4)** | 웹 방 기능은 R1에서 생겼다: 방 토큰은 localStorage `bby.room.<방 ID>`, deviceToken은 웹이 쓰지 않아 쿠키 없음. `/v1/anon`은 `ANON_ENABLED`(기본 끔)로 닫음. 위 행은 원문 | 기기 | 11 |
 | 통계 이벤트 13종과 속성, 공통 속성 4개(`platform`·`app_version`·`data_version`·`anon_user_id`), 금지 속성 | `contracts/events.json`. 웹이 보내는 것은 `input_completed`·`result_viewed`(`response_time_bucket` 포함)·`mode_switched`·`share_clicked`·`link_opened`·`link_person_selected`·`map_app_opened`·`station_chosen`·`seo_to_input_clicked` 9종. `room_created`·`participant_joined`(서버), `outcome_answered`(UI 없음), `analytics_consent_changed`(동의 UI 없음)는 아직 안 보냄 | PostHog | 2(통계 표) |
 | SDK 자동 속성: 무작위 `distinct_id`, `$browser`·`$os`·`$device_type`·화면 크기, 쿼리·해시를 지운 `$current_url`·`$pathname`·`$referrer`(조합 경로는 `/meet/[pair]`), `$process_person_profile: false`, `$geoip_disable: true`. `$raw_user_agent`는 제외 | `web/src/lib/analytics/tracker.ts`(`posthogOptions`), `redact.ts` | PostHog | 2(동의 항목) |
 | 꺼 둔 기능: autocapture, 페이지뷰·이탈, 세션 녹화, heatmap, 설문, 플래그 요청, 외부 스크립트 | `tracker.ts` | — | 2 |

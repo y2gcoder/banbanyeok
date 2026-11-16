@@ -55,10 +55,16 @@ data class AppConfig(
     val corsOrigins: List<String>,
     val rateLimit: RateLimitConfig,
     val maxRequestBytes: Long,
+    /**
+     * `POST /v1/anon`(익명 사용자·기기 토큰 발급)을 열지. 웹은 쓰지 않으므로(R1 결정) 앱이 방 기능을 내놓을 때까지 기본은 끔(W4).
+     * 끄면 그 경로는 없는 경로처럼 404다. 테이블·정리 작업은 그대로 둔다.
+     */
+    val anonEnabled: Boolean = false,
 ) {
     // 비밀값(DB 비밀번호, pepper)이 로그에 찍히지 않게 한다.
     override fun toString(): String =
-        "AppConfig(profile=$profile, port=$port, database=$database, artifacts=${artifacts.kind}, cors=$corsOrigins)"
+        "AppConfig(profile=$profile, port=$port, database=$database, artifacts=${artifacts.kind}, cors=$corsOrigins, " +
+            "anonEnabled=$anonEnabled)"
 
     companion object {
         fun load(env: Map<String, String> = System.getenv()): AppConfig = ConfigLoader(env).load()
@@ -91,6 +97,7 @@ internal class ConfigLoader(
                 corsOrigins = corsOrigins(),
                 rateLimit = rateLimit(),
                 maxRequestBytes = long("MAX_REQUEST_BYTES", DEFAULT_MAX_REQUEST_BYTES, 1024L..MAX_REQUEST_BYTES_LIMIT),
+                anonEnabled = flag("ANON_ENABLED", default = false),
             )
         if (problems.isNotEmpty()) throw ConfigException(problems.toList())
         return config
@@ -265,6 +272,30 @@ internal class ConfigLoader(
         if (env[name] != null && (value == null || value <= 0)) problems += "$name 은 0보다 큰 수여야 합니다"
         return (value?.takeIf { it > 0 } ?: default) / (perMinutes * SECONDS_PER_MINUTE)
     }
+
+    /** `true`/`false`만 받는다(대소문자 무시). 없으면 [default]. */
+    private fun flag(
+        name: String,
+        default: Boolean,
+    ): Boolean =
+        when (env[name]?.trim()?.lowercase()) {
+            null, "" -> {
+                default
+            }
+
+            "true" -> {
+                true
+            }
+
+            "false" -> {
+                false
+            }
+
+            else -> {
+                problems += "$name 은 true 또는 false여야 합니다"
+                default
+            }
+        }
 
     private fun required(
         name: String,

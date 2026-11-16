@@ -17,8 +17,16 @@ import {
   writeChoice,
 } from "./consent";
 import type { EventProperties } from "./events.gen";
+import { type RoomRef, roomHashProperty } from "./room";
 import { createTracker, type PostHogClient } from "./tracker";
-import { clearAnalyticsStorage, isFirstVisit, readAnalyticsId, referrerKind, trackingDeclined } from "./visit";
+import {
+  clearAnalyticsStorage,
+  deviceSecrets,
+  isFirstVisit,
+  readAnalyticsId,
+  referrerKind,
+  trackingDeclined,
+} from "./visit";
 
 const READY = "bby:analytics-ready";
 
@@ -31,15 +39,32 @@ const tracker = createTracker({
   consented: () => readChoice() === "granted",
   clearStorage: clearAnalyticsStorage,
   onReady: () => window.dispatchEvent(new Event(READY)),
-  // `no-external`: 녹화·설문·원격 스크립트를 내려받지 않는 빌드. 첫 이벤트 때 따로 불러온다.
-  loadPostHog: async () => (await import("posthog-js/no-external")).default as PostHogClient,
+  secrets: deviceSecrets,
+  // `no-external`: 녹화·설문·원격 스크립트를 내려받지 않는 빌드. 그래서 켜는 두 기능(오류 추적·웹 바이탈)의 확장은 SDK가 PostHog CDN에서
+  // 받는 대신 우리 번들에서 같이 불러 둔다(init 전에 `__PosthogExtensions__`에 등록된다). 웹 바이탈은 원인 요소를 끈 기본 판(`web-vitals`).
+  loadPostHog: async () => {
+    const [posthog] = await Promise.all([
+      import("posthog-js/no-external"),
+      import("posthog-js/dist/exception-autocapture"),
+      import("posthog-js/dist/web-vitals"),
+    ]);
+    return posthog.default as PostHogClient;
+  },
 });
 
-// 동의 상태가 바뀌면(이 탭의 버튼·다른 탭) 철회를 즉시 반영한다. 동의로 바뀌는 쪽은 다음 이벤트에서 알아서 켜진다.
+// 동의 상태가 바뀌면(이 탭의 버튼·다른 탭) 철회를 즉시 반영한다. 동의로 바뀌면 그때 시작한다(동의 이벤트도 곧 나간다).
 if (typeof window !== "undefined") {
   subscribeConsent(() => {
     if (readChoice() !== "granted") tracker.revoke();
+    else tracker.start();
   });
+}
+
+/**
+ * 페이지를 열 때(Providers) 부른다. 이미 동의한 기기면 PostHog를 불러와 오류 추적·웹 바이탈을 시작하고, 아니면 아무것도 하지 않는다.
+ */
+export function startAnalytics(): void {
+  tracker.start();
 }
 
 /** 이 빌드가 통계를 모으는 설정인지(키·호스트가 있음). 아니면 동의를 묻지 않는다. */
@@ -50,6 +75,7 @@ export function currentConsentState(): ConsentState {
   return consentState(analyticsAvailable, trackingDeclined());
 }
 
+export { type RoomRef, roomHashProperty, secondsSinceRoomCreated } from "./room";
 export { subscribeConsent };
 
 /** 이 브라우저의 통계 식별자(화면 표시 전용, 어디에도 보내지 않는다). 없으면 null. */
@@ -104,6 +130,8 @@ export type ResultViewedInput = {
   dataVersion: string;
   /** 이 화면을 위해 서버를 실제로 부른 시간(밀리초). 캐시에서 바로 보였다면 없다. */
   responseMs: number | undefined;
+  /** 방 결과면 그 방(통계에는 서버가 준 `room_hash`만 간다). 혼자 입력한 결과는 없다. */
+  room?: RoomRef;
 };
 
 /** 추천 결과 표시. 모드·후보 수·서버 응답 시간 구간만 보낸다. */
@@ -117,7 +145,7 @@ export function trackResultViewed(input: ResultViewedInput): void {
   if (input.topMaxMinutes !== undefined) properties.max_minutes_bucket = maxMinutesBucket(input.topMaxMinutes);
   if (input.responseMs !== undefined) properties.response_time_bucket = responseTimeBucket(input.responseMs);
   if (input.topStationCode) properties.top1_station_code = input.topStationCode;
-  track("result_viewed", properties);
+  track("result_viewed", { ...properties, ...(input.room ? roomHashProperty(input.room) : {}) });
 }
 
 /** 받은 링크 열림. 첫 방문 여부와 유입 경로 분류만 보낸다(리퍼러 원문은 보내지 않는다). */
