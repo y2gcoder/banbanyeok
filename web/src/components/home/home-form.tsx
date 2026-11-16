@@ -204,9 +204,9 @@ export function HomeForm() {
         href={NEW_ROOM_PATH}
         className="flex flex-col gap-0.5 rounded-xl border border-rule-strong bg-surface px-4 py-3.5 hover:border-ink"
       >
-        <span className="text-[16px] font-bold text-ink">친구가 각자 입력하게 하기 →</span>
+        <span className="text-[16px] font-bold text-ink">방 만들어서 각자 입력하기 →</span>
         <span className="text-[13px] leading-snug text-muted-foreground">
-          방을 만들어 링크를 보내면 친구가 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요.
+          링크를 보내면 친구가 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요.
         </span>
       </Link>
     </form>

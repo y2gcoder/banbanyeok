@@ -36,7 +36,7 @@ const SCREENS: readonly Screen[] = [
     actions: (p) => [
       p.getByRole("combobox").first(),
       p.getByRole("button", { name: /한 명 더/ }),
-      p.getByRole("link", { name: /친구가 각자 입력하게 하기/ }),
+      p.getByRole("link", { name: /방 만들어서 각자 입력하기/ }),
     ],
     columns: (p) => [p.getByRole("heading", { name: /덜 억울할까/ }), p.getByRole("combobox").first()],
   },
