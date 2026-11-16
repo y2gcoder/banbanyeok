@@ -399,6 +399,7 @@ test("삭제 요청용 식별자: /privacy에 이 브라우저의 식별자를 �
   await page.getByRole("link", { name: "통계 설정" }).click();
   const box = page.getByRole("textbox", { name: "이 브라우저의 통계 식별자" });
   await expect(box).toHaveValue(String(sentId));
+  await expect(page.getByText(/철회하기 전에 이 값을 복사해 privacy@banbanyeok\.app/)).toBeVisible();
   await page.getByRole("button", { name: "복사", exact: true }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(sentId);
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
@@ -408,14 +409,22 @@ test("삭제 요청용 식별자: /privacy에 이 브라우저의 식별자를 �
   await collectSwitch(page).click();
   const cleared = page.getByRole("textbox", { name: "방금 지운 통계 식별자" });
   await expect(cleared).toHaveValue(String(sentId)); // 삭제 요청에 쓰도록 이 화면에는 남는다
+  // 철회 직후에도 그 값을 복사할 수 있다(메모리에만, 저장소에는 없다).
+  await page.evaluate(() => navigator.clipboard.writeText(""));
+  await page.getByRole("button", { name: "복사", exact: true }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(sentId);
+  expect(
+    await page.evaluate((id) => JSON.stringify({ ...localStorage, ...sessionStorage }).includes(id), String(sentId)),
+  ).toBe(false);
   expect(await analyticsKeys(page)).toEqual([]); // 기기에서는 지워졌다
   await page.waitForTimeout(BATCH_WAIT_MS);
   // 식별자를 보이고 복사하고 철회하는 동안 만든 요청 중 외부로 나간 것도, 식별자를 담은 것도 없다.
   expect(probe.outside.filter((line) => !line.startsWith("POST "))).toEqual([]);
   expect(probe.allUrls.slice(requestsBefore).some((url) => url.includes(String(sentId)))).toBe(false);
 
-  await page.reload(); // 화면을 떠나면 사라진다
+  await page.reload(); // 새로 고치면(화면을 떠나면) 남지 않는다
   await expect(page.getByRole("textbox", { name: "방금 지운 통계 식별자" })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "이 브라우저의 통계 식별자" })).toHaveCount(0);
 });
 
 // 방 흐름의 통계. 방 API는 같은 출처 요청을 가로채 흉내 낸다(가짜 서버는 방을 구현하지 않는다). 방 ID·토큰은 이벤트 속성과

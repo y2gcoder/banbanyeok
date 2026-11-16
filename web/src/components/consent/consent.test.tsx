@@ -334,20 +334,29 @@ describe("통계 설정(/privacy)", () => {
     env.id = "01a1d8e0-adf1-7b8b-b68b-16811547a84e";
     render(<ConsentSettings />);
     expect(screen.getByRole("textbox", { name: "이 브라우저의 통계 식별자" })).toHaveValue(env.id);
+    // 철회 전에 복사해 보내라는 안내(B안): 철회하면 이 기기에서 지워지므로
+    expect(
+      screen.getByText(/이미 모은 통계도 지우려면 철회하기 전에 이 값을 복사해 privacy@banbanyeok\.app/),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "복사" }));
     expect(writeText).toHaveBeenCalledWith("01a1d8e0-adf1-7b8b-b68b-16811547a84e");
     expect(screen.getByRole("button", { name: "복사했어요" })).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("어느 항목이든 해제하면 지운 식별자를 이 화면에 남겨 삭제 요청에 쓰게 하고, 다시 모두 켜면 치운다", async () => {
+  it("어느 항목이든 해제하면 지운 식별자를 이 화면에 남겨 삭제 요청에 쓰게 하고(복사 가능), 다시 모두 켜면 치운다", async () => {
     const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
     writeChoice(BOTH);
     env.id = "id-123";
     render(<ConsentSettings />);
     await user.click(collectSwitch());
     expect(readChoice()).toBe("denied");
     expect(screen.getByRole("textbox", { name: "방금 지운 통계 식별자" })).toHaveValue("id-123");
+    // 철회 직후에도 복사할 수 있다. 값은 메모리(화면 상태)에만 있고 저장소에는 쓰지 않는다.
+    await user.click(screen.getByRole("button", { name: "복사" }));
+    expect(writeText).toHaveBeenCalledWith("id-123");
+    expect(JSON.stringify({ ...localStorage, ...sessionStorage })).not.toContain("id-123");
     expect(screen.queryByRole("textbox", { name: "이 브라우저의 통계 식별자" })).toBeNull();
     await user.click(collectSwitch());
     expect(screen.queryByRole("textbox", { name: "방금 지운 통계 식별자" })).toBeNull();
