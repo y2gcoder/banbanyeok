@@ -70,7 +70,7 @@ describe("언제 만나요? (방 만들기)", () => {
       expect(radio).not.toBeChecked();
     // iOS 휠의 "지우기"는 빈 값을 보낸다 = 날짜 없음.
     fireEvent.change(picker, { target: { value: "" } });
-    expect(days()).toHaveTextContent("날짜 고르기…");
+    expect(days()).toHaveTextContent("날짜 선택…");
     expect(status()).toHaveTextContent("평일 낮 기준으로 계산해요");
   });
 
@@ -128,7 +128,7 @@ describe("언제 만나요? (방 만들기)", () => {
     expect(screen.queryByRole("button", { name: /날짜 지우기/ })).toBeNull();
     fireEvent.change(screen.getByLabelText("날짜 고르기"), { target: { value: "2026-11-25" } });
     await user.click(screen.getByRole("button", { name: "날짜 지우기: 11월 25일 (수)" }));
-    expect(days()).toHaveTextContent("날짜 고르기…");
+    expect(days()).toHaveTextContent("날짜 선택…");
     expect(status()).toHaveTextContent("평일 낮 기준으로 계산해요");
     expect(screen.queryByRole("button", { name: /날짜 지우기/ })).toBeNull();
   });

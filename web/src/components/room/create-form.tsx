@@ -247,6 +247,9 @@ export function CreateRoomForm() {
           </p>
         ) : null}
         <p className="text-center text-sm text-muted-foreground">수도권 지하철역만 돼요. 가입은 필요 없어요.</p>
+        <p className="text-center text-[12px] leading-snug text-muted-foreground">
+          약속일을 정하면 약속 다음 날 방이 사라지고, 안 정하면 마지막 변경 후 7일(최대 30일) 뒤에 사라져요.
+        </p>
       </form>
     </RoomShell>
   );

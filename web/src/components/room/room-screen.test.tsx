@@ -53,11 +53,14 @@ function roomFor(token: string | null): Room {
 
 function renderScreen() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={client}>
-      <RoomScreen roomId={ROOM} />
-    </QueryClientProvider>,
-  );
+  return {
+    client,
+    ...render(
+      <QueryClientProvider client={client}>
+        <RoomScreen roomId={ROOM} />
+      </QueryClientProvider>,
+    ),
+  };
 }
 
 async function joinAsFriend(user: ReturnType<typeof userEvent.setup>) {
@@ -152,6 +155,57 @@ describe("방 화면", () => {
     renderScreen();
     expect(await screen.findByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeInTheDocument();
     await waitFor(() => expect(window.localStorage.getItem(`bby.room.${ROOM}`)).toBeNull());
+  });
+
+  it("방을 보는 중에 방 쿼리가 404를 받으면(방장이 지움) 이전 화면을 남기지 않고 방 없음 안내로 바꾼다", async () => {
+    const { ApiRequestError } = await import("@/lib/api/client");
+    window.localStorage.setItem(
+      `bby.room.${ROOM}`,
+      JSON.stringify({ v: 1, participantToken: "tok-1", participantId: "m1", keepUntil: "2999-01-01T00:00:00Z" }),
+    );
+    members = [{ id: "m1", token: "tok-1" }];
+    const { client } = renderScreen();
+    expect(await screen.findByText("(나)")).toBeInTheDocument();
+    vi.mocked(api.getRoom).mockRejectedValue(new ApiRequestError(404, "ROOM_NOT_FOUND", "없음"));
+    await client.invalidateQueries({ queryKey: ["room", ROOM] });
+    expect(await screen.findByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeInTheDocument();
+    expect(screen.queryByText("(나)")).not.toBeInTheDocument();
+    await waitFor(() => expect(window.localStorage.getItem(`bby.room.${ROOM}`)).toBeNull());
+  });
+
+  it("결과 쿼리만 404를 받아도 방 전체를 방 없음 안내로 바꾸고 다시 시도는 두지 않는다", async () => {
+    const { ApiRequestError } = await import("@/lib/api/client");
+    window.localStorage.setItem(
+      `bby.room.${ROOM}`,
+      JSON.stringify({ v: 1, participantToken: "tok-1", participantId: "m1", keepUntil: "2999-01-01T00:00:00Z" }),
+    );
+    members = [
+      { id: "m1", token: "tok-1" },
+      { id: "m2", token: "tok-2" },
+    ];
+    vi.mocked(api.getRoomResult).mockRejectedValue(new ApiRequestError(404, "ROOM_NOT_FOUND", "없음"));
+    renderScreen();
+    expect(await screen.findByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다시 시도" })).not.toBeInTheDocument();
+    await waitFor(() => expect(window.localStorage.getItem(`bby.room.${ROOM}`)).toBeNull());
+  });
+
+  it("5xx 같은 다른 오류는 이전 방 화면을 그대로 둔다", async () => {
+    const { ApiRequestError } = await import("@/lib/api/client");
+    window.localStorage.setItem(
+      `bby.room.${ROOM}`,
+      JSON.stringify({ v: 1, participantToken: "tok-1", participantId: "m1", keepUntil: "2999-01-01T00:00:00Z" }),
+    );
+    members = [{ id: "m1", token: "tok-1" }];
+    const { client } = renderScreen();
+    expect(await screen.findByText("(나)")).toBeInTheDocument();
+    const before = vi.mocked(api.getRoom).mock.calls.length;
+    vi.mocked(api.getRoom).mockRejectedValue(new ApiRequestError(503, "UNAVAILABLE", "잠시 후"));
+    await client.invalidateQueries({ queryKey: ["room", ROOM] });
+    await waitFor(() => expect(vi.mocked(api.getRoom).mock.calls.length).toBeGreaterThan(before));
+    await waitFor(() => expect(client.getQueryState(["room", ROOM, "m1"])?.status).toBe("error"));
+    expect(screen.getByText("(나)")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "찾을 수 없는 방이에요" })).not.toBeInTheDocument();
   });
 
   it("살아 있는 방은 저장해 둔 지 오래돼도(서버는 활동마다 만료를 미룬다) 열 때 토큰을 지우지 않는다", async () => {

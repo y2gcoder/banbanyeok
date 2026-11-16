@@ -67,7 +67,7 @@ function dayHint(date: string): string {
 /**
  * 방 만들기의 "언제 만나요? (선택)". 폰에서는 날짜 칩 → 시간대 칩 → 정확한 시각(접힘) 순서로 위아래로 쌓고, 칸이 넓으면(@sm,
  * 24rem 이상) 날짜 묶음과 시간대 묶음을 좌우에 둔다. 칩은 높이 44px 이상의 라디오이고, 고른 칩을 다시 누르면 지워진다(= 정하지 않음).
- * "날짜 고르기…"는 칩 모양 아래 투명한 진짜 date 입력 하나라 iOS에서 누르면 날짜 휠이 뜬다. 날짜는 서울 기준이다.
+ * "날짜 선택…"은 칩 모양 아래 투명한 진짜 date 입력 하나라 iOS에서 누르면 날짜 휠이 뜬다. 날짜는 서울 기준이다.
  */
 export function MeetingWhenFields({
   id,
@@ -144,6 +144,8 @@ export function MeetingWhenFields({
             <label
               className={cn(
                 chipClass(picked !== null),
+                // 넓은 폼(2열)에서 글자가 칩 가장자리에 붙지 않게 안쪽 여백을 더 둔다.
+                "px-3",
                 "has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-ink",
               )}
             >
@@ -167,7 +169,7 @@ export function MeetingWhenFields({
                 className="absolute inset-0 m-0 size-full min-w-0 cursor-pointer appearance-none rounded-xl text-[16px] opacity-0"
               />
               <ChipText
-                label={picked ? formatMeetingDay(picked) : "날짜 고르기…"}
+                label={picked ? formatMeetingDay(picked) : "날짜 선택…"}
                 hint={picked && holidayName(picked) ? "공휴일" : undefined}
                 checked={picked !== null}
               />
@@ -244,9 +246,7 @@ export function MeetingWhenFields({
         {holiday ? `(${holiday})` : ""} 기준으로 계산해요
       </p>
       <p className="text-[13px] leading-snug text-muted-foreground">
-        요일·시간대마다 열차 간격이 달라 기다리는 시간이 바뀌어요. 안 정하면 평일 낮 기준이에요. 오늘·내일·이번 토요일과
-        시간대 칩은 다시 누르면 지워져요. 약속일을 정하면 약속 다음 날 방이 사라지고, 안 정하면 마지막 변경 후 7일(최대
-        30일) 뒤에 사라져요.
+        요일·시간대마다 기다리는 시간이 달라요. 안 정하면 평일 낮 기준이에요. 고른 칩은 다시 누르면 지워져요.
       </p>
     </fieldset>
   );
