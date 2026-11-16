@@ -29,12 +29,13 @@ class TimeSlotTest :
         val resolver = TimeSlotResolver(HolidayCalendar.bundled())
 
         describe("contracts/time-slots.json") {
-            it("resolves every vector (date, time) to the expected slot") {
+            it("resolves every vector (date, time, band) to the expected slot") {
                 slots.getValue("vectors").jsonArray.map { it.jsonObject }.forEach { vector ->
                     val basis =
                         resolver.resolve(
                             vector.text("date")?.let(LocalDate::parse),
                             vector.text("time")?.let(LocalTime::parse),
+                            vector.text("band")?.let { requireNotNull(TimeBand.parseOrNull(it)) },
                         )
                     withClue(vector.text("id")) { basis.slot.id shouldBe vector.text("expected") }
                 }

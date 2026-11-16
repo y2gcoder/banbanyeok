@@ -1,6 +1,7 @@
 package app.banbanyeok.server.app
 
 import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.StationDirectory
@@ -254,6 +255,92 @@ class TimeSlotHttpTest :
                     val holiday = holidayRoom.json().basis()
                     holiday.getValue("label").jsonPrimitive.content shouldBe "일요일·공휴일 낮"
                     holiday.getValue("holidayName").jsonPrimitive.content shouldBe "추석"
+                }
+            }
+
+            it("passes a band-only meeting and states its basis without inventing a time") {
+                withMockedApi { services ->
+                    val command = slot<CreateRoomCommand>()
+                    coEvery { services.rooms.create(capture(command)) } returns
+                        CreatedRoom(ROOM, "host-tok", "p00001", "part-tok", Instant.parse("2026-11-22T15:00:00Z"))
+                    val body =
+                        """{"mode":"fair","meetingDate":"2026-11-21","meetingBand":"evening",""" +
+                            """"host":{"originCode":"$gangnam"}}"""
+                    client.json(HttpMethod.Post, "/v1/rooms", body).status shouldBe HttpStatusCode.Created
+                    command.captured.meetingBand shouldBe TimeBand.EVENING
+                    command.captured.meetingTime shouldBe null
+                    listOf("\"dusk\"", "\"Evening\"", "1", "true").forEach { bad ->
+                        val response =
+                            client.json(
+                                HttpMethod.Post,
+                                "/v1/rooms",
+                                """{"mode":"fair","meetingBand":$bad,"host":{"originCode":"$gangnam"}}""",
+                            )
+                        response.status shouldBe HttpStatusCode.BadRequest
+                        response
+                            .json()
+                            .getValue("code")
+                            .jsonPrimitive.content shouldBe "INVALID_MEETING_BAND"
+                    }
+
+                    coEvery { services.rooms.get(ROOM, null) } returns
+                        RoomView(
+                            ROOM,
+                            RoomMode.FAIR,
+                            null,
+                            false,
+                            LocalDate.parse("2026-11-21"),
+                            Instant.parse("2026-11-22T15:00:00Z"),
+                            "20261116.1",
+                            emptyList(),
+                            meetingTime = null,
+                            meetingBand = TimeBand.NIGHT,
+                        )
+                    val room = client.json(HttpMethod.Get, "/v1/rooms/$ROOM")
+                    OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/$ROOM", room)
+                    val json = room.json()
+                    json.getValue("meetingTime") shouldBe kotlinx.serialization.json.JsonNull
+                    json.getValue("meetingBand").jsonPrimitive.content shouldBe "night"
+                    // 시간대만 고른 토요일 밤은 그날(토요일) 운행일의 밤이다(03:00 전 규칙은 시각이 있을 때만).
+                    json
+                        .basis()
+                        .getValue("timeSlot")
+                        .jsonPrimitive.content shouldBe "saturday-night"
+                    json
+                        .basis()
+                        .getValue("label")
+                        .jsonPrimitive.content shouldBe "토요일 밤"
+                }
+            }
+
+            it("distinguishes a missing meetingBand from null in a patch") {
+                withMockedApi { services ->
+                    val patches = mutableListOf<RoomPatch>()
+                    coEvery { services.rooms.updateRoom(ROOM, "host-tok", capture(patches)) } returns
+                        RoomView(ROOM, RoomMode.FAIR, null, false, null, Instant.EPOCH, "20261116.1", emptyList())
+                    client.json(
+                        HttpMethod.Patch,
+                        "/v1/rooms/$ROOM",
+                        """{"meetingBand":"morning"}""",
+                        token = "host-tok",
+                    )
+                    client.json(HttpMethod.Patch, "/v1/rooms/$ROOM", """{"meetingBand":null}""", token = "host-tok")
+                    client.json(HttpMethod.Patch, "/v1/rooms/$ROOM", """{"locked":false}""", token = "host-tok")
+                    patches[0].meetingBand shouldBe Change.Set(TimeBand.MORNING)
+                    patches[1].meetingBand shouldBe Change.Set(null)
+                    patches[2].meetingBand shouldBe Change.Unchanged
+                    val bad =
+                        client.json(
+                            HttpMethod.Patch,
+                            "/v1/rooms/$ROOM",
+                            """{"meetingBand":"noon"}""",
+                            token = "host-tok",
+                        )
+                    bad.status shouldBe HttpStatusCode.BadRequest
+                    bad
+                        .json()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "INVALID_MEETING_BAND"
                 }
             }
 

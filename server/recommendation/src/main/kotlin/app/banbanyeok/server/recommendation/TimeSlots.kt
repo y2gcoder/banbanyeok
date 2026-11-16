@@ -76,8 +76,9 @@ public class HolidayCalendar(
 }
 
 /**
- * 약속 날짜·시각 → 구분(contracts/time-slots.json의 rules). 03:00 전은 전날 운행일의 밤이고, 요일 유형은 운행일로 정한다.
- * 시각이 없으면 낮, 날짜가 없으면 평일이다.
+ * 약속 날짜·시각(또는 시간대) → 구분(contracts/time-slots.json의 rules). 03:00 전은 전날 운행일의 밤이고, 요일 유형은 운행일로 정한다.
+ * 시각이 있으면 시각으로 시간대를 정하고, 없으면 고른 시간대([band])를, 둘 다 없으면 낮이다. 날짜가 없으면 평일이다.
+ * 시간대만 고른 경우(시각 없음) 운행일은 그 날짜다(밤을 골랐다면 그 날의 밤).
  */
 public class TimeSlotResolver(
     private val calendar: HolidayCalendar,
@@ -85,8 +86,9 @@ public class TimeSlotResolver(
     public fun resolve(
         date: LocalDate?,
         time: LocalTime?,
+        band: TimeBand? = null,
     ): TimeBasis {
-        val band = time?.let(::bandOf) ?: TimeBand.DAY
+        val resolvedBand = time?.let { TimeBand.ofClock(it.hour, it.minute) } ?: band ?: TimeBand.DAY
         val serviceDay = if (time != null && time < SERVICE_DAY_START) date?.minusDays(1) else date
         val holiday = serviceDay?.let(calendar::nameOf)
         val day =
@@ -96,23 +98,11 @@ public class TimeSlotResolver(
                 serviceDay.dayOfWeek == DayOfWeek.SATURDAY -> DayType.SATURDAY
                 else -> DayType.WEEKDAY
             }
-        val slot = TimeSlot(day, band)
+        val slot = TimeSlot(day, resolvedBand)
         return TimeBasis(slot, TimeSlotLabels.of(slot), holiday)
     }
 
-    private fun bandOf(time: LocalTime): TimeBand =
-        when {
-            time < SERVICE_DAY_START -> TimeBand.NIGHT
-            time < DAY_START -> TimeBand.MORNING
-            time < EVENING_START -> TimeBand.DAY
-            time < NIGHT_START -> TimeBand.EVENING
-            else -> TimeBand.NIGHT
-        }
-
     private companion object {
         val SERVICE_DAY_START: LocalTime = LocalTime.of(3, 0)
-        val DAY_START: LocalTime = LocalTime.of(10, 0)
-        val EVENING_START: LocalTime = LocalTime.of(17, 0)
-        val NIGHT_START: LocalTime = LocalTime.of(21, 0)
     }
 }

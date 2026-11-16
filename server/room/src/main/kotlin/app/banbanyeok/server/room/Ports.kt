@@ -33,6 +33,8 @@ public data class RoomChange(
     val locked: Boolean? = null,
     val meetingDate: Change<java.time.LocalDate> = Change.Unchanged,
     val meetingTime: Change<java.time.LocalTime> = Change.Unchanged,
+    /** 저장할 시간대. 시각이 있는 방은 null(시각에서 나온다). */
+    val meetingBand: Change<app.banbanyeok.schema.TimeBand> = Change.Unchanged,
 )
 
 /**

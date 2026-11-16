@@ -54,7 +54,7 @@ class RoomResultService(
         }
         val resolvedMode = mode ?: view.mode.toRecommendMode()
         val favor = favorTarget(resolvedMode, favorId, view.favorParticipantId, view.participants)
-        val time = times.resolve(view.meetingDate, view.meetingTime)
+        val time = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand)
         awaitSlots(time.slot)
         val request =
             RecommendRequest(

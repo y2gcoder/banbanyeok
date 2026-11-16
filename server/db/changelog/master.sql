@@ -71,3 +71,11 @@ CREATE TRIGGER participants_limit BEFORE INSERT ON participants
 -- 약속일(meeting_date)과 같이 방이 지워질 때 함께 지워진다.
 ALTER TABLE rooms ADD COLUMN meeting_time time;
 --rollback ALTER TABLE rooms DROP COLUMN meeting_time;
+
+--changeset banbanyeok:20261116-meeting-band
+-- 약속 시간대(선택). 시각 없이 시간대(아침·낮·저녁·밤)만 고른 방이 쓴다. 화면에 없는 시각을 만들어 저장하지 않으려는 것이다.
+-- 시각이 있으면 시간대는 시각에서 나오므로 이 칸은 null이다(둘이 어긋날 수 없게 막는다). 기존 방은 null(= 시각 또는 낮).
+ALTER TABLE rooms
+    ADD COLUMN meeting_band text CONSTRAINT rooms_meeting_band_check CHECK (meeting_band IN ('morning', 'day', 'evening', 'night')),
+    ADD CONSTRAINT rooms_meeting_band_without_time CHECK (meeting_band IS NULL OR meeting_time IS NULL);
+--rollback ALTER TABLE rooms DROP COLUMN meeting_band;

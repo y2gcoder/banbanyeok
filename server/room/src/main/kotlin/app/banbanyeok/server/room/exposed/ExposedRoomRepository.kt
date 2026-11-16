@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room.exposed
 
+import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.server.room.Activity
 import app.banbanyeok.server.room.AddResult
 import app.banbanyeok.server.room.Change
@@ -46,6 +47,7 @@ public class ExposedRoomRepository(
             it[dataVersion] = room.dataVersion
             it[meetingDate] = room.meetingDate
             it[meetingTime] = room.meetingTime
+            it[meetingBand] = room.meetingBand?.id
             it[expectedCount] = room.expectedCount?.toShort()
             it[status] = statusOf(room.locked)
             it[createdAt] = room.createdAt
@@ -160,6 +162,7 @@ public class ExposedRoomRepository(
                     change.locked?.let { locked -> it[status] = statusOf(locked) }
                     (change.meetingDate as? Change.Set)?.let { set -> it[meetingDate] = set.value }
                     (change.meetingTime as? Change.Set)?.let { set -> it[meetingTime] = set.value }
+                    (change.meetingBand as? Change.Set)?.let { set -> it[meetingBand] = set.value?.id }
                     it[expiresAt] = activity.expiresAt
                     it[lastActivityAt] = activity.at
                 }
@@ -242,6 +245,7 @@ public class ExposedRoomRepository(
             dataVersion = this[RoomsTable.dataVersion],
             meetingDate = this[RoomsTable.meetingDate],
             meetingTime = this[RoomsTable.meetingTime],
+            meetingBand = this[RoomsTable.meetingBand]?.let(TimeBand::parseOrNull),
             expectedCount = this[RoomsTable.expectedCount]?.toInt(),
             locked = this[RoomsTable.status] == LOCKED,
             outcome =
