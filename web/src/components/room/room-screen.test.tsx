@@ -253,7 +253,7 @@ describe("방 화면", () => {
       expect(track).not.toHaveBeenCalledWith("people_limit_hit", expect.anything());
     });
 
-    it("방장이 예상 인원을 4로 정한 방(자리가 남음)이나, 방장 기기로 연 가득 찬 방은 세지 않는다", async () => {
+    it("방장 기기로 연 가득 찬 방은 세지 않는다", async () => {
       fullRoom();
       window.localStorage.setItem(
         `bby.room.${ROOM}`,
@@ -261,6 +261,32 @@ describe("방 화면", () => {
       );
       renderScreen();
       await screen.findByRole("heading", { name: "방이 가득 찼어요" });
+      expect(track).not.toHaveBeenCalledWith("people_limit_hit", expect.anything());
+    });
+
+    it("방장이 예상 인원을 4로 정했을 뿐 자리가 남은 방(참여자 1명)에서는 세지 않는다", async () => {
+      window.localStorage.setItem(
+        `bby.room.${ROOM}`,
+        JSON.stringify({ v: 1, hostToken: "host-tok", expectedCount: 4, keepUntil: "2999-01-01T00:00:00Z" }),
+      );
+      renderScreen();
+      await screen.findByRole("heading", { name: "나도 출발역 넣기" });
+      expect(track).not.toHaveBeenCalledWith("people_limit_hit", expect.anything());
+    });
+
+    it("이미 참여한 사람이 4명이 찬 방을 열어도 세지 않는다", async () => {
+      members = [
+        { id: "m1", token: "mine" },
+        { id: "m2", token: "other-2" },
+        { id: "m3", token: "other-3" },
+      ];
+      window.localStorage.setItem(
+        `bby.room.${ROOM}`,
+        JSON.stringify({ v: 1, participantToken: "mine", participantId: "m1", keepUntil: "2999-01-01T00:00:00Z" }),
+      );
+      renderScreen();
+      expect(await screen.findByText("(나)")).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "방이 가득 찼어요" })).toBeNull();
       expect(track).not.toHaveBeenCalledWith("people_limit_hit", expect.anything());
     });
   });

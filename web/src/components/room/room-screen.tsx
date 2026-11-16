@@ -241,11 +241,12 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   // 정원이 찬 방에 들어오려던 사람(참여하지 않았고 방장도 아님): 인원 상한 수요로 한 번만 센다. 방장이 예상 인원을 4로 고르는 것은 세지 않는다.
   const cannotJoinFull = room !== undefined && !record?.hostToken && joinState(room) === "full";
-  const fullReported = useRef(false);
+  // 어느 방에서 보냈는지 기억한다: 같은 방에서는 1회, 다른 방으로 옮겨 가면(roomId가 바뀌면) 다시 센다.
+  const fullReportedFor = useRef<string | null>(null);
   const roomHash = room?.roomHash;
   useEffect(() => {
-    if (!cannotJoinFull || fullReported.current) return;
-    fullReported.current = true;
+    if (!cannotJoinFull || fullReportedFor.current === roomId) return;
+    fullReportedFor.current = roomId;
     track("people_limit_hit", { surface: "room_full", ...roomHashProperty({ roomId, roomHash }) });
   }, [cannotJoinFull, roomId, roomHash]);
 

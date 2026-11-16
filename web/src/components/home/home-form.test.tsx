@@ -93,6 +93,17 @@ describe("입력 화면", () => {
     expect(screen.getByRole("button", { name: /한 명 더/ })).toBeInTheDocument();
   });
 
+  it("줄을 더하면 그 줄의 이름 칸으로 포커스가 간다(4번째 줄에서 버튼이 바뀌어도 포커스가 body로 떨어지지 않는다)", async () => {
+    const user = userEvent.setup();
+    render(<HomeForm />);
+    await user.click(screen.getByRole("button", { name: /한 명 더/ }));
+    expect(screen.getByRole("textbox", { name: "3번째 사람 이름(선택)" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: /한 명 더/ }));
+    expect(screen.queryByRole("button", { name: /한 명 더/ })).toBeNull();
+    expect(screen.getByRole("textbox", { name: "4번째 사람 이름(선택)" })).toHaveFocus();
+    expect(document.body).not.toHaveFocus();
+  });
+
   describe("인원 상한(4명) 수요 측정", () => {
     const fillToLimit = async (user: ReturnType<typeof userEvent.setup>) => {
       await user.click(screen.getByRole("button", { name: /한 명 더/ }));
@@ -114,15 +125,33 @@ describe("입력 화면", () => {
       await fillToLimit(user);
       const button = screen.getByRole("button", { name: "4명까지 돼요 · 더 필요해요?" });
       expect(button).toHaveClass("min-h-11");
-      expect(button).toHaveAttribute("aria-expanded", "false");
+      // 닫히지 않는 안내라 펼침 상태를 알리지 않는다.
+      expect(button).not.toHaveAttribute("aria-expanded");
+      expect(button).not.toHaveAttribute("aria-controls");
 
+      // 알림 영역은 눌러 보기 전에도 비어 있는 채로 있고, 같은 요소에 내용이 채워진다(채워진 채 새로 마운트되면 스크린리더가 읽지 않는다).
+      const status = screen.getByRole("status");
+      expect(status).toBeEmptyDOMElement();
       await user.click(button);
-      expect(screen.getByRole("status")).toHaveTextContent("지금은 4명까지예요. 더 필요하다는 의견을 모으고 있어요.");
-      expect(button).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByRole("status")).toBe(status);
+      expect(status).toHaveTextContent("지금은 4명까지예요. 더 필요하다는 의견을 모으고 있어요.");
       expect(screen.getAllByRole("combobox")).toHaveLength(4); // 줄은 늘지 않는다
       expect(push).not.toHaveBeenCalled();
       expect(track).toHaveBeenCalledTimes(1);
       expect(track).toHaveBeenCalledWith("people_limit_hit", { surface: "home", attempted: 5 });
+    });
+
+    it("줄을 빼면 안내가 사라지고, 다시 4명이 되어도 이전 안내가 남아 있지 않다(통계는 이미 보냈으니 다시 보내지 않는다)", async () => {
+      const user = userEvent.setup();
+      render(<HomeForm />);
+      await fillToLimit(user);
+      await user.click(screen.getByRole("button", { name: /더 필요해요/ }));
+      expect(screen.getByRole("status")).toHaveTextContent(/지금은 4명까지예요/);
+      await user.click(screen.getByRole("button", { name: "친구2 빼기" }));
+      expect(screen.queryByText(/지금은 4명까지예요/)).toBeNull();
+      await user.click(screen.getByRole("button", { name: /한 명 더/ }));
+      expect(screen.queryByText(/지금은 4명까지예요/)).toBeNull();
+      expect(track).toHaveBeenCalledTimes(1);
     });
 
     it("같은 화면에서 여러 번 눌러도(줄을 뺐다 다시 채운 뒤에도) 한 번만 보낸다", async () => {

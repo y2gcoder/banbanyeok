@@ -1,5 +1,5 @@
 // 생성 파일: contracts/events.json에서 만든다(pnpm gen:events). 직접 고치지 않는다.
-export const EVENTS_SCHEMA_VERSION = 3;
+export const EVENTS_SCHEMA_VERSION = 4;
 
 export type PropertySpec =
   | { readonly type: "string"; readonly required: boolean }

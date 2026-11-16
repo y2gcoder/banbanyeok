@@ -39,7 +39,6 @@ function rowsFor(stations: readonly Station[]): Row[] {
   while (rows.length < MIN_PEOPLE) rows.push(emptyRow(rows.length));
   return rows;
 }
-const withNewRow = (rows: Row[]): Row[] => [...rows, emptyRow(Math.max(-1, ...rows.map((r) => r.key)) + 1)];
 
 export function HomeForm() {
   const router = useRouter();
@@ -56,6 +55,7 @@ export function HomeForm() {
   // 인원 상한 안내: 같은 화면에서 여러 번 눌러도 통계는 한 번만 보낸다.
   const [limitNoteShown, setLimitNoteShown] = useState(false);
   const limitReported = useRef(false);
+  const [focusKey, setFocusKey] = useState<number | null>(null);
 
   useEffect(() => {
     startedAt.current = performance.now();
@@ -87,10 +87,23 @@ export function HomeForm() {
     }
   }, []);
 
+  useEffect(() => {
+    if (focusKey === null) return;
+    document.getElementById(`${formId}-name-${focusKey}`)?.focus();
+    setFocusKey(null);
+  }, [focusKey, formId]);
+
   const filled = rows.filter((row) => row.station).length;
   const update = (key: number, patch: Partial<Row>) => {
     setError(null);
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  };
+
+  // 줄을 더하면 그 줄의 이름 칸으로 포커스를 옮긴다(4번째 줄에서는 누른 버튼이 안내 버튼으로 바뀌어 포커스가 body로 떨어진다).
+  const addRow = () => {
+    const key = Math.max(-1, ...rows.map((r) => r.key)) + 1;
+    setRows((current) => [...current, emptyRow(key)]);
+    setFocusKey(key);
   };
 
   const wantMorePeople = () => {
@@ -159,7 +172,10 @@ export function HomeForm() {
                   {index >= MIN_PEOPLE ? (
                     <button
                       type="button"
-                      onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}
+                      onClick={() => {
+                        setLimitNoteShown(false);
+                        setRows((current) => current.filter((r) => r.key !== row.key));
+                      }}
                       className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-ink"
                     >
                       <XIcon className="size-4" aria-hidden="true" />
@@ -180,7 +196,7 @@ export function HomeForm() {
       {rows.length < MAX_PEOPLE ? (
         <button
           type="button"
-          onClick={() => setRows(withNewRow)}
+          onClick={addRow}
           className="ml-8 inline-flex min-h-11 w-fit items-center gap-1.5 rounded-md px-1 text-[15px] font-semibold text-ink-soft hover:text-ink"
         >
           <PlusIcon className="size-4" aria-hidden="true" />한 명 더 (최대 {MAX_PEOPLE}명)
@@ -191,21 +207,14 @@ export function HomeForm() {
           <button
             type="button"
             onClick={wantMorePeople}
-            aria-expanded={limitNoteShown}
-            aria-controls={`${formId}-limit-note`}
             className="inline-flex min-h-11 w-fit items-center rounded-md px-1 text-[14px] text-muted-foreground underline-offset-4 hover:text-ink hover:underline"
           >
             {LIMIT_BUTTON}
           </button>
-          {limitNoteShown ? (
-            <p
-              id={`${formId}-limit-note`}
-              role="status"
-              className="px-1 text-[13px] leading-snug text-muted-foreground"
-            >
-              {LIMIT_NOTE}
-            </p>
-          ) : null}
+          {/* 안내는 닫히지 않는다: 버튼 상태가 아니라 알림 영역으로만 전한다. 영역은 항상 그려 두고 내용만 채워야 스크린리더가 읽는다. */}
+          <p role="status" className="px-1 text-[13px] leading-snug text-muted-foreground">
+            {limitNoteShown ? LIMIT_NOTE : null}
+          </p>
         </div>
       )}
 
