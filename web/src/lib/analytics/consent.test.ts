@@ -65,6 +65,37 @@ describe("동의 저장", () => {
     expect(readChoice()).toBe("unset");
   });
 
+  it("낡은 버전 기록을 만나면 그 기록과 ph_* 통계 식별자·첫 방문 표시를 지운다(동의 기록 외 다른 키는 둔다, 전송 없음)", () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    window.localStorage.setItem(
+      CONSENT_KEY,
+      JSON.stringify({ v: CONSENT_VERSION - 1, collect: true, transfer: true, at: "x" }),
+    );
+    window.localStorage.setItem("ph_phc_ABC_posthog", '{"distinct_id":"id"}');
+    window.localStorage.setItem("bby.analytics.seen", "1");
+    window.localStorage.setItem("bby.other", "keep");
+    window.sessionStorage.setItem("ph_phc_ABC_window_id", "w");
+    expect(readChoice()).toBe("unset");
+    expect(window.localStorage.getItem(CONSENT_KEY)).toBeNull();
+    expect(window.localStorage.getItem("ph_phc_ABC_posthog")).toBeNull();
+    expect(window.localStorage.getItem("bby.analytics.seen")).toBeNull();
+    expect(window.sessionStorage.getItem("ph_phc_ABC_window_id")).toBeNull();
+    expect(window.localStorage.getItem("bby.other")).toBe("keep");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("현재 버전 기록과 미래 버전 기록은 식별자를 지우지 않는다", () => {
+    window.localStorage.setItem("ph_phc_ABC_posthog", '{"distinct_id":"id"}');
+    writeChoice(BOTH);
+    expect(readChoice()).toBe("granted");
+    window.localStorage.setItem(
+      CONSENT_KEY,
+      JSON.stringify({ v: CONSENT_VERSION + 1, collect: true, transfer: true, at: "x" }),
+    );
+    expect(readChoice()).toBe("unset");
+    expect(window.localStorage.getItem("ph_phc_ABC_posthog")).not.toBeNull();
+  });
+
   it("깨졌거나 알 수 없는 값, 읽을 수 없는 저장소는 미동의", () => {
     for (const raw of [
       "not json",
