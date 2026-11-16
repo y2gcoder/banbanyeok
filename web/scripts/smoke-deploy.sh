@@ -4,7 +4,8 @@
 #   REDIRECT_FROM      공백으로 구분한 주소들: BASE_URL로 301 이동해야 한다(선택)
 #   SERVER_CONNECTED   1이면 /api/healthz가 200 ok여야 한다. 0이면 503 UPSTREAM_NOT_CONFIGURED여야 한다
 #   SITE_INDEXABLE     1이면 robots.txt가 sitemap을 안내해야 하고, 0이면 전체 차단이어야 한다
-#   SITE_URL           정식 주소(선택). 있으면 /s의 og:image가 이 주소로 시작하고 그 주소가 200 image/png여야 한다
+#   SITE_URL           정식 주소(선택). 있으면 /r/new·/r/<가짜 ID>·/result?…의 og:image가 이 주소로 시작해야 하고(서버 연결과 무관),
+#                      서버가 연결됐으면 /s의 og:image도 이 주소로 시작하고 그 주소가 200 image/png여야 한다
 # 새 도메인·인증서는 몇 분 걸릴 수 있어 첫 요청은 재시도한다.
 # /api/v1/* 쓰기 요청(POST·DELETE)은 브라우저처럼 `Origin: <BASE_URL의 출처>`를 붙여 보낸다. 브라우저는 같은 출처 POST에도 Origin을 붙이고
 # 서버(CORS)는 허용되지 않은 Origin을 403으로 거절하므로, 붙이지 않으면 그 실패를 놓친다(B1). 서버가 연결된 배포에서는 스모크가 방을 하나
@@ -114,6 +115,27 @@ if [ -n "$pair_url" ]; then
 else
   bad "sitemap.xml에 조합 주소가 없습니다"
 fi
+
+# 요청 때 렌더되는 페이지의 절대 주소(서버 연결과 무관): HTML에 localhost가 없고 og:image가 정식 주소(SITE_URL)로 시작해야 한다.
+# Worker 런타임 환경에는 SITE_URL이 없어 이런 페이지가 localhost 주소를 내던 문제(V1)를 막는다. 방 ID는 형식만 맞는 가짜다(서버를 부르지 않는 메타데이터).
+runtime_pages=("/r/new" "/r/abcdefghjk")
+if [ -n "${pair_path:-}" ]; then
+  pair_codes="${pair_path#/meet/}"
+  runtime_pages+=("/result?v=2&o=${pair_codes%%-*}.${pair_codes##*-}&m=f&t=weekday-day")
+fi
+for page_path in "${runtime_pages[@]}"; do
+  fetch "$BASE_URL$page_path"
+  if [ "$status" != "200" ]; then bad "$page_path status=$status"; continue; fi
+  if grep -q "localhost" <<<"$body"; then bad "$page_path HTML에 localhost 주소가 있습니다"; else pass "$page_path HTML에 localhost 없음"; fi
+  page_og="$(grep -oE '<meta property="og:image" content="[^"]*"' <<<"$body" | first | sed -E 's#.*content="##; s#"$##')"
+  if [ -z "${SITE_URL:-}" ]; then
+    echo "warn $page_path og:image 정식 주소 검사 건너뜀(SITE_URL 없음): ${page_og:-없음}"
+  elif [[ "$page_og" == "${SITE_URL%/}/"* ]]; then
+    pass "$page_path og:image가 정식 주소"
+  else
+    bad "$page_path og:image가 정식 주소가 아님: ${page_og:-없음} (기대: ${SITE_URL%/}/…)"
+  fi
+done
 
 # robots.txt
 fetch "$BASE_URL/robots.txt"

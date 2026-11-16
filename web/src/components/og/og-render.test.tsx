@@ -49,12 +49,25 @@ describe("OG 이미지 그리기(satori)", () => {
       const view = toResultView(c.result);
       const data = sharedCardData(view, c.state);
       if (!data) throw new Error(`${c.id}: 그림 데이터 없음`);
-      // 숨긴 출발역은 그림 값·미리보기 설명 어디에도 없다.
+      // 숨긴 출발역은 그림 값·미리보기 설명 어디에도 없다(입력에 본인 시점의 출발역 이름이 들어 있어도: hidden-self-view).
       expect(JSON.stringify([data, sharedPreview(view, c.state)])).not.toContain(HIDDEN_ORIGIN);
       const drawn = await render(<SharedCard data={data} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-${c.id}.png`), drawn.bytes);
     }
+  });
+
+  it("숨긴 사람 본인 시점처럼 입력에 숨긴 출발역 이름이 있어도 그림 값·미리보기 설명에는 '참가자 N'만 나온다", () => {
+    const c = SHARED_CASES.find((x) => x.id === "hidden-self-view");
+    if (!c) throw new Error("표본 없음");
+    expect(JSON.stringify(c.result)).toContain(HIDDEN_ORIGIN); // 입력에는 있다(본인에게만 오는 originName)
+    const view = toResultView(c.result);
+    const data = sharedCardData(view, c.state);
+    const preview = sharedPreview(view, c.state);
+    expect(data?.people.map((p) => p.name)).toEqual(["강남", "참가자 2", "홍대입구"]);
+    expect(data?.modeLine).toBe("참가자 2 쪽으로 고름");
+    expect(preview?.description).toBe("강남 5분 · 참가자 2 4분 · 홍대입구 35분 · 참가자 2 쪽으로 고름");
+    expect(JSON.stringify([data, preview])).not.toContain(HIDDEN_ORIGIN);
   });
 
   it("같은 내용은 같은 그림이다(정적 생성이 결정적)", async () => {

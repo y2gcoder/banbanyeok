@@ -165,6 +165,21 @@ describe("결과 불러오기(서버 호출)", () => {
     );
   });
 
+  it("부른 쪽의 중단 신호(/s/og 시간 예산)가 서버 호출에도 걸린다", async () => {
+    let seen: AbortSignal | undefined;
+    recommend.mockImplementation((_query: unknown, signal: AbortSignal) => {
+      seen = signal;
+      return new Promise(() => {});
+    });
+    const controller = new AbortController();
+    const pending = loadSharedView({ ...state, origins: ["1qs", "k3a"] }, controller.signal);
+    await vi.waitFor(() => expect(seen).toBeDefined());
+    expect(seen?.aborted).toBe(false);
+    controller.abort();
+    expect(seen?.aborted).toBe(true);
+    void pending;
+  });
+
   it("링크와 다른 기준(평일 낮 대체)으로 계산된 결과는 null — 틀린 기준의 미리보기를 메신저 캐시에 남기지 않는다", async () => {
     recommend.mockResolvedValue(
       result({

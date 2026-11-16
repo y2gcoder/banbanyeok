@@ -33,7 +33,7 @@ type Pick = { mode: Mode; favorId: string | null };
 
 /**
  * 방 결과. 서버가 방 전체로 계산한다(숨긴 사람의 출발역은 가려지고 시간·환승은 보인다). 모드 탭은 보는 사람의 화면 설정이고
- * 처음 값은 방의 추천 기준·배려 대상이다. 이름은 서버 label이고 "(나)"는 내 토큰이 가리키는 사람에게만 붙는다.
+ * 처음 값은 방의 추천 기준·배려 대상이다. 이름은 서버 label·shortLabel이고 "(나)"는 내 토큰이 가리키는 사람에게만 붙는다.
  */
 export function RoomResult({
   roomId,
@@ -45,7 +45,11 @@ export function RoomResult({
   renderAfter,
 }: Props) {
   const panelId = useId();
-  const people = room.participants.map((p, index) => ({ index, name: p.label }));
+  // 배려 대상 알약은 좁은 칸이라 짧은 이름(shortLabel). 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로.
+  const people = room.participants.map((p, index) => ({
+    index,
+    name: (p.shortLabel as string | undefined) ?? p.label,
+  }));
   const [pick, setPick] = useState<Pick>(() => ({ mode: room.mode, favorId: room.favorTarget ?? null }));
 
   // 배려 대상이 방에서 빠졌으면 첫 사람으로(없는 ID를 서버에 보내지 않는다).
