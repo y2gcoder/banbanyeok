@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Wordmark } from "@/components/common/wordmark";
 import { ConsentSettings } from "@/components/consent/consent-settings";
 import { plainPageMetadata } from "@/lib/seo/metadata";
+import { parenSafe } from "@/lib/text/paren-safe";
 import { type Block, POLICY } from "./policy";
 
 // 초안이라 검색 색인에서 뺀다. 운영자 검토 후 공개할 때 robots를 지운다(docs/setup/l1-notes.md).
@@ -17,12 +18,12 @@ export const metadata: Metadata = {
 function PolicyBlock({ block }: { block: Block }) {
   switch (block.kind) {
     case "p":
-      return <p>{block.text}</p>;
+      return <p>{parenSafe(block.text)}</p>;
     case "list":
       return (
         <ul className="flex list-disc flex-col gap-1.5 pl-5">
           {block.items.map((item) => (
-            <li key={item}>{item}</li>
+            <li key={item}>{parenSafe(item)}</li>
           ))}
         </ul>
       );
@@ -42,14 +43,14 @@ function PolicyTable({ block }: { block: TableBlock }) {
         {block.rows.map(([title, ...values]) => (
           <li key={title} className="flex flex-col gap-2 rounded-xl border border-rule bg-surface p-4">
             <p className="font-bold text-ink">
-              <span className="sr-only">{firstHead}: </span>
-              {title}
+              <span className="sr-only">{parenSafe(firstHead)}: </span>
+              {parenSafe(title)}
             </p>
             <dl className="flex flex-col gap-2">
               {values.map((value, i) => (
                 <div key={restHead[i]} className="flex flex-col">
-                  <dt className="text-[13px] font-semibold text-muted-foreground">{restHead[i]}</dt>
-                  <dd>{value}</dd>
+                  <dt className="text-[13px] font-semibold text-muted-foreground">{parenSafe(restHead[i])}</dt>
+                  <dd>{parenSafe(value)}</dd>
                 </div>
               ))}
             </dl>
@@ -57,12 +58,12 @@ function PolicyTable({ block }: { block: TableBlock }) {
         ))}
       </ul>
       <table className="hidden w-full border-collapse overflow-hidden rounded-xl bg-surface text-left text-[14px] leading-relaxed sm:table">
-        <caption className="pb-2 text-left text-[14px] font-bold text-ink">{block.caption}</caption>
+        <caption className="pb-2 text-left text-[14px] font-bold text-ink">{parenSafe(block.caption)}</caption>
         <thead className="bg-muted">
           <tr>
             {block.head.map((h) => (
               <th key={h} scope="col" className="px-3 py-2 font-bold text-ink">
-                {h}
+                {parenSafe(h)}
               </th>
             ))}
           </tr>
@@ -71,11 +72,11 @@ function PolicyTable({ block }: { block: TableBlock }) {
           {block.rows.map(([title, ...values]) => (
             <tr key={title} className="border-t border-rule align-top">
               <th scope="row" className="px-3 py-2 font-semibold text-ink">
-                {title}
+                {parenSafe(title)}
               </th>
               {values.map((value, i) => (
                 <td key={restHead[i]} className="px-3 py-2 text-ink-soft">
-                  {value}
+                  {parenSafe(value)}
                 </td>
               ))}
             </tr>
@@ -107,10 +108,10 @@ export default function PrivacyPage() {
             {POLICY.title}
           </h1>
           <p role="note" className="rounded-xl border-2 border-safety bg-surface p-4 font-semibold text-ink">
-            {POLICY.draftWarning}
+            {parenSafe(POLICY.draftWarning)}
           </p>
           {POLICY.intro.map((text) => (
-            <p key={text}>{text}</p>
+            <p key={text}>{parenSafe(text)}</p>
           ))}
         </section>
 
@@ -120,7 +121,7 @@ export default function PrivacyPage() {
           </h2>
           <ul className="flex list-disc flex-col gap-1.5 pl-5">
             {POLICY.summary.map((line) => (
-              <li key={line}>{line}</li>
+              <li key={line}>{parenSafe(line)}</li>
             ))}
           </ul>
         </section>
@@ -151,7 +152,7 @@ export default function PrivacyPage() {
                 href={`#${s.id}`}
                 className="inline-flex min-h-11 items-center rounded-md font-semibold text-ink underline underline-offset-4"
               >
-                {s.title}
+                {parenSafe(s.title)}
               </a>
             </li>
           ))}
@@ -162,7 +163,7 @@ export default function PrivacyPage() {
         {POLICY.sections.map((s) => (
           <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="flex scroll-mt-4 flex-col gap-3">
             <h2 id={`${s.id}-title`} className="text-[20px] leading-snug font-extrabold text-ink">
-              {s.title}
+              {parenSafe(s.title)}
             </h2>
             {s.blocks.map((b) => (
               <PolicyBlock key={blockKey(b)} block={b} />

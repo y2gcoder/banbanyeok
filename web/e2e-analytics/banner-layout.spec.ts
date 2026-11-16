@@ -142,7 +142,7 @@ for (const vp of U2_CASES) {
       await page.goto("/");
       await expect(banner(page)).toBeVisible();
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      const last = page.getByRole("link", { name: /친구가 각자 입력하게 하기/ });
+      const last = page.getByRole("link", { name: /방 만들어서 각자 입력하기/ });
       await expect(last).toBeInViewport({ ratio: 1 });
       const lastBox = await last.boundingBox();
       const bannerBox = await banner(page).boundingBox();

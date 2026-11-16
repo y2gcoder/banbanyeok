@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { setAnalyticsConsent } from "@/lib/analytics";
+import { parenSafe } from "@/lib/text/paren-safe";
 import { cn } from "@/lib/utils";
 import { CONSENT_COPY } from "./consent-text";
 import { useAnalyticsId, useConsentScopes, useConsentState } from "./use-consent";
@@ -14,6 +15,9 @@ const STATUS = {
   "browser-declined": "브라우저의 추적 거부 신호(Do Not Track 또는 Global Privacy Control)가 켜져 있어 모으지 않아요.",
   unavailable: "이 서비스는 지금 이용 통계를 모으지 않아요.",
 } as const;
+
+const WITHDRAW_NOTE =
+  "하나라도 끄면 바로 통계를 멈추고, 이 기기에 저장된 통계 식별자를 지워요. 이미 모은 통계는 보유 기간이 지나면 파기하고, 요청하면 지체 없이 삭제해요 (개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.";
 
 /** 항목 하나의 동의 스위치. 둘 다 켜져야 통계를 모으고, 하나라도 끄면 바로 멈춘다. */
 function ScopeSwitch({
@@ -35,10 +39,10 @@ function ScopeSwitch({
     <div className="flex items-center justify-between gap-4 rounded-xl border border-rule bg-platform/60 p-4">
       <div className="flex min-w-0 flex-col gap-1">
         <span id={labelId} className="font-bold text-ink">
-          {label}
+          {parenSafe(label)}
         </span>
         <span id={detailId} className="text-[14px] text-ink-soft">
-          {detail}
+          {parenSafe(detail)}
         </span>
       </div>
       <button
@@ -108,7 +112,7 @@ function IdentifierBox({ id, heading, note }: { id: string; heading: string; not
         </Button>
       </div>
       <p aria-live="polite" className="text-[14px]">
-        {note}
+        {parenSafe(note)}
       </p>
     </div>
   );
@@ -139,14 +143,14 @@ export function ConsentSettings() {
   return (
     <div className="flex flex-col gap-3">
       <p>
-        {CONSENT_COPY.question} {CONSENT_COPY.intro} {CONSENT_COPY.rule}
+        {parenSafe(CONSENT_COPY.question)} {parenSafe(CONSENT_COPY.intro)} {parenSafe(CONSENT_COPY.rule)}
       </p>
       <p id={statusId} aria-live="polite" className="font-semibold text-ink">
         {state === null
           ? "상태를 확인하는 중이에요."
           : partial
             ? "일부만 동의함 — 두 가지 모두 동의해야 모으므로 지금은 모으지 않아요."
-            : STATUS[state]}
+            : parenSafe(STATUS[state])}
       </p>
       <ScopeSwitch
         label="이용 통계 수집·이용 동의"
@@ -176,10 +180,7 @@ export function ConsentSettings() {
           note="이 기기에서는 지웠어요. 이미 모은 통계의 삭제를 요청하려면 지금 복사해 두세요. 이 화면을 나가면 다시 볼 수 없어요."
         />
       ) : null}
-      <p className="text-[14px]">
-        하나라도 끄면 바로 통계를 멈추고, 이 기기에 저장된 통계 식별자를 지워요. 이미 모은 통계는 보유 기간이 지나면
-        파기하고, 요청하면 지체 없이 삭제해요 (개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.
-      </p>
+      <p className="text-[14px]">{parenSafe(WITHDRAW_NOTE)}</p>
     </div>
   );
 }

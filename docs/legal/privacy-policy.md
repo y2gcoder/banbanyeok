@@ -150,7 +150,7 @@
 | PostHog, Inc.(미국 법인, privacy@posthog.com) | 보호법 제28조의8제1항제1호(국외 이전에 대한 별도 동의) | 미국(PostHog 미국 클라우드) | 2항의 '이용 통계' 항목(접속 IP 주소는 전송되지만 저장하지 않도록 설정) | 동의한 뒤 서비스를 이용할 때마다 암호화된 네트워크(HTTPS)로 전송 | 이용 통계 분석. 수집한 날부터 1년 |
 | GitHub, Inc.(미국 법인, dpo@github.com) | 보호법 제28조의8제1항제3호(서비스 제공을 위한 처리위탁, 이 방침으로 공개) | 미국 등(백업 작업을 실행하는 클라우드 서버의 위치는 GitHub가 정함) | 2항의 '방을 만들거나 참여' 항목(데이터베이스 백업 파일) | 주 1회 백업할 때 데이터베이스에서 암호화된 네트워크(TLS)로 받아 Google Cloud 서울 저장소로 전송 | 백업 작업 실행. 작업마다 새로 만들고 끝나면 폐기하는 실행 환경에서 작업 시간(최대 20분) 동안만 처리 |
 
-- 이전을 거부하는 방법과 효과: 이용 통계와 그 국외 이전은 처음 방문할 때 묻는 동의 화면에서 거부할 수 있고, 동의한 뒤에도 이 페이지의 '통계 설정'에서 언제든 철회할 수 있습니다. 거부하거나 철회해도 서비스를 모두 쓸 수 있으며, 철회하면 그때부터 PostHog로 보내지 않습니다.
+- 이전을 거부하는 방법과 효과: 이용 통계와 그 국외 이전은 처음 방문할 때 묻는 동의 화면이나 이 페이지의 '통계 설정'에서 거부할 수 있고, 동의한 뒤에도 '통계 설정'에서 언제든 철회할 수 있습니다. 거부하거나 철회해도 서비스를 모두 쓸 수 있으며, 철회하면 그때부터 PostHog로 보내지 않습니다.
 - Google·Cloudflare·Supabase·GitHub로의 이전은 서비스를 제공하는 데 꼭 필요해서, 이를 원하지 않으면 서비스를 이용하지 않아야 합니다. 이미 넣은 방 정보는 8항의 방법으로 바로 지울 수 있고, 방 기능 대신 서버에 저장하지 않는 링크 공유를 쓸 수도 있습니다.
 - 재수탁자(각 회사가 다시 맡기는 회사)는 각 회사가 공개한 재수탁자 목록에서 확인할 수 있습니다: Google Cloud(https://cloud.google.com/terms/subprocessors), Cloudflare(https://www.cloudflare.com/gdpr/subprocessors/cloudflare-services/), Supabase(https://supabase.com/legal/subprocessors), PostHog(https://posthog.com/subprocessors), GitHub(https://docs.github.com/en/site-policy/privacy-policies/github-subprocessors).
 

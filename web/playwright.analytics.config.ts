@@ -15,7 +15,13 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"]] : "list",
   use: { baseURL: `http://127.0.0.1:${webPort}`, locale: "ko-KR", trace: "retain-on-failure" },
-  projects: [{ name: "mobile-chrome", use: { ...devices["Pixel 7"] } }],
+  projects: [
+    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
+    // E2E_WEBKIT=1일 때만: 줄바꿈 spec 하나를 WebKit(Playwright 내장)에서도 돌린다. CI는 chromium만 내려받으므로 기본은 끈다.
+    ...(process.env.E2E_WEBKIT
+      ? [{ name: "mobile-safari", testMatch: /open-paren\.spec\.ts/, use: { ...devices["iPhone 15"] } }]
+      : []),
+  ],
   webServer: [
     {
       command: "node mock/main.ts",

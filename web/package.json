@@ -24,6 +24,7 @@
     "e2e": "playwright test && playwright test --config playwright.analytics.config.ts",
     "e2e:real": "playwright test --config playwright.real.config.ts",
     "e2e:analytics": "playwright test --config playwright.analytics.config.ts",
+    "ios-sim:line-break": "node scripts/ios-sim-line-break.ts",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview"
   },
