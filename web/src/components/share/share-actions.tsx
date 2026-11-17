@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon, CopyIcon, MessageCircleIcon } from "lucide-react";
-import { type KeyboardEvent, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { type RoomRef, roomHashProperty, track } from "@/lib/analytics";
@@ -49,7 +49,7 @@ async function copy(text: string): Promise<boolean> {
  * 공유: 빌드에 카카오 앱 키가 있고 메시지(`kakao`)를 받았으면 카카오톡 공유 API로 보낸다. SDK는 버튼을 누르기 시작할 때 처음 받아
  * 카카오에 메시지를 확인받고, 누른 순간 둘 다 끝났으면 바로, 아니면 `KAKAO_WAIT_MS`까지 기다렸다 보낸다.
  * 키가 없거나 SDK를 못 받거나 카카오·SDK가 거절하면 지금까지처럼 시스템 공유 시트(navigator.share, 카톡을 고른다)로, 그것도 없으면
- * 링크 복사 대화상자로 간다.
+ * 링크 복사 대화상자로 간다. 기다리는 동안 화면을 떠나면(언마운트) 아무것도 보내지 않는다.
  */
 export function ShareActions({
   path,
@@ -66,6 +66,13 @@ export function ShareActions({
   const [copied, setCopied] = useState(false);
   const kakaoKey = kakao ? publicKakaoJsKey() : null;
   const sending = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const copyLink = async () => {
     track("share_clicked", { channel: "copy", link_type: linkType, ...roomProperty });
@@ -114,6 +121,7 @@ export function ShareActions({
         let sdk = readyKakaoShare(settings);
         if (!sdk) {
           sdk = await prepareKakaoShare(kakaoKey, settings, KAKAO_WAIT_MS);
+          if (!mounted.current) return;
         }
         if (sdk && sendWithKakao(sdk, settings)) return;
       }

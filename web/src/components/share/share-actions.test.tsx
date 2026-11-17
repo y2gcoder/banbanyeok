@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KakaoFeedMessage, KakaoFeedSettings } from "@/lib/share/kakao";
 import type { KakaoSdk } from "@/lib/share/kakao-sdk";
@@ -158,6 +158,21 @@ describe("카톡으로 보내기", () => {
     expect(sdk.Share.sendDefault).not.toHaveBeenCalled();
     expect(track).toHaveBeenCalledTimes(1);
     expect(track).toHaveBeenCalledWith("share_clicked", { channel: "system", ...ROOM });
+  });
+
+  it("기다리는 동안 화면을 떠나면 카카오로도 공유 시트로도 보내지 않고 세지도 않는다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", KEY);
+    const track = await renderShare();
+    fireEvent.pointerDown(kakaoButton());
+    fireEvent.click(kakaoButton());
+    cleanup();
+
+    const sdk = fakeSdk();
+    finishLoading(sdk);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(sdk.Share.sendDefault).not.toHaveBeenCalled();
+    expect(share).not.toHaveBeenCalled();
+    expect(track).not.toHaveBeenCalled();
   });
 
   it("첫 누름에 SDK가 아직 오는 중이면 받을 때까지 기다렸다 카카오로 보낸다(Enter로 눌러도 같다)", async () => {
