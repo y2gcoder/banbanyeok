@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { roomShareCopy } from "@/lib/room/share-copy";
+import type { RoomPreview } from "@/lib/api/types";
+import { INVITE_COPY, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
 import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS } from "./policy";
 
@@ -100,6 +101,41 @@ describe("개인정보 처리방침", () => {
     expect(shown).toContain("19:30");
     const line = markdown.split("\n").find((l) => l.includes("방 링크의 미리보기에는"));
     expect(line).toContain("약속 날짜·시각");
+  });
+
+  it("카카오톡 공유: 모든 공유 버튼 이름으로, 누를 때 카카오로 가는 것과 누르기 전에는 SDK를 받지 않는다는 것을 적는다", () => {
+    const line = markdown.split("\n").find((l) => l.includes("카카오 JavaScript SDK")) ?? "";
+    const base: Omit<Extract<RoomPreview, { stage: "result" }>, "stage"> = {
+      dataVersion: "20261115.8",
+      basis: { mode: "fair", favorLabel: null },
+      station: { stationCode: "k3a", stationName: "강남", times: [{ label: "민수", seconds: 600 }] },
+      room: {
+        roomId: "qt7yvmsht3",
+        shareVersion: 4,
+        participantCount: 2,
+        canJoin: true,
+        meetingDate: null,
+        meetingTime: null,
+        meetingBand: null,
+        timeBasis: {
+          timeSlot: "weekday-day",
+          requestedTimeSlot: "weekday-day",
+          label: "평일 낮",
+          dayType: "weekday",
+          band: "day",
+          holidayName: null,
+        },
+      },
+    };
+    const buttons = [
+      INVITE_COPY.message.button,
+      roomShareCopy({ stage: "result", ...base }).message.button,
+      roomShareCopy({ stage: "decided", ...base, decidedBy: "민수", decidedAt: "2026-11-17T10:00:00Z" }).message.button,
+    ];
+    for (const button of buttons) expect(line, button).toContain(`'${button}'`);
+    expect(line).toContain("카카오 주식회사");
+    expect(line).toContain("접속 IP 주소");
+    expect(line).toContain("이 버튼을 누르기 전에는 카카오 공유 프로그램을 받지 않으며");
   });
 
   it("목차 앵커가 겹치지 않는다", () => {

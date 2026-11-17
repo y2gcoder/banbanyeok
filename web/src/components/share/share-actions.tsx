@@ -1,11 +1,13 @@
 "use client";
 
-import { CheckIcon, CopyIcon, MessageCircleIcon } from "lucide-react";
-import { useState } from "react";
+import { CheckIcon, CopyIcon, LoaderCircleIcon, MessageCircleIcon } from "lucide-react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { type RoomRef, roomHashProperty, track } from "@/lib/analytics";
 import type { ShareStage } from "@/lib/room/share-copy";
+import { type KakaoFeedMessage, type KakaoFeedSettings, kakaoFeedSettings, publicKakaoJsKey } from "@/lib/share/kakao";
+import { type KakaoSdk, preloadKakaoShare, prepareKakaoShare, readyKakaoShare } from "@/lib/share/kakao-sdk";
 
 /**
  * path는 `/s?...`(혼자 입력한 결과) 또는 `/r/<방 ID>?sv=<n>`(방). 출처는 브라우저에서 붙인다(서버 렌더링에는 window가 없다).
@@ -20,7 +22,17 @@ type Props = {
   linkType?: "url_state" | "room";
   /** 방 링크면 그 방과 링크 미리보기 단계. 통계에는 서버가 준 `room_hash`와 단계만 간다. */
   room?: RoomRef & { stage: ShareStage };
+  /** 카카오톡 공유 API로 보낼 메시지. 빌드에 카카오 앱 키가 없으면 쓰지 않는다. */
+  kakao?: KakaoFeedMessage;
 };
+
+/**
+ * 첫 누름에 SDK를 받고 카카오에 메시지를 확인받기를 기다리는 한도. 모바일은 SDK 자신도 카카오 확인 요청을 기다린 뒤 카카오톡을 열므로
+ * 기다려도 되고, PC 공유 창(팝업)은 브라우저가 누른 직후 몇 초 동안만 열어 준다. 못 받으면 그 누름은 시스템 공유로 간다.
+ */
+const KAKAO_WAIT_MS = 3000;
+
+const isActivationKey = (event: KeyboardEvent) => event.key === "Enter" || event.key === " ";
 
 const absolute = (path: string) => new URL(path, window.location.origin).toString();
 
@@ -34,14 +46,34 @@ async function copy(text: string): Promise<boolean> {
 }
 
 /**
- * 공유: 시스템 공유 시트(navigator.share, 카톡을 고른다)가 기본이고, 없으면 링크 복사 대화상자를 연다.
- * 카카오 SDK 공유(앱 키 필요)는 이번 범위가 아니다.
+ * 공유: 빌드에 카카오 앱 키가 있고 메시지(`kakao`)를 받았으면 카카오톡 공유 API로 보낸다. SDK는 버튼을 누르기 시작할 때 처음 받아
+ * 카카오에 메시지를 확인받고, 누른 순간 둘 다 끝났으면 바로, 아니면 `KAKAO_WAIT_MS`까지 기다렸다 보낸다(기다리는 동안 버튼은 바쁨).
+ * 키가 없거나 SDK를 못 받거나 카카오·SDK가 거절하면 지금까지처럼 시스템 공유 시트(navigator.share, 카톡을 고른다)로, 그것도 없으면
+ * 링크 복사 대화상자로 간다. 기다리는 동안 화면을 떠나면(언마운트) 아무것도 보내지 않는다.
  */
-export function ShareActions({ path, title, text, button = "카톡으로 보내기", linkType = "url_state", room }: Props) {
+export function ShareActions({
+  path,
+  title,
+  text,
+  button = "카톡으로 보내기",
+  linkType = "url_state",
+  room,
+  kakao,
+}: Props) {
   const roomProperty = linkType === "room" && room ? { ...roomHashProperty(room), room_stage: room.stage } : {};
   // 대체 대화상자에 보여 줄 링크. null이면 닫힘. 브라우저에서만 만든다.
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const kakaoKey = kakao ? publicKakaoJsKey() : null;
+  const sending = useRef(false);
+  const [waiting, setWaiting] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const copyLink = async () => {
     track("share_clicked", { channel: "copy", link_type: linkType, ...roomProperty });
@@ -50,7 +82,25 @@ export function ShareActions({ path, title, text, button = "카톡으로 보내�
     if (!ok) setFallbackUrl(absolute(path));
   };
 
-  const shareToKakao = async () => {
+  const kakaoSettings = (): KakaoFeedSettings | null =>
+    kakao && kakaoKey ? kakaoFeedSettings(kakao, window.location.origin) : null;
+
+  const prepareKakao = () => {
+    const settings = kakaoSettings();
+    if (kakaoKey && settings) preloadKakaoShare(kakaoKey, settings);
+  };
+
+  const sendWithKakao = (sdk: KakaoSdk, settings: KakaoFeedSettings): boolean => {
+    try {
+      sdk.Share.sendDefault(settings);
+    } catch {
+      return false;
+    }
+    track("share_clicked", { channel: "kakao", link_type: linkType, ...roomProperty });
+    return true;
+  };
+
+  const systemShare = async () => {
     track("share_clicked", { channel: "system", link_type: linkType, ...roomProperty });
     if (typeof navigator.share === "function") {
       try {
@@ -63,14 +113,42 @@ export function ShareActions({ path, title, text, button = "카톡으로 보내�
     setFallbackUrl(absolute(path));
   };
 
+  const shareToKakao = async () => {
+    if (sending.current) return;
+    sending.current = true;
+    try {
+      const settings = kakaoSettings();
+      if (kakaoKey && settings) {
+        let sdk = readyKakaoShare(settings);
+        if (!sdk) {
+          setWaiting(true);
+          sdk = await prepareKakaoShare(kakaoKey, settings, KAKAO_WAIT_MS);
+          if (!mounted.current) return;
+          setWaiting(false);
+        }
+        if (sdk && sendWithKakao(sdk, settings)) return;
+      }
+      await systemShare();
+    } finally {
+      sending.current = false;
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <Button
         type="button"
+        onPointerDown={prepareKakao}
+        onKeyDown={(event) => isActivationKey(event) && prepareKakao()}
         onClick={() => void shareToKakao()}
+        aria-busy={waiting || undefined}
         className="h-14 rounded-xl bg-kakao text-[17px] font-bold text-kakao-ink hover:bg-[color-mix(in_oklch,var(--kakao),black_6%)]"
       >
-        <MessageCircleIcon className="size-5" aria-hidden="true" />
+        {waiting ? (
+          <LoaderCircleIcon className="size-5 motion-safe:animate-spin" aria-hidden="true" />
+        ) : (
+          <MessageCircleIcon className="size-5" aria-hidden="true" />
+        )}
         {button}
       </Button>
       <Button type="button" variant="ghost" onClick={() => void copyLink()} className="h-11 text-[15px] font-semibold">
@@ -78,7 +156,7 @@ export function ShareActions({ path, title, text, button = "카톡으로 보내�
         {copied ? "링크를 복사했어요" : "링크 복사"}
       </Button>
       <p aria-live="polite" className="sr-only">
-        {copied ? "링크를 복사했어요" : ""}
+        {waiting ? "카카오톡 공유를 준비하고 있어요" : copied ? "링크를 복사했어요" : ""}
       </p>
       <Dialog open={fallbackUrl !== null} onOpenChange={(open) => !open && setFallbackUrl(null)}>
         <DialogContent className="gap-4 rounded-2xl p-5">

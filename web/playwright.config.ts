@@ -29,14 +29,16 @@ export default defineConfig({
     },
     {
       // rewrite 대상(API_ORIGIN)은 빌드 때 정해지므로 같은 값으로 빌드하고 실행한다.
-      command: `pnpm build && pnpm start --port ${webPort}`,
+      command: `pnpm build && pnpm start --hostname 127.0.0.1 --port ${webPort}`,
       // SITE_URL도 빌드 때 정해진다(canonical·OG 주소가 정적 페이지에 들어간다).
-      // 통계 키는 비워서 빌드한다: 개발자 환경 변수와 무관하게 "키 없음 = 완전히 꺼짐"을 e2e로 확인한다(e2e/analytics.spec.ts).
+      // 통계·카카오 키는 비워서 빌드한다: 개발자 환경 변수와 무관하게 "키 없음 = 완전히 꺼짐"을 e2e로 확인한다(e2e/analytics.spec.ts,
+      // e2e/security.spec.ts의 외부 스크립트 없는 CSP).
       env: {
         API_ORIGIN: apiOrigin,
         SITE_URL: `http://127.0.0.1:${webPort}`,
         NEXT_PUBLIC_POSTHOG_KEY: "",
         NEXT_PUBLIC_POSTHOG_HOST: "",
+        NEXT_PUBLIC_KAKAO_JS_KEY: "",
       },
       url: `http://127.0.0.1:${webPort}/`,
       timeout: 240_000,

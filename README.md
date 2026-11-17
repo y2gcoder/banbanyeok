@@ -105,6 +105,7 @@ main에서 `web/`·`contracts/`·`data/artifacts/`가 바뀌면 자동으로, �
 | secret | `PROXY_SHARED_SECRET` | 서버와 같은 값. Worker secret으로 주입돼 `/api/*` 프록시가 서버에 `X-Banbanyeok-Proxy-Secret`로 보냄 |
 | variable | `CLOUDFLARE_ACCOUNT_ID` | 배포 계정 |
 | variable | `POSTHOG_PROJECT_KEY`, `POSTHOG_HOST` | 빌드 때 번들에 박히는 공개 통계 키·수집 호스트(동의 전에는 로드하지 않음) |
+| variable | `KAKAO_JS_KEY` | 빌드 때 번들에 박히는 카카오 JavaScript 키(공개 값). 있으면 "카톡으로 보내기"가 카카오톡 공유 API로 보내고(SDK는 버튼을 누를 때 받음), 없으면 시스템 공유 시트. 배포 스모크가 카카오가 이 키와 배포 도메인을 받는지 확인한다 |
 | variable | `SERVER_ORIGIN` | 서버(Cloud Run) 출처. 비어 있으면 API 없이 배포하고 사이트 전체를 noindex로 둠 |
 | variable | `SITE_DOMAIN` | 정식 도메인(호스트만). 있으면 Workers Custom Domain(apex + www)으로 붙고 `SITE_URL`(OG·sitemap·canonical)이 여기서 나옴 |
 

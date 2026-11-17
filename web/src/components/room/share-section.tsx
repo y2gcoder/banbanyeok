@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ShareActions } from "@/components/share/share-actions";
 import type { Room } from "@/lib/api/types";
 import { roomPreviewQueryOptions } from "@/lib/room/queries";
-import { INVITE_COPY, roomShareCopy, type ShareStage } from "@/lib/room/share-copy";
+import { INVITE_COPY, roomKakaoMessage, roomShareCopy, type ShareStage } from "@/lib/room/share-copy";
 import { roomShareLink } from "@/lib/room/share-link";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,7 @@ const HINTS: Record<ShareStage, string | null> = {
  * 방 화면의 공유 칸(하나). 링크와 문구는 같은 미리보기(`roomShareCopy`)에서 나온다: 링크의 번호는 그 미리보기를 만든 방의 번호다.
  * 미리보기는 방의 공유 번호가 바뀔 때 미리 받아 둔다(버튼을 누른 뒤 네트워크를 기다리면 iOS가 공유 시트를 열어 주지 않는다).
  * 화면의 방과 번호가 같은 미리보기만 쓰고, 못 받았거나 받는 중이거나 번호가 다르면 번호 없는 링크와 초대 문구(서로 맞는 한 쌍)를 쓴다.
+ * 카카오톡 공유 메시지도 같은 미리보기에서 만든다.
  */
 export function RoomShareSection({ roomId, room }: { roomId: string; room: Room }) {
   const query = useQuery(roomPreviewQueryOptions(roomId, room.shareVersion));
@@ -49,6 +50,7 @@ export function RoomShareSection({ roomId, room }: { roomId: string; room: Room 
         button={copy.message.button}
         linkType="room"
         room={{ roomId, roomHash: room.roomHash, stage: copy.stage }}
+        kakao={roomKakaoMessage(roomId, preview)}
       />
     </section>
   );

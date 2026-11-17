@@ -1,7 +1,11 @@
 import type { Mode, RecommendResult } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
+import type { ShareState } from "@/lib/link/codec";
+import { sharedImagePath } from "@/lib/seo/shared-preview";
+import type { KakaoFeedMessage } from "@/lib/share/kakao";
 import { DEFAULT_SLOT } from "@/lib/when/time-slot";
 import { modeSentence } from "./mode-sentence";
+import { sharePath } from "./share-url";
 import type { CandidateView } from "./view-model";
 
 /**
@@ -17,4 +21,20 @@ export function shareMessage(
   const times = top.people.map((p) => `${p.shortName} ${formatMinutes(p.minutes)}`).join(" · ");
   const when = basis && basis.timeSlot !== DEFAULT_SLOT ? ` · ${basis.label} 기준` : "";
   return { title: `${top.stationName}에서 볼까?`, text: `${times} · ${modeSentence(mode, favorName)}${when}` };
+}
+
+/** 혼자 입력한 결과를 카카오톡 공유 API로 보내는 메시지. 공유 시트와 같은 문구이고, 그림은 그 링크(`/s`)의 미리보기 그림이다. */
+export function soloKakaoMessage(
+  state: ShareState,
+  message: { title: string; text: string },
+  dataVersion: string,
+): KakaoFeedMessage {
+  const path = sharePath(state);
+  return {
+    title: message.title,
+    description: message.text,
+    imagePath: sharedImagePath(state, dataVersion),
+    path,
+    buttons: [{ title: "결과 보기", path }],
+  };
 }
