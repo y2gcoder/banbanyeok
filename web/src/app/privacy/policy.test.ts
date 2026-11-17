@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
 import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS } from "./policy";
 
@@ -68,6 +69,37 @@ describe("개인정보 처리방침", () => {
       expect(email).not.toMatch(personalDomains);
       expect(email.endsWith("@banbanyeok.app")).toBe(false);
     }
+  });
+
+  it("방 링크 미리보기 안내는 정한 역 미리보기가 싣는 약속 시각까지 적는다", () => {
+    const shown = roomShareCopy({
+      stage: "decided",
+      room: {
+        roomId: "qt7yvmsht3",
+        shareVersion: 4,
+        participantCount: 2,
+        canJoin: false,
+        meetingDate: "2026-11-21",
+        meetingTime: "19:30",
+        meetingBand: null,
+        timeBasis: {
+          timeSlot: "saturday-evening",
+          requestedTimeSlot: "saturday-evening",
+          label: "토요일 저녁",
+          dayType: "saturday",
+          band: "evening",
+          holidayName: null,
+        },
+      },
+      dataVersion: "20261115.8",
+      basis: { mode: "fair", favorLabel: null },
+      station: { stationCode: "k3a", stationName: "강남", times: [{ label: "민수", seconds: 600 }] },
+      decidedBy: "민수",
+      decidedAt: "2026-11-17T10:00:00Z",
+    }).preview.description;
+    expect(shown).toContain("19:30");
+    const line = markdown.split("\n").find((l) => l.includes("방 링크의 미리보기에는"));
+    expect(line).toContain("약속 날짜·시각");
   });
 
   it("목차 앵커가 겹치지 않는다", () => {

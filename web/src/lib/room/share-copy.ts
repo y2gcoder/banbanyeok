@@ -69,7 +69,10 @@ const safeName = (label: string, index: number) => ogSafeName(label, `참가자 
 
 /** 배려 대상·정한 사람은 서버가 짧은 이름만 주므로, 그 이름의 줄과 같은 순번으로 그린다. */
 function cardName(preview: Computed, label: string): string {
-  return safeName(label, preview.station.times.findIndex((t) => t.label === label));
+  return safeName(
+    label,
+    preview.station.times.findIndex((t) => t.label === label),
+  );
 }
 
 function card(preview: Computed, suffix: string, modeLine: string, footer?: SharedCardData["footer"]): SharedCardData {
