@@ -1,25 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { KakaoFeedSettings } from "./kakao";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { KakaoSdk } from "./kakao-sdk";
 
 const KEY = "a".repeat(32);
-const LINK = {
-  webUrl: "https://banbanyeok.app/r/qt7yvmsht3?sv=5",
-  mobileWebUrl: "https://banbanyeok.app/r/qt7yvmsht3?sv=5",
-};
-const SETTINGS: KakaoFeedSettings = {
-  objectType: "feed",
-  content: {
-    title: "지금은 강남이 제일 공평해요",
-    description: "민수 22분",
-    imageUrl: "https://banbanyeok.app/r/qt7yvmsht3/og?sv=5",
-    imageWidth: 1200,
-    imageHeight: 630,
-    link: LINK,
-  },
-  buttons: [{ title: "내 출발역 넣기", link: LINK }],
-};
 
 type Loader = typeof import("./kakao-sdk");
 
@@ -54,19 +37,14 @@ beforeEach(() => {
   delete window.Kakao;
 });
 
-afterEach(() => {
-  vi.useRealTimers();
-});
-
-describe("카카오 SDK 불러오기와 보내기 전 확인", () => {
+describe("카카오 SDK 미리 준비", () => {
   it("부르기 전에는 스크립트가 없고, 처음 부를 때 고정 버전을 SRI·익명 CORS·리퍼러 없이 하나만 넣는다", async () => {
     const loader = await freshLoader();
     expect(scripts()).toHaveLength(0);
-    expect(loader.readyKakaoShare(SETTINGS)).toBeNull();
+    expect(loader.readyKakaoShare()).toBeNull();
 
-    loader.preloadKakaoShare(KEY, SETTINGS);
-    loader.preloadKakaoShare(KEY, SETTINGS);
-    void loader.prepareKakaoShare(KEY, SETTINGS, 1000);
+    loader.preloadKakaoShare(KEY);
+    loader.preloadKakaoShare(KEY);
 
     expect(scripts()).toHaveLength(1);
     const [script] = scripts();
@@ -74,104 +52,101 @@ describe("카카오 SDK 불러오기와 보내기 전 확인", () => {
     expect(script?.integrity).toBe("sha384-BGX7Wb16GmRFagri4bLJV2DgipVZaU2AI812GZtHtHzzDQJnfHasDXN5houxv45w");
     expect(script?.crossOrigin).toBe("anonymous");
     expect(script?.referrerPolicy).toBe("no-referrer");
+    expect(loader.readyKakaoShare()).toBeNull();
   });
 
-  it("받으면 앱 키로 한 번 초기화하고, 그 뒤로는 기다리지 않고 바로 쓴다", async () => {
+  it("받으면 앱 키로 한 번 초기화하고, 이용자 내용이 없는 고정 메시지로 한 번 확인받은 뒤 준비된다", async () => {
     const loader = await freshLoader();
     const sdk = fakeSdk();
-    const waiting = loader.prepareKakaoShare(KEY, SETTINGS, 1000);
+    loader.preloadKakaoShare(KEY);
     finishLoading(scripts()[0], sdk);
 
-    await expect(waiting).resolves.toBe(sdk);
-    expect(loader.readyKakaoShare(SETTINGS)).toBe(sdk);
-    await expect(loader.prepareKakaoShare(KEY, SETTINGS, 1000)).resolves.toBe(sdk);
+    await vi.waitFor(() => expect(loader.readyKakaoShare()).toBe(sdk));
+    loader.preloadKakaoShare(KEY);
     expect(sdk.init).toHaveBeenCalledTimes(1);
     expect(sdk.init).toHaveBeenCalledWith(KEY);
     expect(scripts()).toHaveLength(1);
+    const origin = window.location.origin;
+    const site = { web_url: `${origin}/`, mobile_web_url: `${origin}/` };
+    expect(sdk.API.request).toHaveBeenCalledTimes(1);
+    expect(sdk.API.request).toHaveBeenCalledWith({
+      url: "/v2/api/kakaolink/talk/template/default",
+      data: {
+        link_ver: "4.0",
+        template_object: {
+          object_type: "feed",
+          content: {
+            title: "반반역",
+            description: "같이 만날 역 정해요",
+            image_url: `${origin}/opengraph-image`,
+            image_width: 1200,
+            image_height: 630,
+            link: site,
+          },
+          buttons: [{ title: "반반역 열기", link: site }],
+        },
+      },
+    });
   });
 
-  it("못 받으면(차단·네트워크·SRI 불일치) null이고 스크립트를 치워, 다음에 누를 때 다시 받는다", async () => {
+  it("못 받으면(차단·네트워크·SRI 불일치) 준비되지 않고 스크립트를 치워, 다시 부르면 다시 받는다", async () => {
     const loader = await freshLoader();
-    const waiting = loader.prepareKakaoShare(KEY, SETTINGS, 1000);
+    loader.preloadKakaoShare(KEY);
     scripts()[0]?.dispatchEvent(new Event("error"));
-
-    await expect(waiting).resolves.toBeNull();
-    expect(loader.readyKakaoShare(SETTINGS)).toBeNull();
-    expect(scripts()).toHaveLength(0);
+    await vi.waitFor(() => expect(scripts()).toHaveLength(0));
+    expect(loader.readyKakaoShare()).toBeNull();
 
     const sdk = fakeSdk();
-    const retry = loader.prepareKakaoShare(KEY, SETTINGS, 1000);
+    loader.preloadKakaoShare(KEY);
     expect(scripts()).toHaveLength(1);
     finishLoading(scripts()[0], sdk);
-    await expect(retry).resolves.toBe(sdk);
+    await vi.waitFor(() => expect(loader.readyKakaoShare()).toBe(sdk));
   });
 
-  it("스크립트는 받았는데 SDK가 없거나 초기화가 실패하면 null", async () => {
+  it("스크립트는 받았는데 SDK가 없거나 초기화가 실패하면 준비되지 않는다", async () => {
     const loader = await freshLoader();
-    const waiting = loader.prepareKakaoShare(KEY, SETTINGS, 1000);
+    loader.preloadKakaoShare(KEY);
     scripts()[0]?.dispatchEvent(new Event("load"));
-    await expect(waiting).resolves.toBeNull();
+    await vi.waitFor(() => expect(scripts()).toHaveLength(0));
 
     const broken = fakeSdk();
     broken.init.mockImplementation(() => {
       throw new Error("Kakao.init: Already initialized");
     });
-    const again = loader.prepareKakaoShare(KEY, SETTINGS, 1000);
+    loader.preloadKakaoShare(KEY);
     finishLoading(scripts()[0], broken);
-    await expect(again).resolves.toBeNull();
-    expect(loader.readyKakaoShare(SETTINGS)).toBeNull();
+    await vi.waitFor(() => expect(scripts()).toHaveLength(0));
+    expect(loader.readyKakaoShare()).toBeNull();
+    expect(broken.API.request).not.toHaveBeenCalled();
   });
 
-  it("한도 안에 못 받으면 null이고, 늦게라도 받으면 다음 누름부터 바로 쓴다", async () => {
-    vi.useFakeTimers();
-    const loader = await freshLoader();
-    const waiting = loader.prepareKakaoShare(KEY, SETTINGS, 3000);
-    await vi.advanceTimersByTimeAsync(3000);
-    await expect(waiting).resolves.toBeNull();
-
-    const sdk = fakeSdk();
-    finishLoading(scripts()[0], sdk);
-    await vi.waitFor(() => expect(loader.readyKakaoShare(SETTINGS)).toBe(sdk));
-  });
-
-  it("카카오가 메시지를 거절하면 null이고, 다음 누름에 다시 확인받는다", async () => {
+  it("카카오가 확인을 거절하면 준비되지 않고, 다시 부르면 SDK는 그대로 두고 확인만 다시 받는다", async () => {
     const loader = await freshLoader();
     const sdk = fakeSdk();
     sdk.API.request.mockRejectedValueOnce({ code: -401 });
-    const first = loader.prepareKakaoShare(KEY, SETTINGS, 1000);
+    loader.preloadKakaoShare(KEY);
     finishLoading(scripts()[0], sdk);
-    await expect(first).resolves.toBeNull();
-    expect(loader.readyKakaoShare(SETTINGS)).toBeNull();
+    await vi.waitFor(() => expect(sdk.API.request).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(loader.readyKakaoShare()).toBeNull();
 
-    await expect(loader.prepareKakaoShare(KEY, SETTINGS, 1000)).resolves.toBe(sdk);
-    expect(loader.readyKakaoShare(SETTINGS)).toBe(sdk);
+    loader.preloadKakaoShare(KEY);
+    await vi.waitFor(() => expect(loader.readyKakaoShare()).toBe(sdk));
     expect(sdk.API.request).toHaveBeenCalledTimes(2);
+    expect(scripts()).toHaveLength(1);
+    expect(sdk.init).toHaveBeenCalledTimes(1);
   });
 
-  it("받아 준 메시지는 다시 확인받지 않고, 내용이 바뀐 메시지는 새로 확인받는다", async () => {
-    const loader = await freshLoader();
-    const sdk = fakeSdk();
-    const first = loader.prepareKakaoShare(KEY, SETTINGS, 1000);
-    finishLoading(scripts()[0], sdk);
-    await expect(first).resolves.toBe(sdk);
-    await expect(loader.prepareKakaoShare(KEY, SETTINGS, 1000)).resolves.toBe(sdk);
-    expect(sdk.API.request).toHaveBeenCalledTimes(1);
-
-    const changed = { ...SETTINGS, content: { ...SETTINGS.content, description: "민수 22분 · 지연 19분" } };
-    expect(loader.readyKakaoShare(changed)).toBeNull();
-    await expect(loader.prepareKakaoShare(KEY, changed, 1000)).resolves.toBe(sdk);
-    expect(sdk.API.request).toHaveBeenCalledTimes(2);
-  });
-
-  it("카카오가 답하지 않으면 한도에서 null", async () => {
-    vi.useFakeTimers();
+  it("카카오가 답하지 않는 동안은 준비되지 않고, 다시 불러도 확인을 겹쳐 보내지 않는다", async () => {
     const loader = await freshLoader();
     const sdk = fakeSdk();
     sdk.API.request.mockReturnValue(new Promise(() => {}));
-    const waiting = loader.prepareKakaoShare(KEY, SETTINGS, 3000);
+    loader.preloadKakaoShare(KEY);
     finishLoading(scripts()[0], sdk);
-    await vi.advanceTimersByTimeAsync(3000);
-    await expect(waiting).resolves.toBeNull();
-    expect(loader.readyKakaoShare(SETTINGS)).toBeNull();
+    await vi.waitFor(() => expect(sdk.API.request).toHaveBeenCalledTimes(1));
+    loader.preloadKakaoShare(KEY);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(sdk.API.request).toHaveBeenCalledTimes(1);
+    expect(loader.readyKakaoShare()).toBeNull();
   });
 });
