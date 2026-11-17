@@ -307,8 +307,17 @@ describe("방 화면", () => {
       label: "평일 낮",
       holidayName: null,
     };
-    /** 결과를 계산한 방의 번호. 방 폴링보다 늦게 오는 결과를 흉내 내려고 방 번호와 따로 둔다. */
-    let resultVersion: number | undefined;
+    /** 참이면 결과·미리보기 요청이 `release()` 전까지 끝나지 않는다(방 폴링보다 늦게 오는 응답). */
+    let holdResults = false;
+    let holdPreviews = false;
+    let held: (() => void)[] = [];
+    const release = () => {
+      holdResults = false;
+      holdPreviews = false;
+      for (const done of held.splice(0)) done();
+    };
+    const later = <T,>(hold: boolean, value: () => T): Promise<T> =>
+      hold ? new Promise((resolve) => held.push(() => resolve(value()))) : Promise.resolve(value());
 
     function resultFor(token: string | null): RecommendResult {
       const participants = roomFor(token).participants;
@@ -332,7 +341,7 @@ describe("방 화면", () => {
         participants,
         timeBasis: WEEKDAY,
         candidates: [candidate(1, "s1q", "동대문역사문화공원", 1349), candidate(2, "v96", "신용산", 1388)],
-        ...(resultVersion === undefined ? {} : { shareVersion: resultVersion }),
+        ...(version === undefined ? {} : { shareVersion: version }),
       };
     }
 
@@ -370,10 +379,14 @@ describe("방 화면", () => {
 
     beforeEach(() => {
       version = 3;
-      resultVersion = 3;
+      holdResults = false;
+      holdPreviews = false;
+      held = [];
       members = [{ id: "m1", token: "tok-1" }];
-      vi.mocked(api.getRoomResult).mockImplementation(async (_id, _query, token) => resultFor(token));
-      vi.mocked(api.getRoomPreview).mockImplementation(async () => previewNow());
+      vi.mocked(api.getRoomResult).mockImplementation((_id, _query, token) =>
+        later(holdResults, () => resultFor(token)),
+      );
+      vi.mocked(api.getRoomPreview).mockImplementation(() => later(holdPreviews, previewNow));
       vi.mocked(api.setDecision).mockImplementation(async (_id, token, body) => {
         decided = body.stationCode
           ? {
@@ -442,7 +455,6 @@ describe("방 화면", () => {
 
     it("번호를 모르는 옛 서버면 미리보기를 부르지 않고 번호 없는 링크와 초대 문구, 정하기는 이 화면에서만", async () => {
       version = undefined;
-      resultVersion = undefined;
       joinedAs("m1", "tok-1");
       const user = userEvent.setup();
       renderScreen();
@@ -467,7 +479,6 @@ describe("방 화면", () => {
 
     it("참여한 사람이 정하면 그 결과의 번호를 보내고, 정한 역 안내와 풀기가 보이며, 풀기는 방의 번호를 보낸다", async () => {
       joinedAs("m1", "tok-1");
-      version = 4; // 결과(번호 3)를 계산한 뒤 누가 이름만 바꿨다
       const user = userEvent.setup();
       renderScreen();
       await user.click((await screen.findAllByRole("button", { name: "이 역으로 정했어요" }))[0] as HTMLElement);
@@ -485,8 +496,63 @@ describe("방 화면", () => {
       });
 
       await user.click(screen.getByRole("button", { name: "정한 역 풀기" }));
-      expect(api.setDecision).toHaveBeenLastCalledWith(ROOM, "tok-1", { stationCode: null, seenVersion: 5 });
+      expect(api.setDecision).toHaveBeenLastCalledWith(ROOM, "tok-1", { stationCode: null, seenVersion: 4 });
       await waitFor(() => expect(screen.queryByRole("heading", { name: /에서 만나요$/ })).toBeNull());
+    });
+
+    it("정한 직후 결과가 아직 옛 번호면 바꾸기를 막고 불러오는 중이라고 알린 뒤, 새 결과가 오면 그 번호로 보낸다", async () => {
+      joinedAs("m1", "tok-1");
+      const user = userEvent.setup();
+      renderScreen();
+      const first = (await screen.findAllByRole("button", { name: "이 역으로 정했어요" }))[0] as HTMLElement;
+      holdResults = true;
+      await user.click(first);
+      expect(await screen.findByRole("heading", { name: "동대문역사문화공원에서 만나요" })).toBeInTheDocument();
+      const change = screen.getByRole("button", { name: "이 역으로 바꾸기" });
+      expect(change).toBeDisabled();
+      expect(screen.getByText("새 결과를 불러오는 중이에요.")).toBeInTheDocument();
+      await user.click(change);
+      expect(api.setDecision).toHaveBeenCalledTimes(1);
+
+      release();
+      await waitFor(() => expect(screen.getByRole("button", { name: "이 역으로 바꾸기" })).toBeEnabled());
+      await user.click(screen.getByRole("button", { name: "이 역으로 바꾸기" }));
+      expect(api.setDecision).toHaveBeenLastCalledWith(ROOM, "tok-1", { stationCode: "v96", seenVersion: 4 });
+    });
+
+    it("방 폴링이 먼저 새 번호를 보면 결과를 바로 다시 불러오고, 그 결과의 번호로 정한다", async () => {
+      joinedAs("m1", "tok-1");
+      const user = userEvent.setup();
+      const { client } = renderScreen();
+      await screen.findAllByRole("button", { name: "이 역으로 정했어요" });
+      version = 4; // 누가 이름을 바꿨다(정함과 무관해 서버는 번호 4로 정하는 것을 받는다)
+      await client.invalidateQueries({ queryKey: ["room", ROOM] });
+      await waitFor(() => expect(api.getRoomResult).toHaveBeenCalledTimes(2));
+      await waitFor(() =>
+        expect(screen.getAllByRole("button", { name: "이 역으로 정했어요" })[0] as HTMLElement).toBeEnabled(),
+      );
+      await user.click(screen.getAllByRole("button", { name: "이 역으로 정했어요" })[0] as HTMLElement);
+      expect(api.setDecision).toHaveBeenCalledWith(ROOM, "tok-1", { stationCode: "s1q", seenVersion: 4 });
+    });
+
+    it("결과가 먼저 새 번호(다른 사람이 정함)를 보면 방을 다시 불러와 그 정함을 보여 준 뒤에야 바꾸게 한다", async () => {
+      joinedAs("m1", "tok-1");
+      const user = userEvent.setup();
+      const { client } = renderScreen();
+      await screen.findAllByRole("button", { name: "이 역으로 정했어요" });
+      decided = {
+        stationCode: "s1q",
+        stationName: "동대문역사문화공원",
+        decidedBy: "h1",
+        decidedAt: "2026-11-17T10:00:00Z",
+      };
+      version = 4;
+      await client.invalidateQueries({ queryKey: ["room-result", ROOM] }); // 방은 아직 번호 3
+      expect(await screen.findByRole("heading", { name: "동대문역사문화공원에서 만나요" })).toBeInTheDocument();
+      const change = await screen.findByRole("button", { name: "이 역으로 바꾸기" });
+      await waitFor(() => expect(change).toBeEnabled());
+      await user.click(change);
+      expect(api.setDecision).toHaveBeenCalledWith(ROOM, "tok-1", { stationCode: "v96", seenVersion: 4 });
     });
 
     it("그사이 방이 바뀌어 거절되면(409 ROOM_CHANGED) 방·결과·미리보기를 다시 불러오고 다시 고르게 안내한다", async () => {

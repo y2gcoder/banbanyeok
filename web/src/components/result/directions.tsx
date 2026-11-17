@@ -22,7 +22,8 @@ export type RoomChoice =
       kind: "member";
       decidedCode: string | null;
       pending: boolean;
-      decide: (stationCode: string, onApplied: () => void) => void;
+      /** 보이는 결과가 지금 방의 번호로 계산됐을 때만 있다. 새 결과를 받는 동안은 null(옛 번호로 보내면 서버가 거절한다). */
+      decide: ((stationCode: string, onApplied: () => void) => void) | null;
     };
 
 /** "이 역으로 정했어요" 이벤트에 필요한 화면 맥락(모드·인원·누가 보는 화면인지). 출발역·이름은 담지 않는다. */
@@ -69,12 +70,13 @@ function RoomDecideButton({
   onApplied: () => void;
 }) {
   const decided = room.decidedCode === stationCode;
+  const { decide } = room;
   return (
     <>
       <button
         type="button"
-        onClick={() => room.decide(stationCode, onApplied)}
-        disabled={decided || room.pending}
+        onClick={() => decide?.(stationCode, onApplied)}
+        disabled={decided || room.pending || !decide}
         aria-pressed={decided}
         className={cn(chooseButton, decided && "bg-ink/80 disabled:opacity-100")}
       >
@@ -82,7 +84,9 @@ function RoomDecideButton({
         {decided ? "정한 역이에요" : room.decidedCode ? "이 역으로 바꾸기" : "이 역으로 정했어요"}
       </button>
       {decided ? null : (
-        <p className="text-center text-[13px] text-muted-foreground">정하면 방 사람 모두에게 보여요.</p>
+        <p className="text-center text-[13px] text-muted-foreground">
+          {decide ? "정하면 방 사람 모두에게 보여요." : "새 결과를 불러오는 중이에요."}
+        </p>
       )}
     </>
   );

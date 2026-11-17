@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RotateCwIcon } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ChoiceContext, RoomChoice } from "@/components/result/directions";
@@ -42,9 +42,10 @@ type Props = {
 
 type Pick = { mode: Mode; favorId: string | null };
 
+/** `currentVersion`은 보이는 결과가 지금 방의 번호로 계산됐을 때 그 번호. 아니면(새 결과를 받는 중) undefined. */
 function roomChoiceOf(
   decision: RoomDecisionMode,
-  seenVersion: number | undefined,
+  currentVersion: number | undefined,
   decidedCode: string | null,
 ): RoomChoice | undefined {
   switch (decision.kind) {
@@ -54,12 +55,14 @@ function roomChoiceOf(
       return { kind: "viewer" };
     case "member": {
       const { control } = decision;
-      if (seenVersion === undefined) return { kind: "viewer" };
       return {
         kind: "member",
         decidedCode,
         pending: control.pending,
-        decide: (stationCode, onApplied) => control.decide(stationCode, seenVersion, onApplied),
+        decide:
+          currentVersion === undefined
+            ? null
+            : (stationCode, onApplied) => control.decide(stationCode, currentVersion, onApplied),
       };
     }
   }
@@ -81,6 +84,7 @@ export function RoomResult({
   renderAfter,
 }: Props) {
   const panelId = useId();
+  const queryClient = useQueryClient();
   // 배려 대상 알약은 좁은 칸이라 짧은 이름(shortLabel). 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로.
   const people = room.participants.map((p, index) => ({
     index,
@@ -128,10 +132,18 @@ export function RoomResult({
     });
   }, [data, view, isPlaceholder, roomId, room.roomHash]);
 
-  // 결과 카드에서 정할 때는 그 결과를 계산한 방의 번호를 보낸다(그 뒤 정한 역 칸이 바뀌었으면 서버가 409로 거절한다).
+  // 결과 카드에서 정할 때는 보이는 결과의 번호를 보낸다. 그 번호가 방(정한 역 안내)과 같을 때만 정하게 한다: 정한 직후처럼 결과가
+  // 옛 번호면 서버가 409로 거절하고, 결과가 더 새로우면 화면에 아직 없는 다른 사람의 정함을 덮어쓴다.
+  const shownVersion = isPlaceholder ? undefined : data?.shareVersion;
+  const roomVersion = room.shareVersion;
+  useEffect(() => {
+    if (shownVersion === undefined || roomVersion === undefined || shownVersion === roomVersion) return;
+    if (shownVersion < roomVersion) void query.refetch({ cancelRefetch: false });
+    else void queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+  }, [shownVersion, roomVersion, query.refetch, queryClient, roomId]);
   const roomChoice = roomChoiceOf(
     decision,
-    data?.shareVersion ?? room.shareVersion,
+    shownVersion !== undefined && shownVersion === roomVersion ? shownVersion : undefined,
     room.decision?.stationCode ?? null,
   );
   const choice: ChoiceContext = {
