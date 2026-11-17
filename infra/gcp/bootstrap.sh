@@ -277,6 +277,8 @@ gr run jobs add-iam-policy-binding "$JOB_BACKUP" --region="$REGION" --member="$d
 gr artifacts repositories add-iam-policy-binding "$AR_REPO" --location="$REGION" --member="$deployer" \
   --role=roles/artifactregistry.writer
 gr storage buckets add-iam-policy-binding "gs://$ARTIFACT_BUCKET" --member="$deployer" --role=roles/storage.objectUser
+# 백업 신선도 점검(backup-freshness.yml)이 최신 백업 이름·크기·시각만 목록으로 읽는다. 목록 전용이라 객체 내용(덤프)은 읽지 못한다.
+gr storage buckets add-iam-policy-binding "gs://$BACKUP_BUCKET" --member="$deployer" --role=roles/storage.legacyBucketReader
 # 리비전·Job이 쓸 실행 계정을 지정하려면 그 계정에 대한 actAs가 필요하다(계정 단위).
 gr iam service-accounts add-iam-policy-binding "$(email "$SA_RUNTIME")" --member="$deployer" \
   --role=roles/iam.serviceAccountUser

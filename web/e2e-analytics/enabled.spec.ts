@@ -15,6 +15,13 @@ const SDK_EVENTS = ["$exception", "$web_vitals"];
 
 type Captured = { event: string; properties: Record<string, unknown> };
 
+/** SDK가 이벤트마다 만드는 무작위 ID. 3글자 역 코드와 우연히 겹칠 수 있어(예: `k3ar3rttz4nfmapi`) 부분 문자열 검사에서만 뺀다. */
+const RANDOM_ID_KEYS = ["$insert_id"];
+
+function withoutRandomIds(properties: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(properties).filter(([key]) => !RANDOM_ID_KEYS.includes(key)));
+}
+
 type Probe = {
   /** 같은 출처 밖으로 나간 모든 요청("메서드 주소"). */
   outside: string[];
@@ -206,7 +213,7 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
       if (/url|referrer/i.test(key) && typeof value === "string") expect(value, `${event}.${key}`).not.toMatch(/[?#]/);
     }
     const { meeting_station_code: _meeting, top1_station_code: _top, ...rest } = properties;
-    const text = JSON.stringify(rest);
+    const text = JSON.stringify(withoutRandomIds(rest));
     for (const needle of [...originCodes, "강남", "홍대", "민수", "o=", "66-87"]) {
       expect(text, `${event} 속성에 "${needle}"`).not.toContain(needle);
     }
@@ -701,8 +708,9 @@ test("오류 추적: 동의 전 오류는 요청 0건, 동의한 뒤 오류 1건
   const text = JSON.stringify(exception);
   expect(text).toContain("after-consent");
   expect(text).not.toContain("before-consent");
+  const scanned = JSON.stringify({ ...exception, properties: withoutRandomIds(exception?.properties ?? {}) });
   for (const needle of [FAKE_ROOM, ...Object.values(FAKE_TOKENS), "k3a", "ryf", "o=", "%EB%AF%BC", "민수", "강남"]) {
-    expect(text, `$exception에 "${needle}"`).not.toContain(needle);
+    expect(scanned, `$exception에 "${needle}"`).not.toContain(needle);
   }
   expect(exception?.properties).toMatchObject({ platform: "web", $geoip_disable: true });
   expect(String(exception?.properties.$current_url)).toMatch(/\/r\/\[room\]$/);

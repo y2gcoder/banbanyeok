@@ -1,0 +1,86 @@
+# DB 백업 신선도 점검. 주 1회 백업(Cloud Scheduler db-backup-weekly, 월요일 03:17 KST)이 조용히 멈추면(스케줄러 일시 중지·삭제 등)
+# 실패 실행 알림(Cloud Monitoring)은 울리지 않는다. 이 워크플로가 매일 가장 최근 백업의 나이를 보고, 없거나 8일보다 오래됐으면 **실패**한다.
+# main의 Actions 결과는 GitHub Slack 앱으로 운영자 채널에 가므로 이 실패가 곧 알림이다(웹훅 없음).
+# 덤프는 받지 않는다. 객체 이름·크기·생성 시각만 목록으로 읽는다(github-deployer의 버킷 legacyBucketReader는 목록 전용, infra/gcp/bootstrap.sh).
+# 예약 실행은 기본 브랜치(main)에서만 돌아 WIF 조건(main 한정)과 맞는다. 설명: docs/setup/p8a-notes.md
+name: backup-freshness
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 09:00 KST. 월요일 03:17 KST 백업과 겹치지 않는다
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: backup-freshness
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 필요한 변수 확인
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          DEPLOY_SA: ${{ vars.GCP_DEPLOY_SA }}
+        run: |
+          missing=0
+          for name in PROJECT WIF_PROVIDER DEPLOY_SA; do
+            if [ -z "${!name}" ]; then echo "::error::저장소 변수가 없습니다: $name"; missing=1; fi
+          done
+          exit "$missing"
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - name: 가장 최근 백업 나이 확인
+        env:
+          BUCKET: ${{ vars.GCP_PROJECT_ID }}-backups
+          MAX_AGE_DAYS: '8'
+        run: |
+          token="$(gcloud auth print-access-token)"
+          response="$(curl -fsS -H "Authorization: Bearer ${token}" \
+            --get "https://storage.googleapis.com/storage/v1/b/${BUCKET}/o" \
+            --data-urlencode "prefix=db/" \
+            --data-urlencode "fields=items(name,size,timeCreated)" \
+            --data-urlencode "maxResults=1000")" || {
+            echo "::error::백업 버킷 목록을 읽지 못했습니다(권한·버킷 이름 확인: gs://${BUCKET}/db/)"
+            exit 1
+          }
+
+          report="$(jq -r --argjson max "$MAX_AGE_DAYS" '
+            [(.items // [])[]
+              | select(.name | endswith(".dump"))
+              | {name, size: (.size | tonumber),
+                 age: ((now - (.timeCreated | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601)) / 86400)}]
+            | sort_by(.age) as $objs
+            | if ($objs | length) == 0 then "NONE"
+              else
+                ($objs[:5][] | "\(.name)\t\(.size) bytes\t\(.age * 10 | floor / 10) days old"),
+                (if $objs[0].age > $max then "STALE \($objs[0].age * 10 | floor / 10)" else "FRESH" end)
+              end' <<<"$response")"
+
+          verdict="$(tail -n1 <<<"$report")"
+          echo "gs://${BUCKET}/db/ 최신 백업(최대 5개, 새것부터)"
+          sed '$d' <<<"$report"
+
+          case "$verdict" in
+            NONE)
+              echo "::error::gs://${BUCKET}/db/ 에 백업(.dump)이 하나도 없습니다. Cloud Scheduler db-backup-weekly와 Cloud Run Job db-backup을 확인하세요."
+              exit 1 ;;
+            STALE*)
+              echo "::error::가장 최근 백업이 ${verdict#STALE }일 전입니다(허용 ${MAX_AGE_DAYS}일). 주 1회 백업이 멈췄을 수 있습니다: Cloud Scheduler db-backup-weekly(일시 중지·삭제 여부)와 db-backup Job 실행 기록을 확인하세요."
+              exit 1 ;;
+            FRESH)
+              echo "OK: 가장 최근 백업이 ${MAX_AGE_DAYS}일 이내입니다." ;;
+            *)
+              echo "::error::점검 결과를 해석하지 못했습니다."
+              exit 1 ;;
+          esac
