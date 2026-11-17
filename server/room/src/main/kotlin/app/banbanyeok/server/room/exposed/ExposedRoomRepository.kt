@@ -164,6 +164,8 @@ public class ExposedRoomRepository(
         activity: Activity,
     ): Boolean =
         inTransaction {
+            val favor = (change.favorParticipantId as? Change.Set)?.value
+            if (favor != null && !lockedRoomHas(roomId, favor)) return@inTransaction false
             val updated =
                 RoomsTable.update({
                     if (change.onlyWithoutMeetingTime) {
@@ -262,6 +264,25 @@ public class ExposedRoomRepository(
             it[joinedAt] = participant.joinedAt
             it[updatedAt] = participant.updatedAt
         }
+    }
+
+    /**
+     * 방 행을 잠근 뒤 참여자를 본다. 나가기는 참여자 트리거가 같은 방 행을 고치므로 이 잠금과 줄을 선다. 나가기가 먼저 커밋되면 이 확인이
+     * 그 사람이 없음을 보고, 나중이면 나가기가 우대 대상을 비운다. 어느 쪽이든 나간 사람이 우대 대상으로 남지 않는다.
+     */
+    private fun lockedRoomHas(
+        roomId: String,
+        participantId: String,
+    ): Boolean {
+        RoomsTable
+            .select(RoomsTable.id)
+            .where { RoomsTable.id eq roomId }
+            .forUpdate()
+            .singleOrNull() ?: return false
+        return ParticipantsTable
+            .select(ParticipantsTable.pid)
+            .where { (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq participantId) }
+            .any()
     }
 
     private fun touch(

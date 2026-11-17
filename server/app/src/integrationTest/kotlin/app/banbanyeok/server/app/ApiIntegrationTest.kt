@@ -261,6 +261,43 @@ class ApiIntegrationTest :
         }
 
         describe("sharing a room and deciding the meeting station") {
+            it("previews a favor room whose stored favor target already left by favoring the first participant") {
+                integration { api, origins ->
+                    val created =
+                        parse(
+                            api
+                                .call(
+                                    HttpMethod.Post,
+                                    "/v1/rooms",
+                                    """{"mode":"favor","favorTarget":"host","host":{"nickname":"민수","originCode":"${origins[0]}"}}""",
+                                    expected = HttpStatusCode.Created,
+                                ).bodyAsText(),
+                        )
+                    val roomId = created.str("roomId")
+                    val room = "/v1/rooms/$roomId"
+                    api.call(
+                        HttpMethod.Post,
+                        "$room/participants",
+                        """{"nickname":"지연","originCode":"${origins.last()}"}""",
+                        expected = HttpStatusCode.Created,
+                    )
+                    // 이 수정 전의 서버는 나간 사람을 우대 대상으로 저장할 수 있었다. 그 행이 남아 있다.
+                    TestDatabase.dataSource.connection.use { connection ->
+                        connection.prepareStatement("UPDATE rooms SET favor_pid = 'gone00' WHERE id = ?").use {
+                            it.setString(1, roomId)
+                            it.executeUpdate()
+                        }
+                    }
+                    val view = parse(api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK).bodyAsText())
+                    view.jsonObject["favorTarget"] shouldBe JsonNull
+                    val preview =
+                        parse(api.call(HttpMethod.Get, "$room/preview", expected = HttpStatusCode.OK).bodyAsText())
+                    preview.jsonObject
+                        .getValue("basis")
+                        .str("favorLabel") shouldBe "민수"
+                }
+            }
+
             it("moves the preview from invite to result to decided and refuses a decision from a stale screen") {
                 integration { api, origins ->
                     val (a, b, c) = Triple(origins[0], origins[origins.size / 2], origins.last())

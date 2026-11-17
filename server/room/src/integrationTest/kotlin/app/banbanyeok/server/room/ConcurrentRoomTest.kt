@@ -4,6 +4,7 @@ import app.banbanyeok.server.room.exposed.ExposedRoomRepository
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -69,6 +70,24 @@ class ConcurrentRoomTest :
                     readers.awaitAll()
                 }
                 withClue("race $n") { (seen - existed).shouldBeEmpty() }
+            }
+        }
+
+        it("never leaves the favor target pointing at someone who left") {
+            repeat(RACES) { n ->
+                val room = aRoom(freshId())
+                rooms.create(room, aParticipant("host01"))
+                rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
+                val toLeaver = RoomChange(mode = RoomMode.FAVOR, favorParticipantId = Change.Set("pid002"))
+                coroutineScope {
+                    listOf(
+                        async(pool) { rooms.updateRoom(room.id, toLeaver, activity(2)) },
+                        async(pool) { rooms.removeParticipant(room.id, "pid002", activity(2)) },
+                    ).awaitAll()
+                }
+                val stored = rooms.find(room.id).shouldNotBeNull()
+                val favor = stored.room.favorParticipantId ?: return@repeat
+                withClue("race $n") { stored.participants.map { it.id } shouldContain favor }
             }
         }
     })

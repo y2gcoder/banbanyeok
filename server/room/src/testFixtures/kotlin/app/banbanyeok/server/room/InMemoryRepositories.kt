@@ -107,8 +107,11 @@ class InMemoryRoomRepository : RoomRepository {
         activity: Activity,
     ): Boolean =
         lock.withLock {
-            val room = rooms[roomId]?.room ?: return@withLock false
+            val stored = rooms[roomId] ?: return@withLock false
+            val room = stored.room
             if (change.onlyWithoutMeetingTime && room.meetingTime != null) return@withLock false
+            val favor = (change.favorParticipantId as? Change.Set)?.value
+            if (favor != null && stored.participants.none { it.id == favor }) return@withLock false
             write(roomId) {
                 it.copy(
                     room =

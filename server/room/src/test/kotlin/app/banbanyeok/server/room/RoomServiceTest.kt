@@ -508,6 +508,38 @@ class RoomServiceTest :
             }
         }
 
+        describe("favor target races") {
+            it("rejects a favor target who left after the room was read and keeps the room as it was") {
+                roomTest {
+                    val created = service.create(command())
+                    val friend = service.join(created.roomId, host("130"), null)
+                    // 서비스가 방을 읽은 뒤, 저장하기 전에 우대 대상이 나간다.
+                    val racing =
+                        object : RoomRepository by rooms {
+                            override suspend fun updateRoom(
+                                roomId: String,
+                                change: RoomChange,
+                                activity: Activity,
+                            ): Boolean {
+                                rooms.removeParticipant(roomId, friend.participantId, activity)
+                                return rooms.updateRoom(roomId, change, activity)
+                            }
+                        }
+                    val raced = RoomService(racing, anonUsers, tokens, ids, stations, clock)
+                    shouldFailWith(RoomError.FAVOR_TARGET_UNKNOWN) {
+                        raced.updateRoom(
+                            created.roomId,
+                            created.hostToken,
+                            RoomPatch(mode = RoomMode.FAVOR, favorTarget = friend.participantId),
+                        )
+                    }
+                    val stored = rooms.find(created.roomId)!!.room
+                    stored.mode shouldBe RoomMode.FAIR
+                    stored.favorParticipantId.shouldBeNull()
+                }
+            }
+        }
+
         describe("recording the outcome") {
             it("accepts a participant's answer and rejects the host token and bad station codes") {
                 roomTest {

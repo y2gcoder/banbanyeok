@@ -183,10 +183,13 @@ public class RoomService(
             )
         val expiresAt = ExpiryPolicy.expiresAt(stored.room.createdAt, now, meetingDate)
         if (!rooms.updateRoom(roomId, change, Activity(now, expiresAt))) {
-            if (change.onlyWithoutMeetingTime && rooms.find(roomId) != null) {
-                reject(RoomError.INVALID_MEETING_BAND, "meetingBand가 meetingTime의 시간대와 다릅니다")
+            // 방이 남아 있는데 바뀌지 않았다면 저장 때 다시 확인한 두 조건(우대 대상, 시각 없는 시간대) 중 하나에 걸렸다.
+            val current = rooms.find(roomId) ?: reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
+            val favor = (change.favorParticipantId as? Change.Set)?.value
+            if (favor != null && current.participants.none { it.id == favor }) {
+                reject(RoomError.FAVOR_TARGET_UNKNOWN, "우대 대상이 참여자에 없습니다")
             }
-            reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
+            reject(RoomError.INVALID_MEETING_BAND, "meetingBand가 meetingTime의 시간대와 다릅니다")
         }
         return viewOf(loadActive(roomId, now), null)
     }
@@ -308,7 +311,8 @@ public class RoomService(
         return RoomView(
             id = room.id,
             mode = room.mode,
-            favorParticipantId = room.favorParticipantId,
+            // 옛 서버가 나간 사람을 우대 대상으로 남긴 방이 있다. 우대 대상이 없는 것으로 보이고 결과는 첫 참가자를 우대한다.
+            favorParticipantId = room.favorParticipantId?.takeIf { id -> stored.participants.any { it.id == id } },
             locked = room.locked || full,
             meetingDate = room.meetingDate,
             meetingTime = room.meetingTime,

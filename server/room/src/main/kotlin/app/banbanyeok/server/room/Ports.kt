@@ -75,6 +75,7 @@ public interface RoomRepository {
         activity: Activity,
     ): Boolean
 
+    /** 우대 대상을 참여자로 바꾸는데 그 사람이 방에 없으면(읽은 뒤 나갔다) 아무것도 바꾸지 않는다. 바뀐 행이 있으면 true. */
     public suspend fun updateRoom(
         roomId: String,
         change: RoomChange,

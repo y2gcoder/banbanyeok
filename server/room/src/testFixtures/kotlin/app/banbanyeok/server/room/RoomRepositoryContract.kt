@@ -45,6 +45,7 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
         addingParticipants(newRepositories)
         changingParticipants(newRepositories)
         changingRooms(newRepositories)
+        favorTargets(newRepositories)
         meetingBands(newRepositories)
         removingRooms(newRepositories)
         anonUsers(newRepositories)
@@ -333,6 +334,22 @@ private fun DescribeSpecRootScope.anonUsers(repos: () -> RepositoryPair) {
             repositories.anonUsers.findByDeviceHash(stale.deviceHash).shouldBeNull()
             repositories.anonUsers.findByDeviceHash(referenced.deviceHash).shouldNotBeNull()
             repositories.anonUsers.findByDeviceHash(fresh.deviceHash).shouldNotBeNull()
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.favorTargets(repos: () -> RepositoryPair) {
+    describe("updateRoom favor target") {
+        it("refuses a favor target who is not in the room and leaves the room as it was") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            rooms.create(room, aParticipant("host01"))
+            rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
+            rooms.removeParticipant(room.id, "pid002", activity(2))
+            val before = rooms.find(room.id)
+            val toLeaver = RoomChange(mode = RoomMode.FAVOR, favorParticipantId = Change.Set("pid002"))
+            rooms.updateRoom(room.id, toLeaver, activity(3)) shouldBe false
+            rooms.find(room.id) shouldBe before
         }
     }
 }
