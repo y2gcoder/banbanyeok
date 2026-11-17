@@ -12,3 +12,10 @@ allowBuilds:
   workerd: true
   # core-js: posthog-js의 전이 의존성. 설치 스크립트는 후원 안내 문구만 출력하므로 막는다(P7).
   core-js: false
+
+# 보안 알림(Dependabot glob #9 #10, minimatch #11) 해소. 상위(@opennextjs/cloudflare 1.20.17,
+# @node-minify/core 10.x)는 게시 7일 미만이거나 glob@13을 그대로 써서 알림이 남으므로,
+# 취약 범위에만 걸리도록 선택자를 좁혀 패치판으로 올린다. 상위가 패치판을 받으면 이 블록을 지운다.
+overrides:
+  "glob@>=9.0.0 <14.0.2": "^14.0.4"
+  "minimatch@>=7.0.0 <11.0.1": "^11.0.5"
