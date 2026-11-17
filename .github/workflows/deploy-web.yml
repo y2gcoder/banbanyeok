@@ -126,8 +126,10 @@ jobs:
           if [ -n "$SITE_DOMAIN" ]; then export BASE_URL="https://$SITE_DOMAIN"; else export BASE_URL="$WORKERS_DEV_URL"; fi
           INTERVAL=30 MAX_WAIT=1500 bash scripts/wait-data-version.sh
 
-      # 배포된 주소를 직접 확인한다(도메인이 있으면 정식 주소 + www·workers.dev 리디렉트).
+      # 배포된 주소를 직접 확인한다(도메인이 있으면 정식 주소 + www·workers.dev 리디렉트). 카카오 키가 있으면 카카오가 이 출처의 공유를 받는지도.
       - name: 스모크 테스트
+        env:
+          KAKAO_JS_KEY: ${{ vars.KAKAO_JS_KEY }}
         run: |
           if [ -n "$SITE_DOMAIN" ]; then
             export BASE_URL="https://$SITE_DOMAIN" REDIRECT_FROM="http://$SITE_DOMAIN https://www.$SITE_DOMAIN $WORKERS_DEV_URL"

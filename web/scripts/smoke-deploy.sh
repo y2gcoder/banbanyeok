@@ -4,6 +4,8 @@
 #   REDIRECT_FROM      공백으로 구분한 주소들: BASE_URL로 301 이동해야 한다(선택)
 #   SERVER_CONNECTED   1이면 /api/healthz가 200 ok여야 한다. 0이면 503 UPSTREAM_NOT_CONFIGURED여야 한다
 #   SITE_INDEXABLE     1이면 robots.txt가 sitemap을 안내해야 하고, 0이면 전체 차단이어야 한다
+#   KAKAO_JS_KEY       카카오 JavaScript 키(선택, 공개 값). 있으면 CSP가 카카오 SDK를 열고, 카카오가 이 키와 BASE_URL 출처의 공유 메시지를
+#                      받는지 확인한다(아래 "카카오톡 공유")
 #   SITE_URL           정식 주소(선택). 있으면 /r/new·/r/<가짜 ID>·/result?…의 og:image가 이 주소로 시작해야 하고(서버 연결과 무관),
 #                      서버가 연결됐으면 /s의 og:image도 이 주소로 시작하고 그 주소가 200 image/png여야 한다
 # 새 도메인·인증서는 몇 분 걸릴 수 있어 첫 요청은 재시도한다.
@@ -253,6 +255,33 @@ if [ "${SERVER_CONNECTED:-0}" = "1" ] && [ -n "${pair_path:-}" ]; then
   else
     bad "/s og:image가 정식 주소가 아님: ${og_image:-없음} (기대: ${SITE_URL%/}/s/og?…)"
   fi
+fi
+
+# 카카오톡 공유: 휴대폰의 카카오 SDK는 카카오톡을 열기 전에 이 템플릿 확인을 받고, 앱도 보내기 전에 같은 확인을 받는다. 앱 키·도메인
+# 설정이 틀리면(-401 앱 키 없음, -402 등록 안 된 도메인 등) 이 배포의 카카오 공유는 모두 시스템 공유 시트로 가므로 여기서 실패로 알린다.
+# 브라우저처럼 Origin과 SDK의 KA 헤더(출처 포함)를 붙인다. 응답 본문에는 앱 키가 담기므로 code만 보인다.
+if [ -n "${KAKAO_JS_KEY:-}" ]; then
+  fetch "$BASE_URL/"
+  if grep -qiE '^content-security-policy:.*https://t1\.kakaocdn\.net/kakao_js_sdk/' <<<"$headers"; then
+    pass "CSP가 카카오 SDK를 연다(빌드에 카카오 키가 있음)"
+  else
+    bad "CSP에 카카오 SDK 주소가 없습니다(빌드에 NEXT_PUBLIC_KAKAO_JS_KEY가 박히지 않음)"
+  fi
+  site_origin="${origin_header#Origin: }"
+  template="$(jq -nc --arg u "$BASE_URL/" --arg i "$BASE_URL/opengraph-image" \
+    '{object_type:"feed",content:{title:"반반역 스모크",image_url:$i,link:{web_url:$u,mobile_web_url:$u}},buttons:[{title:"열기",link:{web_url:$u,mobile_web_url:$u}}]}')"
+  ka="sdk/2.8.4 os/javascript sdk_type/javascript origin/$(jq -rn --arg o "$site_origin" '$o|@uri')"
+  status="$(curl -sS --max-time 20 -o "$api_body" -w '%{http_code}' -G "https://kapi.kakao.com/v2/api/kakaolink/talk/template/default" \
+    -H "Authorization: KakaoAK $KAKAO_JS_KEY" -H "$origin_header" -H "KA: $ka" \
+    --data-urlencode "link_ver=4.0" --data-urlencode "template_object=$template" 2>/dev/null || echo 000)"
+  kakao_code="$(jq -r '.code // "-"' "$api_body" 2>/dev/null || echo -)"
+  if [ "$status" = "200" ]; then
+    pass "카카오가 이 앱 키·출처($site_origin)의 공유 메시지를 받는다"
+  else
+    bad "카카오 템플릿 확인 status=$status code=${kakao_code:--} (앱 키와 카카오 앱의 웹 도메인에 $site_origin 이 있는지 확인)"
+  fi
+else
+  echo "warn 카카오톡 공유 확인 건너뜀(KAKAO_JS_KEY 없음)"
 fi
 
 # 정식 주소로의 리디렉트
