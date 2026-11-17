@@ -64,13 +64,21 @@ function leadingTitle(station: string, mode: Mode, favorLabel: string | null): s
   return favorLabel ? `지금은 ${favorLabel} 쪽으로 ${subject} 좋아요` : `지금은 ${subject} 제일 나아요`;
 }
 
+/** 그림에 그릴 이름. 글꼴에 남는 글자가 없으면 순번("참가자 N", `sharedCardData`와 같은 규칙). */
+const safeName = (label: string, index: number) => ogSafeName(label, `참가자 ${index + 1}`);
+
+/** 배려 대상·정한 사람은 서버가 짧은 이름만 주므로, 그 이름의 줄과 같은 순번으로 그린다. */
+function cardName(preview: Computed, label: string): string {
+  return safeName(label, preview.station.times.findIndex((t) => t.label === label));
+}
+
 function card(preview: Computed, suffix: string, modeLine: string, footer?: SharedCardData["footer"]): SharedCardData {
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
   return {
     stationName: preview.station.stationName,
     suffix,
     people: preview.station.times.map((t, index) => ({
-      name: ogSafeName(t.label, `참가자 ${index + 1}`),
+      name: safeName(t.label, index),
       minutes: t.seconds === null ? null : minutesFromSeconds(t.seconds),
       favored: favored !== null && t.label === favored,
     })),
@@ -89,7 +97,7 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomSha
         `아직이면 출발역 넣어 주세요${SEP}${times}`,
       ]
     : [`${stationName}${OG_TEXT.sharedSuffix}`, `${times}${SEP}${basisLine}`];
-  const favorSafe = preview.basis.favorLabel === null ? null : ogSafeName(preview.basis.favorLabel, "");
+  const favorName = preview.basis.favorLabel === null ? null : cardName(preview, preview.basis.favorLabel);
   return {
     stage: "result",
     preview: { title, description },
@@ -97,7 +105,7 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomSha
     card: card(
       preview,
       OG_TEXT.sharedSuffix,
-      modeSentence(preview.basis.mode, favorSafe || null) + basisSuffix(preview.room.timeBasis),
+      modeSentence(preview.basis.mode, favorName) + basisSuffix(preview.room.timeBasis),
     ),
   };
 }
@@ -108,7 +116,7 @@ function decidedCopy(preview: Extract<RoomPreview, { stage: "decided" }>): RoomS
   const decided = (name: string) => `${withJosa(name, "이/가")}${OG_TEXT.decidedBy}`;
   const title = `${preview.station.stationName}${OG_TEXT.decidedSuffix}`;
   const description = [decided(preview.decidedBy), when, timesText(preview)].filter(Boolean).join(SEP);
-  const by = decided(ogSafeName(preview.decidedBy, "참가자"));
+  const by = decided(cardName(preview, preview.decidedBy));
   const longest = Math.max(...preview.station.times.flatMap((t) => (t.seconds === null ? [] : [t.seconds])));
   const sub = when ?? (Number.isFinite(longest) ? `${OG_TEXT.longestPrefix}${formatSeconds(longest)}` : "");
   return {

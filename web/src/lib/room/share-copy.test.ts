@@ -170,6 +170,26 @@ describe("방 공유 문구", () => {
     expect(done.card?.people.map((p) => p.favored)).toEqual([false, false, false]);
   });
 
+  it("글꼴에 남는 글자가 없는 이름(이모지만)이 배려 대상·정한 사람이면 그림의 기준 줄도 줄과 같은 '참가자 N'이다", () => {
+    const times = [
+      { label: "민수", seconds: 600 },
+      { label: "🎂", seconds: 700 },
+      { label: "🍕", seconds: 800 },
+    ];
+    const station = { stationCode: "s1q", stationName: "신촌", times };
+    const favor = roomShareCopy(result({ station, basis: { mode: "favor", favorLabel: "🎂" } }));
+    expect(favor.card?.people.map((p) => p.name)).toEqual(["민수", "참가자 2", "참가자 3"]);
+    expect(favor.card?.modeLine).toBe("참가자 2 쪽으로 고름");
+    const done = roomShareCopy(decided({ station, decidedBy: "🍕", room: room() }));
+    expect(done.card?.modeLine).toBe("참가자 3이 정했어요");
+    expect(done.card?.footer?.main).toBe("참가자 3이 정했어요");
+    const second = roomShareCopy(decided({ station, decidedBy: "🎂", room: room() }));
+    expect(second.card?.footer?.main).toBe("참가자 2가 정했어요");
+    const twins = [times[1], times[1]].flatMap((t) => (t ? [t] : []));
+    const same = roomShareCopy(result({ station: { ...station, times: twins } }));
+    expect(same.card?.people.map((p) => p.name)).toEqual(["참가자 1", "참가자 2"]);
+  });
+
   it("출발역 이름은 서버가 주지 않으므로 어떤 문구에도 나올 수 없다(숨긴 사람은 '참가자 N')", () => {
     for (const preview of [result(), decided(), result({ room: room({ canJoin: false }) })]) {
       const text = JSON.stringify(roomShareCopy(preview));
