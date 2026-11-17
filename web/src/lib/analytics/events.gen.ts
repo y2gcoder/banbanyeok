@@ -1,5 +1,5 @@
 // 생성 파일: contracts/events.json에서 만든다(pnpm gen:events). 직접 고치지 않는다.
-export const EVENTS_SCHEMA_VERSION = 4;
+export const EVENTS_SCHEMA_VERSION = 5;
 
 export type PropertySpec =
   | { readonly type: "string"; readonly required: boolean }
@@ -71,6 +71,7 @@ export interface EventProperties {
     channel: "kakao" | "copy" | "system";
     link_type: "url_state" | "room";
     room_hash?: string;
+    room_stage?: "collecting" | "result" | "decided";
   };
   link_opened: {
     link_type: "url_state" | "room";
@@ -153,6 +154,7 @@ export const EVENT_SPECS = {
     channel: { type: "enum", required: true, values: ["kakao", "copy", "system"] },
     link_type: { type: "enum", required: true, values: ["url_state", "room"] },
     room_hash: { type: "string", required: false },
+    room_stage: { type: "enum", required: false, values: ["collecting", "result", "decided"] },
   },
   link_opened: {
     link_type: { type: "enum", required: true, values: ["url_state", "room"] },

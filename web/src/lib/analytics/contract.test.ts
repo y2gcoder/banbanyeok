@@ -118,6 +118,18 @@ describe("속성 검증(실행 시)", () => {
     );
   });
 
+  it("방 링크 공유는 미리보기 단계(room_stage)를 실을 수 있다(선택, 세 단계만)", () => {
+    const share = { channel: "system", link_type: "room" } as const;
+    expect(propertyProblems(EVENT_SPECS.share_clicked, share)).toEqual([]);
+    for (const room_stage of ["collecting", "result", "decided"]) {
+      expect(propertyProblems(EVENT_SPECS.share_clicked, { ...share, room_stage }), room_stage).toEqual([]);
+    }
+    expect(propertyProblems(EVENT_SPECS.share_clicked, { ...share, room_stage: "full" })).toEqual([
+      expect.stringContaining("room_stage: 허용 값이 아닙니다"),
+    ]);
+    expect(doc.schemaVersion).toBe(5);
+  });
+
   it("타입: 이벤트별 속성이 계약에서 나온다", () => {
     expectTypeOf<EventProperties["station_chosen"]>().toHaveProperty("meeting_station_code");
     expectTypeOf<EventProperties["input_completed"]>().not.toHaveProperty("origin_codes");
