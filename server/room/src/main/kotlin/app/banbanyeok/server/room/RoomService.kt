@@ -20,6 +20,8 @@ public class RoomService(
     private val stations: StationCatalog,
     private val clock: Clock,
 ) {
+    private val decisions = DecisionRule(stations)
+
     public suspend fun create(command: CreateRoomCommand): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
@@ -205,7 +207,14 @@ public class RoomService(
         if (caller !is Caller.Member) reject(RoomError.FORBIDDEN, "참여자만 정할 수 있습니다")
         val decision = stationCode?.let { Decision(meetingStation(it), caller.participantId, now) }
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
-        when (rooms.writeDecision(stored.room.id, caller.participantId, decision, seen, activity)) {
+        when (
+            rooms.writeDecision(
+                stored.room.id,
+                DecisionRequest(caller.participantId, decision, seen),
+                activity,
+                decisions,
+            )
+        ) {
             DecisionResult.Applied, DecisionResult.Unchanged -> Unit
             DecisionResult.Stale -> reject(RoomError.ROOM_CHANGED, "화면을 본 뒤 방이 바뀌었습니다")
             DecisionResult.TooFew -> reject(RoomError.NOT_ENOUGH_PARTICIPANTS, "참가자가 2명 이상이어야 합니다")
@@ -309,7 +318,7 @@ public class RoomService(
             roomHash = tokens.roomHash(room.id),
             createdAt = room.createdAt,
             shareVersion = room.shareVersion,
-            decision = visibleDecision(stored),
+            decision = decisions.visible(room.decision, stored.participants.map { it.id }),
             participants =
                 stored.participants.map {
                     ParticipantView(
@@ -323,15 +332,6 @@ public class RoomService(
                 },
         )
     }
-
-    /** 정한 역이 지금 데이터에서 만날 역이 아니거나(사라진 역) 정한 사람이 방에 없으면 없는 것으로 보인다. */
-    private fun visibleDecision(stored: StoredRoom): Decision? =
-        stored.room.decision
-            ?.let { it.copy(stationCode = stations.canonical(it.stationCode)) }
-            ?.takeIf { decision ->
-                stations.isMeetingStation(decision.stationCode) &&
-                    stored.participants.any { it.id == decision.decidedBy }
-            }
 
     private fun meetingStation(code: String): String {
         val canonical = stations.canonical(code)

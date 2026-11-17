@@ -37,7 +37,12 @@ class ShareVersionTriggerTest :
             rooms.create(room, aParticipant("host01"))
             rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
             val seen = rooms.find(room.id)!!.room.shareVersion
-            rooms.writeDecision(room.id, "host01", Decision("130", "host01", T0), seen, activity(2)) shouldBe
+            rooms.writeDecision(
+                room.id,
+                DecisionRequest("host01", Decision("130", "host01", T0), seen),
+                activity(2),
+                fakeDecisionRule,
+            ) shouldBe
                 DecisionResult.Applied
             return room.id
         }
@@ -117,7 +122,12 @@ class ShareVersionTriggerTest :
                     val racing = ExposedRoomRepository(TestDatabase.database, pool)
                     repeat(RACES) { n ->
                         val roomId = decidedRoom()
-                        racing.writeDecision(roomId, "host01", null, state(roomId).shareVersion, activity(3))
+                        racing.writeDecision(
+                            roomId,
+                            DecisionRequest("host01", null, state(roomId).shareVersion),
+                            activity(3),
+                            fakeDecisionRule,
+                        )
                         val seen = state(roomId).shareVersion
                         val change = ParticipantChange(null, "225", false, T0.plusSeconds(5))
                         coroutineScope {
@@ -125,10 +135,9 @@ class ShareVersionTriggerTest :
                                 async {
                                     racing.writeDecision(
                                         roomId,
-                                        "pid002",
-                                        Decision("130", "pid002", T0),
-                                        seen,
+                                        DecisionRequest("pid002", Decision("130", "pid002", T0), seen),
                                         activity(5),
+                                        fakeDecisionRule,
                                     )
                                 },
                                 async { racing.updateParticipant(roomId, "pid002", change, activity(5)) },

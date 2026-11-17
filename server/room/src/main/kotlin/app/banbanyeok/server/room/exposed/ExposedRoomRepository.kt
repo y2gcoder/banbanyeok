@@ -5,6 +5,7 @@ import app.banbanyeok.server.room.Activity
 import app.banbanyeok.server.room.AddResult
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.Decision
+import app.banbanyeok.server.room.DecisionRequest
 import app.banbanyeok.server.room.DecisionResult
 import app.banbanyeok.server.room.DecisionRule
 import app.banbanyeok.server.room.Outcome
@@ -199,10 +200,9 @@ public class ExposedRoomRepository(
 
     override suspend fun writeDecision(
         roomId: String,
-        actor: String,
-        decision: Decision?,
-        seen: ShareVersion,
+        request: DecisionRequest,
         activity: Activity,
+        rule: DecisionRule,
     ): DecisionResult =
         inTransaction {
             // 방 행을 잠그면 같은 방의 참여·나가기·출발역 변경(트리거가 방 행을 고친다)과 줄을 선다. 판정과 쓰기 사이에 끼어들 수 없다.
@@ -219,12 +219,12 @@ public class ExposedRoomRepository(
                     .select(ParticipantsTable.pid)
                     .where { ParticipantsTable.roomId eq roomId }
                     .map { it[ParticipantsTable.pid] }
-            DecisionRule.verdict(room, members, actor, decision, seen).also { verdict ->
+            rule.verdict(room, members, request).also { verdict ->
                 if (verdict == DecisionResult.Applied) {
                     RoomsTable.update({ RoomsTable.id eq roomId }) {
-                        it[decidedStation] = decision?.stationCode
-                        it[decidedByPid] = decision?.decidedBy
-                        it[decidedAt] = decision?.decidedAt
+                        it[decidedStation] = request.decision?.stationCode
+                        it[decidedByPid] = request.decision?.decidedBy
+                        it[decidedAt] = request.decision?.decidedAt
                         it[lastActivityAt] = activity.at
                         it[expiresAt] = activity.expiresAt
                     }

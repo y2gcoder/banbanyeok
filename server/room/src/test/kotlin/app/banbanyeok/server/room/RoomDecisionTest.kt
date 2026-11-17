@@ -242,6 +242,39 @@ class RoomDecisionTest :
                 }
             }
 
+            it("answers a repeat of the shown station without writing after the decided code was retired") {
+                runTest {
+                    val rooms = InMemoryRoomRepository()
+                    val before = RoomFixture(rooms = rooms)
+                    val room = before.twoPeople()
+                    before.service.decide(room.roomId, room.hostPart, "225", before.version(room.roomId))
+                    val after =
+                        RoomFixture(rooms = rooms, stations = FakeStationCatalog(replacedBy = mapOf("225" to "31a")))
+                    after.clock.advance(java.time.Duration.ofMinutes(1))
+                    val screen = after.service.get(room.roomId, room.friendPart)
+                    screen.decision!!.stationCode shouldBe "31a"
+                    val again = after.service.decide(room.roomId, room.friendPart, "31a", screen.shareVersion)
+                    again.shareVersion shouldBe screen.shareVersion
+                    again.decision shouldBe screen.decision
+                }
+            }
+
+            it("answers an undo of a decision the screen does not show without writing") {
+                runTest {
+                    val rooms = InMemoryRoomRepository()
+                    val before = RoomFixture(rooms = rooms)
+                    val room = before.twoPeople()
+                    before.service.decide(room.roomId, room.hostPart, "225", before.version(room.roomId))
+                    val after =
+                        RoomFixture(rooms = rooms, stations = FakeStationCatalog(meetingStations = setOf("130", "31a")))
+                    val screen = after.service.get(room.roomId, room.friendPart)
+                    screen.decision.shouldBeNull()
+                    after.service
+                        .decide(room.roomId, room.friendPart, null, screen.shareVersion)
+                        .shareVersion shouldBe screen.shareVersion
+                }
+            }
+
             it("hides a decision whose station is no longer a meeting station") {
                 runTest {
                     val rooms = InMemoryRoomRepository()

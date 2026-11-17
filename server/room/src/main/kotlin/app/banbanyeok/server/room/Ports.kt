@@ -88,15 +88,14 @@ public interface RoomRepository {
     ): Boolean
 
     /**
-     * 방 행을 잠그고(참여와 같은 FOR UPDATE) [DecisionRule]로 판정해 [DecisionResult.Applied]일 때만 정한 역 칸과 활동 시각을 쓴다.
-     * [decision]이 null이면 푼다. 공유 번호는 쓰지 않는다(트리거가 올린다).
+     * 방 행을 잠그고(참여와 같은 FOR UPDATE) [rule]로 판정해 [DecisionResult.Applied]일 때만 정한 역 칸과 활동 시각을 쓴다.
+     * 요청의 정함이 null이면 푼다. 공유 번호는 쓰지 않는다(트리거가 올린다).
      */
     public suspend fun writeDecision(
         roomId: String,
-        actor: String,
-        decision: Decision?,
-        seen: ShareVersion,
+        request: DecisionRequest,
         activity: Activity,
+        rule: DecisionRule,
     ): DecisionResult
 
     public suspend fun delete(roomId: String): Boolean

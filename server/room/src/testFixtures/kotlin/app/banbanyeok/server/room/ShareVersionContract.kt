@@ -88,10 +88,17 @@ private suspend fun RoomRepository.decidedRoom(): String {
     create(room, aParticipant("host01"))
     addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
     val seen = find(room.id)!!.room.shareVersion
-    writeDecision(room.id, "host01", Decision(DECIDED, "host01", T0.plusSeconds(2)), seen, activity(2)) shouldBe
+    decide(room.id, DecisionRequest("host01", Decision(DECIDED, "host01", T0.plusSeconds(2)), seen), 2) shouldBe
         DecisionResult.Applied
     return room.id
 }
+
+private suspend fun RoomRepository.decide(
+    roomId: String,
+    request: DecisionRequest,
+    minutes: Long,
+    rule: DecisionRule = fakeDecisionRule,
+) = writeDecision(roomId, request, activity(minutes), rule)
 
 private suspend fun RoomRepository.version(roomId: String): ShareVersion = find(roomId)!!.room.shareVersion
 
@@ -158,15 +165,15 @@ internal fun DescribeSpecRootScope.decisions(repos: () -> RepositoryPair) {
             val roomId = rooms.decidedRoom()
             val decided = rooms.find(roomId)!!.room
             val old = ShareVersion(decided.shareVersion.value - 1)
-            rooms.writeDecision(roomId, "pid002", Decision(DECIDED, "pid002", T0), old, activity(5)) shouldBe
+            rooms.decide(roomId, DecisionRequest("pid002", Decision(DECIDED, "pid002", T0), old), 5) shouldBe
                 DecisionResult.Unchanged
             rooms.find(roomId)!!.room shouldBe decided
 
-            rooms.writeDecision(roomId, "host01", null, decided.shareVersion, activity(6)) shouldBe
+            rooms.decide(roomId, DecisionRequest("host01", null, decided.shareVersion), 6) shouldBe
                 DecisionResult.Applied
             val undone = rooms.find(roomId)!!.room
             undone.decision.shouldBeNull()
-            rooms.writeDecision(roomId, "pid002", null, old, activity(7)) shouldBe DecisionResult.Unchanged
+            rooms.decide(roomId, DecisionRequest("pid002", null, old), 7) shouldBe DecisionResult.Unchanged
             rooms.find(roomId)!!.room shouldBe undone
         }
 
@@ -176,14 +183,14 @@ internal fun DescribeSpecRootScope.decisions(repos: () -> RepositoryPair) {
             val seen = rooms.version(roomId)
             rooms.updateParticipant(roomId, "pid002", participantChange(origin = OTHER), activity(3))
             val other = Decision(OTHER, "pid002", T0)
-            rooms.writeDecision(roomId, "pid002", other, seen, activity(4)) shouldBe DecisionResult.Stale
+            rooms.decide(roomId, DecisionRequest("pid002", other, seen), 4) shouldBe DecisionResult.Stale
             val future = ShareVersion(rooms.version(roomId).value + 1)
-            rooms.writeDecision(roomId, "pid002", other, future, activity(4)) shouldBe DecisionResult.Stale
+            rooms.decide(roomId, DecisionRequest("pid002", other, future), 4) shouldBe DecisionResult.Stale
             rooms
                 .find(roomId)!!
                 .room.decision
                 .shouldBeNull()
-            rooms.writeDecision(roomId, "pid002", other, rooms.version(roomId), activity(5)) shouldBe
+            rooms.decide(roomId, DecisionRequest("pid002", other, rooms.version(roomId)), 5) shouldBe
                 DecisionResult.Applied
         }
     }
@@ -196,14 +203,14 @@ internal fun DescribeSpecRootScope.decisionGuards(repos: () -> RepositoryPair) {
             val roomId = rooms.decidedRoom()
             val seenBefore = ShareVersion(rooms.version(roomId).value - 1)
             val replace = Decision(OTHER, "pid002", T0.plusSeconds(4))
-            rooms.writeDecision(roomId, "pid002", replace, seenBefore, activity(4)) shouldBe DecisionResult.Stale
-            rooms.writeDecision(roomId, "pid002", null, seenBefore, activity(4)) shouldBe DecisionResult.Stale
+            rooms.decide(roomId, DecisionRequest("pid002", replace, seenBefore), 4) shouldBe DecisionResult.Stale
+            rooms.decide(roomId, DecisionRequest("pid002", null, seenBefore), 4) shouldBe DecisionResult.Stale
             rooms
                 .find(roomId)!!
                 .room.decision!!
                 .decidedBy shouldBe "host01"
 
-            rooms.writeDecision(roomId, "pid002", replace, rooms.version(roomId), activity(5)) shouldBe
+            rooms.decide(roomId, DecisionRequest("pid002", replace, rooms.version(roomId)), 5) shouldBe
                 DecisionResult.Applied
             rooms.find(roomId)!!.room.decision shouldBe replace
         }
@@ -213,25 +220,43 @@ internal fun DescribeSpecRootScope.decisionGuards(repos: () -> RepositoryPair) {
             val roomId = rooms.decidedRoom()
             val seen = rooms.version(roomId)
             rooms.updateParticipant(roomId, "pid002", participantChange(hidden = true), activity(3))
-            rooms.writeDecision(roomId, "pid002", null, seen, activity(4)) shouldBe DecisionResult.Applied
+            rooms.decide(roomId, DecisionRequest("pid002", null, seen), 4) shouldBe DecisionResult.Applied
         }
 
         it("refuses someone outside the room, a decision with one person, and an unknown room") {
             val rooms = repos().rooms
             val roomId = rooms.decidedRoom()
             val seen = rooms.version(roomId)
-            rooms.writeDecision(roomId, "nobody", null, seen, activity(3)) shouldBe DecisionResult.NotMember
+            rooms.decide(roomId, DecisionRequest("nobody", null, seen), 3) shouldBe DecisionResult.NotMember
             rooms.removeParticipant(roomId, "pid002", activity(4))
             val alone = rooms.version(roomId)
-            rooms.writeDecision(roomId, "host01", Decision(OTHER, "host01", T0), alone, activity(5)) shouldBe
+            rooms.decide(roomId, DecisionRequest("host01", Decision(OTHER, "host01", T0), alone), 5) shouldBe
                 DecisionResult.TooFew
-            rooms.writeDecision(roomId, "host01", null, alone, activity(5)) shouldBe DecisionResult.Unchanged
-            rooms.writeDecision(freshId(), "host01", null, alone, activity(5)) shouldBe DecisionResult.RoomNotFound
+            rooms.decide(roomId, DecisionRequest("host01", null, alone), 5) shouldBe DecisionResult.Unchanged
+            rooms.decide(freshId(), DecisionRequest("host01", null, alone), 5) shouldBe DecisionResult.RoomNotFound
             rooms
                 .find(roomId)
                 .shouldNotBeNull()
                 .room.decision
                 .shouldBeNull()
+        }
+    }
+}
+
+internal fun DescribeSpecRootScope.visibleDecisions(repos: () -> RepositoryPair) {
+    describe("writeDecision and the shown decision") {
+        it("judges against the decision the screen shows when the stored code was retired or left the meeting set") {
+            val rooms = repos().rooms
+            val roomId = rooms.decidedRoom()
+            val decided = rooms.find(roomId)!!.room
+            val retired = DecisionRule(FakeStationCatalog(replacedBy = mapOf(DECIDED to OTHER)))
+            val shown = Decision(OTHER, "pid002", T0.plusSeconds(5))
+            rooms.decide(roomId, DecisionRequest("pid002", shown, decided.shareVersion), 5, retired) shouldBe
+                DecisionResult.Unchanged
+            val gone = DecisionRule(FakeStationCatalog(meetingStations = setOf(OTHER)))
+            rooms.decide(roomId, DecisionRequest("pid002", null, decided.shareVersion), 6, gone) shouldBe
+                DecisionResult.Unchanged
+            rooms.find(roomId)!!.room shouldBe decided
         }
     }
 }

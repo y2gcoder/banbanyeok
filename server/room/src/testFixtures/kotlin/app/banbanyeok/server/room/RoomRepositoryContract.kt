@@ -51,6 +51,7 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
         shareVersions(newRepositories)
         decisions(newRepositories)
         decisionGuards(newRepositories)
+        visibleDecisions(newRepositories)
     }
 
 private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {

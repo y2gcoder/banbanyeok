@@ -62,6 +62,9 @@ class FakeStationCatalog(
     override fun canonical(code: String): String = generateSequence(code) { replacedBy[it] }.last()
 }
 
+/** 역 코드를 바꾸지 않는 [FakeStationCatalog] 기본값의 판정. 저장소 계약 테스트가 쓴다. */
+val fakeDecisionRule = DecisionRule(FakeStationCatalog())
+
 val testPepper = "test-pepper-0123456789-0123456789".toByteArray()
 
 class RoomFixture(

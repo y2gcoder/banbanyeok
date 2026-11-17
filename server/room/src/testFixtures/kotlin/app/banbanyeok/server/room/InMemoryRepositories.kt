@@ -149,21 +149,20 @@ class InMemoryRoomRepository : RoomRepository {
 
     override suspend fun writeDecision(
         roomId: String,
-        actor: String,
-        decision: Decision?,
-        seen: ShareVersion,
+        request: DecisionRequest,
         activity: Activity,
+        rule: DecisionRule,
     ): DecisionResult =
         lock.withLock {
             val stored = rooms[roomId] ?: return@withLock DecisionResult.RoomNotFound
             val members = stored.participants.map { it.id }
-            DecisionRule.verdict(stored.room, members, actor, decision, seen).also { verdict ->
+            rule.verdict(stored.room, members, request).also { verdict ->
                 if (verdict == DecisionResult.Applied) {
                     write(roomId) {
                         it.copy(
                             room =
                                 it.room.copy(
-                                    decision = decision,
+                                    decision = request.decision,
                                     lastActivityAt = activity.at,
                                     expiresAt = activity.expiresAt,
                                 ),
