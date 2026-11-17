@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KakaoFeedMessage, KakaoFeedSettings } from "@/lib/share/kakao";
 import type { KakaoSdk } from "@/lib/share/kakao-sdk";
@@ -179,6 +179,52 @@ describe("카톡으로 보내기", () => {
     expect(track).toHaveBeenCalledWith("share_clicked", { channel: "kakao", ...ROOM });
     expect(share).not.toHaveBeenCalled();
     expect(sdk.API.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("카카오톡으로 보낸 뒤에는 '여는 중'으로 바뀌고 다시 눌러도 또 보내지 않으며, 4초 뒤나 돌아오면 원래대로 돌아온다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", KEY);
+    const track = await renderShare();
+    const sdk = await becomeReady();
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(kakaoButton());
+      const opening = screen.getByRole("button", { name: "카카오톡 여는 중…" });
+      expect(opening).toHaveAttribute("aria-busy", "true");
+      expect(opening).not.toBeDisabled();
+      fireEvent.click(opening);
+      expect(sdk.Share.sendDefault).toHaveBeenCalledTimes(1);
+      expect(track.mock.calls.filter(([, props]) => (props as { channel: string }).channel === "kakao")).toHaveLength(
+        1,
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(4000);
+      });
+      expect(kakaoButton()).not.toHaveAttribute("aria-busy");
+
+      fireEvent.click(kakaoButton());
+      expect(sdk.Share.sendDefault).toHaveBeenCalledTimes(2);
+      const visibility = (state: "hidden" | "visible") => {
+        Object.defineProperty(document, "visibilityState", { value: state, configurable: true });
+        fireEvent(document, new Event("visibilitychange"));
+      };
+      visibility("visible");
+      expect(screen.getByRole("button", { name: "카카오톡 여는 중…" })).toBeInTheDocument();
+      visibility("hidden");
+      visibility("visible");
+      expect(kakaoButton()).toBeInTheDocument();
+
+      fireEvent.click(kakaoButton());
+      expect(sdk.Share.sendDefault).toHaveBeenCalledTimes(3);
+      const restored = new Event("pageshow");
+      Object.defineProperty(restored, "persisted", { value: true });
+      act(() => {
+        window.dispatchEvent(restored);
+      });
+      expect(kakaoButton()).not.toHaveAttribute("aria-busy");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("아직 준비 중일 때 누르면 기다리지 않고 그 클릭 안에서 공유 시트를 열고, 페이지는 그대로다", async () => {
