@@ -77,7 +77,11 @@ describe("방 공유 문구", () => {
     expect(copy.stage).toBe("result");
     expect(copy.preview.title).toBe("지금은 동대문역사문화공원이 제일 공평해요");
     expect(copy.preview.description).toBe("아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분");
-    expect(copy.message).toEqual({ title: copy.preview.title, text: copy.preview.description, button: "결과 보내기" });
+    expect(copy.message).toEqual({
+      title: copy.preview.title,
+      text: copy.preview.description,
+      button: "카톡으로 결과 보내기",
+    });
   });
 
   it("방의 기본 기준에 따라 제목의 이유가 바뀌고, 조사는 역 이름 받침을 따른다", () => {
@@ -106,7 +110,7 @@ describe("방 공유 문구", () => {
     expect(copy.preview.description).toBe(
       "민수가 정했어요 · 11월 21일 (토) 저녁 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분",
     );
-    expect(copy.message.button).toBe("정한 역 알리기");
+    expect(copy.message.button).toBe("카톡으로 정한 역 알리기");
     expect(copy.card).toMatchObject({
       stationName: "강남",
       suffix: "에서 만나요",

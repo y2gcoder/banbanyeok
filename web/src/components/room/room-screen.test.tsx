@@ -397,7 +397,7 @@ describe("방 화면", () => {
       joinedAs("m1", "tok-1");
       const user = userEvent.setup();
       const { client } = renderScreen();
-      expect(await screen.findByRole("button", { name: "결과 보내기" })).toBeInTheDocument();
+      expect(await screen.findByRole("button", { name: "카톡으로 결과 보내기" })).toBeInTheDocument();
       expect(screen.getAllByRole("heading", { name: /링크/ })).toHaveLength(1);
       expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3`);
       expect(track).toHaveBeenCalledWith("share_clicked", { channel: "copy", link_type: "room", room_stage: "result" });
@@ -411,7 +411,7 @@ describe("방 화면", () => {
       };
       version = 4;
       await client.invalidateQueries({ queryKey: ["room", ROOM] });
-      expect(await screen.findByRole("button", { name: "정한 역 알리기" })).toBeInTheDocument();
+      expect(await screen.findByRole("button", { name: "카톡으로 정한 역 알리기" })).toBeInTheDocument();
       expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=4`);
       expect(api.getRoomPreview).toHaveBeenCalledTimes(2);
     });

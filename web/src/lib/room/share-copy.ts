@@ -93,7 +93,7 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomSha
   return {
     stage: "result",
     preview: { title, description },
-    message: { title, text: description, button: "결과 보내기" },
+    message: { title, text: description, button: "카톡으로 결과 보내기" },
     card: card(
       preview,
       OG_TEXT.sharedSuffix,
@@ -114,7 +114,7 @@ function decidedCopy(preview: Extract<RoomPreview, { stage: "decided" }>): RoomS
   return {
     stage: "decided",
     preview: { title, description },
-    message: { title, text: description, button: "정한 역 알리기" },
+    message: { title, text: description, button: "카톡으로 정한 역 알리기" },
     card: card(preview, OG_TEXT.decidedSuffix, by, { main: by, sub }),
   };
 }
