@@ -16,7 +16,7 @@ import type { Mode } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import { restoreHref } from "@/lib/form/prefill";
 import { modeFromParam, modeToParam, type ShareState } from "@/lib/link/codec";
-import { shareMessage } from "@/lib/result/share-message";
+import { shareMessage, soloKakaoMessage } from "@/lib/result/share-message";
 import { sharePath } from "@/lib/result/share-url";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
 import { cn } from "@/lib/utils";
@@ -186,6 +186,7 @@ export function ResultScreen({
   const top = view?.candidates[0];
   const longest = top ? top.people.reduce((a, b) => (b.seconds > a.seconds ? b : a)).index : Math.min(1, count - 1);
   const favorName = state.favorIndex === null ? null : (people[state.favorIndex]?.name ?? null);
+  const message = top ? shareMessage(top, state.mode, favorName, data?.timeBasis) : null;
   const first = view?.people[0];
   const sender = first?.labelKind === "name" ? first.name : null;
 
@@ -261,10 +262,14 @@ export function ResultScreen({
         )}
       </div>
 
-      {view && top ? (
+      {view && message ? (
         <div className={SIDE}>
           {variant === "creator" ? (
-            <ShareActions path={sharePath(state)} {...shareMessage(top, state.mode, favorName, data?.timeBasis)} />
+            <ShareActions
+              path={sharePath(state)}
+              {...message}
+              kakao={soloKakaoMessage(state, message, view.dataVersion)}
+            />
           ) : (
             <Link
               href="/"
