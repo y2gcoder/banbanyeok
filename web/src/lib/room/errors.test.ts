@@ -38,6 +38,8 @@ describe("방 오류", () => {
     }
     expect(isStaleRoom(err(400, "INVALID_STATION"))).toBe(false);
     expect(isStaleRoom(new TypeError("x"))).toBe(false);
-    expect(roomErrorMessage(err(409, "ROOM_CHANGED"))).toBe("그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.");
+    expect(roomErrorMessage(err(409, "ROOM_CHANGED"))).toBe(
+      "그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.",
+    );
   });
 });

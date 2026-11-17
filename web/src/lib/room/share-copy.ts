@@ -64,7 +64,7 @@ function leadingTitle(station: string, mode: Mode, favorLabel: string | null): s
   return favorLabel ? `지금은 ${favorLabel} 쪽으로 ${subject} 좋아요` : `지금은 ${subject} 제일 나아요`;
 }
 
-function card(preview: Computed, suffix: string, modeLine: string): SharedCardData {
+function card(preview: Computed, suffix: string, modeLine: string, footer?: SharedCardData["footer"]): SharedCardData {
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
   return {
     stationName: preview.station.stationName,
@@ -75,6 +75,7 @@ function card(preview: Computed, suffix: string, modeLine: string): SharedCardDa
       favored: favored !== null && t.label === favored,
     })),
     modeLine,
+    ...(footer ? { footer } : {}),
   };
 }
 
@@ -83,7 +84,10 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomSha
   const times = timesText(preview);
   const basisLine = modeSentence(preview.basis.mode, preview.basis.favorLabel) + basisSuffix(preview.room.timeBasis);
   const [title, description] = preview.room.canJoin
-    ? [leadingTitle(stationName, preview.basis.mode, preview.basis.favorLabel), `아직이면 출발역 넣어 주세요${SEP}${times}`]
+    ? [
+        leadingTitle(stationName, preview.basis.mode, preview.basis.favorLabel),
+        `아직이면 출발역 넣어 주세요${SEP}${times}`,
+      ]
     : [`${stationName}${OG_TEXT.sharedSuffix}`, `${times}${SEP}${basisLine}`];
   const favorSafe = preview.basis.favorLabel === null ? null : ogSafeName(preview.basis.favorLabel, "");
   return {
@@ -104,12 +108,14 @@ function decidedCopy(preview: Extract<RoomPreview, { stage: "decided" }>): RoomS
   const decided = (name: string) => `${withJosa(name, "이/가")}${OG_TEXT.decidedBy}`;
   const title = `${preview.station.stationName}${OG_TEXT.decidedSuffix}`;
   const description = [decided(preview.decidedBy), when, timesText(preview)].filter(Boolean).join(SEP);
-  const decidedBySafe = ogSafeName(preview.decidedBy, "참가자");
+  const by = decided(ogSafeName(preview.decidedBy, "참가자"));
+  const longest = Math.max(...preview.station.times.flatMap((t) => (t.seconds === null ? [] : [t.seconds])));
+  const sub = when ?? (Number.isFinite(longest) ? `${OG_TEXT.longestPrefix}${formatSeconds(longest)}` : "");
   return {
     stage: "decided",
     preview: { title, description },
     message: { title, text: description, button: "정한 역 알리기" },
-    card: card(preview, OG_TEXT.decidedSuffix, [decided(decidedBySafe), when].filter(Boolean).join(SEP)),
+    card: card(preview, OG_TEXT.decidedSuffix, by, { main: by, sub }),
   };
 }
 

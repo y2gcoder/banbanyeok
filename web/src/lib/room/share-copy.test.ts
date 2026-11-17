@@ -65,7 +65,9 @@ describe("방 공유 문구", () => {
     const copy = roomShareCopy({ stage: "collecting", room: room({ participantCount: 1 }) });
     expect(copy).toBe(INVITE_COPY);
     expect(copy.preview.title).toBe("같이 만날 역 정해요");
-    expect(copy.message.text).toBe("각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요. 출발역은 숨길 수도 있어요.");
+    expect(copy.message.text).toBe(
+      "각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요. 출발역은 숨길 수도 있어요.",
+    );
     expect(copy.message.button).toBe("카톡으로 보내기");
     expect(copy.card).toBeNull();
   });
@@ -91,7 +93,9 @@ describe("방 공유 문구", () => {
   it("더 들어올 수 없으면(정원·잠김) 초대 없이 '에서 볼까?'와 각자 시간·기준", () => {
     const copy = roomShareCopy(result({ room: room({ canJoin: false, timeBasis: SATURDAY_EVENING }) }));
     expect(copy.preview.title).toBe("동대문역사문화공원에서 볼까?");
-    expect(copy.preview.description).toBe("민수 22분 · 참가자 2 21분 · 홍대입구 19분 · 공평하게 고름 · 토요일 저녁 기준");
+    expect(copy.preview.description).toBe(
+      "민수 22분 · 참가자 2 21분 · 홍대입구 19분 · 공평하게 고름 · 토요일 저녁 기준",
+    );
     expect(copy.preview.description).not.toContain("출발역 넣어");
   });
 
@@ -99,14 +103,21 @@ describe("방 공유 문구", () => {
     const copy = roomShareCopy(decided());
     expect(copy.stage).toBe("decided");
     expect(copy.preview.title).toBe("강남에서 만나요");
-    expect(copy.preview.description).toBe("민수가 정했어요 · 11월 21일 (토) 저녁 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분");
+    expect(copy.preview.description).toBe(
+      "민수가 정했어요 · 11월 21일 (토) 저녁 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분",
+    );
     expect(copy.message.button).toBe("정한 역 알리기");
-    expect(copy.card).toMatchObject({ stationName: "강남", suffix: "에서 만나요", modeLine: "민수가 정했어요 · 11월 21일 (토) 저녁" });
+    expect(copy.card).toMatchObject({
+      stationName: "강남",
+      suffix: "에서 만나요",
+      footer: { main: "민수가 정했어요", sub: "11월 21일 (토) 저녁" },
+    });
   });
 
   it("정한 사람이 숨긴 사람이면 서버가 준 '참가자 N'으로, 약속이 없으면 그 칸을 뺀다", () => {
     const copy = roomShareCopy(decided({ decidedBy: "참가자 2", room: room() }));
     expect(copy.preview.description).toBe("참가자 2가 정했어요 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분");
+    expect(copy.card?.footer).toEqual({ main: "참가자 2가 정했어요", sub: "가장 오래 걸려도 22분" });
   });
 
   it("정한 역이 상위 3곳 밖이라 누군가 갈 수 없으면 글에서는 빼고 그림에는 남긴다", () => {
@@ -127,10 +138,12 @@ describe("방 공유 문구", () => {
       { label: "가", seconds: 29 },
       { label: "나", seconds: 30 },
     ];
-    expect(roomShareCopy(result({ station: { stationCode: "s1q", stationName: "신촌", times } })).card?.people).toEqual([
-      { name: "가", minutes: 0, favored: false },
-      { name: "나", minutes: 1, favored: false },
-    ]);
+    expect(roomShareCopy(result({ station: { stationCode: "s1q", stationName: "신촌", times } })).card?.people).toEqual(
+      [
+        { name: "가", minutes: 0, favored: false },
+        { name: "나", minutes: 1, favored: false },
+      ],
+    );
   });
 
   it("긴 이름은 글에는 그대로, 그림에는 글꼴에 있는 글자만 잘라서 넣는다", () => {

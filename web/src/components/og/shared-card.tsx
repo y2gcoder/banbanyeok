@@ -121,7 +121,11 @@ function Lines({ people }: { people: SharedCardData["people"] }) {
  * 카카오 말풍선(약 270px 폭)에서도 역 이름과 색 노선이 읽히게 크게 그린다. 노선 길이는 사람마다 같다(길이로 시간을 읽게 하지 않는다).
  */
 export function SharedCard({ data }: { data: SharedCardData }) {
-  const lines = summary(data.people);
+  const computed = summary(data.people);
+  const lines = data.footer ?? {
+    main: computed?.longest ?? null,
+    sub: computed ? `${computed.spread} ${OG_TEXT.middleDot} ${data.modeLine}` : data.modeLine,
+  };
   return (
     <OgFrame>
       <div style={{ display: "flex", flex: 1 }}>
@@ -139,11 +143,9 @@ export function SharedCard({ data }: { data: SharedCardData }) {
             <span style={{ fontSize: 80, letterSpacing: -3 }}>{data.suffix ?? OG_TEXT.sharedSuffix}</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {lines ? <span style={{ fontSize: 40, color: OG_COLORS.inkSoft }}>{lines.longest}</span> : null}
+            {lines.main ? <span style={{ fontSize: 40, color: OG_COLORS.inkSoft }}>{lines.main}</span> : null}
             {/* 한국어도 낱말 단위로 줄을 바꾼다("저녁"이 "저/녁"으로 갈리지 않게). */}
-            <span style={{ fontSize: 30, color: OG_COLORS.muted, wordBreak: "keep-all" }}>
-              {lines ? `${lines.spread} ${OG_TEXT.middleDot} ${data.modeLine}` : data.modeLine}
-            </span>
+            <span style={{ fontSize: 30, color: OG_COLORS.muted, wordBreak: "keep-all" }}>{lines.sub}</span>
           </div>
         </div>
         <Lines people={data.people} />

@@ -39,8 +39,10 @@ export type SharedCardData = {
    * "참가자 N"으로 주므로 숨긴 출발역은 그림에 나올 수 없다. `favored`는 "누구 쪽으로"에서 고른 사람. `minutes`가 null이면 그 역까지 갈 수 없다.
    */
   people: { name: string; minutes: number | null; favored: boolean }[];
-  /** "공평하게 고름" 같은 기준 한 마디(+ " · 토요일 밤 기준"). 방에서 정한 역은 "민수가 정했어요 · 11월 21일 (토) 저녁". */
+  /** "공평하게 고름" 같은 기준 한 마디(+ " · 토요일 밤 기준"). */
   modeLine: string;
+  /** 왼쪽 아래 두 줄을 직접 정한다(방에서 정한 역: "민수가 정했어요" / "11월 21일 (토) 저녁"). 없으면 최장·차이·기준. */
+  footer?: { main: string; sub: string };
 };
 
 export type SharedPreview = { title: string; description: string };
