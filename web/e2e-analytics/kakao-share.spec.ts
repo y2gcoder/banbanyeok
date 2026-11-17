@@ -47,6 +47,14 @@ function expectContentFree(template: Template | undefined, baseURL: string | und
   });
 }
 
+/** 글자·숫자 값을 지운 템플릿 모양. */
+const shape = (value: unknown): unknown =>
+  Array.isArray(value)
+    ? value.map(shape)
+    : value && typeof value === "object"
+      ? Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, shape(inner)]))
+      : typeof value;
+
 async function attach(context: BrowserContext, page: Page, kapi: KapiAnswer = "accept"): Promise<Probe> {
   const probe: Probe = { kakao: [], templates: [], answered: 0, shares: [], navigations: [], csp: [] };
   context.on("request", (request) => {
@@ -162,6 +170,9 @@ async function expectTalkOpened(page: Page, probe: Probe, pageUrl: string, kakao
     TEMPLATE_CHECK,
   ]);
   expect(probe.templates).toHaveLength(2);
+  expect(shape(probe.templates[0]), "미리 받은 확인은 SDK가 보내는 메시지와 같은 모양").toEqual(
+    shape(probe.templates[1]),
+  );
   const launch = probe.navigations.find(({ url }) => isTalkLaunch(url));
   test.info().annotations.push({ type: "click-to-launch-ms", description: String(launch?.sinceClickMs?.toFixed(0)) });
   return probe.templates[1];

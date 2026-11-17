@@ -103,7 +103,7 @@ describe("개인정보 처리방침", () => {
     expect(line).toContain("약속 날짜·시각");
   });
 
-  it("카카오톡 공유: 모든 공유 버튼 이름으로, 누를 때 카카오로 가는 것과 누르기 전에는 SDK를 받지 않는다는 것을 적는다", () => {
+  it("카카오톡 공유: 모든 공유 버튼 이름으로, 공유 칸이 보일 때 카카오로 가는 것과 누를 때만 메시지 내용이 간다는 것을 적는다", () => {
     const line = markdown.split("\n").find((l) => l.includes("카카오 JavaScript SDK")) ?? "";
     const base: Omit<Extract<RoomPreview, { stage: "result" }>, "stage"> = {
       dataVersion: "20261115.8",
@@ -135,7 +135,18 @@ describe("개인정보 처리방침", () => {
     for (const button of buttons) expect(line, button).toContain(`'${button}'`);
     expect(line).toContain("카카오 주식회사");
     expect(line).toContain("접속 IP 주소");
-    expect(line).toContain("이 버튼을 누르기 전에는 카카오 공유 프로그램을 받지 않으며");
+    expect(line).toContain("공유 칸이 화면에 보이면");
+    expect(line).toContain("이용자나 방의 내용이 없는 고정된 확인 메시지");
+    expect(line).toContain("이 버튼을 누를 때에만 카카오로 보냅니다");
+    expect(line).toContain("공유 칸이 화면에 보이기 전에는 카카오 공유 프로그램을 받지 않으며");
+  });
+
+  it("이전 판: 같은 날 앞선 세 판을 모두 공개 저장소의 그 판 기록으로 잇는다", () => {
+    const line = markdown.split("\n").find((l) => l.includes("이전 판:")) ?? "";
+    for (const commit of ["57a068a", "267cda0", "bd083b5"]) {
+      expect(line).toContain(`https://github.com/y2gcoder/banbanyeok/blob/${commit}/docs/legal/privacy-policy.md`);
+    }
+    expect(markdown).toContain("같은 날 세 번 고쳤습니다");
   });
 
   it("목차 앵커가 겹치지 않는다", () => {

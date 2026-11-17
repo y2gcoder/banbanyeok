@@ -8,6 +8,8 @@ import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 // 봇 신호만 이 테스트 안에서 끈다(앱 코드에는 영향 없음).
 
 const COLLECT = "https://eu.i.posthog.com/e/";
+/** 공유 칸이 보이면 받는 카카오 SDK 파일(kakao-share.spec.ts가 따로 본다). 통계가 아니라 `outside`에 넣지 않는다. 여기서는 빈 답이라 실행되지 않는다. */
+const KAKAO_SDK_REQUEST = "GET https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js";
 const FORBIDDEN_KEY = /origin|nickname|room_id|token_|alias|^lat$|^lng$|address/i;
 const BATCH_WAIT_MS = 4000; // posthog-js 배치 전송 주기(약 3초)보다 길게
 /** SDK가 스스로 보내도 되는 이벤트(contracts/events.json `sdkEvents`): 오류 추적·웹 바이탈. */
@@ -23,7 +25,7 @@ function withoutRandomIds(properties: Record<string, unknown>): Record<string, u
 }
 
 type Probe = {
-  /** 같은 출처 밖으로 나간 모든 요청("메서드 주소"). */
+  /** 같은 출처 밖으로 나간 모든 요청("메서드 주소"). 카카오 SDK 파일은 뺀다. */
   outside: string[];
   events: Captured[];
   allUrls: string[];
@@ -35,7 +37,8 @@ async function attachProbe(context: BrowserContext, baseURL: string): Promise<Pr
   context.on("request", (request) => probe.allUrls.push(request.url()));
   await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => {
     const request = route.request();
-    probe.outside.push(`${request.method()} ${request.url().split("?")[0]}`);
+    const line = `${request.method()} ${request.url().split("?")[0]}`;
+    if (line !== KAKAO_SDK_REQUEST) probe.outside.push(line);
     const body = request.postDataBuffer();
     if (body && request.url().startsWith(COLLECT)) {
       let text: string;

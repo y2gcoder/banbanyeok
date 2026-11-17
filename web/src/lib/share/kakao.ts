@@ -64,7 +64,7 @@ export function publicKakaoJsKey(): string | null {
 
 /**
  * `sendDefault` 인자를 카카오 기본 템플릿 JSON(`template_object`)으로. SDK가 모바일에서 카카오톡을 열기 전에 카카오에 확인받는 내용과 같은
- * 모양이다(e2e가 둘이 같은지 본다).
+ * 모양이다(미리 받는 확인이 쓴다. e2e가 둘의 모양이 같은지 본다).
  */
 export function kakaoTemplateObject(settings: KakaoFeedSettings) {
   const link = ({ webUrl, mobileWebUrl }: KakaoLink) => ({ web_url: webUrl, mobile_web_url: mobileWebUrl });
