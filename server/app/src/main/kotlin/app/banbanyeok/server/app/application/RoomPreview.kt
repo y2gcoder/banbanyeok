@@ -28,7 +28,6 @@ data class PreviewBasis(
     val favorLabel: String?,
 )
 
-/** 모든 단계에 있는 값. */
 data class PreviewRoom(
     val roomId: String,
     val shareVersion: ShareVersion,

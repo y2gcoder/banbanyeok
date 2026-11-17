@@ -18,7 +18,7 @@ private suspend fun shouldFailWith(
 }
 
 /** 방장(03v)과 친구(130)가 있는 방. */
-private class Pair2(
+private class TwoPeople(
     val roomId: String,
     val hostToken: String,
     val hostId: String,
@@ -27,11 +27,11 @@ private class Pair2(
     val friendPart: String,
 )
 
-private suspend fun RoomFixture.twoPeople(): Pair2 {
+private suspend fun RoomFixture.twoPeople(): TwoPeople {
     val created =
         service.create(CreateRoomCommand(RoomMode.FAIR, null, null, ParticipantInput("민수", "03v"), null, null))
     val friend = service.join(created.roomId, ParticipantInput("지연", "130"), null)
-    return Pair2(
+    return TwoPeople(
         created.roomId,
         created.hostToken,
         created.participantId,
@@ -79,7 +79,7 @@ class RoomDecisionTest :
             }
 
             it("accepts a screen from before a nickname, hide, lock, mode or meeting edit") {
-                val edits: List<Pair<String, suspend RoomFixture.(Pair2) -> Unit>> =
+                val edits: List<Pair<String, suspend RoomFixture.(TwoPeople) -> Unit>> =
                     listOf(
                         "nickname" to {
                             service.updateParticipant(
