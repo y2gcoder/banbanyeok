@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, CopyIcon, MessageCircleIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, Loader2Icon, MessageCircleIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -25,6 +25,9 @@ type Props = {
   /** 카카오톡 공유 API로 보낼 메시지. 빌드에 카카오 앱 키가 없으면 쓰지 않는다. */
   kakao?: KakaoFeedMessage;
 };
+
+/** 카카오톡 앱이 안 열리고 이 페이지에 머물 때 "여는 중"을 거두는 시간(ms). */
+const OPENING_MS = 4000;
 
 const absolute = (path: string) => new URL(path, window.location.origin).toString();
 
@@ -57,6 +60,9 @@ export function ShareActions({
   // 대체 대화상자에 보여 줄 링크. null이면 닫힘. 브라우저에서만 만든다.
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // 카카오 버튼 상태. sendDefault가 돌아온 뒤 카카오톡이 열릴 때까지는 SDK 확인 요청과 앱 전환 때문에 화면이 그대로라서, 그 사이 눌림을 알리고 다시 누름을 막는다.
+  const [kakaoState, setKakaoState] = useState<"idle" | "opening">("idle");
+  const opening = kakaoState === "opening";
   const kakaoKey = kakao ? publicKakaoJsKey() : null;
   const area = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -70,6 +76,28 @@ export function ShareActions({
     observer.observe(element);
     return () => observer.disconnect();
   }, [kakaoKey]);
+
+  useEffect(() => {
+    if (!opening) return;
+    const done = () => setKakaoState("idle");
+    const timer = window.setTimeout(done, OPENING_MS);
+    // 카카오톡으로 갔다가 돌아오면 숨겨졌던 페이지가 다시 보인다. bfcache로 복원되면 pageshow만 온다.
+    let hidden = false;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") hidden = true;
+      else if (hidden) done();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) done();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [opening]);
 
   const copyLink = async () => {
     track("share_clicked", { channel: "copy", link_type: linkType, ...roomProperty });
@@ -105,9 +133,13 @@ export function ShareActions({
   };
 
   const shareToKakao = () => {
+    if (opening) return;
     const settings = kakaoSettings();
     const sdk = readyKakaoShare();
-    if (settings && sdk && sendWithKakao(sdk, settings)) return;
+    if (settings && sdk && sendWithKakao(sdk, settings)) {
+      setKakaoState("opening");
+      return;
+    }
     if (kakaoKey) preloadKakaoShare(kakaoKey);
     void systemShare();
   };
@@ -117,17 +149,22 @@ export function ShareActions({
       <Button
         type="button"
         onClick={shareToKakao}
-        className="h-14 rounded-xl bg-kakao text-[17px] font-bold text-kakao-ink hover:bg-[color-mix(in_oklch,var(--kakao),black_6%)]"
+        aria-busy={opening || undefined}
+        className="h-14 rounded-xl bg-kakao text-[17px] font-bold text-kakao-ink transition-transform hover:bg-[color-mix(in_oklch,var(--kakao),black_6%)] active:scale-[0.98] active:bg-[color-mix(in_oklch,var(--kakao),black_10%)]"
       >
-        <MessageCircleIcon className="size-5" aria-hidden="true" />
-        {button}
+        {opening ? (
+          <Loader2Icon className="size-5 animate-spin" aria-hidden="true" />
+        ) : (
+          <MessageCircleIcon className="size-5" aria-hidden="true" />
+        )}
+        {opening ? "카카오톡 여는 중…" : button}
       </Button>
       <Button type="button" variant="ghost" onClick={() => void copyLink()} className="h-11 text-[15px] font-semibold">
         {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
         {copied ? "링크를 복사했어요" : "링크 복사"}
       </Button>
       <p aria-live="polite" className="sr-only">
-        {copied ? "링크를 복사했어요" : ""}
+        {copied ? "링크를 복사했어요" : opening ? "카카오톡 여는 중" : ""}
       </p>
       <Dialog open={fallbackUrl !== null} onOpenChange={(open) => !open && setFallbackUrl(null)}>
         <DialogContent className="gap-4 rounded-2xl p-5">
