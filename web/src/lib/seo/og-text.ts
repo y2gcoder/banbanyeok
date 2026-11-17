@@ -6,6 +6,8 @@
  */
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
+/** 사이트 기본 그림(`app/opengraph-image.tsx`). 결과가 없는 링크(모으는 중의 방 등)가 쓴다. */
+export const SITE_OG_IMAGE_PATH = "/opengraph-image";
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";

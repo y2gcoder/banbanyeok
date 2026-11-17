@@ -1,17 +1,20 @@
 /**
  * 방 공유 문구의 단일 원본. 서버 미리보기(`GET /rooms/{id}/preview`, 누가 묻든 같은 값이고 출발역 필드가 없다)에서 링크 미리보기
  * (og:title·description), 미리보기 그림 값, 공유 시트 문구와 버튼 이름을 한 번에 만든다. 메타데이터(`/r/[roomId]`), 그림
- * (`/r/[roomId]/og`), 방 화면의 공유 칸이 모두 이 결과만 쓴다. 이름은 서버 짧은 이름이고, 그림에 넣을 때만 `ogSafeName`으로 거른다.
+ * (`/r/[roomId]/og`), 방 화면의 공유 칸, 카카오톡 공유 메시지(`roomKakaoMessage`)가 모두 이 결과만 쓴다. 이름은 서버 짧은 이름이고, 그림에
+ * 넣을 때만 `ogSafeName`으로 거른다.
  */
 import type { Mode, RoomPreview, TimeBasis } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
 import { modeSentence } from "@/lib/result/mode-sentence";
 import { ogSafeName } from "@/lib/seo/og-coverage";
-import { OG_TEXT } from "@/lib/seo/og-text";
+import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 import type { SharedCardData } from "@/lib/seo/shared-preview";
+import type { KakaoFeedMessage } from "@/lib/share/kakao";
 import { DEFAULT_SLOT } from "@/lib/when/time-slot";
 import { meetingWhenText } from "./dates";
+import { roomImagePath, roomShareLink } from "./share-link";
 
 export type ShareStage = RoomPreview["stage"];
 
@@ -139,4 +142,31 @@ export function roomShareCopy(preview: RoomPreview): RoomShareCopy {
     case "decided":
       return decidedCopy(preview);
   }
+}
+
+/** 카카오톡 메시지의 버튼: 받는 사람이 그 방에서 할 일. 들어올 수 있으면 출발역 넣기, 꽉 찼으면 결과, 정했으면 방. */
+function kakaoButton(preview: RoomPreview | undefined): string {
+  if (!preview || preview.stage === "collecting") return "내 출발역 넣기";
+  if (preview.stage === "decided") return "방 보기";
+  return preview.room.canJoin ? "내 출발역 넣기" : "결과 보기";
+}
+
+/**
+ * 카카오톡 공유 API로 보내는 메시지. 공유 시트와 같은 문구·같은 번호의 링크이고, 그림은 그 링크 미리보기의 그림(결과가 없으면 사이트
+ * 기본 그림)이다. `preview`는 공유 칸이 쓰는 것과 같은 값(화면의 방과 번호가 같은 미리보기, 없으면 undefined)이다.
+ */
+export function roomKakaoMessage(roomId: string, preview: RoomPreview | undefined): KakaoFeedMessage {
+  const copy = preview ? roomShareCopy(preview) : INVITE_COPY;
+  const path = roomShareLink(roomId, preview?.room.shareVersion);
+  const imagePath =
+    preview && preview.stage !== "collecting"
+      ? roomImagePath(roomId, preview.room.shareVersion, preview.dataVersion)
+      : SITE_OG_IMAGE_PATH;
+  return {
+    title: copy.message.title,
+    description: copy.message.text,
+    imagePath,
+    path,
+    buttons: [{ title: kakaoButton(preview), path }],
+  };
 }

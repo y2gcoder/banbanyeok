@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RoomPreview, TimeBasis } from "@/lib/api/types";
-import { INVITE_COPY, roomShareCopy } from "./share-copy";
+import { kakaoFeedSettings } from "@/lib/share/kakao";
+import { INVITE_COPY, roomKakaoMessage, roomShareCopy } from "./share-copy";
 
 const WEEKDAY_DAY: TimeBasis = {
   timeSlot: "weekday-day",
@@ -194,6 +195,85 @@ describe("방 공유 문구", () => {
     for (const preview of [result(), decided(), result({ room: room({ canJoin: false }) })]) {
       const text = JSON.stringify(roomShareCopy(preview));
       expect(text).toContain("참가자 2");
+      expect(text).not.toContain("신촌");
+    }
+  });
+});
+
+describe("카카오톡 공유 메시지", () => {
+  const ORIGIN = "https://banbanyeok.app";
+  const sent = (preview: RoomPreview | undefined) => kakaoFeedSettings(roomKakaoMessage("qt7yvmsht3", preview), ORIGIN);
+  const ROOM_LINK = "https://banbanyeok.app/r/qt7yvmsht3?sv=5";
+  const roomLink = { webUrl: ROOM_LINK, mobileWebUrl: ROOM_LINK };
+
+  it("결과가 있고 더 들어올 수 있으면 공유 시트와 같은 문구, 그 번호의 방 그림, '내 출발역 넣기' 버튼 하나", () => {
+    expect(sent(result())).toEqual({
+      objectType: "feed",
+      content: {
+        title: "지금은 동대문역사문화공원이 제일 공평해요",
+        description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분",
+        imageUrl: "https://banbanyeok.app/r/qt7yvmsht3/og?sv=5&dv=20261115.8",
+        imageWidth: 1200,
+        imageHeight: 630,
+        link: roomLink,
+      },
+      buttons: [{ title: "내 출발역 넣기", link: roomLink }],
+    });
+  });
+
+  it("더 들어올 수 없으면 '결과 보기', 정했으면 '방 보기'이고 링크는 늘 그 미리보기의 번호다", () => {
+    const full = sent(result({ room: room({ canJoin: false, shareVersion: 9 }) }));
+    expect(full.content.title).toBe("동대문역사문화공원에서 볼까?");
+    expect(full.buttons).toEqual([{ title: "결과 보기", link: full.content.link }]);
+    expect(full.content.link.webUrl).toBe("https://banbanyeok.app/r/qt7yvmsht3?sv=9");
+    expect(full.content.imageUrl).toBe("https://banbanyeok.app/r/qt7yvmsht3/og?sv=9&dv=20261115.8");
+
+    const done = sent(decided());
+    expect(done.content.title).toBe("강남에서 만나요");
+    expect(done.content.description).toBe(
+      "민수가 정했어요 · 11월 21일 (토) 저녁 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분",
+    );
+    expect(done.buttons).toEqual([{ title: "방 보기", link: roomLink }]);
+  });
+
+  it("모으는 중이나 미리보기가 없으면 초대 문구와 사이트 기본 그림, 미리보기가 없으면 번호 없는 링크", () => {
+    const collecting = sent({ stage: "collecting", room: room({ participantCount: 1 }) });
+    expect(collecting.content).toMatchObject({
+      title: INVITE_COPY.message.title,
+      description: INVITE_COPY.message.text,
+      imageUrl: "https://banbanyeok.app/opengraph-image",
+      link: roomLink,
+    });
+    expect(collecting.buttons).toEqual([{ title: "내 출발역 넣기", link: roomLink }]);
+
+    const unknown = sent(undefined);
+    const bare = "https://banbanyeok.app/r/qt7yvmsht3";
+    expect(unknown.content.link).toEqual({ webUrl: bare, mobileWebUrl: bare });
+    expect(unknown.content.imageUrl).toBe("https://banbanyeok.app/opengraph-image");
+    expect(unknown.buttons).toEqual([{ title: "내 출발역 넣기", link: { webUrl: bare, mobileWebUrl: bare } }]);
+  });
+
+  it("모든 링크와 그림은 이 사이트의 출처이고 버튼은 카카오 한도(2개) 안이다", () => {
+    for (const preview of [undefined, result(), result({ room: room({ canJoin: false }) }), decided()]) {
+      const settings = sent(preview);
+      const urls = [settings.content.imageUrl, settings.content.link.webUrl, settings.content.link.mobileWebUrl];
+      for (const button of settings.buttons) urls.push(button.link.webUrl, button.link.mobileWebUrl);
+      for (const url of urls) expect(new URL(url).origin).toBe(ORIGIN);
+      expect(settings.buttons.length).toBeGreaterThan(0);
+      expect(settings.buttons.length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it("이름은 글이라 이모지도 그대로 가고, 숨긴 사람은 '참가자 N'이며 출발역 이름은 어디에도 없다", () => {
+    const times = [
+      { label: "🎂", seconds: 600 },
+      { label: "참가자 2", seconds: 700 },
+    ];
+    const station = { stationCode: "s1q", stationName: "동대문역사문화공원", times };
+    for (const preview of [result({ station }), decided({ station, decidedBy: "🎂" })]) {
+      const text = JSON.stringify(sent(preview));
+      expect(text).toContain("🎂 10분");
+      expect(text).toContain("참가자 2 12분");
       expect(text).not.toContain("신촌");
     }
   });

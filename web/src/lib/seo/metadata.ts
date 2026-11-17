@@ -10,7 +10,7 @@ import { withJosa } from "@/lib/display/korean";
 import { formatMinutes } from "@/lib/display/minutes";
 import { INVITE_COPY, type RoomShareCopy } from "@/lib/room/share-copy";
 import { APP_NAME } from "./app-manifest";
-import { OG_HEIGHT, OG_WIDTH } from "./og-text";
+import { OG_HEIGHT, OG_WIDTH, SITE_OG_IMAGE_PATH } from "./og-text";
 import { PAIR_PATH_PREFIX, type PairPage } from "./pair-pages";
 import { absoluteUrl, isIndexableSite, siteEnv, siteUrl } from "./site";
 
@@ -111,7 +111,7 @@ export function hubMetadata(env: Env = siteEnv()): Metadata {
 
 /** 사이트 기본 미리보기 이미지(빌드 때 만든 정적 PNG). `openGraph`를 하위 페이지가 정의하면 부모의 이미지가 사라지므로 직접 가리킨다. */
 const DEFAULT_IMAGES = [
-  { url: "/opengraph-image", width: OG_WIDTH, height: OG_HEIGHT, alt: `${SITE_NAME}: 우리 어디서 만나야 덜 억울할까?` },
+  { url: SITE_OG_IMAGE_PATH, width: OG_WIDTH, height: OG_HEIGHT, alt: `${SITE_NAME}: 우리 어디서 만나야 덜 억울할까?` },
 ];
 
 /**
