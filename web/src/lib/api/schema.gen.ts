@@ -91,6 +91,36 @@ export interface paths {
         patch: operations["updateRoom"];
         trace?: never;
     };
+    "/rooms/{roomId}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 10자 Crockford base32 무작위 ID */
+                roomId: components["parameters"]["RoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 만날 역 정하기·바꾸기·풀기 (참여자 누구나)
+         * @description `stationCode`가 있으면 그 역으로 정하고(다른 역이 정해져 있으면 바꾼다) null이면 푼다. 역은 만날 역 후보여야 하고 폐기된 코드는
+         *     정식 코드로 바꿔 저장한다. 정하려면 참가자가 2명 이상이어야 한다.
+         *
+         *     `seenVersion`은 화면이 본 공유 번호다(결과 카드에서 정하면 그 결과의 `Result.shareVersion`, 그 밖에는 `Room.shareVersion`).
+         *     정한 역 칸이 그 뒤에 바뀌었으면(참여·출발역 변경·나가기·내보내기로 풀렸거나 다른 사람이 정했거나 풀었으면) 409 `ROOM_CHANGED`다.
+         *     별칭·숨기기·잠금·모드·약속 변경은 정함을 풀지 않으므로 409가 나지 않는다. 화면은 방과 결과를 다시 불러 확인한 뒤 다시 누른다.
+         *
+         *     이미 그 상태면(같은 역이 정해져 있거나 정한 역 없이 풀기) 아무것도 바꾸지 않고 200이다(재시도 안전, 번호도 그대로).
+         */
+        put: operations["setDecision"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rooms/{roomId}/participants": {
         parameters: {
             query?: never;
@@ -149,6 +179,35 @@ export interface paths {
          *     participantToken이 있으면 본인 출발역과 경로 상세를 포함한다. 상세 경로 필드는 P3에서 확정한다.
          */
         get: operations["getRoomResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rooms/{roomId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 10자 Crockford base32 무작위 ID */
+                roomId: components["parameters"]["RoomId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * 링크 미리보기 내용 (누구에게나 같은 값)
+         * @description 공유 링크 `/r/{roomId}?sv={n}`의 미리보기(제목·설명·그림)와 공유 문구가 쓰는 방의 지금 상태. 토큰을 보내도 읽지 않는다. 그래서
+         *     누가 묻든 같은 값이고 출발역 필드가 없다(이름은 짧은 이름, 숨긴 사람은 "참가자 N"). 번호(`room.shareVersion`)와 내용은 방을 한 번
+         *     읽은 같은 값에서 나온다.
+         *
+         *     결과는 방의 기본 기준(`Room.mode`·`favorTarget`)으로 계산한다. favor 방에서 우대 대상이 나갔으면 첫 참가자를 우대한다.
+         *     단계(`stage`): `collecting`은 2명 미만이거나 모두 갈 수 있는 후보가 없다. `result`는 기본 기준의 1위. `decided`는 정한 역이며
+         *     상위 3곳 밖이어도 그 역까지의 시간을 싣는다.
+         */
+        get: operations["getRoomPreview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -244,7 +303,7 @@ export interface components {
          *     | 상태 | code | 뜻 |
          *     |---|---|---|
          *     | 400 | `INVALID_REQUEST` | 본문이 JSON이 아니거나 필드가 없거나 형식이 다르다 |
-         *     | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정) |
+         *     | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정), 또는 정하려는 역이 만날 역 후보가 아니다(`setDecision`) |
          *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
          *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
@@ -252,7 +311,8 @@ export interface components {
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
-         *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과를 계산할 수 없다 |
+         *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
+         *     | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기를 받지 않았다(`setDecision`). 방을 다시 불러 확인한 뒤 다시 누른다 |
          *     | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
          *     | 429 | `RATE_LIMITED` | 속도 제한. `Retry-After`(초)를 따른다 |
          *     | 500 | `INTERNAL_ERROR` | 서버 오류. 내용은 응답에 싣지 않는다 |
@@ -431,6 +491,13 @@ export interface components {
              * @description 방을 만든 시각. 클라이언트가 통계의 `seconds_since_room_created`를 셀 때만 쓴다. 이 필드를 모르는 옛 서버는 보내지 않는다
              */
             createdAt?: string;
+            /** @description 지금 방의 공유 번호. 공유 링크의 `?sv=`와 풀기의 `seenVersion`에 쓴다. 이 필드를 모르는 옛 서버는 보내지 않는다 */
+            shareVersion?: components["schemas"]["ShareVersion"];
+            /**
+             * @description 방에서 정한 만날 역. 없으면 null. 참여·출발역 변경·나가기·내보내기가 있으면 풀린다. 정한 역이 지금 데이터의 만날 역이 아니면
+             *     없는 것으로 보인다. 이 필드를 모르는 옛 서버는 보내지 않는다
+             */
+            decision?: components["schemas"]["Decision"] | null;
             /**
              * @description 방이 계산할 기준: 약속 날짜(`meetingDate`)·시각(`meetingTime`)·시간대(`meetingBand`)에서 서버가 정한 구분과 화면 문구(`label`). 결과를 계산하기 전(참여자가
              *     1명이어도)에 참여 화면의 "○○ 기준으로 계산해요"가 이 `label`을 그대로 쓴다. 클라이언트는 날짜로 공휴일·요일을 다시 계산하지 않는다.
@@ -485,6 +552,87 @@ export interface components {
             /** @description 엄밀한 공평 1위. favor 상한의 기준 */
             baselineStationCode?: components["schemas"]["StationCode"] | null;
             candidates: components["schemas"]["Candidate"][];
+            /** @description 방 결과에만 있다(`/recommend`에는 없다). 이 결과를 계산한 방의 공유 번호이고, 결과 카드에서 정할 때 `seenVersion`으로 보낸다 */
+            shareVersion?: components["schemas"]["ShareVersion"];
+        };
+        /**
+         * Format: int64
+         * @description 방 공유 번호. 미리보기에 보이는 것(참여자·이름·숨기기·출발역·모드·우대 대상·잠금·약속·정한 역)이 바뀔 때마다 서버(DB)가 올리고
+         *     줄지 않는다. 내용 해시가 아니라서 같은 상태로 돌아와도 번호는 커진다. `dataVersion`(역 데이터 버전)과 다르다.
+         */
+        ShareVersion: number;
+        Decision: {
+            stationCode: components["schemas"]["StationCode"];
+            stationName: string;
+            /** @description 정한 참가자의 participantId. 이름은 `participants[].label`에서 찾는다 */
+            decidedBy: string;
+            /** Format: date-time */
+            decidedAt: string;
+        };
+        DecisionRequest: {
+            /** @description 정할 역. null이면 푼다 */
+            stationCode: components["schemas"]["StationCode"] | null;
+            seenVersion: components["schemas"]["ShareVersion"];
+        };
+        /** @description 링크 미리보기 내용. `stage`로 구별한다 */
+        RoomPreview: components["schemas"]["RoomPreviewCollecting"] | components["schemas"]["RoomPreviewResult"] | components["schemas"]["RoomPreviewDecided"];
+        RoomPreviewCollecting: {
+            /** @constant */
+            stage: "collecting";
+            room: components["schemas"]["PreviewRoom"];
+        };
+        RoomPreviewResult: {
+            /** @constant */
+            stage: "result";
+            room: components["schemas"]["PreviewRoom"];
+            /** @description 계산에 쓴 manifest dataVersion(그림 주소의 `dv`) */
+            dataVersion: string;
+            basis: components["schemas"]["PreviewBasis"];
+            station: components["schemas"]["PreviewStation"];
+        };
+        RoomPreviewDecided: {
+            /** @constant */
+            stage: "decided";
+            room: components["schemas"]["PreviewRoom"];
+            /** @description 계산에 쓴 manifest dataVersion(그림 주소의 `dv`) */
+            dataVersion: string;
+            basis: components["schemas"]["PreviewBasis"];
+            station: components["schemas"]["PreviewStation"];
+            /** @description 정한 사람의 짧은 이름(숨긴 사람은 "참가자 N") */
+            decidedBy: string;
+            /** Format: date-time */
+            decidedAt: string;
+        };
+        PreviewRoom: {
+            roomId: string;
+            shareVersion: components["schemas"]["ShareVersion"];
+            participantCount: number;
+            /** @description 지금 링크로 새로 들어올 수 있다(자리가 있고 잠기지 않았다) */
+            canJoin: boolean;
+            /** Format: date */
+            meetingDate: string | null;
+            meetingTime: components["schemas"]["MeetingTime"] | null;
+            meetingBand: components["schemas"]["MeetingBand"] | null;
+            /** @description 약속 날짜·시각에서 정한 계산 기준과 문구(`Room.timeBasis`와 같다) */
+            timeBasis: components["schemas"]["TimeBasis"];
+        };
+        /** @description 방의 기본 기준(보는 사람이 고른 탭이 아니다) */
+        PreviewBasis: {
+            mode: components["schemas"]["Mode"];
+            /** @description `mode=favor`일 때 우대하는 사람의 짧은 이름 */
+            favorLabel: string | null;
+        };
+        PreviewStation: {
+            stationCode: components["schemas"]["StationCode"];
+            stationName: string;
+            /** @description 참여 순서 */
+            times: components["schemas"]["PreviewTime"][];
+        };
+        PreviewTime: {
+            /** @description 짧은 이름(`Participant.shortLabel`). 숨긴 사람은 "참가자 N" */
+            label: string;
+            /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null */
+            seconds: number | null;
         };
     };
     responses: {
@@ -673,6 +821,47 @@ export interface operations {
             429: components["responses"]["Error"];
         };
     };
+    setDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 10자 Crockford base32 무작위 ID */
+                roomId: components["parameters"]["RoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description 바뀐(또는 그대로인) 방. 요청자 시점이다(본인 출발역이 보인다) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            /** @description 화면이 본 뒤 방이 바뀌었다(`ROOM_CHANGED`), 또는 참가자가 2명 미만이다(`NOT_ENOUGH_PARTICIPANTS`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            429: components["responses"]["Error"];
+        };
+    };
     joinRoom: {
         parameters: {
             query?: never;
@@ -813,6 +1002,40 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+        };
+    };
+    getRoomPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 10자 Crockford base32 무작위 ID */
+                roomId: components["parameters"]["RoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 미리보기 내용 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomPreview"];
+                };
+            };
+            404: components["responses"]["Error"];
+            /** @description 참가자의 출발역이 지금 데이터에 없다(`STATION_UNAVAILABLE`). 클라이언트는 기본 초대 미리보기를 쓴다 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            429: components["responses"]["Error"];
         };
     };
     answerOutcome: {

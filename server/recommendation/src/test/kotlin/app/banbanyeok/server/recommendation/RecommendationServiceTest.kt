@@ -170,6 +170,31 @@ class RecommendationServiceTest :
             }
         }
 
+        describe("times to one station") {
+            it(
+                "measures a station outside the top three, keeps unreachable people as null, and knows only candidates",
+            ) {
+                val request = RecommendRequest(people("03v", "31a"), RecommendMode.FAIR)
+                ("4xz" in service().recommend(request).candidates.map { it.stationCode }) shouldBe false
+                service().timesTo(request, "4xz") shouldContainExactly
+                    listOf(ParticipantTime("p0", 2400, 2), ParticipantTime("p1", 3000, 3))
+                service().timesTo(request, "zzz").shouldBeNull()
+
+                val gap =
+                    smallOd(listOf("03v", "130"), listOf("03v", "130"), listOf(listOf(0, null), listOf(900, 0)))
+                service(
+                    gap,
+                ).timesTo(RecommendRequest(people("03v", "130"), RecommendMode.FAIR), "130") shouldContainExactly
+                    listOf(null, ParticipantTime("p1", 0, 0))
+            }
+
+            it("rejects the same requests as recommend") {
+                shouldThrow<RecommendationException> {
+                    service().timesTo(RecommendRequest(people("03v", "zzz"), RecommendMode.FAIR), "130")
+                }.error shouldBe RecommendationError.UNKNOWN_STATION
+            }
+        }
+
         describe("request validation") {
             it("rejects fewer than two or more than four people") {
                 shouldThrow<RecommendationException> {

@@ -17,6 +17,7 @@ import io.ktor.server.testing.testApplication
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -255,6 +256,150 @@ class ApiIntegrationTest :
                     val version = parse(manifest).str("dataVersion")
                     api.call(HttpMethod.Get, "/v1/data/$version/stations.json", expected = HttpStatusCode.OK)
                     api.call(HttpMethod.Get, "/v1/healthz", expected = HttpStatusCode.OK)
+                }
+            }
+        }
+
+        describe("sharing a room and deciding the meeting station") {
+            it("previews a favor room whose stored favor target already left by favoring the first participant") {
+                integration { api, origins ->
+                    val created =
+                        parse(
+                            api
+                                .call(
+                                    HttpMethod.Post,
+                                    "/v1/rooms",
+                                    """{"mode":"favor","favorTarget":"host","host":{"nickname":"민수","originCode":"${origins[0]}"}}""",
+                                    expected = HttpStatusCode.Created,
+                                ).bodyAsText(),
+                        )
+                    val roomId = created.str("roomId")
+                    val room = "/v1/rooms/$roomId"
+                    api.call(
+                        HttpMethod.Post,
+                        "$room/participants",
+                        """{"nickname":"지연","originCode":"${origins.last()}"}""",
+                        expected = HttpStatusCode.Created,
+                    )
+                    // 이 수정 전의 서버는 나간 사람을 우대 대상으로 저장할 수 있었다. 그 행이 남아 있다.
+                    TestDatabase.dataSource.connection.use { connection ->
+                        connection.prepareStatement("UPDATE rooms SET favor_pid = 'gone00' WHERE id = ?").use {
+                            it.setString(1, roomId)
+                            it.executeUpdate()
+                        }
+                    }
+                    val view = parse(api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK).bodyAsText())
+                    view.jsonObject["favorTarget"] shouldBe JsonNull
+                    val preview =
+                        parse(api.call(HttpMethod.Get, "$room/preview", expected = HttpStatusCode.OK).bodyAsText())
+                    preview.jsonObject
+                        .getValue("basis")
+                        .str("favorLabel") shouldBe "민수"
+                }
+            }
+
+            it("moves the preview from invite to result to decided and refuses a decision from a stale screen") {
+                integration { api, origins ->
+                    val (a, b, c) = Triple(origins[0], origins[origins.size / 2], origins.last())
+                    val created =
+                        parse(
+                            api
+                                .call(
+                                    HttpMethod.Post,
+                                    "/v1/rooms",
+                                    """{"mode":"fair","host":{"nickname":"민수","originCode":"$a"}}""",
+                                    expected = HttpStatusCode.Created,
+                                ).bodyAsText(),
+                        )
+                    val room = "/v1/rooms/${created.str("roomId")}"
+                    val hostPart = created.str("participantToken")
+                    val invite =
+                        parse(api.call(HttpMethod.Get, "$room/preview", expected = HttpStatusCode.OK).bodyAsText())
+                    invite.str("stage") shouldBe "collecting"
+
+                    val friend =
+                        parse(
+                            api
+                                .call(
+                                    HttpMethod.Post,
+                                    "$room/participants",
+                                    """{"originCode":"$b","hidden":true}""",
+                                    expected = HttpStatusCode.Created,
+                                ).bodyAsText(),
+                        )
+                    val friendPart = friend.str("participantToken")
+                    // 숨긴 본인의 토큰을 보내도 미리보기에는 출발역이 없다.
+                    val shown =
+                        api.call(
+                            HttpMethod.Get,
+                            "$room/preview",
+                            token = friendPart,
+                            expected = HttpStatusCode.OK,
+                        )
+                    val result = parse(shown.bodyAsText())
+                    result.str("stage") shouldBe "result"
+                    shown.bodyAsText() shouldNotContain "\"$b\""
+                    val labels =
+                        result.jsonObject
+                            .getValue("station")
+                            .jsonObject
+                            .getValue("times")
+                            .jsonArray
+                            .map { it.str("label") }
+                    labels shouldContainExactly listOf("민수", "참가자 2")
+
+                    val computed =
+                        parse(api.call(HttpMethod.Get, "$room/result", expected = HttpStatusCode.OK).bodyAsText())
+                    val seen = computed.str("shareVersion")
+                    val second =
+                        computed.jsonObject
+                            .getValue("candidates")
+                            .jsonArray[1]
+                            .str("stationCode")
+                    api.call(
+                        HttpMethod.Put,
+                        "$room/decision",
+                        """{"stationCode":"$second","seenVersion":$seen}""",
+                        token = friendPart,
+                        expected = HttpStatusCode.OK,
+                    )
+                    val decided =
+                        parse(api.call(HttpMethod.Get, "$room/preview", expected = HttpStatusCode.OK).bodyAsText())
+                    decided.str("stage") shouldBe "decided"
+                    decided.str("decidedBy") shouldBe "참가자 2"
+                    decided.jsonObject
+                        .getValue("station")
+                        .str("stationCode") shouldBe second
+
+                    // 정한 뒤 방장이 출발역을 바꾸면 정함이 풀리고, 그 전 화면에서 다시 정하면 409다.
+                    val roomView = parse(api.call(HttpMethod.Get, room, token = hostPart).bodyAsText())
+                    val beforeChange = roomView.str("shareVersion")
+                    val hostId = created.str("participantId")
+                    api.call(
+                        HttpMethod.Put,
+                        "$room/participants/$hostId",
+                        """{"nickname":"민수","originCode":"$c"}""",
+                        token = hostPart,
+                        expected = HttpStatusCode.OK,
+                    )
+                    val stale =
+                        api.call(
+                            HttpMethod.Put,
+                            "$room/decision",
+                            """{"stationCode":"$second","seenVersion":$beforeChange}""",
+                            token = hostPart,
+                            expected = HttpStatusCode.Conflict,
+                        )
+                    parse(stale.bodyAsText()).str("code") shouldBe "ROOM_CHANGED"
+                    val released = parse(api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK).bodyAsText())
+                    released.jsonObject["decision"] shouldBe JsonNull
+                    api.call(
+                        HttpMethod.Put,
+                        "$room/decision",
+                        """{"stationCode":null,"seenVersion":$beforeChange}""",
+                        token = hostPart,
+                        expected = HttpStatusCode.OK,
+                    )
                 }
             }
         }

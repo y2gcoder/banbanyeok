@@ -20,6 +20,10 @@ public enum class RoomError(
     PARTICIPANT_NOT_FOUND(ErrorKind.NOT_FOUND),
     ROOM_FULL(ErrorKind.CONFLICT),
     ROOM_LOCKED(ErrorKind.CONFLICT),
+    NOT_ENOUGH_PARTICIPANTS(ErrorKind.CONFLICT),
+
+    /** 화면이 본 뒤 방의 입력이나 정한 역이 바뀌었다. 방을 다시 불러 확인한 뒤 다시 누른다. */
+    ROOM_CHANGED(ErrorKind.CONFLICT),
 }
 
 public class RoomException(

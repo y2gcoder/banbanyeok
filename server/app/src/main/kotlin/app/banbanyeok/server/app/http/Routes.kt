@@ -17,6 +17,7 @@ import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
 import app.banbanyeok.server.room.RoomService
 import app.banbanyeok.server.room.RoomView
+import app.banbanyeok.server.room.ShareVersion
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -88,6 +89,20 @@ private fun Route.roomRoutes(
             services.rooms.delete(call.roomId(), call.bearerToken())
             call.respond(HttpStatusCode.NoContent)
         }
+        put("/decision") {
+            val body = call.receive<DecisionRequestDto>()
+            if (body.seenVersion < 0) {
+                throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "seenVersion은 0 이상이어야 합니다")
+            }
+            val room =
+                services.rooms.decide(
+                    call.roomId(),
+                    call.bearerToken(),
+                    body.stationCode,
+                    ShareVersion(body.seenVersion),
+                )
+            call.respondRoom(services, room)
+        }
         participantRoutes(services, idempotency)
     }
 }
@@ -144,6 +159,11 @@ private fun Route.resultRoutes(services: ApiServices) {
                 call.request.queryParameters["favor"],
             )
         call.respond(result.toDto(services.directory))
+    }
+    // 토큰을 읽지 않는다. 미리보기는 누가 묻든 같은 값이어야 한다(본인이 숨긴 출발역도 가린다).
+    get("/rooms/{roomId}/preview") {
+        val preview: RoomPreviewDto = services.results.preview(call.roomId()).toDto(services.directory)
+        call.respond(preview)
     }
     post("/recommend") {
         val body = call.receive<RecommendRequestDto>()

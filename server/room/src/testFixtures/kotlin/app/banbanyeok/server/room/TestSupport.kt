@@ -53,11 +53,17 @@ class FakeStationCatalog(
     private val origins: Set<String> = setOf("03v", "130", "225", "31a"),
     /** 폐기된 코드 → 대체 코드(한 단계). */
     private val replacedBy: Map<String, String> = emptyMap(),
+    private val meetingStations: Set<String> = origins,
 ) : StationCatalog {
     override fun isOrigin(code: String): Boolean = code in origins
 
+    override fun isMeetingStation(code: String): Boolean = code in meetingStations
+
     override fun canonical(code: String): String = generateSequence(code) { replacedBy[it] }.last()
 }
+
+/** 역 코드를 바꾸지 않는 [FakeStationCatalog] 기본값의 판정. 저장소 계약 테스트가 쓴다. */
+val fakeDecisionRule = DecisionRule(FakeStationCatalog())
 
 val testPepper = "test-pepper-0123456789-0123456789".toByteArray()
 

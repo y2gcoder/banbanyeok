@@ -450,6 +450,7 @@ class ApiHttpTest :
                         val response = client.json(HttpMethod.Post, "/v1/recommend", body)
                         response.status shouldBe HttpStatusCode.OK
                         OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", response)
+                        response.bodyAsText() shouldNotContain "shareVersion"
                         val participants =
                             Json
                                 .parseToJsonElement(

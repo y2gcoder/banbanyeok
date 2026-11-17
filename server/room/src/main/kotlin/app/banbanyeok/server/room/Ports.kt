@@ -75,6 +75,7 @@ public interface RoomRepository {
         activity: Activity,
     ): Boolean
 
+    /** 우대 대상을 참여자로 바꾸는데 그 사람이 방에 없으면(읽은 뒤 나갔다) 아무것도 바꾸지 않는다. 바뀐 행이 있으면 true. */
     public suspend fun updateRoom(
         roomId: String,
         change: RoomChange,
@@ -86,6 +87,17 @@ public interface RoomRepository {
         outcome: Outcome,
         activity: Activity,
     ): Boolean
+
+    /**
+     * 방 행을 잠그고(참여와 같은 FOR UPDATE) [rule]로 판정해 [DecisionResult.Applied]일 때만 정한 역 칸과 활동 시각을 쓴다.
+     * 요청의 정함이 null이면 푼다. 공유 번호는 쓰지 않는다(트리거가 올린다).
+     */
+    public suspend fun writeDecision(
+        roomId: String,
+        request: DecisionRequest,
+        activity: Activity,
+        rule: DecisionRule,
+    ): DecisionResult
 
     public suspend fun delete(roomId: String): Boolean
 
@@ -125,6 +137,9 @@ public interface StationCatalog {
      * 방은 입력을 저장하기 전과 결과를 계산하기 전에 이 값을 쓴다(옛 링크·옛 방이 계속 열리게).
      */
     public fun canonical(code: String): String = code
+
+    /** 만날 역(od 후보 축)으로 쓸 수 있는 코드. 출발역 축과 다르다. [canonical]을 거친 코드로 묻는다. */
+    public fun isMeetingStation(code: String): Boolean
 }
 
 /** ID와 토큰 생성. 테스트는 결정적인 구현을 쓴다. */

@@ -147,6 +147,24 @@ public class RecommendationService(
         )
     }
 
+    /**
+     * [request]의 사람들이 [stationCode]까지 걸리는 시간(요청 참가자 순서). 순위와 상관없는 역(다른 기준 탭에서 정한 역)도 잰다.
+     * 후보 축에 없는 역이면 null이고, 갈 수 없는 사람은 그 칸이 null이다. 요청 검사는 [recommend]와 같다.
+     */
+    public fun timesTo(
+        request: RecommendRequest,
+        stationCode: String,
+    ): List<ParticipantTime?>? {
+        validate(request)
+        val matrix = travelTimes.measure(request.participants.map { it.originCode }, request.time.slot)
+        val column = matrix.candidates.indexOf(stationCode).takeIf { it >= 0 } ?: return null
+        return request.participants.mapIndexed { row, person ->
+            matrix.times[row][column]?.let { seconds ->
+                ParticipantTime(person.id, seconds, requireNotNull(matrix.transfers[row][column]))
+            }
+        }
+    }
+
     private fun validate(request: RecommendRequest) {
         val people = request.participants
         if (people.size !in MIN_PEOPLE..MAX_PEOPLE) reject(RecommendationError.PEOPLE_COUNT, "참가자는 2~4명이어야 합니다")

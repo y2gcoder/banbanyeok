@@ -35,6 +35,13 @@ class StationDirectory(
 
     override fun isOrigin(code: String): Boolean = travelTimes.isOrigin(code)
 
+    private val meetingCodes: Set<String> =
+        List(dataSet.od.candidateCount) {
+            dataSet.od.candidateCode(it).toString()
+        }.toSet()
+
+    override fun isMeetingStation(code: String): Boolean = code in meetingCodes
+
     override fun nameOf(code: String): String? = names[code]
 
     /**
