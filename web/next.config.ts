@@ -4,6 +4,7 @@ import { analyticsConfig } from "./src/lib/analytics/config";
 import { apiOrigin } from "./src/lib/api/config";
 import { securityHeaders } from "./src/lib/security/headers";
 import { isHttpsCanonicalSite } from "./src/lib/seo/site";
+import { publicKakaoJsKey } from "./src/lib/share/kakao";
 
 const origin = apiOrigin();
 const analytics = analyticsConfig({
@@ -32,6 +33,7 @@ const nextConfig: NextConfig = {
         headers: securityHeaders({
           production: process.env.NODE_ENV === "production",
           posthogHost: analytics?.host,
+          kakaoShare: publicKakaoJsKey() !== null,
           hsts: isHttpsCanonicalSite(),
         }),
       },
