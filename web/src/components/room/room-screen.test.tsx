@@ -555,6 +555,31 @@ describe("방 화면", () => {
       expect(api.setDecision).toHaveBeenCalledWith(ROOM, "tok-1", { stationCode: "v96", seenVersion: 4 });
     });
 
+    it("방이 새 번호로 바뀌고 그 미리보기를 받는 동안은 옛 번호·옛 단계 대신 번호 없는 링크와 초대 문구를 준다", async () => {
+      joinedAs("m1", "tok-1");
+      const user = userEvent.setup();
+      const { client } = renderScreen();
+      expect(await screen.findByRole("button", { name: "카톡으로 결과 보내기" })).toBeInTheDocument();
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3`);
+
+      holdPreviews = true;
+      decided = {
+        stationCode: "s1q",
+        stationName: "동대문역사문화공원",
+        decidedBy: "h1",
+        decidedAt: "2026-11-17T10:00:00Z",
+      };
+      version = 4;
+      await client.invalidateQueries({ queryKey: ["room", ROOM] });
+      expect(await screen.findByRole("heading", { name: "동대문역사문화공원에서 만나요" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "카톡으로 보내기" })).toBeInTheDocument();
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}`);
+
+      release();
+      expect(await screen.findByRole("button", { name: "카톡으로 정한 역 알리기" })).toBeInTheDocument();
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=4`);
+    });
+
     it("그사이 방이 바뀌어 거절되면(409 ROOM_CHANGED) 방·결과·미리보기를 다시 불러오고 다시 고르게 안내한다", async () => {
       joinedAs("m1", "tok-1");
       vi.mocked(api.setDecision).mockRejectedValue(new ApiRequestError(409, "ROOM_CHANGED", "바뀜"));

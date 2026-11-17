@@ -49,17 +49,34 @@ export function roomResultQueryOptions(
   });
 }
 
+/** `signal`이 끊기거나 `ms`가 지나면 끊기는 신호로 부른다. 브라우저용이라 `AbortSignal.any`(Safari 17.4부터)를 쓰지 않는다. */
+async function withTimeout<T>(signal: AbortSignal, ms: number, call: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal.addEventListener("abort", abort, { once: true });
+  const timer = setTimeout(abort, ms);
+  try {
+    return await call(controller.signal);
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", abort);
+  }
+}
+
+/** 서버가 깨는 중이어도 이 안에는 답한다. 넘으면 끊고 다시 시도한다(끝나지 않는 요청이 공유 칸을 초대 문구에 묶어 두지 않게). */
+export const PREVIEW_TIMEOUT_MS = 10_000;
+
 /**
  * 공유 칸의 링크와 문구. 키에 방의 공유 번호가 들어 있어 방 폴링(15초)이 시계다: 번호가 바뀌면 새로 받고, 같은 번호는 다시 받지 않는다.
- * 새 번호를 받는 동안은 이전 미리보기(번호와 문구가 한 쌍)를 그대로 쓴다. 번호를 보내지 않는 옛 서버면 부르지 않는다.
+ * 이전 번호의 미리보기는 남기지 않는다(옛 단계의 문구를 보내게 된다). 번호를 보내지 않는 옛 서버면 부르지 않는다.
  */
 export function roomPreviewQueryOptions(roomId: string, shareVersion: number | undefined) {
   return queryOptions({
     queryKey: ["room-preview", roomId, shareVersion ?? null] as const,
-    queryFn: ({ signal }) => getRoomPreview(roomId, { signal }),
+    queryFn: ({ signal }) =>
+      withTimeout(signal, PREVIEW_TIMEOUT_MS, (both) => getRoomPreview(roomId, { signal: both })),
     enabled: shareVersion !== undefined,
     retry,
     staleTime: Number.POSITIVE_INFINITY,
-    placeholderData: keepPreviousData,
   });
 }

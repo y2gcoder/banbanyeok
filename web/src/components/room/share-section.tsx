@@ -18,11 +18,11 @@ const HINTS: Record<ShareStage, string | null> = {
 /**
  * 방 화면의 공유 칸(하나). 링크와 문구는 같은 미리보기(`roomShareCopy`)에서 나온다: 링크의 번호는 그 미리보기를 만든 방의 번호다.
  * 미리보기는 방의 공유 번호가 바뀔 때 미리 받아 둔다(버튼을 누른 뒤 네트워크를 기다리면 iOS가 공유 시트를 열어 주지 않는다).
- * 못 받았거나 받는 중이면 번호 없는 링크와 초대 문구(서로 맞는 한 쌍)를 쓴다.
+ * 화면의 방과 번호가 같은 미리보기만 쓰고, 못 받았거나 받는 중이거나 번호가 다르면 번호 없는 링크와 초대 문구(서로 맞는 한 쌍)를 쓴다.
  */
 export function RoomShareSection({ roomId, room }: { roomId: string; room: Room }) {
   const query = useQuery(roomPreviewQueryOptions(roomId, room.shareVersion));
-  const preview = query.data;
+  const preview = query.data?.room.shareVersion === room.shareVersion ? query.data : undefined;
   const copy = preview ? roomShareCopy(preview) : INVITE_COPY;
   const path = roomShareLink(roomId, preview?.room.shareVersion);
   const alone = room.participants.length < 2;
