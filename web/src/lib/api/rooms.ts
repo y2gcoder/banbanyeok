@@ -1,9 +1,10 @@
 /**
- * 방 API 호출(브라우저 전용). 토큰은 `Authorization: Bearer` 헤더로만 보내고 URL·본문·로그에 넣지 않는다.
+ * 방 API 호출. 미리보기(`getRoomPreview`)만 서버(메타데이터·그림 경로)에서도 부르고, 나머지는 브라우저 전용이다. 토큰은 `Authorization: Bearer` 헤더로만 보내고 URL·본문·로그에 넣지 않는다.
  * 계약: contracts/openapi.yaml(rooms·participants·result·outcome). 오류는 [ApiRequestError]로 던진다(code로 분기).
  */
-import { client, failure } from "./client";
+import { client, failure, trustedServerHeaders } from "./client";
 import type {
+  DecisionRequest,
   JoinedRoom,
   Mode,
   OutcomeAnswer,
@@ -14,6 +15,7 @@ import type {
   RoomCreateRequest,
   RoomParticipant,
   RoomPatch,
+  RoomPreview,
 } from "./types";
 
 type Options = { signal?: AbortSignal | undefined };
@@ -146,4 +148,32 @@ export async function answerOutcome(roomId: string, participantToken: string, an
     cache: "no-store",
   });
   if (!result.response.ok) throw failure(result.response.status, result.error);
+}
+
+/**
+ * 정하기·바꾸기·풀기(`stationCode: null`). `seenVersion`은 화면이 그린 공유 번호다: 결과 카드에서 정하면 그 결과의 `shareVersion`,
+ * 정한 역 풀기는 방의 `shareVersion`. 그 뒤 방이 바뀌었으면 409 `ROOM_CHANGED`.
+ */
+export async function setDecision(roomId: string, participantToken: string, body: DecisionRequest): Promise<Room> {
+  const result = await client().PUT("/rooms/{roomId}/decision", {
+    params: { path: { roomId } },
+    headers: bearer(participantToken),
+    body,
+    cache: "no-store",
+  });
+  if (result.data !== undefined) return result.data;
+  throw failure(result.response.status, result.error);
+}
+
+/**
+ * 링크 미리보기 내용(누가 묻든 같은 값, 출발역 필드 없음). 토큰을 보내지 않는다. 서버(Workers)에서 부르면 신뢰 헤더를 붙인다.
+ */
+export async function getRoomPreview(roomId: string, { signal }: Options = {}): Promise<RoomPreview> {
+  const result = await client(await trustedServerHeaders()).GET("/rooms/{roomId}/preview", {
+    params: { path: { roomId } },
+    cache: "no-store",
+    ...(signal ? { signal } : {}),
+  });
+  if (result.data !== undefined) return result.data;
+  throw failure(result.response.status, result.error);
 }

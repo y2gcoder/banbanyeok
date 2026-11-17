@@ -32,12 +32,14 @@ function favorName(view: ResultView, state: ShareState): string | null {
 /** 공유 링크 그림(`SharedCard`)에 넘기는 값. */
 export type SharedCardData = {
   stationName: string;
+  /** 역 이름 아래 큰 줄. 없으면 "에서 볼까?"(방에서 정한 역은 "에서 만나요"). */
+  suffix?: string;
   /**
    * 입력 순서. 이름은 서버 짧은 이름(shortLabel)을 글꼴에 있는 글자만으로 정리한 값(`ogSafeName`)이다. 출발역을 숨긴 사람은 서버가
-   * "참가자 N"으로 주므로 숨긴 출발역은 그림에 나올 수 없다. `favored`는 "누구 쪽으로"에서 고른 사람.
+   * "참가자 N"으로 주므로 숨긴 출발역은 그림에 나올 수 없다. `favored`는 "누구 쪽으로"에서 고른 사람. `minutes`가 null이면 그 역까지 갈 수 없다.
    */
-  people: { name: string; minutes: number; favored: boolean }[];
-  /** "공평하게 고름" 같은 기준 한 마디(+ " · 토요일 밤 기준"). */
+  people: { name: string; minutes: number | null; favored: boolean }[];
+  /** "공평하게 고름" 같은 기준 한 마디(+ " · 토요일 밤 기준"). 방에서 정한 역은 "민수가 정했어요 · 11월 21일 (토) 저녁". */
   modeLine: string;
 };
 

@@ -1,6 +1,6 @@
 /** 방 화면의 서버 상태(TanStack Query). 토큰은 키에 넣지 않는다(참여자 ID로 구분한다). */
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
-import { getRoom, getRoomResult } from "@/lib/api/rooms";
+import { getRoom, getRoomPreview, getRoomResult } from "@/lib/api/rooms";
 import type { Mode } from "@/lib/api/types";
 import { isClientError, isRoomGone } from "./errors";
 
@@ -14,7 +14,7 @@ const retry = (count: number, error: unknown) => !isClientError(error) && count 
 const pollWhileAlive = (query: { state: { error: unknown } }) => (isRoomGone(query.state.error) ? false : POLL_MS);
 const refetchOnFocusWhileAlive = (query: { state: { error: unknown } }) => !isRoomGone(query.state.error);
 
-const roomKey = (roomId: string, participantId: string | null) => ["room", roomId, participantId] as const;
+export const roomKey = (roomId: string, participantId: string | null) => ["room", roomId, participantId] as const;
 
 export function roomQueryOptions(roomId: string, participantToken: string | null, participantId: string | null) {
   return queryOptions({
@@ -45,6 +45,21 @@ export function roomResultQueryOptions(
     refetchInterval: pollWhileAlive,
     refetchOnWindowFocus: refetchOnFocusWhileAlive,
     staleTime: 5_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * 공유 칸의 링크와 문구. 키에 방의 공유 번호가 들어 있어 방 폴링(15초)이 시계다: 번호가 바뀌면 새로 받고, 같은 번호는 다시 받지 않는다.
+ * 새 번호를 받는 동안은 이전 미리보기(번호와 문구가 한 쌍)를 그대로 쓴다. 번호를 보내지 않는 옛 서버면 부르지 않는다.
+ */
+export function roomPreviewQueryOptions(roomId: string, shareVersion: number | undefined) {
+  return queryOptions({
+    queryKey: ["room-preview", roomId, shareVersion ?? null] as const,
+    queryFn: ({ signal }) => getRoomPreview(roomId, { signal }),
+    enabled: shareVersion !== undefined,
+    retry,
+    staleTime: Number.POSITIVE_INFINITY,
     placeholderData: keepPreviousData,
   });
 }

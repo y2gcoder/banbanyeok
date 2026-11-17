@@ -15,6 +15,9 @@ export type RoomParticipant = Schemas["Participant"];
 export type RoomCreated = Schemas["RoomCreated"];
 export type RoomCreateRequest = Schemas["RoomCreateRequest"];
 export type RoomPatch = Schemas["RoomPatch"];
+export type RoomDecision = Schemas["Decision"];
+export type DecisionRequest = Schemas["DecisionRequest"];
+export type RoomPreview = Schemas["RoomPreview"];
 export type ParticipantInput = Schemas["ParticipantInput"];
 export type OutcomeAnswer = NonNullable<
   paths["/rooms/{roomId}/outcome"]["post"]["requestBody"]

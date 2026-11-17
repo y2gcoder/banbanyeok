@@ -17,13 +17,23 @@ function headlineSize(stationName: string): number {
   return Math.min(168, Math.floor(540 / (length * 0.95)));
 }
 
-/** 왼쪽 아래 요약: 큰 줄 "가장 오래 걸려도 31분", 작은 줄 "차이 11분". 길어져도 줄이 넘치지 않게 둘로 나눈다. */
-function summary(minutes: number[]): { longest: string; spread: string } {
+/**
+ * 왼쪽 아래 요약: 큰 줄 "가장 오래 걸려도 31분", 작은 줄 "차이 11분". 길어져도 줄이 넘치지 않게 둘로 나눈다.
+ * 갈 수 없는 사람은 빼고 센다. 아무도 시간이 없으면 요약 없이 기준 줄만 둔다.
+ */
+function summary(people: SharedCardData["people"]): { longest: string; spread: string } | null {
+  const minutes = people.flatMap((p) => (p.minutes === null ? [] : [p.minutes]));
+  if (minutes.length === 0) return null;
   const max = Math.max(...minutes);
   return {
     longest: `${OG_TEXT.longestPrefix}${formatMinutes(max)}`,
     spread: `${OG_TEXT.spreadPrefix}${formatMinutes(max - Math.min(...minutes))}`,
   };
+}
+
+function minutesText(minutes: number | null): string {
+  if (minutes === null) return OG_TEXT.noRoute;
+  return minutes === 0 ? OG_TEXT.zeroMinutes : formatMinutes(minutes);
 }
 
 function ys(count: number): number[] {
@@ -99,9 +109,7 @@ function Lines({ people }: { people: SharedCardData["people"] }) {
           <span style={{ fontSize: 32, color: anyFavored && !person.favored ? OG_COLORS.muted : OG_COLORS.inkSoft }}>
             {person.name}
           </span>
-          <span style={{ fontSize: 38 }}>
-            {person.minutes === 0 ? OG_TEXT.zeroMinutes : formatMinutes(person.minutes)}
-          </span>
+          <span style={{ fontSize: 38 }}>{minutesText(person.minutes)}</span>
         </div>
       ))}
     </div>
@@ -109,11 +117,11 @@ function Lines({ people }: { people: SharedCardData["people"] }) {
 }
 
 /**
- * 공유 링크(`/s?...`) 미리보기: 왼쪽에 "{1위역}에서 볼까?"와 최장·차이, 오른쪽에 각자의 노선이 그 역으로 모이는 그림. 요청 때 만든다.
+ * 공유 링크(`/s?...`)와 방 링크(`/r/<id>?sv=`) 미리보기: 왼쪽에 "{1위역}에서 볼까?"(정한 역은 "에서 만나요")와 최장·차이, 오른쪽에 각자의 노선이 그 역으로 모이는 그림. 요청 때 만든다.
  * 카카오 말풍선(약 270px 폭)에서도 역 이름과 색 노선이 읽히게 크게 그린다. 노선 길이는 사람마다 같다(길이로 시간을 읽게 하지 않는다).
  */
 export function SharedCard({ data }: { data: SharedCardData }) {
-  const lines = summary(data.people.map((p) => p.minutes));
+  const lines = summary(data.people);
   return (
     <OgFrame>
       <div style={{ display: "flex", flex: 1 }}>
@@ -128,13 +136,13 @@ export function SharedCard({ data }: { data: SharedCardData }) {
             }}
           >
             <span style={{ fontSize: headlineSize(data.stationName), letterSpacing: -6 }}>{data.stationName}</span>
-            <span style={{ fontSize: 80, letterSpacing: -3 }}>{OG_TEXT.sharedSuffix}</span>
+            <span style={{ fontSize: 80, letterSpacing: -3 }}>{data.suffix ?? OG_TEXT.sharedSuffix}</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 40, color: OG_COLORS.inkSoft }}>{lines.longest}</span>
+            {lines ? <span style={{ fontSize: 40, color: OG_COLORS.inkSoft }}>{lines.longest}</span> : null}
             {/* 한국어도 낱말 단위로 줄을 바꾼다("저녁"이 "저/녁"으로 갈리지 않게). */}
             <span style={{ fontSize: 30, color: OG_COLORS.muted, wordBreak: "keep-all" }}>
-              {`${lines.spread} ${OG_TEXT.middleDot} ${data.modeLine}`}
+              {lines ? `${lines.spread} ${OG_TEXT.middleDot} ${data.modeLine}` : data.modeLine}
             </span>
           </div>
         </div>

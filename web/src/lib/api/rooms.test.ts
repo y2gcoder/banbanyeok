@@ -8,9 +8,11 @@ import {
   createRoom,
   deleteRoom,
   getRoom,
+  getRoomPreview,
   getRoomResult,
   joinRoom,
   removeParticipant,
+  setDecision,
   updateParticipant,
   updateRoom,
 } from "./rooms";
@@ -96,6 +98,36 @@ describe("방 API 호출", () => {
       expect(call.url.toString()).not.toContain(SECRET);
       expect(call.body).not.toContain(SECRET);
     }
+  });
+
+  it("정하기·풀기: PUT /rooms/{id}/decision, 본 번호를 본문에, 토큰은 헤더에만", async () => {
+    respond = json(200, { roomId: ROOM, participants: [] });
+    await setDecision(ROOM, SECRET, { stationCode: "s1q", seenVersion: 7 });
+    await setDecision(ROOM, SECRET, { stationCode: null, seenVersion: 8 });
+    expect(sent.map((c) => `${c.method} ${c.url.pathname}`)).toEqual([
+      `PUT /v1/rooms/${ROOM}/decision`,
+      `PUT /v1/rooms/${ROOM}/decision`,
+    ]);
+    expect(sent.map((c) => JSON.parse(c.body))).toEqual([
+      { stationCode: "s1q", seenVersion: 7 },
+      { stationCode: null, seenVersion: 8 },
+    ]);
+    for (const call of sent) {
+      expect(call.headers.get("authorization")).toBe(`Bearer ${SECRET}`);
+      expect(call.body).not.toContain(SECRET);
+    }
+    respond = json(409, { code: "ROOM_CHANGED", message: "바뀜" });
+    await expect(setDecision(ROOM, SECRET, { stationCode: "s1q", seenVersion: 7 })).rejects.toMatchObject({
+      status: 409,
+      code: "ROOM_CHANGED",
+    });
+  });
+
+  it("미리보기: GET /rooms/{id}/preview, 토큰을 보내지 않는다", async () => {
+    respond = json(200, { stage: "collecting", room: {} });
+    await getRoomPreview(ROOM);
+    expect(sent.map((c) => `${c.method} ${c.url.pathname}`)).toEqual([`GET /v1/rooms/${ROOM}/preview`]);
+    expect(sent[0]?.headers.get("authorization")).toBeNull();
   });
 
   it("오류는 계약의 {code, message}로 ApiRequestError가 된다(204 응답은 오류가 아니다)", async () => {
