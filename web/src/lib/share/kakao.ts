@@ -62,6 +62,27 @@ export function publicKakaoJsKey(): string | null {
   return kakaoJsKey(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
 }
 
+/**
+ * `sendDefault` 인자를 카카오 기본 템플릿 JSON(`template_object`)으로. SDK가 모바일에서 카카오톡을 열기 전에 카카오에 확인받는 내용과 같은
+ * 모양이다(e2e가 둘이 같은지 본다).
+ */
+export function kakaoTemplateObject(settings: KakaoFeedSettings) {
+  const link = ({ webUrl, mobileWebUrl }: KakaoLink) => ({ web_url: webUrl, mobile_web_url: mobileWebUrl });
+  const { content } = settings;
+  return {
+    object_type: settings.objectType,
+    content: {
+      title: content.title,
+      description: content.description,
+      image_url: content.imageUrl,
+      image_width: content.imageWidth,
+      image_height: content.imageHeight,
+      link: link(content.link),
+    },
+    buttons: settings.buttons.map((button) => ({ title: button.title, link: link(button.link) })),
+  };
+}
+
 export function kakaoFeedSettings(message: KakaoFeedMessage, origin: string): KakaoFeedSettings {
   const link = (path: string): KakaoLink => {
     const url = new URL(path, origin).toString();

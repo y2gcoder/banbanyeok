@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { type RoomRef, roomHashProperty, track } from "@/lib/analytics";
 import type { ShareStage } from "@/lib/room/share-copy";
-import { type KakaoFeedMessage, kakaoFeedSettings, publicKakaoJsKey } from "@/lib/share/kakao";
-import { type KakaoSdk, preloadKakaoSdk, readyKakaoSdk, waitForKakaoSdk } from "@/lib/share/kakao-sdk";
+import { type KakaoFeedMessage, type KakaoFeedSettings, kakaoFeedSettings, publicKakaoJsKey } from "@/lib/share/kakao";
+import { type KakaoSdk, preloadKakaoShare, prepareKakaoShare, readyKakaoShare } from "@/lib/share/kakao-sdk";
 
 /**
  * path는 `/s?...`(혼자 입력한 결과) 또는 `/r/<방 ID>?sv=<n>`(방). 출처는 브라우저에서 붙인다(서버 렌더링에는 window가 없다).
@@ -27,8 +27,8 @@ type Props = {
 };
 
 /**
- * 첫 누름에 SDK를 기다리는 한도. 모바일은 SDK 자신도 카카오 확인 요청을 기다린 뒤 카카오톡을 열므로 기다려도 되고, PC 공유 창(팝업)은
- * 브라우저가 누른 직후 몇 초 동안만 열어 준다. 못 받으면 그 누름은 시스템 공유로 간다.
+ * 첫 누름에 SDK를 받고 카카오에 메시지를 확인받기를 기다리는 한도. 모바일은 SDK 자신도 카카오 확인 요청을 기다린 뒤 카카오톡을 열므로
+ * 기다려도 되고, PC 공유 창(팝업)은 브라우저가 누른 직후 몇 초 동안만 열어 준다. 못 받으면 그 누름은 시스템 공유로 간다.
  */
 const KAKAO_WAIT_MS = 3000;
 
@@ -46,9 +46,10 @@ async function copy(text: string): Promise<boolean> {
 }
 
 /**
- * 공유: 빌드에 카카오 앱 키가 있고 메시지(`kakao`)를 받았으면 카카오톡 공유 API로 보낸다. SDK는 버튼을 누르기 시작할 때 처음 받고,
- * 누른 순간 준비돼 있으면 바로, 아니면 `KAKAO_WAIT_MS`까지 기다렸다 보낸다. 키가 없거나 SDK를 못 받거나 SDK가 거절하면 지금까지처럼
- * 시스템 공유 시트(navigator.share, 카톡을 고른다)로, 그것도 없으면 링크 복사 대화상자로 간다.
+ * 공유: 빌드에 카카오 앱 키가 있고 메시지(`kakao`)를 받았으면 카카오톡 공유 API로 보낸다. SDK는 버튼을 누르기 시작할 때 처음 받아
+ * 카카오에 메시지를 확인받고, 누른 순간 둘 다 끝났으면 바로, 아니면 `KAKAO_WAIT_MS`까지 기다렸다 보낸다.
+ * 키가 없거나 SDK를 못 받거나 카카오·SDK가 거절하면 지금까지처럼 시스템 공유 시트(navigator.share, 카톡을 고른다)로, 그것도 없으면
+ * 링크 복사 대화상자로 간다.
  */
 export function ShareActions({
   path,
@@ -73,13 +74,17 @@ export function ShareActions({
     if (!ok) setFallbackUrl(absolute(path));
   };
 
+  const kakaoSettings = (): KakaoFeedSettings | null =>
+    kakao && kakaoKey ? kakaoFeedSettings(kakao, window.location.origin) : null;
+
   const prepareKakao = () => {
-    if (kakaoKey) preloadKakaoSdk(kakaoKey);
+    const settings = kakaoSettings();
+    if (kakaoKey && settings) preloadKakaoShare(kakaoKey, settings);
   };
 
-  const sendWithKakao = (sdk: KakaoSdk, message: KakaoFeedMessage): boolean => {
+  const sendWithKakao = (sdk: KakaoSdk, settings: KakaoFeedSettings): boolean => {
     try {
-      sdk.Share.sendDefault(kakaoFeedSettings(message, window.location.origin));
+      sdk.Share.sendDefault(settings);
     } catch {
       return false;
     }
@@ -104,9 +109,13 @@ export function ShareActions({
     if (sending.current) return;
     sending.current = true;
     try {
-      if (kakao && kakaoKey) {
-        const sdk = readyKakaoSdk() ?? (await waitForKakaoSdk(kakaoKey, KAKAO_WAIT_MS));
-        if (sdk && sendWithKakao(sdk, kakao)) return;
+      const settings = kakaoSettings();
+      if (kakaoKey && settings) {
+        let sdk = readyKakaoShare(settings);
+        if (!sdk) {
+          sdk = await prepareKakaoShare(kakaoKey, settings, KAKAO_WAIT_MS);
+        }
+        if (sdk && sendWithKakao(sdk, settings)) return;
       }
       await systemShare();
     } finally {

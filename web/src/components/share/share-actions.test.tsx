@@ -18,18 +18,27 @@ const MESSAGE: KakaoFeedMessage = {
 const scripts = () => document.querySelectorAll('script[src*="kakaocdn"]');
 const kakaoButton = () => screen.getByRole("button", { name: /카톡으로 결과 보내기/ });
 
-function fakeSdk() {
+/** `accepts`가 거짓이면 카카오가 메시지를 거절한다(앱 키·도메인 설정 오류, 카카오에 못 닿음 등). */
+function fakeSdk({ accepts = true } = {}) {
   let ready = false;
   const sendDefault = vi.fn<(settings: KakaoFeedSettings) => void>();
+  const request = vi.fn(async (_settings: { url: string; data: Record<string, unknown> }) => {
+    if (!accepts) throw { code: -401, msg: "appKey does not exist" };
+    return {};
+  });
   const sdk = {
     init: () => {
       ready = true;
     },
     isInitialized: () => ready,
     Share: { sendDefault },
+    API: { request },
   } satisfies KakaoSdk;
   return sdk;
 }
+
+/** 누르기 시작할 때 받은 SDK가 카카오에 메시지를 확인받을 때까지. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function finishLoading(sdk: KakaoSdk) {
   window.Kakao = sdk;
@@ -96,7 +105,8 @@ describe("카톡으로 보내기", () => {
     expect(scripts()).toHaveLength(1);
     const sdk = fakeSdk();
     finishLoading(sdk);
-    await waitFor(() => expect(sdk.isInitialized()).toBe(true));
+    await waitFor(() => expect(sdk.API.request).toHaveBeenCalledTimes(1));
+    await settle();
 
     fireEvent.click(kakaoButton());
     const origin = window.location.origin;
@@ -116,6 +126,38 @@ describe("카톡으로 보내기", () => {
     });
     expect(track).toHaveBeenCalledWith("share_clicked", { channel: "kakao", ...ROOM });
     expect(share).not.toHaveBeenCalled();
+    expect(sdk.API.request).toHaveBeenCalledWith({
+      url: "/v2/api/kakaolink/talk/template/default",
+      data: {
+        link_ver: "4.0",
+        template_object: {
+          object_type: "feed",
+          content: {
+            title: "지금은 강남이 제일 공평해요",
+            description: "아직이면 출발역 넣어 주세요 · 민수 22분",
+            image_url: `${origin}/r/qt7yvmsht3/og?sv=5&dv=20261115.8`,
+            image_width: 1200,
+            image_height: 630,
+            link: { web_url: link.webUrl, mobile_web_url: link.mobileWebUrl },
+          },
+          buttons: [{ title: "내 출발역 넣기", link: { web_url: link.webUrl, mobile_web_url: link.mobileWebUrl } }],
+        },
+      },
+    });
+  });
+
+  it("카카오가 메시지를 받지 않으면(앱 키·도메인 설정 오류, 카카오에 못 닿음) SDK로 보내지 않고 공유 시트로 간다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", KEY);
+    const track = await renderShare();
+    fireEvent.pointerDown(kakaoButton());
+    fireEvent.click(kakaoButton());
+    const sdk = fakeSdk({ accepts: false });
+    finishLoading(sdk);
+
+    await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+    expect(sdk.Share.sendDefault).not.toHaveBeenCalled();
+    expect(track).toHaveBeenCalledTimes(1);
+    expect(track).toHaveBeenCalledWith("share_clicked", { channel: "system", ...ROOM });
   });
 
   it("첫 누름에 SDK가 아직 오는 중이면 받을 때까지 기다렸다 카카오로 보낸다(Enter로 눌러도 같다)", async () => {

@@ -225,7 +225,7 @@
           "name": "channel",
           "type": "enum",
           "required": true,
-          "description": "공유 채널. kakao: 카카오톡 공유 API(SDK)로 보냄(빌드에 카카오 앱 키가 있고 SDK를 받았을 때). system: 시스템 공유 시트(카카오 공유를 쓸 수 없거나 SDK를 못 받았을 때 포함, 시트가 없으면 링크 대화상자). copy: 링크 복사.",
+          "description": "공유 채널. kakao: 카카오가 이 메시지(템플릿)를 받아 준 뒤 카카오톡 공유 API(SDK)로 넘김(카카오톡을 열었는지, 상대에게 실제로 보냈는지는 모른다). system: 시스템 공유 시트(카카오 공유를 쓸 수 없거나 SDK를 못 받았거나 카카오가 메시지를 거절했을 때 포함, 시트가 없으면 링크 대화상자). copy: 링크 복사.",
           "enum": [
             "kakao",
             "copy",
