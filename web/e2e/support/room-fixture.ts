@@ -110,8 +110,14 @@ export const ROOM_BASIS = {
   holidayName: null,
 };
 
-/** 시나리오의 방을 가로채 준비한다. 방장 시나리오는 이 기기에 방장 기록(토큰)을 넣어 둔다. 열 주소를 돌려준다. */
-export async function prepareRoom(page: Page, scenario: RoomScenario): Promise<string> {
+/** 방 응답의 `roomHash`(계약 형식: 16자리 소문자 hex). */
+export const FAKE_ROOM_HASH = "0123456789abcdef";
+
+/**
+ * 시나리오의 방을 가로채 준비한다. 방장 시나리오는 이 기기에 방장 기록(토큰)을 넣어 둔다. 열 주소를 돌려준다.
+ * `shareVersion`을 주면 방이 공유 번호·방 해시를 싣고 링크 미리보기(`/preview`, 결과 단계)도 답한다(공유 칸이 번호 붙은 링크를 쓴다).
+ */
+export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersion?: number): Promise<string> {
   const people = scenario === "host-alone" ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
   const asHost = scenario !== "friend-join";
   if (asHost) {
@@ -144,6 +150,32 @@ export async function prepareRoom(page: Page, scenario: RoomScenario): Promise<s
           meetingTime: "19:30",
           timeBasis: ROOM_BASIS,
           participants,
+          ...(shareVersion === undefined ? {} : { shareVersion, roomHash: FAKE_ROOM_HASH, decision: null }),
+        }),
+      );
+    }
+    if (request.method() === "GET" && path === `/rooms/${FAKE_ROOM_ID}/preview` && shareVersion !== undefined) {
+      const top = CANDIDATES[0];
+      return route.fulfill(
+        json(200, {
+          stage: "result",
+          room: {
+            roomId: FAKE_ROOM_ID,
+            shareVersion,
+            participantCount: people.length,
+            canJoin: people.length < 4,
+            meetingDate: "2026-11-21",
+            meetingTime: "19:30",
+            meetingBand: null,
+            timeBasis: ROOM_BASIS,
+          },
+          dataVersion: "20261114.5",
+          basis: { mode: "fair", favorLabel: null },
+          station: {
+            stationCode: top?.stationCode,
+            stationName: top?.stationName,
+            times: people.map((p, i) => ({ label: p.shortLabel, seconds: top?.times[i]?.seconds ?? null })),
+          },
         }),
       );
     }

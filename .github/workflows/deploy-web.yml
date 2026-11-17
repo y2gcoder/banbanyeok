@@ -6,6 +6,7 @@
 # 설정 값(저장소 Settings → Secrets and variables → Actions):
 #   secrets  CLOUDFLARE_API_TOKEN, PROXY_SHARED_SECRET(서버와 같은 값, Worker secret으로 주입)
 #   variables CLOUDFLARE_ACCOUNT_ID, POSTHOG_PROJECT_KEY(공개 phc_ 키), POSTHOG_HOST,
+#             KAKAO_JS_KEY(카카오 JavaScript 키, 공개 값. 없으면 카카오톡 공유 API 없이 시스템 공유 시트만),
 #             SERVER_ORIGIN(서버 Cloud Run 출처, 없으면 API 없이 배포), SITE_DOMAIN(정식 도메인, 없으면 workers.dev만),
 #             SITE_INDEX(출시 스위치: true일 때만 검색 노출 허용. 비어 있으면 noindex)
 name: deploy-web
@@ -81,11 +82,12 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "도메인=${site_domain:-없음(workers.dev)} 서버=${server_origin:-없음(API 미연결)} 색인=$([ "${VAR_SITE_INDEX:-}" = "true" ] && [ -n "$server_origin" ] && echo 허용 || echo noindex)"
 
-      # NEXT_PUBLIC_*·SITE_URL은 빌드 때 번들·정적 페이지에 박힌다(PostHog 키는 공개 값).
+      # NEXT_PUBLIC_*·SITE_URL은 빌드 때 번들·정적 페이지에 박힌다(PostHog·카카오 키는 공개 값). 카카오 키가 있으면 CSP에도 카카오 주소가 들어간다.
       - name: 빌드 (cf:build)
         env:
           NEXT_PUBLIC_POSTHOG_KEY: ${{ vars.POSTHOG_PROJECT_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+          NEXT_PUBLIC_KAKAO_JS_KEY: ${{ vars.KAKAO_JS_KEY }}
           API_ORIGIN: ${{ env.SERVER_ORIGIN }}
         run: |
           export NEXT_PUBLIC_APP_VERSION="${GITHUB_SHA::7}"
