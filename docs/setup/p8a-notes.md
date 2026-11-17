@@ -39,6 +39,7 @@ Cloud Scheduler db-backup-weekly (월 03:17 KST) ─▶ Cloud Run Job db-backup 
 | `github-deployer` | `run.developer` | 서비스 `server`, Job `migrate`·`cleanup`·`db-backup` | 리비전·Job 배포, Job 실행·대기, 트래픽 전환. 서비스 IAM 정책 변경(`setIamPolicy`)은 불가 |
 | `github-deployer` | `artifactregistry.writer` | 저장소 `server` | 이미지 푸시 |
 | `github-deployer` | `storage.objectUser` | 버킷 `…-artifacts` | 산출물 발행(생성·덮어쓰기)과 오래된 버전 정리(삭제) |
+| `github-deployer` | `storage.legacyBucketReader` | 버킷 `…-backups` | 백업 신선도 점검이 객체 목록(이름·크기·시각)만 읽는다. 객체 내용(덤프)은 읽지 못한다 |
 | `github-deployer` | `iam.serviceAccountUser` | 계정 `server-runtime`, `db-migrator`, `db-backup` | 리비전·Job에 실행 계정을 지정(actAs) |
 | `github-deployer` | `serviceusage.serviceUsageConsumer` | 프로젝트 | gcloud/클라이언트가 프로젝트 API를 호출 |
 | `scheduler-invoker` | `run.invoker` | Job `cleanup` | Cloud Scheduler가 이 Job만 실행 |
@@ -132,7 +133,7 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
 
 이미지와 Job 갱신은 `deploy-server.yml`이 한다(실행은 하지 않음). 로컬 검증: backup 이미지를 빌드하고 compose Postgres + fake-gcs-server 에뮬레이터로 `job.sh`를 실행해 덤프→업로드→크기 대조까지 통과(`GCS_API_HOST`, `GCS_NO_AUTH=1` 시험 훅).
 
-**운영 점검(코드 없음)**: 가장 최근 백업이 8일보다 오래됐는지 가끔 확인한다: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/ | sort -k2 | tail -3`. Scheduler가 실패하면 `gcloud run jobs executions list --job=db-backup --region=asia-northeast3`의 실패 실행으로 보인다(실행 알림은 아직 없음).
+**운영 점검**: 8일 초과는 `backup-freshness.yml`(6.1절)이 매일 자동으로 알린다. 손으로 볼 때는: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/ | sort -k2 | tail -3`. Scheduler가 실패하면 `gcloud run jobs executions list --job=db-backup --region=asia-northeast3`의 실패 실행으로 보인다(실행 알림은 아직 없음).
 
 **복원 절차**
 1. 백업 고르기: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/`, 받기: `gcloud storage cp gs://banbanyeok-7eoxn-backups/db/<파일> .`
@@ -281,6 +282,7 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 - 알림 채널: 이메일 1개(운영자 메일).
 - 가동 확인(uptime check) 2개: `https://banbanyeok.app/api/healthz`(본문에 `ok` 포함), `https://banbanyeok.app/`(2xx). 5분 주기, 제한 시간 15초, 기본(전 지역).
 - 알림 정책 "반반역 사이트 응답 없음": `check_passed`가 false인 지역이 2곳 이상, 5분 지속이면 알림, 30분 뒤 자동 종료.
+- 백업 신선도 점검(`.github/workflows/backup-freshness.yml`): 매일 09:00 KST에 `gs://…-backups/db/`의 가장 최근 `.dump`가 없거나 8일보다 오래됐으면 워크플로가 **실패**한다. 실패 알림은 GitHub Slack 앱이 main의 Actions 결과를 보내는 운영자 채널로 간다(웹훅 없음). Cloud Monitoring 알림은 실패한 실행만 잡고 아예 안 돈 경우는 못 잡는데, 이 점검이 그 구멍(스케줄러 일시 중지·삭제)을 메운다. 출력은 객체 이름·크기·나이뿐이다. 수동 확인은 `gh workflow run backup-freshness.yml`. 예약 실행은 저장소에 60일 활동이 없으면 GitHub이 멈추므로 그때는 이 점검도 멈춘다.
 - 부수 효과: `/api/healthz`(웹 프록시 → 서버 `/v1/healthz`)가 5분마다 여러 지역에서 오므로 **라이브 리비전의 인스턴스가 대부분 데워진 채로 유지**된다(콜드스타트 체감이 줄어듦, 비용은 무료 구간 안). 그래서 라이브 서비스의 체감 콜드스타트는 아래 실측(새 인스턴스의 첫 요청)보다 드물다. 측정용 태그 리비전에는 영향이 없다(그 URL로는 가동 확인이 가지 않는다).
 
 ## 7. 버전 근거
