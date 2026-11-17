@@ -33,6 +33,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
+import java.sql.Connection
 import java.time.Instant
 
 /** Postgres(Exposed) 구현. 블로킹 JDBC이므로 IO 디스패처에서 트랜잭션 하나로 실행한다. */
@@ -64,16 +65,17 @@ public class ExposedRoomRepository(
         insertParticipant(room.id, host)
     }
 
+    // 방 행과 참여자를 따로 SELECT한다. READ COMMITTED면 그 사이에 커밋된 참여가 섞여 있었던 적 없는 번호·인원 조합이 보이고,
+    // 미리보기는 그 `?sv=`로 카카오에 오래 캐시된다. 스냅숏 하나에서 읽는다.
     override suspend fun find(roomId: String): StoredRoom? =
-        inTransaction {
-            val room =
+        withContext(ioDispatcher) {
+            transaction(database, transactionIsolation = Connection.TRANSACTION_REPEATABLE_READ, readOnly = true) {
                 RoomsTable
                     .selectAll()
                     .where { RoomsTable.id eq roomId }
                     .singleOrNull()
                     ?.toRoom()
-            room?.let {
-                StoredRoom(it, participantsOf(roomId))
+                    ?.let { StoredRoom(it, participantsOf(roomId)) }
             }
         }
 
