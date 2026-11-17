@@ -125,7 +125,10 @@ public class RoomService(
             reject(RoomError.FORBIDDEN, "본인 항목만 고칠 수 있습니다")
         }
         val value = validated(input)
-        val change = ParticipantChange(value.nickname, value.originCode, value.hidden, now)
+        // 저장된 코드가 폐기된 코드여도 정식 코드가 같으면 그대로 쓴다. 출발역이 바뀐 것으로 보면 트리거가 정한 역을 풀기 때문이다.
+        val storedOrigin = stored.participants.first { it.id == participantId }.originCode
+        val origin = if (stations.canonical(storedOrigin) == value.originCode) storedOrigin else value.originCode
+        val change = ParticipantChange(value.nickname, origin, value.hidden, now)
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
         if (!rooms.updateParticipant(roomId, participantId, change, activity)) {
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
@@ -184,6 +187,32 @@ public class RoomService(
             reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
         }
         return viewOf(loadActive(roomId, now), null)
+    }
+
+    /**
+     * 참여자 누구나 만날 역을 정하거나 바꾸거나([stationCode]) 푼다(null). [seen]은 화면이 본 공유 번호이고, 그 뒤에 입력이 바뀌었거나
+     * 화면이 보지 못한 정함이 생겼으면 ROOM_CHANGED(409)다. 이미 그 상태면 아무것도 쓰지 않고 지금 방을 돌려준다(재시도 안전).
+     */
+    public suspend fun decide(
+        roomId: String,
+        token: String?,
+        stationCode: String?,
+        seen: ShareVersion,
+    ): RoomView {
+        val now = clock.instant()
+        val stored = loadActive(roomId, now)
+        val caller = requireCaller(stored, token)
+        if (caller !is Caller.Member) reject(RoomError.FORBIDDEN, "참여자만 정할 수 있습니다")
+        val decision = stationCode?.let { Decision(meetingStation(it), caller.participantId, now) }
+        val activity = activityOf(stored.room, stored.room.meetingDate, now)
+        when (rooms.writeDecision(stored.room.id, caller.participantId, decision, seen, activity)) {
+            DecisionResult.Applied, DecisionResult.Unchanged -> Unit
+            DecisionResult.Stale -> reject(RoomError.ROOM_CHANGED, "화면을 본 뒤 방이 바뀌었습니다")
+            DecisionResult.TooFew -> reject(RoomError.NOT_ENOUGH_PARTICIPANTS, "참가자가 2명 이상이어야 합니다")
+            DecisionResult.NotMember -> reject(RoomError.UNAUTHORIZED, "인증이 필요합니다")
+            DecisionResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
+        }
+        return viewOf(loadActive(roomId, now), caller.participantId)
     }
 
     public suspend fun delete(
@@ -279,6 +308,8 @@ public class RoomService(
             dataVersion = room.dataVersion,
             roomHash = tokens.roomHash(room.id),
             createdAt = room.createdAt,
+            shareVersion = room.shareVersion,
+            decision = visibleDecision(stored),
             participants =
                 stored.participants.map {
                     ParticipantView(
@@ -291,6 +322,23 @@ public class RoomService(
                     )
                 },
         )
+    }
+
+    /** 정한 역이 지금 데이터에서 만날 역이 아니거나(사라진 역) 정한 사람이 방에 없으면 없는 것으로 보인다. */
+    private fun visibleDecision(stored: StoredRoom): Decision? =
+        stored.room.decision
+            ?.let { it.copy(stationCode = stations.canonical(it.stationCode)) }
+            ?.takeIf { decision ->
+                stations.isMeetingStation(decision.stationCode) &&
+                    stored.participants.any { it.id == decision.decidedBy }
+            }
+
+    private fun meetingStation(code: String): String {
+        val canonical = stations.canonical(code)
+        if (StationCode.parseOrNull(canonical) == null || !stations.isMeetingStation(canonical)) {
+            reject(RoomError.INVALID_STATION, "만날 역 후보가 아닙니다")
+        }
+        return canonical
     }
 
     private fun favorChange(
