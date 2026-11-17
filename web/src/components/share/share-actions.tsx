@@ -5,18 +5,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { type RoomRef, roomHashProperty, track } from "@/lib/analytics";
+import type { ShareStage } from "@/lib/room/share-copy";
 
 /**
- * path는 `/s?...`(혼자 입력한 결과) 또는 `/r/<방 ID>`(방). 출처는 브라우저에서 붙인다(서버 렌더링에는 window가 없다).
+ * path는 `/s?...`(혼자 입력한 결과) 또는 `/r/<방 ID>?sv=<n>`(방). 출처는 브라우저에서 붙인다(서버 렌더링에는 window가 없다).
  * `linkType`은 통계 이벤트의 링크 종류다. 방 링크라도 방 ID는 통계에 보내지 않는다.
  */
 type Props = {
   path: string;
   title: string;
   text: string;
+  /** 공유 버튼 이름. 기본 "카톡으로 보내기". */
+  button?: string;
   linkType?: "url_state" | "room";
-  /** 방 링크면 그 방. 통계에는 서버가 준 `room_hash`만 간다. */
-  room?: RoomRef;
+  /** 방 링크면 그 방과 링크 미리보기 단계. 통계에는 서버가 준 `room_hash`와 단계만 간다. */
+  room?: RoomRef & { stage: ShareStage };
 };
 
 const absolute = (path: string) => new URL(path, window.location.origin).toString();
@@ -34,8 +37,8 @@ async function copy(text: string): Promise<boolean> {
  * 공유: 시스템 공유 시트(navigator.share, 카톡을 고른다)가 기본이고, 없으면 링크 복사 대화상자를 연다.
  * 카카오 SDK 공유(앱 키 필요)는 이번 범위가 아니다.
  */
-export function ShareActions({ path, title, text, linkType = "url_state", room }: Props) {
-  const roomProperty = linkType === "room" && room ? roomHashProperty(room) : {};
+export function ShareActions({ path, title, text, button = "카톡으로 보내기", linkType = "url_state", room }: Props) {
+  const roomProperty = linkType === "room" && room ? { ...roomHashProperty(room), room_stage: room.stage } : {};
   // 대체 대화상자에 보여 줄 링크. null이면 닫힘. 브라우저에서만 만든다.
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -68,7 +71,7 @@ export function ShareActions({ path, title, text, linkType = "url_state", room }
         className="h-14 rounded-xl bg-kakao text-[17px] font-bold text-kakao-ink hover:bg-[color-mix(in_oklch,var(--kakao),black_6%)]"
       >
         <MessageCircleIcon className="size-5" aria-hidden="true" />
-        카톡으로 보내기
+        {button}
       </Button>
       <Button type="button" variant="ghost" onClick={() => void copyLink()} className="h-11 text-[15px] font-semibold">
         {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}

@@ -59,6 +59,7 @@ function renderResult(target: Room, onRoomGone: () => void = () => {}, reject?: 
         participantToken={null}
         participantId={null}
         isHost={false}
+        decision={{ kind: "viewer" }}
         onRoomGone={onRoomGone}
         onResultSeen={() => {}}
       />

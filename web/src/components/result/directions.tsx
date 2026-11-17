@@ -12,11 +12,25 @@ import { cn } from "@/lib/utils";
 const linkButton = cn(buttonVariants({ variant: "outline" }), "h-11 flex-1 rounded-lg text-[15px] font-semibold");
 const chooseButton = cn(buttonVariants(), "h-12 w-full rounded-xl text-[16px] font-bold");
 
+/**
+ * 방에서의 "이 역으로 정했어요". 참여한 사람(member)은 서버에 정하고 모두에게 보인다. 참여하지 않고 보기만 하는 사람(viewer)에게는
+ * 정하기 버튼이 없다. 없으면(혼자 입력한 결과, 번호를 모르는 옛 서버의 방) 이 화면에서만 표시하고 통계만 보낸다.
+ */
+export type RoomChoice =
+  | { kind: "viewer" }
+  | {
+      kind: "member";
+      decidedCode: string | null;
+      pending: boolean;
+      decide: (stationCode: string, onApplied: () => void) => void;
+    };
+
 /** "이 역으로 정했어요" 이벤트에 필요한 화면 맥락(모드·인원·누가 보는 화면인지). 출발역·이름은 담지 않는다. */
 export type ChoiceContext = {
   mode: Mode;
   participantCount: number;
   variant: "creator" | "received";
+  room?: RoomChoice;
 };
 
 type Route = PersonTimeView & { directionsUrl: string };
@@ -44,12 +58,43 @@ function RouteLinks({ routes, candidate, onOpen }: { routes: Route[]; candidate:
   );
 }
 
+/** 방 참여자의 정하기 버튼. 이미 이 역이면 눌린 상태로 두고, 다른 역이 정해져 있으면 바꾸기다. 풀기는 정한 역 안내에 있다. */
+function RoomDecideButton({
+  room,
+  stationCode,
+  onApplied,
+}: {
+  room: Extract<RoomChoice, { kind: "member" }>;
+  stationCode: string;
+  onApplied: () => void;
+}) {
+  const decided = room.decidedCode === stationCode;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => room.decide(stationCode, onApplied)}
+        disabled={decided || room.pending}
+        aria-pressed={decided}
+        className={cn(chooseButton, decided && "bg-ink/80 disabled:opacity-100")}
+      >
+        <CheckIcon aria-hidden="true" />
+        {decided ? "정한 역이에요" : room.decidedCode ? "이 역으로 바꾸기" : "이 역으로 정했어요"}
+      </button>
+      {decided ? null : (
+        <p className="text-center text-[13px] text-muted-foreground">정하면 방 사람 모두에게 보여요.</p>
+      )}
+    </>
+  );
+}
+
 /**
  * 지도에서 보기 + 사람별 카카오맵 길찾기 + "이 역으로 정했어요". 웹 링크가 기본(앱 스킴은 공식 문서가 없어 쓰지 않는다).
  *
- * "이 역으로 정했어요"는 실제로 만날 역을 정했는지의 대리 지표다. 누르면 길찾기로 이어진다:
+ * "이 역으로 정했어요"는 실제로 만날 역을 정했는지의 대리 지표다. 혼자 입력한 결과에서는 누르면 길찾기로 이어진다:
  * 받은 링크에서 "나"를 골랐다면 내 길찾기를 바로 열고, 아니면 사람별 길찾기를 고르는 목록을 연다.
  * 길찾기를 열 수 없는 카드(출발역을 숨긴 경우 등)는 눌렀다는 표시만 한다. 한 카드에서 여러 번 눌러도 한 번만 센다.
+ * 방에서는 서버에 정하고(`choice.room`), 서버가 받았을 때 센다. 길찾기는 아래 링크 버튼으로 연다.
  */
 export function Directions({
   candidate,
@@ -67,10 +112,7 @@ export function Directions({
   const routes = candidate.people.filter((p): p is Route => p.directionsUrl !== null);
   const mine = meIndex === null ? undefined : routes.find((p) => p.index === meIndex);
 
-  const choose = () => {
-    setChosen(true);
-    if (counted.current) return;
-    counted.current = true;
+  const chosenEvent = () =>
     track("station_chosen", {
       rank: candidate.rank,
       meeting_station_code: candidate.stationCode,
@@ -78,11 +120,20 @@ export function Directions({
       participant_count: choice.participantCount,
       link_variant: choice.variant,
     });
+  const choose = () => {
+    setChosen(true);
+    if (counted.current) return;
+    counted.current = true;
+    chosenEvent();
   };
 
   return (
     <div className="flex flex-col gap-2">
-      {mine ? (
+      {choice.room ? (
+        choice.room.kind === "member" ? (
+          <RoomDecideButton room={choice.room} stationCode={candidate.stationCode} onApplied={chosenEvent} />
+        ) : null
+      ) : mine ? (
         <a
           href={mine.directionsUrl}
           target="_blank"
@@ -122,7 +173,7 @@ export function Directions({
           {chosen ? "정했어요!" : "이 역으로 정했어요"}
         </button>
       )}
-      {routes.length > 0 ? (
+      {!choice.room && routes.length > 0 ? (
         <p className="text-center text-[13px] text-muted-foreground">
           {mine ? "누르면 카카오맵 길찾기가 열려요." : "누르면 카카오맵 길찾기를 고를 수 있어요."}
         </p>

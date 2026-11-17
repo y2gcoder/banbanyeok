@@ -4,8 +4,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "@/lib/analytics";
+import { ApiRequestError } from "@/lib/api/client";
 import * as api from "@/lib/api/rooms";
-import type { Room } from "@/lib/api/types";
+import type { RecommendResult, Room, RoomPreview } from "@/lib/api/types";
 import { RoomScreen } from "./room-screen";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -16,6 +17,9 @@ const ROOM = "qt7yvmsht3";
 let members: { id: string; token: string }[] = [];
 let tokenSeq = 0;
 let basis: Room["timeBasis"];
+/** 서버 공유 번호와 정한 역. undefined면 번호를 모르는 옛 서버처럼 방 응답에 싣지 않는다. */
+let version: number | undefined;
+let decided: Room["decision"];
 
 function roomFor(token: string | null): Room {
   const host = {
@@ -36,6 +40,7 @@ function roomFor(token: string | null): Room {
     expiresAt: "2999-01-01T00:00:00Z",
     dataVersion: "20261114.5",
     ...(basis ? { timeBasis: basis } : {}),
+    ...(version === undefined ? {} : { shareVersion: version, decision: decided ?? null }),
     participants: [
       host,
       ...members.map((m) => ({
@@ -79,6 +84,8 @@ beforeEach(() => {
   members = [];
   tokenSeq = 0;
   basis = undefined;
+  version = undefined;
+  decided = null;
   vi.mocked(api.getRoom).mockImplementation(async (_id, token) => roomFor(token));
   vi.mocked(api.getRoomResult).mockImplementation(() => new Promise(() => {}));
   vi.mocked(api.newIdempotencyKey).mockImplementation(() => `key-${++tokenSeq}`);
@@ -288,6 +295,222 @@ describe("방 화면", () => {
       expect(await screen.findByText("(나)")).toBeInTheDocument();
       expect(screen.queryByRole("heading", { name: "방이 가득 찼어요" })).toBeNull();
       expect(track).not.toHaveBeenCalledWith("people_limit_hit", expect.anything());
+    });
+  });
+
+  describe("공유 번호와 정한 역", () => {
+    const WEEKDAY: NonNullable<Room["timeBasis"]> = {
+      timeSlot: "weekday-day",
+      requestedTimeSlot: "weekday-day",
+      dayType: "weekday",
+      band: "day",
+      label: "평일 낮",
+      holidayName: null,
+    };
+    /** 결과를 계산한 방의 번호. 방 폴링보다 늦게 오는 결과를 흉내 내려고 방 번호와 따로 둔다. */
+    let resultVersion: number | undefined;
+
+    function resultFor(token: string | null): RecommendResult {
+      const participants = roomFor(token).participants;
+      const times = (seconds: number) =>
+        participants.map((p) => ({ participantId: p.participantId, seconds, transfers: 0 }));
+      const candidate = (rank: number, stationCode: string, stationName: string, seconds: number) => ({
+        rank,
+        stationCode,
+        stationName,
+        times: times(seconds),
+        maxSeconds: seconds,
+        spreadSeconds: 0,
+        totalSeconds: seconds * participants.length,
+        reasonCode: rank === 1 ? ("FAIR_MINIMAX" as const) : ("FAIR_ALTERNATIVE" as const),
+        reason: "이유",
+      });
+      return {
+        status: "ok",
+        mode: "fair",
+        dataVersion: "20261114.5",
+        participants,
+        timeBasis: WEEKDAY,
+        candidates: [candidate(1, "s1q", "동대문역사문화공원", 1349), candidate(2, "v96", "신용산", 1388)],
+        ...(resultVersion === undefined ? {} : { shareVersion: resultVersion }),
+      };
+    }
+
+    function previewNow(): RoomPreview {
+      const room = {
+        roomId: ROOM,
+        shareVersion: version ?? 0,
+        participantCount: 1 + members.length,
+        canJoin: true,
+        meetingDate: null,
+        meetingTime: null,
+        meetingBand: null,
+        timeBasis: WEEKDAY,
+      };
+      if (members.length === 0) return { stage: "collecting", room };
+      const station = {
+        stationCode: decided?.stationCode ?? "s1q",
+        stationName: decided?.stationName ?? "동대문역사문화공원",
+        times: [
+          { label: "민수", seconds: 1349 },
+          { label: "참가자 2", seconds: 1349 },
+        ],
+      };
+      const base = { room, dataVersion: "20261114.5", basis: { mode: "fair" as const, favorLabel: null }, station };
+      return decided
+        ? { ...base, stage: "decided", decidedBy: "민수", decidedAt: decided.decidedAt }
+        : { ...base, stage: "result" };
+    }
+
+    const joinedAs = (id: string, token: string) =>
+      window.localStorage.setItem(
+        `bby.room.${ROOM}`,
+        JSON.stringify({ v: 1, participantToken: token, participantId: id, keepUntil: "2999-01-01T00:00:00Z" }),
+      );
+
+    beforeEach(() => {
+      version = 3;
+      resultVersion = 3;
+      members = [{ id: "m1", token: "tok-1" }];
+      vi.mocked(api.getRoomResult).mockImplementation(async (_id, _query, token) => resultFor(token));
+      vi.mocked(api.getRoomPreview).mockImplementation(async () => previewNow());
+      vi.mocked(api.setDecision).mockImplementation(async (_id, token, body) => {
+        decided = body.stationCode
+          ? {
+              stationCode: body.stationCode,
+              stationName: "동대문역사문화공원",
+              decidedBy: "m1",
+              decidedAt: "2026-11-17T10:00:00Z",
+            }
+          : null;
+        version = (version ?? 0) + 1;
+        return roomFor(token);
+      });
+    });
+
+    async function copiedLink(user: ReturnType<typeof userEvent.setup>): Promise<string> {
+      await user.click(screen.getByRole("button", { name: /^링크(를)? 복사/ }));
+      return navigator.clipboard.readText();
+    }
+
+    it("공유 칸은 하나이고, 링크에는 지금 공유 번호가, 버튼과 통계에는 지금 단계가 들어간다", async () => {
+      joinedAs("m1", "tok-1");
+      const user = userEvent.setup();
+      const { client } = renderScreen();
+      expect(await screen.findByRole("button", { name: "결과 보내기" })).toBeInTheDocument();
+      expect(screen.getAllByRole("heading", { name: /링크/ })).toHaveLength(1);
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3`);
+      expect(track).toHaveBeenCalledWith("share_clicked", { channel: "copy", link_type: "room", room_stage: "result" });
+
+      // 다른 사람이 정해서 번호가 올랐다: 방 폴링이 새 번호를 보면 미리보기를 새로 받아 링크와 버튼이 같이 바뀐다.
+      decided = {
+        stationCode: "s1q",
+        stationName: "동대문역사문화공원",
+        decidedBy: "h1",
+        decidedAt: "2026-11-17T10:00:00Z",
+      };
+      version = 4;
+      await client.invalidateQueries({ queryKey: ["room", ROOM] });
+      expect(await screen.findByRole("button", { name: "정한 역 알리기" })).toBeInTheDocument();
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=4`);
+      expect(api.getRoomPreview).toHaveBeenCalledTimes(2);
+    });
+
+    it("혼자인 방장은 링크 보내기 칸이 맨 위에 있고 초대 문구다", async () => {
+      members = [];
+      window.localStorage.setItem(
+        `bby.room.${ROOM}`,
+        JSON.stringify({
+          v: 1,
+          hostToken: "h",
+          participantToken: "tok-h",
+          participantId: "h1",
+          keepUntil: "2999-01-01T00:00:00Z",
+        }),
+      );
+      vi.mocked(api.getRoom).mockImplementation(async (_id, token) => {
+        const room = roomFor(token);
+        return { ...room, participants: room.participants.map((p) => ({ ...p, isSelf: token === "tok-h" })) };
+      });
+      const user = userEvent.setup();
+      renderScreen();
+      expect(await screen.findByRole("heading", { name: "친구에게 링크를 보내 주세요" })).toBeInTheDocument();
+      await waitFor(() => expect(api.getRoomPreview).toHaveBeenCalled());
+      expect(screen.getByRole("button", { name: "카톡으로 보내기" })).toBeInTheDocument();
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3`);
+    });
+
+    it("번호를 모르는 옛 서버면 미리보기를 부르지 않고 번호 없는 링크와 초대 문구, 정하기는 이 화면에서만", async () => {
+      version = undefined;
+      resultVersion = undefined;
+      joinedAs("m1", "tok-1");
+      const user = userEvent.setup();
+      renderScreen();
+      expect(await screen.findByRole("button", { name: "카톡으로 보내기" })).toBeInTheDocument();
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}`);
+      // 내 길찾기가 있는 카드라 예전처럼 길찾기 링크다.
+      await user.click((await screen.findAllByRole("link", { name: "이 역으로 정했어요" }))[0] as HTMLElement);
+      expect(api.getRoomPreview).not.toHaveBeenCalled();
+      expect(api.setDecision).not.toHaveBeenCalled();
+      expect(track).toHaveBeenCalledWith("station_chosen", expect.objectContaining({ rank: 1 }));
+    });
+
+    it("참여하지 않고 보는 사람에게는 정하기·풀기 버튼이 없고, 정한 역 안내는 보인다", async () => {
+      decided = { stationCode: "v96", stationName: "신용산", decidedBy: "h1", decidedAt: "2026-11-17T10:00:00Z" };
+      renderScreen();
+      expect(await screen.findByRole("heading", { name: "신용산에서 만나요" })).toBeInTheDocument();
+      expect(screen.getByText("민수가 정했어요")).toBeInTheDocument();
+      expect((await screen.findAllByText("동대문역사문화공원")).length).toBeGreaterThan(0); // 결과 카드가 그려진 뒤에 본다
+      expect(screen.queryByRole("button", { name: /이 역으로/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: "정한 역 풀기" })).toBeNull();
+    });
+
+    it("참여한 사람이 정하면 그 결과의 번호를 보내고, 정한 역 안내와 풀기가 보이며, 풀기는 방의 번호를 보낸다", async () => {
+      joinedAs("m1", "tok-1");
+      version = 4; // 결과(번호 3)를 계산한 뒤 누가 이름만 바꿨다
+      const user = userEvent.setup();
+      renderScreen();
+      await user.click((await screen.findAllByRole("button", { name: "이 역으로 정했어요" }))[0] as HTMLElement);
+      expect(api.setDecision).toHaveBeenCalledWith(ROOM, "tok-1", { stationCode: "s1q", seenVersion: 3 });
+      expect(await screen.findByRole("heading", { name: "동대문역사문화공원에서 만나요" })).toBeInTheDocument();
+      expect(screen.getByText("내가 정했어요")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "정한 역이에요" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "이 역으로 바꾸기" })).toBeEnabled();
+      expect(track).toHaveBeenCalledWith("station_chosen", {
+        rank: 1,
+        meeting_station_code: "s1q",
+        mode: "fair",
+        participant_count: 2,
+        link_variant: "received",
+      });
+
+      await user.click(screen.getByRole("button", { name: "정한 역 풀기" }));
+      expect(api.setDecision).toHaveBeenLastCalledWith(ROOM, "tok-1", { stationCode: null, seenVersion: 5 });
+      await waitFor(() => expect(screen.queryByRole("heading", { name: /에서 만나요$/ })).toBeNull());
+    });
+
+    it("그사이 방이 바뀌어 거절되면(409 ROOM_CHANGED) 방·결과·미리보기를 다시 불러오고 다시 고르게 안내한다", async () => {
+      joinedAs("m1", "tok-1");
+      vi.mocked(api.setDecision).mockRejectedValue(new ApiRequestError(409, "ROOM_CHANGED", "바뀜"));
+      const user = userEvent.setup();
+      renderScreen();
+      const buttons = await screen.findAllByRole("button", { name: "이 역으로 정했어요" });
+      await waitFor(() => expect(api.getRoomPreview).toHaveBeenCalled());
+      const before = {
+        room: vi.mocked(api.getRoom).mock.calls.length,
+        result: vi.mocked(api.getRoomResult).mock.calls.length,
+        preview: vi.mocked(api.getRoomPreview).mock.calls.length,
+      };
+      await user.click(buttons[0] as HTMLElement);
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.",
+      );
+      await waitFor(() => {
+        expect(vi.mocked(api.getRoom).mock.calls.length).toBeGreaterThan(before.room);
+        expect(vi.mocked(api.getRoomResult).mock.calls.length).toBeGreaterThan(before.result);
+        expect(vi.mocked(api.getRoomPreview).mock.calls.length).toBeGreaterThan(before.preview);
+      });
+      expect(track).not.toHaveBeenCalledWith("station_chosen", expect.anything());
     });
   });
 });

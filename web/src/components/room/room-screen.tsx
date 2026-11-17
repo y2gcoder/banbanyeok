@@ -3,15 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ShareActions } from "@/components/share/share-actions";
 import { roomHashProperty, secondsSinceRoomCreated, track } from "@/lib/analytics";
 import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/room/dates";
-import { errorCode, isRoomGone, isTokenRejected, roomErrorMessage } from "@/lib/room/errors";
-import { normalizeRoomId, roomPath } from "@/lib/room/id";
+import { isRoomGone, isStaleRoom, isTokenRejected, roomErrorMessage } from "@/lib/room/errors";
+import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
 import { roomQueryOptions } from "@/lib/room/queries";
 import {
@@ -29,7 +28,7 @@ import { HostControls } from "./host-controls";
 import { JoinForm } from "./join-form";
 import { OutcomeCard } from "./outcome-card";
 import { PeopleList } from "./people-list";
-import { RoomResult } from "./room-result";
+import { type RoomDecisionMode, RoomResult } from "./room-result";
 import {
   CannotJoin,
   ROOM_MAIN,
@@ -40,10 +39,9 @@ import {
   RoomLoading,
   RoomShell,
 } from "./room-states";
+import { RoomShareSection } from "./share-section";
 import { useIdempotencyKey } from "./use-idempotency-key";
-
-const SHARE_TITLE = "같이 만날 역 정해요";
-const SHARE_TEXT = "각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요. 출발역은 숨길 수도 있어요.";
+import { useRoomDecision } from "./use-room-decision";
 
 const FULL_LOCK_REASON = "정한 예상 인원이 다 차서 잠겨 있어요. 누가 나가면 자동으로 다시 열려요.";
 
@@ -140,6 +138,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["room", roomId] });
     void queryClient.invalidateQueries({ queryKey: ["room-result", roomId] });
+    void queryClient.invalidateQueries({ queryKey: ["room-preview", roomId] });
   }, [queryClient, roomId]);
 
   const reportMutationError = (error: unknown) => {
@@ -169,8 +168,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     },
     onError: (error) => {
       // 잠김·정원 초과·사라진 방이면 화면의 방 상태가 오래된 것이다. 다시 불러 안내를 바꾼다.
-      const code = errorCode(error);
-      if (code === "ROOM_FULL" || code === "ROOM_LOCKED" || code === "ROOM_NOT_FOUND") refresh();
+      if (isStaleRoom(error)) refresh();
     },
   });
 
@@ -237,6 +235,8 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     onError: reportMutationError,
   });
 
+  const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh });
+
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
 
   // 정원이 찬 방에 들어오려던 사람(참여하지 않았고 방장도 아님): 인원 상한 수요로 한 번만 센다. 방장이 예상 인원을 4로 고르는 것은 세지 않는다.
@@ -278,6 +278,14 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const fullByCount =
     room.locked && Boolean(record?.expectedCount) && room.participants.length >= (record?.expectedCount ?? 5);
   const busy = leave.isPending || kick.isPending || lock.isPending || remove.isPending;
+  const decision: RoomDecisionMode =
+    room.shareVersion === undefined
+      ? { kind: "local" }
+      : joined && token
+        ? { kind: "member", control: decisionControl }
+        : { kind: "viewer" };
+  // 공유 칸은 하나다. 혼자일 때는 링크 보내기가 가장 먼저 할 일이라 맨 위, 둘 이상이면 참여자 목록 아래.
+  const share = joined ? <RoomShareSection roomId={roomId} room={room} /> : null;
 
   return (
     <RoomShell split="room">
@@ -286,27 +294,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         <RoomIntro title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"} />
         <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
 
-        {/* 첫 사람(방장)이 방금 만든 방이거나 아직 혼자일 때: 링크 보내기가 가장 먼저 할 일이다. */}
-        {joined && !enough ? (
-          <section
-            aria-labelledby="share-title"
-            className="flex flex-col gap-3 rounded-2xl border-2 border-ink bg-surface p-5"
-          >
-            <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
-              친구에게 링크를 보내 주세요
-            </h2>
-            <p className="text-[14px] text-ink-soft">
-              친구가 링크로 들어와 자기 출발역을 넣으면 여기에 나타나요. 두 명 이상 모이면 결과를 볼 수 있어요.
-            </p>
-            <ShareActions
-              path={roomPath(roomId)}
-              title={SHARE_TITLE}
-              text={SHARE_TEXT}
-              linkType="room"
-              room={{ roomId, roomHash: room.roomHash }}
-            />
-          </section>
-        ) : null}
+        {enough ? null : share}
 
         <PeopleList
           people={people}
@@ -375,23 +363,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         ) : null}
         {!joined && (state === "full" || state === "locked") ? <CannotJoin reason={state} /> : null}
 
-        {joined && enough ? (
-          <section
-            aria-labelledby="share-title"
-            className="flex flex-col gap-3 rounded-2xl border border-rule bg-surface p-5"
-          >
-            <h2 id="share-title" className="text-[18px] font-extrabold text-ink">
-              링크 다시 보내기
-            </h2>
-            <ShareActions
-              path={roomPath(roomId)}
-              title={SHARE_TITLE}
-              text={SHARE_TEXT}
-              linkType="room"
-              room={{ roomId, roomHash: room.roomHash }}
-            />
-          </section>
-        ) : null}
+        {enough ? share : null}
       </div>
 
       {/* 오른쪽 칸(폰에서는 가운데): 결과 */}
@@ -403,6 +375,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             participantToken={token}
             participantId={participantId}
             isHost={isHost}
+            decision={decision}
             onRoomGone={() => setResultGone(true)}
             onResultSeen={() => {
               if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
