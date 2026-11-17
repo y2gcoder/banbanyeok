@@ -1,6 +1,12 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package app.banbanyeok.server.app.http
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -91,6 +97,25 @@ data class RoomDto(
     val roomHash: String,
     /** 방을 만든 시각(통계의 `seconds_since_room_created`). */
     val createdAt: String,
+    /** 공유 번호(링크 `?sv=`, 정하기의 `seenVersion`). */
+    val shareVersion: Long,
+    val decision: DecisionDto?,
+)
+
+@Serializable
+data class DecisionDto(
+    val stationCode: String,
+    val stationName: String,
+    /** 정한 참가자의 participantId. */
+    val decidedBy: String,
+    val decidedAt: String,
+)
+
+/** `stationCode`가 null이면 푼다. 두 키 모두 있어야 한다(없으면 400 INVALID_REQUEST). */
+@Serializable
+data class DecisionRequestDto(
+    val stationCode: String?,
+    val seenVersion: Long,
 )
 
 @Serializable
@@ -131,4 +156,71 @@ data class ResultDto(
     /** 카드. `favoredSeconds`는 정수 필드라 값이 없으면 키를 생략하므로 [candidateJson]으로 직접 만든다. */
     val candidates: List<JsonObject>,
     val timeBasis: TimeBasisDto,
+    /** 방 결과에만 있다(`/recommend`에는 키가 없다). */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val shareVersion: Long? = null,
 )
+
+@Serializable
+data class PreviewRoomDto(
+    val roomId: String,
+    val shareVersion: Long,
+    val participantCount: Int,
+    val canJoin: Boolean,
+    val meetingDate: String?,
+    val meetingTime: String?,
+    val meetingBand: String?,
+    val timeBasis: TimeBasisDto,
+)
+
+@Serializable
+data class PreviewBasisDto(
+    val mode: String,
+    val favorLabel: String?,
+)
+
+@Serializable
+data class PreviewTimeDto(
+    val label: String,
+    val seconds: Int?,
+)
+
+@Serializable
+data class PreviewStationDto(
+    val stationCode: String,
+    val stationName: String,
+    val times: List<PreviewTimeDto>,
+)
+
+/** contracts/openapi.yaml `RoomPreview`. 단계(`stage`)마다 있는 필드가 다르다. */
+@Serializable
+@JsonClassDiscriminator("stage")
+sealed interface RoomPreviewDto {
+    val room: PreviewRoomDto
+
+    @Serializable
+    @SerialName("collecting")
+    data class Collecting(
+        override val room: PreviewRoomDto,
+    ) : RoomPreviewDto
+
+    @Serializable
+    @SerialName("result")
+    data class Result(
+        override val room: PreviewRoomDto,
+        val dataVersion: String,
+        val basis: PreviewBasisDto,
+        val station: PreviewStationDto,
+    ) : RoomPreviewDto
+
+    @Serializable
+    @SerialName("decided")
+    data class Decided(
+        override val room: PreviewRoomDto,
+        val dataVersion: String,
+        val basis: PreviewBasisDto,
+        val station: PreviewStationDto,
+        val decidedBy: String,
+        val decidedAt: String,
+    ) : RoomPreviewDto
+}

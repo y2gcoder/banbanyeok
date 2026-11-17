@@ -5,6 +5,9 @@ import app.banbanyeok.applogic.ParticipantLabels
 import app.banbanyeok.applogic.PersonRef
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
+import app.banbanyeok.server.app.application.PreviewBasis
+import app.banbanyeok.server.app.application.PreviewStation
+import app.banbanyeok.server.app.application.RoomPreview
 import app.banbanyeok.server.app.application.RoomResult
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.recommendation.RecommendMode
@@ -29,6 +32,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeParseException
 
 fun RoomMode.wire(): String = name.lowercase()
@@ -77,7 +81,7 @@ fun RoomView.toDto(
     favorTarget = favorParticipantId,
     locked = locked,
     meetingDate = meetingDate?.toString(),
-    meetingTime = meetingTime?.let { "%02d:%02d".format(java.util.Locale.ROOT, it.hour, it.minute) },
+    meetingTime = meetingTime?.wire(),
     meetingBand = meetingBand?.id,
     expiresAt = expiresAt.toString(),
     dataVersion = dataVersion,
@@ -85,7 +89,53 @@ fun RoomView.toDto(
     timeBasis = timeBasis.toDto(requested = timeBasis.slot),
     roomHash = roomHash,
     createdAt = createdAt.toString(),
+    shareVersion = shareVersion.value,
+    decision =
+        decision?.let {
+            DecisionDto(it.stationCode, directory.stationName(it.stationCode), it.decidedBy, it.decidedAt.toString())
+        },
 )
+
+private fun StationDirectory.stationName(code: String): String = nameOf(code) ?: code
+
+private fun LocalTime.wire(): String = "%02d:%02d".format(java.util.Locale.ROOT, hour, minute)
+
+fun RoomPreview.toDto(directory: StationDirectory): RoomPreviewDto {
+    val header =
+        PreviewRoomDto(
+            roomId = room.roomId,
+            shareVersion = room.shareVersion.value,
+            participantCount = room.participantCount,
+            canJoin = room.canJoin,
+            meetingDate = room.meetingDate?.toString(),
+            meetingTime = room.meetingTime?.wire(),
+            meetingBand = room.meetingBand?.id,
+            timeBasis = room.timeBasis.toDto(requested = room.timeBasis.slot),
+        )
+
+    fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel)
+
+    fun PreviewStation.dto() =
+        PreviewStationDto(
+            stationCode,
+            directory.stationName(stationCode),
+            times.map { PreviewTimeDto(it.label, it.seconds) },
+        )
+
+    return when (this) {
+        is RoomPreview.Collecting -> {
+            RoomPreviewDto.Collecting(header)
+        }
+
+        is RoomPreview.Result -> {
+            RoomPreviewDto.Result(header, dataVersion, basis.dto(), station.dto())
+        }
+
+        is RoomPreview.Decided -> {
+            RoomPreviewDto.Decided(header, dataVersion, basis.dto(), station.dto(), decidedBy, decidedAt.toString())
+        }
+    }
+}
 
 /** 계산 기준 DTO. [requested]는 요청한(방은 약속 날짜·시각에서 정한) 구분이고 `slot`과 다르면 기본 구분으로 대신 계산했다는 뜻이다. */
 private fun TimeBasis.toDto(requested: TimeSlot) =
@@ -135,9 +185,9 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
     )
 
 fun RoomResult.toDto(directory: StationDirectory): ResultDto =
-    recommendation.toDto(
-        participants.zip(recommendation.labels) { participant, label -> participant.toDto(directory, label) },
-    )
+    recommendation
+        .toDto(participants.zip(recommendation.labels) { participant, label -> participant.toDto(directory, label) })
+        .copy(shareVersion = shareVersion.value)
 
 /** 무상태 추천: 참가자는 입력 순서의 인덱스 문자열("0", "1", …)로 구분한다. */
 fun Recommendation.toStatelessDto(
