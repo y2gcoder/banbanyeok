@@ -154,11 +154,26 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   const friendDecide = friend.page.getByRole("button", { name: "이 역으로 정했어요" });
   await expect(friendDecide.nth(1)).toBeVisible();
 
-  // 방장이 1위로 정한다.
+  // 방장이 1위로 정한다. 정한 뒤 결과가 새 번호로 다시 올 때까지는 다른 역으로 바꿀 수 없다(옛 번호로 보내면 409).
+  await page.getByRole("region", { name: "만날 역 후보" }).locator("details > summary").first().click(); // 2위 펼치기
+  let releaseResult = () => {};
+  const resultHeld = new Promise<void>((resolve) => {
+    releaseResult = resolve;
+  });
+  await page.route("**/rooms/*/result**", async (route) => {
+    await resultHeld;
+    await route.continue().catch(() => {}); // 붙잡힌 사이 화면이 더 새 요청으로 바꿔 끊은 요청
+  });
   await page.getByRole("button", { name: "이 역으로 정했어요" }).first().click();
   const banner = page.getByRole("region", { name: /에서 만나요$/ });
   await expect(banner).toBeVisible();
   await expect(banner.getByText("내가 정했어요")).toBeVisible();
+  await expect(page.getByRole("button", { name: "이 역으로 바꾸기" }).first()).toBeDisabled();
+  await expect(page.getByText("새 결과를 불러오는 중이에요.").first()).toBeVisible();
+  await shots(page, "5-pending-host");
+  releaseResult();
+  await page.unroute("**/rooms/*/result**");
+  await expect(page.getByRole("button", { name: "이 역으로 바꾸기" }).first()).toBeEnabled();
 
   // 친구의 오래된 화면에서 2위로 정하면 거절되고, 새로 불러온 뒤 안내한다.
   await friendDecide.nth(1).click();
