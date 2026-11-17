@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, CopyIcon, MessageCircleIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, LoaderCircleIcon, MessageCircleIcon } from "lucide-react";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -47,7 +47,7 @@ async function copy(text: string): Promise<boolean> {
 
 /**
  * 공유: 빌드에 카카오 앱 키가 있고 메시지(`kakao`)를 받았으면 카카오톡 공유 API로 보낸다. SDK는 버튼을 누르기 시작할 때 처음 받아
- * 카카오에 메시지를 확인받고, 누른 순간 둘 다 끝났으면 바로, 아니면 `KAKAO_WAIT_MS`까지 기다렸다 보낸다.
+ * 카카오에 메시지를 확인받고, 누른 순간 둘 다 끝났으면 바로, 아니면 `KAKAO_WAIT_MS`까지 기다렸다 보낸다(기다리는 동안 버튼은 바쁨).
  * 키가 없거나 SDK를 못 받거나 카카오·SDK가 거절하면 지금까지처럼 시스템 공유 시트(navigator.share, 카톡을 고른다)로, 그것도 없으면
  * 링크 복사 대화상자로 간다. 기다리는 동안 화면을 떠나면(언마운트) 아무것도 보내지 않는다.
  */
@@ -66,6 +66,7 @@ export function ShareActions({
   const [copied, setCopied] = useState(false);
   const kakaoKey = kakao ? publicKakaoJsKey() : null;
   const sending = useRef(false);
+  const [waiting, setWaiting] = useState(false);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -120,8 +121,10 @@ export function ShareActions({
       if (kakaoKey && settings) {
         let sdk = readyKakaoShare(settings);
         if (!sdk) {
+          setWaiting(true);
           sdk = await prepareKakaoShare(kakaoKey, settings, KAKAO_WAIT_MS);
           if (!mounted.current) return;
+          setWaiting(false);
         }
         if (sdk && sendWithKakao(sdk, settings)) return;
       }
@@ -138,9 +141,14 @@ export function ShareActions({
         onPointerDown={prepareKakao}
         onKeyDown={(event) => isActivationKey(event) && prepareKakao()}
         onClick={() => void shareToKakao()}
+        aria-busy={waiting || undefined}
         className="h-14 rounded-xl bg-kakao text-[17px] font-bold text-kakao-ink hover:bg-[color-mix(in_oklch,var(--kakao),black_6%)]"
       >
-        <MessageCircleIcon className="size-5" aria-hidden="true" />
+        {waiting ? (
+          <LoaderCircleIcon className="size-5 motion-safe:animate-spin" aria-hidden="true" />
+        ) : (
+          <MessageCircleIcon className="size-5" aria-hidden="true" />
+        )}
         {button}
       </Button>
       <Button type="button" variant="ghost" onClick={() => void copyLink()} className="h-11 text-[15px] font-semibold">
@@ -148,7 +156,7 @@ export function ShareActions({
         {copied ? "링크를 복사했어요" : "링크 복사"}
       </Button>
       <p aria-live="polite" className="sr-only">
-        {copied ? "링크를 복사했어요" : ""}
+        {waiting ? "카카오톡 공유를 준비하고 있어요" : copied ? "링크를 복사했어요" : ""}
       </p>
       <Dialog open={fallbackUrl !== null} onOpenChange={(open) => !open && setFallbackUrl(null)}>
         <DialogContent className="gap-4 rounded-2xl p-5">

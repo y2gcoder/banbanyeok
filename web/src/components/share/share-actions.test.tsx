@@ -160,6 +160,21 @@ describe("카톡으로 보내기", () => {
     expect(track).toHaveBeenCalledWith("share_clicked", { channel: "system", ...ROOM });
   });
 
+  it("기다리는 동안 버튼이 바쁨으로 보이고, 끝나면 돌아온다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", KEY);
+    await renderShare();
+    fireEvent.pointerDown(kakaoButton());
+    fireEvent.click(kakaoButton());
+
+    await waitFor(() => expect(kakaoButton()).toHaveAttribute("aria-busy", "true"));
+    expect(screen.getByText("카카오톡 공유를 준비하고 있어요")).toBeInTheDocument();
+    const sdk = fakeSdk();
+    finishLoading(sdk);
+    await waitFor(() => expect(sdk.Share.sendDefault).toHaveBeenCalledTimes(1));
+    expect(kakaoButton()).not.toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByText("카카오톡 공유를 준비하고 있어요")).not.toBeInTheDocument();
+  });
+
   it("기다리는 동안 화면을 떠나면 카카오로도 공유 시트로도 보내지 않고 세지도 않는다", async () => {
     vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", KEY);
     const track = await renderShare();
