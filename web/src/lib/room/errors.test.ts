@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiRequestError } from "@/lib/api/client";
 import { CONNECTION_MESSAGE } from "@/lib/api/errors";
-import { errorCode, isClientError, isRoomGone, isTokenRejected, roomErrorMessage } from "./errors";
+import { errorCode, isClientError, isRoomGone, isStaleRoom, isTokenRejected, roomErrorMessage } from "./errors";
 
 const err = (status: number, code: string, message = "서버 문구") => new ApiRequestError(status, code, message);
 
@@ -30,5 +30,16 @@ describe("방 오류", () => {
     expect(isClientError(new TypeError("x"))).toBe(false);
     expect(errorCode(err(409, "ROOM_FULL"))).toBe("ROOM_FULL");
     expect(errorCode(new Error("x"))).toBeNull();
+  });
+
+  it("오래된 화면이라 다시 불러와야 하는 답: 정원·잠김·없어짐·그사이 바뀐 방", () => {
+    for (const code of ["ROOM_FULL", "ROOM_LOCKED", "ROOM_NOT_FOUND", "ROOM_CHANGED"]) {
+      expect(isStaleRoom(err(409, code)), code).toBe(true);
+    }
+    expect(isStaleRoom(err(400, "INVALID_STATION"))).toBe(false);
+    expect(isStaleRoom(new TypeError("x"))).toBe(false);
+    expect(roomErrorMessage(err(409, "ROOM_CHANGED"))).toBe(
+      "그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.",
+    );
   });
 });

@@ -17,6 +17,7 @@ const MESSAGES: Readonly<Record<string, string>> = {
   RATE_LIMITED: "요청이 너무 많아요. 잠시 뒤에 다시 해 주세요.",
   STATION_UNAVAILABLE: "방을 만든 뒤 데이터가 바뀌어 계산할 수 없는 출발역이 있어요. 출발역을 다시 골라 주세요.",
   NOT_ENOUGH_PARTICIPANTS: "두 명 이상 들어와야 결과를 볼 수 있어요.",
+  ROOM_CHANGED: "그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.",
 };
 
 /** 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 계약의 오류 모양을 가진 그 밖의 4xx는 서버 message, 나머지는 결과 화면과 같은 안내. */
@@ -29,6 +30,11 @@ export function roomErrorMessage(error: unknown): string {
 }
 
 export const errorCode = (error: unknown): string | null => (error instanceof ApiRequestError ? error.code : null);
+
+/** 화면이 그린 방이 오래됐다는 답(정원·잠김·없어짐, 그사이 바뀐 방). 다시 불러와 안내를 바꾼다. */
+const STALE_ROOM_CODES: ReadonlySet<string> = new Set(["ROOM_FULL", "ROOM_LOCKED", "ROOM_NOT_FOUND", "ROOM_CHANGED"]);
+export const isStaleRoom = (error: unknown): boolean =>
+  error instanceof ApiRequestError && STALE_ROOM_CODES.has(error.code);
 
 /** 방이 없다(만료·삭제·없는 ID 모두 같은 404). */
 export const isRoomGone = (error: unknown): boolean =>

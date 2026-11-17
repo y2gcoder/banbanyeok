@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RotateCwIcon } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import type { ChoiceContext } from "@/components/result/directions";
+import type { ChoiceContext, RoomChoice } from "@/components/result/directions";
 import { ModeTabs } from "@/components/result/mode-tabs";
 import { Notices } from "@/components/result/notices";
 import { Candidates, LoadingCard } from "@/components/result/result-screen";
@@ -16,6 +16,14 @@ import { toResultView } from "@/lib/result/view-model";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
 import { favorIndexOf } from "@/lib/room/view";
+import { DecisionBanner } from "./decision-banner";
+import type { DecisionControl } from "./use-room-decision";
+
+/**
+ * 이 화면에서의 정하기: 참여한 사람(member)은 서버에 정하고, 보기만 하는 사람(viewer)은 정할 수 없다. 공유 번호를 모르는 옛 서버의
+ * 방(local)은 예전처럼 이 화면에서만 표시한다.
+ */
+export type RoomDecisionMode = { kind: "local" } | { kind: "viewer" } | { kind: "member"; control: DecisionControl };
 
 type Props = {
   roomId: string;
@@ -23,6 +31,7 @@ type Props = {
   participantToken: string | null;
   participantId: string | null;
   isHost: boolean;
+  decision: RoomDecisionMode;
   /** 결과 쿼리가 방 없음(404)을 받았을 때. 방 화면이 전체를 "방이 없어요" 안내로 바꾼다(되살릴 수 없으므로 다시 시도는 두지 않는다). */
   onRoomGone: () => void;
   /** 결과가 처음 나왔을 때(이 기기 기준) 한 번. 통계의 경과 일수 기준 시각을 저장하는 데 쓴다. */
@@ -32,6 +41,32 @@ type Props = {
 };
 
 type Pick = { mode: Mode; favorId: string | null };
+
+/** `currentVersion`은 보이는 결과가 지금 방의 번호로 계산됐을 때 그 번호. 아니면(새 결과를 받는 중) undefined. */
+function roomChoiceOf(
+  decision: RoomDecisionMode,
+  currentVersion: number | undefined,
+  decidedCode: string | null,
+): RoomChoice | undefined {
+  switch (decision.kind) {
+    case "local":
+      return undefined;
+    case "viewer":
+      return { kind: "viewer" };
+    case "member": {
+      const { control } = decision;
+      return {
+        kind: "member",
+        decidedCode,
+        pending: control.pending,
+        decide:
+          currentVersion === undefined
+            ? null
+            : (stationCode, onApplied) => control.decide(stationCode, currentVersion, onApplied),
+      };
+    }
+  }
+}
 
 /**
  * 방 결과. 서버가 방 전체로 계산한다(숨긴 사람의 출발역은 가려지고 시간·환승은 보인다). 모드 탭은 보는 사람의 화면 설정이고
@@ -43,11 +78,13 @@ export function RoomResult({
   participantToken,
   participantId,
   isHost,
+  decision,
   onRoomGone,
   onResultSeen,
   renderAfter,
 }: Props) {
   const panelId = useId();
+  const queryClient = useQueryClient();
   // 배려 대상 알약은 좁은 칸이라 짧은 이름(shortLabel). 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로.
   const people = room.participants.map((p, index) => ({
     index,
@@ -95,11 +132,32 @@ export function RoomResult({
     });
   }, [data, view, isPlaceholder, roomId, room.roomHash]);
 
+  // 결과 카드에서 정할 때는 보이는 결과의 번호를 보낸다. 그 번호가 방(정한 역 안내)과 같을 때만 정하게 한다: 정한 직후처럼 결과가
+  // 옛 번호면 서버가 409로 거절하고, 결과가 더 새로우면 화면에 아직 없는 다른 사람의 정함을 덮어쓴다.
+  const shownVersion = isPlaceholder ? undefined : data?.shareVersion;
+  const roomVersion = room.shareVersion;
+  useEffect(() => {
+    if (shownVersion === undefined || roomVersion === undefined || shownVersion === roomVersion) return;
+    if (shownVersion < roomVersion) void query.refetch({ cancelRefetch: false });
+    else void queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+  }, [shownVersion, roomVersion, query.refetch, queryClient, roomId]);
+  const roomChoice = roomChoiceOf(
+    decision,
+    shownVersion !== undefined && shownVersion === roomVersion ? shownVersion : undefined,
+    room.decision?.stationCode ?? null,
+  );
   const choice: ChoiceContext = {
     mode: pick.mode,
     participantCount: room.participants.length,
     variant: isHost ? "creator" : "received",
+    ...(roomChoice ? { room: roomChoice } : {}),
   };
+  const undoVersion = room.shareVersion;
+  const undo =
+    decision.kind === "member" && undoVersion !== undefined
+      ? { pending: decision.control.pending, onUndo: () => decision.control.undo(undoVersion) }
+      : null;
+  const notice = decision.kind === "member" ? decision.control.notice : null;
   const top = view?.candidates[0];
   const longest = top ? top.people.reduce((a, b) => (b.seconds > a.seconds ? b : a)).index : 0;
 
@@ -111,6 +169,7 @@ export function RoomResult({
 
   return (
     <section aria-labelledby="result-title" className="flex flex-col gap-4">
+      <DecisionBanner room={room} undo={undo} />
       <h2 id="result-title" className="text-[20px] font-extrabold text-ink">
         만날 역 후보
       </h2>
@@ -126,6 +185,14 @@ export function RoomResult({
       <div id={panelId} role="tabpanel" aria-busy={query.isFetching} className="flex flex-col gap-4">
         {view ? (
           <>
+            {notice ? (
+              <p
+                role="alert"
+                className="rounded-xl border border-destructive/40 bg-surface p-3 text-[14px] font-semibold text-destructive"
+              >
+                {notice}
+              </p>
+            ) : null}
             <Notices notices={view.notices} onFavor={(index) => change("favor", index)} />
             <Candidates view={view} meIndex={meIndex >= 0 ? meIndex : null} choice={choice} />
           </>

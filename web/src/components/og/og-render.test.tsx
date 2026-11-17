@@ -2,7 +2,10 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { describe, expect, it } from "vitest";
+import type { RoomPreview } from "@/lib/api/types";
 import { toResultView } from "@/lib/result/view-model";
+import { roomShareCopy } from "@/lib/room/share-copy";
+import { missingGlyphs } from "@/lib/seo/og-coverage";
 import { ogFonts } from "@/lib/seo/og-font";
 import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
 import { buildPairPages } from "@/lib/seo/pair-pages";
@@ -68,6 +71,62 @@ describe("OG 이미지 그리기(satori)", () => {
     expect(data?.modeLine).toBe("참가자 2 쪽으로 고름");
     expect(preview?.description).toBe("강남 5분 · 참가자 2 4분 · 홍대입구 35분 · 참가자 2 쪽으로 고름");
     expect(JSON.stringify([data, preview])).not.toContain(HIDDEN_ORIGIN);
+  });
+
+  it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 글꼴에 없는 글자 없음", async () => {
+    const room = {
+      roomId: "qt7yvmsht3",
+      shareVersion: 9,
+      participantCount: 3,
+      canJoin: true,
+      meetingDate: "2026-11-21",
+      meetingTime: "19:30",
+      meetingBand: "evening",
+      timeBasis: {
+        timeSlot: "saturday-evening",
+        requestedTimeSlot: "saturday-evening",
+        dayType: "saturday",
+        band: "evening",
+        label: "토요일 저녁",
+        holidayName: null,
+      },
+    } as const;
+    const station = {
+      stationCode: "s1q",
+      stationName: "동대문역사문화공원",
+      times: [
+        { label: "민수", seconds: 1349 },
+        { label: "참가자 2", seconds: 1287 },
+        { label: "지연이와 함께 오는 아주 긴 이름", seconds: 1164 },
+      ],
+    };
+    const cases: [string, RoomPreview][] = [
+      [
+        "room-result-favor",
+        { stage: "result", room, dataVersion: "1", basis: { mode: "favor", favorLabel: "민수" }, station },
+      ],
+      [
+        "room-decided",
+        {
+          stage: "decided",
+          room,
+          dataVersion: "1",
+          basis: { mode: "fair", favorLabel: null },
+          station: { ...station, times: [...station.times.slice(0, 2), { label: "🎂", seconds: null }] },
+          decidedBy: "참가자 2",
+          decidedAt: "2026-11-17T10:00:00Z",
+        },
+      ],
+    ];
+    for (const [id, preview] of cases) {
+      const card = roomShareCopy(preview).card;
+      if (!card) throw new Error(`${id}: 그림 데이터 없음`);
+      const text = [card.stationName, card.suffix, card.modeLine, ...card.people.map((p) => p.name)].join("");
+      expect(missingGlyphs(text), id).toEqual([]);
+      const drawn = await render(<SharedCard data={card} />);
+      expectPng(drawn);
+      if (screensDir) writeFileSync(join(screensDir, `og-${id}.png`), drawn.bytes);
+    }
   });
 
   it("같은 내용은 같은 그림이다(정적 생성이 결정적)", async () => {

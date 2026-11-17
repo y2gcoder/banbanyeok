@@ -124,7 +124,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
 
   await page.getByRole("button", { name: "링크 복사" }).click();
   const link = await page.evaluate(() => navigator.clipboard.readText());
-  expect(link).toMatch(ROOM_URL);
+  expect(link).toMatch(/\/r\/[0-9a-hjkmnp-tv-z]{10}\?sv=\d+$/); // 공유 링크에는 방 공유 번호만 붙는다
   expect(link).not.toContain(hostRecord?.hostToken ?? "never");
 
   // 친구(다른 컨텍스트): 링크를 열면 방장이 보이고, 숨기기로 참여한다.
@@ -166,7 +166,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await sweepViewports(
     page,
     (p) => [
-      p.getByRole("button", { name: "카톡으로 보내기" }),
+      p.getByRole("button", { name: "카톡으로 결과 보내기" }),
       p.getByRole("tab", { name: "빨리 만나기" }),
       p.getByRole("button", { name: "참여 잠그기" }),
     ],

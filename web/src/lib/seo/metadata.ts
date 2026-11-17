@@ -8,6 +8,7 @@
 import type { Metadata } from "next";
 import { withJosa } from "@/lib/display/korean";
 import { formatMinutes } from "@/lib/display/minutes";
+import { INVITE_COPY, type RoomShareCopy } from "@/lib/room/share-copy";
 import { APP_NAME } from "./app-manifest";
 import { OG_HEIGHT, OG_WIDTH } from "./og-text";
 import { PAIR_PATH_PREFIX, type PairPage } from "./pair-pages";
@@ -143,16 +144,24 @@ export function sharedLinkMetadata(
   return linkPageMetadata(preview.title, preview.description, images);
 }
 
-const ROOM_TITLE = "같이 만날 역 정해요";
-const ROOM_DESCRIPTION =
-  "각자 출발역을 넣으면 모두에게 공평한 만날 역을 지하철 시간으로 계산해요. 출발역은 숨길 수도 있어요.";
+const { title: ROOM_TITLE, description: ROOM_DESCRIPTION } = INVITE_COPY.preview;
 
 /**
- * 방 링크(`/r/<방 ID>`, 방 만들기 `/r/new`)의 미리보기. **방 ID·참여자 정보를 쓰지 않는 일반 문구**다: 서버를 부르지 않고(방 ID만으로는
- * 어떤 방인지 알 수 없게), 숨기기를 지키며(이름·출발역 없음), 요청마다 이미지를 그리지 않는다(Workers CPU). 색인하지 않는다.
+ * 공유 번호가 없는 방 링크(`/r/<방 ID>`), 방 만들기(`/r/new`), 방 미리보기를 못 받은 경우의 미리보기. **방 ID·참여자 정보를 쓰지 않는
+ * 일반 문구**다: 서버를 부르지 않고(방 ID만으로는 어떤 방인지 알 수 없게), 요청마다 이미지를 그리지 않는다(Workers CPU). 색인하지 않는다.
  */
 export function roomLinkMetadata(): Metadata {
   return linkPageMetadata(ROOM_TITLE, ROOM_DESCRIPTION, DEFAULT_IMAGES);
+}
+
+/**
+ * 공유 번호가 붙은 방 링크(`/r/<방 ID>?sv=`)의 미리보기: 방의 지금 단계 문구(`roomShareCopy`)와 그 방 그림. 그림이 없는 단계(모으는 중)는
+ * 사이트 기본 이미지. 색인하지 않는다.
+ */
+export function roomPreviewMetadata(copy: RoomShareCopy, imagePath: string | null): Metadata {
+  const { title, description } = copy.preview;
+  const images = imagePath ? [{ url: imagePath, width: OG_WIDTH, height: OG_HEIGHT, alt: title }] : DEFAULT_IMAGES;
+  return linkPageMetadata(title, description, images);
 }
 
 /** 방 만들기(`/r/new`): 방 링크와 같은 문구·이미지이고 색인하지 않지만, 링크마다 다르지 않아 canonical·og:url은 자기 주소다. */
