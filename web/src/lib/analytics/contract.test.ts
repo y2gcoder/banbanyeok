@@ -127,7 +127,20 @@ describe("속성 검증(실행 시)", () => {
     expect(propertyProblems(EVENT_SPECS.share_clicked, { ...share, room_stage: "full" })).toEqual([
       expect.stringContaining("room_stage: 허용 값이 아닙니다"),
     ]);
-    expect(doc.schemaVersion).toBe(5);
+    expect(doc.schemaVersion).toBe(6);
+  });
+
+  it("공유 채널은 카카오톡 공유 API(kakao)·시스템 공유 시트(system)·링크 복사(copy) 셋이다", () => {
+    for (const channel of ["kakao", "system", "copy"]) {
+      for (const link_type of ["room", "url_state"]) {
+        expect(propertyProblems(EVENT_SPECS.share_clicked, { channel, link_type }), `${channel} ${link_type}`).toEqual(
+          [],
+        );
+      }
+    }
+    expect(propertyProblems(EVENT_SPECS.share_clicked, { channel: "kakao_sdk", link_type: "room" })).toEqual([
+      expect.stringContaining("channel: 허용 값이 아닙니다"),
+    ]);
   });
 
   it("타입: 이벤트별 속성이 계약에서 나온다", () => {
