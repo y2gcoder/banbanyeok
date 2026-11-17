@@ -4,6 +4,9 @@ import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.server.room.Activity
 import app.banbanyeok.server.room.AddResult
 import app.banbanyeok.server.room.Change
+import app.banbanyeok.server.room.Decision
+import app.banbanyeok.server.room.DecisionResult
+import app.banbanyeok.server.room.DecisionRule
 import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
 import app.banbanyeok.server.room.Participant
@@ -12,6 +15,7 @@ import app.banbanyeok.server.room.Room
 import app.banbanyeok.server.room.RoomChange
 import app.banbanyeok.server.room.RoomMode
 import app.banbanyeok.server.room.RoomRepository
+import app.banbanyeok.server.room.ShareVersion
 import app.banbanyeok.server.room.StoredRoom
 import app.banbanyeok.server.room.TokenHash
 import kotlinx.coroutines.CoroutineDispatcher
@@ -24,6 +28,7 @@ import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
@@ -192,6 +197,41 @@ public class ExposedRoomRepository(
             updated > 0
         }
 
+    override suspend fun writeDecision(
+        roomId: String,
+        actor: String,
+        decision: Decision?,
+        seen: ShareVersion,
+        activity: Activity,
+    ): DecisionResult =
+        inTransaction {
+            // 방 행을 잠그면 같은 방의 참여·나가기·출발역 변경(트리거가 방 행을 고친다)과 줄을 선다. 판정과 쓰기 사이에 끼어들 수 없다.
+            val room =
+                RoomsTable
+                    .selectAll()
+                    .where { RoomsTable.id eq roomId }
+                    .forUpdate()
+                    .singleOrNull()
+                    ?.toRoom()
+                    ?: return@inTransaction DecisionResult.RoomNotFound
+            val members =
+                ParticipantsTable
+                    .select(ParticipantsTable.pid)
+                    .where { ParticipantsTable.roomId eq roomId }
+                    .map { it[ParticipantsTable.pid] }
+            DecisionRule.verdict(room, members, actor, decision, seen).also { verdict ->
+                if (verdict == DecisionResult.Applied) {
+                    RoomsTable.update({ RoomsTable.id eq roomId }) {
+                        it[decidedStation] = decision?.stationCode
+                        it[decidedByPid] = decision?.decidedBy
+                        it[decidedAt] = decision?.decidedAt
+                        it[lastActivityAt] = activity.at
+                        it[expiresAt] = activity.expiresAt
+                    }
+                }
+            }
+        }
+
     override suspend fun delete(roomId: String): Boolean = inTransaction { RoomsTable.deleteWhere { id eq roomId } > 0 }
 
     override suspend fun deleteExpired(now: Instant): Int =
@@ -262,7 +302,20 @@ public class ExposedRoomRepository(
             createdAt = this[RoomsTable.createdAt],
             lastActivityAt = this[RoomsTable.lastActivityAt],
             expiresAt = this[RoomsTable.expiresAt],
+            shareVersion = ShareVersion(this[RoomsTable.shareVersion]),
+            decisionBasis = ShareVersion(this[RoomsTable.decisionBasisVersion]),
+            decision = decisionOf(),
         )
+
+    /** CHECK rooms_decision_complete가 세 칸이 함께 있거나 함께 없음을 보장한다. */
+    private fun ResultRow.decisionOf(): Decision? {
+        val station = this[RoomsTable.decidedStation] ?: return null
+        return Decision(
+            station,
+            requireNotNull(this[RoomsTable.decidedByPid]),
+            requireNotNull(this[RoomsTable.decidedAt]),
+        )
+    }
 
     private fun ResultRow.toParticipant() =
         Participant(

@@ -26,6 +26,33 @@ public class TokenHash(
     override fun toString(): String = "TokenHash(***)"
 }
 
+/**
+ * 방 공유 번호. 미리보기에 보이는 것이 바뀔 때마다 커지고 줄지 않는다(내용 해시가 아니다). 공유 링크 `?sv=`의 값이다.
+ * DB 트리거(changeset 20261117-room-share-version)만 올린다. 앱은 읽기만 한다.
+ */
+@JvmInline
+public value class ShareVersion(
+    public val value: Long,
+) : Comparable<ShareVersion> {
+    init {
+        require(value >= 0) { "ShareVersion은 0 이상이어야 합니다" }
+    }
+
+    override fun compareTo(other: ShareVersion): Int = value.compareTo(other.value)
+
+    public companion object {
+        public val ZERO: ShareVersion = ShareVersion(0)
+    }
+}
+
+/** 방에서 정한 만날 역. 세 값은 함께 있거나 함께 없다(DB CHECK rooms_decision_complete). */
+public data class Decision(
+    val stationCode: String,
+    /** 정한 참가자의 participantId. 그 사람이 나가면 DB가 정함을 푼다. */
+    val decidedBy: String,
+    val decidedAt: Instant,
+)
+
 public data class Room(
     val id: String,
     val hostHash: TokenHash,
@@ -48,6 +75,10 @@ public data class Room(
     val createdAt: Instant,
     val lastActivityAt: Instant,
     val expiresAt: Instant,
+    val shareVersion: ShareVersion = ShareVersion.ZERO,
+    /** 정한 역 칸이 마지막으로 바뀐(입력이 바뀌어 풀린 것 포함) [shareVersion]. 정하기·풀기의 기준이다. */
+    val decisionBasis: ShareVersion = ShareVersion.ZERO,
+    val decision: Decision? = null,
 )
 
 public data class Participant(
@@ -153,6 +184,9 @@ public data class RoomView(
     val meetingTime: LocalTime? = null,
     /** 약속 시간대: 시각이 있으면 그 시각의 시간대, 없으면 고른 시간대, 둘 다 없으면 null. */
     val meetingBand: TimeBand? = null,
+    val shareVersion: ShareVersion = ShareVersion.ZERO,
+    /** 지금 데이터에서도 만날 역이고 정한 사람이 방에 있는 정함만 보인다. 역 코드는 정식 코드다. */
+    val decision: Decision? = null,
 )
 
 /** 결과 계산에 필요한 방의 원본 정보(마스킹 전). room 모듈 밖으로 나가는 유일한 원본 출발역이다. */

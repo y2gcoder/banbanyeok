@@ -79,3 +79,82 @@ ALTER TABLE rooms
     ADD COLUMN meeting_band text CONSTRAINT rooms_meeting_band_check CHECK (meeting_band IN ('morning', 'day', 'evening', 'night')),
     ADD CONSTRAINT rooms_meeting_band_without_time CHECK (meeting_band IS NULL OR meeting_time IS NULL);
 --rollback ALTER TABLE rooms DROP COLUMN meeting_band;
+
+--changeset banbanyeok:20261117-room-share-version splitStatements:false
+-- 방 공유 버전과 정한 역(#51). 설계: docs/design/room-share-version.md
+-- share_version: 미리보기에 보이는 것이 바뀔 때마다 1씩 커지고 줄지 않는다(공유 링크 ?sv=). 내용 해시가 아니라서 같은 상태로
+-- 돌아와도 번호는 다시 쓰이지 않는다.
+-- decision_basis_version: 정한 역 칸이 마지막으로 바뀐(입력이 바뀌어 풀린 것 포함) share_version. 정하기·풀기는 화면이 본 번호가
+-- decision_basis_version 이상, share_version 이하일 때만 받는다.
+-- 두 번호는 아래 트리거만 쓴다. 앱이 보낸 값은 무시하고 OLD에서 다시 세므로, 배포 중 옛 서버의 쓰기도 센다.
+ALTER TABLE rooms
+    ADD COLUMN share_version          bigint NOT NULL DEFAULT 0,
+    ADD COLUMN decision_basis_version bigint NOT NULL DEFAULT 0,
+    ADD COLUMN decided_station        text CONSTRAINT rooms_decided_station_format CHECK (decided_station ~ '^[0-9a-hjkmnp-tv-z]{3}$'),
+    ADD COLUMN decided_by_pid         text,
+    ADD COLUMN decided_at             timestamptz,
+    ADD CONSTRAINT rooms_decision_complete CHECK (
+        (decided_station IS NULL) = (decided_by_pid IS NULL) AND (decided_station IS NULL) = (decided_at IS NULL)
+    ),
+    ADD CONSTRAINT rooms_decision_basis_le_share CHECK (decision_basis_version BETWEEN 0 AND share_version);
+
+-- 방 행이 바뀔 때: 미리보기에 보이는 칸이 바뀌었거나 참여자 트리거가 올려 달라고 했으면(share_version > OLD) 정확히 1 올린다.
+-- 정한 역 칸이 바뀌었거나 참여자 트리거가 풀었으면(decision_basis_version > OLD) 새 번호를 기준 번호로 찍는다.
+-- last_activity_at·expires_at·outcome만 바뀌는 쓰기(활동 기록, 결과 설문)는 올리지 않는다.
+CREATE FUNCTION rooms_share_version() RETURNS trigger AS $$
+DECLARE
+    decision_changed boolean;
+    preview_changed  boolean;
+BEGIN
+    decision_changed :=
+        (NEW.decided_station, NEW.decided_by_pid, NEW.decided_at)
+            IS DISTINCT FROM (OLD.decided_station, OLD.decided_by_pid, OLD.decided_at)
+        OR NEW.decision_basis_version > OLD.decision_basis_version;
+    preview_changed :=
+        decision_changed
+        OR NEW.share_version > OLD.share_version
+        OR (NEW.mode, NEW.favor_pid, NEW.status, NEW.expected_count, NEW.meeting_date, NEW.meeting_time, NEW.meeting_band)
+            IS DISTINCT FROM (OLD.mode, OLD.favor_pid, OLD.status, OLD.expected_count, OLD.meeting_date, OLD.meeting_time, OLD.meeting_band);
+    NEW.share_version := OLD.share_version + CASE WHEN preview_changed THEN 1 ELSE 0 END;
+    NEW.decision_basis_version := CASE WHEN decision_changed THEN NEW.share_version ELSE OLD.decision_basis_version END;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER rooms_share_version BEFORE UPDATE ON rooms
+    FOR EACH ROW EXECUTE FUNCTION rooms_share_version();
+
+-- 참여자가 들어오거나 나가거나(내보내기 포함) 출발역을 바꾸면 입력이 바뀐 것이다: 번호를 올리고 정한 역을 푼다.
+-- 별칭·숨기기만 바뀌면 번호만 올린다(시간이 그대로라 정한 역은 남는다). 방이 지워지며 함께 지워질 때는 방 행이 이미 없어 0행이다.
+CREATE FUNCTION participants_share_version() RETURNS trigger AS $$
+DECLARE
+    rid      text;
+    releases boolean;
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF (NEW.nickname, NEW.origin_code, NEW.hidden) IS NOT DISTINCT FROM (OLD.nickname, OLD.origin_code, OLD.hidden) THEN
+            RETURN NULL;
+        END IF;
+        rid := NEW.room_id;
+        releases := NEW.origin_code IS DISTINCT FROM OLD.origin_code;
+    ELSIF TG_OP = 'INSERT' THEN
+        rid := NEW.room_id;
+        releases := true;
+    ELSE
+        rid := OLD.room_id;
+        releases := true;
+    END IF;
+    UPDATE rooms SET
+        share_version          = share_version + 1,
+        decision_basis_version = decision_basis_version + CASE WHEN releases THEN 1 ELSE 0 END,
+        decided_station        = CASE WHEN releases THEN NULL ELSE decided_station END,
+        decided_by_pid         = CASE WHEN releases THEN NULL ELSE decided_by_pid END,
+        decided_at             = CASE WHEN releases THEN NULL ELSE decided_at END
+    WHERE id = rid;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER participants_share_version AFTER INSERT OR DELETE OR UPDATE OF nickname, origin_code, hidden ON participants
+    FOR EACH ROW EXECUTE FUNCTION participants_share_version();
+--rollback DROP TRIGGER participants_share_version ON participants; DROP FUNCTION participants_share_version(); DROP TRIGGER rooms_share_version ON rooms; DROP FUNCTION rooms_share_version(); ALTER TABLE rooms DROP CONSTRAINT rooms_decision_basis_le_share, DROP CONSTRAINT rooms_decision_complete, DROP COLUMN decided_at, DROP COLUMN decided_by_pid, DROP COLUMN decided_station, DROP COLUMN decision_basis_version, DROP COLUMN share_version;

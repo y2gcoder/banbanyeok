@@ -87,6 +87,18 @@ public interface RoomRepository {
         activity: Activity,
     ): Boolean
 
+    /**
+     * 방 행을 잠그고(참여와 같은 FOR UPDATE) [DecisionRule]로 판정해 [DecisionResult.Applied]일 때만 정한 역 칸과 활동 시각을 쓴다.
+     * [decision]이 null이면 푼다. 공유 번호는 쓰지 않는다(트리거가 올린다).
+     */
+    public suspend fun writeDecision(
+        roomId: String,
+        actor: String,
+        decision: Decision?,
+        seen: ShareVersion,
+        activity: Activity,
+    ): DecisionResult
+
     public suspend fun delete(roomId: String): Boolean
 
     /** 만료 시각이 [now] 이하인 방(과 참여자)을 지우고 지운 방 수를 돌려준다. */
@@ -125,6 +137,9 @@ public interface StationCatalog {
      * 방은 입력을 저장하기 전과 결과를 계산하기 전에 이 값을 쓴다(옛 링크·옛 방이 계속 열리게).
      */
     public fun canonical(code: String): String = code
+
+    /** 만날 역(od 후보 축)으로 쓸 수 있는 코드. 출발역 축과 다르다. [canonical]을 거친 코드로 묻는다. */
+    public fun isMeetingStation(code: String): Boolean
 }
 
 /** ID와 토큰 생성. 테스트는 결정적인 구현을 쓴다. */

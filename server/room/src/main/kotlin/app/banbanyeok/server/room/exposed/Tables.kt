@@ -34,6 +34,13 @@ internal object RoomsTable : Table("rooms") {
     val createdAt = timestamp("created_at")
     val lastActivityAt = timestamp("last_activity_at")
     val expiresAt = timestamp("expires_at")
+
+    /** 트리거(rooms_share_version, participants_share_version)만 쓴다. 앱은 읽기만 한다. */
+    val shareVersion = long("share_version")
+    val decisionBasisVersion = long("decision_basis_version")
+    val decidedStation = text("decided_station").nullable()
+    val decidedByPid = text("decided_by_pid").nullable()
+    val decidedAt = timestamp("decided_at").nullable()
     override val primaryKey = PrimaryKey(id)
 }
 

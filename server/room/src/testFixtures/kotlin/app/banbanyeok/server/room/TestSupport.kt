@@ -53,8 +53,11 @@ class FakeStationCatalog(
     private val origins: Set<String> = setOf("03v", "130", "225", "31a"),
     /** 폐기된 코드 → 대체 코드(한 단계). */
     private val replacedBy: Map<String, String> = emptyMap(),
+    private val meetingStations: Set<String> = origins,
 ) : StationCatalog {
     override fun isOrigin(code: String): Boolean = code in origins
+
+    override fun isMeetingStation(code: String): Boolean = code in meetingStations
 
     override fun canonical(code: String): String = generateSequence(code) { replacedBy[it] }.last()
 }

@@ -4,24 +4,30 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 
-/** 테스트용 메모리 fake. Exposed 구현과 같은 계약 테스트([roomRepositoryContract])를 통과한다. */
+/**
+ * 테스트용 메모리 fake. Exposed 구현과 같은 계약 테스트([roomRepositoryContract])를 통과한다.
+ * 모든 쓰기는 [write]를 지나 SQL 문장 하나처럼 적용되고, 공유 번호와 정한 역은 DB 트리거의 거울([settle])이 맞춘다.
+ */
 class InMemoryRoomRepository : RoomRepository {
     private val lock = Mutex()
-    private val rooms = LinkedHashMap<String, Room>()
-    private val participants = LinkedHashMap<String, MutableList<Participant>>()
+    private val rooms = LinkedHashMap<String, StoredRoom>()
 
     override suspend fun create(
         room: Room,
         host: Participant,
     ) = lock.withLock {
         check(room.id !in rooms) { "duplicate room id" }
-        rooms[room.id] = room
-        participants[room.id] = mutableListOf(host)
+        rooms[room.id] = StoredRoom(room, emptyList())
+        write(room.id) { it.copy(participants = listOf(host)) }
     }
 
     override suspend fun find(roomId: String): StoredRoom? =
         lock.withLock {
-            rooms[roomId]?.let { StoredRoom(it, ordered(roomId)) }
+            rooms[roomId]?.let {
+                it.copy(
+                    participants = it.participants.sortedWith(compareBy({ p -> p.joinedAt }, { p -> p.id })),
+                )
+            }
         }
 
     override suspend fun addParticipant(
@@ -30,21 +36,20 @@ class InMemoryRoomRepository : RoomRepository {
         activity: Activity,
     ): AddResult =
         lock.withLock {
-            val room = rooms[roomId] ?: return@withLock AddResult.RoomNotFound
-            val list = participants.getValue(roomId)
-            val capacity = minOf(MAX_PARTICIPANTS, room.expectedCount ?: MAX_PARTICIPANTS)
+            val stored = rooms[roomId] ?: return@withLock AddResult.RoomNotFound
+            val capacity = minOf(MAX_PARTICIPANTS, stored.room.expectedCount ?: MAX_PARTICIPANTS)
             when {
-                room.locked -> {
+                stored.room.locked -> {
                     AddResult.Locked
                 }
 
-                list.size >= capacity -> {
+                stored.participants.size >= capacity -> {
                     AddResult.Full
                 }
 
                 else -> {
-                    list += participant
-                    touch(room, activity)
+                    write(roomId) { it.copy(participants = it.participants + participant) }
+                    touch(roomId, activity)
                     AddResult.Added
                 }
             }
@@ -57,17 +62,26 @@ class InMemoryRoomRepository : RoomRepository {
         activity: Activity,
     ): Boolean =
         lock.withLock {
-            val list = participants[roomId] ?: return@withLock false
-            val index = list.indexOfFirst { it.id == participantId }
-            if (index < 0) return@withLock false
-            list[index] =
-                list[index].copy(
-                    nickname = change.nickname,
-                    originCode = change.originCode,
-                    hidden = change.hidden,
-                    updatedAt = change.updatedAt,
+            val stored = rooms[roomId] ?: return@withLock false
+            if (stored.participants.none { it.id == participantId }) return@withLock false
+            write(roomId) {
+                it.copy(
+                    participants =
+                        it.participants.map { p ->
+                            if (p.id != participantId) {
+                                p
+                            } else {
+                                p.copy(
+                                    nickname = change.nickname,
+                                    originCode = change.originCode,
+                                    hidden = change.hidden,
+                                    updatedAt = change.updatedAt,
+                                )
+                            }
+                        },
                 )
-            touch(rooms.getValue(roomId), activity)
+            }
+            touch(roomId, activity)
             true
         }
 
@@ -77,12 +91,13 @@ class InMemoryRoomRepository : RoomRepository {
         activity: Activity,
     ): Boolean =
         lock.withLock {
-            val list = participants[roomId] ?: return@withLock false
-            if (!list.removeAll { it.id == participantId }) return@withLock false
-            val room = rooms.getValue(roomId)
-            rooms[roomId] =
-                room.copy(favorParticipantId = room.favorParticipantId.takeIf { it != participantId })
-            touch(rooms.getValue(roomId), activity)
+            val stored = rooms[roomId] ?: return@withLock false
+            if (stored.participants.none { it.id == participantId }) return@withLock false
+            write(roomId) { it.copy(participants = it.participants.filter { p -> p.id != participantId }) }
+            if (stored.room.favorParticipantId == participantId) {
+                write(roomId) { it.copy(room = it.room.copy(favorParticipantId = null)) }
+            }
+            touch(roomId, activity)
             true
         }
 
@@ -92,27 +107,23 @@ class InMemoryRoomRepository : RoomRepository {
         activity: Activity,
     ): Boolean =
         lock.withLock {
-            val room = rooms[roomId] ?: return@withLock false
+            val room = rooms[roomId]?.room ?: return@withLock false
             if (change.onlyWithoutMeetingTime && room.meetingTime != null) return@withLock false
-            rooms[roomId] =
-                room.copy(
-                    mode = change.mode ?: room.mode,
-                    favorParticipantId =
-                        (change.favorParticipantId as? Change.Set)?.value
-                            ?: room.favorParticipantId.takeIf { change.favorParticipantId is Change.Unchanged },
-                    locked = change.locked ?: room.locked,
-                    meetingDate =
-                        (change.meetingDate as? Change.Set)?.value
-                            ?: room.meetingDate.takeIf { change.meetingDate is Change.Unchanged },
-                    meetingTime =
-                        (change.meetingTime as? Change.Set)?.value
-                            ?: room.meetingTime.takeIf { change.meetingTime is Change.Unchanged },
-                    meetingBand =
-                        (change.meetingBand as? Change.Set)?.value
-                            ?: room.meetingBand.takeIf { change.meetingBand is Change.Unchanged },
-                    lastActivityAt = activity.at,
-                    expiresAt = activity.expiresAt,
+            write(roomId) {
+                it.copy(
+                    room =
+                        room.copy(
+                            mode = change.mode ?: room.mode,
+                            favorParticipantId = change.favorParticipantId.or(room.favorParticipantId),
+                            locked = change.locked ?: room.locked,
+                            meetingDate = change.meetingDate.or(room.meetingDate),
+                            meetingTime = change.meetingTime.or(room.meetingTime),
+                            meetingBand = change.meetingBand.or(room.meetingBand),
+                            lastActivityAt = activity.at,
+                            expiresAt = activity.expiresAt,
+                        ),
                 )
+            }
             true
         }
 
@@ -122,48 +133,116 @@ class InMemoryRoomRepository : RoomRepository {
         activity: Activity,
     ): Boolean =
         lock.withLock {
-            val room = rooms[roomId] ?: return@withLock false
-            rooms[roomId] = room.copy(outcome = outcome)
-            touch(rooms.getValue(roomId), activity)
+            if (roomId !in rooms) return@withLock false
+            write(roomId) {
+                it.copy(
+                    room =
+                        it.room.copy(
+                            outcome = outcome,
+                            lastActivityAt = activity.at,
+                            expiresAt = activity.expiresAt,
+                        ),
+                )
+            }
             true
         }
 
-    override suspend fun delete(roomId: String): Boolean =
+    override suspend fun writeDecision(
+        roomId: String,
+        actor: String,
+        decision: Decision?,
+        seen: ShareVersion,
+        activity: Activity,
+    ): DecisionResult =
         lock.withLock {
-            participants.remove(roomId)
-            rooms.remove(roomId) != null
+            val stored = rooms[roomId] ?: return@withLock DecisionResult.RoomNotFound
+            val members = stored.participants.map { it.id }
+            DecisionRule.verdict(stored.room, members, actor, decision, seen).also { verdict ->
+                if (verdict == DecisionResult.Applied) {
+                    write(roomId) {
+                        it.copy(
+                            room =
+                                it.room.copy(
+                                    decision = decision,
+                                    lastActivityAt = activity.at,
+                                    expiresAt = activity.expiresAt,
+                                ),
+                        )
+                    }
+                }
+            }
         }
+
+    override suspend fun delete(roomId: String): Boolean = lock.withLock { rooms.remove(roomId) != null }
 
     override suspend fun deleteExpired(now: Instant): Int =
         lock.withLock {
-            val expired = rooms.values.filter { !it.expiresAt.isAfter(now) }.map { it.id }
-            expired.forEach {
-                rooms.remove(it)
-                participants.remove(it)
-            }
+            val expired = rooms.values.filter { !it.room.expiresAt.isAfter(now) }.map { it.room.id }
+            expired.forEach(rooms::remove)
             expired.size
         }
 
     /** 익명 사용자 fake가 참조 여부를 판단하는 데 쓴다. */
     internal suspend fun referencedAnonIds(): Set<String> =
         lock.withLock {
-            (rooms.values.mapNotNull { it.hostAnonId } + participants.values.flatten().mapNotNull { it.anonId }).toSet()
+            rooms.values
+                .flatMap { stored -> listOf(stored.room.hostAnonId) + stored.participants.map { it.anonId } }
+                .filterNotNull()
+                .toSet()
         }
 
-    private fun ordered(roomId: String) =
-        participants.getValue(roomId).sortedWith(compareBy({ it.joinedAt }, { it.id }))
+    private fun write(
+        roomId: String,
+        change: (StoredRoom) -> StoredRoom,
+    ) {
+        val before = rooms.getValue(roomId)
+        val after = change(before)
+        rooms[roomId] = after.copy(room = settle(before, after))
+    }
 
     private fun touch(
-        room: Room,
+        roomId: String,
         activity: Activity,
-    ) {
-        rooms[room.id] = rooms.getValue(room.id).copy(lastActivityAt = activity.at, expiresAt = activity.expiresAt)
-    }
+    ) = write(roomId) { it.copy(room = it.room.copy(lastActivityAt = activity.at, expiresAt = activity.expiresAt)) }
+
+    private fun <T> Change<T>.or(current: T?): T? =
+        when (this) {
+            Change.Unchanged -> current
+            is Change.Set -> value
+        }
 
     private companion object {
         const val MAX_PARTICIPANTS = 4
     }
 }
+
+/**
+ * DB 트리거(changeset 20261117-room-share-version)의 거울. 쓰기 한 번의 전후를 비교한다. 참여·나가기·출발역 변경은 정한 역을 풀고,
+ * 별칭·숨기기·미리보기에 보이는 방 칸·정한 역 변경은 번호만 올린다. 활동 시각과 결과 설문은 올리지 않는다. 앱이 넣은 번호는 무시한다.
+ */
+internal fun settle(
+    before: StoredRoom,
+    after: StoredRoom,
+): Room {
+    val old = before.room
+    val new = after.room.copy(shareVersion = old.shareVersion, decisionBasis = old.decisionBasis)
+    val was = before.participants.associateBy { it.id }
+    val kept = after.participants.mapNotNull { p -> was[p.id]?.let { it to p } }
+    val releases =
+        was.keys != after.participants.map { it.id }.toSet() || kept.any { (o, n) -> o.originCode != n.originCode }
+    val looks = kept.any { (o, n) -> o.nickname != n.nickname || o.hidden != n.hidden }
+    val decisionChanged = releases || new.decision != old.decision
+    if (!decisionChanged && !looks && new.previewColumns() == old.previewColumns()) return new
+    val version = ShareVersion(old.shareVersion.value + 1)
+    return new.copy(
+        shareVersion = version,
+        decisionBasis = if (decisionChanged) version else old.decisionBasis,
+        decision = if (releases) null else new.decision,
+    )
+}
+
+private fun Room.previewColumns() =
+    listOf(mode, favorParticipantId, locked, expectedCount, meetingDate, meetingTime, meetingBand)
 
 class InMemoryAnonUserRepository(
     private val rooms: InMemoryRoomRepository,
