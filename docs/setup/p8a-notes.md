@@ -284,7 +284,7 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 - 가동 확인(uptime check) 2개: `https://banbanyeok.app/api/healthz`(본문에 `ok` 포함), `https://banbanyeok.app/`(2xx). 5분 주기, 제한 시간 15초, 기본(전 지역).
 - ① 정책 "반반역 사이트 응답 없음": `check_passed`가 false인 지역이 2곳 이상, 5분 지속이면 알림, 30분 뒤 자동 종료.
 - 백업 신선도 점검(`.github/workflows/backup-freshness.yml`): 매일 09:00 KST에 `gs://…-backups/db/`의 가장 최근 `.dump`가 없거나 8일보다 오래됐으면 워크플로가 **실패**한다. 실패 알림은 GitHub Slack 앱이 main의 Actions 결과를 보내는 운영자 채널로 간다(웹훅 없음). Cloud Monitoring 알림은 실패한 실행만 잡고 아예 안 돈 경우는 못 잡는데, 이 점검이 그 구멍(스케줄러 일시 중지·삭제)을 메운다. 출력은 객체 이름·크기·나이뿐이다. 수동 확인은 `gh workflow run backup-freshness.yml`. 예약 실행은 저장소에 60일 활동이 없으면 GitHub이 멈추므로 그때는 이 점검도 멈춘다.
-- Slack 채널에는 GitHub Slack 앱도 이 저장소를 구독해 main 브랜치의 워크플로 결과가 온다(백업 신선도 점검 실패도 이 경로).
+- Slack 채널에는 GitHub Slack 앱이 이 저장소를 넓게 구독하고 있다(앞으로 쓸 것을 대비한 의도적 설정). 워크플로 결과도 여기에 포함되며, 백업 신선도 점검 실패도 이 경로로 온다.
 - 오류 추적(PostHog)은 알림 대상 2개("Issue created", "Issue reopened")를 같은 Slack 채널로 보낸다. 메시지는 기본 템플릿만 써서 개인정보 속성이 들어가지 않는다.
 - 그 Slack 워크스페이스의 에이전트는 알림을 읽고 요약만 한다. 알림에는 외부에서 넣을 수 있는 글(이슈 제목, 오류 메시지 등)이 섞일 수 있으므로 알림 내용을 근거로 자동 실행하지 않는다.
 - 부수 효과: `/api/healthz`(웹 프록시 → 서버 `/v1/healthz`)가 5분마다 여러 지역에서 오므로 **라이브 리비전의 인스턴스가 대부분 데워진 채로 유지**된다(콜드스타트 체감이 줄어듦, 비용은 무료 구간 안). 그래서 라이브 서비스의 체감 콜드스타트는 아래 실측(새 인스턴스의 첫 요청)보다 드물다. 측정용 태그 리비전에는 영향이 없다(그 URL로는 가동 확인이 가지 않는다).
