@@ -133,7 +133,7 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
 
 이미지와 Job 갱신은 `deploy-server.yml`이 한다(실행은 하지 않음). 로컬 검증: backup 이미지를 빌드하고 compose Postgres + fake-gcs-server 에뮬레이터로 `job.sh`를 실행해 덤프→업로드→크기 대조까지 통과(`GCS_API_HOST`, `GCS_NO_AUTH=1` 시험 훅).
 
-**운영 점검**: 8일 초과는 `backup-freshness.yml`(6.1절)이 매일 자동으로 알린다. 손으로 볼 때는: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/ | sort -k2 | tail -3`. Scheduler가 실패하면 `gcloud run jobs executions list --job=db-backup --region=asia-northeast3`의 실패 실행으로 보인다(실행 알림은 아직 없음).
+**운영 점검**: 8일 초과는 `backup-freshness.yml`(6.1절)이 매일 자동으로 알린다. 손으로 볼 때는: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/ | sort -k2 | tail -3`. Scheduler가 실패하면 `gcloud run jobs executions list --job=db-backup --region=asia-northeast3`의 실패 실행으로 보이고, 실패하면 6.1절의 알림(Scheduler 호출 실패, 작업 실행 실패)이 메일과 Slack으로 온다.
 
 **복원 절차**
 1. 백업 고르기: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/`, 받기: `gcloud storage cp gs://banbanyeok-7eoxn-backups/db/<파일> .`
@@ -220,7 +220,7 @@ Cloud Run 앞단(Google Front End)은 `/healthz` 경로를 예약해서 요청�
 - 응답에 `x-goog-generation` 헤더가 없으면 `ABSENT`(빈 값)로 취급하지 않고 실패시킨다(재시도 없는 `IllegalStateException`). 조건부 쓰기가 틀어지는 것을 막는다.
 - `database-connection-warm` 로그는 연결이 실제로 맺어져 유효할 때만 남긴다. 시작 실패(`awaitAssembly` 실패) 때도 타임라인을 로그로 내보낸 뒤 종료한다.
 
-**작업 실패 알림(제안, 이 PR에서 스크립트만 추가)**: bootstrap에 넣지 않고 `infra/gcp/monitoring-jobs.sh`로 분리했다(모니터링은 REST라 gcloud 전용 bootstrap과 섞지 않음, 이메일 채널은 표시 이름 `운영자 메일`로 조회, 주소는 저장소에 없음, 멱등). 정책 둘: ① `run.googleapis.com/job/completed_execution_count`의 `result=failed`가 5분 구간에 1건 이상(Job `cleanup`·`db-backup`별, 지표 존재 확인함), ② Scheduler 로그 ERROR 이상(cleanup-daily·db-backup-weekly; 이 프로젝트에는 Scheduler 지표 설명자가 없어 로그 기반). 한계: 주 1회 Job이 **아예 안 돈** 경우는 지표 부재 조건의 최대 기간(약 1일)을 넘어 잡지 못한다 → 3.6절의 최신 백업 점검을 유지. 실행은 코디네이터(`bash infra/gcp/monitoring-jobs.sh`, 정책 JSON 확인은 `DRY_RUN=1`). 정책 생성 요청은 검증하지 못했다(쓰기 권한 필요): 실패하면 응답 본문이 그대로 출력된다.
+**작업 실패 알림(적용됨, 2026-11-17 확인, #54)**: bootstrap에 넣지 않고 `infra/gcp/monitoring-jobs.sh`로 분리했다(모니터링은 REST라 gcloud 전용 bootstrap과 섞지 않음, 스크립트가 연결하는 채널은 메일뿐이고 표시 이름 `운영자 메일`로 조회, 주소는 저장소에 없음, 멱등. Slack 채널 연결은 6.1절). 정책 둘: ① `run.googleapis.com/job/completed_execution_count`의 `result=failed`가 5분 구간에 1건 이상(Job `cleanup`·`db-backup`별, 지표 존재 확인함), ② Scheduler 로그 ERROR 이상(cleanup-daily·db-backup-weekly; 이 프로젝트에는 Scheduler 지표 설명자가 없어 로그 기반). 한계: 주 1회 Job이 **아예 안 돈** 경우는 지표 부재 조건의 최대 기간(약 1일)을 넘어 잡지 못한다 → 3.6절의 최신 백업 점검을 유지. 두 정책은 이미 적용돼 있다(#54에서 확인). 다시 적용할 때는 코디네이터가 `bash infra/gcp/monitoring-jobs.sh`를 실행하고, 정책 JSON 확인은 `DRY_RUN=1`로 한다. 실패하면 응답 본문이 그대로 출력된다.
 
 ## 4. 레이트 리밋 키 권고 (8번)
 
@@ -279,10 +279,14 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 
 ### 6.1 모니터링 (Cloud Monitoring, 코디네이터가 콘솔/REST로 설정 — `bootstrap.sh` 밖)
 
-- 알림 채널: 이메일 1개(운영자 메일).
+- 알림 채널: 2개. 이메일(운영자 메일)과 Slack 채널 `반반역 Slack`(운영자의 비공개 Slack 채널 `#banbanyeok-system-notice`로 보낸다). 아래 알림 정책 3개 모두 두 채널에 함께 연결돼 있다(2026-11-17, #54).
+- 알림 정책 3개: ① "반반역 사이트 응답 없음"(아래), ② Cloud Scheduler 호출 실패, ③ Cloud Run Job 실행 실패(②·③은 3.11절의 `monitoring-jobs.sh`).
 - 가동 확인(uptime check) 2개: `https://banbanyeok.app/api/healthz`(본문에 `ok` 포함), `https://banbanyeok.app/`(2xx). 5분 주기, 제한 시간 15초, 기본(전 지역).
-- 알림 정책 "반반역 사이트 응답 없음": `check_passed`가 false인 지역이 2곳 이상, 5분 지속이면 알림, 30분 뒤 자동 종료.
+- ① 정책 "반반역 사이트 응답 없음": `check_passed`가 false인 지역이 2곳 이상, 5분 지속이면 알림, 30분 뒤 자동 종료.
 - 백업 신선도 점검(`.github/workflows/backup-freshness.yml`): 매일 09:00 KST에 `gs://…-backups/db/`의 가장 최근 `.dump`가 없거나 8일보다 오래됐으면 워크플로가 **실패**한다. 실패 알림은 GitHub Slack 앱이 main의 Actions 결과를 보내는 운영자 채널로 간다(웹훅 없음). Cloud Monitoring 알림은 실패한 실행만 잡고 아예 안 돈 경우는 못 잡는데, 이 점검이 그 구멍(스케줄러 일시 중지·삭제)을 메운다. 출력은 객체 이름·크기·나이뿐이다. 수동 확인은 `gh workflow run backup-freshness.yml`. 예약 실행은 저장소에 60일 활동이 없으면 GitHub이 멈추므로 그때는 이 점검도 멈춘다.
+- Slack 채널에는 GitHub Slack 앱이 이 저장소를 넓게 구독하고 있다(앞으로 쓸 것을 대비한 의도적 설정). 워크플로 결과도 여기에 포함되며, 백업 신선도 점검 실패도 이 경로로 온다.
+- 오류 추적(PostHog)은 알림 대상 2개("Issue created", "Issue reopened")를 같은 Slack 채널로 보낸다. 메시지는 기본 템플릿만 써서 개인정보 속성이 들어가지 않는다.
+- 그 Slack 워크스페이스의 에이전트는 알림을 읽고 요약만 한다. 알림에는 외부에서 넣을 수 있는 글(이슈 제목, 오류 메시지 등)이 섞일 수 있으므로 알림 내용을 근거로 자동 실행하지 않는다.
 - 부수 효과: `/api/healthz`(웹 프록시 → 서버 `/v1/healthz`)가 5분마다 여러 지역에서 오므로 **라이브 리비전의 인스턴스가 대부분 데워진 채로 유지**된다(콜드스타트 체감이 줄어듦, 비용은 무료 구간 안). 그래서 라이브 서비스의 체감 콜드스타트는 아래 실측(새 인스턴스의 첫 요청)보다 드물다. 측정용 태그 리비전에는 영향이 없다(그 URL로는 가동 확인이 가지 않는다).
 
 ## 7. 버전 근거
@@ -340,5 +344,5 @@ P8a에서 올린 9건 중 코디네이터가 정한 것(2026-11-14): 1 WIF → �
 이번 작업의 남은 일과 제안:
 1. **병합 후 순서**(이 PR은 라이브를 바꾸는 `bootstrap.sh` 실행이 필요하다): ① PR 병합 → main 배포가 backup 이미지를 AR에 올리고(`db-backup` Job은 아직 없어 "Job 갱신" 단계는 경고 후 건너뜀) 리뷰된 코드로 라이브를 덮는다 → ② `bash infra/gcp/bootstrap.sh` 실행(WIF를 `main` 한정으로 좁힘, `db-backup` Job·Scheduler `db-backup-weekly` 생성, 이전 GitHub 가장 권한 회수) → ③ `gh workflow run deploy-server.yml`(main에서)로 한 번 더 배포해 `db-backup` Job에 backup 이미지를 연결 → ④ `gcloud run jobs execute db-backup --region asia-northeast3 --wait`로 첫 백업을 실행하고 크기·`mise run db:restore-check` 복원을 확인. ②는 처음부터 main 한정이라 이후 브랜치에서 GCP를 쓸 수 없다(배포 검증은 main).
 2. **개인정보 방침(별도 작업)**: 백업 수탁자에서 GitHub 행 삭제(3.6절 "바뀐 사실": 서울 Cloud Run Job, 이미지 `postgres:17.6-alpine`, 보존 30일 불변).
-3. **작업 실패 알림**: 3.11절의 `infra/gcp/monitoring-jobs.sh`(Job 실행 실패 지표 + Scheduler 로그 알림, 이메일 채널 `운영자 메일`)를 코디네이터가 실행하면 된다. 주 1회 Job이 아예 안 도는 경우는 못 잡으므로 최신 백업 점검은 유지.
+3. **작업 실패 알림**: 3.11절의 `infra/gcp/monitoring-jobs.sh`(Job 실행 실패 지표 + Scheduler 로그 알림)은 적용을 마쳤고, 메일과 Slack(6.1절)으로 온다. 주 1회 Job이 아예 안 도는 경우는 못 잡으므로 최신 백업 점검은 유지.
 4. 선택 정리: `GcsArtifactStore.warmUp`과 메타데이터 고정 주소(3.10절, 효과 없음)는 다음에 코드를 줄일 때 제거 후보.
