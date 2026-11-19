@@ -310,6 +310,11 @@ else
   echo "warn 카카오톡 공유 확인 건너뜀(KAKAO_JS_KEY 없음)"
 fi
 
+# 네이버 서치어드바이저 소유 확인 메타: SITE_INDEX와 상관없이 첫 화면에 한 번 있어야 한다.
+fetch "$BASE_URL/"
+naver_tags="$(grep -oE '<meta name="naver-site-verification" content="[0-9a-f]{40}"' <<<"$body" | wc -l | tr -d ' ')"
+if [ "$naver_tags" = "1" ]; then pass "첫 화면에 네이버 소유 확인 메타가 있음"; else bad "첫 화면의 네이버 소유 확인 메타가 ${naver_tags}개(기대: 1개)"; fi
+
 # 정식 주소로의 리디렉트
 for from in ${REDIRECT_FROM:-}; do
   [ -z "$from" ] && continue
