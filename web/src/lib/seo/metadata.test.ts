@@ -108,6 +108,12 @@ describe("허브·사이트 기본 메타데이터", () => {
     expect(meta.appleWebApp).toEqual({ capable: true, title: "반반역", statusBarStyle: "default" });
     expect(siteMetadata({}).robots).toEqual({ index: false, follow: false });
   });
+
+  it("네이버 소유 확인 태그는 색인 여부와 상관없이 늘 있다", () => {
+    const expected = { other: { "naver-site-verification": "5225d18c291ecbe66eda9ebb67f07145141f5625" } };
+    expect(siteMetadata(env).verification).toEqual(expected);
+    expect(siteMetadata({}).verification).toEqual(expected);
+  });
 });
 
 describe("공유 링크 메타데이터", () => {

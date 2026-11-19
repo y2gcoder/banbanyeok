@@ -143,3 +143,10 @@ test("사이트 기본 그림: 홈·방 링크의 og:image는 버전 붙은 주�
   expect(await bytes("/opengraph-image")).toBe(expected);
   expect(versioned.headers()["cache-control"]).toBe("public, max-age=0, must-revalidate");
 });
+
+test("첫 화면 head에 네이버 소유 확인 메타가 한 번 있다(색인 여부와 무관)", async ({ page }) => {
+  await page.goto("/");
+  const tags = page.locator('meta[name="naver-site-verification"]');
+  await expect(tags).toHaveCount(1);
+  await expect(tags).toHaveAttribute("content", "5225d18c291ecbe66eda9ebb67f07145141f5625");
+});

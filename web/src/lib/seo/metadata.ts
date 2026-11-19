@@ -20,6 +20,8 @@ type Env = Record<string, string | undefined>;
 const SITE_NAME = "반반역";
 const SITE_DESCRIPTION = "각자 지하철 시간으로 계산해서 공평하게 만날 역을 찾아요. 가입 없이 링크로 공유해요.";
 export const HUB_PATH = PAIR_PATH_PREFIX;
+/** 네이버 서치어드바이저 소유 확인 값(HTML 태그 방식, 2026-11-20 발급). 공개 값이고, SITE_INDEX와 무관하게 늘 내보낸다. */
+const NAVER_SITE_VERIFICATION = "5225d18c291ecbe66eda9ebb67f07145141f5625";
 
 type Social = {
   title: string;
@@ -63,6 +65,7 @@ export function siteMetadata(env: Env = siteEnv()): Metadata {
     title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
     description: SITE_DESCRIPTION,
     robots: robots(env),
+    verification: { other: { "naver-site-verification": NAVER_SITE_VERIFICATION } },
     // 홈 화면에 추가한 iOS 웹 앱: 이름, 전체 화면 실행, 상태 표시줄은 기본(밝은 바탕·검은 글자, 내용은 그 아래에서 시작).
     // black-translucent는 내용이 상태 표시줄 밑으로 들어가고 글자가 흰색이라 밝은 화면에서 시계·배터리가 보이지 않는다.
     appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
