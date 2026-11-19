@@ -7,6 +7,9 @@
  * docs/legal/privacy-policy-review.md(5절: 실제 구현·배포와의 대조, 2026-11-15)에 있다.
  * 2026-11-17부터 시행 중이라 남은 {자리표시}가 없다. 다시 {중괄호} 자리표시가 생기면 테스트가 실패한다.
  * 작성 기준·검토 메모는 공개 화면에 싣지 않고 docs/legal/privacy-policy-review.md 상단 '내부 메모'에 둔다.
+ *
+ * 처리방침을 바꿀 때는 이 파일의 POLICY를 바로 고치지 않는다. 아래 UPCOMING_POLICY에 '예정된 다음 판'을 넣고 15항의 약속(시행 7일 전,
+ * 중요한 변경은 30일 전부터 화면 공지)대로 알린다. 절차는 docs/legal/privacy-policy-change.md, 날짜 판정은 schedule.ts.
  */
 
 export type Block =
@@ -21,6 +24,23 @@ export type Policy = {
   intro: readonly string[];
   summary: readonly string[];
   sections: readonly Section[];
+};
+
+/** 바뀌기 전·후를 견주는 표의 한 행. 항목마다 지금 방침의 문구와 바뀐 뒤 문구를 짧게 적는다. */
+export type PolicyChange = { item: string; before: string; after: string };
+
+/**
+ * 예정된 다음 판. 날짜는 모두 YYYY-MM-DD이고 한국 시간(KST) 기준이다.
+ * 공지 시작일 0시부터 시행일 전날 24시까지 화면에 알리고, 시행일 0시에 policy가 지금 판이 된다(재배포 없이).
+ * 공지 시작일은 시행일보다 7일 이상 앞이어야 한다(테스트가 확인). 30일 전 공지가 필요한 변경인지는 사람이 판단한다.
+ */
+export type UpcomingPolicy = {
+  effectiveDate: string;
+  noticeFrom: string;
+  /** 한두 문장. 무엇이 왜 바뀌는지. */
+  summary: string;
+  changes: readonly PolicyChange[];
+  policy: Policy;
 };
 
 /** 운영자의 연락 주소. 운영자 개인 메일이 아닌 전용 주소(Cloudflare Email Routing으로 전달). */
@@ -521,3 +541,6 @@ export const POLICY: Policy = {
     },
   ],
 };
+
+/** 예정된 다음 판. 없으면(지금) 화면 어디에도 공지가 나오지 않는다. */
+export const UPCOMING_POLICY: UpcomingPolicy | null = null;
