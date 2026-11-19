@@ -112,7 +112,7 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
 
   const collecting = await scrape(request, `/r/${roomId}?sv=${collectingVersion}`);
   expect(collecting.title).toBe(INVITE_TITLE);
-  expect(collecting.image).toMatch(/\/opengraph-image$/);
+  expect(collecting.image).toMatch(/\/opengraph-image\?v=[0-9a-f]{8}$/);
   expect(collecting.noindex).toBe(true);
   const plain = await scrape(request, `/r/${roomId}`);
   expect(plain.title).toBe(INVITE_TITLE);

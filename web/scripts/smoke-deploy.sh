@@ -139,6 +139,19 @@ for page_path in "${runtime_pages[@]}"; do
   fi
 done
 
+# 사이트 기본 그림: 홈의 og:image는 그림 내용의 버전(?v=)이 붙은 주소여야 하고 그 주소가 200 image/png여야 한다.
+# 카카오는 그림을 주소별로 오래 캐시하고 지우는 길이 없어서, 주소에 버전이 없으면 문구가 바뀐 뒤에도 옛 그림이 나간다.
+fetch "$BASE_URL/"
+site_og_path="$(grep -oE '<meta property="og:image" content="[^"]*"' <<<"$body" | first | sed -E 's#.*content="https?://[^/]+##; s#"$##')"
+if [[ "$site_og_path" =~ ^/opengraph-image\?v=[0-9a-f]{8}$ ]]; then
+  pass "홈 og:image에 그림 버전이 있음($site_og_path)"
+  fetch "$BASE_URL$site_og_path"
+  if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "사이트 기본 그림 $site_og_path"; else bad "사이트 기본 그림 status=$status"; fi
+else
+  bad "홈 og:image가 버전 붙은 /opengraph-image?v=<8자리>가 아님: ${site_og_path:-없음}"
+  site_og_path="/opengraph-image"
+fi
+
 # robots.txt
 fetch "$BASE_URL/robots.txt"
 if [ "${SITE_INDEXABLE:-0}" = "1" ]; then
@@ -268,7 +281,7 @@ if [ -n "${KAKAO_JS_KEY:-}" ]; then
     bad "CSP에 카카오 SDK 주소가 없습니다(빌드에 NEXT_PUBLIC_KAKAO_JS_KEY가 박히지 않음)"
   fi
   site_origin="${origin_header#Origin: }"
-  template="$(jq -nc --arg u "$BASE_URL/" --arg i "$BASE_URL/opengraph-image" \
+  template="$(jq -nc --arg u "$BASE_URL/" --arg i "$BASE_URL$site_og_path" \
     '{object_type:"feed",content:{title:"반반역 스모크",image_url:$i,link:{web_url:$u,mobile_web_url:$u}},buttons:[{title:"열기",link:{web_url:$u,mobile_web_url:$u}}]}')"
   ka="sdk/2.8.4 os/javascript sdk_type/javascript origin/$(jq -rn --arg o "$site_origin" '$o|@uri')"
   status="$(curl -sS --max-time 20 -o "$api_body" -w '%{http_code}' -G "https://kapi.kakao.com/v2/api/kakaolink/talk/template/default" \

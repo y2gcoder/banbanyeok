@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RoomPreview, TimeBasis } from "@/lib/api/types";
+import { SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 import { kakaoFeedSettings } from "@/lib/share/kakao";
 import { INVITE_COPY, roomKakaoMessage, roomShareCopy } from "./share-copy";
 
@@ -241,7 +242,7 @@ describe("카카오톡 공유 메시지", () => {
     expect(collecting.content).toMatchObject({
       title: INVITE_COPY.message.title,
       description: INVITE_COPY.message.text,
-      imageUrl: "https://banbanyeok.app/opengraph-image",
+      imageUrl: `https://banbanyeok.app${SITE_OG_IMAGE_PATH}`,
       link: roomLink,
     });
     expect(collecting.buttons).toEqual([{ title: "내 출발역 넣기", link: roomLink }]);
@@ -249,7 +250,7 @@ describe("카카오톡 공유 메시지", () => {
     const unknown = sent(undefined);
     const bare = "https://banbanyeok.app/r/qt7yvmsht3";
     expect(unknown.content.link).toEqual({ webUrl: bare, mobileWebUrl: bare });
-    expect(unknown.content.imageUrl).toBe("https://banbanyeok.app/opengraph-image");
+    expect(unknown.content.imageUrl).toBe(`https://banbanyeok.app${SITE_OG_IMAGE_PATH}`);
     expect(unknown.buttons).toEqual([{ title: "내 출발역 넣기", link: { webUrl: bare, mobileWebUrl: bare } }]);
   });
 

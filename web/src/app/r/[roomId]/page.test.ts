@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiRequestError } from "@/lib/api/client";
 import type { RoomPreview } from "@/lib/api/types";
 import { roomLinkMetadata } from "@/lib/seo/metadata";
+import { SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 
 const getRoomPreview = vi.fn<(roomId: string) => Promise<RoomPreview>>();
 vi.mock("@/lib/api/rooms", () => ({ getRoomPreview: (roomId: string) => getRoomPreview(roomId) }));
@@ -91,7 +92,7 @@ describe("방 링크 미리보기(/r/[roomId])", () => {
     getRoomPreview.mockResolvedValue({ stage: "collecting", room: { ...ROOM_PART, participantCount: 1 } });
     const m = await meta(ROOM, { sv: "6" });
     expect(m.title).toBe("같이 만날 역 정해요");
-    expect(og(m)).toMatchObject({ images: [{ url: "/opengraph-image" }] });
+    expect(og(m)).toMatchObject({ images: [{ url: SITE_OG_IMAGE_PATH }] });
   });
 
   it("번호가 지금보다 크거나 서버가 실패하면 기본 초대 문구", async () => {

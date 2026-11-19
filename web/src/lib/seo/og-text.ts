@@ -6,8 +6,16 @@
  */
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
-/** 사이트 기본 그림(`app/opengraph-image.tsx`). 결과가 없는 링크(모으는 중의 방 등)가 쓴다. */
-export const SITE_OG_IMAGE_PATH = "/opengraph-image";
+/**
+ * 사이트 기본 그림(`app/opengraph-image/route.tsx`). 결과가 없는 링크(모으는 중의 방 등)가 쓴다.
+ * 카카오는 그림을 주소별로 오래 캐시하고 지우는 길이 없다. 주소가 같으면 그림이 바뀌어도 옛 그림이 나가므로, 그림이 바뀔 때만 바뀌는
+ * `v`를 붙인다. 이 그림을 가리키는 곳은 모두 `SITE_OG_IMAGE_PATH`를 쓴다.
+ *
+ * `SITE_OG_IMAGE_VERSION`은 그림 입력(사이트 그림 문구·색·크기·글꼴 파일·그리는 코드)의 해시 앞 8자리다. 입력이 바뀌면
+ * `site-og-image-version.test.ts`가 실패하고 새 값을 알려 준다. 배포마다 바뀌는 값을 쓰지 않는 이유는 그림이 그대로인데 캐시를 버리게 되기 때문이다.
+ */
+export const SITE_OG_IMAGE_VERSION = "bc9aa8d4";
+export const SITE_OG_IMAGE_PATH = `/opengraph-image?v=${SITE_OG_IMAGE_VERSION}`;
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";

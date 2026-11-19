@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import type { ReactElement } from "react";
 import { ogFonts } from "@/lib/seo/og-font";
-import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
+import { OG_HEIGHT, OG_WIDTH, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 import { absoluteUrl } from "@/lib/seo/site";
 import { SiteCard } from "./site-card";
 
@@ -11,7 +11,7 @@ const CACHE_OK = "public, max-age=86400, s-maxage=86400";
 const CACHE_FALLBACK = "public, max-age=60";
 /**
  * 시간 예산. 링크 그림(서버 응답 받기 + 그리기)은 1.5초, 그게 안 되면 기본 그림 그리기에 0.5초. 둘 다 안 되면 빌드 때 만든
- * 정적 기본 이미지(`/opengraph-image`)로 302 보낸다. 어느 경우에도 500을 내지 않는다(크롤러가 오래 기다려 주지 않고, 깨진 그림보다 기본 그림이 낫다).
+ * 정적 기본 이미지(`SITE_OG_IMAGE_PATH`)로 302 보낸다. 어느 경우에도 500을 내지 않는다(크롤러가 오래 기다려 주지 않고, 깨진 그림보다 기본 그림이 낫다).
  * 링크 HTML을 먼저 스크랩하며 서버가 이미 깨어 있으므로 평소에는 첫 단계에서 끝난다.
  */
 const LINK_BUDGET_MS = 1500;
@@ -68,6 +68,6 @@ export async function ogImageResponse(card: (signal: AbortSignal) => Promise<Rea
   }
   return new Response(null, {
     status: 302,
-    headers: { Location: absoluteUrl("/opengraph-image"), "Cache-Control": CACHE_FALLBACK },
+    headers: { Location: absoluteUrl(SITE_OG_IMAGE_PATH), "Cache-Control": CACHE_FALLBACK },
   });
 }

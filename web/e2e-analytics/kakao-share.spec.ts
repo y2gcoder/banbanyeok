@@ -1,5 +1,6 @@
 import { type BrowserContext, devices, expect, type Locator, type Page, test } from "@playwright/test";
 import { FAKE_ROOM_ID, prepareRoom } from "../e2e/support/room-fixture";
+import { SITE_OG_IMAGE_PATH } from "../src/lib/seo/og-text";
 
 // 카카오 앱 키(가짜, 형식만 맞음)를 박아 빌드한 앱에서 "카톡으로 보내기"가 카카오톡 공유 API로 가는지 본다. SDK는 카카오 CDN의 실제
 // 파일을 받고(SRI 해시가 맞아야 실행된다), 카카오로 가는 요청(템플릿 확인 API, PC 공유 창 폼, iPhone 카카오톡 열기 주소)은 브라우저에서
@@ -39,7 +40,7 @@ function expectContentFree(template: Template | undefined, baseURL: string | und
     content: {
       title: "반반역",
       description: "같이 만날 역 정해요",
-      image_url: `${baseURL}/opengraph-image`,
+      image_url: `${baseURL}${SITE_OG_IMAGE_PATH}`,
       image_width: 1200,
       image_height: 630,
       link: site,

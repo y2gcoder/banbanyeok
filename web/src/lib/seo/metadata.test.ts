@@ -12,6 +12,7 @@ import {
   sharedLinkMetadata,
   siteMetadata,
 } from "./metadata";
+import { SITE_OG_IMAGE_PATH } from "./og-text";
 import { buildPairPages, type PairPage } from "./pair-pages";
 import { parseSeoPairs } from "./pairs";
 
@@ -86,8 +87,13 @@ describe("허브·사이트 기본 메타데이터", () => {
     expect(String(meta.metadataBase)).toBe("https://banban.example/");
     expect(meta.title).toEqual({ default: "반반역", template: "%s | 반반역" });
     expect(meta.description).toContain("공평하게 만날 역");
-    expect(og(meta)).toMatchObject({ siteName: "반반역", locale: "ko_KR", url: "https://banban.example/" });
-    expect(tw(meta)).toMatchObject({ card: "summary_large_image" });
+    expect(og(meta)).toMatchObject({
+      siteName: "반반역",
+      locale: "ko_KR",
+      url: "https://banban.example/",
+      images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }],
+    });
+    expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: SITE_OG_IMAGE_PATH }] });
     expect(meta.robots).toBeUndefined();
     expect(meta.appleWebApp).toEqual({ capable: true, title: "반반역", statusBarStyle: "default" });
     expect(siteMetadata({}).robots).toEqual({ index: false, follow: false });
@@ -118,7 +124,7 @@ describe("공유 링크 메타데이터", () => {
     const meta = sharedLinkMetadata(null);
     expect(meta.title).toBe("만날 역 후보");
     expect(meta.robots).toEqual({ index: false, follow: false });
-    expect(og(meta)).toMatchObject({ images: [{ url: "/opengraph-image", width: 1200, height: 630 }] });
+    expect(og(meta)).toMatchObject({ images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }] });
     expect(og(meta)).not.toHaveProperty("url");
     expect(meta.alternates).toEqual({ canonical: null });
   });
@@ -137,16 +143,16 @@ describe("방 링크 메타데이터", () => {
     expect(meta.title).toBe("같이 만날 역 정해요");
     expect(og(meta)).toMatchObject({
       title: "같이 만날 역 정해요 | 반반역",
-      images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
+      images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }],
     });
-    expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: "/opengraph-image" }] });
+    expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: SITE_OG_IMAGE_PATH }] });
   });
 
   it("방 링크는 canonical을 지우고, 방 만들기(/r/new)는 자기 주소를 canonical·og:url로 쓴다", () => {
     expect(roomLinkMetadata().alternates).toEqual({ canonical: null });
     const meta = newRoomMetadata({ SITE_URL: "https://banban.example" });
     expect(meta.alternates?.canonical).toBe("https://banban.example/r/new");
-    expect(og(meta)).toMatchObject({ url: "https://banban.example/r/new", images: [{ url: "/opengraph-image" }] });
+    expect(og(meta)).toMatchObject({ url: "https://banban.example/r/new", images: [{ url: SITE_OG_IMAGE_PATH }] });
     expect(meta.robots).toEqual({ index: false, follow: false });
   });
 
