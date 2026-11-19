@@ -37,6 +37,7 @@ test("허브 → 조합 페이지: 후보 3곳, 메타데이터, 정적 OG 이�
 
   await page.goto("/meet");
   await expect(page.getByRole("heading", { level: 1, name: "인기 역 조합별 만날 곳" })).toBeVisible();
+  expect(await meta(page, 'meta[property="og:image"]')).toBe(`${baseURL}${SITE_OG_IMAGE_PATH}`);
   await expectAccessible(page);
 
   await page.goto(path);
@@ -62,7 +63,7 @@ test("허브 → 조합 페이지: 후보 3곳, 메타데이터, 정적 OG 이�
 
   // 미리보기 이미지: 빌드 때 만든 정적 PNG(1200×630)
   const ogImage = await meta(page, 'meta[property="og:image"]');
-  expect(ogImage).toContain(`${path}/opengraph-image`);
+  expect(ogImage).toMatch(new RegExp(`^${baseURL}${path}/opengraph-image\\?v=[0-9a-f]{8}$`));
   await expectOgPng(page, ogImage ?? "");
   expect(await meta(page, 'meta[name="twitter:image"]')).toBe(ogImage);
 

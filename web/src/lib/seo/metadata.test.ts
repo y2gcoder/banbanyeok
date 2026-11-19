@@ -13,6 +13,7 @@ import {
   siteMetadata,
 } from "./metadata";
 import { SITE_OG_IMAGE_PATH } from "./og-text";
+import { pairOgImagePath } from "./pair-og-image";
 import { buildPairPages, type PairPage } from "./pair-pages";
 import { parseSeoPairs } from "./pairs";
 
@@ -26,6 +27,13 @@ const tw = (meta: Metadata) => meta.twitter as Record<string, unknown>;
 
 describe("조합 페이지 메타데이터", () => {
   const meta = pairMetadata(page, env);
+
+  it("이미지: 이 조합의 버전 붙은 그림 주소(Open Graph·Twitter 같은 주소)", () => {
+    const image = { url: pairOgImagePath(page), width: 1200, height: 630 };
+    expect(image.url).toMatch(/^\/meet\/[0-9a-z]{3}-[0-9a-z]{3}\/opengraph-image\?v=[0-9a-f]{8}$/);
+    expect(og(meta)).toMatchObject({ images: [image] });
+    expect(tw(meta)).toMatchObject({ images: [{ url: image.url }] });
+  });
 
   it("제목: 역 이름 두 개와 후보 수", () => {
     expect(pairTitle(page)).toBe("강남역·홍대입구역 중간 만날 곳 추천 3곳");
@@ -79,6 +87,8 @@ describe("허브·사이트 기본 메타데이터", () => {
     expect(meta.title).toBe("인기 역 조합별 만날 곳 추천");
     expect(meta.alternates?.canonical).toBe("https://banban.example/meet");
     expect(og(meta).url).toBe("https://banban.example/meet");
+    expect(og(meta)).toMatchObject({ images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }] });
+    expect(tw(meta)).toMatchObject({ images: [{ url: SITE_OG_IMAGE_PATH }] });
     expect(hubMetadata({}).robots).toEqual({ index: false, follow: false });
   });
 

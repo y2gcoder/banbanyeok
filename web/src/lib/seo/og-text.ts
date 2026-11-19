@@ -14,8 +14,15 @@ export const OG_HEIGHT = 630;
  * `SITE_OG_IMAGE_VERSION`은 그림 입력(사이트 그림 문구·색·크기·글꼴 파일·그리는 코드)의 해시 앞 8자리다. 입력이 바뀌면
  * `site-og-image-version.test.ts`가 실패하고 새 값을 알려 준다. 배포마다 바뀌는 값을 쓰지 않는 이유는 그림이 그대로인데 캐시를 버리게 되기 때문이다.
  */
-export const SITE_OG_IMAGE_VERSION = "bc9aa8d4";
+export const SITE_OG_IMAGE_VERSION = "153205a5";
 export const SITE_OG_IMAGE_PATH = `/opengraph-image?v=${SITE_OG_IMAGE_VERSION}`;
+
+/**
+ * 역 조합 페이지 그림(`app/(seo)/meet/[pair]/opengraph-image/route.tsx`)의 **고정 부분**(문구·색·크기·글꼴·그리는 코드) 버전.
+ * 사이트 기본 그림과 같은 이유·방식이다(`site-og-image-version.test.ts`가 입력이 바뀌었는데 값이 그대로면 실패시킨다).
+ * 조합마다 다른 부분(역 이름·후보·시간)은 `pair-og-image.ts`가 페이지 데이터로 더해, 그림이 바뀔 때만 주소의 `v`가 바뀐다.
+ */
+export const PAIR_OG_IMAGE_VERSION = "5b206790";
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";

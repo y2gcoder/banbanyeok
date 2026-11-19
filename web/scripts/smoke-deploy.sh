@@ -109,6 +109,8 @@ if [ -n "$pair_url" ]; then
   fetch "$BASE_URL$pair_path"
   og_path="$(grep -oE 'content="[^"]*/meet/[^"]*opengraph-image[^"]*"' <<<"$body" | first | sed -E 's#content="https?://[^/]+##; s#"$##')"
   if [ -n "$og_path" ]; then
+    # 조합 그림 주소의 v는 그림 입력과 조합 데이터에서 만든다. 없으면 카카오가 옛 그림을 캐시한다(사이트 기본 그림과 같은 이유).
+    if [[ "$og_path" =~ ^/meet/[0-9a-z]{3}-[0-9a-z]{3}/opengraph-image\?v=[0-9a-f]{8}$ ]]; then pass "조합 og:image에 그림 버전이 있음($og_path)"; else bad "조합 og:image가 버전 붙은 /meet/<조합>/opengraph-image?v=<8자리>가 아님: $og_path"; fi
     fetch "$BASE_URL$og_path"
     if [ "$status" = "200" ] && grep -qi "content-type: image/png" <<<"$headers"; then pass "정적 OG $og_path"; else bad "정적 OG status=$status"; fi
   else
@@ -151,6 +153,11 @@ else
   bad "홈 og:image가 버전 붙은 /opengraph-image?v=<8자리>가 아님: ${site_og_path:-없음}"
   site_og_path="/opengraph-image"
 fi
+
+# 허브(/meet)도 사이트 기본 그림(버전 붙은 주소)을 og:image로 가진다.
+fetch "$BASE_URL/meet"
+hub_og="$(grep -oE '<meta property="og:image" content="[^"]*"' <<<"$body" | first | sed -E 's#.*content="https?://[^/]+##; s#"$##')"
+if [ -n "${site_og_path:-}" ] && [ "$hub_og" = "$site_og_path" ]; then pass "허브 og:image가 사이트 기본 그림($hub_og)"; else bad "허브 og:image가 사이트 기본 그림이 아님: ${hub_og:-없음} (기대: ${site_og_path:-없음})"; fi
 
 # robots.txt
 fetch "$BASE_URL/robots.txt"
