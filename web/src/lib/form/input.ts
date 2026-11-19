@@ -1,5 +1,5 @@
 /** 입력 화면 검증(zod). 규칙은 링크 코덱(§7)과 같다: 2~4명, 별칭은 코드포인트 20자 이하. */
-import { z } from "zod";
+
 import type { Mode } from "@/lib/api/types";
 import {
   codePointLength,
@@ -10,6 +10,7 @@ import {
   type ShareState,
 } from "@/lib/link/codec";
 import { DEFAULT_SLOT, type TimeSlot } from "@/lib/when/time-slot";
+import { z } from "@/lib/zod";
 
 const stationCode = z.string().refine(isStationCode, "역 코드 형식이 아니에요");
 

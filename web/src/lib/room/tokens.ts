@@ -9,7 +9,7 @@
  *   그 전에 방이 없어졌는지는 방을 열었을 때 서버가 404로 알려 주고, 그때 지운다.
  * - localStorage는 막혀 있을 수 있다(사파리 개인 모드 등). 실패하면 조용히 무시한다(저장을 못 하면 이 기기에서 고치지 못할 뿐이다).
  */
-import { z } from "zod";
+import { z } from "../zod";
 import { normalizeRoomId } from "./id";
 
 export const ROOM_KEY_PREFIX = "bby.room.";

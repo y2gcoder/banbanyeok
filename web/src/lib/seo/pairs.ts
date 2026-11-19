@@ -4,8 +4,9 @@
  * 형식은 읽는 쪽에 엄격하다(알 수 없는 키 = 오류, contracts/data-format.md §6). 파일이 약속(a<b·중복 없음·파생 값 일치)을
  * 어기면 빌드를 멈춘다. 페이지가 잘못된 숫자를 공개하는 것보다 낫다.
  */
-import { z } from "zod";
+
 import { isStationCode } from "@/lib/link/codec";
+import { z } from "@/lib/zod";
 
 const SEO_PAIRS_SCHEMA_VERSION = 1;
 export const MAX_RESULTS_PER_PAIR = 3;
