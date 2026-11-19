@@ -23,8 +23,8 @@ export default function HomePage() {
             id="home-title"
             className="text-[32px] leading-[1.18] font-extrabold tracking-[-0.03em] text-ink lg:text-[52px] wide:text-[40px]"
           >
-            우리 어디서 만나야
-            <br />덜 억울할까?
+            우리 어디서 만나면
+            <br />딱 반반일까?
           </h1>
           <p className="text-[17px] text-ink-soft wide:text-[19px]">각자 지하철 시간으로 계산해요</p>
         </section>

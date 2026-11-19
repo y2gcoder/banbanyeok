@@ -27,10 +27,10 @@ export const OG_COLORS = {
 
 export const OG_TEXT = {
   brand: "반반역",
-  taglineTop: "우리 어디서 만나야",
-  taglineBottom: "덜 억울할까?",
+  taglineTop: "우리 어디서 만나면",
+  taglineBottom: "딱 반반일까?",
   taglineSub: "각자 지하철 시간으로 계산해요",
-  pairQuestion: "어디서 만나면 덜 억울할까?",
+  pairQuestion: "어디서 만나면 딱 반반일까?",
   pairBasis: "지하철 시간 기준 · 공평하게 고른 후보 3곳",
   rank: "위",
   minute: "분",

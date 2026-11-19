@@ -50,7 +50,7 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
   await page.goto("/");
   await warmUp;
-  await expect(page.getByRole("heading", { name: /덜 억울할까/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /딱 반반일까/ })).toBeVisible();
   await expectAccessible(page);
   await shot(page, "1-home");
 

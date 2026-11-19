@@ -32,13 +32,13 @@ const SCREENS: readonly Screen[] = [
   {
     id: "home",
     path: "/",
-    ready: (p) => p.getByRole("heading", { name: /덜 억울할까/ }),
+    ready: (p) => p.getByRole("heading", { name: /딱 반반일까/ }),
     actions: (p) => [
       p.getByRole("combobox").first(),
       p.getByRole("button", { name: /한 명 더/ }),
       p.getByRole("link", { name: /방 만들어서 각자 입력하기/ }),
     ],
-    columns: (p) => [p.getByRole("heading", { name: /덜 억울할까/ }), p.getByRole("combobox").first()],
+    columns: (p) => [p.getByRole("heading", { name: /딱 반반일까/ }), p.getByRole("combobox").first()],
   },
   {
     id: "result",
@@ -210,7 +210,7 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
       await expect(page.getByRole("combobox", { name: "민수의 출발역" })).toHaveValue("강남");
       await expect(page.getByRole("textbox", { name: "3번째 사람 이름(선택)" })).toHaveValue("지연");
       expect(await horizontalOverflow(page)).toEqual([]);
-      await expectColumns(page, page.getByRole("heading", { name: /덜 억울할까/ }), page.getByRole("combobox").first());
+      await expectColumns(page, page.getByRole("heading", { name: /딱 반반일까/ }), page.getByRole("combobox").first());
     }
     expect(await isWide(page)).toBe(true);
 
