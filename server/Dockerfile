@@ -20,13 +20,15 @@ FROM fsouza/fake-gcs-server:1.56.1 AS gcsemu
 FROM base AS cds
 COPY --from=gcsemu /bin/fake-gcs-server /usr/local/bin/fake-gcs-server
 COPY data/artifacts/dev/ /training/gcs/training/
+# -XX:-UseBASE64Intrinsics는 CVE-2026-114938(Java4Shell, x86-64 HotSpot Base64 디코더 버그)의 임시 완화다(#66). server/app/docker/run.sh의 실행 옵션과 같은 자리에 둬야 한다.
+# Temurin 25.0.5.1 이상으로 올리는 PR에서 두 곳 모두 뺀다.
 RUN bash -c 'set -eu; \
   fake-gcs-server -scheme http -port 4443 -data /training/gcs -backend memory > /tmp/gcs-emulator.log 2>&1 & \
   for i in $(seq 1 60); do (exec 3<>/dev/tcp/127.0.0.1/4443) 2>/dev/null && break; sleep 1; done; \
   export APP_PROFILE=local SERVER_PORT=8080 ARTIFACT_STORE=gcs ARTIFACT_GCS_BUCKET=training \
     ARTIFACT_GCS_ENDPOINT=http://127.0.0.1:4443 \
     DATABASE_URL=jdbc:postgresql://127.0.0.1:1/none RATE_LIMIT_ENABLED=false; \
-  java -Xms32m -Xmx256m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ArchiveClassesAtExit=/app/app.jsa -cp "$(cat /app/classpath.txt)" app.banbanyeok.server.app.MainKt \
+  java -Xms32m -Xmx256m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:-UseBASE64Intrinsics -XX:ArchiveClassesAtExit=/app/app.jsa -cp "$(cat /app/classpath.txt)" app.banbanyeok.server.app.MainKt \
     > /tmp/training.log 2>&1 & pid=$!; \
   ready=0; for i in $(seq 1 120); do \
     if (exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /healthz HTTP/1.0\r\n\r\n" >&3; read -r line <&3; [[ "$line" == *200* ]]) 2>/dev/null; then ready=1; break; fi; sleep 1; done; \
