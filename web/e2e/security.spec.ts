@@ -3,8 +3,17 @@ import { expect, type Page, test } from "@playwright/test";
 // 보안 헤더(CSP·Referrer-Policy 등)가 운영 빌드의 모든 종류의 응답에 붙고, CSP 때문에 막히는 요청이 앱 흐름에 없는지 확인한다.
 // (PostHog를 켠 상태에서 동의 뒤에도 막히지 않는지는 e2e-analytics/enabled.spec.ts가 본다.)
 
-function collectCspViolations(page: Page): string[] {
+// 콘솔 메시지가 아니라 브라우저의 securitypolicyviolation 이벤트로 모은다. try/catch로 삼켜지는 `new Function`(eval) 차단은 콘솔에 안 찍힌다.
+async function collectCspViolations(page: Page): Promise<string[]> {
   const violations: string[] = [];
+  await page.exposeFunction("reportCspViolation", (text: string) => violations.push(text));
+  await page.addInitScript(() => {
+    document.addEventListener("securitypolicyviolation", (event) => {
+      (window as unknown as { reportCspViolation: (text: string) => void }).reportCspViolation(
+        `${event.violatedDirective} blocked=${event.blockedURI} source=${event.sourceFile}`,
+      );
+    });
+  });
   page.on("console", (message) => {
     if (/content security policy/i.test(message.text())) violations.push(message.text());
   });
@@ -48,7 +57,7 @@ test("모든 응답에 보안 헤더가 붙고 CSP가 외부 스크립트·프�
 });
 
 test("핵심 흐름(입력 → 결과 → SEO 페이지)에서 CSP 위반이 없다", async ({ page }) => {
-  const violations = collectCspViolations(page);
+  const violations = await collectCspViolations(page);
   await page.goto("/");
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
