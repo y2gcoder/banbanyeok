@@ -26,7 +26,7 @@ export type SecurityHeaderOptions = {
 type CspOptions = Pick<SecurityHeaderOptions, "posthogHost" | "kakaoShare">;
 
 export function contentSecurityPolicy({ posthogHost, kakaoShare }: CspOptions): string {
-  const kakao = (source: string) => (kakaoShare ? [source] : []);
+  const kakao = (...list: string[]) => (kakaoShare ? list : []);
   const sources = (...list: string[]) => list.join(" ");
   return [
     "default-src 'self'",
@@ -39,7 +39,7 @@ export function contentSecurityPolicy({ posthogHost, kakaoShare }: CspOptions): 
     ...kakao(`frame-src 'self' ${KAKAO_SHARE_CSP.frame}`),
     "object-src 'none'",
     "base-uri 'self'",
-    sources("form-action 'self'", ...kakao(KAKAO_SHARE_CSP.formAction)),
+    sources("form-action 'self'", ...kakao(...KAKAO_SHARE_CSP.formAction)),
     "frame-ancestors 'none'",
   ].join("; ");
 }

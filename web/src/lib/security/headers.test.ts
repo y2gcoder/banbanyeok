@@ -32,7 +32,9 @@ describe("보안 헤더", () => {
       "script-src 'self' 'unsafe-inline' https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js",
     );
     expect(directive(csp, "connect-src")).toBe("connect-src 'self' https://us.i.posthog.com https://kapi.kakao.com");
-    expect(directive(csp, "form-action")).toBe("form-action 'self' https://sharer.kakao.com");
+    expect(directive(csp, "form-action")).toBe(
+      "form-action 'self' https://sharer.kakao.com https://accounts.kakao.com",
+    );
     expect(directive(csp, "frame-src")).toBe("frame-src 'self' kakaolink:");
     expect(csp).not.toContain("unsafe-eval");
     expect(csp).toContain("frame-ancestors 'none'");

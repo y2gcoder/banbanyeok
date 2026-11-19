@@ -7,6 +7,7 @@ import { FAKE_ROOM_ID, prepareRoom } from "../e2e/support/room-fixture";
 
 const SDK_URL = "https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js";
 const KAKAO = /^https:\/\/([a-z0-9-]+\.)*(kakao\.com|kakaocdn\.net)\//;
+const LOGIN_URL = "https://accounts.kakao.com/login?continue=https%3A%2F%2Fsharer.kakao.com%2Fpicker%2Flink";
 const TEMPLATE_CHECK = "GET https://kapi.kakao.com/v2/api/kakaolink/talk/template/default";
 
 type Template = {
@@ -90,6 +91,11 @@ async function attach(context: BrowserContext, page: Page, kapi: KapiAnswer = "a
       const params = new URLSearchParams(request.postData() ?? "");
       const linkObj = JSON.parse(params.get("validation_params") ?? "{}") as { template_object?: Template };
       if (linkObj.template_object) probe.templates.push(linkObj.template_object);
+      // 카카오 계정에 로그인하지 않은 PC는 공유 창 폼이 로그인 화면으로 넘어간다(302). 브라우저는 폼 전송의 이동 경로 전체에 form-action을 적용한다.
+      return route.fulfill({ status: 302, headers: { location: LOGIN_URL } });
+    }
+    if (url.host === "accounts.kakao.com") {
+      return route.fulfill({ status: 200, contentType: "text/html", body: "<title>카카오계정</title>" });
     }
     await route.fulfill({
       status: 401,
@@ -377,10 +383,12 @@ test.describe("PC", () => {
 
     const popup = page.waitForEvent("popup");
     await button.click();
-    expect((await popup).url()).toMatch(/^https:\/\/sharer\.kakao\.com\/picker\/link/);
+    const shareWindow = await popup;
     await expect
       .poll(() => probe.kakao.includes("POST https://sharer.kakao.com/picker/link"), { timeout: 15_000 })
       .toBe(true);
+    // 로그인하지 않은 이용자의 공유 창은 카카오 로그인 화면까지 가야 한다. 비어 있는 about:blank로 남으면 안 된다.
+    await expect.poll(() => shareWindow.url(), { timeout: 15_000 }).toMatch(/^https:\/\/accounts\.kakao\.com\/login/);
     expect(probe.templates).toHaveLength(2);
     const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5`;
     expect(probe.templates[1]?.content.link).toEqual({ web_url: link, mobile_web_url: link });
