@@ -19,11 +19,11 @@ export function PolicyNoticeStrip({ noticeFrom, effectiveDate }: NoticeWindow) {
   const now = useSyncExternalStore(subscribe, today, serverToday);
   if (now === null || noticePhase({ noticeFrom, effectiveDate }, now) !== "notice") return null;
   return (
-    <div className="flex min-h-11 w-full flex-wrap items-center gap-x-2 rounded-xl border border-rule-strong bg-surface px-3.5 py-1 text-[14px] leading-snug text-ink">
-      <p>개인정보 처리방침이 {koreanDate(effectiveDate, { today: now })}부터 바뀝니다</p>
+    <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-rule-strong bg-surface py-0.5 pr-2 pl-3.5 text-[14px] leading-snug text-ink">
+      <p className="min-w-0 py-1.5">개인정보 처리방침이 {koreanDate(effectiveDate, { today: now })}부터 바뀝니다</p>
       <Link
         href="/privacy#policy-notice"
-        className="inline-flex min-h-11 items-center rounded-md font-bold underline underline-offset-4"
+        className="inline-flex min-h-11 shrink-0 items-center rounded-md px-1.5 font-bold underline underline-offset-4"
       >
         자세히
       </Link>
