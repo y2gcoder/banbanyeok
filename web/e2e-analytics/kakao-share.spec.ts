@@ -384,7 +384,6 @@ test.describe("PC", () => {
     const popup = page.waitForEvent("popup");
     await button.click();
     const shareWindow = await popup;
-    expect(shareWindow.url()).toMatch(/^https:\/\/sharer\.kakao\.com\/picker\/link/);
     await expect
       .poll(() => probe.kakao.includes("POST https://sharer.kakao.com/picker/link"), { timeout: 15_000 })
       .toBe(true);

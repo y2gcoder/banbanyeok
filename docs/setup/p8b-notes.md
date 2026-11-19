@@ -118,7 +118,7 @@ P5 대비(11,107 / 2,374 KiB) +166 KiB(gzip)는 프록시 진입점·보안 헤�
 
 - `'unsafe-inline'`은 Next의 하이드레이션 인라인 스크립트 때문이다. nonce 방식은 모든 페이지를 요청마다 렌더해야 해서(CPU·정적 SEO 페이지와 충돌) 쓰지 않았다. `unsafe-eval`·외부 스크립트 출처는 없다.
 - **PostHog와의 충돌**: PostHog는 `posthog-js/no-external` 번들을 동의 뒤 동적 import하는 같은 출처 스크립트이고 수집은 `connect-src`의 `us.i.posthog.com` 한 곳이다. 통계 키가 없는 빌드에서는 그 호스트가 `connect-src`에서도 빠진다.
-- **카카오톡 공유(#51 B단계)**: 빌드에 `KAKAO_JS_KEY`(→ `NEXT_PUBLIC_KAKAO_JS_KEY`)가 있을 때만 네 곳을 더 연다. `script-src`에 고정 버전 SDK 파일 하나(`https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js`, 스크립트에 SRI 해시도 건다), `connect-src`에 `https://kapi.kakao.com`(공유 칸이 보일 때 앱이 내용 없는 메시지로, 누른 뒤 모바일에서는 SDK가 실제 메시지로 템플릿을 확인받는 요청), `form-action`에 `https://sharer.kakao.com`(PC 공유 창으로 보내는 폼), `frame-src 'self' kakaolink:`(일부 안드로이드 브라우저에서 카카오톡을 여는 숨은 프레임). 키가 없으면 위 표와 같다. SDK는 공유 버튼이 있는 공유 칸이 화면에 들어올 때 받는다(iPhone 첫 누름에 카카오톡을 바로 열려고).
+- **카카오톡 공유(#51 B단계)**: 빌드에 `KAKAO_JS_KEY`(→ `NEXT_PUBLIC_KAKAO_JS_KEY`)가 있을 때만 네 곳을 더 연다. `script-src`에 고정 버전 SDK 파일 하나(`https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js`, 스크립트에 SRI 해시도 건다), `connect-src`에 `https://kapi.kakao.com`(공유 칸이 보일 때 앱이 내용 없는 메시지로, 누른 뒤 모바일에서는 SDK가 실제 메시지로 템플릿을 확인받는 요청), `form-action`에 `https://sharer.kakao.com`(PC 공유 창으로 보내는 폼)과 `https://accounts.kakao.com`(카카오에 로그인하지 않은 PC에서 그 폼이 302로 넘어가는 로그인 화면. 폼 전송은 이동 경로 전체가 `form-action`을 따른다), `frame-src 'self' kakaolink:`(일부 안드로이드 브라우저에서 카카오톡을 여는 숨은 프레임). 키가 없으면 위 표와 같다. SDK는 공유 버튼이 있는 공유 칸이 화면에 들어올 때 받는다(iPhone 첫 누름에 카카오톡을 바로 열려고).
 - **개발 서버(`next dev`)에는 CSP를 붙이지 않는다**(HMR이 eval·websocket 사용). 운영 빌드에서만 강제하고 e2e가 운영 빌드로 확인한다.
 - e2e: `e2e/security.spec.ts`(모든 응답 종류의 헤더, 핵심 흐름에서 CSP 위반 0건), `e2e-analytics/enabled.spec.ts`(동의 뒤 전송 시 CSP 위반 0건 + 기존 시나리오 전부).
 

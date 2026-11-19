@@ -43,10 +43,16 @@ export const KAKAO_SDK = {
   integrity: "sha384-BGX7Wb16GmRFagri4bLJV2DgipVZaU2AI812GZtHtHzzDQJnfHasDXN5houxv45w",
 } as const;
 
-/** SDK가 공유할 때 쓰는 카카오 주소. 모바일은 템플릿 검사 요청(XHR), PC는 공유 창에 폼 전송, 일부 안드로이드 브라우저는 숨은 프레임. */
+/**
+ * SDK가 공유할 때 쓰는 카카오 주소. 모바일은 템플릿 검사 요청(XHR), PC는 공유 창에 폼 전송, 일부 안드로이드 브라우저는 숨은 프레임.
+ *
+ * `form-action`은 폼을 보낸 주소만이 아니라 그 이동 경로(리디렉트)도 검사한다. 카카오 계정에 로그인하지 않은 PC에서는
+ * `sharer.kakao.com/picker/link` 전송이 `accounts.kakao.com/login`으로 302 되므로 로그인 화면 출처도 연다. 안 열면 공유 창이
+ * 빈 about:blank로 남는다(콘솔에는 전송 주소인 sharer.kakao.com이 막혔다고 나온다).
+ */
 export const KAKAO_SHARE_CSP = {
   connect: "https://kapi.kakao.com",
-  formAction: "https://sharer.kakao.com",
+  formAction: ["https://sharer.kakao.com", "https://accounts.kakao.com"],
   frame: "kakaolink:",
 } as const;
 
