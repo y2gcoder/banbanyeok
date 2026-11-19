@@ -157,11 +157,12 @@ export function PolicyView({ policy, notice }: ResolvedPolicy) {
         <ol className="flex flex-col gap-1">
           {policy.sections.map((s) => (
             <li key={s.id}>
+              {/* inline-flex의 자식이 되는 글과 괄호 span이 따로 flex 항목이 되지 않게 span 하나로 감싼다. */}
               <a
                 href={`#${s.id}`}
                 className="inline-flex min-h-11 items-center rounded-md font-semibold text-ink underline underline-offset-4"
               >
-                {parenSafe(s.title)}
+                <span>{parenSafe(s.title)}</span>
               </a>
             </li>
           ))}
