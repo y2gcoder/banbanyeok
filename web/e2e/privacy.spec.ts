@@ -49,6 +49,29 @@ test("처리방침: 열림, 초안 안내 없음, 목차와 필수 제목, 접�
   await expectAccessible(page);
 });
 
+for (const width of [360, 768, 1024, 1280]) {
+  test(`처리방침: ${width}px 목차 제목은 한 덩어리 글로 줄바꿈된다`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/privacy");
+    const links = page.getByRole("navigation", { name: "목차" }).getByRole("listitem").getByRole("link");
+    expect(await links.count()).toBeGreaterThan(10);
+    const misaligned = await links.evaluateAll((anchors) =>
+      anchors.flatMap((a) => {
+        const range = document.createRange();
+        range.selectNodeContents(a);
+        const left = a.getBoundingClientRect().left;
+        const lineStart = new Map<number, number>();
+        for (const r of range.getClientRects()) {
+          const top = Math.round(r.top);
+          lineStart.set(top, Math.min(lineStart.get(top) ?? Infinity, r.left));
+        }
+        return [...lineStart.values()].some((x) => Math.abs(x - left) > 1) ? [a.textContent] : [];
+      }),
+    );
+    expect(misaligned).toEqual([]);
+  });
+}
+
 test("처리방침: 넓은 화면에서는 표로 보이고 접근성 위반 0", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
   await page.goto("/privacy");
