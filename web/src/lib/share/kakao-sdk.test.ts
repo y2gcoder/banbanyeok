@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 import type { KakaoSdk } from "./kakao-sdk";
 
 const KEY = "a".repeat(32);
@@ -78,7 +79,7 @@ describe("카카오 SDK 미리 준비", () => {
           content: {
             title: "반반역",
             description: "같이 만날 역 정해요",
-            image_url: `${origin}/opengraph-image`,
+            image_url: `${origin}${SITE_OG_IMAGE_PATH}`,
             image_width: 1200,
             image_height: 630,
             link: site,

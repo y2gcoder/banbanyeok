@@ -11,6 +11,7 @@ import { formatMinutes } from "@/lib/display/minutes";
 import { INVITE_COPY, type RoomShareCopy } from "@/lib/room/share-copy";
 import { APP_NAME } from "./app-manifest";
 import { OG_HEIGHT, OG_WIDTH, SITE_OG_IMAGE_PATH } from "./og-text";
+import { pairOgImagePath } from "./pair-og-image";
 import { PAIR_PATH_PREFIX, type PairPage } from "./pair-pages";
 import { absoluteUrl, isIndexableSite, siteEnv, siteUrl } from "./site";
 
@@ -65,9 +66,14 @@ export function siteMetadata(env: Env = siteEnv()): Metadata {
     // 홈 화면에 추가한 iOS 웹 앱: 이름, 전체 화면 실행, 상태 표시줄은 기본(밝은 바탕·검은 글자, 내용은 그 아래에서 시작).
     // black-translucent는 내용이 상태 표시줄 밑으로 들어가고 글자가 흰색이라 밝은 화면에서 시계·배터리가 보이지 않는다.
     appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
-    ...social({ title: "우리 어디서 만나면 딱 반반일까?", description: SITE_DESCRIPTION, path: "/" }, env),
+    ...social(
+      { title: "우리 어디서 만나면 딱 반반일까?", description: SITE_DESCRIPTION, path: "/", images: DEFAULT_IMAGES },
+      env,
+    ),
   };
 }
+
+const PAIR_IMAGE_ALT = "반반역: 두 역 사이에서 공평하게 만날 곳 후보 3곳";
 
 /** 이 조합 페이지의 제목: "강남역·홍대입구역 중간 만날 곳 추천 3곳". */
 export function pairTitle(page: PairPage): string {
@@ -92,7 +98,15 @@ export function pairMetadata(page: PairPage, env: Env = siteEnv()): Metadata {
     title: pairTitle(page),
     description: pairDescription(page),
     robots: robots(env),
-    ...social({ title: pairTitle(page), description: pairDescription(page), path: page.path }, env),
+    ...social(
+      {
+        title: pairTitle(page),
+        description: pairDescription(page),
+        path: page.path,
+        images: [{ url: pairOgImagePath(page), width: OG_WIDTH, height: OG_HEIGHT, alt: PAIR_IMAGE_ALT }],
+      },
+      env,
+    ),
   };
 }
 
@@ -105,7 +119,7 @@ export function hubMetadata(env: Env = siteEnv()): Metadata {
     title: HUB_TITLE,
     description: HUB_DESCRIPTION,
     robots: robots(env),
-    ...social({ title: HUB_TITLE, description: HUB_DESCRIPTION, path: HUB_PATH }, env),
+    ...social({ title: HUB_TITLE, description: HUB_DESCRIPTION, path: HUB_PATH, images: DEFAULT_IMAGES }, env),
   };
 }
 

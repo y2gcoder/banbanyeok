@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
+import { SITE_OG_IMAGE_PATH } from "../src/lib/seo/og-text";
 
 // SEO 페이지(조합·허브), 사이트맵·robots, 정적/동적 OG 이미지. 특정 조합·문장에 의존하지 않는다(데이터는 파이프라인이 다시 만든다):
 // 허브에서 첫 조합 링크를 따라간다. 빌드의 SITE_URL은 playwright.config.ts가 baseURL과 같게 둔다(localhost류 → 색인 막힘).
@@ -36,6 +37,7 @@ test("허브 → 조합 페이지: 후보 3곳, 메타데이터, 정적 OG 이�
 
   await page.goto("/meet");
   await expect(page.getByRole("heading", { level: 1, name: "인기 역 조합별 만날 곳" })).toBeVisible();
+  expect(await meta(page, 'meta[property="og:image"]')).toBe(`${baseURL}${SITE_OG_IMAGE_PATH}`);
   await expectAccessible(page);
 
   await page.goto(path);
@@ -61,7 +63,7 @@ test("허브 → 조합 페이지: 후보 3곳, 메타데이터, 정적 OG 이�
 
   // 미리보기 이미지: 빌드 때 만든 정적 PNG(1200×630)
   const ogImage = await meta(page, 'meta[property="og:image"]');
-  expect(ogImage).toContain(`${path}/opengraph-image`);
+  expect(ogImage).toMatch(new RegExp(`^${baseURL}${path}/opengraph-image\\?v=[0-9a-f]{8}$`));
   await expectOgPng(page, ogImage ?? "");
   expect(await meta(page, 'meta[name="twitter:image"]')).toBe(ogImage);
 
@@ -120,4 +122,24 @@ test("공유 링크의 미리보기: 링크별 제목·설명과 동적 OG 이�
   // 링크가 깨졌거나 서버가 답하지 못해도 기본 미리보기 이미지를 준다.
   await expectOgPng(page, "/s/og?v=9");
   await expectOgPng(page, "/opengraph-image");
+});
+
+test("사이트 기본 그림: 홈·방 링크의 og:image는 버전 붙은 주소이고, 그 주소(와 버전 없는 주소)가 같은 PNG를 준다", async ({
+  page,
+  request,
+  baseURL,
+}) => {
+  expect(SITE_OG_IMAGE_PATH).toMatch(/^\/opengraph-image\?v=[0-9a-f]{8}$/);
+  for (const path of ["/", "/r/new"]) {
+    await page.goto(path);
+    expect(await meta(page, 'meta[property="og:image"]')).toBe(`${baseURL}${SITE_OG_IMAGE_PATH}`);
+    expect(await meta(page, 'meta[name="twitter:image"]')).toBe(`${baseURL}${SITE_OG_IMAGE_PATH}`);
+  }
+  await expectOgPng(page, SITE_OG_IMAGE_PATH);
+  const versioned = await request.get(SITE_OG_IMAGE_PATH);
+  const bytes = async (url: string) => (await (await request.get(url)).body()).toString("base64");
+  const expected = (await versioned.body()).toString("base64");
+  expect(await bytes("/opengraph-image?v=zzzzzzzz")).toBe(expected);
+  expect(await bytes("/opengraph-image")).toBe(expected);
+  expect(versioned.headers()["cache-control"]).toBe("public, max-age=0, must-revalidate");
 });

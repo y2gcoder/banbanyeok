@@ -12,6 +12,8 @@ import {
   sharedLinkMetadata,
   siteMetadata,
 } from "./metadata";
+import { SITE_OG_IMAGE_PATH } from "./og-text";
+import { pairOgImagePath } from "./pair-og-image";
 import { buildPairPages, type PairPage } from "./pair-pages";
 import { parseSeoPairs } from "./pairs";
 
@@ -25,6 +27,13 @@ const tw = (meta: Metadata) => meta.twitter as Record<string, unknown>;
 
 describe("조합 페이지 메타데이터", () => {
   const meta = pairMetadata(page, env);
+
+  it("이미지: 이 조합의 버전 붙은 그림 주소(Open Graph·Twitter 같은 주소)", () => {
+    const image = { url: pairOgImagePath(page), width: 1200, height: 630 };
+    expect(image.url).toMatch(/^\/meet\/[0-9a-z]{3}-[0-9a-z]{3}\/opengraph-image\?v=[0-9a-f]{8}$/);
+    expect(og(meta)).toMatchObject({ images: [image] });
+    expect(tw(meta)).toMatchObject({ images: [{ url: image.url }] });
+  });
 
   it("제목: 역 이름 두 개와 후보 수", () => {
     expect(pairTitle(page)).toBe("강남역·홍대입구역 중간 만날 곳 추천 3곳");
@@ -78,6 +87,8 @@ describe("허브·사이트 기본 메타데이터", () => {
     expect(meta.title).toBe("인기 역 조합별 만날 곳 추천");
     expect(meta.alternates?.canonical).toBe("https://banban.example/meet");
     expect(og(meta).url).toBe("https://banban.example/meet");
+    expect(og(meta)).toMatchObject({ images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }] });
+    expect(tw(meta)).toMatchObject({ images: [{ url: SITE_OG_IMAGE_PATH }] });
     expect(hubMetadata({}).robots).toEqual({ index: false, follow: false });
   });
 
@@ -86,8 +97,13 @@ describe("허브·사이트 기본 메타데이터", () => {
     expect(String(meta.metadataBase)).toBe("https://banban.example/");
     expect(meta.title).toEqual({ default: "반반역", template: "%s | 반반역" });
     expect(meta.description).toContain("공평하게 만날 역");
-    expect(og(meta)).toMatchObject({ siteName: "반반역", locale: "ko_KR", url: "https://banban.example/" });
-    expect(tw(meta)).toMatchObject({ card: "summary_large_image" });
+    expect(og(meta)).toMatchObject({
+      siteName: "반반역",
+      locale: "ko_KR",
+      url: "https://banban.example/",
+      images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }],
+    });
+    expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: SITE_OG_IMAGE_PATH }] });
     expect(meta.robots).toBeUndefined();
     expect(meta.appleWebApp).toEqual({ capable: true, title: "반반역", statusBarStyle: "default" });
     expect(siteMetadata({}).robots).toEqual({ index: false, follow: false });
@@ -118,7 +134,7 @@ describe("공유 링크 메타데이터", () => {
     const meta = sharedLinkMetadata(null);
     expect(meta.title).toBe("만날 역 후보");
     expect(meta.robots).toEqual({ index: false, follow: false });
-    expect(og(meta)).toMatchObject({ images: [{ url: "/opengraph-image", width: 1200, height: 630 }] });
+    expect(og(meta)).toMatchObject({ images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }] });
     expect(og(meta)).not.toHaveProperty("url");
     expect(meta.alternates).toEqual({ canonical: null });
   });
@@ -137,16 +153,16 @@ describe("방 링크 메타데이터", () => {
     expect(meta.title).toBe("같이 만날 역 정해요");
     expect(og(meta)).toMatchObject({
       title: "같이 만날 역 정해요 | 반반역",
-      images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
+      images: [{ url: SITE_OG_IMAGE_PATH, width: 1200, height: 630 }],
     });
-    expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: "/opengraph-image" }] });
+    expect(tw(meta)).toMatchObject({ card: "summary_large_image", images: [{ url: SITE_OG_IMAGE_PATH }] });
   });
 
   it("방 링크는 canonical을 지우고, 방 만들기(/r/new)는 자기 주소를 canonical·og:url로 쓴다", () => {
     expect(roomLinkMetadata().alternates).toEqual({ canonical: null });
     const meta = newRoomMetadata({ SITE_URL: "https://banban.example" });
     expect(meta.alternates?.canonical).toBe("https://banban.example/r/new");
-    expect(og(meta)).toMatchObject({ url: "https://banban.example/r/new", images: [{ url: "/opengraph-image" }] });
+    expect(og(meta)).toMatchObject({ url: "https://banban.example/r/new", images: [{ url: SITE_OG_IMAGE_PATH }] });
     expect(meta.robots).toEqual({ index: false, follow: false });
   });
 

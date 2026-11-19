@@ -68,7 +68,7 @@ describe("/s/og", () => {
     loadSharedView.mockRejectedValue(new Error("down"));
     const response = await GET(new Request(URL_OK));
     expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toMatch(/\/opengraph-image$/);
+    expect(response.headers.get("location")).toMatch(/\/opengraph-image\?v=[0-9a-f]{8}$/);
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
   });
 });
