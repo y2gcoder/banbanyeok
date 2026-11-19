@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Wordmark } from "@/components/common/wordmark";
-import { ConsentSettings } from "@/components/consent/consent-settings";
+import { connection } from "next/server";
 import { plainPageMetadata } from "@/lib/seo/metadata";
-import { parenSafe } from "@/lib/text/paren-safe";
-import { type Block, POLICY } from "./policy";
+import { POLICY, UPCOMING_POLICY } from "./policy";
+import { PolicyView } from "./policy-view";
+import { resolvePolicy } from "./schedule";
 
 // 검색 노출은 사이트 전체 규칙(SITE_INDEX → isIndexableSite)을 따른다. 정식 출시 때 SITE_INDEX 하나로 함께 켜진다.
 export const metadata: Metadata = plainPageMetadata({
@@ -12,159 +12,11 @@ export const metadata: Metadata = plainPageMetadata({
   path: "/privacy",
 });
 
-function PolicyBlock({ block }: { block: Block }) {
-  switch (block.kind) {
-    case "p":
-      return <p>{parenSafe(block.text)}</p>;
-    case "list":
-      return (
-        <ul className="flex list-disc flex-col gap-1.5 pl-5">
-          {block.items.map((item) => (
-            <li key={item}>{parenSafe(item)}</li>
-          ))}
-        </ul>
-      );
-    case "table":
-      return <PolicyTable block={block} />;
-  }
-}
-
-type TableBlock = Extract<Block, { kind: "table" }>;
-
-/** 좁은 화면(모바일 우선)에서는 행마다 카드로, 넓은 화면에서는 표로 보인다. 가로 스크롤을 만들지 않는다. */
-function PolicyTable({ block }: { block: TableBlock }) {
-  const [firstHead, ...restHead] = block.head;
-  return (
-    <div className="flex flex-col gap-2">
-      <ul aria-label={block.caption} className="flex flex-col gap-2 sm:hidden">
-        {block.rows.map(([title, ...values]) => (
-          <li key={title} className="flex flex-col gap-2 rounded-xl border border-rule bg-surface p-4">
-            <p className="font-bold text-ink">
-              <span className="sr-only">{parenSafe(firstHead)}: </span>
-              {parenSafe(title)}
-            </p>
-            <dl className="flex flex-col gap-2">
-              {values.map((value, i) => (
-                <div key={restHead[i]} className="flex flex-col">
-                  <dt className="text-[13px] font-semibold text-muted-foreground">{parenSafe(restHead[i])}</dt>
-                  <dd>{parenSafe(value)}</dd>
-                </div>
-              ))}
-            </dl>
-          </li>
-        ))}
-      </ul>
-      <table className="hidden w-full border-collapse overflow-hidden rounded-xl bg-surface text-left text-[14px] leading-relaxed sm:table">
-        <caption className="pb-2 text-left text-[14px] font-bold text-ink">{parenSafe(block.caption)}</caption>
-        <thead className="bg-muted">
-          <tr>
-            {block.head.map((h) => (
-              <th key={h} scope="col" className="px-3 py-2 font-bold text-ink">
-                {parenSafe(h)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {block.rows.map(([title, ...values]) => (
-            <tr key={title} className="border-t border-rule align-top">
-              <th scope="row" className="px-3 py-2 font-semibold text-ink">
-                {parenSafe(title)}
-              </th>
-              {values.map((value, i) => (
-                <td key={restHead[i]} className="px-3 py-2 text-ink-soft">
-                  {parenSafe(value)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/** 정적 본문이라 블록의 첫 문장이 곧 고유한 키다. */
-function blockKey(block: Block): string {
-  if (block.kind === "p") return block.text;
-  if (block.kind === "list") return block.items[0] ?? "";
-  return block.caption;
-}
-
-export default function PrivacyPage() {
-  return (
-    // 폰·태블릿은 한 칸(읽기 폭 최대 42rem). 넓은 화면(lg)에서는 목차가 왼쪽 칸에 붙어 있고 본문이 오른쪽 칸에 온다.
-    // 문서 순서는 그대로(요약·설정 → 목차 → 본문)이고 칸만 정한다.
-    <main className="mx-auto grid w-full max-w-2xl gap-8 px-gutter pt-5 pb-10 text-[15px] leading-relaxed text-ink-soft lg:max-w-6xl lg:grid-cols-[minmax(0,16rem)_minmax(0,42rem)] lg:grid-rows-[auto_auto_1fr] lg:justify-center lg:gap-x-12">
-      <header className="lg:col-span-2">
-        <Wordmark />
-      </header>
-      <div className="flex min-w-0 flex-col gap-8 lg:col-start-2">
-        <section aria-labelledby="privacy-title" className="flex flex-col gap-4">
-          <h1 id="privacy-title" className="text-[28px] leading-tight font-extrabold tracking-[-0.02em] text-ink">
-            {POLICY.title}
-          </h1>
-          {POLICY.intro.map((text) => (
-            <p key={text}>{parenSafe(text)}</p>
-          ))}
-        </section>
-
-        <section aria-labelledby="privacy-summary" className="flex flex-col gap-3 rounded-2xl bg-surface p-5">
-          <h2 id="privacy-summary" className="text-[18px] font-bold text-ink">
-            한눈에 보기
-          </h2>
-          <ul className="flex list-disc flex-col gap-1.5 pl-5">
-            {POLICY.summary.map((line) => (
-              <li key={line}>{parenSafe(line)}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section
-          aria-labelledby="analytics-settings-title"
-          id="analytics-settings"
-          className="flex scroll-mt-4 flex-col gap-3 rounded-2xl bg-surface p-5"
-        >
-          <h2 id="analytics-settings-title" className="text-[18px] font-bold text-ink">
-            통계 설정
-          </h2>
-          <ConsentSettings />
-        </section>
-      </div>
-
-      <nav
-        aria-labelledby="privacy-toc"
-        className="flex flex-col gap-3 lg:col-start-1 lg:row-span-2 lg:row-start-2 tall:lg:sticky tall:lg:top-4 tall:lg:max-h-[calc(100dvh-2rem)] tall:lg:self-start tall:lg:overflow-y-auto"
-      >
-        <h2 id="privacy-toc" className="text-[18px] font-bold text-ink">
-          목차
-        </h2>
-        <ol className="flex flex-col gap-1">
-          {POLICY.sections.map((s) => (
-            <li key={s.id}>
-              <a
-                href={`#${s.id}`}
-                className="inline-flex min-h-11 items-center rounded-md font-semibold text-ink underline underline-offset-4"
-              >
-                {parenSafe(s.title)}
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
-
-      <div className="flex min-w-0 flex-col gap-8 lg:col-start-2">
-        {POLICY.sections.map((s) => (
-          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="flex scroll-mt-4 flex-col gap-3">
-            <h2 id={`${s.id}-title`} className="text-[20px] leading-snug font-extrabold text-ink">
-              {parenSafe(s.title)}
-            </h2>
-            {s.blocks.map((b) => (
-              <PolicyBlock key={blockKey(b)} block={b} />
-            ))}
-          </section>
-        ))}
-      </div>
-    </main>
-  );
+/**
+ * 예정된 다음 판이 없으면 지금처럼 빌드 때 만든 정적 페이지다. 있으면 요청 때 렌더해서(connection) 시행일 0시(KST)에
+ * 재배포 없이 판이 바뀌고 공지가 사라진다. 예정 판이 없는 동안에는 Worker CPU를 쓰지 않는다.
+ */
+export default async function PrivacyPage() {
+  if (UPCOMING_POLICY) await connection();
+  return <PolicyView {...resolvePolicy(POLICY, UPCOMING_POLICY, new Date())} />;
 }

@@ -4,10 +4,11 @@ import { describe, expect, it } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
 import { INVITE_COPY, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
-import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS } from "./policy";
+import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS, UPCOMING_POLICY } from "./policy";
+import { FIXTURE_UPCOMING } from "./upcoming.fixture";
 
 const mdPath = resolve(import.meta.dirname, "../../../../docs/legal/privacy-policy.md");
-const markdown = policyMarkdown(POLICY);
+const markdown = policyMarkdown(POLICY, UPCOMING_POLICY);
 
 describe("개인정보 처리방침", () => {
   it("docs/legal/privacy-policy.md가 페이지와 같은 원본에서 나온다", () => {
@@ -147,6 +148,24 @@ describe("개인정보 처리방침", () => {
       expect(line).toContain(`https://github.com/y2gcoder/banbanyeok/blob/${commit}/docs/legal/privacy-policy.md`);
     }
     expect(markdown).toContain("같은 날 세 번 고쳤습니다");
+  });
+
+  it("'예정된 변경' 절은 예정된 다음 판이 있을 때만 md에 있다", () => {
+    expect(markdown.includes("## 예정된 변경")).toBe(UPCOMING_POLICY !== null);
+    expect(policyMarkdown(POLICY)).not.toContain("예정된 변경");
+  });
+
+  it("예정 판이 있으면 지금 판 뒤에 '예정된 변경' 절만 붙고 오늘 날짜와 무관하다", () => {
+    const base = policyMarkdown(POLICY);
+    const withUpcoming = policyMarkdown(POLICY, FIXTURE_UPCOMING);
+    expect(withUpcoming.startsWith(base)).toBe(true);
+    const added = withUpcoming.slice(base.length);
+    expect(added).toContain("## 예정된 변경");
+    expect(added).toContain("시행일: 2026년 12월 20일");
+    expect(added).toContain("공지 시작일: 2026년 12월 1일");
+    expect(added).toContain(FIXTURE_UPCOMING.summary);
+    expect(added).toContain("| 방 정보 보관 기간 (4항) | 마지막 변경 후 7일 | 마지막 변경 후 14일 |");
+    expect(withUpcoming).not.toContain(FIXTURE_UPCOMING.policy.title);
   });
 
   it("목차 앵커가 겹치지 않는다", () => {
