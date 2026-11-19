@@ -287,6 +287,12 @@ if [ -n "${KAKAO_JS_KEY:-}" ]; then
   else
     bad "CSP에 카카오 SDK 주소가 없습니다(빌드에 NEXT_PUBLIC_KAKAO_JS_KEY가 박히지 않음)"
   fi
+  # PC의 공유 창은 sharer.kakao.com으로 폼을 보내고 로그인 안 한 상태에서는 accounts.kakao.com으로 리디렉트된다. form-action은 리디렉트도 막으므로 둘 다 있어야 한다(#73).
+  if grep -qiE "^content-security-policy:.*form-action [^;]*https://sharer\\.kakao\\.com" <<<"$headers" && grep -qiE "^content-security-policy:.*form-action [^;]*https://accounts\\.kakao\\.com" <<<"$headers"; then
+    pass "CSP form-action에 sharer.kakao.com과 accounts.kakao.com이 있다(PC 공유 창)"
+  else
+    bad "CSP form-action에 https://sharer.kakao.com 과 https://accounts.kakao.com 이 모두 있어야 합니다(PC 카카오 공유 창이 빈 창으로 남음)"
+  fi
   site_origin="${origin_header#Origin: }"
   template="$(jq -nc --arg u "$BASE_URL/" --arg i "$BASE_URL$site_og_path" \
     '{object_type:"feed",content:{title:"반반역 스모크",image_url:$i,link:{web_url:$u,mobile_web_url:$u}},buttons:[{title:"열기",link:{web_url:$u,mobile_web_url:$u}}]}')"
