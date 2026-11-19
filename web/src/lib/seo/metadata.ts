@@ -65,7 +65,7 @@ export function siteMetadata(env: Env = siteEnv()): Metadata {
     // 홈 화면에 추가한 iOS 웹 앱: 이름, 전체 화면 실행, 상태 표시줄은 기본(밝은 바탕·검은 글자, 내용은 그 아래에서 시작).
     // black-translucent는 내용이 상태 표시줄 밑으로 들어가고 글자가 흰색이라 밝은 화면에서 시계·배터리가 보이지 않는다.
     appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
-    ...social({ title: "우리 어디서 만나야 덜 억울할까?", description: SITE_DESCRIPTION, path: "/" }, env),
+    ...social({ title: "우리 어디서 만나면 딱 반반일까?", description: SITE_DESCRIPTION, path: "/" }, env),
   };
 }
 
@@ -111,7 +111,7 @@ export function hubMetadata(env: Env = siteEnv()): Metadata {
 
 /** 사이트 기본 미리보기 이미지(빌드 때 만든 정적 PNG). `openGraph`를 하위 페이지가 정의하면 부모의 이미지가 사라지므로 직접 가리킨다. */
 const DEFAULT_IMAGES = [
-  { url: SITE_OG_IMAGE_PATH, width: OG_WIDTH, height: OG_HEIGHT, alt: `${SITE_NAME}: 우리 어디서 만나야 덜 억울할까?` },
+  { url: SITE_OG_IMAGE_PATH, width: OG_WIDTH, height: OG_HEIGHT, alt: `${SITE_NAME}: 우리 어디서 만나면 딱 반반일까?` },
 ];
 
 /**

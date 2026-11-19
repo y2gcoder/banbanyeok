@@ -24,8 +24,8 @@ export default function HubPage() {
       <section className="flex flex-col gap-2">
         <h1 className="text-[28px] leading-[1.2] font-extrabold tracking-[-0.03em] text-ink">인기 역 조합별 만날 곳</h1>
         <p className="max-w-2xl text-[16px] text-ink-soft">
-          자주 만나는 역끼리 {pages.length}개 조합을 골랐어요. 각자 지하철 시간으로 계산해서, 가장 오래 걸리는 사람이 덜
-          억울한 순서로 3곳을 보여 줘요.
+          자주 만나는 역끼리 {pages.length}개 조합을 골랐어요. 각자 지하철 시간으로 계산해서, 가장 오래 걸리는 사람의
+          시간이 짧은 순서로 3곳을 보여 줘요.
         </p>
       </section>
       {groups.length === 0 ? (
