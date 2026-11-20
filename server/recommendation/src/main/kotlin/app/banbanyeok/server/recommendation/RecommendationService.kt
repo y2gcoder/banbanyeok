@@ -72,6 +72,12 @@ public data class Recommendation(
     public val requestedSlot: TimeSlot = TimeSlot.DEFAULT,
 )
 
+/** [RecommendationService.recommendWithMapMiddle]의 결과. [mapMiddle]은 보일 조건을 채울 때만 있다. */
+public data class RecommendationWithMapMiddle(
+    public val recommendation: Recommendation,
+    public val mapMiddle: MapMiddle?,
+)
+
 public enum class RecommendationError {
     PEOPLE_COUNT,
     INVALID_NICKNAME,
@@ -97,9 +103,29 @@ public class RecommendationService(
     private val locations: StationLocations = StationLocations { null },
 ) {
     public fun recommend(request: RecommendRequest): Recommendation {
-        val people = request.participants
         validate(request)
-        val matrix = travelTimes.measure(people.map { it.originCode }, request.time.slot)
+        return recommendFrom(request, measure(request))
+    }
+
+    /**
+     * [recommend]와 "지도 한가운데" 비교(#68)를 **한 번 읽은 같은 행렬**로 계산한다. 순위와 비교를 따로 조회하면 구분 행렬 검사가
+     * 그 사이에 끝났을 때 응답의 timeBasis와 다른 구분으로 비교 시간이 나올 수 있다(BackgroundSlots).
+     */
+    public fun recommendWithMapMiddle(request: RecommendRequest): RecommendationWithMapMiddle {
+        validate(request)
+        val matrix = measure(request)
+        val recommendation = recommendFrom(request, matrix)
+        return RecommendationWithMapMiddle(recommendation, mapMiddleFrom(request, recommendation, matrix))
+    }
+
+    private fun measure(request: RecommendRequest): TravelMatrix =
+        travelTimes.measure(request.participants.map { it.originCode }, request.time.slot)
+
+    private fun recommendFrom(
+        request: RecommendRequest,
+        matrix: TravelMatrix,
+    ): Recommendation {
+        val people = request.participants
         val ids = people.map { it.id }
         val favorIndex = if (request.mode == RecommendMode.FAVOR) ids.indexOf(request.favorId) else -1
         val result =
@@ -173,28 +199,26 @@ public class RecommendationService(
      * - 모든 참가자의 출발역 좌표를 안다.
      * - 지도 한가운데 역이 1위 추천 역과 다르다(모두가 갈 수 있는 역 중에서 고른다).
      * - 그 역의 최장 시간이 1위 추천 역보다 [MapMiddleRule.MIN_EXTRA_MINUTES]분 이상 길다.
-     * 순위는 건드리지 않고, [recommendation]은 같은 [request]로 [recommend]한 결과여야 한다.
-     * 시간은 같은 데이터 버전·같은 구분의 od에서 꺼낸다([timesTo]와 같다).
+     * 순위는 건드리지 않는다. 시간은 순위를 낸 [matrix]와 같은 행렬(같은 데이터 버전·같은 구분)에서 꺼낸다.
      */
-    public fun mapMiddle(
+    private fun mapMiddleFrom(
         request: RecommendRequest,
         recommendation: Recommendation,
+        matrix: TravelMatrix,
     ): MapMiddle? {
         val top = recommendation.candidates.firstOrNull() ?: return null
         val fair = request.mode == RecommendMode.FAIR && recommendation.mode == RecommendMode.FAIR
-        if (!fair || request.participants.any { it.hidden }) return null
-        validate(request)
-        return middleStation(request, top)
+        return if (fair && request.participants.none { it.hidden }) middleStation(request, top, matrix) else null
     }
 
     private fun middleStation(
         request: RecommendRequest,
         top: RecommendedStation,
+        matrix: TravelMatrix,
     ): MapMiddle? {
         val people = request.participants
         val points = people.mapNotNull { locations.locate(it.originCode) }
         if (points.size != people.size) return null
-        val matrix = travelTimes.measure(people.map { it.originCode }, request.time.slot)
         val column =
             MapMiddleRule.nearest(points, matrix.candidates, locations) { c -> matrix.times.all { it[c] != null } }
                 ?: return null

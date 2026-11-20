@@ -46,7 +46,7 @@ private fun service(
 private fun people(vararg codes: String) = codes.mapIndexed { i, c -> RecommendParticipant("p$i", null, c) }
 
 private fun RecommendationService.middleOf(request: RecommendRequest): MapMiddle? =
-    mapMiddle(request, recommend(request))
+    recommendWithMapMiddle(request).mapMiddle
 
 class MapMiddleTest :
     DescribeSpec({
@@ -56,25 +56,27 @@ class MapMiddleTest :
             ) {
                 val request = RecommendRequest(people("03v", "130"), RecommendMode.FAIR)
                 val service = service()
-                val result = service.recommend(request)
+                val result = service.recommendWithMapMiddle(request).recommendation
                 result.candidates.first().stationCode shouldBe "130" // 공평 1위(최장 10분)는 그대로다
-                val middle = service.mapMiddle(request, result).shouldNotBeNull()
+                val middle = service.recommendWithMapMiddle(request).mapMiddle.shouldNotBeNull()
                 middle.stationCode shouldBe "225"
                 middle.stationName shouldBe "225역"
                 middle.times.map { it.participantId to it.seconds } shouldContainExactly
                     listOf("p0" to 1200, "p1" to 600)
             }
 
-            it("does not change the fair ranking") {
+            it("does not change the ranking: all three cards equal the calculation without the comparison") {
                 val request = RecommendRequest(people("03v", "130"), RecommendMode.FAIR)
                 val plain =
                     RecommendationService(
                         OdTravelTimeProvider(od(), "20261120.1"),
                         codeNames,
                     ).recommend(request)
-                val withLocations = service().recommend(request)
-                withLocations.candidates.map { it.stationCode to it.times } shouldBe
-                    plain.candidates.map { it.stationCode to it.times }
+                val withMiddle = service().recommendWithMapMiddle(request)
+                withMiddle.mapMiddle.shouldNotBeNull() // 비교가 붙는 응답에서 대조한다
+                withMiddle.recommendation.candidates.size shouldBe 3
+                withMiddle.recommendation shouldBe plain
+                service().recommend(request) shouldBe plain
             }
 
             it("is hidden when it is the recommended station itself") {
@@ -260,6 +262,22 @@ class MapMiddleTest :
                         }
                     }
                 MapMiddleRule.nearest(listOf(GeoPoint(37.5, 127.0)), listOf("225", "31a"), points) { true } shouldBe 1
+            }
+
+            it(
+                "treats only exactly equal distances as a tie (a farther station by 1e-6 degree does not win by code order)",
+            ) {
+                // 평균 (37.5, 127.1): 130은 위도로 0.02도, 03v는 위도로 0.02도에 경도로 0.000001도 더 멀다. 코드는 03v가 앞선다.
+                val points =
+                    StationLocations {
+                        when (it) {
+                            "03v" -> GeoPoint(37.48, 127.100001)
+                            "130" -> GeoPoint(37.52, 127.1)
+                            else -> null
+                        }
+                    }
+                val origins = listOf(GeoPoint(37.5, 127.1))
+                MapMiddleRule.nearest(origins, listOf("03v", "130"), points) { true } shouldBe 1
             }
 
             it("skips candidates without coordinates and returns null when there is nothing to pick") {

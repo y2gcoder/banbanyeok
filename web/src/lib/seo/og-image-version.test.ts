@@ -1,11 +1,17 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ScoreboardCard } from "@/components/og/scoreboard-card";
+import { SHARED_CASES } from "@/components/og/shared-card.cases";
+import { toResultView } from "@/lib/result/view-model";
 import {
   OG_COLORS,
   OG_FONT_FILE,
   OG_HEIGHT,
+  OG_NAME_MAX,
   OG_TEXT,
   OG_WIDTH,
   PAIR_OG_IMAGE_VERSION,
@@ -13,6 +19,7 @@ import {
   SITE_OG_IMAGE_PATH,
   SITE_OG_IMAGE_VERSION,
 } from "./og-text";
+import { scoreboardCardData } from "./scoreboard-card-data";
 
 const ROOT = process.cwd();
 
@@ -21,6 +28,10 @@ type Drawn = {
   texts: (keyof typeof OG_TEXT)[];
   /** 이 그림을 그리는 코드. */
   sources: string[];
+  /** 그림을 바꾸는 그 밖의 상수(`OG_TEXT`가 아닌 것: 이름 말줄임 길이 등). */
+  constants?: Record<string, unknown>;
+  /** 대표 표본을 실제로 그린 결과(마크업). 상수·규칙·코드 어디를 바꿨든 그림이 달라지면 해시가 달라진다. */
+  rendered?: () => string[];
 };
 
 const SITE: Drawn = {
@@ -38,6 +49,31 @@ const PAIR: Drawn = {
     "src/lib/display/minutes.ts",
   ],
 };
+
+/**
+ * 공유 링크 그림 대표 표본(2·3·4명, 긴 별칭 4인, 1시간 넘음, 칭호·기준 칩 포함)을 그린 마크업. 이름 말줄임(`OG_NAME_MAX`)·칭호 임계값·
+ * 비교 문장 6자 규칙처럼 코드 밖 상수나 규칙이 바뀌어 그림이 달라지는 경우를 해시 입력에 목록을 빠뜨려도 잡는다.
+ * 표본은 `shared-card.cases.ts`에서 고른다(그 값이나 이 목록을 바꿔도 해시가 달라지므로 버전을 함께 올린다).
+ */
+const SAMPLE_IDS = [
+  "two-even-middle",
+  "two-middle-saturday",
+  "three-middle",
+  "four-middle-long-name",
+  "three-middle-over-hour",
+  "nickname-hidden",
+  "four-fair",
+];
+
+function renderedSharedSamples(): string[] {
+  return SAMPLE_IDS.map((id) => {
+    const found = SHARED_CASES.find((c) => c.id === id);
+    if (!found) throw new Error(`표본 없음: ${id}`);
+    const data = scoreboardCardData(toResultView(found.result), found.state);
+    if (!data) throw new Error(`그림 값 없음: ${id}`);
+    return renderToStaticMarkup(createElement(ScoreboardCard, { data }));
+  });
+}
 
 /**
  * 공유 링크 그림 "A 숫자판"(`/s/og`). 그림 값을 만드는 코드(이름 거르기·칭호·문장 규칙)도 입력이다. 그림에는 역 이름·시간처럼 결과마다
@@ -62,6 +98,8 @@ const SHARED: Drawn = {
     "middleMore",
     "middleLongest",
   ],
+  constants: { OG_NAME_MAX },
+  rendered: renderedSharedSamples,
   sources: [
     "src/app/s/og/route.tsx",
     "src/components/og/scoreboard-card.tsx",
@@ -77,10 +115,11 @@ const SHARED: Drawn = {
 };
 
 /** 그림을 정하는 입력(문구·크기·색·글꼴 파일·그리는 코드)의 해시 앞 8자리. */
-function inputsHash({ texts, sources }: Drawn): string {
+function inputsHash({ texts, sources, constants, rendered }: Drawn): string {
   const digest = createHash("sha256");
   const fixedTexts = Object.fromEntries(texts.map((key) => [key, OG_TEXT[key]]));
-  digest.update(JSON.stringify({ OG_WIDTH, OG_HEIGHT, OG_COLORS, fixedTexts }));
+  digest.update(JSON.stringify({ OG_WIDTH, OG_HEIGHT, OG_COLORS, fixedTexts, constants }));
+  for (const markup of rendered?.() ?? []) digest.update(markup);
   digest.update(readFileSync(join(ROOT, "public/fonts", OG_FONT_FILE)));
   for (const source of sources) digest.update(readFileSync(join(ROOT, source)));
   return digest.digest("hex").slice(0, 8);
