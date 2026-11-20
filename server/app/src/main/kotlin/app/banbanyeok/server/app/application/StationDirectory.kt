@@ -2,8 +2,10 @@ package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.server.recommendation.GeoPoint
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.SlotMatrices
+import app.banbanyeok.server.recommendation.StationLocations
 import app.banbanyeok.server.recommendation.StationNames
 import app.banbanyeok.server.recommendation.TravelMatrix
 import app.banbanyeok.server.recommendation.TravelTimeProvider
@@ -18,8 +20,11 @@ class StationDirectory(
     /** 기본 구분을 뺀 구분 행렬. 서버는 [BackgroundSlots], 테스트는 이미 읽은 데이터 세트의 행렬. */
     private val slots: SlotMatrices = SlotMatrices { dataSet.odSlots[it] },
 ) : StationCatalog,
-    StationNames {
+    StationNames,
+    StationLocations {
     private val names: Map<String, String> = dataSet.registry.stations.associate { it.code to it.name }
+    private val points: Map<String, GeoPoint> =
+        dataSet.registry.stations.associate { it.code to GeoPoint(it.lat, it.lng) }
     private val replacements: Map<String, String> =
         dataSet.registry.stations
             .mapNotNull { station -> station.replacedBy?.let { station.code to it } }
@@ -43,6 +48,8 @@ class StationDirectory(
     override fun isMeetingStation(code: String): Boolean = code in meetingCodes
 
     override fun nameOf(code: String): String? = names[code]
+
+    override fun locate(code: String): GeoPoint? = points[code]
 
     /**
      * 폐기된 코드를 replacedBy 사슬의 끝(active 코드)으로 바꾼다. 사슬의 순환·끊김은 파이프라인 게이트가 막지만, 여기서도

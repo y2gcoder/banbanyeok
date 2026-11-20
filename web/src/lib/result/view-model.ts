@@ -8,6 +8,7 @@ import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "@/l
 import { evaluateNotices, type Notice } from "@/lib/display/notices";
 import { kakaoPlaceUrl, kakaoTransitUrl } from "@/lib/map/kakao";
 import { stationByCode } from "@/lib/stations";
+import { type MapMiddleView, toMapMiddleView } from "./map-middle";
 
 type PersonView = {
   index: number;
@@ -49,6 +50,8 @@ export type ResultView = {
   notices: Notice[];
   /** 계산 기준(실제로 쓴 구분과 화면 문구). */
   timeBasis: RecommendResult["timeBasis"];
+  /** "지도 한가운데였다면?" 비교. 보여 줄 조건을 모두 만족할 때만 있다(`toMapMiddleView`). 옛 서버·방 결과에는 없다. */
+  mapMiddle: MapMiddleView | null;
 };
 
 function place(code: string | null, name: string | null) {
@@ -92,6 +95,7 @@ export function toResultView(result: RecommendResult): ResultView {
       placeUrl: destination ? kakaoPlaceUrl(destination) : null,
     };
   });
+  const first = candidates[0];
   const notices = evaluateNotices({
     mode: result.mode,
     names: people.map((p) => p.name),
@@ -106,5 +110,8 @@ export function toResultView(result: RecommendResult): ResultView {
     candidates,
     notices,
     timeBasis: result.timeBasis,
+    mapMiddle: first
+      ? toMapMiddleView(result, { stationCode: first.stationCode, minutes: first.aggregate.minutes })
+      : null,
   };
 }

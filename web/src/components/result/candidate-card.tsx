@@ -1,8 +1,10 @@
 import { ChevronRightIcon } from "lucide-react";
 import { LineBadges } from "@/components/common/line-badge";
 import { formatMinutes } from "@/lib/display/minutes";
+import type { MapMiddleView } from "@/lib/result/map-middle";
 import type { CandidateView } from "@/lib/result/view-model";
 import { type ChoiceContext, Directions } from "./directions";
+import { MapMiddleCompare } from "./map-middle-compare";
 import { TimeRails } from "./time-rails";
 
 /** 환승역 기호(굵은 고리). 1위 표시. */
@@ -47,10 +49,13 @@ export function TopCandidateCard({
   candidate,
   choice,
   meIndex = null,
+  mapMiddle = null,
 }: {
   candidate: CandidateView;
   choice: ChoiceContext;
   meIndex?: number | null;
+  /** 보여 줄 조건을 모두 만족할 때만 값이 있다(`ResultView.mapMiddle`). 없으면 비교 표가 빠진다. */
+  mapMiddle?: MapMiddleView | null;
 }) {
   return (
     <article
@@ -76,6 +81,7 @@ export function TopCandidateCard({
       <TimeRails people={candidate.people} maxMinutes={candidate.aggregate.max} meIndex={meIndex} />
       <Stats candidate={candidate} />
       <Reason text={candidate.reason} />
+      {mapMiddle ? <MapMiddleCompare candidate={candidate} middle={mapMiddle} /> : null}
       <Directions candidate={candidate} choice={choice} meIndex={meIndex} />
     </article>
   );

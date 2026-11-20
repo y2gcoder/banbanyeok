@@ -32,7 +32,14 @@ function build(
     mode = "fair",
     favorIndex = null,
     basis = WEEKDAY_DAY,
-  }: { mode?: Mode; favorIndex?: number | null; basis?: Basis } = {},
+    middle,
+  }: {
+    mode?: Mode;
+    favorIndex?: number | null;
+    basis?: Basis;
+    /** 서버가 주는 "지도 한가운데" 역과 각자 시간(초). 없으면 키가 없는 응답(옛 서버·조건 미달)이다. */
+    middle?: { station: string; seconds: number[] };
+  } = {},
 ): { id: string; result: RecommendResult; state: ShareState } {
   const [day = "weekday", band = "day"] = basis.slot.split("-");
   const seconds = people.map((p) => p.seconds);
@@ -71,6 +78,15 @@ function build(
         reason: "",
       },
     ],
+    ...(middle
+      ? {
+          mapMiddle: {
+            stationCode: "001",
+            stationName: middle.station,
+            times: middle.seconds.map((sec, i) => ({ participantId: String(i), seconds: sec, transfers: 1 })),
+          },
+        }
+      : {}),
   } as RecommendResult;
   const state: ShareState = {
     origins: people.map(() => "000"),
@@ -86,6 +102,43 @@ function build(
 export const HIDDEN_ORIGIN = "선릉";
 
 export const SHARED_CASES = [
+  // 공유 카드 "A 숫자판"(#68): 지도 한가운데 비교가 붙는 경우. 시간은 로컬 서버 응답에서 옮긴 근사값이다(홍대입구·잠실은 신당 21분 안팎, 한강진 24·36분).
+  build("two-even-middle", "신당", [person("홍대입구", 1260), person("잠실", 1260)], {
+    middle: { station: "한강진", seconds: [1380, 2100] },
+  }),
+  build("two-middle-saturday", "충무로", [person("강남", 1500), person("수유", 1320)], {
+    basis: { slot: "saturday-night", label: "토요일 밤" },
+    middle: { station: "신당", seconds: [1860, 1500] },
+  }),
+  build("three-middle", "교대", [person("구로디지털단지", 1320), person("잠실", 960), person("홍대입구", 1380)], {
+    middle: { station: "고속터미널", seconds: [1740, 1380, 1980] },
+  }),
+  build(
+    "four-middle-long-name",
+    "을지로3가",
+    [
+      {
+        label: "우리팀막내생일축하해요",
+        shortLabel: "우리팀막내생일축하해요",
+        kind: "name",
+        origin: "신촌",
+        seconds: 1500,
+      },
+      person("서울대입구", 1560),
+      person("잠실", 1500),
+      person("성수", 1440),
+    ],
+    { middle: { station: "동대문역사문화공원", seconds: [2160, 1620, 1440, 1800] } },
+  ),
+  build(
+    "three-middle-over-hour",
+    "안양",
+    [person("구로디지털단지", 2100), person("수원", 1680), person("인천", 3900)],
+    {
+      basis: { slot: "holiday-evening", label: "일요일·공휴일 저녁" },
+      middle: { station: "금정", seconds: [2460, 1380, 4260] },
+    },
+  ),
   build("two-saturday-night", "약수", [person("혜화", 1079), person("강남", 1367)], {
     basis: { slot: "saturday-night", label: "토요일 밤" },
   }),

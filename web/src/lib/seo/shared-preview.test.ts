@@ -3,6 +3,8 @@ import type { RecommendResult } from "../api/types";
 import { decodeShareQuery, type ShareState } from "../link/codec";
 import { modeSentence } from "../result/mode-sentence";
 import { toResultView } from "../result/view-model";
+import { SHARED_OG_IMAGE_VERSION } from "./og-text";
+import { scoreboardCardData } from "./scoreboard-card-data";
 import { loadSharedView, sharedCardData, sharedImagePath, sharedPreview } from "./shared-preview";
 
 const recommend = vi.fn();
@@ -124,7 +126,19 @@ describe("og:image 주소", () => {
   it("링크 상태 그대로에 데이터 버전을 붙여 캐시를 비켜 간다", () => {
     const path = sharedImagePath(state, "20261112.6");
     expect(path.startsWith("/s/og?v=2&o=1qs.70x&m=f&t=weekday-day&n=")).toBe(true);
-    expect(path.endsWith("&dv=20261112.6")).toBe(true);
+    expect(path.endsWith(`&dv=20261112.6&iv=${SHARED_OG_IMAGE_VERSION}`)).toBe(true);
+  });
+
+  it("그림 디자인 버전(iv)이 주소에 든다: 디자인이 바뀌면 같은 결과도 새 주소가 된다(카카오 캐시를 비켜 간다)", () => {
+    expect(sharedImagePath(state, "1")).toMatch(/&iv=[0-9a-f]{8}$/);
+    expect(sharedImagePath(state, "1")).toContain(`iv=${SHARED_OG_IMAGE_VERSION}`);
+  });
+
+  it("옛 공유 링크(v=1)와 새 링크(v=2)의 쿼리 모두 같은 그림 주소 규칙에서 읽힌다(iv·dv는 무시)", () => {
+    const legacy: ShareState = { ...state, nicknames: null };
+    const v1 = decodeShareQuery("v=1&o=1qs.70x&m=f&iv=abcdef01&dv=1");
+    expect(v1).toEqual({ ok: true, state: legacy });
+    expect(decodeShareQuery("v=2&o=1qs.70x&m=f&t=weekday-day&iv=abcdef01&dv=1")).toEqual({ ok: true, state: legacy });
   });
 
   it("그 주소의 쿼리를 링크 코덱이 그대로 읽는다(dv는 무시)", () => {
@@ -201,5 +215,86 @@ describe("결과 불러오기(서버 호출)", () => {
       throw new Error("연결 실패");
     });
     expect(await loadSharedView({ ...state, origins: ["1qs", "dxy"] })).toBeNull();
+  });
+});
+
+describe("지도 한가운데 비교(#68)", () => {
+  /** 신촌 34분·잠실 30분(1위 왕십리) 대신 지도 한가운데 역에서 각자 40분·35분이면 지훈이 6분 더 걸린다(최장 34 → 40). */
+  const withMiddle = (seconds: [number, number], overrides: Partial<RecommendResult> = {}) =>
+    result({
+      mapMiddle: {
+        stationCode: "3k5",
+        stationName: "한강진",
+        times: [
+          { participantId: "0", seconds: seconds[0], transfers: 1 },
+          { participantId: "1", seconds: seconds[1], transfers: 1 },
+        ],
+      },
+      ...overrides,
+    });
+
+  it("설명(og:description) 끝에 비교 문장이 붙는다", () => {
+    const view = toResultView(withMiddle([2400, 2100]));
+    expect(sharedPreview(view, state)?.description).toBe(
+      "지훈🎂 34분 · 잠실 30분 · 공평하게 고름 · 지도 한가운데인 한강진역이면 지훈🎂은 6분 더 걸려요",
+    );
+  });
+
+  it("짧은 이름이면 이름으로 부른다", () => {
+    const view = toResultView(withMiddle([2040, 2400]));
+    expect(sharedPreview(view, state)?.description.endsWith("지도 한가운데인 한강진역이면 잠실은 10분 더 걸려요")).toBe(
+      true,
+    );
+  });
+
+  it("mapMiddle이 없는 응답(옛 서버·조건 미달)은 문구가 그대로다", () => {
+    const view = toResultView(result());
+    expect(view.mapMiddle).toBeNull();
+    expect(sharedPreview(view, state)?.description).toBe("지훈🎂 34분 · 잠실 30분 · 공평하게 고름");
+    expect(scoreboardCardData(view, state)?.compareLine).toBeNull();
+  });
+
+  it("그림 값: 숫자판에는 차이·칭호·비교 문장(글꼴에 있는 글자로 거른 이름)이 든다", () => {
+    const view = toResultView(withMiddle([2040, 2400]));
+    const data = scoreboardCardData(view, state);
+    expect(data?.spread).toBe(4);
+    expect(data?.title).toBeNull();
+    expect(data?.compareLine).toBe("지도 한가운데인 한강진역이면 잠실은 10분 더 걸려요");
+    // 이모지가 걸러진 이름("지훈")으로 문장을 만든다.
+    const jihun = scoreboardCardData(toResultView(withMiddle([2700, 2100])), state);
+    expect(jihun?.compareLine).toBe("지도 한가운데인 한강진역이면 지훈은 11분 더 걸려요");
+  });
+
+  it("공평 기준이 아니면 비교도 칭호도 없다", () => {
+    const view = toResultView(withMiddle([2400, 2100], { mode: "fast" }));
+    expect(view.mapMiddle).toBeNull();
+    expect(scoreboardCardData(view, { ...state, mode: "fast" })?.compareLine).toBeNull();
+  });
+
+  it("출발역을 숨긴 참가자가 있으면 비교가 없다(숨긴 출발역을 거꾸로 짐작할 수 있다)", () => {
+    const base = withMiddle([2400, 2100]);
+    const [first, second] = base.participants;
+    if (!first || !second) throw new Error("표본");
+    const hidden = toResultView({ ...base, participants: [first, { ...second, hidden: true, originName: null }] });
+    expect(hidden.mapMiddle).toBeNull();
+    expect(sharedPreview(hidden, state)?.description).not.toContain("지도 한가운데");
+  });
+
+  it("차이가 아주 작을 때만 칭호: 2명은 1분 이하", () => {
+    const even = toResultView(
+      result({
+        candidates: [
+          {
+            ...result().candidates[0],
+            times: [
+              { participantId: "0", seconds: 1800, transfers: 0 },
+              { participantId: "1", seconds: 1860, transfers: 0 },
+            ],
+          },
+        ],
+      } as Partial<RecommendResult>),
+    );
+    expect(scoreboardCardData(even, state)?.title).toBe("완벽한 반반");
+    expect(scoreboardCardData(toResultView(result()), state)?.title).toBeNull();
   });
 });

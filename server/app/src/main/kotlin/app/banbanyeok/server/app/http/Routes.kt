@@ -189,8 +189,9 @@ private fun Route.resultRoutes(services: ApiServices) {
                 body.favorIndex?.toString(),
                 TimeBasis(slot, TimeSlotLabels.of(slot)),
             )
-        val result = services.recommendation.recommend(request)
-        call.respond(result.toStatelessDto(origins, nicknames, services.directory))
+        val (result, mapMiddle) = services.recommendation.recommendWithMapMiddle(request)
+        // 이 경로의 참가자는 출발역을 숨길 수 없다(hidden = false). 지도 한가운데 비교는 조건을 모두 만족할 때만 붙는다.
+        call.respond(result.toStatelessDto(origins, nicknames, services.directory, mapMiddle))
     }
 }
 

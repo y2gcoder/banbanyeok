@@ -72,6 +72,12 @@ public data class Recommendation(
     public val requestedSlot: TimeSlot = TimeSlot.DEFAULT,
 )
 
+/** [RecommendationService.recommendWithMapMiddle]의 결과. [mapMiddle]은 보일 조건을 채울 때만 있다. */
+public data class RecommendationWithMapMiddle(
+    public val recommendation: Recommendation,
+    public val mapMiddle: MapMiddle?,
+)
+
 public enum class RecommendationError {
     PEOPLE_COUNT,
     INVALID_NICKNAME,
@@ -94,11 +100,32 @@ public class RecommendationService(
     private val travelTimes: TravelTimeProvider,
     private val stationNames: StationNames,
     private val toleranceSeconds: Int = 0,
+    private val locations: StationLocations = StationLocations { null },
 ) {
     public fun recommend(request: RecommendRequest): Recommendation {
-        val people = request.participants
         validate(request)
-        val matrix = travelTimes.measure(people.map { it.originCode }, request.time.slot)
+        return recommendFrom(request, measure(request))
+    }
+
+    /**
+     * [recommend]와 "지도 한가운데" 비교(#68)를 **한 번 읽은 같은 행렬**로 계산한다. 순위와 비교를 따로 조회하면 구분 행렬 검사가
+     * 그 사이에 끝났을 때 응답의 timeBasis와 다른 구분으로 비교 시간이 나올 수 있다(BackgroundSlots).
+     */
+    public fun recommendWithMapMiddle(request: RecommendRequest): RecommendationWithMapMiddle {
+        validate(request)
+        val matrix = measure(request)
+        val recommendation = recommendFrom(request, matrix)
+        return RecommendationWithMapMiddle(recommendation, mapMiddleFrom(request, recommendation, matrix))
+    }
+
+    private fun measure(request: RecommendRequest): TravelMatrix =
+        travelTimes.measure(request.participants.map { it.originCode }, request.time.slot)
+
+    private fun recommendFrom(
+        request: RecommendRequest,
+        matrix: TravelMatrix,
+    ): Recommendation {
+        val people = request.participants
         val ids = people.map { it.id }
         val favorIndex = if (request.mode == RecommendMode.FAVOR) ids.indexOf(request.favorId) else -1
         val result =
@@ -163,6 +190,47 @@ public class RecommendationService(
                 ParticipantTime(person.id, seconds, requireNotNull(matrix.transfers[row][column]))
             }
         }
+    }
+
+    /**
+     * "지도 한가운데" 비교(#68)를 보일 때만 값을 준다. 하나라도 어기면 null이다.
+     * - 공평 기준이고 1위 추천 역이 있다.
+     * - **출발역을 숨긴 사람이 없다**: 숨긴 사람의 출발역은 평균점과 지도 한가운데 역에서 거꾸로 짐작할 수 있다.
+     * - 모든 참가자의 출발역 좌표를 안다.
+     * - 지도 한가운데 역이 1위 추천 역과 다르다(모두가 갈 수 있는 역 중에서 고른다).
+     * - 그 역의 최장 시간이 1위 추천 역보다 [MapMiddleRule.MIN_EXTRA_MINUTES]분 이상 길다.
+     * 순위는 건드리지 않는다. 시간은 순위를 낸 [matrix]와 같은 행렬(같은 데이터 버전·같은 구분)에서 꺼낸다.
+     */
+    private fun mapMiddleFrom(
+        request: RecommendRequest,
+        recommendation: Recommendation,
+        matrix: TravelMatrix,
+    ): MapMiddle? {
+        val top = recommendation.candidates.firstOrNull() ?: return null
+        val fair = request.mode == RecommendMode.FAIR && recommendation.mode == RecommendMode.FAIR
+        return if (fair && request.participants.none { it.hidden }) middleStation(request, top, matrix) else null
+    }
+
+    private fun middleStation(
+        request: RecommendRequest,
+        top: RecommendedStation,
+        matrix: TravelMatrix,
+    ): MapMiddle? {
+        val people = request.participants
+        val points = people.mapNotNull { locations.locate(it.originCode) }
+        if (points.size != people.size) return null
+        val column =
+            MapMiddleRule.nearest(points, matrix.candidates, locations) { c -> matrix.times.all { it[c] != null } }
+                ?: return null
+        val times =
+            people.mapIndexed { row, person ->
+                val seconds = requireNotNull(matrix.times[row][column])
+                ParticipantTime(person.id, seconds, requireNotNull(matrix.transfers[row][column]))
+            }
+        val code = matrix.candidates[column]
+        val worseEnough =
+            MapMiddleRule.extraMinutes(times.map { it.seconds }, top.maxSeconds) >= MapMiddleRule.MIN_EXTRA_MINUTES
+        return if (code != top.stationCode && worseEnough) MapMiddle(code, nameOf(code), times) else null
     }
 
     private fun validate(request: RecommendRequest) {

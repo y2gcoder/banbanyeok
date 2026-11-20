@@ -565,7 +565,7 @@ class ApiHttpTest :
 
             it("maps recommendation validation errors to 400") {
                 withMockedApi { services ->
-                    every { services.recommendation.recommend(any()) } throws
+                    every { services.recommendation.recommendWithMapMiddle(any()) } throws
                         RecommendationException(RecommendationError.UNKNOWN_STATION, "알 수 없는 출발역이 있습니다")
                     val response =
                         client.json(
@@ -582,7 +582,7 @@ class ApiHttpTest :
             it("passes the favor index as the favored person's id") {
                 withMockedApi { services ->
                     val request = slot<RecommendRequest>()
-                    every { services.recommendation.recommend(capture(request)) } throws
+                    every { services.recommendation.recommendWithMapMiddle(capture(request)) } throws
                         RecommendationException(RecommendationError.FAVOR_TARGET_UNKNOWN, "x")
                     client.json(
                         HttpMethod.Post,

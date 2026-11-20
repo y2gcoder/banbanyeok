@@ -133,6 +133,33 @@ function reason(mode: Mode, r: Row, index: number, ranked: Row[], names: string[
   return `${withJosa(name, "은/는")} ${formatMinutes(minutesFromSeconds(mine.seconds))}, ${how}`;
 }
 
+/**
+ * "지도 한가운데" 역(#68): 출발역 좌표 평균(경도는 cos 위도로 보정)에 가장 가까운 후보. 같은 거리면 코드 순.
+ * 공평 기준에서 1위와 다르고 가장 오래 걸리는 시간이 5분(표시 분) 이상 늘 때만 준다. 서버의 `MapMiddleRule`을 흉내 낸 것이다.
+ */
+function mapMiddle(rows: Row[], people: MockStation[], first: Row | undefined): Result["mapMiddle"] {
+  if (!first || people.length === 0) return undefined;
+  const lat = people.reduce((sum, p) => sum + p.lat, 0) / people.length;
+  const lng = people.reduce((sum, p) => sum + p.lng, 0) / people.length;
+  const squeeze = Math.cos((lat * Math.PI) / 180);
+  const distance = (r: Row) => Math.hypot(r.station.lat - lat, (r.station.lng - lng) * squeeze);
+  const nearest = rows.reduce<Row | undefined>(
+    (best, r) =>
+      !best || distance(r) < distance(best) || (distance(r) === distance(best) && r.station.code < best.station.code)
+        ? r
+        : best,
+    undefined,
+  );
+  if (!nearest || nearest.station.code === first.station.code) return undefined;
+  const extra = minutesFromSeconds(nearest.max) - minutesFromSeconds(first.max);
+  if (extra < 5) return undefined;
+  return {
+    stationCode: nearest.station.code,
+    stationName: nearest.station.name,
+    times: nearest.times.map((t, p) => ({ participantId: String(p), seconds: t.seconds, transfers: t.transfers })),
+  };
+}
+
 const REASON_CODES: Record<Mode, [Candidate["reasonCode"], Candidate["reasonCode"]]> = {
   fair: ["FAIR_MINIMAX", "FAIR_ALTERNATIVE"],
   fast: ["FAST_TOTAL", "FAST_ALTERNATIVE"],
@@ -150,6 +177,7 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
   const { ranked, baseline } = rank(rows, body.mode, favorIndex);
   const top = ranked.slice(0, 3);
   const [firstCode, restCode] = REASON_CODES[body.mode];
+  const middle = body.mode === "fair" ? mapMiddle(rows, people, top[0]) : undefined;
   return {
     status: top.length === 0 ? "no_common_candidate" : "ok",
     mode: body.mode,
@@ -165,6 +193,7 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
       shortLabel: names[i] ?? "",
     })),
     baselineStationCode: baseline?.station.code ?? null,
+    ...(middle ? { mapMiddle: middle } : {}),
     timeBasis: {
       timeSlot: slot,
       requestedTimeSlot: slot,

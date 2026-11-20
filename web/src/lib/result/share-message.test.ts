@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RecommendResult } from "@/lib/api/types";
 import type { ShareState } from "@/lib/link/codec";
+import { SHARED_OG_IMAGE_VERSION } from "@/lib/seo/og-text";
 import { kakaoFeedSettings } from "@/lib/share/kakao";
 import { shareMessage, soloKakaoMessage } from "./share-message";
 import { toResultView } from "./view-model";
@@ -113,7 +114,7 @@ describe("혼자 입력한 결과의 카카오톡 공유 메시지", () => {
     expect(settings.content).toEqual({
       title: "신촌에서 볼까?",
       description: "혜화 30분 · 민수 25분 · 공평하게 고름",
-      imageUrl: "https://banbanyeok.app/s/og?v=2&o=2je.a1b&m=f&t=weekday-day&dv=20261115.8",
+      imageUrl: `https://banbanyeok.app/s/og?v=2&o=2je.a1b&m=f&t=weekday-day&dv=20261115.8&iv=${SHARED_OG_IMAGE_VERSION}`,
       imageWidth: 1200,
       imageHeight: 630,
       link: { webUrl: link, mobileWebUrl: link },

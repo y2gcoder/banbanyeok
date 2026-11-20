@@ -8,21 +8,28 @@ import { recommend } from "@/lib/api/client";
 import type { Mode, RecommendResult } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
 import { encodeShareQuery, type ShareState } from "@/lib/link/codec";
+import { mapMiddleSentence } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
 import { DEFAULT_SLOT, type TimeSlot } from "@/lib/when/time-slot";
 import { ogSafeName } from "./og-coverage";
-import { OG_TEXT } from "./og-text";
+import { OG_TEXT, SHARED_OG_IMAGE_VERSION } from "./og-text";
 
 /** 크롤러(카카오·슬랙 등)가 오래 기다려 주지 않는다. 서버가 깨는 중이면 기본 미리보기로 간다. */
 const RECOMMEND_TIMEOUT_MS = 3000;
 
 const SHARED_OG_PATH = "/s/og";
 
-/** 평일 낮이 아닌 기준이면 " · 토요일 저녁 기준"(시간이 그 기준이라서). 평일 낮은 덧붙이지 않는다(옛 링크와 같은 문구). */
-function basisSuffix(view: ResultView): string {
+/** 평일 낮이 아닌 기준이면 "토요일 저녁 기준"(시간이 그 기준이라서). 평일 낮은 null이다(옛 링크와 같은 문구). */
+export function basisText(view: ResultView): string | null {
   const basis = view.timeBasis as ResultView["timeBasis"] | undefined; // 구분을 모르는 옛 서버는 보내지 않는다
-  return !basis || basis.timeSlot === DEFAULT_SLOT ? "" : ` ${OG_TEXT.middleDot} ${basis.label}${OG_TEXT.basisSuffix}`;
+  return !basis || basis.timeSlot === DEFAULT_SLOT ? null : `${basis.label}${OG_TEXT.basisSuffix}`;
+}
+
+/** 설명·그림 기준 줄 뒤에 붙는 " · 토요일 저녁 기준". */
+function basisSuffix(view: ResultView): string {
+  const text = basisText(view);
+  return text === null ? "" : ` ${OG_TEXT.middleDot} ${text}`;
 }
 
 function favorName(view: ResultView, state: ShareState): string | null {
@@ -51,9 +58,10 @@ export function sharedPreview(view: ResultView, state: ShareState): SharedPrevie
   const top = view.candidates[0];
   if (!top) return null;
   const times = top.people.map((p) => `${p.shortName} ${formatMinutes(p.minutes)}`).join(" · ");
+  const middle = mapMiddleSentence(view);
   return {
     title: `${top.stationName}${OG_TEXT.sharedSuffix}`,
-    description: `${times} · ${modeSentence(view.mode, favorName(view, state))}${basisSuffix(view)}`,
+    description: `${times} · ${modeSentence(view.mode, favorName(view, state))}${basisSuffix(view)}${middle ? ` ${OG_TEXT.middleDot} ${middle}` : ""}`,
   };
 }
 
@@ -79,9 +87,13 @@ export function sharedCardData(view: ResultView, state: ShareState): SharedCardD
   };
 }
 
-/** `og:image` 주소. 데이터 버전을 붙여, 새 데이터가 나오면 주소가 바뀌어 크롤러 캐시를 비켜 간다. */
+/**
+ * `og:image` 주소. 데이터 버전(`dv`)을 붙여, 새 데이터가 나오면 주소가 바뀌어 크롤러 캐시를 비켜 간다. 그림 디자인 버전(`iv`,
+ * `SHARED_OG_IMAGE_VERSION`)도 붙여, 그림이 바뀌면 같은 결과도 새 주소가 된다(카카오는 그림을 주소별로 오래 캐시하고 지울 길이 없다).
+ * 링크 자신의 버전 `v`(1·2)와 다른 값이다.
+ */
 export function sharedImagePath(state: ShareState, dataVersion: string): string {
-  return `${SHARED_OG_PATH}?${encodeShareQuery(state)}&dv=${encodeURIComponent(dataVersion)}`;
+  return `${SHARED_OG_PATH}?${encodeShareQuery(state)}&dv=${encodeURIComponent(dataVersion)}&iv=${SHARED_OG_IMAGE_VERSION}`;
 }
 
 /**
