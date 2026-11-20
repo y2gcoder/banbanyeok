@@ -69,7 +69,7 @@ private suspend fun room(
     val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a", false), null)
     return Room(
         fixture,
-        RoomResultService(fixture.service, recommendation),
+        RoomResultService(fixture.service, recommendation, testTimes),
         created.roomId,
         created.participantToken,
         created.participantId,

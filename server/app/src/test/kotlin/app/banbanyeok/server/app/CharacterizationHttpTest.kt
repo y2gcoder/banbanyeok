@@ -69,7 +69,7 @@ class CharacterizationHttpTest :
             val slots = listOf(null, "weekday-day", "weekday-evening", "saturday-night", "holiday-morning")
             val mocks = MockedServices()
             val api =
-                ApiServices(mocks.anon, mocks.rooms, mocks.results, recommendation(), directory, DevArtifacts.published)
+                apiServices(mocks.anon, mocks.rooms, mocks.results, recommendation(), directory, DevArtifacts.published)
             val responses = Recorded()
             testApplication {
                 application { apiModule(unlimited, api) }
@@ -109,9 +109,9 @@ class CharacterizationHttpTest :
 
         it("keeps every room result and link preview response") {
             val fixture = RoomFixture(stations = directory)
-            val results = RoomResultService(fixture.service, recommendation())
+            val results = RoomResultService(fixture.service, recommendation(), testTimes)
             val api =
-                ApiServices(
+                apiServices(
                     fixture.anonService,
                     fixture.service,
                     results,
@@ -265,7 +265,7 @@ class CharacterizationHttpTest :
             // 막차 표를 쓸 수 없으면(옛 데이터·읽기 실패) 응답에 막차 키가 하나도 없어야 한다.
             val service = RecommendationService(directory.travel, directory, locations = directory, clock = clock)
             val mocks = MockedServices()
-            val api = ApiServices(mocks.anon, mocks.rooms, mocks.results, service, directory, DevArtifacts.published)
+            val api = apiServices(mocks.anon, mocks.rooms, mocks.results, service, directory, DevArtifacts.published)
             val responses = Recorded()
             testApplication {
                 application { apiModule(unlimited, api) }

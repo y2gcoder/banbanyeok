@@ -40,7 +40,7 @@ private const val ROOM = "abcdefghjk"
 /** 실제 추천 서비스와 data/artifacts/dev(구분 12개)로 /recommend를 돌린다. */
 private fun realApi(): ApiServices {
     val mocks = MockedServices()
-    return ApiServices(
+    return apiServices(
         mocks.anon,
         mocks.rooms,
         mocks.results,
@@ -147,7 +147,7 @@ class TimeSlotHttpTest :
                 val directory = StationDirectory(loaded.dataSet, BackgroundSlots(failed))
                 val mocks = MockedServices()
                 val api =
-                    ApiServices(
+                    apiServices(
                         mocks.anon,
                         mocks.rooms,
                         mocks.results,

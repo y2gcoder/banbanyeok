@@ -2,15 +2,6 @@ package app.banbanyeok.server.app.http
 
 import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResultService
-import app.banbanyeok.server.app.application.StationDirectory
-import app.banbanyeok.server.artifact.PublishedArtifacts
-import app.banbanyeok.server.recommendation.RecommendParticipant
-import app.banbanyeok.server.recommendation.RecommendRequest
-import app.banbanyeok.server.recommendation.RecommendationService
-import app.banbanyeok.server.recommendation.time.DayCertainty
-import app.banbanyeok.server.recommendation.time.HolidayCalendar
-import app.banbanyeok.server.recommendation.time.TimeBasis
-import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.AnonUserService
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.Outcome
@@ -35,7 +26,6 @@ import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
 
@@ -127,7 +117,7 @@ private fun Route.participantRoutes(
                     services.rooms.updateParticipant(call.roomId(), call.participantId(), call.bearerToken(), input)
                 // 표시 이름은 방 전체(순번·같은 역 번호)로 정해지므로 방을 다시 읽어 그 사람의 항목을 돌려준다.
                 val room = services.rooms.get(call.roomId(), call.bearerToken())
-                call.respond(room.participantDtos(services.directory).first { it.participantId == updated.id })
+                call.respond(room.participantDtos(services.stations).first { it.participantId == updated.id })
             }
             delete {
                 services.rooms.removeParticipant(call.roomId(), call.participantId(), call.bearerToken())
@@ -153,52 +143,26 @@ private fun Route.resultRoutes(services: ApiServices) {
     get("/rooms/{roomId}/result") {
         val mode = call.request.queryParameters["mode"]?.let(::requireRecommendMode)
         val result =
-            services.results.result(
-                call.roomId(),
-                call.bearerToken(),
-                mode,
-                call.request.queryParameters["favor"],
-            )
-        call.respond(result.toDto(services.directory))
+            roomRecommendationErrors {
+                services.results.result(
+                    call.roomId(),
+                    call.bearerToken(),
+                    mode,
+                    call.request.queryParameters["favor"],
+                )
+            }
+        call.respond(result.toDto(services.stations))
     }
     // 토큰을 읽지 않는다. 미리보기는 누가 묻든 같은 값이어야 한다(본인이 숨긴 출발역도 가린다).
     get("/rooms/{roomId}/preview") {
-        val preview: RoomPreviewDto = services.results.preview(call.roomId()).toDto(services.directory)
+        val preview: RoomPreviewDto =
+            roomRecommendationErrors { services.results.preview(call.roomId()) }.toDto(services.stations)
         call.respond(preview)
     }
     post("/recommend") {
-        val body = call.receive<RecommendRequestDto>()
-        val nicknames = body.nicknames ?: List(body.origins.size) { null }
-        if (nicknames.size != body.origins.size) {
-            throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "nicknames는 origins와 같은 길이여야 합니다")
-        }
-        // 폐기된 코드(옛 공유 링크)는 정식 코드로 바꿔 계산하고 응답에도 정식 코드를 싣는다.
-        val origins = body.origins.map(services.directory::canonical)
-        val people =
-            origins.mapIndexed {
-                index,
-                code,
-                ->
-                RecommendParticipant(index.toString(), nicknames[index], code)
-            }
-        val slot = requireTimeSlot(body.timeSlot)
-        // 구분을 보내지 않은 요청(옛 클라이언트, 요일을 고른 적 없는 `v=1` 링크)은 평일 낮으로 계산하되 막차 시각은 내지 않는다:
-        // 평일은 고른 값이 아니라 기본값이고, 휴일 막차는 평일보다 이르다.
-        val chosen = body.timeSlot != null && body.timeSlot !is JsonNull
-        val request =
-            RecommendRequest(
-                people,
-                requireRecommendMode(body.mode),
-                body.favorIndex?.toString(),
-                TimeBasis.of(slot),
-                dayCertainty = if (chosen) DayCertainty.KNOWN else DayCertainty.DEFAULTED,
-            )
-        // 구분 행렬 대기·측정·막차 표 읽기는 evaluate가 한 번씩 한다. 순위와 지도 한가운데 비교가 같은 행렬에서 나온다.
-        val evaluation = services.recommendation.evaluate(request)
-        // 이 경로의 참가자는 출발역을 숨길 수 없다(hidden = false). 지도 한가운데 비교는 조건을 모두 만족할 때만 붙는다.
-        call.respond(
-            evaluation.recommendation.toStatelessDto(origins, nicknames, services.directory, evaluation.mapMiddle),
-        )
+        val request = call.receive<RecommendRequestDto>().toStatelessRequest()
+        val result = statelessRecommendationErrors { services.stateless.recommend(request) }
+        call.respond(result.toDto(services.stations))
     }
 }
 
@@ -230,13 +194,10 @@ private fun Route.dataRoutes(services: ApiServices) {
     }
 }
 
-/** 방 응답의 계산 기준을 정하는 규칙. 결과 계산(RoomResultService)과 같은 번들 공휴일 목록·같은 규칙이다. */
-private val roomTimes: TimeSlotResolver by lazy { TimeSlotResolver(HolidayCalendar.bundled()) }
-
 private suspend fun ApplicationCall.respondRoom(
     services: ApiServices,
     room: RoomView,
-) = respond(room.toDto(services.directory, roomTimes.resolve(room.meetingDate, room.meetingTime, room.meetingBand)))
+) = respond(room.toDto(services.stations, services.times.resolve(room.meetingDate, room.meetingTime, room.meetingBand)))
 
 private fun ApplicationCall.roomId(): String = requireNotNull(parameters["roomId"])
 

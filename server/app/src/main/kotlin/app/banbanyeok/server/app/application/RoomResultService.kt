@@ -4,11 +4,8 @@ import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
 import app.banbanyeok.server.recommendation.Recommendation
-import app.banbanyeok.server.recommendation.RecommendationError
-import app.banbanyeok.server.recommendation.RecommendationException
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
-import app.banbanyeok.server.recommendation.time.HolidayCalendar
 import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.ParticipantView
@@ -37,12 +34,14 @@ class RoomResult(
 /**
  * 방의 결과를 계산한다: room 모듈에서 참여자를 읽고 recommendation 모듈에 계산을 맡긴다. 두 모듈은 서로 모르므로 여기서 잇는다.
  * 숨긴 참가자의 실제 출발역은 계산에만 쓰이고 응답의 참여자 목록에는 마스킹된 뷰가 나간다.
+ * 추천이 요청을 거절하면 [app.banbanyeok.server.recommendation.RecommendationException]을 그대로 던진다: 방 경로의 오류 코드는
+ * HTTP 계층(http/Errors.kt)의 방 표가 정한다.
  */
 class RoomResultService(
     private val rooms: RoomService,
     private val recommendation: RecommendationService,
-    /** 약속 날짜·시각 → 계산 구분. 없으면 평일 낮. */
-    private val times: TimeSlotResolver = TimeSlotResolver(HolidayCalendar.bundled()),
+    /** 약속 날짜·시각 → 계산 구분(조립 지점이 한 번 만들어 넘긴다). */
+    private val times: TimeSlotResolver,
 ) {
     suspend fun result(
         roomId: String,
@@ -56,7 +55,7 @@ class RoomResultService(
         }
         val request = requestOf(context, mode, favorId)
         return RoomResult(
-            mapped { recommendation.evaluate(request) }.recommendation,
+            recommendation.evaluate(request).recommendation,
             context.view.participants,
             context.view.shareVersion,
         )
@@ -65,7 +64,7 @@ class RoomResultService(
     /**
      * 링크 미리보기 내용. 토큰 없이 방을 한 번 읽고(숨긴 출발역은 이미 가려져 있다) 방의 기본 기준으로 계산한다. 정한 역이 상위 후보에
      * 없으면 그 역까지의 시간·막차를 같은 평가(한 번 잰 행렬, 한 번 읽은 막차 표)에서 꺼낸다. 출발역이 지금 데이터에 없으면
-     * STATION_UNAVAILABLE(409)이다.
+     * [app.banbanyeok.server.recommendation.RecommendationError.UNKNOWN_STATION]이다.
      */
     suspend fun preview(roomId: String): RoomPreview {
         val context = rooms.loadForResult(roomId, viewerToken = null)
@@ -83,7 +82,7 @@ class RoomResultService(
             )
         if (context.computeParticipants.size < MIN_PEOPLE) return RoomPreview.Collecting(room)
         val request = requestOf(context, mode = null, favorId = null)
-        val evaluation = mapped { recommendation.evaluate(request) }
+        val evaluation = recommendation.evaluate(request)
         val ranked = evaluation.recommendation
         val labels =
             request.participants
@@ -163,33 +162,6 @@ class RoomResultService(
             viewerId = view.participants.firstOrNull { it.isSelf }?.id,
         )
     }
-
-    private inline fun <T> mapped(block: () -> T): T =
-        try {
-            block()
-        } catch (e: RecommendationException) {
-            throw when (e.error) {
-                RecommendationError.UNKNOWN_STATION -> {
-                    AppException(ErrorKind.CONFLICT, "STATION_UNAVAILABLE", "참가자의 출발역이 현재 데이터에 없습니다", e)
-                }
-
-                RecommendationError.PEOPLE_COUNT -> {
-                    AppException(ErrorKind.CONFLICT, "NOT_ENOUGH_PARTICIPANTS", "참가자가 2명 이상이어야 합니다", e)
-                }
-
-                RecommendationError.INVALID_NICKNAME -> {
-                    AppException(ErrorKind.INVALID, "INVALID_NICKNAME", "별칭이 올바르지 않습니다", e)
-                }
-
-                RecommendationError.FAVOR_TARGET_REQUIRED -> {
-                    AppException(ErrorKind.INVALID, "FAVOR_TARGET_REQUIRED", "우대 대상이 필요합니다", e)
-                }
-
-                RecommendationError.FAVOR_TARGET_UNKNOWN -> {
-                    AppException(ErrorKind.INVALID, "FAVOR_TARGET_UNKNOWN", "우대 대상이 참가자에 없습니다", e)
-                }
-            }
-        }
 
     /**
      * 우대 대상. 방의 기본 기준(요청에 모드가 없음)인데 저장된 대상이 없으면(우대 대상이 나갔다) 첫 참가자를 우대한다.

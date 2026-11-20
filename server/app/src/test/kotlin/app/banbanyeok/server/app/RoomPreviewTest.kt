@@ -29,7 +29,7 @@ private fun previewTest(
 ) = runTest {
     val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
     val recommendation = RecommendationService(OdTravelTimeProvider(od, "20261112.1"), codeNames)
-    fixture.body(RoomResultService(fixture.service, recommendation))
+    fixture.body(RoomResultService(fixture.service, recommendation, testTimes))
 }
 
 private fun hostCommand(

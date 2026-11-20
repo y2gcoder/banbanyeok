@@ -3,6 +3,7 @@ package app.banbanyeok.server.app.http
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
+import app.banbanyeok.server.app.application.StatelessRequest
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
@@ -67,9 +68,9 @@ fun parseBand(value: JsonElement): TimeBand? {
         )
 }
 
-/** `timeSlot` 값. 없거나 null이면 기본 구분(평일 낮). 문자열이 아니거나 모르는 id면 INVALID_TIME_SLOT. */
-fun requireTimeSlot(value: JsonElement?): TimeSlot {
-    if (value == null || value is JsonNull) return TimeSlot.DEFAULT
+/** `timeSlot` 값. 없거나 null이면 고르지 않은 것(null). 문자열이 아니거나 모르는 id면 INVALID_TIME_SLOT. */
+fun parseTimeSlot(value: JsonElement?): TimeSlot? {
+    if (value == null || value is JsonNull) return null
     val text = (value as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
     return text?.let(TimeSlot::parseOrNull)
         ?: throw AppException(ErrorKind.INVALID, "INVALID_TIME_SLOT", "timeSlot은 weekday-day 같은 구분 id여야 합니다")
@@ -79,6 +80,19 @@ fun requireTimeSlot(value: JsonElement?): TimeSlot {
 private fun JsonElement.timeText(): String =
     (this as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
         ?: throw AppException(ErrorKind.INVALID, "INVALID_MEETING_TIME", "meetingTime은 HH:MM 문자열이어야 합니다")
+
+/**
+ * 무상태 추천 요청. 검사 순서는 별칭 길이, 구분, 모드다(여러 곳이 잘못된 요청은 앞의 오류를 돌려준다). 구분을 보내지 않았거나 null이면
+ * 고르지 않은 것으로 넘긴다.
+ */
+fun RecommendRequestDto.toStatelessRequest(): StatelessRequest {
+    val names = nicknames ?: List(origins.size) { null }
+    if (names.size != origins.size) {
+        throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "nicknames는 origins와 같은 길이여야 합니다")
+    }
+    val slot = parseTimeSlot(timeSlot)
+    return StatelessRequest(origins, names, requireRecommendMode(mode), favorIndex, slot)
+}
 
 fun ParticipantInputDto.toInput() = ParticipantInput(nickname, originCode, hidden)
 

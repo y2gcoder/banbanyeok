@@ -435,7 +435,7 @@ class ApiHttpTest :
                             DevArtifacts.directory,
                         )
                     val api =
-                        app.banbanyeok.server.app.http.ApiServices(
+                        apiServices(
                             services.anon,
                             services.rooms,
                             services.results,
@@ -472,7 +472,7 @@ class ApiHttpTest :
                     )
                 val mocks = MockedServices()
                 val api =
-                    app.banbanyeok.server.app.http.ApiServices(
+                    apiServices(
                         mocks.anon,
                         mocks.rooms,
                         mocks.results,
