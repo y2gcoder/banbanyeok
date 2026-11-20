@@ -10,9 +10,9 @@ import app.banbanyeok.server.app.application.PreviewStation
 import app.banbanyeok.server.app.application.RoomPreview
 import app.banbanyeok.server.app.application.RoomResult
 import app.banbanyeok.server.app.application.StationDirectory
+import app.banbanyeok.server.recommendation.MapMiddle
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.Recommendation
-import app.banbanyeok.server.recommendation.RecommendedStation
 import app.banbanyeok.server.recommendation.TimeBasis
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
@@ -148,31 +148,6 @@ private fun TimeBasis.toDto(requested: TimeSlot) =
         holidayName = holidayName,
     )
 
-fun RecommendedStation.candidateJson(): JsonObject =
-    buildJsonObject {
-        put("rank", rank)
-        put("stationCode", stationCode)
-        put("stationName", stationName)
-        put(
-            "times",
-            JsonArray(
-                times.map {
-                    buildJsonObject {
-                        put("participantId", it.participantId)
-                        put("seconds", it.seconds)
-                        put("transfers", it.transfers)
-                    }
-                },
-            ),
-        )
-        put("maxSeconds", maxSeconds)
-        put("spreadSeconds", spreadSeconds)
-        put("totalSeconds", totalSeconds)
-        favoredSeconds?.let { put("favoredSeconds", it) }
-        put("reasonCode", reasonCode)
-        put("reason", reason)
-    }
-
 private fun Recommendation.toDto(participants: List<ParticipantDto>) =
     ResultDto(
         status = status,
@@ -194,6 +169,7 @@ fun Recommendation.toStatelessDto(
     origins: List<String>,
     nicknames: List<String?>,
     directory: StationDirectory,
+    mapMiddle: MapMiddle? = null,
 ): ResultDto =
     toDto(
         origins.mapIndexed { index, code ->
@@ -211,4 +187,4 @@ fun Recommendation.toStatelessDto(
                 shortLabel = label.short,
             )
         },
-    )
+    ).copy(mapMiddle = mapMiddle?.toJson())

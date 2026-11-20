@@ -16,6 +16,7 @@ import type { Mode } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import { restoreHref } from "@/lib/form/prefill";
 import { modeFromParam, modeToParam, type ShareState } from "@/lib/link/codec";
+import { mapMiddleSentence } from "@/lib/result/map-middle";
 import { shareMessage, soloKakaoMessage } from "@/lib/result/share-message";
 import { sharePath } from "@/lib/result/share-url";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
@@ -72,7 +73,7 @@ export function Candidates({
   if (!top) return null;
   return (
     <>
-      <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} />
+      <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} mapMiddle={view.mapMiddle} />
       {rest.length > 0 ? (
         <section aria-label="다른 후보" className="overflow-hidden rounded-2xl border border-rule bg-surface">
           {rest.map((candidate) => (
@@ -186,7 +187,8 @@ export function ResultScreen({
   const top = view?.candidates[0];
   const longest = top ? top.people.reduce((a, b) => (b.seconds > a.seconds ? b : a)).index : Math.min(1, count - 1);
   const favorName = state.favorIndex === null ? null : (people[state.favorIndex]?.name ?? null);
-  const message = top ? shareMessage(top, state.mode, favorName, data?.timeBasis) : null;
+  const message =
+    top && view ? shareMessage(top, state.mode, favorName, data?.timeBasis, mapMiddleSentence(view)) : null;
   const first = view?.people[0];
   const sender = first?.labelKind === "name" ? first.name : null;
 

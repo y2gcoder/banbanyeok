@@ -77,7 +77,7 @@ object CompositionRoot {
             val roomRepository = ExposedRoomRepository(db, ioDispatcher)
             val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
             val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
-            val recommendation = RecommendationService(directory.travel, directory)
+            val recommendation = RecommendationService(directory.travel, directory, locations = directory)
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),

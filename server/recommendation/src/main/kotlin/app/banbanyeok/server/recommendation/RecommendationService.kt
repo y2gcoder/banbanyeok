@@ -94,6 +94,7 @@ public class RecommendationService(
     private val travelTimes: TravelTimeProvider,
     private val stationNames: StationNames,
     private val toleranceSeconds: Int = 0,
+    private val locations: StationLocations = StationLocations { null },
 ) {
     public fun recommend(request: RecommendRequest): Recommendation {
         val people = request.participants
@@ -163,6 +164,49 @@ public class RecommendationService(
                 ParticipantTime(person.id, seconds, requireNotNull(matrix.transfers[row][column]))
             }
         }
+    }
+
+    /**
+     * "지도 한가운데" 비교(#68)를 보일 때만 값을 준다. 하나라도 어기면 null이다.
+     * - 공평 기준이고 1위 추천 역이 있다.
+     * - **출발역을 숨긴 사람이 없다**: 숨긴 사람의 출발역은 평균점과 지도 한가운데 역에서 거꾸로 짐작할 수 있다.
+     * - 모든 참가자의 출발역 좌표를 안다.
+     * - 지도 한가운데 역이 1위 추천 역과 다르다(모두가 갈 수 있는 역 중에서 고른다).
+     * - 그 역의 최장 시간이 1위 추천 역보다 [MapMiddleRule.MIN_EXTRA_MINUTES]분 이상 길다.
+     * 순위는 건드리지 않고, [recommendation]은 같은 [request]로 [recommend]한 결과여야 한다.
+     * 시간은 같은 데이터 버전·같은 구분의 od에서 꺼낸다([timesTo]와 같다).
+     */
+    public fun mapMiddle(
+        request: RecommendRequest,
+        recommendation: Recommendation,
+    ): MapMiddle? {
+        val top = recommendation.candidates.firstOrNull() ?: return null
+        val fair = request.mode == RecommendMode.FAIR && recommendation.mode == RecommendMode.FAIR
+        if (!fair || request.participants.any { it.hidden }) return null
+        validate(request)
+        return middleStation(request, top)
+    }
+
+    private fun middleStation(
+        request: RecommendRequest,
+        top: RecommendedStation,
+    ): MapMiddle? {
+        val people = request.participants
+        val points = people.mapNotNull { locations.locate(it.originCode) }
+        if (points.size != people.size) return null
+        val matrix = travelTimes.measure(people.map { it.originCode }, request.time.slot)
+        val column =
+            MapMiddleRule.nearest(points, matrix.candidates, locations) { c -> matrix.times.all { it[c] != null } }
+                ?: return null
+        val times =
+            people.mapIndexed { row, person ->
+                val seconds = requireNotNull(matrix.times[row][column])
+                ParticipantTime(person.id, seconds, requireNotNull(matrix.transfers[row][column]))
+            }
+        val code = matrix.candidates[column]
+        val worseEnough =
+            MapMiddleRule.extraMinutes(times.map { it.seconds }, top.maxSeconds) >= MapMiddleRule.MIN_EXTRA_MINUTES
+        return if (code != top.stationCode && worseEnough) MapMiddle(code, nameOf(code), times) else null
     }
 
     private fun validate(request: RecommendRequest) {

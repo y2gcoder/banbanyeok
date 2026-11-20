@@ -537,6 +537,18 @@ export interface components {
              */
             reason: string;
         };
+        /**
+         * @description "지도 한가운데" 역(#68): 참가자 출발역 좌표의 산술 평균점(경도는 cos(평균 위도)로 보정)에서 가장 가까운, **모두가 갈 수 있는**
+         *     만날 역(후보 축). 같은 거리면 역 코드가 앞선 쪽. 추천 순위와 별개로 표시만 더하는 값이다.
+         *     시간은 `candidates[].times`와 같은 데이터 버전·같은 `timeBasis`의 od에서 꺼낸 값이다.
+         */
+        MapMiddle: {
+            stationCode: components["schemas"]["StationCode"];
+            /** @description 지도 한가운데 역의 표시 이름 */
+            stationName: string;
+            /** @description 참가자 순서는 응답의 `participants`와 같다. 모두가 갈 수 있는 역이라 빈 칸이 없다. */
+            times: components["schemas"]["PersonalTime"][];
+        };
         Result: {
             /**
              * @description `no_common_candidate`는 모든 참가자가 도달할 수 있는 후보역이 없다는 뜻이다(출발역에서 갈 수 없는 후보가 있는 경우를
@@ -552,6 +564,13 @@ export interface components {
             /** @description 엄밀한 공평 1위. favor 상한의 기준 */
             baselineStationCode?: components["schemas"]["StationCode"] | null;
             candidates: components["schemas"]["Candidate"][];
+            /**
+             * @description "지도 한가운데였다면" 비교. **다음을 모두 만족할 때만 있고, 하나라도 어기면 키 자체가 없다**(클라이언트는 없으면 비교를 그냥
+             *     뺀다): `mode=fair`일 때, 지도 한가운데 역이 1위 추천 역과 다를 때, 모두가 그 역에 갈 수 있을 때, 그 역의 가장 오래 걸리는
+             *     시간이 1위 추천 역보다 5분(화면에 보이는 분 기준) 이상 길 때, **출발역을 숨긴 참가자가 없을 때**(숨긴 출발역을 거꾸로
+             *     짐작할 수 있다). 지금은 `/recommend`만 계산하고 방 결과(`/rooms/{roomId}/result`)에는 없다.
+             */
+            mapMiddle?: components["schemas"]["MapMiddle"];
             /** @description 방 결과에만 있다(`/recommend`에는 없다). 이 결과를 계산한 방의 공유 번호이고, 결과 카드에서 정할 때 `seenVersion`으로 보낸다 */
             shareVersion?: components["schemas"]["ShareVersion"];
         };

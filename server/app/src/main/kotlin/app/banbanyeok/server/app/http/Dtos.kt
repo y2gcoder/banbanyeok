@@ -156,6 +156,9 @@ data class ResultDto(
     /** 카드. `favoredSeconds`는 정수 필드라 값이 없으면 키를 생략하므로 [candidateJson]으로 직접 만든다. */
     val candidates: List<JsonObject>,
     val timeBasis: TimeBasisDto,
+    /** "지도 한가운데" 비교(#68). 조건을 모두 만족할 때만 있고, 방 결과에는 아직 없다. 키를 생략하므로 [candidateJson]처럼 직접 만든다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val mapMiddle: JsonObject? = null,
     /** 방 결과에만 있다(`/recommend`에는 키가 없다). */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val shareVersion: Long? = null,

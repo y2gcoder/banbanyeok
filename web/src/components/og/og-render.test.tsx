@@ -10,9 +10,11 @@ import { ogFonts } from "@/lib/seo/og-font";
 import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
 import { buildPairPages } from "@/lib/seo/pair-pages";
 import { parseSeoPairs } from "@/lib/seo/pairs";
+import { scoreboardCardData } from "@/lib/seo/scoreboard-card-data";
 import { sharedCardData, sharedPreview } from "@/lib/seo/shared-preview";
 import fixture from "../../../fixtures/seo-pairs.json";
 import { PairCard } from "./pair-card";
+import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
 import { HIDDEN_ORIGIN, SHARED_CASES } from "./shared-card.cases";
 import { SiteCard } from "./site-card";
@@ -57,6 +59,28 @@ describe("OG 이미지 그리기(satori)", () => {
       const drawn = await render(<SharedCard data={data} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-${c.id}.png`), drawn.bytes);
+    }
+  });
+
+  it("공유 링크 이미지 A 숫자판(/s/og): 정해 둔 경우 전부, 글꼴에 없는 글자 없음, 숨긴 출발역 없음", async () => {
+    for (const c of SHARED_CASES) {
+      const view = toResultView(c.result);
+      const data = scoreboardCardData(view, c.state);
+      if (!data) throw new Error(`${c.id}: 그림 데이터 없음`);
+      const text = [
+        data.stationName,
+        data.suffix ?? "",
+        data.modeLine,
+        data.compareLine ?? "",
+        data.basisLine ?? "",
+        data.title ?? "",
+        ...data.people.map((p) => p.name),
+      ].join("");
+      expect(missingGlyphs(text), c.id).toEqual([]);
+      expect(JSON.stringify(data), c.id).not.toContain(HIDDEN_ORIGIN);
+      const drawn = await render(<ScoreboardCard data={data} />);
+      expectPng(drawn);
+      if (screensDir) writeFileSync(join(screensDir, `og-scoreboard-${c.id}.png`), drawn.bytes);
     }
   });
 

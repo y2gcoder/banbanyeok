@@ -24,6 +24,14 @@ export const SITE_OG_IMAGE_PATH = `/opengraph-image?v=${SITE_OG_IMAGE_VERSION}`;
  */
 export const PAIR_OG_IMAGE_VERSION = "5b206790";
 
+/**
+ * 공유 링크 그림(`app/s/og/route.tsx`, "A 숫자판")의 버전. 이 그림은 결과마다 다르지만 **디자인(문구·색·크기·글꼴·그리는 코드·문장 규칙)이 같으면**
+ * 같은 결과는 같은 그림이다. 그래서 `/s/og` 주소에 `iv=`로 붙여(`sharedImagePath`) 디자인이 바뀔 때만 주소가 바뀌게 한다.
+ * 입력이 바뀌면 `og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
+ * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 이 값을 쓰지 않는다.
+ */
+export const SHARED_OG_IMAGE_VERSION = "dd6b02c3";
+
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";
 export const OG_FONT_FAMILY = "BanbanSans";
@@ -63,6 +71,12 @@ export const OG_TEXT = {
   modeFair: "공평하게 고름",
   modeFast: "가장 빠른 만남으로 고름",
   modeFavorSuffix: " 쪽으로 고름",
+  /** 공유 링크 그림 "A 숫자판"(`/s/og`): 차이가 아주 작을 때의 칭호와 지도 한가운데 비교 문장 "지도 한가운데인 한강진역이면 잠실은 14분 더 걸려요". */
+  evenTitle: "완벽한 반반",
+  middleLead: "지도 한가운데인 ",
+  middleIf: "이면 ",
+  middleMore: " 더 걸려요",
+  middleLongest: "가장 오래 걸리는 사람",
   ellipsis: "…",
   middleDot: "·",
   /** "{토요일 저녁} 기준". 구분 라벨은 서버가 주지만 글자는 여기서 서브셋에 넣는다(contracts/time-slots.json의 label). */
