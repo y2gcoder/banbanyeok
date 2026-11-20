@@ -38,6 +38,13 @@ export type ShareState = {
   favorIndex: number | null;
   nicknames: (string | null)[] | null;
   timeSlot: TimeSlot;
+  /**
+   * 옛 링크(v=1)에서만 true다: 그 링크는 요일·시간대를 고른 적이 없고 `timeSlot`(평일 낮)은 기본값일 뿐이다. 추천을 요청할 때 이
+   * 표시가 있으면 `timeSlot`을 보내지 않는다 — 순위는 같고(서버 기본값도 평일 낮), 서버가 귀갓길 막차 시각을 내지 않는다(요일을 모르면
+   * 평일 막차를 보이면 안 된다. 휴일 막차가 더 이르다). 이 상태를 다시 주소로 적을 때는 **v=1 그대로** 적는다(`encodeShareQuery`):
+   * v=2로 올려 적으면 그 주소를 읽는 쪽(미리보기 그림 `/s/og`, 다시 공유한 링크)에서는 평일 낮을 "고른" 것이 된다.
+   */
+  slotDefaulted?: true;
 };
 
 export type DecodeResult = { ok: true; state: ShareState } | { ok: false; error: LinkErrorCode };
@@ -98,19 +105,25 @@ export function modeFromParam(m: string, count: number): Pick<ShareState, "mode"
   }
 }
 
-/** 정규형 쿼리(앞의 `?` 없음). 순서 v, o, m, t, n. 별칭이 하나도 없으면 n을 생략한다. 규칙 위반은 RangeError. */
+/**
+ * 정규형 쿼리(앞의 `?` 없음). 순서 v, o, m, t, n. 별칭이 하나도 없으면 n을 생략한다. 규칙 위반은 RangeError.
+ * 옛 링크(v=1)에서 읽은 상태(`slotDefaulted`)는 **v=1로, `t` 없이** 적는다: 구분을 고른 적이 없다는 사실이 주소에서 사라지지 않게.
+ */
 export function encodeShareQuery(state: ShareState): string {
   const { origins, nicknames } = state;
   if (origins.length < MIN_PEOPLE || origins.length > MAX_PEOPLE || !origins.every(isStationCode)) {
     throw new RangeError("origins");
   }
+  const legacy = state.slotDefaulted === true;
   const parts = [
-    `v=${URL_VERSION}`,
+    `v=${legacy ? LEGACY_VERSION : URL_VERSION}`,
     `o=${origins.join(".")}`,
     `m=${modeToParam(state.mode, state.favorIndex, origins.length)}`,
   ];
   if (!isTimeSlot(state.timeSlot)) throw new RangeError("timeSlot");
-  parts.push(`t=${state.timeSlot}`);
+  // 옛 링크의 구분은 평일 낮뿐이다. 다른 값과 같이 오면 호출한 쪽이 상태를 잘못 만든 것이다.
+  if (legacy && state.timeSlot !== DEFAULT_SLOT) throw new RangeError("timeSlot");
+  if (!legacy) parts.push(`t=${state.timeSlot}`);
   if (nicknames?.some((name) => name)) {
     if (nicknames.length !== origins.length) throw new RangeError("nicknames");
     for (const name of nicknames) {
@@ -203,7 +216,8 @@ export function decodeShareQuery(query: string): DecodeResult {
     const mode = readMode(m, origins.length);
     if (!isTimeSlot(t)) throw new LinkError("BAD_TIME_SLOT");
     const nicknames = readNicknames(values.get("n"), origins.length);
-    return { ok: true, state: { origins, ...mode, nicknames, timeSlot: t } };
+    const legacy = v === LEGACY_VERSION ? ({ slotDefaulted: true } as const) : {};
+    return { ok: true, state: { origins, ...mode, nicknames, timeSlot: t, ...legacy } };
   } catch (error) {
     if (error instanceof LinkError) return { ok: false, error: error.code };
     throw error;

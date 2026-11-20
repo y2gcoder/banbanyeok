@@ -273,8 +273,14 @@ test.describe("데스크톱 키보드", () => {
     await open(page, screen("home"));
     // Tab 순서: 워드마크 → 1번째 이름 → 1번째 역 → 2번째 이름 → 2번째 역 → 한 명 더 → 언제(요일) → 언제(시간대)
     // → (만날 역 찾기는 비활성) → 방 만들기 링크. 라디오 묶음은 묶음마다 한 번 멈추고 방향키로 고른다.
+    const order = ["A", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT", "A"];
+    // 처리방침 변경 공지 기간(공지 시작일 ≤ 오늘 < 시행일, 브라우저 날짜로 판단)에는 맨 위 한 줄 공지의 "자세히" 링크가 먼저 온다.
+    // 공지는 하이드레이션 뒤에 그려지므로 입력 칸이 준비된 뒤에 센다.
+    await expect(page.getByRole("textbox", { name: "1번째 사람 이름(선택)" })).toBeVisible();
+    const notice = await page.getByRole("link", { name: "자세히" }).count();
+    const expected = notice > 0 ? ["A", ...order] : order;
     const visited: string[] = [];
-    for (let i = 0; i < 9; i += 1) {
+    for (let i = 0; i < expected.length; i += 1) {
       await page.keyboard.press("Tab");
       const focus = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement;
@@ -290,7 +296,7 @@ test.describe("데스크톱 키보드", () => {
       visited.push(focus.tag);
       expect.soft(focus.visible, `포커스 표시: ${focus.tag} ${focus.name}`).toBe(true);
     }
-    expect(visited).toEqual(["A", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT", "A"]);
+    expect(visited).toEqual(expected);
 
     // 키보드만으로: 이름 → Tab → 역(입력 후 Enter로 고름) → Tab … → Enter로 제출
     await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).focus();

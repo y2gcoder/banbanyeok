@@ -1,5 +1,7 @@
 package app.banbanyeok.server.app
 
+import app.banbanyeok.schema.DayType
+import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
@@ -27,6 +29,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import java.nio.file.Path
 import java.time.Clock
+import java.time.LocalDate
 
 /** 조립된 서버: 서비스 묶음과 정리용 자원. */
 class Components(
@@ -69,6 +72,14 @@ object CompositionRoot {
             val db = (database ?: requireNotNull(owned)).database
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
+            // 수집일은 manifest 검사에서 이미 실제 날짜로 확인했다. 그래도 읽지 못하면 서버는 뜨고 막차만 끈다.
+            val manifest = loaded.dataSet.manifest
+            val lastTrains =
+                BackgroundLastTrains(
+                    loaded.lastTrains,
+                    lastTrainAsOf(manifest.lastTrainAsOf),
+                    lastTrainPartialDays(manifest.lastTrainPartialDays),
+                )
             val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
 
             val clock = Clock.systemUTC()
@@ -77,7 +88,14 @@ object CompositionRoot {
             val roomRepository = ExposedRoomRepository(db, ioDispatcher)
             val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
             val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
-            val recommendation = RecommendationService(directory.travel, directory, locations = directory)
+            val recommendation =
+                RecommendationService(
+                    directory.travel,
+                    directory,
+                    locations = directory,
+                    lastTrains = lastTrains,
+                    clock = clock,
+                )
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
@@ -95,6 +113,20 @@ object CompositionRoot {
             timeline?.mark("services-assembled")
             Components(config, clock, services, RoomCleanup(roomRepository, anonRepository, clock)) {
                 owned?.close()
+            }
+        }
+
+    /** manifest의 `lastTrainPartialDays`. 모르는 id는 manifest 검사에서 이미 걸러졌다. */
+    internal fun lastTrainPartialDays(ids: List<String>?): Set<DayType> =
+        DayType.entries.filter { it.id in ids.orEmpty() }.toSet()
+
+    /** manifest의 `lastTrainAsOf`. 없거나 날짜로 읽을 수 없으면 null(막차 항목 없이 응답한다). */
+    internal fun lastTrainAsOf(text: String?): LocalDate? =
+        text?.let {
+            try {
+                LocalDate.parse(it)
+            } catch (_: java.time.format.DateTimeParseException) {
+                null
             }
         }
 

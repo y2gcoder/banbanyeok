@@ -137,7 +137,8 @@ describe("og:image 주소", () => {
   it("옛 공유 링크(v=1)와 새 링크(v=2)의 쿼리 모두 같은 그림 주소 규칙에서 읽힌다(iv·dv는 무시)", () => {
     const legacy: ShareState = { ...state, nicknames: null };
     const v1 = decodeShareQuery("v=1&o=1qs.70x&m=f&iv=abcdef01&dv=1");
-    expect(v1).toEqual({ ok: true, state: legacy });
+    // v=1은 구분을 고른 적이 없다는 표시가 붙는다(추천 요청에서 구분을 빼는 데 쓴다).
+    expect(v1).toEqual({ ok: true, state: { ...legacy, slotDefaulted: true } });
     expect(decodeShareQuery("v=2&o=1qs.70x&m=f&t=weekday-day&iv=abcdef01&dv=1")).toEqual({ ok: true, state: legacy });
   });
 
@@ -177,6 +178,31 @@ describe("결과 불러오기(서버 호출)", () => {
       { origins: ["1qs", "70x"], mode: "fair", favorIndex: null, nicknames: ["지훈🎂", null], timeSlot: "weekday-day" },
       expect.any(AbortSignal),
     );
+  });
+
+  it("옛 링크(v=1)의 미리보기는 구분 없이 요청한다(막차 시각이 실리지 않게)", async () => {
+    recommend.mockResolvedValue(result());
+    const legacy = decodeShareQuery("v=1&o=1qs.8jt&m=f");
+    if (!legacy.ok) throw new Error("decode failed");
+    const view = await loadSharedView(legacy.state);
+    expect(view).not.toBeNull();
+    expect(recommend).toHaveBeenCalledWith(
+      {
+        origins: ["1qs", "8jt"],
+        mode: "fair",
+        favorIndex: null,
+        nicknames: null,
+        timeSlot: "weekday-day",
+        slotDefaulted: true,
+      },
+      expect.any(AbortSignal),
+    );
+    // 구분을 고른 링크는 그 표시 없이 요청한다(위 "성공하면 화면 값으로").
+    recommend.mockClear();
+    const chosen = decodeShareQuery("v=2&o=1qs.fkn&m=f&t=weekday-day");
+    if (!chosen.ok) throw new Error("decode failed");
+    await loadSharedView(chosen.state);
+    expect(recommend.mock.calls[0]?.[0]).not.toHaveProperty("slotDefaulted");
   });
 
   it("부른 쪽의 중단 신호(/s/og 시간 예산)가 서버 호출에도 걸린다", async () => {

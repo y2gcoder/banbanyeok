@@ -43,11 +43,16 @@ export async function trustedServerHeaders(): Promise<Headers | undefined> {
 }
 
 /** 추천에 필요한 상태. 별칭은 서버가 표시 이름(label)과 문장에 쓴다. 구분(timeSlot)이 계산 기준을 정한다. */
-export type RecommendQuery = Pick<ShareState, "origins" | "mode" | "favorIndex" | "nicknames" | "timeSlot">;
+export type RecommendQuery = Pick<
+  ShareState,
+  "origins" | "mode" | "favorIndex" | "nicknames" | "timeSlot" | "slotDefaulted"
+>;
 
 /**
  * `POST /recommend` 본문. favorIndex는 배려 모드일 때만 보낸다. 별칭은 사람이 넣은 것만 보낸다: 넣지 않은 사람은 `null`,
- * 아무도 넣지 않았으면 필드를 생략한다. 구분은 늘 보낸다(서버 기본값도 평일 낮이지만 요청이 기준을 스스로 말하게).
+ * 아무도 넣지 않았으면 필드를 생략한다. 구분은 고른 것이면 늘 보낸다(서버 기본값도 평일 낮이지만 요청이 기준을 스스로 말하게).
+ * 옛 링크(v=1)처럼 구분을 고른 적이 없으면(`slotDefaulted`) 보내지 않는다: 순위는 평일 낮으로 같고, 서버는 요일을 모르는 요청에
+ * 귀갓길 막차 시각을 내지 않는다(`lastTrainBasis.unavailable = day_unknown`).
  */
 export function recommendBody(query: RecommendQuery): RecommendBody {
   const nicknames = query.origins.map((_, i) => query.nicknames?.[i]?.trim() || null);
@@ -56,7 +61,7 @@ export function recommendBody(query: RecommendQuery): RecommendBody {
     mode: query.mode,
     ...(query.mode === "favor" && query.favorIndex !== null ? { favorIndex: query.favorIndex } : {}),
     ...(nicknames.some((name) => name !== null) ? { nicknames } : {}),
-    timeSlot: query.timeSlot,
+    ...(query.slotDefaulted ? {} : { timeSlot: query.timeSlot }),
   };
 }
 

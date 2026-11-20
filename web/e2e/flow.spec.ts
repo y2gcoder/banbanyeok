@@ -116,12 +116,19 @@ test("카톡으로 보내기: 공유 시트가 없으면 링크 대화상자를 
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "share", { value: undefined });
   });
-  await page.goto("/result?v=1&o=k3a.ryf&m=f");
+  await page.goto("/result?v=2&o=k3a.ryf&m=f&t=weekday-day");
   await page.getByRole("button", { name: "카톡으로 보내기" }).click();
   const dialog = page.getByRole("dialog", { name: "링크를 보내 주세요" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("textbox", { name: "링크" })).toHaveValue(/\/s\?v=2&o=k3a\.ryf&m=f&t=weekday-day$/);
   await shot(page, "3-share-fallback");
+
+  // 옛 링크(v=1)의 결과를 다시 보내면 링크도 v=1 그대로다: 구분을 고른 적이 없는 링크가 평일 낮을 고른 링크로 바뀌지 않는다.
+  await page.goto("/result?v=1&o=k3a.ryf&m=f");
+  await page.getByRole("button", { name: "카톡으로 보내기" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "링크를 보내 주세요" }).getByRole("textbox", { name: "링크" }),
+  ).toHaveValue(/\/s\?v=1&o=k3a\.ryf&m=f$/);
 });
 
 test("받은 링크가 깨졌으면 무엇이 틀렸는지 말하고 새로 찾기로 보낸다", async ({ page }) => {

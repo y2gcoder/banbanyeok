@@ -125,6 +125,11 @@ internal data class TagoInput(
     val timetable: TagoTimetable,
     /** Rows per day type for slot headways. Weekday is [timetable]; others are empty until fetched. */
     val timetables: Map<DayType, TagoTimetable> = mapOf(DayType.WEEKDAY to timetable),
+    /**
+     * Rows per day type exactly as cached, without the weekend fallback of [timetables]. Last trains never borrow
+     * another day type's timetable (a Saturday without rows stays without last trains).
+     */
+    val raw: Map<DayType, TagoTimetable> = mapOf(DayType.WEEKDAY to timetable),
 )
 
 /** Name key used only to pair a TAGO row with an S1 row of the same operator line (never across lines). */

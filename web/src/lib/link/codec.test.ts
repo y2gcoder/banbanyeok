@@ -26,8 +26,35 @@ describe("링크 코덱 — contracts/golden/link-vectors.json", () => {
 
   it.each(vectors.decode.map((v) => [v.id, v] as const))("decode %s", (_id, vector) => {
     const result = decodeShareQuery(vector.query);
-    if ("expectedError" in vector) expect(result).toEqual({ ok: false, error: vector.expectedError });
-    else expect(result).toEqual({ ok: true, state: vector.expected });
+    if ("expectedError" in vector) {
+      expect(result).toEqual({ ok: false, error: vector.expectedError });
+      return;
+    }
+    // 벡터는 Kotlin·앱과 같이 쓰는 링크 계약이다. `slotDefaulted`는 웹 안의 표시라 따로 본다(v=1에서만 true).
+    if (!result.ok) throw new Error(`decode failed: ${result.error}`);
+    const { slotDefaulted, ...state } = result.state;
+    expect(state).toEqual(vector.expected);
+    expect(slotDefaulted).toBe(new URLSearchParams(vector.query).get("v") === "1" ? true : undefined);
+  });
+
+  it("옛 링크(v=1)는 구분을 고른 적이 없다고 표시하고, 다시 적어도 v=1 그대로다(구분을 고른 링크로 바뀌지 않는다)", () => {
+    const legacy = decodeShareQuery("v=1&o=03v.130&m=f");
+    if (!legacy.ok) throw new Error("decode failed");
+    expect(legacy.state.timeSlot).toBe("weekday-day");
+    expect(legacy.state.slotDefaulted).toBe(true);
+    expect(encodeShareQuery(legacy.state)).toBe("v=1&o=03v.130&m=f");
+    // 별칭과 모드는 그대로 싣고, 다시 읽으면 같은 상태다.
+    const named = decodeShareQuery("v=1&o=03v.130&m=p1&n=66-87IiY.7KeA7Jew&utm_source=kakao");
+    if (!named.ok) throw new Error("decode failed");
+    expect(encodeShareQuery(named.state)).toBe("v=1&o=03v.130&m=p1&n=66-87IiY.7KeA7Jew");
+    expect(decodeShareQuery(encodeShareQuery(named.state))).toEqual(named);
+    // 구분을 고른 링크(v=2)는 평일 낮이어도 v=2이고 `t`를 싣는다.
+    const chosen = decodeShareQuery("v=2&o=03v.130&m=f&t=weekday-day");
+    if (!chosen.ok) throw new Error("decode failed");
+    expect("slotDefaulted" in chosen.state).toBe(false);
+    expect(encodeShareQuery(chosen.state)).toBe("v=2&o=03v.130&m=f&t=weekday-day");
+    // 옛 링크의 표시와 다른 구분이 같이 올 수는 없다.
+    expect(() => encodeShareQuery({ ...legacy.state, timeSlot: "saturday-night" })).toThrow(RangeError);
   });
 
   it("오류 코드 10개가 모두 벡터에 있다", () => {

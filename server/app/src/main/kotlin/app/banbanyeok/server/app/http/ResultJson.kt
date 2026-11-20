@@ -1,8 +1,12 @@
 package app.banbanyeok.server.app.http
 
+import app.banbanyeok.schema.LastTrainKind
+import app.banbanyeok.server.recommendation.LastTrainBasis
 import app.banbanyeok.server.recommendation.MapMiddle
+import app.banbanyeok.server.recommendation.ParticipantLastTrain
 import app.banbanyeok.server.recommendation.ParticipantTime
 import app.banbanyeok.server.recommendation.RecommendedStation
+import app.banbanyeok.server.recommendation.wire
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -22,6 +26,38 @@ fun RecommendedStation.candidateJson(): JsonObject =
         favoredSeconds?.let { put("favoredSeconds", it) }
         put("reasonCode", reasonCode)
         put("reason", reason)
+        lastTrains?.let { list -> put("lastTrains", JsonArray(list.map { it.toJson(withParticipant = true) })) }
+    }
+
+/**
+ * 막차 한 건(openapi `LastTrain`). 값과 분류만 싣는다: `margin`의 10분 단위 내림과 문구는 클라이언트가 한다. 확인 필요(`check`)면
+ * 시각이 없다. `transfer`는 여유 시각(`margin`)에만 있고, 행선지(`boundFor`)는 열차 한 대로 가는 길에만 있다.
+ */
+fun ParticipantLastTrain.toJson(withParticipant: Boolean): JsonObject =
+    buildJsonObject {
+        if (withParticipant) put("participantId", participantId)
+        put("kind", cell.kind.wire)
+        cell.minute?.let { put("minute", it) }
+        if (cell.kind == LastTrainKind.MARGIN_TRANSFER || cell.kind == LastTrainKind.MARGIN_DIRECT) {
+            put("transfer", cell.kind == LastTrainKind.MARGIN_TRANSFER)
+        }
+        cell.boundFor?.let { code ->
+            put(
+                "boundFor",
+                buildJsonObject {
+                    put("stationCode", code.toString())
+                    put("stationName", boundName ?: code.toString())
+                },
+            )
+        }
+    }
+
+fun LastTrainBasis.toJson(): JsonObject =
+    buildJsonObject {
+        put("dayType", dayType.id)
+        put("asOf", asOf.toString())
+        unavailable?.let { put("unavailable", it.name.lowercase()) }
+        if (partial) put("partial", true)
     }
 
 fun MapMiddle.toJson(): JsonObject =

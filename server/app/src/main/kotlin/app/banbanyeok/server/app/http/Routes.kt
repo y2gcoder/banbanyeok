@@ -4,6 +4,7 @@ import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.artifact.PublishedArtifacts
+import app.banbanyeok.server.recommendation.DayCertainty
 import app.banbanyeok.server.recommendation.HolidayCalendar
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
@@ -35,6 +36,7 @@ import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
 
@@ -182,12 +184,16 @@ private fun Route.resultRoutes(services: ApiServices) {
             }
         val slot = requireTimeSlot(body.timeSlot)
         services.directory.awaitSlots(slot)
+        // 구분을 보내지 않은 요청(옛 클라이언트, 요일을 고른 적 없는 `v=1` 링크)은 평일 낮으로 계산하되 막차 시각은 내지 않는다:
+        // 평일은 고른 값이 아니라 기본값이고, 휴일 막차는 평일보다 이르다.
+        val chosen = body.timeSlot != null && body.timeSlot !is JsonNull
         val request =
             RecommendRequest(
                 people,
                 requireRecommendMode(body.mode),
                 body.favorIndex?.toString(),
                 TimeBasis(slot, TimeSlotLabels.of(slot)),
+                dayCertainty = if (chosen) DayCertainty.KNOWN else DayCertainty.DEFAULTED,
             )
         val (result, mapMiddle) = services.recommendation.recommendWithMapMiddle(request)
         // 이 경로의 참가자는 출발역을 숨길 수 없다(hidden = false). 지도 한가운데 비교는 조건을 모두 만족할 때만 붙는다.

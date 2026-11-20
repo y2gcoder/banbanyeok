@@ -111,8 +111,13 @@ test("공유 링크의 미리보기: 링크별 제목·설명과 동적 OG 이�
   expect(await meta(page, 'meta[name="robots"]')).toBe("noindex, nofollow");
   expect(await meta(page, 'meta[name="description"]')).toMatch(/ [0-9]+분 · .+ 고름$/);
   const ogImage = (await meta(page, 'meta[property="og:image"]')) ?? "";
-  // 옛 링크(v=1)도 미리보기 이미지 주소는 지금 형식(v=2, 평일 낮)으로 만든다.
-  expect(ogImage).toContain(`${baseURL}/s/og?v=2&o=${origins}&m=f&t=weekday-day&dv=`);
+  // 옛 링크(v=1)의 미리보기 이미지 주소는 v=1 그대로다: `t=weekday-day`를 붙이면 그림 요청만 구분을 고른 요청이 된다.
+  expect(ogImage).toContain(`${baseURL}/s/og?v=1&o=${origins}&m=f&dv=`);
+  // 구분을 고른 링크(v=2)는 그 구분을 그림 주소에도 싣는다.
+  await page.goto(`/s?v=2&o=${origins}&m=f&t=weekday-day`);
+  expect(await meta(page, 'meta[property="og:image"]')).toContain(
+    `${baseURL}/s/og?v=2&o=${origins}&m=f&t=weekday-day&dv=`,
+  );
   await expectOgPng(page, ogImage);
 
   // 별칭에 글꼴에 없는 글자(이모지)가 있어도 그려진다(빈 네모 대신 걸러냄).

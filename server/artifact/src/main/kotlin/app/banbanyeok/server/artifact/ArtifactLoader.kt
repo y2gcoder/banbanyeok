@@ -3,6 +3,7 @@ package app.banbanyeok.server.artifact
 import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
+import app.banbanyeok.schema.LastTrainTable
 import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.OdMatrix
@@ -31,6 +32,11 @@ public class LoadedArtifacts(
     public val manifestJson: ByteArray,
     public val manifestVersion: ArtifactVersion,
     public val slots: Deferred<Map<TimeSlot, OdMatrix>> = CompletableDeferred(dataSet.odSlots),
+    /**
+     * 귀갓길 막차 표(manifest 세대 3). 구분 행렬처럼 뒤에서 읽고 검사한다. 세대 1·2 데이터면 바로 null이고, 읽기나 검증에 실패하면
+     * 예외로 끝난다(서버는 계속 돌고 응답에서 막차만 빠진다).
+     */
+    public val lastTrains: Deferred<LastTrainTable?> = CompletableDeferred(null),
 ) {
     public val dataVersion: String get() = dataSet.manifest.dataVersion
 }
@@ -50,23 +56,29 @@ public class ArtifactLoader(
         onPhase("artifact-manifest-read")
         val manifestText = manifest.content.decodeToString()
         val dataSet = validated("산출물 검증 실패") { core(manifestText) }
-        return LoadedArtifacts(dataSet, manifest.content, manifest.version, background.async { slots(dataSet) })
+        return LoadedArtifacts(
+            dataSet,
+            manifest.content,
+            manifest.version,
+            background.async { slots(dataSet) },
+            background.async { lastTrains(dataSet) },
+        )
     }
 
     /**
-     * 세대 2(구분 행렬 포함)와 세대 1을 함께 읽어 세대 2를 쓴다(data-format §5). 단 세대 1(발행 때 마지막에 바뀌는 포인터)과
-     * dataVersion이 다르면 세대 2는 지난 것이다(예: 옛 스크립트로 T2 이전 데이터로 되돌림) — 그때와 세대 2가 없을 때는 세대 1을 쓴다.
+     * 세대별 manifest를 함께 읽어 가장 높은 세대를 쓴다(data-format §5). 단 세대 1(발행 때 마지막에 바뀌는 포인터)과 dataVersion이
+     * 다른 높은 세대는 지난 것이다(예: 옛 스크립트로 이전 데이터로 되돌림) — 그러면 그 아래 세대를, 끝내 맞는 것이 없으면 세대 1을 쓴다.
      */
     private suspend fun currentManifest(): StoredArtifact {
-        val (v2, v1) =
+        val found =
             coroutineScope {
-                val v2 = async { store.get(MANIFEST_V2_KEY) }
-                val v1 = async { store.get(MANIFEST_KEY) }
-                v2.await() to v1.await()
+                ManifestNames.NEWEST_FIRST.map { name -> async { store.get(ArtifactKey(name)) } }.map { it.await() }
             }
-        if (v1 == null) return v2 ?: throw ArtifactLoadException("manifest.json이 저장소에 없습니다")
-        if (v2 == null) return v1
-        return if (dataVersionOf(v2) != null && dataVersionOf(v2) == dataVersionOf(v1)) v2 else v1
+        val v1 =
+            found.last()
+                ?: return found.firstNotNullOfOrNull { it } ?: throw ArtifactLoadException("manifest.json이 저장소에 없습니다")
+        val version = dataVersionOf(v1)
+        return found.dropLast(1).filterNotNull().firstOrNull { version != null && dataVersionOf(it) == version } ?: v1
     }
 
     private fun dataVersionOf(manifest: StoredArtifact): String? =
@@ -110,6 +122,14 @@ public class ArtifactLoader(
         }.also { onPhase("artifact-slots-validated") }
     }
 
+    /** 막차 표. 세대 3 manifest가 가리킬 때만 읽는다. */
+    private suspend fun lastTrains(dataSet: DataSet): LastTrainTable? {
+        val file = dataSet.manifest.files.lastTrain ?: return null
+        val bytes = read(file.path)
+        return validated("막차 표 검증 실패") { DataSetLoader.lastTrains(dataSet, bytes) }
+            .also { onPhase("artifact-last-trains-validated") }
+    }
+
     private inline fun <T> validated(
         what: String,
         block: () -> T,
@@ -127,5 +147,6 @@ public class ArtifactLoader(
     public companion object {
         public val MANIFEST_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_ONE)
         public val MANIFEST_V2_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_TWO)
+        public val MANIFEST_V3_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_THREE)
     }
 }

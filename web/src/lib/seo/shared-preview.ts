@@ -106,13 +106,22 @@ async function fetchResult(
   favorIndex: number | null,
   nicknamesJson: string,
   timeSlot: TimeSlot,
+  slotDefaulted: boolean,
   signal: AbortSignal | undefined,
 ): Promise<RecommendResult | null> {
   try {
     const nicknames = JSON.parse(nicknamesJson) as ShareState["nicknames"];
     const timeout = AbortSignal.timeout(RECOMMEND_TIMEOUT_MS);
     return await recommend(
-      { origins: origins.split("."), mode, favorIndex, nicknames, timeSlot },
+      // 옛 링크(v=1)는 구분을 고른 적이 없다: 결과 화면과 같이 구분 없이 요청한다(막차 시각이 미리보기에 실리지 않게).
+      {
+        origins: origins.split("."),
+        mode,
+        favorIndex,
+        nicknames,
+        timeSlot,
+        ...(slotDefaulted ? { slotDefaulted } : {}),
+      },
       signal ? AbortSignal.any([timeout, signal]) : timeout,
     );
   } catch {
@@ -134,6 +143,7 @@ export async function loadSharedView(state: ShareState, signal?: AbortSignal): P
     state.favorIndex,
     JSON.stringify(state.nicknames),
     state.timeSlot,
+    state.slotDefaulted === true,
     signal,
   );
   if (!result) return null;

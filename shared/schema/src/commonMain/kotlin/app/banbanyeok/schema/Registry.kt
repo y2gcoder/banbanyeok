@@ -19,10 +19,10 @@ import kotlin.math.roundToLong
 public const val SCHEMA_VERSION: Int = 1
 
 /**
- * 이 모듈이 읽고 쓰는 manifest의 최신 세대. 2: 구분별 od 행렬(`files.odSlots`). 구성 형식(레지스트리·후보·od.bin)은 두 세대 모두
- * [SCHEMA_VERSION]이다(data-format §1·§5).
+ * 이 모듈이 읽고 쓰는 manifest의 최신 세대. 2: 구분별 od 행렬(`files.odSlots`). 3: 귀갓길 막차 표(`files.lastTrain`, lt.bin).
+ * 구성 형식(레지스트리·후보·od.bin)은 모든 세대에서 [SCHEMA_VERSION]이다(data-format §1·§5).
  */
-public const val MANIFEST_SCHEMA_VERSION: Int = 2
+public const val MANIFEST_SCHEMA_VERSION: Int = 3
 
 @Serializable
 public enum class StationStatus {

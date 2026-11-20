@@ -213,6 +213,7 @@ internal fun readTago(root: Path): TagoInput {
         list.associate { it.text("subwayStationId") to (it.text("subwayStationName") to it.text("subwayRouteName")) },
         raw.getValue(DayType.WEEKDAY),
         weekendFallback(raw),
+        raw,
     )
 }
 

@@ -536,6 +536,96 @@ export interface components {
              * @example 가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요. 2위 합정보다 가장 오래 걸리는 사람이 4분 덜 걸려요.
              */
             reason: string;
+            /**
+             * @description 이 역에서 각자 집(출발역)으로 돌아가는 막차(#62). `Result.lastTrainBasis`가 있을 때만 있고, 없으면 키 자체가 없다.
+             *     순위를 다 정한 뒤 붙이는 값이라 순위·시간·이유에는 쓰이지 않는다. 참가자 순서는 `participants`와 같다.
+             *
+             *     **출발역을 숨긴 참가자의 항목은 그 참가자 본인의 요청(participantToken)에만 들어 있다.** 다른 사람의 응답, 토큰 없는
+             *     응답, 미리보기에는 없다(막차 시각으로 숨긴 출발역을 거꾸로 짐작할 수 있다). `/recommend`에는 숨김이 없으므로 모두 들어 있다.
+             */
+            lastTrains?: components["schemas"]["LastTrain"][];
+        };
+        /**
+         * @description 한 사람이 만날 역에서 집(출발역)으로 돌아가는 막차. 서버는 **값과 분류만** 준다. 문구와 반올림은 클라이언트가 한다.
+         *
+         *     `kind`:
+         *     - `direct` 직행 확정: 열차 한 대로 가고, 타는 역과 내리는 역의 시각이 모두 **운영사 공식 시간표와 대조를 통과한 노선·요일
+         *       종류**의 것이다(서울교통공사 1~8호선 운영 구간은 열차코드가 있는 공식 파일과 발행 때마다 자동 대조, 신분당선은 운영사
+         *       역별 시간표 표본). `minute`을 **그대로** 보인다.
+         *     - `margin` 여유 시각: 갈아타는 길(`transfer: true`)이거나, 열차 한 대로 가지만 대조를 통과하지 못했거나 대조할 둘째
+         *       원천이 없는 구간(`transfer: false`. 9호선, 1·3·4·7·8호선의 다른 운영사 구간)이다. `minute`은 시간표에서 읽은 실제 이음의 첫 승차 시각에서 **원천 여유를 뺀** 값이다: 갈아탈 때마다
+         *       max(10분, 걷는 시간×2+5분)을 두었고, 열차 번호가 있는 둘째 원천과 대조하지 못한 시간표의 열차는 출발 3분 전까지 타는
+         *       것으로 계산했다(원천이 운영사 개정판과 1~2분 다를 수 있다). 클라이언트는 이 값을 **10분 단위로 내려** "늦어도 23:10"처럼
+         *       보인다. 올림·반올림은 하지 않는다.
+         *     - `check` 확인 필요: 시각이 없다. 열차 번호가 있는 시간표(와 운영사 표로 칸마다 대조한 직행)만으로는 길을 찾지 못했거나
+         *       (열차 번호 없는 시간표뿐인 노선을 지나는 길은 시각을 내지 않는다), `lastTrainBasis.unavailable`이 있다. 클라이언트는 시각
+         *       없이 지도 앱으로 가는 버튼만 보인다.
+         *
+         *     화면이 이유를 말할 때 쓰는 근거(서버는 문구를 주지 않는다):
+         *
+         *     | 안내 | 근거 |
+         *     |---|---|
+         *     | 직행 확정 | `kind=direct` |
+         *     | 여유 시각: 갈아타는 길 | `kind=margin`, `transfer=true` |
+         *     | 여유 시각: 공식표 대조 전 노선의 직행 | `kind=margin`, `transfer=false` |
+         *     | 확인 필요: 요일을 모름 | `lastTrainBasis.unavailable=day_unknown` |
+         *     | 확인 필요: 공휴일 목록 밖의 약속일 | `lastTrainBasis.unavailable=date_out_of_range` |
+         *     | 확인 필요: 시간표가 120일보다 오래됨 | `lastTrainBasis.unavailable=stale` |
+         *     | 확인 필요: 이 요일은 일부 노선만 안내(토요일) | `kind=check`, `lastTrainBasis.partial=true` |
+         *     | 확인 필요: 그 밖(시각을 낼 수 있는 노선만으로는 길이 없음) | `kind=check`, `unavailable`·`partial` 없음 |
+         *     | 시간표 기준일 | `lastTrainBasis.asOf` |
+         *     | 행선지("광교행") | `boundFor`(직행일 때만) |
+         *
+         *     오차는 이른 쪽으로만 난다: 보이는 시각에 타면 시간표대로 집에 닿는다. 열차 지연과 수집 뒤의 시간표 개정은 반영하지 못한다.
+         */
+        LastTrain: {
+            /** @description `participants[].participantId` */
+            participantId: string;
+            /** @enum {string} */
+            kind: "direct" | "margin" | "check";
+            /**
+             * @description 만날 역에서 타는 시각. **운행일의 분**이다(03:00에 운행일이 바뀐다): 23:10 = 1390, 다음 날 00:03 = 1443.
+             *     1440 이상이면 달력으로는 다음 날이다. `kind`가 `check`면 키가 없다.
+             */
+            minute?: number;
+            /** @description `kind=margin`일 때만 있다. true면 갈아타는 길, false면 열차 한 대로 가는 길(대조 전 노선) */
+            transfer?: boolean;
+            /** @description 열차 한 대로 가는 길(`direct`, 또는 `margin`의 `transfer=false`)에서 그 열차의 행선지(종착역). "광교행" */
+            boundFor?: {
+                stationCode: components["schemas"]["StationCode"];
+                stationName: string;
+            };
+        };
+        /**
+         * @description 막차의 기준. 이 객체가 없으면 그 응답에는 막차가 없다(막차 표가 없는 데이터, 서버가 표를 아직 읽는 중이거나 검증에 실패,
+         *     요청한 구분으로 계산하지 못해 평일 낮으로 대신 계산한 경우). 클라이언트는 그때 막차 칸을 그리지 않는다.
+         */
+        LastTrainBasis: {
+            /**
+             * @description 어느 요일 종류의 시간표인가(`timeBasis.dayType`과 같다). 다른 요일 종류의 시간표로 대신하지 않는다
+             * @enum {string}
+             */
+            dayType: "weekday" | "saturday" | "holiday";
+            /**
+             * Format: date
+             * @description 계산에 쓴 시간표 가운데 가장 오래된 수집일(서울 날짜)
+             */
+            asOf: string;
+            /**
+             * @description 있으면 **모든 사람의 항목이 `check`**(시각 없음)다.
+             *     - `day_unknown`: 요일 종류가 주어지지 않았다. `/recommend`에 `timeSlot`이 없거나(구분을 고른 적 없는 옛 `v=1` 링크는
+             *       `timeSlot`을 보내지 않는다) 방에 약속일이 없다. 그때의 평일은 고른 값이 아니라 기본값이고, 휴일 막차는 평일보다 이르다.
+             *     - `date_out_of_range`: 약속일이 공휴일 목록(contracts/holidays.json)의 범위 밖이라 공휴일인지 알 수 없다.
+             *     - `stale`: 시간표를 받은 지 120일이 넘었다(시간표가 바뀌었을 수 있다).
+             * @enum {string}
+             */
+            unavailable?: "day_unknown" | "date_out_of_range" | "stale";
+            /**
+             * @description `true`면 이 요일 종류는 **시간표가 있는 노선만** 계산했다(지금은 토요일: 서울교통공사 1~8호선만). 그때의 `check`는 길이
+             *     없어서가 아니라 시간표가 없는 노선을 지나야 해서일 수 있으니, 클라이언트는 "이 요일은 일부 노선만 안내한다"고 알린다.
+             *     전 노선을 계산한 요일 종류에서는 키가 없다(`false`를 보내지 않는다).
+             */
+            partial?: boolean;
         };
         /**
          * @description "지도 한가운데" 역(#68): 참가자 출발역 좌표의 산술 평균점(경도는 cos(평균 위도)로 보정)에서 가장 가까운, **모두가 갈 수 있는**
@@ -564,6 +654,8 @@ export interface components {
             /** @description 엄밀한 공평 1위. favor 상한의 기준 */
             baselineStationCode?: components["schemas"]["StationCode"] | null;
             candidates: components["schemas"]["Candidate"][];
+            /** @description 귀갓길 막차의 기준(#62). 있을 때만 `candidates[].lastTrains`가 있다 */
+            lastTrainBasis?: components["schemas"]["LastTrainBasis"];
             /**
              * @description "지도 한가운데였다면" 비교. **다음을 모두 만족할 때만 있고, 하나라도 어기면 키 자체가 없다**(클라이언트는 없으면 비교를 그냥
              *     뺀다): `mode=fair`일 때, 지도 한가운데 역이 1위 추천 역과 다를 때, 모두가 그 역에 갈 수 있을 때, 그 역의 가장 오래 걸리는
@@ -608,6 +700,8 @@ export interface components {
             dataVersion: string;
             basis: components["schemas"]["PreviewBasis"];
             station: components["schemas"]["PreviewStation"];
+            /** @description 막차의 기준. 있을 때만 `station.times[].lastTrain`이 있을 수 있다 */
+            lastTrainBasis?: components["schemas"]["LastTrainBasis"];
         };
         RoomPreviewDecided: {
             /** @constant */
@@ -621,6 +715,8 @@ export interface components {
             decidedBy: string;
             /** Format: date-time */
             decidedAt: string;
+            /** @description 막차의 기준. 있을 때만 `station.times[].lastTrain`이 있을 수 있다 */
+            lastTrainBasis?: components["schemas"]["LastTrainBasis"];
         };
         PreviewRoom: {
             roomId: string;
@@ -652,6 +748,20 @@ export interface components {
             label: string;
             /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null */
             seconds: number | null;
+            /**
+             * @description 그 역에서 돌아가는 막차. `LastTrain`에서 `participantId`를 뺀 모양이다(미리보기는 이름표만 쓴다). **출발역을 숨긴 사람에게는
+             *     키가 없다**(미리보기는 누가 묻든 같은 값이다). 막차 표를 쓸 수 없을 때도 없다.
+             */
+            lastTrain?: {
+                /** @enum {string} */
+                kind: "direct" | "margin" | "check";
+                minute?: number;
+                transfer?: boolean;
+                boundFor?: {
+                    stationCode: components["schemas"]["StationCode"];
+                    stationName: string;
+                };
+            };
         };
     };
     responses: {
@@ -1111,7 +1221,10 @@ export interface operations {
                      *     이름(`participants[].label`)과 `reason` 문장은 이 이름을 쓴다. 없는 사람은 "{출발역}에서 오는 분"이다(data-format §8).
                      */
                     nicknames?: (string | null)[];
-                    /** @description 언제 만나는가. 생략하거나 null이면 `weekday-day`(평일 낮). 문자열이 아니거나 모르는 id면 400 `INVALID_TIME_SLOT` */
+                    /**
+                     * @description 언제 만나는가. 생략하거나 null이면 `weekday-day`(평일 낮)로 계산한다. 문자열이 아니거나 모르는 id면 400 `INVALID_TIME_SLOT`.
+                     *     생략하면 요일 종류를 고르지 않은 것으로 보아 막차 시각은 내지 않는다(`lastTrainBasis.unavailable=day_unknown`).
+                     */
                     timeSlot?: components["schemas"]["TimeSlot"] | null;
                 };
             };

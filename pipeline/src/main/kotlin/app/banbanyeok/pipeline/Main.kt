@@ -12,25 +12,45 @@ import kotlin.io.path.exists
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
+/** The commands that stage a release or fetch one source. False when [args] is none of them. */
+private fun fetchOrStage(
+    root: Path,
+    args: Array<String>,
+): Boolean {
+    when {
+        args.firstOrNull() == "stage-release" -> {
+            // 발행 디렉터리(기본 build/release). 업로드는 scripts/publish-artifacts.sh.
+            require(args.size <= 2) { "Usage: stage-release [outDir]" }
+            stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
+        }
+
+        args.firstOrNull() == "tago-fetch" -> {
+            tagoCommand(root, args.drop(1))
+        }
+
+        // Keyless download of the operator's train-coded timetable file (S7), the second source for last trains.
+        args.singleOrNull() == "official-fetch" -> {
+            officialFetch(root)
+        }
+
+        // The only command that needs SEOUL_OPENAPI_KEY. Exit 2 = limit reached; rerun to resume.
+        args.singleOrNull() == "seoul-fetch" -> {
+            kotlin.system.exitProcess(seoulFetch(root))
+        }
+
+        else -> {
+            return false
+        }
+    }
+    return true
+}
+
 fun main(args: Array<String>) {
     val root =
         generateSequence(Path.of("").toAbsolutePath()) {
             it.parent
         }.first { it.resolve("contracts/data-format.md").exists() }
-    if (args.firstOrNull() == "stage-release") {
-        // 발행 디렉터리(기본 build/release). 업로드는 scripts/publish-artifacts.sh.
-        require(args.size <= 2) { "Usage: stage-release [outDir]" }
-        stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
-        return
-    }
-    if (args.firstOrNull() == "tago-fetch") {
-        tagoCommand(root, args.drop(1))
-        return
-    }
-    if (args.singleOrNull() == "seoul-fetch") {
-        // The only command that needs SEOUL_OPENAPI_KEY. Exit 2 = limit reached; rerun to resume.
-        kotlin.system.exitProcess(seoulFetch(root))
-    }
+    if (fetchOrStage(root, args)) return
     when (args.singleOrNull()) {
         "fetch" -> {
             fetch(root)
@@ -73,7 +93,8 @@ fun main(args: Array<String>) {
 
         else -> {
             error(
-                "Usage: fetch|seoul-fetch|headways|build|validate|all|spotcheck|refresh|tago-fetch [probe]|" +
+                "Usage: fetch|seoul-fetch|official-fetch|headways|build|validate|all|spotcheck|refresh|" +
+                    "tago-fetch [probe]|" +
                     "stage-release [outDir]",
             )
         }
@@ -84,7 +105,8 @@ fun main(args: Array<String>) {
 private val CANDIDATE_RANGE = 50..130
 
 private fun build(root: Path) {
-    val slots = slotNetworks(root)
+    val input = readInput(root)
+    val slots = slotNetworks(input)
     val net = slots.getValue(TimeSlot.DEFAULT)
     // name,reason,reviewed: reviewed is the human review state carried into candidate-review.json.
     val seeds = csv(root.resolve("data/config/candidate-places.csv").readText()).drop(1)
@@ -126,7 +148,17 @@ private fun build(root: Path) {
             "slots ${results.size}; gates ${results.count { it.value.passed }}/${results.size} passed",
     )
     require(passed) { "Validation gate failed; no travel artifacts written. See data/config/validation-report.json" }
-    publish(root, net, candidateList, results.mapValues { it.value.times to it.value.transfers })
+    val started = System.nanoTime()
+    val lastTrains = buildLastTrains(root, input, net, candidateList)
+    root.resolve("data/config/last-train-report.json").writeJson(lastTrains.report.toString())
+    println(
+        "Last trains as of ${lastTrains.asOf}: computed and gated in " +
+            "${(System.nanoTime() - started) / 1_000_000} ms; gates ${if (lastTrains.passed) "passed" else "FAILED"}",
+    )
+    require(lastTrains.passed) {
+        "Last-train gate failed; no artifacts written. See data/config/last-train-report.json"
+    }
+    publish(root, net, candidateList, results.mapValues { it.value.times to it.value.transfers }, lastTrains)
 }
 
 private fun writeValidationReport(
@@ -198,7 +230,8 @@ private fun validate(root: Path) {
     val registry = RegistryCodec.parse(root.resolve("data/registry/stations.json").readText())
     require(RegistryCompatibility.checkAppendOnly(dataset.registry, registry).isEmpty())
     require(registry == dataset.registry) { "Artifact registry differs from control registry; rebuild required" }
-    val slots = slotNetworks(root)
+    val input = readInput(root)
+    val slots = slotNetworks(input)
     val net = slots.getValue(TimeSlot.DEFAULT)
     require(net.registry == registry) { "Raw sources require a registry rebuild" }
     require(baselineViolations(root, registry).isEmpty()) { "Committed registry append-only gate failed" }
@@ -224,7 +257,19 @@ private fun validate(root: Path) {
             }
         }
     }
-    println("Validated artifact hashes, contract, append-only registry and recomputed OD cells of ${slots.size} slots")
+    val lastTrains = buildLastTrains(root, input, net, dataset.candidates)
+    require(lastTrains.passed) { "Last-train gate failed" }
+    require(lastTrains.table == loadDevLastTrains(root.resolve("data/artifacts/dev"), dataset)) {
+        "Artifact last-train table differs from the current timetables; rebuild required"
+    }
+    require(lastTrains.asOf == dataset.manifest.lastTrainAsOf) { "Artifact last-train date differs; rebuild required" }
+    require(lastTrains.partialDays == dataset.manifest.lastTrainPartialDays) {
+        "Artifact last-train partial day types differ; rebuild required"
+    }
+    println(
+        "Validated artifact hashes, contract, append-only registry, recomputed OD cells of ${slots.size} slots " +
+            "and the last-train table",
+    )
 }
 
 private fun writeCoverage(
