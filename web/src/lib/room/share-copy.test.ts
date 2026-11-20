@@ -231,6 +231,9 @@ describe("방 공유 문구", () => {
     expect(dawn("03:00")).toEqual(["막차 다음 날 00:03", null, "늦어도 23:00"]);
     // 자정 뒤 약속보다 늦게 떠나는 열차는 약속일과 같은 날이다: "다음 날"을 붙이지 않는다.
     expect(dawn("00:00")).toEqual(["막차 00:03", null, null]);
+    // 약속과 같은 분에 떠나는 열차도 그리지 않는다(약속을 시작하는 순간 떠나 귀갓길에 탈 수 없다). 1분 뒤부터 그린다.
+    expect(dawn("00:03")).toEqual([null, null, null]);
+    expect(dawn("00:02")).toEqual(["막차 00:03", null, null]);
     // 확인 필요는 줄이 없다. 막차를 모르는 서버의 미리보기(키 없음)는 그림 값이 예전과 같다.
     const unknown = result({
       station: { ...station, times: station.times.map((t) => ({ ...t, lastTrain: { kind: "check" as const } })) },

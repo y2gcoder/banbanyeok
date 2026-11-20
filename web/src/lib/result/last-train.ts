@@ -6,6 +6,7 @@
  * 시각은 만날 역에서 열차를 타는 시각이고 **운행일의 분**이다(03:00에 운행일이 바뀐다): 1390 = 23:10, 1443 = 다음 날 00:03.
  * 약속 날짜·시각을 알면(방) 실제 달력 날짜로 옮겨 본다: 03:00 전 약속은 전날 운행일이라, 그 밤 막차가 약속보다 먼저 떠날 수 있다.
  * 그런 열차는 귀가 시각으로 보이지 않고 "약속 전에 떠나요"로 알린다(화면의 줄·맨 위 한 줄·공유 그림 모두 같은 기준).
+ * 약속과 **같은 분**에 떠나는 열차도 같다: 약속을 시작하는 순간 떠나므로 귀갓길에 탈 수 없다("약속 시각에 떠나요").
  */
 import type { RecommendResult } from "@/lib/api/types";
 import { stationLabel, withJosa } from "@/lib/display/korean";
@@ -64,24 +65,28 @@ export type LastTrainTime = {
   bound: string | null;
 };
 
-/** 약속 시각보다 먼저 떠나는 열차: 귀가 시각으로 보이지 않고 이 말만 한다. */
+/** 약속 시각까지(같은 분 포함) 떠나는 열차: 귀갓길에 탈 수 없으므로 귀가 시각으로 보이지 않고 이 말만 한다. */
 export type LastTrainGone = {
   kind: "gone";
+  /** 약속과 같은 분에 떠난다("약속 전"이 아니라 "약속 시각에"라고 말한다). */
+  atMeeting: boolean;
   /** 서버 분류. 직행 확정이면 막차가 약속 전에 떠난다고 말할 수 있고, 여유 시각이면 "이를 수 있다"까지만 말한다. */
   source: "direct" | "margin";
   /** "11월 28일 00:27 막차는 약속 전에 떠나요." */
   text: string;
 };
 
-function goneText(source: "direct" | "margin", when: string): string {
-  return source === "direct"
-    ? `${when} 막차는 약속 전에 떠나요.`
-    : `넉넉히 잡으면 ${when}엔 떠나야 해서 약속 시각보다 일러요. 실제 막차는 이보다 늦을 수 있어요.`;
+function goneText(source: "direct" | "margin", when: string, atMeeting: boolean): string {
+  if (source === "direct") return `${when} 막차는 ${atMeeting ? "약속 시각에" : "약속 전에"} 떠나요.`;
+  const tail = "실제 막차는 이보다 늦을 수 있어요.";
+  return atMeeting
+    ? `넉넉히 잡으면 ${when}엔 떠나야 해서 약속 시각과 같아요. ${tail}`
+    : `넉넉히 잡으면 ${when}엔 떠나야 해서 약속 시각보다 일러요. ${tail}`;
 }
 
 /**
  * 시각이 있는 항목을 화면 값으로. 확인 필요이거나 값이 모자라면 null.
- * 약속 날짜·시각을 알고 보이는 시각이 약속보다 이르면 `gone`이다(약속과 같은 분은 아직 탈 수 있는 열차로 둔다).
+ * 약속 날짜·시각을 알고 보이는 시각이 약속 시각 이하면 `gone`이다(같은 분 포함: 약속을 시작하는 순간 떠나는 열차는 탈 수 없다).
  */
 export function lastTrainState(
   entry: LastTrainEntry | undefined,
@@ -92,8 +97,14 @@ export function lastTrainState(
   const clock = clockText(minute);
   const service = serviceDayOf(meeting);
   const departs = service ? dayAfter(service.date, Math.floor(minute / DAY_MINUTES)) : null;
-  if (service && departs && service.meetingMinute !== null && minute < service.meetingMinute) {
-    return { kind: "gone", source: entry.kind, text: goneText(entry.kind, `${formatMeetingDate(departs)} ${clock}`) };
+  if (service && departs && service.meetingMinute !== null && minute <= service.meetingMinute) {
+    const atMeeting = minute === service.meetingMinute;
+    return {
+      kind: "gone",
+      atMeeting,
+      source: entry.kind,
+      text: goneText(entry.kind, `${formatMeetingDate(departs)} ${clock}`, atMeeting),
+    };
   }
   return {
     kind: entry.kind,
@@ -182,14 +193,24 @@ function leaveByText(time: LastTrainTime): string {
 
 /**
  * 맨 위 한 줄. **출발역을 공개한 사람**의 줄만 본다(숨긴 본인의 값은 넣지 않는다: 사람마다 다른 말이 되지 않게).
- * - 약속 전에 떠나는 줄이 있으면 그 사실이 먼저다(가장 이른 시각을 귀가 시각처럼 말하지 않는다).
+ * - 약속 시각까지 떠나는 줄이 있으면 그 사실이 먼저다(가장 이른 시각을 귀가 시각처럼 말하지 않는다).
  * - 확인 필요인 줄이 섞여 있으면 "공개된 시각 중에는"으로 범위를 밝힌다. 모두 시각이 있을 때만 "○○은 23시 전에 나서야 해요"다.
  */
 function leadText(rows: readonly LastTrainRow[]): string | null {
   const open = rows.filter((row) => !row.onlyMe);
   const gone = open.flatMap((row) => (row.state.kind === "gone" ? [row.state] : []));
-  if (gone.some((state) => state.source === "direct")) return "약속 전에 막차가 떠나는 분이 있어요.";
-  if (gone.length > 0) return "막차가 약속 시각보다 이를 수 있는 분이 있어요.";
+  // 약속 전에 떠나는 줄이 하나라도 있으면 "약속 전", 모두 약속과 같은 분이면 "약속 시각"이라고 말한다.
+  const direct = gone.filter((state) => state.source === "direct");
+  if (direct.length > 0) {
+    return direct.every((state) => state.atMeeting)
+      ? "약속 시각에 막차가 떠나는 분이 있어요."
+      : "약속 전에 막차가 떠나는 분이 있어요.";
+  }
+  if (gone.length > 0) {
+    return gone.every((state) => state.atMeeting)
+      ? "막차가 약속 시각 무렵일 수 있는 분이 있어요."
+      : "막차가 약속 시각보다 이를 수 있는 분이 있어요.";
+  }
   const earliest = open
     .flatMap((row) => (row.state.kind === "direct" || row.state.kind === "margin" ? [{ row, time: row.state }] : []))
     .reduce<{ row: LastTrainRow; time: LastTrainTime } | null>(
@@ -295,7 +316,7 @@ export function toLastTrainView(
 
 /**
  * 공유 그림의 작은 줄: "막차 23:52"(직행 확정), "늦어도 23:00"(여유 시각), 자정을 넘기면 "막차 다음 날 00:03".
- * 시각이 없거나 약속 전에 떠나는 열차면 null(줄을 비운다). 낱말은 그림 글꼴 서브셋에 든 것(`OG_TEXT`)을 받아 쓴다.
+ * 시각이 없거나 약속 시각까지(같은 분 포함) 떠나는 열차면 null(줄을 비운다). 낱말은 그림 글꼴 서브셋에 든 것(`OG_TEXT`)을 받아 쓴다.
  */
 export function lastTrainCardLine(
   state: LastTrainTime | LastTrainGone | null,

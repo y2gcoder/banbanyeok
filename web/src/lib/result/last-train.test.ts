@@ -300,6 +300,7 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
     const meeting = { date: "2026-11-28", time: "02:59" };
     expect(lastTrainState(samseong(1467), meeting)).toEqual({
       kind: "gone",
+      atMeeting: false,
       source: "direct",
       text: "11월 28일 00:27 막차는 약속 전에 떠나요.",
     });
@@ -354,11 +355,62 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
     expect(lastTrainCardLine(lastTrainState(samseong(1467), meeting), OG_TEXT)).toBe("막차 00:27");
   });
 
-  it("약속과 같은 분에 떠나는 열차는 아직 탈 수 있는 열차다", () => {
-    expect(lastTrainState(direct(1380), { date: "2026-11-28", time: "23:00" })).toMatchObject({ kind: "direct" });
-    expect(lastTrainState(direct(1379), { date: "2026-11-28", time: "23:00" })).toMatchObject({ kind: "gone" });
-    // 보이는 시각(10분 단위로 내린 값)으로 견준다: 23:09 여유 시각은 23:00으로 보이고 23:05 약속보다 이르다.
-    expect(lastTrainState(transfer(1389), { date: "2026-11-28", time: "23:05" })).toMatchObject({ kind: "gone" });
+  it("약속과 같은 분에 떠나는 열차도 탈 수 없다: 약속을 시작하는 순간 떠난다(경계는 '출발 ≤ 약속')", () => {
+    const meeting = { date: "2026-11-28", time: "23:00" };
+    // 22:59는 약속 전, 23:00은 약속 시각, 23:01부터 귀갓길에 탈 수 있다.
+    expect(lastTrainState(direct(1379), meeting)).toEqual({
+      kind: "gone",
+      atMeeting: false,
+      source: "direct",
+      text: "11월 28일 22:59 막차는 약속 전에 떠나요.",
+    });
+    expect(lastTrainState(direct(1380), meeting)).toEqual({
+      kind: "gone",
+      atMeeting: true,
+      source: "direct",
+      text: "11월 28일 23:00 막차는 약속 시각에 떠나요.",
+    });
+    expect(lastTrainState(direct(1381), meeting)).toMatchObject({ kind: "direct", clock: "23:01", nextDay: false });
+    // 여유 시각은 보이는 시각(10분 단위로 내린 값)으로 견준다: 23:09는 23:00으로 보여 약속과 같고, 23:10은 약속 뒤다.
+    expect(lastTrainState(transfer(1389), meeting)).toEqual({
+      kind: "gone",
+      atMeeting: true,
+      source: "margin",
+      text: "넉넉히 잡으면 11월 28일 23:00엔 떠나야 해서 약속 시각과 같아요. 실제 막차는 이보다 늦을 수 있어요.",
+    });
+    expect(lastTrainState(transfer(1390), meeting)).toMatchObject({ kind: "margin", clock: "23:10" });
+    expect(lastTrainState(transfer(1389), { date: "2026-11-28", time: "23:05" })).toMatchObject({
+      kind: "gone",
+      atMeeting: false,
+    });
+    // 새벽 약속(전날 운행일)의 같은 분: 토요일 00:27 약속과 금요일 운행일의 24:27.
+    expect(lastTrainState(samseong(1467), { date: "2026-11-28", time: "00:27" })).toMatchObject({
+      kind: "gone",
+      text: "11월 28일 00:27 막차는 약속 시각에 떠나요.",
+    });
+    expect(lastTrainState(samseong(1467), { date: "2026-11-28", time: "00:26" })).toMatchObject({ kind: "direct" });
+    // 공유 그림에도 같은 분의 열차는 그리지 않는다.
+    expect(lastTrainCardLine(lastTrainState(direct(1380), meeting), OG_TEXT)).toBeNull();
+    expect(lastTrainCardLine(lastTrainState(direct(1381), meeting), OG_TEXT)).toBe("막차 23:01");
+  });
+
+  it("맨 위 줄: 모두 약속과 같은 분이면 '약속 시각', 약속 전에 떠나는 줄이 섞이면 '약속 전'이라고 말한다", () => {
+    const meeting = { date: "2026-11-28", time: "23:00" };
+    expect(view(weekday, [direct(1380), direct(1443)], undefined, meeting).lead).toBe(
+      "약속 시각에 막차가 떠나는 분이 있어요.",
+    );
+    expect(view(weekday, [direct(1380), direct(1379)], undefined, meeting).lead).toBe(
+      "약속 전에 막차가 떠나는 분이 있어요.",
+    );
+    // 여유 시각만 걸리면 단정하지 않는다.
+    expect(view(weekday, [transfer(1389), direct(1443)], undefined, meeting).lead).toBe(
+      "막차가 약속 시각 무렵일 수 있는 분이 있어요.",
+    );
+    expect(view(weekday, [transfer(1379), direct(1443)], undefined, meeting).lead).toBe(
+      "막차가 약속 시각보다 이를 수 있는 분이 있어요.",
+    );
+    // 같은 분의 열차는 "나서야 해요"의 시각으로 쓰지 않는다.
+    expect(JSON.stringify(view(weekday, [direct(1380), direct(1443)], undefined, meeting))).not.toContain("23시 전에");
   });
 
   it("낮·저녁 약속과 시각 없이 시간대만 고른 방은 예전과 같다(자정을 넘기면 '다음 날')", () => {

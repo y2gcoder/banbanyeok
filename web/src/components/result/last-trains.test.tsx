@@ -164,6 +164,18 @@ describe("집에 가는 막차 칸", () => {
     expect(screen.getByText("지연은 22:20 전에 나서야 해요")).toBeInTheDocument();
   });
 
+  it("약속과 같은 분에 떠나는 열차는 '약속 시각에 떠나요'로 알리고 귀가 시각으로 보이지 않는다", () => {
+    const people = [person(0, "민수"), person(1, "지연")];
+    // 민수 직행 00:03, 약속도 00:03. 지연 갈아타는 여유 시각은 전날 22:20.
+    render(<LastTrains view={view(weekday, [direct, changing], people, { date: "2026-11-28", time: "00:03" })} />);
+    const rows = screen.getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("민수11월 28일 00:03 막차는 약속 시각에 떠나요.지도 앱에서 막차 확인하기");
+    expect(screen.getByText("약속 시각에 막차가 떠나는 분이 있어요.")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "강남역 집에 가는 막차" })).not.toHaveTextContent(
+      /나서야 해요|출발하세요|광교행/,
+    );
+  });
+
   it("모두 출발역을 숨긴 방을 다른 사람이 보면 줄 없이 '본인 화면에서만 보여요'만 보인다", () => {
     const people = [person(0, "참가자 1", { hidden: true }), person(1, "참가자 2", { hidden: true })];
     const found = toLastTrainView({ ...weekday, partial: true }, [], station, people);
