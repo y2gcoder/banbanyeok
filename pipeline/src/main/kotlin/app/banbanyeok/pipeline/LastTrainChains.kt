@@ -16,15 +16,22 @@ private data class LtMatch(
  * Rebuilds trains from station rows that carry no train number: a row is linked to the row of the same train at
  * the next station when that row names the same terminal and sits at the expected time (± [LT_TOLERANCE]).
  *
- * Only neighbours on the terminal's side are tried ([allowed]); among them the neighbour that most rows of the
- * same (station, terminal) match wins, so a following train that happens to sit at another neighbour at the
- * expected time is never linked. A skipped stop (express) or a short run simply has no row to link to: the chain
- * ends there, which loses rides but never invents one.
+ * - The expected time is an **arrival** when the next row has one (departure + run time), and a departure only
+ *   for rows without an arrival (a passing train). A train that waits at a station to be overtaken leaves late
+ *   but still arrives on time, so it is matched by its arrival, not confused with the train overtaking it.
+ * - A row at the next station that is not later than this row's departure is never the same train.
+ * - Only neighbours on the terminal's side are tried ([allowed]); among them the neighbour that most rows of
+ *   the same (station, terminal) match wins.
+ * - A link that cannot be told from another one is not made ([LT_AMBIGUOUS]): two candidates about equally far
+ *   from the expected time, or two rows claiming the same candidate about equally well.
+ *
+ * A link that is not made loses rides (the answer gets earlier or disappears); it never invents one.
  */
 internal class LtChainer(
     rows: Map<String, List<LtRow>>,
     private val neighbours: Map<String, List<String>>,
     private val hops: Map<Pair<String, String>, Int>,
+    private val runs: Map<Pair<String, String>, Int>,
     private val allowed: (station: String, end: String, next: String) -> Boolean,
 ) {
     /** Station id → distinct rows of the night in time order. Links refer to these lists. */
@@ -36,30 +43,41 @@ internal class LtChainer(
                 .sortedWith(compareBy({ it.key }, { it.arrival }, { it.departure }, { it.end }))
         }
 
-    /** Station id → terminal → (time, row index) in time order. */
-    private val byEnd: Map<String, Map<String, List<Pair<Int, Int>>>> =
-        this.rows.mapValues { (_, list) ->
-            list.withIndex().groupBy({ it.value.end }, { it.value.key to it.index })
-        }
+    /** Station id → terminal → row indexes. */
+    private val byEnd: Map<String, Map<String, List<Int>>> =
+        this.rows.mapValues { (_, list) -> list.indices.groupBy { list[it].end } }
 
+    /** How far the candidate row is from where this train would be, or null when it cannot be this train. */
+    private fun gap(
+        row: LtRow,
+        candidate: LtRow,
+        hop: Int,
+        run: Int,
+    ): Int? {
+        val stops = candidate.arrival >= 0
+        val actual = if (stops) candidate.arrival else candidate.departure
+        val expected = row.departure + if (stops) run else hop
+        return kotlin.math.abs(actual - expected).takeIf { actual > row.departure && it <= LT_TOLERANCE }
+    }
+
+    /** The one row at [next] this train continues as: the nearest candidate, unless a second one is about as near. */
     private fun match(
         from: String,
         row: LtRow,
         next: String,
     ): LtMatch? {
         val hop = hops[from to next] ?: return null
-        val candidates = byEnd[next]?.get(row.end) ?: return null
-        val expected = row.departure + hop
-        val first = candidates.indexOfFirst { it.first >= expected - LT_TOLERANCE - LT_TERMINAL_EARLY }
-        if (first < 0) return null
-        return candidates
-            .subList(first, candidates.size)
-            .takeWhile { it.first <= expected + LT_TOLERANCE }
-            .filter { (time, index) ->
-                val terminal = rows.getValue(next)[index].departure < 0
-                time >= expected - LT_TOLERANCE - if (terminal) LT_TERMINAL_EARLY else 0
-            }.minByOrNull { kotlin.math.abs(it.first - expected) }
-            ?.let { LtMatch(kotlin.math.abs(it.first - expected), next, it.second) }
+        val run = runs[from to next] ?: return null
+        val list = rows[next] ?: return null
+        val found =
+            byEnd[next]
+                ?.get(row.end)
+                .orEmpty()
+                .mapNotNull { index -> gap(row, list[index], hop, run)?.let { LtMatch(it, next, index) } }
+                .sortedWith(compareBy({ it.gap }, { it.index }))
+        val best = found.firstOrNull() ?: return null
+        val second = found.getOrNull(1)
+        return best.takeIf { second == null || second.gap - best.gap >= LT_AMBIGUOUS }
     }
 
     private val previous: Map<String, List<String>> =
@@ -74,13 +92,14 @@ internal class LtChainer(
         val row = rows.getValue(head.station)[head.index]
         return previous[head.station].orEmpty().filter { allowed(it, row.end, head.station) }.none { before ->
             val expected = row.departure - hops.getValue(before to head.station)
-            byEnd[before]?.get(row.end).orEmpty().any { (time, index) ->
-                rows.getValue(before)[index].departure >= 0 && kotlin.math.abs(time - expected) <= LT_ORIGIN_WINDOW
+            val list = rows.getValue(before)
+            byEnd[before]?.get(row.end).orEmpty().any { index ->
+                list[index].departure >= 0 && kotlin.math.abs(list[index].departure - expected) <= LT_ORIGIN_WINDOW
             }
         }
     }
 
-    /** Every departing row's best match at each allowed neighbour, in (station, row) order. */
+    /** Every departing row's match at each allowed neighbour, in (station, row) order. */
     private fun matches(): Map<LtRef, List<LtMatch>> {
         val found = linkedMapOf<LtRef, List<LtMatch>>()
         rows.forEach { (station, list) ->
@@ -105,19 +124,20 @@ internal class LtChainer(
             val key = ref.station to rows.getValue(ref.station)[ref.index].end
             list.forEach { votes.getOrPut(key) { sortedMapOf() }.merge(it.next, 1, Int::plus) }
         }
-        val forward = mutableMapOf<LtRef, LtRef>()
-        val taken = mutableMapOf<LtRef, Pair<Int, LtRef>>()
+        // Rows claiming each candidate, in (station, row) order.
+        val claims = linkedMapOf<LtRef, MutableList<Pair<Int, LtRef>>>()
         found.forEach { (ref, list) ->
             val key = ref.station to rows.getValue(ref.station)[ref.index].end
             // The neighbour most rows agree on; on a tie the smaller id (the map is sorted).
             val side = votes[key]?.entries?.maxByOrNull { it.value }?.key
             val best = list.firstOrNull { it.next == side } ?: return@forEach
-            val target = LtRef(best.next, best.index)
-            val holder = taken[target]
-            if (holder != null && holder.first <= best.gap) return@forEach
-            if (holder != null) forward.remove(holder.second)
-            taken[target] = best.gap to ref
-            forward[ref] = target
+            claims.getOrPut(LtRef(best.next, best.index)) { mutableListOf() }.add(best.gap to ref)
+        }
+        val forward = mutableMapOf<LtRef, LtRef>()
+        claims.forEach { (target, list) ->
+            val ranked = list.sortedBy { it.first }
+            val clear = ranked.size == 1 || ranked[1].first - ranked[0].first >= LT_AMBIGUOUS
+            if (clear) forward[ranked[0].second] = target
         }
         return forward
     }
@@ -136,6 +156,10 @@ internal fun ltChains(links: Map<LtRef, LtRef>): List<List<LtRef>> {
 internal fun ltUnnumberedTrains(
     problem: LtProblem,
     rows: Map<String, List<LtRow>>,
+    /** Seconds before departure a rider must be on the platform, per line family (the source margin). */
+    margin: (family: String) -> Int = { 0 },
+    /** Families confirmed against the operator's timetable that day type. */
+    verified: Set<String> = emptySet(),
 ): List<LtTrain> {
     val known = rows.filterKeys { it in problem.stations }
     val neighbours =
@@ -143,7 +167,7 @@ internal fun ltUnnumberedTrains(
             .groupBy({ it.first }, { it.second })
             .mapValues { it.value.sorted() }
     val chainer =
-        LtChainer(known, neighbours, problem.hops) { station, end, next ->
+        LtChainer(known, neighbours, problem.hops, problem.runs) { station, end, next ->
             val here = problem.stations.getValue(station)
             val there = problem.stations[next] ?: return@LtChainer false
             problem.families.closer(here.group, here.code, there.code, problem.stations[end]?.code)
@@ -151,13 +175,21 @@ internal fun ltUnnumberedTrains(
     return ltChains(chainer.links()).map { chain ->
         val head = chain.first()
         val first = chainer.rows.getValue(head.station)[head.index]
+        val family = problem.stations.getValue(head.station).group
         LtTrain(
-            problem.stations.getValue(head.station).group,
+            family,
             problem.stations[first.end]?.code,
             chain.mapIndexed { index, ref ->
                 val row = chainer.rows.getValue(ref.station)[ref.index]
                 val origin = index == 0 && row.arrival < 0 && chainer.startsRun(ref)
-                LtStop(problem.stations.getValue(ref.station).code, row.arrival, row.departure, origin)
+                LtStop(
+                    problem.stations.getValue(ref.station).code,
+                    row.arrival,
+                    row.departure,
+                    origin,
+                    margin(family),
+                    family in verified,
+                )
             },
         )
     }
@@ -165,11 +197,20 @@ internal fun ltUnnumberedTrains(
 
 private val stopOrder = compareBy<LtStop>({ it.key }, { it.code })
 
-/** Trains of the numbered lines: stops of one train number in time order; trains in train-id order. */
-internal fun ltNumberedTrains(stops: List<LtNumberedStop>): List<LtTrain> =
+/**
+ * Trains of the numbered lines: stops of one train number in time order; trains in train-id order. Rows of the
+ * lines in [verified] are confirmed rows; rows of every other line are boarded [margin] seconds early.
+ */
+internal fun ltNumberedTrains(
+    stops: List<LtNumberedStop>,
+    verified: Set<String> = emptySet(),
+    margin: Int = 0,
+): List<LtTrain> =
     stops
-        .map { it to LtStop(it.code, it.arrival, it.departure) }
-        .filter { (_, stop) -> stop.key in LT_CHAIN_FROM until LT_DAY_END }
+        .map {
+            val confirmed = it.group in verified
+            it to LtStop(it.code, it.arrival, it.departure, margin = if (confirmed) 0 else margin, verified = confirmed)
+        }.filter { (_, stop) -> stop.key in LT_CHAIN_FROM until LT_DAY_END }
         .groupBy({ it.first.train }, { it })
         .toSortedMap()
         .values
@@ -228,8 +269,33 @@ internal fun ltStitch(
     return alone + whole + numbered.filterIndexed { index, _ -> index !in merged }
 }
 
-/** All trains of one day type. */
+/** All trains of one day type from the first source of every line family. */
 internal fun ltTrains(
     problem: LtProblem,
+    day: app.banbanyeok.schema.DayType,
     rows: LtDayRows,
-): List<LtTrain> = ltStitch(ltNumberedTrains(rows.numbered), ltUnnumberedTrains(problem, rows.unnumbered))
+): List<LtTrain> =
+    ltStitch(
+        ltNumberedTrains(rows.numbered, problem.exactNumbered[day].orEmpty(), problem.sourceMargin),
+        ltUnnumberedTrains(problem, rows.unnumbered, { problem.margin(it, day) }, problem.exact[day].orEmpty()),
+    )
+
+/**
+ * The same night with the second source for the families that have one: their unnumbered rows are left out and
+ * their numbered trains from the second source are used instead. Null when no family has a second source.
+ */
+internal fun ltSecondTrains(
+    problem: LtProblem,
+    day: app.banbanyeok.schema.DayType,
+    rows: LtDayRows,
+): List<LtTrain>? {
+    val families = rows.second.map { it.group }.toSet()
+    if (families.isEmpty()) return null
+    val others = rows.unnumbered.filterKeys { problem.stations[it]?.group !in families }
+    // The second source's own rows carry no margin (the earlier of the two answers is kept) and confirm nothing.
+    return ltStitch(
+        ltNumberedTrains(rows.numbered, problem.exactNumbered[day].orEmpty(), problem.sourceMargin) +
+            ltNumberedTrains(rows.second),
+        ltUnnumberedTrains(problem, others, { problem.margin(it, day) }, problem.exact[day].orEmpty()),
+    )
+}

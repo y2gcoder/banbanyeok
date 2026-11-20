@@ -45,6 +45,26 @@ internal data class LtHiddenCheck(
             )
 }
 
+/** Median departure-to-departure and departure-to-arrival seconds between adjacent stations of the true trains. */
+private fun medianHops(
+    families: LtFamilies,
+    truth: List<LtTrain>,
+): Pair<Map<Pair<String, String>, Int>, Map<Pair<String, String>, Int>> {
+    val samples = mutableMapOf<Pair<String, String>, MutableList<Int>>()
+    val runSamples = mutableMapOf<Pair<String, String>, MutableList<Int>>()
+    truth.forEach { train ->
+        train.stops.zipWithNext().filter { it.first.departure >= 0 }.forEach { (a, b) ->
+            val adjacent = families.adjacent(train.group, a.code.substringAfter(':'), b.code.substringAfter(':'))
+            if (adjacent) samples.getOrPut(a.code to b.code) { mutableListOf() }.add(b.key - a.departure)
+            if (adjacent && b.arrival >= 0) {
+                runSamples.getOrPut(a.code to b.code) { mutableListOf() }.add(b.arrival - a.departure)
+            }
+        }
+    }
+    val hops = samples.mapValues { (_, values) -> values.sorted()[values.size / 2] }
+    return hops to hops.mapValues { (pair, hop) -> runSamples[pair]?.let { it.sorted()[it.size / 2] } ?: hop }
+}
+
 /**
  * Scores the chain matching on lines that do have train numbers: the numbers are hidden, trains are rebuilt from
  * (station, terminal, times) alone exactly as for the unnumbered lines, and the last direct train of every
@@ -64,14 +84,7 @@ internal fun ltHiddenNumbers(
     val kept = stops.filter { it.group !in skip }
     val truth =
         ltNumberedTrains(kept.map { it.copy(code = id(it.group, it.code)) })
-    val samples = mutableMapOf<Pair<String, String>, MutableList<Int>>()
-    truth.forEach { train ->
-        train.stops.zipWithNext().filter { it.first.departure >= 0 }.forEach { (a, b) ->
-            val adjacent = families.adjacent(train.group, a.code.substringAfter(':'), b.code.substringAfter(':'))
-            if (adjacent) samples.getOrPut(a.code to b.code) { mutableListOf() }.add(b.key - a.departure)
-        }
-    }
-    val hops = samples.mapValues { (_, values) -> values.sorted()[values.size / 2] }
+    val (hops, runs) = medianHops(families, truth)
     val rows =
         kept
             .filter { it.end != null }
@@ -81,7 +94,7 @@ internal fun ltHiddenNumbers(
             )
     val neighbours = hops.keys.groupBy({ it.first }, { it.second }).mapValues { it.value.sorted() }
     val chainer =
-        LtChainer(rows, neighbours, hops) { station, end, next ->
+        LtChainer(rows, neighbours, hops, runs) { station, end, next ->
             families.closer(
                 station.substringBefore(':'),
                 station.substringAfter(':'),
@@ -121,12 +134,15 @@ internal fun ltHiddenNumbers(
 internal fun ltLaterCells(
     base: LtDayResult,
     wider: LtDayResult,
-): Int = base.latest.indices.count { wider.latest[it] > base.latest[it] || wider.direct[it] != base.direct[it] }
+): Int =
+    base.latest.indices.count {
+        wider.latest[it] > base.latest[it] || wider.direct[it]?.boardBy != base.direct[it]?.boardBy
+    }
 
 /** Cells whose content contradicts the search they came from (a direct train later than the best itinerary). */
 internal fun ltInconsistentCells(result: LtDayResult): Int =
     result.latest.indices.count {
-        result.direct[it] > result.latest[it] ||
+        (result.direct[it]?.boardBy ?: -1) > result.latest[it] ||
             (result.latest[it] < 0) != (result.cells[it].kind == 0)
     }
 
@@ -208,7 +224,11 @@ internal fun ltOfficialSamples(text: String): List<LtOfficialSample> =
         )
     }
 
-/** Compares the samples with the computed direct trains; a sample passes when minute and destination match. */
+/**
+ * Compares the samples with the last single train of each cell. A sample passes only when the departure minute,
+ * the train's destination **and its line family** all match: a sample cannot vouch for another family, and a cell
+ * where no single train runs never passes.
+ */
 internal fun ltOfficialReport(
     samples: List<LtOfficialSample>,
     problem: LtProblem,
@@ -220,22 +240,123 @@ internal fun ltOfficialReport(
         val home = problem.homes.indexOf(stationNamed(origins, sample.home).code)
         val meeting = problem.meetings.indexOf(stationNamed(origins, sample.meeting).code)
         require(home >= 0 && meeting >= 0) { "Official sample ${sample.meeting}→${sample.home} is outside the axes" }
-        val result = results.getValue(sample.day)
-        val cell = home * problem.meetings.size + meeting
-        val direct = result.direct[cell].takeIf { it >= 0 }?.div(60)
-        val bound = result.cells[cell].bound?.let(names::get)
+        val direct = results.getValue(sample.day).direct[home * problem.meetings.size + meeting]
+        val minute = direct?.departure?.div(60)
+        val bound = direct?.bound?.let(names::get)
+        val family = direct?.group
         obj(
             "meeting" to sample.meeting,
             "home" to sample.home,
             "day" to sample.day.id,
             "family" to sample.family,
             "official" to sample.minute,
-            "computed" to direct,
+            "computed" to minute,
+            "computedFamily" to family,
             "computedBound" to bound,
             "officialBound" to sample.bound,
-            "passed" to (direct == sample.minute && (bound == null || bound == sample.bound)),
+            "passed" to (minute == sample.minute && bound == sample.bound && family == sample.family),
             "url" to sample.url,
             "checkedAt" to sample.checkedAt,
         )
     }
+}
+
+/** One row of data/config/last-train-ceilings.csv: a cell that must never show a time later than the operator's. */
+internal data class LtCeiling(
+    val meeting: String,
+    val home: String,
+    val day: DayType,
+    val notAfter: Int,
+    val url: String,
+    val checkedAt: String,
+)
+
+internal fun ltCeilings(text: String): List<LtCeiling> =
+    csv(text).drop(1).filter { it.any(String::isNotBlank) }.map { row ->
+        require(row.size == 7) { "last-train-ceilings.csv: meeting,home,day,notAfter,url,checkedAt,note" }
+        val (hour, minute) = row[3].split(':').map(String::toInt)
+        LtCeiling(
+            row[0],
+            row[1],
+            requireNotNull(DayType.entries.firstOrNull { it.id == row[2] }) { "Unknown day type ${row[2]}" },
+            hour * 60 + minute,
+            row[4].also { require(it.startsWith("https://")) { "last-train-ceilings.csv: source URL required" } },
+            row[5],
+        )
+    }
+
+/** What each ceiling cell shows (floored for margin kinds); it passes when that is not later than the ceiling. */
+internal fun ltCeilingReport(
+    ceilings: List<LtCeiling>,
+    problem: LtProblem,
+    origins: List<Station>,
+    results: Map<DayType, LtDayResult>,
+): List<JsonObject> =
+    ceilings.map { ceiling ->
+        val home = problem.homes.indexOf(stationNamed(origins, ceiling.home).code)
+        val meeting = problem.meetings.indexOf(stationNamed(origins, ceiling.meeting).code)
+        require(home >= 0 && meeting >= 0) { "Ceiling ${ceiling.meeting}→${ceiling.home} is outside the axes" }
+        val cell = results.getValue(ceiling.day).cells[home * problem.meetings.size + meeting]
+        val shown = cell.takeIf { it.kind != 0 }?.let(::ltShown)
+        obj(
+            "meeting" to ceiling.meeting,
+            "home" to ceiling.home,
+            "day" to ceiling.day.id,
+            "notAfter" to ceiling.notAfter,
+            "shown" to shown,
+            "passed" to (shown == null || shown <= ceiling.notAfter),
+            "url" to ceiling.url,
+            "checkedAt" to ceiling.checkedAt,
+        )
+    }
+
+/** Last direct trains of one line family in our trains against the operator's train-coded file, pair by pair. */
+internal data class LtCrossCheck(
+    val pairs: Int,
+    val same: Int,
+    /** Pairs where ours is later than the operator's, and by how many seconds at most. */
+    val later: Int,
+    val maxLaterSeconds: Int,
+    val earlier: Int,
+    val onlyOurs: Int,
+    val onlyOfficial: Int,
+) {
+    /**
+     * Every pair we publish has the same last direct train in the operator's file (so none is later, earlier or ours
+     * alone), and there is something to compare. Only then are the line's direct trains published to the minute.
+     */
+    val identical: Boolean get() = pairs > 0 && same == pairs
+
+    val json: JsonObject
+        get() =
+            obj(
+                "pairs" to pairs,
+                "same" to same,
+                "later" to later,
+                "maxLaterSeconds" to maxLaterSeconds,
+                "earlier" to earlier,
+                "onlyOurs" to onlyOurs,
+                "onlyOfficial" to onlyOfficial,
+            )
+}
+
+/** [ours] and [official] are trains of the same line family and day type. Source margins are not applied. */
+internal fun ltCrossCheck(
+    ours: List<LtTrain>,
+    official: List<LtTrain>,
+): LtCrossCheck {
+    fun raw(trains: List<LtTrain>) =
+        ltPairs(trains.map { train -> LtTrain(train.group, train.end, train.stops.map { it.copy(margin = 0) }) })
+    val mine = raw(ours)
+    val theirs = raw(official)
+    val late = mine.mapNotNull { (pair, value) -> theirs[pair]?.let { value - it }?.takeIf { it > 0 } }
+    return LtCrossCheck(
+        pairs = mine.size,
+        same = mine.count { theirs[it.key] == it.value },
+        later = late.size,
+        maxLaterSeconds = late.maxOrNull() ?: 0,
+        earlier = mine.count { (pair, value) -> (theirs[pair] ?: Int.MIN_VALUE) > value },
+        onlyOurs = mine.keys.count { it !in theirs },
+        onlyOfficial = theirs.keys.count { it !in mine },
+    )
 }

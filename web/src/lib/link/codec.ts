@@ -38,6 +38,12 @@ export type ShareState = {
   favorIndex: number | null;
   nicknames: (string | null)[] | null;
   timeSlot: TimeSlot;
+  /**
+   * 옛 링크(v=1)에서만 true다: 그 링크는 요일·시간대를 고른 적이 없고 `timeSlot`(평일 낮)은 기본값일 뿐이다. 웹 안에서만 쓰는 표시라
+   * 링크에 쓰지 않는다(인코더는 무시한다). 추천을 요청할 때 이 표시가 있으면 `timeSlot`을 보내지 않는다 — 순위는 같고(서버 기본값도
+   * 평일 낮), 서버가 귀갓길 막차 시각을 내지 않는다(요일을 모르면 평일 막차를 보이면 안 된다. 휴일 막차가 더 이르다).
+   */
+  slotDefaulted?: true;
 };
 
 export type DecodeResult = { ok: true; state: ShareState } | { ok: false; error: LinkErrorCode };
@@ -203,7 +209,8 @@ export function decodeShareQuery(query: string): DecodeResult {
     const mode = readMode(m, origins.length);
     if (!isTimeSlot(t)) throw new LinkError("BAD_TIME_SLOT");
     const nicknames = readNicknames(values.get("n"), origins.length);
-    return { ok: true, state: { origins, ...mode, nicknames, timeSlot: t } };
+    const legacy = v === LEGACY_VERSION ? ({ slotDefaulted: true } as const) : {};
+    return { ok: true, state: { origins, ...mode, nicknames, timeSlot: t, ...legacy } };
   } catch (error) {
     if (error instanceof LinkError) return { ok: false, error: error.code };
     throw error;

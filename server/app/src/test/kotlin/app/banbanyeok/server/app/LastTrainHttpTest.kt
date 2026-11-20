@@ -76,6 +76,20 @@ class LastTrainHttpTest :
         val hongdae = codeOf("홍대입구")
         val jamsil = codeOf("잠실")
 
+        describe("the timetable date of the manifest") {
+            it("turns last trains off instead of failing the start when it cannot be read as a date") {
+                CompositionRoot.lastTrainAsOf("2026-11-16") shouldBe LocalDate.parse("2026-11-16")
+                CompositionRoot.lastTrainAsOf(null) shouldBe null
+                // manifest 검사가 먼저 거르지만, 여기까지 와도 서버는 뜨고 막차만 꺼진다(PR #81 검토: 2026-02-30에서 기동 실패).
+                CompositionRoot.lastTrainAsOf("2026-02-30") shouldBe null
+                BackgroundLastTrains(
+                    CompletableDeferred(DevArtifacts.lastTrains.current()!!.table),
+                    null,
+                ).current() shouldBe
+                    null
+            }
+        }
+
         describe("POST /v1/recommend lastTrains") {
             it("adds everyone's last train to every candidate, read from the published table of the same data") {
                 testApplication {
@@ -119,6 +133,28 @@ class LastTrainHttpTest :
                 LastTrainRule.cell(table, DayType.SATURDAY, gwanggyo, gangnam).kind.wire shouldBe "check"
             }
 
+            it("confirms Seoul lines 1 to 8 against the operator's file and keeps line 9 a margin time") {
+                val table = DevArtifacts.lastTrains.current()!!.table
+                // 2호선(순환, 단축 운행): 홍대입구에서 합정으로 가는 막차는 신도림행이다. 평일 24:50, 토요일·휴일 23:51.
+                val sindorim = codeOf("신도림")
+                mapOf(
+                    DayType.WEEKDAY to 24 * 60 + 50,
+                    DayType.SATURDAY to 23 * 60 + 51,
+                    DayType.HOLIDAY to 23 * 60 + 51,
+                ).forEach { (day, minute) ->
+                    val cell = LastTrainRule.cell(table, day, codeOf("합정"), hongdae)
+                    cell.kind.wire shouldBe "direct"
+                    cell.minute shouldBe minute
+                    cell.boundFor?.toString() shouldBe sindorim
+                }
+                // 9호선은 확정에서 뺀다. 휴일 당산→가양 급행은 운영사 표로 23:48:30이다(PR #81 검토): 보이는 시각은 그보다 늦지 않다.
+                listOf("가양", "마곡나루", "김포공항").forEach { home ->
+                    val cell = LastTrainRule.cell(table, DayType.HOLIDAY, codeOf(home), codeOf("당산"))
+                    cell.kind shouldBe app.banbanyeok.schema.LastTrainKind.MARGIN_DIRECT
+                    (cell.minute!! <= 23 * 60 + 48) shouldBe true
+                }
+            }
+
             it("keeps the ranking, times and reasons of every slot exactly as without last trains") {
                 testApplication {
                     application { apiModule(testConfig(), api()) }
@@ -154,24 +190,20 @@ class LastTrainHttpTest :
                                 "/v1/recommend",
                                 body(listOf(hongdae, gwanggyo), "saturday-night"),
                             ).body()
-                    json
-                        .getValue("lastTrainBasis")
-                        .jsonObject
-                        .getValue("dayType")
-                        .jsonPrimitive.content shouldBe
-                        "saturday"
+                    // 토요일은 일부 노선만 계산한 요일 종류다: 화면이 "이 요일은 일부 노선만"이라고 말할 근거를 준다.
+                    json.getValue("lastTrainBasis").toString() shouldBe
+                        """{"dayType":"saturday","asOf":"${DevArtifacts.lastTrainAsOf}","partial":true}"""
                     json.cards().forEach { card ->
-                        val (seoul, sinbundang) = card.trains()
+                        val (_, sinbundang) = card.trains()
                         sinbundang.toString() shouldBe """{"participantId":"1","kind":"check"}"""
-                        // 홍대입구(2호선)는 토요일 시간표가 있다: 직행 확정은 아니고(대조 전) 여유 시각이거나, 자기 역이면 확인 필요.
-                        (seoul.getValue("kind").jsonPrimitive.content in setOf("margin", "check")) shouldBe true
                     }
+                    // 홍대입구(2호선)는 토요일 시간표가 있다: 시각이 나오는 후보가 있다.
                     json.cards().any {
                         it
                             .trains()
                             .first()
                             .getValue("kind")
-                            .jsonPrimitive.content == "margin"
+                            .jsonPrimitive.content in setOf("direct", "margin")
                     } shouldBe
                         true
                 }
@@ -235,12 +267,15 @@ class LastTrainHttpTest :
                 listOf(pending, failed).forEach { source ->
                     testApplication {
                         application { apiModule(testConfig(), api(source)) }
+                        val started = System.nanoTime()
                         val response =
                             client.json(
                                 HttpMethod.Post,
                                 "/v1/recommend",
                                 body(listOf(gangnam, gwanggyo), "weekday-night"),
                             )
+                        // 표가 준비되지 않았어도 요청은 기다리지 않는다(PR #81 검토: 전에는 요청마다 최대 2초를 기다렸다).
+                        ((System.nanoTime() - started) / 1_000_000 < 1_500) shouldBe true
                         response.status shouldBe HttpStatusCode.OK
                         OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", response)
                         val json = response.body()

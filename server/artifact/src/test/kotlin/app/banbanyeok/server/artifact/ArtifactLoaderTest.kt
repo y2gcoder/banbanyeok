@@ -100,6 +100,21 @@ class ArtifactLoaderTest :
                 loaded.lastTrains.await() shouldBe null
             }
 
+            it("falls back to generation 2 when the generation 3 manifest carries a date that is not on the calendar") {
+                // PR #81 검토: lastTrainAsOf만 2026-02-30으로 바꾸면 모양 검사는 통과하고 서버가 날짜를 읽다 기동에 실패했다.
+                val store = LocalFileArtifactStore(Files.createTempDirectory("bad-date"), UnconfinedTestDispatcher())
+                copyDev(store)
+                val v3 = store.get(ArtifactLoader.MANIFEST_V3_KEY)!!.content.decodeToString()
+                val broken =
+                    Regex("\"lastTrainAsOf\": \"[0-9-]+\"").replace(v3, "\"lastTrainAsOf\": \"2026-02-30\"")
+                (broken == v3) shouldBe false
+                store.put(ArtifactLoader.MANIFEST_V3_KEY, broken.encodeToByteArray())
+                val loaded = ArtifactLoader(store).load()
+                loaded.dataSet.manifest.schemaVersion shouldBe 2
+                loaded.slots.await().size shouldBe 11
+                loaded.lastTrains.await() shouldBe null
+            }
+
             it(
                 "still starts and serves every slot when the last-train table is tampered, and reports only that failure",
             ) {

@@ -26,8 +26,26 @@ describe("링크 코덱 — contracts/golden/link-vectors.json", () => {
 
   it.each(vectors.decode.map((v) => [v.id, v] as const))("decode %s", (_id, vector) => {
     const result = decodeShareQuery(vector.query);
-    if ("expectedError" in vector) expect(result).toEqual({ ok: false, error: vector.expectedError });
-    else expect(result).toEqual({ ok: true, state: vector.expected });
+    if ("expectedError" in vector) {
+      expect(result).toEqual({ ok: false, error: vector.expectedError });
+      return;
+    }
+    // 벡터는 Kotlin·앱과 같이 쓰는 링크 계약이다. `slotDefaulted`는 웹 안의 표시라 따로 본다(v=1에서만 true).
+    if (!result.ok) throw new Error(`decode failed: ${result.error}`);
+    const { slotDefaulted, ...state } = result.state;
+    expect(state).toEqual(vector.expected);
+    expect(slotDefaulted).toBe(new URLSearchParams(vector.query).get("v") === "1" ? true : undefined);
+  });
+
+  it("옛 링크(v=1)는 구분을 고른 적이 없다고 표시하고, 다시 인코딩하면 그 표시는 링크에 남지 않는다", () => {
+    const legacy = decodeShareQuery("v=1&o=03v.130&m=f");
+    if (!legacy.ok) throw new Error("decode failed");
+    expect(legacy.state.timeSlot).toBe("weekday-day");
+    expect(legacy.state.slotDefaulted).toBe(true);
+    expect(encodeShareQuery(legacy.state)).toBe("v=2&o=03v.130&m=f&t=weekday-day");
+    const chosen = decodeShareQuery("v=2&o=03v.130&m=f&t=weekday-day");
+    if (!chosen.ok) throw new Error("decode failed");
+    expect("slotDefaulted" in chosen.state).toBe(false);
   });
 
   it("오류 코드 10개가 모두 벡터에 있다", () => {

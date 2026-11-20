@@ -68,5 +68,19 @@
     "rows": 1663,
     "sha256": "c9ea8c0f941b8b9e2cb3ab4752bef36466420042e288437cdcaebc61b33e5bcb",
     "source_url": "https://data.seoul.go.kr/dataList/OA-101/A/1/datasetView.do (SearchInfoBySubwayNameService, SearchSTNTimeTableByIDService)"
+  },
+  {
+    "bytes": 32730124,
+    "content_type": "application/octet-stream; charset=UTF-8",
+    "effective_date": "2026-09-01 (서울교통공사_서울 도시철도 열차운행시각표_20260901, 수정일 2026-09-14)",
+    "estimated": false,
+    "fetched_at": "2026-11-20T12:46:39.287349Z",
+    "file": "data/raw/seoulmetro-timetable.csv",
+    "id": "S7",
+    "license": "이용허락범위 제한 없음 (서울교통공사, data.go.kr/15098251)",
+    "request_body": null,
+    "rows": 423107,
+    "sha256": "fd7e7b6edc18a5ac4f40f53b594d460d5cbd96d90919aaeb54b957890080d606",
+    "source_url": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000007671122&fileDetailSn=1"
   }
 ]

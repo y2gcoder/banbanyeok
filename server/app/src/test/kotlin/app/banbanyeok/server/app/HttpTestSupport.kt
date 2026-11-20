@@ -44,7 +44,11 @@ object DevArtifacts {
     /** 검사를 마친 dev 막차 표(lt.bin). */
     val lastTrains: BackgroundLastTrains by lazy {
         runBlocking { loaded.lastTrains.join() }
-        BackgroundLastTrains(loaded.lastTrains, java.time.LocalDate.parse(lastTrainAsOf))
+        BackgroundLastTrains(
+            loaded.lastTrains,
+            java.time.LocalDate.parse(lastTrainAsOf),
+            CompositionRoot.lastTrainPartialDays(loaded.dataSet.manifest.lastTrainPartialDays),
+        )
     }
     val published: PublishedArtifacts by lazy { PublishedArtifacts(store, loaded) }
     val origins: List<String> get() = directory.originCodes

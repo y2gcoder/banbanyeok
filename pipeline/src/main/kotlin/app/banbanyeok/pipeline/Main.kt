@@ -12,25 +12,45 @@ import kotlin.io.path.exists
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
+/** The commands that stage a release or fetch one source. False when [args] is none of them. */
+private fun fetchOrStage(
+    root: Path,
+    args: Array<String>,
+): Boolean {
+    when {
+        args.firstOrNull() == "stage-release" -> {
+            // 발행 디렉터리(기본 build/release). 업로드는 scripts/publish-artifacts.sh.
+            require(args.size <= 2) { "Usage: stage-release [outDir]" }
+            stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
+        }
+
+        args.firstOrNull() == "tago-fetch" -> {
+            tagoCommand(root, args.drop(1))
+        }
+
+        // Keyless download of the operator's train-coded timetable file (S7), the second source for last trains.
+        args.singleOrNull() == "official-fetch" -> {
+            officialFetch(root)
+        }
+
+        // The only command that needs SEOUL_OPENAPI_KEY. Exit 2 = limit reached; rerun to resume.
+        args.singleOrNull() == "seoul-fetch" -> {
+            kotlin.system.exitProcess(seoulFetch(root))
+        }
+
+        else -> {
+            return false
+        }
+    }
+    return true
+}
+
 fun main(args: Array<String>) {
     val root =
         generateSequence(Path.of("").toAbsolutePath()) {
             it.parent
         }.first { it.resolve("contracts/data-format.md").exists() }
-    if (args.firstOrNull() == "stage-release") {
-        // 발행 디렉터리(기본 build/release). 업로드는 scripts/publish-artifacts.sh.
-        require(args.size <= 2) { "Usage: stage-release [outDir]" }
-        stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
-        return
-    }
-    if (args.firstOrNull() == "tago-fetch") {
-        tagoCommand(root, args.drop(1))
-        return
-    }
-    if (args.singleOrNull() == "seoul-fetch") {
-        // The only command that needs SEOUL_OPENAPI_KEY. Exit 2 = limit reached; rerun to resume.
-        kotlin.system.exitProcess(seoulFetch(root))
-    }
+    if (fetchOrStage(root, args)) return
     when (args.singleOrNull()) {
         "fetch" -> {
             fetch(root)
@@ -73,7 +93,8 @@ fun main(args: Array<String>) {
 
         else -> {
             error(
-                "Usage: fetch|seoul-fetch|headways|build|validate|all|spotcheck|refresh|tago-fetch [probe]|" +
+                "Usage: fetch|seoul-fetch|official-fetch|headways|build|validate|all|spotcheck|refresh|" +
+                    "tago-fetch [probe]|" +
                     "stage-release [outDir]",
             )
         }
@@ -242,6 +263,9 @@ private fun validate(root: Path) {
         "Artifact last-train table differs from the current timetables; rebuild required"
     }
     require(lastTrains.asOf == dataset.manifest.lastTrainAsOf) { "Artifact last-train date differs; rebuild required" }
+    require(lastTrains.partialDays == dataset.manifest.lastTrainPartialDays) {
+        "Artifact last-train partial day types differ; rebuild required"
+    }
     println(
         "Validated artifact hashes, contract, append-only registry, recomputed OD cells of ${slots.size} slots " +
             "and the last-train table",

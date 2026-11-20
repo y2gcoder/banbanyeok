@@ -184,7 +184,6 @@ private fun Route.resultRoutes(services: ApiServices) {
             }
         val slot = requireTimeSlot(body.timeSlot)
         services.directory.awaitSlots(slot)
-        services.directory.awaitLastTrains()
         // 구분을 보내지 않은 요청(옛 클라이언트, 요일을 고른 적 없는 `v=1` 링크)은 평일 낮으로 계산하되 막차 시각은 내지 않는다:
         // 평일은 고른 값이 아니라 기본값이고, 휴일 막차는 평일보다 이르다.
         val chosen = body.timeSlot != null && body.timeSlot !is JsonNull

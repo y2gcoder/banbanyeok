@@ -45,6 +45,31 @@ class ToyNetworkTests(unittest.TestCase):
         self.assertEqual(last_train.MARGIN_DIRECT, self.cells['holiday']['x02', 'x01'][0])
         self.assertEqual({}, self.cells['saturday'])
 
+    def test_a_numbered_line_is_exact_only_on_days_it_matched_the_operators_file(self):
+        # N선은 평일에만 공식 파일 대조를 통과했다(exactNumbered): n01 23:50 열차는 평일엔 분 그대로, 휴일엔 3분 여유를 둔다.
+        self.assertEqual((last_train.DIRECT, 23 * 60 + 50, 'n03'), self.cells['weekday']['n02', 'n01'])
+        self.assertEqual((last_train.MARGIN_DIRECT, 23 * 60 + 47, 'n03'), self.cells['holiday']['n02', 'n01'])
+        # 타는 역은 확정 구간이어도 내리는 역(n04)이 번호 없는 줄로 이은 구간이면 확정이 아니다.
+        self.assertEqual((last_train.MARGIN_DIRECT, 23 * 60 + 10, 'n05'), self.cells['weekday']['n04', 'n01'])
+
+    def test_an_uncompared_source_is_boarded_three_minutes_early(self):
+        # 휴일의 X선은 번호 없는 줄로 다시 이은 열차이고 그날은 확정 노선이 아니다: 23:00 열차는 22:57로 낸다.
+        self.assertEqual((last_train.MARGIN_DIRECT, 22 * 60 + 57, 'x06'), self.cells['holiday']['t00', 'x01'])
+        # 평일은 공식표 대조를 통과한 날이라 분 그대로다.
+        self.assertEqual(23 * 60 + 45, self.cells['weekday']['x02', 'x01'][1])
+
+    def test_the_earlier_answer_of_two_sources_is_kept(self):
+        holiday = self.cells['holiday']
+        # 둘째 원천은 x01행을 10분 일찍 운행한다(t00 23:16): 이른 쪽을 쓴다.
+        self.assertEqual((last_train.MARGIN_DIRECT, 23 * 60 + 16, 'x01'), holiday['x01', 't00'])
+        # 둘째 원천에만 있는 더 늦은 열차(23:40)는 쓰지 않는다.
+        self.assertEqual(22 * 60 + 57, holiday['x02', 'x01'][1])
+
+    def test_an_express_is_not_joined_to_the_local_it_overtakes(self):
+        # PR #81 검토의 반례: 완행은 b에서 23:02~23:12 대기, 급행은 a 23:10 출발로 b·c를 통과한다. a→c는 완행 23:00(여유 3분).
+        cells = last_train.expect(FIXTURES / 'overtake.json')
+        self.assertEqual([['c', 'a', last_train.MARGIN_DIRECT, 22 * 60 + 57, 'd']], cells['weekday'])
+
     def test_fixture_lists_rows_for_the_days_it_covers(self):
         data = json.loads((FIXTURES / 'toy.json').read_text(encoding='utf-8'))
         self.assertEqual({'weekday', 'holiday'}, set(data['rows']))

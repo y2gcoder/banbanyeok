@@ -1,0 +1,118 @@
+{
+ "homes": [
+  "c"
+ ],
+ "meetings": [
+  "a"
+ ],
+ "stations": {
+  "a": [
+   "a",
+   "X"
+  ],
+  "b": [
+   "b",
+   "X"
+  ],
+  "c": [
+   "c",
+   "X"
+  ],
+  "d": [
+   "d",
+   "X"
+  ]
+ },
+ "families": {
+  "X": [
+   [
+    "a",
+    "b"
+   ],
+   [
+    "b",
+    "c"
+   ],
+   [
+    "c",
+    "d"
+   ]
+  ]
+ },
+ "hops": [
+  [
+   "a",
+   "b",
+   120
+  ],
+  [
+   "b",
+   "c",
+   120
+  ],
+  [
+   "c",
+   "d",
+   120
+  ]
+ ],
+ "walks": [],
+ "stationWalks": {},
+ "exact": {},
+ "rows": {
+  "weekday": {
+   "unnumbered": {
+    "a": [
+     [
+      -1,
+      82800,
+      "d"
+     ],
+     [
+      -1,
+      83400,
+      "d"
+     ]
+    ],
+    "b": [
+     [
+      82920,
+      83520,
+      "d"
+     ],
+     [
+      -1,
+      83460,
+      "d"
+     ]
+    ],
+    "c": [
+     [
+      83640,
+      83640,
+      "d"
+     ],
+     [
+      -1,
+      83520,
+      "d"
+     ]
+    ],
+    "d": [
+     [
+      83760,
+      -1,
+      "d"
+     ],
+     [
+      83580,
+      -1,
+      "d"
+     ]
+    ]
+   },
+   "numbered": []
+  }
+ },
+ "about": "A local train waits at b to be overtaken (arrives 23:02, leaves 23:12); an express leaves a at 23:10 and only passes b and c. The express must not be joined to the local's rows: a to c is the 23:00 local (PR #81 review)."
+}

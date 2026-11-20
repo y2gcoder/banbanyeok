@@ -23,6 +23,8 @@ export function recommendQueryOptions(query: RecommendQuery) {
       query.favorIndex,
       query.nicknames,
       query.timeSlot,
+      // 구분을 보내지 않는 요청(v=1 링크)은 응답의 막차 항목이 다르다.
+      query.slotDefaulted === true,
     ] as const,
     queryFn: async ({ signal }) => {
       const started = performance.now();

@@ -37,3 +37,12 @@
 | `stations.json`의 `tago:*` 출처 ID·별칭(서해구청) | 같은 S6 역 목록 | 같은 조건 |
 | 운정중앙·킨텍스·동탄(GTX-A), 양원(경의중앙선) 좌표 | Wikidata P625 (Q125895818, Q125695849, Q23954759, Q482940), https://www.wikidata.org | CC0 1.0 |
 | `data/config/official-times.csv`, `official-comparison.json` | 신분당선 공식 소요 시각표 (https://shinbundang.co.kr/index.jsp?open_main=1&open_sub1=4&open_sub2=2&pageID=%2Fdxline%2Fdxline3_2.jsp), 2026-11-15 손으로 옮겨 적음 | 대조용 사실값(분·초)만 기록. 그래프 간선의 원천으로 쓰지 않는다 |
+
+## 귀갓길 막차 (#62)
+
+| 파생 산출물 | 출처·가공 | 이용 조건 |
+|---|---|---|
+| `lt.bin`의 서울교통공사 1~8호선 운영 구간 | 서울시 역코드로 지하철역별 열차 시간표 정보 검색 S5 (서울 열린데이터광장 OA-101, 서울교통공사). 평일·토요일·휴일 역별 시간표를 열차 번호로 묶어 역 쌍마다 마지막 열차를 구함 | 공공누리 제1유형 (출처표시). 원 응답은 `data/raw/seoul/`(git 제외), 영수증은 `source-manifest.json`의 S5 |
+| `lt.bin`의 그 밖의 노선 | 국토교통부 TAGO 지하철정보 S6 (https://www.data.go.kr/data/15098554/openapi.do) 평일·휴일 역별 시간표. 열차 ID가 없어 줄을 이어 열차를 다시 만들고, 대조를 통과하지 못한 노선은 출발 3분 전까지 타는 것으로 계산 | 공공데이터포털 표기 이용허락범위 제한 없음. 원 응답은 `data/raw/tago/`(git 제외), 영수증은 S6 |
+| `lt.bin`의 1·3·4·7·8·9호선 둘째 원천, 서울 1~8호선 직행 확정의 대조, `data/config/last-train-official.csv`의 1~8호선 표본, `last-train-ceilings.csv` | 서울교통공사_서울 도시철도 열차운행시각표 S7 (https://www.data.go.kr/data/15098251/fileData.do, 파일 기준일 2026-09-01, 수정일 2026-09-14). 열차코드가 있는 1~9호선 전 구간 시간표 | 공공데이터포털 표기 이용허락범위 제한 없음. 원 파일은 `data/raw/seoulmetro-timetable.csv`(git 제외), 영수증은 S7 |
+| `data/config/last-train-official.csv`의 신분당선·공항철도 표본 | 신분당선 역별 시간표(https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp), 공항철도 역별 시간표(https://www.airportrailroad.com/train/normal/info/010/0), 2026-11-20 손으로 옮겨 적음 | 대조용 사실값(시각·행선지)만 기록. 표의 원천으로 쓰지 않는다 |

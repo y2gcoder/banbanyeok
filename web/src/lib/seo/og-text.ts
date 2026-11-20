@@ -30,7 +30,7 @@ export const PAIR_OG_IMAGE_VERSION = "5b206790";
  * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
  * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 이 값을 쓰지 않는다.
  */
-export const SHARED_OG_IMAGE_VERSION = "6e456756";
+export const SHARED_OG_IMAGE_VERSION = "97b100f4";
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";

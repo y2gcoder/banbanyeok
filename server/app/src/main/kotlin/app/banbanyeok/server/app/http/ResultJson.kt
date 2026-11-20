@@ -57,6 +57,7 @@ fun LastTrainBasis.toJson(): JsonObject =
         put("dayType", dayType.id)
         put("asOf", asOf.toString())
         unavailable?.let { put("unavailable", it.name.lowercase()) }
+        if (partial) put("partial", true)
     }
 
 fun MapMiddle.toJson(): JsonObject =

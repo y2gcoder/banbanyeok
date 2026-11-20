@@ -115,49 +115,36 @@ private class LtBackward(
         val run = night.trains[train]
         val origin = run.stops[from]
         val target = run.stops[to]
-        if (!origin.boards || origin.departure < LT_BOARD_FROM || origin.code == home) return true
+        if (!origin.boards || origin.boardBy < LT_BOARD_FROM || origin.code == home) return true
         if (from >= to || !ltRides(origin, target)) return false
         val state = night.stateOf(origin.code, run.group)
-        if (origin.departure > best[state]) {
-            best[state] = origin.departure
-            queue.add(origin.departure to state)
+        if (origin.boardBy > best[state]) {
+            best[state] = origin.boardBy
+            queue.add(origin.boardBy to state)
         }
         return true
     }
 }
 
-private data class LtDirect(
-    val departure: Int,
-    val bound: String,
-    val group: String,
-)
-
-/** Latest single-train departure per (home, meeting), with that train's destination and family. */
+/** Latest single-train boarding per (home, meeting), with that train's destination and family. */
 private fun ltDirect(
     trains: List<LtTrain>,
     homes: Map<String, Int>,
     meetings: Map<String, Int>,
 ): Map<Pair<Int, Int>, LtDirect> {
     val best = mutableMapOf<Pair<Int, Int>, LtDirect>()
-    val order = compareBy<LtDirect>({ it.departure }, { it.bound }, { it.group })
+    // The latest train; among trains boarded at the same time the smaller destination code, so the result does
+    // not depend on the order of the trains.
+    val order = compareBy<LtDirect>({ -it.boardBy }, { !it.verified }, { it.bound }, { it.group }, { it.departure })
     trains.forEach { train ->
         train.stops.forEachIndexed { to, target ->
             val home = homes[target.code] ?: return@forEachIndexed
             train.stops.subList(0, to).forEach { origin ->
                 val meeting = meetings[origin.code]
                 if (meeting != null && ltRides(origin, target)) {
-                    val found = LtDirect(origin.departure, train.bound, train.group)
-                    // The latest train; among trains leaving together the smaller destination code, so the
-                    // result does not depend on the order of the trains.
-                    best.merge(home to meeting, found) { old, new ->
-                        if (new.departure > old.departure ||
-                            (new.departure == old.departure && order.compare(new, old) < 0)
-                        ) {
-                            new
-                        } else {
-                            old
-                        }
-                    }
+                    val verified = origin.verified && target.verified
+                    val found = LtDirect(origin.boardBy, origin.departure, train.bound, train.group, verified)
+                    best.merge(home to meeting, found) { old, new -> minOf(old, new, order) }
                 }
             }
         }
@@ -166,20 +153,19 @@ private fun ltDirect(
 }
 
 /**
- * Classifies one cell. [latest] is the latest departure by any itinerary and [direct] by one train (so
- * `latest >= direct`). A transfer itinerary wins only when what a client would show for it (floored to ten
+ * Classifies one cell. [latest] is the latest boarding by any itinerary and [direct] by one train (so
+ * `latest >= direct`). The direct train is a confirmed one only when it is boarded and left at confirmed rows. A transfer itinerary wins only when what a client would show for it (floored to ten
  * minutes) is later than what it would show for the direct train.
  */
 private fun ltCell(
     latest: Int,
     direct: LtDirect?,
-    exact: Set<String>,
 ): LtCell {
     if (latest < 0) return LtCell.UNKNOWN
     val minute = latest / SECONDS_PER_MINUTE
     if (direct == null) return LtCell(LastTrainKind.MARGIN_TRANSFER.raw, minute, null)
-    val directMinute = direct.departure / SECONDS_PER_MINUTE
-    val confirmed = direct.group in exact
+    val directMinute = direct.boardBy / SECONDS_PER_MINUTE
+    val confirmed = direct.verified
     val directShown = if (confirmed) directMinute else ltMarginShown(directMinute)
     return when {
         ltMarginShown(minute) > directShown -> LtCell(LastTrainKind.MARGIN_TRANSFER.raw, minute, null)
@@ -191,7 +177,6 @@ private fun ltCell(
 /** Last trains of one day type for every (home, meeting) cell. */
 internal fun ltDay(
     problem: LtProblem,
-    day: DayType,
     trains: List<LtTrain>,
     allowance: LtAllowance = LtAllowance.DEFAULT,
 ): LtDayResult {
@@ -199,10 +184,9 @@ internal fun ltDay(
     val homes = problem.homes.withIndex().associate { it.value to it.index }
     val meetings = problem.meetings.withIndex().associate { it.value to it.index }
     val direct = ltDirect(trains, homes, meetings)
-    val exact = problem.exact[day].orEmpty()
     val width = problem.meetings.size
     val latestAll = IntArray(problem.homes.size * width) { -1 }
-    val directAll = IntArray(problem.homes.size * width) { -1 }
+    val directAll = MutableList<LtDirect?>(problem.homes.size * width) { null }
     val cells = MutableList(problem.homes.size * width) { LtCell.UNKNOWN }
     val allow = { code: String, from: String, to: String -> allowance.seconds(problem.walks.seconds(code, from, to)) }
     problem.homes.forEachIndexed { h, home ->
@@ -212,10 +196,63 @@ internal fun ltDay(
                 val latest = night.statesAt[meeting].orEmpty().maxOfOrNull { best[it.second] } ?: -1
                 val single = direct[h to m]
                 latestAll[h * width + m] = latest
-                directAll[h * width + m] = single?.departure ?: -1
-                cells[h * width + m] = ltCell(latest, single, exact)
+                directAll[h * width + m] = single
+                cells[h * width + m] = ltCell(latest, single)
             }
         }
     }
     return LtDayResult(cells, latestAll, directAll)
+}
+
+/** What a client shows for a cell: the minute as it is for a confirmed direct train, floored for a margin kind. */
+internal fun ltShown(cell: LtCell): Int =
+    if (cell.kind ==
+        LastTrainKind.DIRECT.raw
+    ) {
+        cell.minute
+    } else {
+        ltMarginShown(cell.minute)
+    }
+
+/**
+ * The answer that holds whichever of two sources is the current timetable: per cell the one a client would show
+ * earlier, and no time at all when either source finds no way. Evidence for the gates stays with [first].
+ */
+internal fun ltEarlier(
+    first: LtDayResult,
+    second: LtDayResult,
+): LtDayResult {
+    val cells =
+        first.cells.indices.map { i ->
+            val a = first.cells[i]
+            val b = second.cells[i]
+            when {
+                a.kind == 0 || b.kind == 0 -> LtCell.UNKNOWN
+                ltShown(b) < ltShown(a) || (ltShown(b) == ltShown(a) && b.minute < a.minute) -> b
+                else -> a
+            }
+        }
+    val latest =
+        IntArray(first.latest.size) { i ->
+            if (cells[i].kind ==
+                0
+            ) {
+                -1
+            } else {
+                minOf(first.latest[i], second.latest[i])
+            }
+        }
+    return LtDayResult(cells, latest, first.direct)
+}
+
+/** One day type's table from its rows: both sources where a family has a second one, the earlier answer kept. */
+internal fun ltNight(
+    problem: LtProblem,
+    day: DayType,
+    rows: LtDayRows,
+    allowance: LtAllowance = LtAllowance.DEFAULT,
+): LtDayResult {
+    val first = ltDay(problem, ltTrains(problem, day, rows), allowance)
+    val second = ltSecondTrains(problem, day, rows) ?: return first
+    return ltEarlier(first, ltDay(problem, second, allowance))
 }

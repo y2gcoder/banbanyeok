@@ -33,6 +33,31 @@ internal class LtConfig(
     /** Families whose direct trains matched the operator's published timetable, per day type. */
     val exact: Map<DayType, Set<String>>
 
+    /**
+     * Day types computed from some lines only: their allowlist leaves out a line that another day type has. A route
+     * through a line left out is unknown there, and the manifest says so (`lastTrainPartialDays`).
+     */
+    val partialDays: List<DayType>
+        get() {
+            fun lines(day: DayType) =
+                seoulLines.getValue(day).map { "seoul:$it" } + tagoGroups.getValue(day).map { "tago:$it" }
+            val all = DayType.entries.flatMap(::lines).toSet()
+            return DayType.entries.filter { !lines(it).containsAll(all) }
+        }
+
+    /**
+     * Lines of the operator's train-coded file (S7) to compare with. A Seoul Metro line listed here must agree
+     * with S5 pair for pair; a TAGO family listed here is computed from both sources, the earlier answer kept.
+     */
+    val secondSourceLines: Set<String> =
+        data
+            .getValue("secondSource")
+            .jsonObject
+            .getValue("lines")
+            .jsonArray
+            .map { it.jsonPrimitive.content }
+            .toSet()
+
     init {
         val days = data.getValue("days").jsonObject
         require(days.keys == DayType.entries.map { it.id }.toSet()) { "last-train.json: days must list every day type" }
@@ -51,6 +76,9 @@ internal class LtConfig(
         tagoGroups = DayType.entries.associateWith { list(it, "tagoGroups") }
         require(seoulLines.values.all { SEOUL_LINES.containsAll(it) }) { "last-train.json: unknown Seoul line" }
         require(tagoGroups.values.all { families.containsAll(it) }) { "last-train.json: unknown TAGO line family" }
+        require(secondSourceLines.all { it in SEOUL_LINES || it in families }) {
+            "last-train.json: unknown second-source line"
+        }
         val entries = data.getValue("exact").jsonObject
         entries.forEach { (family, value) ->
             val rule = value.jsonObject
@@ -127,9 +155,10 @@ internal fun ltProblem(
         meetings,
         LtFamilies(rides),
         ltStations(net.origins, input),
-        ltHops(requireNotNull(net.tagoReport) { "Last trains need the TAGO network" }),
+        ltHops(requireNotNull(net.tagoReport) { "Last trains need the TAGO network" }, "seconds"),
         LtWalks(pairWalks, stationWalks),
         config.exact,
+        ltHops(net.tagoReport, "runSeconds"),
     )
 }
 
@@ -155,8 +184,14 @@ private fun ltStations(
         .toMap()
 }
 
-/** Directed run times of neighbouring TAGO stations from the network's evidence (tago-report.json `edges`). */
-private fun ltHops(report: JsonObject): Map<Pair<String, String>, Int> =
+/**
+ * Directed times of neighbouring TAGO stations from the network's evidence (tago-report.json `edges`): `seconds`
+ * is departure to departure (run + dwell on arrival), `runSeconds` departure to arrival.
+ */
+private fun ltHops(
+    report: JsonObject,
+    field: String,
+): Map<Pair<String, String>, Int> =
     report
         .getValue("edges")
         .jsonArray
@@ -165,7 +200,7 @@ private fun ltHops(report: JsonObject): Map<Pair<String, String>, Int> =
             val from = edge.text("from").substringBefore(' ')
             val to = edge.text("to").substringBefore(' ')
 
-            fun seconds(key: String) = (edge[key] as? JsonObject)?.text("seconds")?.toInt()
+            fun seconds(key: String) = (edge[key] as? JsonObject)?.text(field)?.toInt()
             listOfNotNull(
                 seconds("forward")?.let { (from to to) to it },
                 seconds("reverse")?.let { (to to from) to it },
@@ -192,7 +227,12 @@ internal class LtSources(
     private val seoul: Map<DayType, List<JsonObject>>,
     /** Stations of the travel network (active, on the home axis). */
     private val stations: List<Station>,
+    /** Rows of the operator's train-coded file ([readOfficialTimetable]). */
+    official: List<OfficialRow> = emptyList(),
 ) {
+    private val official = official.filter { it.line in config.secondSourceLines }.groupBy { it.day to it.line }
+    private val officialCodes = mutableMapOf<Pair<String, String>, String?>()
+
     private val records =
         input.records.filter { it.operator == "서울교통공사" && it.line in SEOUL_LINES.map { n -> "${n}호선" } }
     private val codes = mutableMapOf<Pair<String, String>, String>()
@@ -215,8 +255,39 @@ internal class LtSources(
                     }
                 }
         val lines = config.seoulLines.getValue(day)
-        return LtDayRows(unnumbered, seoul[day].orEmpty().mapNotNull { numbered(it, lines) })
+        return LtDayRows(
+            unnumbered,
+            seoul[day].orEmpty().mapNotNull { numbered(it, lines) },
+            (groups intersect config.secondSourceLines).sorted().flatMap { secondSource(day, it) },
+        )
     }
+
+    /** One line of the operator's file as numbered stops; rows of stations off the line's graph are left out. */
+    fun secondSource(
+        day: DayType,
+        line: String,
+    ): List<LtNumberedStop> =
+        official[day to line].orEmpty().mapNotNull { row ->
+            val code = officialCodes.getOrPut(line to row.station) { terminal(line, row.station) }
+            code?.let {
+                LtNumberedStop(
+                    line,
+                    row.train,
+                    it,
+                    row.arrival,
+                    row.departure,
+                    terminals.getOrPut(
+                        line to row.terminal,
+                    ) {
+                        terminal(line, row.terminal)
+                    },
+                )
+            }
+        }
+
+    /** Seoul Metro lines that both S5 and the operator's file cover on [day]. */
+    fun comparedLines(day: DayType): List<String> =
+        (config.seoulLines.getValue(day) intersect config.secondSourceLines).sorted()
 
     private fun day(seconds: Int?): Int = seconds?.takeIf { it < LT_DAY_END } ?: -1
 
@@ -282,8 +353,8 @@ internal fun ltAsOf(root: Path): String =
         .parseToJsonElement(root.resolve("data/config/source-manifest.json").readText())
         .jsonArray
         .map { it.jsonObject }
-        .filter { it.text("id") in setOf("S5", "S6") }
-        .also { require(it.size == 2) { "S5 and S6 receipts are required for last trains" } }
+        .filter { it.text("id") in setOf("S5", "S6", OFFICIAL_ID) }
+        .also { require(it.size == 3) { "S5, S6 and $OFFICIAL_ID receipts are required for last trains" } }
         .minOf { Instant.parse(it.text("fetched_at")) }
         .atZone(SEOUL_ZONE)
         .toLocalDate()

@@ -1,5 +1,5 @@
 {
- "about": "Toy network for the last-train rules (#62). Line X has no train numbers (express, short run, mid-line start, passing head); line N has numbers and continues without numbers beyond n03. Expected cells: toy.expected.json, written by spikes/last-train-design/oracle.py.",
+ "about": "Toy network for the last-train rules (#62). Line X has no train numbers (express, short run, mid-line start, passing head); line N has numbers (confirmed against the operator's file on weekdays) and continues without numbers beyond n03. Expected cells: toy.expected.json, written by spikes/last-train-design/oracle.py. On the holiday line X also has a second, numbered source that differs by a minute.",
  "homes": [
   "n01",
   "n02",
@@ -716,7 +716,126 @@
      -1,
      "n01"
     ]
+   ],
+   "second": [
+    [
+     "X",
+     "X|h1",
+     "x01",
+     -1,
+     82740,
+     "x06"
+    ],
+    [
+     "X",
+     "X|h1",
+     "x02",
+     82830,
+     82860,
+     "x06"
+    ],
+    [
+     "X",
+     "X|h1",
+     "t00",
+     82950,
+     82980,
+     "x06"
+    ],
+    [
+     "X",
+     "X|h1",
+     "x04",
+     83070,
+     83100,
+     "x06"
+    ],
+    [
+     "X",
+     "X|h1",
+     "x05",
+     83190,
+     83220,
+     "x06"
+    ],
+    [
+     "X",
+     "X|h1",
+     "x06",
+     83310,
+     -1,
+     "x06"
+    ],
+    [
+     "X",
+     "X|h2",
+     "x01",
+     -1,
+     85200,
+     "x02"
+    ],
+    [
+     "X",
+     "X|h2",
+     "x02",
+     85290,
+     -1,
+     "x02"
+    ],
+    [
+     "X",
+     "X|r1",
+     "x06",
+     -1,
+     83400,
+     "x01"
+    ],
+    [
+     "X",
+     "X|r1",
+     "x05",
+     83490,
+     83520,
+     "x01"
+    ],
+    [
+     "X",
+     "X|r1",
+     "x04",
+     83610,
+     83640,
+     "x01"
+    ],
+    [
+     "X",
+     "X|r1",
+     "t00",
+     83730,
+     83760,
+     "x01"
+    ],
+    [
+     "X",
+     "X|r1",
+     "x02",
+     83850,
+     83880,
+     "x01"
+    ],
+    [
+     "X",
+     "X|r1",
+     "x01",
+     83970,
+     -1,
+     "x01"
+    ]
    ]
   }
+ },
+ "exactNumbered": {
+  "weekday": [
+   "N"
+  ]
  }
 }

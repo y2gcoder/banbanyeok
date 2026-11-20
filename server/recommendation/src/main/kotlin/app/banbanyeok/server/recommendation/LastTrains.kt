@@ -9,10 +9,14 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
 
-/** 검증을 마친 막차 표와 그 시간표의 수집일(manifest `lastTrainAsOf`, 서울 날짜). */
+/**
+ * 검증을 마친 막차 표와 그 시간표의 수집일(manifest `lastTrainAsOf`, 서울 날짜). [partialDays]는 시간표가 있는 노선만 계산한
+ * 요일 종류다(manifest `lastTrainPartialDays`).
+ */
 public class LastTrainData(
     public val table: LastTrainTable,
     public val asOf: LocalDate,
+    public val partialDays: Set<DayType> = emptySet(),
 )
 
 /**
@@ -47,6 +51,8 @@ public data class LastTrainBasis(
     public val dayType: DayType,
     public val asOf: LocalDate,
     public val unavailable: LastTrainUnavailable? = null,
+    /** 이 요일 종류는 시간표가 있는 노선만 계산했다: 확인 필요 항목은 시간표가 없는 노선을 지나는 길일 수 있다. */
+    public val partial: Boolean = false,
 )
 
 /** 한 사람이 만날 역에서 집(출발역)으로 돌아가는 막차. [cell]의 종류가 확인 필요면 시각이 없다. */
@@ -84,6 +90,7 @@ public object LastTrainRule {
                 stale(data.asOf, clock) -> LastTrainUnavailable.STALE
                 else -> null
             },
+            day in data.partialDays,
         )
 
     /** [homeCode]에 사는 사람이 [meetingCode]에서 돌아가는 막차. 축에 없는 역이면 확인 필요다. */

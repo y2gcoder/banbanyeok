@@ -1,0 +1,4 @@
+meeting,home,day,notAfter,url,checkedAt,note
+당산,가양,holiday,23:48,https://www.data.go.kr/data/15098251/fileData.do,2026-11-20,휴일 급행 E9683 당산 23:48:30 출발(가양 23:55:25 도착). TAGO는 23:50:05라 늦게 나왔다(PR #81 독립 검토)
+당산,마곡나루,holiday,23:48,https://www.data.go.kr/data/15098251/fileData.do,2026-11-20,같은 열차 E9683(마곡나루 23:58:50 도착)
+당산,김포공항,holiday,23:48,https://www.data.go.kr/data/15098251/fileData.do,2026-11-20,같은 열차 E9683(김포공항 24:02:05 도착)

@@ -199,6 +199,7 @@ private class ArtifactWriter(
             ),
         lastTrainAsOf = lastTrains.asOf,
         lastTrainModel = LT_MODEL,
+        lastTrainPartialDays = lastTrains.partialDays,
     )
 
     private fun receipt(name: String): ManifestFile =
@@ -221,6 +222,7 @@ private class ArtifactWriter(
     private fun unchanged(): Boolean {
         if (!output.resolve(ManifestNames.GENERATION_THREE).exists()) return false
         if (previous?.lastTrainAsOf != lastTrains.asOf || previous.lastTrainModel != LT_MODEL) return false
+        if (previous.lastTrainPartialDays != lastTrains.partialDays) return false
         val old = previous.files
         if (old.odSlots?.mapValues { it.value.path } !=
             slots.associate { it.id to slotFiles.getValue(it) }

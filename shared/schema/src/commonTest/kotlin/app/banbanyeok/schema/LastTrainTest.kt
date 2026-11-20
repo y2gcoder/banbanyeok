@@ -118,7 +118,22 @@ class LastTrainTest {
         assertFailsWith<SchemaException> { ManifestCodec.validate(v3.copy(files = v3.files.copy(lastTrain = null))) }
         assertFailsWith<SchemaException> { ManifestCodec.validate(v3.copy(lastTrainAsOf = null)) }
         assertFailsWith<SchemaException> { ManifestCodec.validate(v3.copy(lastTrainAsOf = "2026-13-01")) }
+        // 모양은 날짜지만 달력에 없는 날: 서버가 날짜로 읽다 기동에 실패하지 않게 manifest 검사에서 거부한다.
+        listOf("2026-02-30", "2026-02-29", "2026-04-31", "2026-11-00", "2100-02-29").forEach { date ->
+            assertFailsWith<SchemaException>(date) { ManifestCodec.validate(v3.copy(lastTrainAsOf = date)) }
+        }
+        listOf("2028-02-29", "2000-02-29", "2026-12-31").forEach { ManifestCodec.validate(v3.copy(lastTrainAsOf = it)) }
         assertFailsWith<SchemaException> { ManifestCodec.validate(v3.copy(lastTrainModel = " ")) }
+        // 일부 노선만 계산한 요일 종류: 없어도 되고, 있으면 아는 id를 겹치지 않게 적는다.
+        val partial = v3.copy(lastTrainPartialDays = listOf("saturday"))
+        assertEquals(partial, ManifestCodec.parse(ManifestCodec.encode(partial)))
+        assertTrue("lastTrainPartialDays" !in ManifestCodec.encode(v3))
+        assertFailsWith<SchemaException> { ManifestCodec.validate(v3.copy(lastTrainPartialDays = listOf("sunday"))) }
+        assertFailsWith<SchemaException> {
+            ManifestCodec.validate(v3.copy(lastTrainPartialDays = listOf("saturday", "saturday")))
+        }
+        assertNull(partial.generationTwo().lastTrainPartialDays)
+        assertNull(partial.generationOne().lastTrainPartialDays)
         // 세대 1·2에는 막차 항목이 있으면 안 된다(세대 2만 아는 reader는 모르는 키를 거부한다).
         assertFailsWith<SchemaException> { ManifestCodec.validate(v3.copy(schemaVersion = 2, minClientSchema = 2)) }
     }

@@ -113,6 +113,15 @@ class LastTrainTest :
                     listOf(LastTrainCell.UNKNOWN, LastTrainCell.UNKNOWN)
             }
 
+            it("says when the day type was computed from some lines only") {
+                val partial =
+                    service(LastTrainSource { LastTrainData(sampleLastTrains, asOf, setOf(DayType.SATURDAY)) })
+                partial
+                    .recommend(request(slot = TimeSlot(DayType.SATURDAY, TimeBand.NIGHT)))
+                    .lastTrainBasis shouldBe LastTrainBasis(DayType.SATURDAY, asOf, partial = true)
+                partial.recommend(request()).lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
+            }
+
             it("leaves last trains out when the requested slot could not be computed") {
                 // 구분 행렬이 없으면 평일 낮으로 대신 계산한다. 그 응답에 다른 요일의 막차를 붙이지 않는다.
                 val result =

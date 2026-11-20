@@ -18,8 +18,20 @@ internal const val LT_DAY_END = 27 * 3600
 /** A row belongs to the same train as a row at the next station when it is this close to the expected time. */
 internal const val LT_TOLERANCE = 90
 
-/** The terminal row carries an arrival only, which is earlier than the departure-based estimate by its dwell. */
-internal const val LT_TERMINAL_EARLY = 60
+/**
+ * Two candidate rows (or two rows claiming one candidate) whose distances from the expected time differ by less
+ * than this cannot be told apart: a train waiting to be overtaken and the train overtaking it sit at one station
+ * within a minute of each other. Such a link is not made at all.
+ */
+internal const val LT_AMBIGUOUS = 60
+
+/**
+ * Allowance for the timetable source itself being a different revision from the operator's current one: a train
+ * of a source that could not be compared with a second, train-numbered source must be boarded this many seconds
+ * before its published departure. The one family that can be compared (line 9, TAGO against the operator's file)
+ * is up to 125 s late on holidays; three minutes is that rounded up to whole minutes with a minute to spare.
+ */
+internal const val LT_SOURCE_MARGIN = 180
 
 /**
  * A chain's first row without an arrival starts its run there only when no train to the same terminal is at the
@@ -31,7 +43,7 @@ internal const val LT_ORIGIN_WINDOW = 300
 /** A rebuilt chain and a numbered train are one train when they leave the same station this close together. */
 internal const val LT_STITCH_TOLERANCE = 45
 
-internal const val LT_MODEL = "chain-v1+walk2x5m"
+internal const val LT_MODEL = "chain-v2+walk2x5m+source3m"
 
 /**
  * Time allowed for changing trains: max([floor], walk × [walkFactor] + [extra]). The published table uses
@@ -77,6 +89,11 @@ internal class LtDayRows(
     /** Station id → rows (TAGO lines: no train numbers). */
     val unnumbered: Map<String, List<LtRow>>,
     val numbered: List<LtNumberedStop>,
+    /**
+     * A second, train-numbered source for line families that [unnumbered] also covers (the operator's own file).
+     * The table is computed once with each source for those families and every cell keeps the earlier answer.
+     */
+    val second: List<LtNumberedStop> = emptyList(),
 )
 
 /**
@@ -90,12 +107,22 @@ internal data class LtStop(
     val departure: Int,
     /** The train starts its run here (first row, nothing before it). */
     val origin: Boolean = false,
+    /** Seconds before [departure] by which a rider must be on the platform ([LT_SOURCE_MARGIN] or 0). */
+    val margin: Int = 0,
+    /**
+     * The row comes from a line and day type whose last trains were confirmed against the operator's timetable.
+     * A ride is a confirmed direct train only when it is boarded and left at such rows.
+     */
+    val verified: Boolean = false,
 ) {
     val key: Int get() = if (departure >= 0) departure else arrival
 
     val alights: Boolean get() = arrival >= 0
 
     val boards: Boolean get() = departure >= 0 && (arrival >= 0 || origin)
+
+    /** The time published for boarding here: the departure less the source margin. */
+    val boardBy: Int get() = departure - margin
 }
 
 /** A rider boards at [from] and gets off at [to], a later row of the same train (from 20:00 on). */
@@ -103,7 +130,7 @@ internal fun ltRides(
     from: LtStop,
     to: LtStop,
 ): Boolean =
-    from.boards && to.alights && from.departure >= LT_BOARD_FROM && from.code != to.code &&
+    from.boards && to.alights && from.boardBy >= LT_BOARD_FROM && from.code != to.code &&
         from.departure < to.arrival
 
 /** A train of one night: stops in running order. [end] is the terminal's physical code when known. */
@@ -221,12 +248,31 @@ internal data class LtProblem(
     val families: LtFamilies,
     /** Unnumbered station id → physical code and family. */
     val stations: Map<String, LtStation>,
-    /** Directed run time between neighbouring unnumbered stations (departure to departure). */
+    /** Directed time between neighbouring unnumbered stations, departure to departure (run + dwell on arrival). */
     val hops: Map<Pair<String, String>, Int>,
     val walks: LtWalks,
-    /** Families whose direct trains passed the comparison with the operator's timetable, per day type. */
+    /** Unnumbered families whose direct trains passed the comparison with the operator's timetable, per day type. */
     val exact: Map<DayType, Set<String>>,
-)
+    /** Directed running time between the same stations, departure to arrival. */
+    val runs: Map<Pair<String, String>, Int> = hops.mapValues { maxOf(it.value - DEFAULT_DWELL, 1) },
+    /** [LT_SOURCE_MARGIN] for trains rebuilt from unnumbered rows of a family that is not exact that day. */
+    val sourceMargin: Int = LT_SOURCE_MARGIN,
+    /**
+     * Numbered lines whose every last direct train equals the operator's train-coded file that day type (checked
+     * by the build, pair for pair). Rows of other numbered lines are boarded with the source margin.
+     */
+    val exactNumbered: Map<DayType, Set<String>> = emptyMap(),
+) {
+    fun margin(
+        family: String,
+        day: DayType,
+    ): Int = if (family in exact[day].orEmpty()) 0 else sourceMargin
+
+    companion object {
+        /** Dwell assumed when a problem file gives hop times only. */
+        const val DEFAULT_DWELL = 30
+    }
+}
 
 /** A cell's content before encoding: minute of the service day, schema kind raw value, terminal code. */
 internal data class LtCell(
@@ -239,17 +285,30 @@ internal data class LtCell(
     }
 }
 
+/** The last train that serves a cell on its own: what the operator's timetable can be compared with. */
+internal data class LtDirect(
+    /** Published boarding time in seconds (departure less the source margin). */
+    val boardBy: Int,
+    /** The train's departure as the source prints it. */
+    val departure: Int,
+    val bound: String,
+    val group: String,
+    /** Boarded and left at rows confirmed against the operator's timetable ([LtStop.verified]). */
+    val verified: Boolean,
+)
+
 /** Result of one day type: cells in home-major order (home index × meetings + meeting index). */
 internal class LtDayResult(
     val cells: List<LtCell>,
-    /** Latest departure in seconds by any itinerary, -1 when none (for the gates). */
+    /** Latest boarding time in seconds by any itinerary, -1 when none (for the gates). */
     val latest: IntArray,
-    /** Latest departure in seconds by one train, -1 when none (for the gates). */
-    val direct: IntArray,
+    /** The last single train of each cell, null when no train serves it alone (for the gates). */
+    val direct: List<LtDirect?>,
 )
 
 internal fun ltProblem(data: JsonObject): LtProblem {
     fun strings(key: String) = data.getValue(key).jsonArray.map { it.jsonPrimitive.content }
+    val hopRows = data.getValue("hops").jsonArray.map { it.jsonArray }
     val walks =
         data.getValue("walks").jsonArray.associate {
             val row = it.jsonArray
@@ -272,10 +331,7 @@ internal fun ltProblem(data: JsonObject): LtProblem {
                     .jsonPrimitive.content,
             )
         },
-        data.getValue("hops").jsonArray.associate {
-            val row = it.jsonArray
-            (row[0].jsonPrimitive.content to row[1].jsonPrimitive.content) to row[2].jsonPrimitive.int
-        },
+        hopRows.associate { (it[0].jsonPrimitive.content to it[1].jsonPrimitive.content) to it[2].jsonPrimitive.int },
         LtWalks(walks, data.getValue("stationWalks").jsonObject.mapValues { it.value.jsonPrimitive.int }),
         DayType.entries.associateWith { day ->
             data
@@ -286,8 +342,36 @@ internal fun ltProblem(data: JsonObject): LtProblem {
                 .map { it.jsonPrimitive.content }
                 .toSet()
         },
+        hopRows.associate { row ->
+            val run =
+                row.getOrNull(3)?.jsonPrimitive?.int ?: maxOf(row[2].jsonPrimitive.int - LtProblem.DEFAULT_DWELL, 1)
+            (row[0].jsonPrimitive.content to row[1].jsonPrimitive.content) to run
+        },
+        data["sourceMargin"]?.jsonPrimitive?.int ?: LT_SOURCE_MARGIN,
+        DayType.entries.associateWith { day ->
+            data["exactNumbered"]
+                ?.jsonObject
+                ?.get(day.id)
+                ?.jsonArray
+                .orEmpty()
+                .map { it.jsonPrimitive.content }
+                .toSet()
+        },
     )
 }
+
+private fun ltNumbered(rows: kotlinx.serialization.json.JsonArray): List<LtNumberedStop> =
+    rows.map {
+        val row = it.jsonArray
+        LtNumberedStop(
+            row[0].jsonPrimitive.content,
+            row[1].jsonPrimitive.content,
+            row[2].jsonPrimitive.content,
+            row[3].jsonPrimitive.int,
+            row[4].jsonPrimitive.int,
+            row[5].jsonPrimitive.content.ifEmpty { null },
+        )
+    }
 
 /** Rows embedded in a problem file (toy fixtures; real runs read the timetable caches). */
 internal fun ltRows(
@@ -302,17 +386,8 @@ internal fun ltRows(
                 LtRow(row[0].jsonPrimitive.int, row[1].jsonPrimitive.int, row[2].jsonPrimitive.content)
             }
         },
-        rows.getValue("numbered").jsonArray.map {
-            val row = it.jsonArray
-            LtNumberedStop(
-                row[0].jsonPrimitive.content,
-                row[1].jsonPrimitive.content,
-                row[2].jsonPrimitive.content,
-                row[3].jsonPrimitive.int,
-                row[4].jsonPrimitive.int,
-                row[5].jsonPrimitive.content.ifEmpty { null },
-            )
-        },
+        ltNumbered(rows.getValue("numbered").jsonArray),
+        rows["second"]?.jsonArray?.let(::ltNumbered).orEmpty(),
     )
 }
 
@@ -327,9 +402,12 @@ internal fun ltProblemJson(problem: LtProblem): JsonObject {
         "hops" to
             problem.hops.entries
                 .sortedWith(compareBy({ it.key.first }, { it.key.second }))
-                .map { listOf(it.key.first, it.key.second, it.value) },
+                .map { listOf(it.key.first, it.key.second, it.value, problem.runs.getValue(it.key)) },
+        "sourceMargin" to problem.sourceMargin,
         "walks" to pairWalks,
         "stationWalks" to stationWalks,
         "exact" to JsonObject(problem.exact.entries.associate { it.key.id to jsonValue(it.value.sorted()) }),
+        "exactNumbered" to
+            JsonObject(problem.exactNumbered.entries.associate { it.key.id to jsonValue(it.value.sorted()) }),
     )
 }

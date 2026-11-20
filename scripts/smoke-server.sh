@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 배포된 서버(또는 태그 붙은 후보 리비전)의 스모크 테스트. 사용: bash scripts/smoke-server.sh <base-url> [expected-dataVersion]
-# 확인: /v1/healthz → /v1/manifest(데이터 버전) → 추천 1건 → 구분(토요일 밤) 추천 1건 → DB 읽기(없는 방 404) → 방 생성·조회·삭제 한 번(DB 쓰기·pepper 경로).
+# 확인: /v1/healthz → /v1/manifest(데이터 버전) → 추천 1건 → 구분(토요일 밤) 추천 1건 → 귀갓길 막차(수집일·신분당 확정 표본)
+#       → DB 읽기(없는 방 404) → 방 생성·조회·삭제 한 번(DB 쓰기·pepper 경로).
 # 방 토큰은 출력하지 않는다. 만든 방은 방장 토큰으로 바로 지운다. 콜드스타트 때문에 첫 /healthz는 재시도한다.
 set -euo pipefail
 
@@ -55,6 +56,40 @@ r = json.load(open(sys.argv[1]))
 basis = r.get("timeBasis") or {}
 assert basis.get("timeSlot") == "saturday-night", basis.get("timeSlot")
 print("   기준 %s, 1위 %s" % (basis.get("label"), r["candidates"][0]["stationName"]))
+PY
+
+echo "3c) 귀갓길 막차 (강남·광교, 평일 밤): 막차 표가 읽혔고 신분당선 확정 표본(광교행 직행)이 그대로 나와야 한다"
+# 막차 표는 기동 뒤 뒤에서 읽고 요청은 기다리지 않는다. 그래서 표가 준비될 때까지 몇 번 다시 묻는다(없으면 lastTrainBasis 키가 없다).
+last_ok=0
+for _ in $(seq 1 10); do
+  code="$(http "$tmp/l" -X POST "$base/v1/recommend" -H 'Content-Type: application/json' \
+    -d '{"origins":["k3a","dzc"],"mode":"fair","timeSlot":"weekday-night"}')"
+  [[ "$code" == 200 ]] || fail "/v1/recommend(weekday-night) 상태 $code"
+  if python3 -I -c 'import json,sys; sys.exit(0 if "lastTrainBasis" in json.load(open(sys.argv[1])) else 1)' "$tmp/l"; then
+    last_ok=1; break
+  fi
+  sleep 2
+done
+[[ "$last_ok" == 1 ]] || fail "응답에 lastTrainBasis가 없음(막차 표를 읽지 못했거나 검증에 실패)"
+python3 -I - "$tmp/l" <<'PY' || fail "막차 응답이 예상과 다름(확정 표본 또는 수집일)"
+import json, re, sys
+r = json.load(open(sys.argv[1]))
+basis = r["lastTrainBasis"]
+assert basis["dayType"] == "weekday", basis
+assert re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", basis["asOf"]), basis
+if basis.get("unavailable") == "stale":
+    # 수집 120일이 지나면 서버가 시각을 내지 않는다(설계된 동작). 배포는 막지 않고 알리기만 한다.
+    print("   경고: 시간표 수집일 %s에서 120일이 지나 막차 시각을 내지 않는 중(재수집 필요)" % basis["asOf"])
+    sys.exit(0)
+assert "unavailable" not in basis, basis
+trains = [t for c in r["candidates"] for t in c["lastTrains"]]
+assert len(trains) == 2 * len(r["candidates"]), len(trains)
+# 광교(dzc) 참가자는 신분당선 위의 만날 역에서 광교행 직행 확정 막차를 받는다(분 단위, 20:00~26:59).
+confirmed = [t for t in trains if t["participantId"] == "1" and t["kind"] == "direct"
+             and t.get("boundFor", {}).get("stationCode") == "dzc" and 1200 <= t["minute"] <= 1619]
+assert confirmed, trains
+print("   수집일 %s, 광교행 직행 확정 %d건(예: %02d:%02d)" % (
+    basis["asOf"], len(confirmed), confirmed[0]["minute"] // 60 % 24, confirmed[0]["minute"] % 60))
 PY
 
 echo "4) DB 읽기: 없는 방은 404 ROOM_NOT_FOUND여야 한다(DB 연결 실패면 500)"

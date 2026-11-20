@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 CHAIN_FROM, BOARD_FROM, DAY_END = 19 * 3600, 20 * 3600, 27 * 3600
-TOLERANCE, TERMINAL_EARLY, STITCH, ORIGIN_WINDOW = 90, 60, 45, 300
+TOLERANCE, AMBIGUOUS, STITCH, ORIGIN_WINDOW, DEFAULT_DWELL = 90, 60, 45, 300, 30
 ALLOW_FLOOR, ALLOW_FACTOR, ALLOW_EXTRA = 600, 2, 300
 DAYS = ("weekday", "saturday", "holiday")
 UNKNOWN, DIRECT, MARGIN_TRANSFER, MARGIN_DIRECT = 0, 1, 2, 3
@@ -51,7 +51,10 @@ class Problem:
                 adjacent[b].add(a)
             self.graph[group] = adjacent
         self.stations = {sid: tuple(v) for sid, v in data["stations"].items()}  # sid -> (code, group)
-        self.hops = {(a, b): s for a, b, s in data["hops"]}
+        self.hops = {(row[0], row[1]): row[2] for row in data["hops"]}
+        self.runs = {(row[0], row[1]): row[3] if len(row) > 3 else max(row[2] - DEFAULT_DWELL, 1) for row in data["hops"]}
+        self.source_margin = data.get("sourceMargin", 180)
+        self.exact_numbered = {day: set(data.get("exactNumbered", {}).get(day, [])) for day in DAYS}
         self.walks = {(c, a, b): s for c, a, b, s in data["walks"]}
         self.station_walks = data["stationWalks"]
         self.exact = {day: set(data["exact"].get(day, [])) for day in DAYS}
@@ -73,6 +76,9 @@ class Problem:
         d = self.distances[group, end]
         return here in d and there in d and d[there] < d[here]
 
+    def margin(self, family, day):
+        return 0 if family in self.exact[day] else self.source_margin
+
     def allowance(self, code, origin, target):
         walk = self.walks.get((code, origin, target), self.station_walks.get(code, 0))
         return max(ALLOW_FLOOR, walk * ALLOW_FACTOR + ALLOW_EXTRA)
@@ -80,8 +86,10 @@ class Problem:
 
 class Train:
     def __init__(self, group, end, stops):
-        # stops: (code, arrival, departure, origin) in running order. A row is a stop a rider can leave at only when it
-        # has an arrival, and one a rider can board at only when it has an arrival too or starts the run (origin).
+        # stops: (code, arrival, departure, origin, margin, verified) in running order. A row is a stop a rider can
+        # leave at only when it has an arrival, and one a rider can board at only when it has an arrival too or starts
+        # the run (origin). The rider must be on the platform `margin` seconds before the departure (source margin).
+        # `verified` rows come from a line and day type confirmed against the operator's timetable.
         self.group, self.end, self.stops = group, end, stops
 
     @property
@@ -93,28 +101,35 @@ def stop_order(stop):
     return key_of(stop[1], stop[2]), stop[0]
 
 
-def chain_links(rows, neighbours, hops, allowed):
-    """rows: station -> sorted distinct [(arrival, departure, end)]. Returns {(station, i): (next, j)}."""
+def chain_links(rows, neighbours, hops, runs, allowed):
+    """rows: station -> sorted distinct [(arrival, departure, end)]. Returns ({(station, i): (next, j)}, by_end).
+
+    A row continues as the row at the next station with the same terminal whose arrival is where the train would
+    arrive (departure + run), or whose departure is where it would leave when the row has no arrival (a passing
+    train). It must be later than this row's departure. A link that cannot be told from another is not made.
+    """
     by_end = {}
     for station, found in rows.items():
         index = collections.defaultdict(list)
-        for i, (arrival, departure, end) in enumerate(found):
-            index[end].append((key_of(arrival, departure), i))
+        for i, (_arrival, _departure, end) in enumerate(found):
+            index[end].append(i)
         by_end[station] = index
 
     def match(station, departure, end, nxt):
-        hop, candidates = hops.get((station, nxt)), by_end.get(nxt, {}).get(end)
-        if hop is None or not candidates:
+        hop, run = hops.get((station, nxt)), runs.get((station, nxt))
+        if hop is None or run is None or nxt not in rows:
             return None
-        expected, best = departure + hop, None
-        at = bisect.bisect_left(candidates, (expected - TOLERANCE - TERMINAL_EARLY, -1))
-        while at < len(candidates) and candidates[at][0] <= expected + TOLERANCE:
-            when, j = candidates[at]
-            low = expected - TOLERANCE - (TERMINAL_EARLY if rows[nxt][j][1] < 0 else 0)
-            if when >= low and (best is None or abs(when - expected) < best[0]):
-                best = (abs(when - expected), nxt, j)
-            at += 1
-        return best
+        found = []
+        for j in by_end[nxt].get(end, ()):
+            arrival, leaves, _end = rows[nxt][j]
+            actual = arrival if arrival >= 0 else leaves
+            gap = abs(actual - (departure + (run if arrival >= 0 else hop)))
+            if actual > departure and gap <= TOLERANCE:
+                found.append((gap, j))
+        found.sort()
+        if not found or (len(found) > 1 and found[1][0] - found[0][0] < AMBIGUOUS):
+            return None
+        return found[0][0], nxt, found[0][1]
 
     found, votes = {}, collections.defaultdict(collections.Counter)
     for station in sorted(rows):
@@ -126,26 +141,32 @@ def chain_links(rows, neighbours, hops, allowed):
             found[station, i] = matches
             for _gap, nxt, _j in matches:
                 votes[station, end][nxt] += 1
-    forward, taken = {}, {}
+    claims = {}
     for (station, i), matches in found.items():
         tally = votes[station, rows[station][i][2]]
         side = max(sorted(tally), key=lambda n: tally[n], default=None)
         best = next((m for m in matches if m[1] == side), None)
-        if best is None:
-            continue
-        target = (best[1], best[2])
-        if target in taken and taken[target][0] <= best[0]:
-            continue
-        if target in taken:
-            del forward[taken[target][1]]
-        taken[target] = (best[0], (station, i))
-        forward[station, i] = target
+        if best is not None:
+            claims.setdefault((best[1], best[2]), []).append((best[0], (station, i)))
+    forward = {}
+    for target, claimed in claims.items():
+        ranked = sorted(claimed, key=lambda c: c[0])
+        if len(ranked) == 1 or ranked[1][0] - ranked[0][0] >= AMBIGUOUS:
+            forward[ranked[0][1]] = target
     return forward, by_end
 
 
+def board_by(stop):
+    return stop[2] - stop[4]
+
+
+def boards(stop):
+    return stop[2] >= 0 and (stop[1] >= 0 or stop[3])
+
+
 def rides(origin, target):
-    boards = origin[2] >= 0 and (origin[1] >= 0 or origin[3])
-    return boards and target[1] >= 0 and origin[2] >= BOARD_FROM and origin[0] != target[0] and origin[2] < target[1]
+    return (boards(origin) and target[1] >= 0 and board_by(origin) >= BOARD_FROM and origin[0] != target[0]
+            and origin[2] < target[1])
 
 
 def clean_rows(rows):
@@ -156,7 +177,7 @@ def clean_rows(rows):
     return out
 
 
-def unnumbered_trains(problem, rows):
+def unnumbered_trains(problem, rows, day):
     rows = clean_rows({s: r for s, r in rows.items() if s in problem.stations})
     neighbours = collections.defaultdict(list)
     for a, b in problem.hops:
@@ -169,7 +190,7 @@ def unnumbered_trains(problem, rows):
         end_code = problem.stations[end][0] if end in problem.stations else None
         return problem.closer(group, code, problem.stations[nxt][0], end_code)
 
-    forward, by_end = chain_links(rows, neighbours, problem.hops, allowed)
+    forward, by_end = chain_links(rows, neighbours, problem.hops, problem.runs, allowed)
     previous = collections.defaultdict(list)
     for a, b in problem.hops:
         previous[b].append(a)
@@ -180,27 +201,30 @@ def unnumbered_trains(problem, rows):
             if not allowed(before, end, station):
                 continue
             expected = departure - problem.hops[before, station]
-            for when, j in by_end.get(before, {}).get(end, ()):
-                if rows[before][j][1] >= 0 and abs(when - expected) <= ORIGIN_WINDOW:
+            for j in by_end.get(before, {}).get(end, ()):
+                if rows[before][j][1] >= 0 and abs(rows[before][j][1] - expected) <= ORIGIN_WINDOW:
                     return False
         return True
 
     trains = []
     for head in sorted(set(forward) - set(forward.values())):
         node, stops = head, []
+        family = problem.stations[head[0]][1]
+        margin, verified = problem.margin(family, day), family in problem.exact[day]
         while node is not None:
             station, i = node
             arrival, departure, _end = rows[station][i]
             origin = node == head and arrival < 0 and starts_run(station, i)
-            stops.append((problem.stations[station][0], arrival, departure, origin))
+            stops.append((problem.stations[station][0], arrival, departure, origin, margin, verified))
             node = forward.get(node)
         end = rows[head[0]][head[1]][2]
         trains.append(Train(problem.stations[head[0]][1], problem.stations[end][0] if end in problem.stations else None, stops))
     return trains
 
 
-def numbered_trains(stops):
-    """stops: (group, train id, code, arrival, departure, end code or None)."""
+def numbered_trains(stops, verified=frozenset(), margin=0):
+    """stops: (group, train id, code, arrival, departure, end code or None). Rows of the lines in `verified` are
+    confirmed rows; rows of every other line are boarded `margin` seconds early."""
     runs = collections.defaultdict(set)
     meta = {}
     for group, train, code, arrival, departure, end in stops:
@@ -210,7 +234,9 @@ def numbered_trains(stops):
     trains = []
     for t in sorted(runs):
         stops = sorted(runs[t], key=stop_order)
-        trains.append(Train(meta[t][0], meta[t][1], [(*stop, i == 0) for i, stop in enumerate(stops)]))
+        confirmed = meta[t][0] in verified
+        trains.append(Train(meta[t][0], meta[t][1],
+                            [(*stop, i == 0, 0 if confirmed else margin, confirmed) for i, stop in enumerate(stops)]))
     return trains
 
 
@@ -219,7 +245,7 @@ def stitch(numbered, chains):
     for index, train in enumerate(numbered):
         if train.end is None:
             continue
-        for code, _arrival, departure, _origin in train.stops:
+        for code, _arrival, departure, *_rest in train.stops:
             if departure >= 0:
                 at[train.group, code, train.end].append((departure, index))
     for found in at.values():
@@ -227,7 +253,7 @@ def stitch(numbered, chains):
     alone, merged = [], {}
     for chain in chains:
         partner = None
-        for code, _arrival, departure, _origin in (chain.stops[0], chain.stops[-1]):
+        for code, _arrival, departure, *_rest in (chain.stops[0], chain.stops[-1]):
             options = at.get((chain.group, code, chain.end), []) if chain.end is not None and departure >= 0 else []
             i = bisect.bisect_left(options, (departure - STITCH, -1))
             if i < len(options) and options[i][0] <= departure + STITCH:
@@ -244,6 +270,7 @@ def stitch(numbered, chains):
 
 
 def direct_matrix(trains, homes, meetings):
+    """(home, meeting) -> (board by, departure, bound, family, verified) of the last single train."""
     best = {}
     for train in trains:
         for to, target in enumerate(train.stops):
@@ -251,11 +278,11 @@ def direct_matrix(trains, homes, meetings):
                 continue
             for origin in train.stops[:to]:
                 if origin[0] in meetings and rides(origin, target):
-                    found = (origin[2], train.bound, train.group)
+                    found = (-board_by(origin), not (origin[5] and target[5]), train.bound, train.group, origin[2])
                     old = best.get((target[0], origin[0]))
-                    if old is None or found[0] > old[0] or (found[0] == old[0] and found < old):
+                    if old is None or found < old:
                         best[target[0], origin[0]] = found
-    return best
+    return {k: (-v[0], v[4], v[2], v[3], not v[1]) for k, v in best.items()}
 
 
 def backward(problem, trains, arrivals, states_at, home):
@@ -266,14 +293,14 @@ def backward(problem, trains, arrivals, states_at, home):
     def board(t, origin_index, target_index):
         train = trains[t]
         origin, target = train.stops[origin_index], train.stops[target_index]
-        if origin[2] < BOARD_FROM or origin[0] == home or not (origin[1] >= 0 or origin[3]):
+        if not boards(origin) or board_by(origin) < BOARD_FROM or origin[0] == home:
             return True
         if origin_index >= target_index or not rides(origin, target):
             return False
         state = (origin[0], train.group)
-        if origin[2] > best.get(state, -1):
-            best[state] = origin[2]
-            heapq.heappush(queue, (-origin[2], state))
+        if board_by(origin) > best.get(state, -1):
+            best[state] = board_by(origin)
+            heapq.heappush(queue, (-board_by(origin), state))
         return True
 
     def scan(state, deadline):
@@ -326,17 +353,51 @@ def day_cells(problem, day, trains):
             if single is None:
                 cells[home, meeting] = (MARGIN_TRANSFER, minute, None)
                 continue
-            direct_minute, confirmed = single[0] // 60, single[2] in problem.exact[day]
+            direct_minute, confirmed = single[0] // 60, single[4]
             shown = direct_minute if confirmed else direct_minute - direct_minute % 10
             if minute - minute % 10 > shown:
                 cells[home, meeting] = (MARGIN_TRANSFER, minute, None)
             else:
-                cells[home, meeting] = (DIRECT if confirmed else MARGIN_DIRECT, direct_minute, single[1])
+                cells[home, meeting] = (DIRECT if confirmed else MARGIN_DIRECT, direct_minute, single[2])
     return cells
 
 
-def trains_of(problem, rows):
-    return stitch(numbered_trains(rows["numbered"]), unnumbered_trains(problem, rows["unnumbered"]))
+def shown(cell):
+    return cell[1] if cell[0] == DIRECT else cell[1] - cell[1] % 10
+
+
+def earlier(first, second):
+    """Per cell the answer a client would show earlier; no answer when either source finds no way."""
+    cells = {}
+    for key in first.keys() & second.keys():
+        a, b = first[key], second[key]
+        cells[key] = b if (shown(b), b[1]) < (shown(a), a[1]) else a
+    return cells
+
+
+def first_numbered(problem, rows, day):
+    return numbered_trains(rows["numbered"], problem.exact_numbered[day], problem.source_margin)
+
+
+def trains_of(problem, rows, day):
+    return stitch(first_numbered(problem, rows, day), unnumbered_trains(problem, rows["unnumbered"], day))
+
+
+def second_trains_of(problem, rows, day):
+    """The same night with the second source for the families that have one, or None."""
+    families = {stop[0] for stop in rows.get("second", ())}
+    if not families:
+        return None
+    others = {s: r for s, r in rows["unnumbered"].items() if problem.stations.get(s, (None, None))[1] not in families}
+    # The second source's own rows carry no margin (the earlier answer is kept) and confirm nothing.
+    numbered = first_numbered(problem, rows, day) + numbered_trains(rows["second"])
+    return stitch(numbered, unnumbered_trains(problem, others, day))
+
+
+def day_table(problem, day, rows):
+    cells = day_cells(problem, day, trains_of(problem, rows, day))
+    second = second_trains_of(problem, rows, day)
+    return cells if second is None else earlier(cells, day_cells(problem, day, second))
 
 
 # ---- rows from the raw caches (real data) ----
@@ -383,16 +444,28 @@ def cache_rows(problem, raw, registry, day):
             arrival, departure = (seconds(r[k]) if r[k] != "00:00:00" else -1 for k in ("ARRIVETIME", "LEFTTIME"))
             train = "|".join(r[k] for k in ("LINE_NUM", "INOUT_TAG", "TRAIN_NO", "ORIGINSTATION", "DESTSTATION"))
             numbered.append((line, train, station_code(r["STATION_NM"], line), arrival, departure, terminal(r["SUBWAYENAME"], line)))
-    return {"unnumbered": unnumbered, "numbered": numbered}
+    second = []
+    families = set(allowed.get("secondSource", ()))
+    if families:
+        import csv
+        with open(raw / "seoulmetro-timetable.csv", encoding="cp949", newline="") as file:
+            for r in list(csv.reader(file))[1:]:
+                if r[1] in families and r[4] == ("DAY", "SAT", "END")[number - 1]:
+                    code = terminal(r[3], r[1])
+                    if code is not None:
+                        second.append((r[1], "|".join((r[1], r[4], r[5], r[7], r[10], r[11])), code,
+                                       seconds(r[8]), seconds(r[9]), terminal(r[11], r[1])))
+    return {"unnumbered": unnumbered, "numbered": numbered, "second": second}
 
 
 def embedded_rows(data, day):
     rows = data["rows"].get(day)
     if rows is None:
-        return {"unnumbered": {}, "numbered": []}
+        return {"unnumbered": {}, "numbered": [], "second": []}
     return {
         "unnumbered": {s: [tuple(r) for r in found] for s, found in rows["unnumbered"].items()},
         "numbered": [(g, t, c, a, d, e or None) for g, t, c, a, d, e in rows["numbered"]],
+        "second": [(g, t, c, a, d, e or None) for g, t, c, a, d, e in rows.get("second", ())],
     }
 
 
@@ -429,8 +502,9 @@ def compare(problem_path, raw, table_path):
     registry = read_json("data/registry/stations.json")["stations"]
     different = 0
     for day in DAYS:
-        trains = trains_of(problem, cache_rows(problem, Path(raw), registry, day))
-        cells = day_cells(problem, day, trains)
+        rows = cache_rows(problem, Path(raw), registry, day)
+        trains = trains_of(problem, rows, day)
+        cells = day_table(problem, day, rows)
         keys = set(cells) | set(table[day])
         wrong = [k for k in sorted(keys) if cells.get(k) != table[day].get(k)]
         kinds = collections.Counter(c[0] for c in cells.values())
@@ -448,7 +522,7 @@ def expect(problem_path):
     problem = Problem(data)
     out = {}
     for day in DAYS:
-        cells = day_cells(problem, day, trains_of(problem, embedded_rows(data, day)))
+        cells = day_table(problem, day, embedded_rows(data, day))
         out[day] = [[home, meeting, *cell] for (home, meeting), cell in sorted(cells.items())]
     return out
 

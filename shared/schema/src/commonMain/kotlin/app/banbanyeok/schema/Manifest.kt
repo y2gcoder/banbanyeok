@@ -44,6 +44,11 @@ public data class Manifest(
     val lastTrainAsOf: String? = null,
     /** 세대 3: 막차 계산 규칙의 식별자. 규칙이 바뀌면 값이 바뀐다. */
     val lastTrainModel: String? = null,
+    /**
+     * 세대 3(선택): 시간표가 있는 노선만 계산한 요일 종류의 id(`weekday`·`saturday`·`holiday`). 그 요일 종류의 '확인 필요'는
+     * 시간표가 없는 노선을 지나는 길일 수 있다. 없으면 모든 요일 종류를 전 노선으로 계산했다.
+     */
+    val lastTrainPartialDays: List<String>? = null,
 )
 
 public object ManifestCodec {
@@ -117,17 +122,25 @@ public object ManifestCodec {
     private fun validateLastTrain(manifest: Manifest) {
         val file = manifest.files.lastTrain
         if (manifest.schemaVersion < LAST_TRAIN_GENERATION) {
-            schemaCheck(file == null && manifest.lastTrainAsOf == null && manifest.lastTrainModel == null) {
-                "schemaVersion ${manifest.schemaVersion} manifest에는 막차 항목(files.lastTrain, lastTrainAsOf, lastTrainModel)이 없어야 합니다"
+            schemaCheck(
+                file == null && manifest.lastTrainAsOf == null && manifest.lastTrainModel == null &&
+                    manifest.lastTrainPartialDays == null,
+            ) {
+                "schemaVersion ${manifest.schemaVersion} manifest에는 막차 항목(files.lastTrain, lastTrainAsOf, " +
+                    "lastTrainModel, lastTrainPartialDays)이 없어야 합니다"
             }
             return
         }
         schemaCheck(file != null) { "schemaVersion ${manifest.schemaVersion} manifest에는 files.lastTrain이 있어야 합니다" }
         validateFile("lastTrain", requireNotNull(file))
-        schemaCheck(manifest.lastTrainAsOf?.let(datePattern::matches) == true) {
-            "lastTrainAsOf는 YYYY-MM-DD여야 합니다: '${manifest.lastTrainAsOf}'"
+        schemaCheck(manifest.lastTrainAsOf?.let(::isCalendarDate) == true) {
+            "lastTrainAsOf는 달력에 있는 날짜(YYYY-MM-DD)여야 합니다: '${manifest.lastTrainAsOf}'"
         }
         schemaCheck(manifest.lastTrainModel?.isNotBlank() == true) { "lastTrainModel이 비어 있습니다" }
+        val partial = manifest.lastTrainPartialDays.orEmpty()
+        schemaCheck(partial.distinct() == partial && partial.all { id -> DayType.entries.any { it.id == id } }) {
+            "lastTrainPartialDays는 요일 종류 id를 겹치지 않게 적어야 합니다: $partial"
+        }
     }
 
     /** 세대 1은 구분 행렬이 없고, 세대 2는 기본 구분을 뺀 11개가 빠짐없이 있어야 한다. */
@@ -153,6 +166,20 @@ public object ManifestCodec {
                 "같은 경로('$path')를 가리키는 구분 행렬의 sha256/bytes가 다릅니다"
             }
         }
+    }
+
+    /** `YYYY-MM-DD`이고 실제로 있는 날짜인가(2월 30일, 평년의 2월 29일은 아니다). 공통 코드라 java.time을 쓰지 않는다. */
+    internal fun isCalendarDate(text: String): Boolean {
+        if (!datePattern.matches(text)) return false
+        val (year, month, day) = text.split('-').map(String::toInt)
+        val leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+        val days =
+            when (month) {
+                2 -> if (leap) 29 else 28
+                4, 6, 9, 11 -> 30
+                else -> 31
+            }
+        return day in 1..days
     }
 
     /** `YYYYMMDD.N`을 비교 가능한 수로 바꾼다(문자열 비교는 N이 두 자리일 때 틀린다). */
@@ -225,6 +252,7 @@ public fun Manifest.generationOne(): Manifest =
         files = files.copy(odSlots = null, lastTrain = null),
         lastTrainAsOf = null,
         lastTrainModel = null,
+        lastTrainPartialDays = null,
     )
 
 /** 세대 3 manifest에서 막차 표를 뺀 세대 2 manifest(같은 dataVersion·같은 파일). 세대 3을 모르는 reader용으로 함께 발행한다. */
@@ -236,6 +264,7 @@ public fun Manifest.generationTwo(): Manifest {
         files = files.copy(lastTrain = null),
         lastTrainAsOf = null,
         lastTrainModel = null,
+        lastTrainPartialDays = null,
     )
 }
 
