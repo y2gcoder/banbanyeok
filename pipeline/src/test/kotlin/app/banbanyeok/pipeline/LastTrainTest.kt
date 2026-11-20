@@ -185,23 +185,13 @@ class LastTrainTest :
             val trains = ltTrains(overtake, DayType.WEEKDAY, ltRows(data, DayType.WEEKDAY))
 
             it("keepsTheTwoTrainsApart") {
-                // The local: a 23:00, waits at b from 23:02 to 23:12, c 23:14, d 23:16.
-                val local =
-                    trains.single { train ->
-                        train.stops.first().let {
-                            it.code == "a" &&
-                                it.departure == at(23, 0)
-                        }
-                    }
-                assertEquals(listOf("a", "b", "c", "d"), local.stops.map { it.code })
-                assertEquals(listOf(-1, at(23, 2), at(23, 14), at(23, 16)), local.stops.map { it.arrival })
                 // No rebuilt train reaches a stop before it left the previous one.
                 trains.forEach { train ->
                     train.stops.zipWithNext().forEach { (from, to) ->
                         assertTrue(to.key > from.departure, "${from.code}→${to.code} goes back in time")
                     }
                 }
-                // The express that leaves a at 23:10 only passes b and c: it never gets the local's stop at c.
+                // The express that leaves a at 23:10 only passes b and c: nobody gets off a train rebuilt from it.
                 val express =
                     trains.single { train ->
                         train.stops.first().let {
@@ -209,20 +199,108 @@ class LastTrainTest :
                                 it.departure == at(23, 10)
                         }
                     }
-                assertTrue(express.stops.drop(1).none { it.code == "c" && it.alights })
+                assertTrue(express.stops.drop(1).none { it.alights })
+                // The local (a 23:00, waits at b from 23:02 to 23:12) is followed to b. Its stop at c (23:14) could
+                // also be the express that passed b at 23:11 (expected at c 23:12:30, 90 s off), so that link is
+                // not made: the rule keeps a link only when no other row could claim it.
+                val local =
+                    trains.single { train ->
+                        train.stops.first().let {
+                            it.code == "a" &&
+                                it.departure == at(23, 0)
+                        }
+                    }
+                assertEquals(listOf("a", "b"), local.stops.map { it.code })
+                assertEquals(listOf(-1, at(23, 2)), local.stops.map { it.arrival })
             }
 
-            it("answersAToCWithTheLocalNotTheExpress") {
+            it("givesNoTimeRatherThanTheExpress") {
+                // The truth is the local at 23:00; the first review's wrong answer was 23:10. With the link at b
+                // not made there is no train from a that is known to stop at c: no time is shown.
                 val cell = ltNight(overtake, DayType.WEEKDAY, ltRows(data, DayType.WEEKDAY)).cells.single()
-                // 23:00 less the three-minute source margin; the review's wrong answer was 23:10.
-                assertEquals(LtCell(LastTrainKind.MARGIN_DIRECT.raw, 22 * 60 + 57, "d"), cell)
-                assertTrue(ltShown(cell) <= 23 * 60)
+                assertEquals(LtCell.UNKNOWN, cell)
             }
 
             it("matchesTheIndependentOracle") {
                 // python3 -B prototype/last_train.py expect pipeline/src/test/resources/last-train/overtake.json
                 val result = ltNight(overtake, DayType.WEEKDAY, ltRows(data, DayType.WEEKDAY))
-                assertEquals(listOf(LtCell(3, 1377, "d")), result.cells)
+                assertEquals(listOf(LtCell.UNKNOWN), result.cells)
+            }
+        }
+
+        describe("a train that starts where an express passes (PR #81 second review)") {
+            // All to d, 120 s between stations. Local: a 23:00, b 23:01:30–23:02, c 23:03:30–23:04. A second
+            // local starts at b at 23:16 and stops at c 23:17:30–23:20. An express leaves a at 23:14 and passes b
+            // (23:17:10) and c (23:19:20). The last train from a that stops at c is the 23:00 local.
+            val text = resource("start-and-pass.json")
+
+            fun night(json: String): Pair<List<LtTrain>, LtCell> {
+                val data = parseObject(json)
+                val problem = ltProblem(data)
+                val rows = ltRows(data, DayType.WEEKDAY)
+                return ltTrains(problem, DayType.WEEKDAY, rows) to
+                    ltNight(problem, DayType.WEEKDAY, rows).cells.single()
+            }
+
+            fun List<LtTrain>.fromAAt(seconds: Int) =
+                filter { train ->
+                    train.stops.any {
+                        it.code == "a" &&
+                            it.departure == seconds
+                    }
+                }
+
+            it("doesNotJoinTheExpressToTheTrainStartingAtTheNextStation") {
+                val (trains, cell) = night(text)
+                // At b two rows are within 90 s of where the 23:14 train is expected (23:16): the local starting
+                // there (0 s off) and the express itself (70 s off). Neither is chosen: the 23:14 row is in no train.
+                assertTrue(trains.fromAAt(at(23, 14)).isEmpty())
+                assertEquals(
+                    listOf("a", "b", "c", "d"),
+                    trains
+                        .fromAAt(at(23, 0))
+                        .single()
+                        .stops
+                        .map { it.code },
+                )
+                // 23:00 less the three-minute source margin. The second review's wrong answer was 23:11 (shown 23:10).
+                assertEquals(LtCell(LastTrainKind.MARGIN_DIRECT.raw, 22 * 60 + 57, "d"), cell)
+                assertTrue(ltShown(cell) <= 23 * 60)
+            }
+
+            it("doesNotLinkIntoAStartingRowWhenTheExpressIsOnlyALittleFurtherOff") {
+                // The express now passes b at 23:17:40, 100 s from the expected time: outside the tolerance, so the
+                // starting local is the only candidate. A row without an arrival may be a start, and another row
+                // to the same terminal is within five minutes: still not linked.
+                val moved = text.replace("[-1, 83830, \"d\"]", "[-1, 83860, \"d\"]")
+                assertTrue(moved != text)
+                val (trains, cell) = night(moved)
+                assertTrue(
+                    trains.fromAAt(at(23, 14)).none { train ->
+                        train.stops.any { it.code == "c" && it.alights }
+                    },
+                )
+                assertEquals(LtCell(LastTrainKind.MARGIN_DIRECT.raw, 22 * 60 + 57, "d"), cell)
+            }
+
+            it("stillFollowsAPassingTrainThatNothingElseIsNear") {
+                // Without the local that starts at b the express is one train again: a 23:14, passing b and c, d 23:20:50.
+                val alone =
+                    text
+                        .replace("[-1, 83760, \"d\"], ", "")
+                        .replace("[83850, 84000, \"d\"], ", "")
+                        .replace("[84090, -1, \"d\"], ", "")
+                val (trains, cell) = night(alone)
+                assertEquals(
+                    listOf("a", "b", "c", "d"),
+                    trains
+                        .fromAAt(at(23, 14))
+                        .single()
+                        .stops
+                        .map { it.code },
+                )
+                // It does not stop at c, so the answer for c is unchanged.
+                assertEquals(LtCell(LastTrainKind.MARGIN_DIRECT.raw, 22 * 60 + 57, "d"), cell)
             }
         }
 
@@ -315,6 +393,38 @@ class LastTrainTest :
                 val check = ltCrossCheck(ours, shifted)
                 assertFalse(check.identical)
                 assertEquals(60, check.maxLaterSeconds)
+            }
+
+            it("doesNotConfirmALineWhoseTrainsAreBoundElsewhereInTheOperatorsFile") {
+                // The second review's hole: every departure the same second, every terminal different, and the
+                // comparison still called the line identical. A confirmed direct train is shown with its destination.
+                val ours = ltNumberedTrains(ltRows(toy, DayType.WEEKDAY).numbered)
+                val elsewhere = ours.map { LtTrain(it.group, "x06", it.stops) }
+                val check = ltCrossCheck(ours, elsewhere)
+                assertTrue(check.pairs > 0)
+                assertEquals(0, check.same)
+                assertEquals(check.pairs, check.otherBound)
+                assertEquals(0, check.later)
+                assertEquals(0, check.onlyOurs)
+                assertFalse(check.identical)
+                // One train of several bound elsewhere is enough: only the pairs it is the last train of differ.
+                val one =
+                    ours.mapIndexed { index, train ->
+                        if (index ==
+                            ours.lastIndex
+                        ) {
+                            LtTrain(train.group, "x06", train.stops)
+                        } else {
+                            train
+                        }
+                    }
+                val partly = ltCrossCheck(ours, one)
+                assertTrue(partly.otherBound in 1 until partly.pairs)
+                assertEquals(partly.pairs - partly.otherBound, partly.same)
+                assertFalse(partly.identical)
+                // Two trains leaving a pair at the same second are compared as a set of terminals.
+                assertEquals(0, ltCrossCheck(ours + elsewhere, elsewhere + ours).otherBound)
+                assertTrue(ltCrossCheck(ours + elsewhere, ours).otherBound > 0)
             }
         }
 

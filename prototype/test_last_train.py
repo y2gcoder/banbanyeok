@@ -66,9 +66,39 @@ class ToyNetworkTests(unittest.TestCase):
         self.assertEqual(22 * 60 + 57, holiday['x02', 'x01'][1])
 
     def test_an_express_is_not_joined_to_the_local_it_overtakes(self):
-        # PR #81 검토의 반례: 완행은 b에서 23:02~23:12 대기, 급행은 a 23:10 출발로 b·c를 통과한다. a→c는 완행 23:00(여유 3분).
+        # PR #81 검토의 반례: 완행은 b에서 23:02~23:12 대기, 급행은 a 23:10 출발로 b·c를 통과한다. a→c의 참값은 완행 23:00이고
+        # 틀린 답은 23:10이었다. 완행이 c에 닿는 줄(23:14)은 b를 23:11에 지난 급행도 90초 안에서 자기 것이라 할 수 있어 잇지 않는다:
+        # 시각을 내지 않는다(이른 쪽).
         cells = last_train.expect(FIXTURES / 'overtake.json')
+        self.assertEqual([], cells['weekday'])
+
+    def test_an_express_is_not_joined_to_the_train_starting_where_it_passes(self):
+        # 둘째 검토의 반례: 급행 a 23:14, b에서 시작하는 완행 23:16(c 정차), 급행의 b 통과 줄 23:17:10. 두 줄 모두 예상 시각
+        # 90초 안이다. 가까운 쪽을 고르면 급행에 완행이 붙어 a→c가 23:11이 된다. 참값은 23:00(여유 3분을 빼 22:57).
+        cells = last_train.expect(FIXTURES / 'start-and-pass.json')
         self.assertEqual([['c', 'a', last_train.MARGIN_DIRECT, 22 * 60 + 57, 'd']], cells['weekday'])
+
+    def test_a_row_without_an_arrival_is_linked_to_only_when_nothing_else_is_near(self):
+        data = json.loads((FIXTURES / 'start-and-pass.json').read_text(encoding='utf-8'))
+        problem = last_train.Problem(data)
+
+        def trains(rows):
+            return last_train.unnumbered_trains(problem, rows, 'weekday')
+
+        def from_a(found, seconds):
+            return [t for t in found if any(stop[0] == 'a' and stop[2] == seconds for stop in t.stops)]
+
+        rows = {station: [tuple(row) for row in found] for station, found in data['rows']['weekday']['unnumbered'].items()}
+        self.assertEqual([], from_a(trains(rows), 23 * 3600 + 14 * 60))
+        # 급행의 b 통과 줄이 100초 떨어져 후보가 하나뿐이어도, 도착 시각 없는 줄은 시발일 수 있고 5분 안에 다른 줄이 있다.
+        moved = dict(rows, b=[row if row != (-1, 83830, 'd') else (-1, 83860, 'd') for row in rows['b']])
+        self.assertNotEqual(rows, moved)
+        self.assertEqual([], from_a(trains(moved), 23 * 3600 + 14 * 60))
+        # b에서 시작하는 완행이 없으면 급행은 다시 한 열차다(a, b·c 통과, d 도착).
+        alone = dict(rows, b=[r for r in rows['b'] if r[1] != 83760], c=[r for r in rows['c'] if r[1] != 84000],
+                     d=[r for r in rows['d'] if r[0] != 84090])
+        express = from_a(trains(alone), 23 * 3600 + 14 * 60)
+        self.assertEqual([['a', 'b', 'c', 'd']], [[stop[0] for stop in t.stops] for t in express])
 
     def test_fixture_lists_rows_for_the_days_it_covers(self):
         data = json.loads((FIXTURES / 'toy.json').read_text(encoding='utf-8'))

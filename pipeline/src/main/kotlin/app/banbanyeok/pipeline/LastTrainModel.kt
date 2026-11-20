@@ -19,13 +19,6 @@ internal const val LT_DAY_END = 27 * 3600
 internal const val LT_TOLERANCE = 90
 
 /**
- * Two candidate rows (or two rows claiming one candidate) whose distances from the expected time differ by less
- * than this cannot be told apart: a train waiting to be overtaken and the train overtaking it sit at one station
- * within a minute of each other. Such a link is not made at all.
- */
-internal const val LT_AMBIGUOUS = 60
-
-/**
  * Allowance for the timetable source itself being a different revision from the operator's current one: a train
  * of a source that could not be compared with a second, train-numbered source must be boarded this many seconds
  * before its published departure. The one family that can be compared (line 9, TAGO against the operator's file)
@@ -34,16 +27,19 @@ internal const val LT_AMBIGUOUS = 60
 internal const val LT_SOURCE_MARGIN = 180
 
 /**
- * A chain's first row without an arrival starts its run there only when no train to the same terminal is at the
- * previous station within this many seconds of the expected time; otherwise it may be a passing train whose
- * earlier rows did not link.
+ * A row without an arrival is either a train passing through or a train starting its run, and nothing in the row
+ * says which. Within this many seconds of the expected time it is treated as contested:
+ * - a chain's first row is a start only when no train to the same terminal is at the previous station that near
+ *   (otherwise it may be a passing train whose earlier rows did not link);
+ * - a row is linked to a row without an arrival only when no other row to the same terminal is that near, on
+ *   either side of the link (otherwise the row may be the start of another train).
  */
 internal const val LT_ORIGIN_WINDOW = 300
 
 /** A rebuilt chain and a numbered train are one train when they leave the same station this close together. */
 internal const val LT_STITCH_TOLERANCE = 45
 
-internal const val LT_MODEL = "chain-v2+walk2x5m+source3m"
+internal const val LT_MODEL = "chain-v3+walk2x5m+source3m"
 
 /**
  * Time allowed for changing trains: max([floor], walk × [walkFactor] + [extra]). The published table uses

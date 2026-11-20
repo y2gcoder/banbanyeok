@@ -22,8 +22,13 @@ private data class LtMatch(
  * - A row at the next station that is not later than this row's departure is never the same train.
  * - Only neighbours on the terminal's side are tried ([allowed]); among them the neighbour that most rows of
  *   the same (station, terminal) match wins.
- * - A link that cannot be told from another one is not made ([LT_AMBIGUOUS]): two candidates about equally far
- *   from the expected time, or two rows claiming the same candidate about equally well.
+ * - **A link is made only when it is the only one possible**: the row has exactly one candidate within the
+ *   tolerance, and no other row has that candidate within the tolerance. How much nearer one candidate is than
+ *   another says nothing: a train that starts at the next station can sit exactly where a passing express was
+ *   expected, with the express itself a minute off.
+ * - **A row without an arrival may be where another train starts its run**, not this train passing. Such a row
+ *   is linked to only when nothing else to the same terminal is at that station within [LT_ORIGIN_WINDOW] of the
+ *   expected time, and no other row could claim it within that window either.
  *
  * A link that is not made loses rides (the answer gets earlier or disappears); it never invents one.
  */
@@ -47,7 +52,7 @@ internal class LtChainer(
     private val byEnd: Map<String, Map<String, List<Int>>> =
         this.rows.mapValues { (_, list) -> list.indices.groupBy { list[it].end } }
 
-    /** How far the candidate row is from where this train would be, or null when it cannot be this train. */
+    /** How far the candidate row is from where this train would be, or null when it is nowhere near or not later. */
     private fun gap(
         row: LtRow,
         candidate: LtRow,
@@ -57,27 +62,26 @@ internal class LtChainer(
         val stops = candidate.arrival >= 0
         val actual = if (stops) candidate.arrival else candidate.departure
         val expected = row.departure + if (stops) run else hop
-        return kotlin.math.abs(actual - expected).takeIf { actual > row.departure && it <= LT_TOLERANCE }
+        return kotlin.math.abs(actual - expected).takeIf { actual > row.departure && it <= LT_ORIGIN_WINDOW }
     }
 
-    /** The one row at [next] this train continues as: the nearest candidate, unless a second one is about as near. */
-    private fun match(
+    /**
+     * Rows at [next] that could be this train, nearest first: every row to the same terminal within
+     * [LT_ORIGIN_WINDOW] of where the train would be. Those within [LT_TOLERANCE] are its candidates.
+     */
+    private fun near(
         from: String,
         row: LtRow,
         next: String,
-    ): LtMatch? {
-        val hop = hops[from to next] ?: return null
-        val run = runs[from to next] ?: return null
-        val list = rows[next] ?: return null
-        val found =
-            byEnd[next]
-                ?.get(row.end)
-                .orEmpty()
-                .mapNotNull { index -> gap(row, list[index], hop, run)?.let { LtMatch(it, next, index) } }
-                .sortedWith(compareBy({ it.gap }, { it.index }))
-        val best = found.firstOrNull() ?: return null
-        val second = found.getOrNull(1)
-        return best.takeIf { second == null || second.gap - best.gap >= LT_AMBIGUOUS }
+    ): List<LtMatch> {
+        val hop = hops[from to next] ?: return emptyList()
+        val run = runs[from to next] ?: return emptyList()
+        val list = rows[next] ?: return emptyList()
+        return byEnd[next]
+            ?.get(row.end)
+            .orEmpty()
+            .mapNotNull { index -> gap(row, list[index], hop, run)?.let { LtMatch(it, next, index) } }
+            .sortedWith(compareBy({ it.gap }, { it.index }))
     }
 
     private val previous: Map<String, List<String>> =
@@ -99,8 +103,8 @@ internal class LtChainer(
         }
     }
 
-    /** Every departing row's match at each allowed neighbour, in (station, row) order. */
-    private fun matches(): Map<LtRef, List<LtMatch>> {
+    /** Every departing row's nearby rows at each allowed neighbour, in (station, row) order. */
+    private fun nearby(): Map<LtRef, List<LtMatch>> {
         val found = linkedMapOf<LtRef, List<LtMatch>>()
         rows.forEach { (station, list) ->
             list.forEachIndexed { index, row ->
@@ -109,35 +113,51 @@ internal class LtChainer(
                         neighbours[station]
                             .orEmpty()
                             .filter { allowed(station, row.end, it) }
-                            .mapNotNull { match(station, row, it) }
+                            .flatMap { near(station, row, it) }
                 }
             }
         }
         return found
     }
 
+    private fun passes(match: LtMatch) = rows.getValue(match.next)[match.index].arrival < 0
+
     /** Row → the row of the same train at the next station. */
     fun links(): Map<LtRef, LtRef> {
-        val found = matches()
+        val found = nearby()
         val votes = mutableMapOf<Pair<String, String>, MutableMap<String, Int>>()
         found.forEach { (ref, list) ->
             val key = ref.station to rows.getValue(ref.station)[ref.index].end
-            list.forEach { votes.getOrPut(key) { sortedMapOf() }.merge(it.next, 1, Int::plus) }
+            list.filter { it.gap <= LT_TOLERANCE }.map { it.next }.distinct().forEach {
+                votes.getOrPut(key) { sortedMapOf() }.merge(it, 1, Int::plus)
+            }
         }
-        // Rows claiming each candidate, in (station, row) order.
-        val claims = linkedMapOf<LtRef, MutableList<Pair<Int, LtRef>>>()
-        found.forEach { (ref, list) ->
-            val key = ref.station to rows.getValue(ref.station)[ref.index].end
-            // The neighbour most rows agree on; on a tie the smaller id (the map is sorted).
-            val side = votes[key]?.entries?.maxByOrNull { it.value }?.key
-            val best = list.firstOrNull { it.next == side } ?: return@forEach
-            claims.getOrPut(LtRef(best.next, best.index)) { mutableListOf() }.add(best.gap to ref)
+        // Per row: the rows near it at the neighbour most rows of its (station, terminal) agree on.
+        val sided =
+            found.mapValues { (ref, list) ->
+                val key = ref.station to rows.getValue(ref.station)[ref.index].end
+                // On a tie the smaller id (the map is sorted).
+                val side = votes[key]?.entries?.maxByOrNull { it.value }?.key
+                list.filter { it.next == side }
+            }
+        // Rows each row could be the continuation of: how many could claim it within the tolerance, and at all.
+        val close = mutableMapOf<LtRef, Int>()
+        val wide = mutableMapOf<LtRef, Int>()
+        sided.values.forEach { list ->
+            list.forEach { match ->
+                val target = LtRef(match.next, match.index)
+                wide.merge(target, 1, Int::plus)
+                if (match.gap <= LT_TOLERANCE) close.merge(target, 1, Int::plus)
+            }
         }
         val forward = mutableMapOf<LtRef, LtRef>()
-        claims.forEach { (target, list) ->
-            val ranked = list.sortedBy { it.first }
-            val clear = ranked.size == 1 || ranked[1].first - ranked[0].first >= LT_AMBIGUOUS
-            if (clear) forward[ranked[0].second] = target
+        sided.forEach { (ref, list) ->
+            val candidates = list.filter { it.gap <= LT_TOLERANCE }
+            val only = candidates.singleOrNull() ?: return@forEach
+            val target = LtRef(only.next, only.index)
+            // A candidate without an arrival may be another train's start: nothing else may be near at all.
+            val contested = passes(only) && (list.size > 1 || wide[target] != 1)
+            if (close[target] == 1 && !contested) forward[ref] = target
         }
         return forward
     }

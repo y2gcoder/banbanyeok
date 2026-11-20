@@ -7,18 +7,39 @@ import kotlinx.serialization.json.JsonObject
 // Gates that must pass before a last-train table is published. All of them guard one property: a published time
 // may be earlier than the real last train, never later.
 
-/** Latest single-train departure per (boarding station, alighting station) over [trains]. */
-private fun ltPairs(trains: List<LtTrain>): Map<Pair<String, String>, Int> {
-    val best = mutableMapOf<Pair<String, String>, Int>()
+/** The last single-train departure of a station pair and where the trains leaving at that second are bound for. */
+internal data class LtLastRide(
+    val departure: Int,
+    val bounds: Set<String>,
+)
+
+/** Latest single-train ride per (boarding station, alighting station) over [trains]. */
+private fun ltLastRides(trains: List<LtTrain>): Map<Pair<String, String>, LtLastRide> {
+    val best = mutableMapOf<Pair<String, String>, LtLastRide>()
     trains.forEach { train ->
         train.stops.forEachIndexed { to, target ->
             train.stops.subList(0, to).forEach { origin ->
-                if (ltRides(origin, target)) best.merge(origin.code to target.code, origin.departure, ::maxOf)
+                if (ltRides(origin, target)) {
+                    best.merge(
+                        origin.code to target.code,
+                        LtLastRide(origin.departure, setOf(train.bound)),
+                    ) { old, new ->
+                        when {
+                            new.departure > old.departure -> new
+                            new.departure < old.departure -> old
+                            else -> LtLastRide(old.departure, old.bounds + new.bounds)
+                        }
+                    }
+                }
             }
         }
     }
     return best
 }
+
+/** Latest single-train departure per (boarding station, alighting station) over [trains]. */
+private fun ltPairs(trains: List<LtTrain>): Map<Pair<String, String>, Int> =
+    ltLastRides(trains).mapValues { it.value.departure }
 
 /** Outcome of rebuilding numbered trains with their numbers hidden. [late] and [phantom] must be 0. */
 internal data class LtHiddenCheck(
@@ -310,10 +331,16 @@ internal fun ltCeilingReport(
         )
     }
 
-/** Last direct trains of one line family in our trains against the operator's train-coded file, pair by pair. */
+/**
+ * Last direct trains of one line family in our trains against the operator's train-coded file, pair by pair. A pair
+ * is the [same] when its last departure is the same second **and** the trains leaving then are bound for the same
+ * terminals: a confirmed direct train is published with its destination, so the destination is compared too.
+ */
 internal data class LtCrossCheck(
     val pairs: Int,
     val same: Int,
+    /** Pairs whose last departure is the same second but whose trains are bound elsewhere in the operator's file. */
+    val otherBound: Int,
     /** Pairs where ours is later than the operator's, and by how many seconds at most. */
     val later: Int,
     val maxLaterSeconds: Int,
@@ -322,8 +349,9 @@ internal data class LtCrossCheck(
     val onlyOfficial: Int,
 ) {
     /**
-     * Every pair we publish has the same last direct train in the operator's file (so none is later, earlier or ours
-     * alone), and there is something to compare. Only then are the line's direct trains published to the minute.
+     * Every pair we publish has the same last direct train to the same terminal in the operator's file (so none is
+     * later, earlier, bound elsewhere or ours alone), and there is something to compare. Only then are the line's
+     * direct trains published to the minute.
      */
     val identical: Boolean get() = pairs > 0 && same == pairs
 
@@ -332,6 +360,7 @@ internal data class LtCrossCheck(
             obj(
                 "pairs" to pairs,
                 "same" to same,
+                "otherBound" to otherBound,
                 "later" to later,
                 "maxLaterSeconds" to maxLaterSeconds,
                 "earlier" to earlier,
@@ -346,16 +375,24 @@ internal fun ltCrossCheck(
     official: List<LtTrain>,
 ): LtCrossCheck {
     fun raw(trains: List<LtTrain>) =
-        ltPairs(trains.map { train -> LtTrain(train.group, train.end, train.stops.map { it.copy(margin = 0) }) })
+        ltLastRides(trains.map { train -> LtTrain(train.group, train.end, train.stops.map { it.copy(margin = 0) }) })
     val mine = raw(ours)
     val theirs = raw(official)
-    val late = mine.mapNotNull { (pair, value) -> theirs[pair]?.let { value - it }?.takeIf { it > 0 } }
+    val late =
+        mine.mapNotNull { (pair, ride) ->
+            theirs[pair]?.let { ride.departure - it.departure }?.takeIf { it > 0 }
+        }
     return LtCrossCheck(
         pairs = mine.size,
         same = mine.count { theirs[it.key] == it.value },
+        otherBound =
+            mine.count { (pair, ride) ->
+                theirs[pair]?.let { it.departure == ride.departure && it != ride } ==
+                    true
+            },
         later = late.size,
         maxLaterSeconds = late.maxOrNull() ?: 0,
-        earlier = mine.count { (pair, value) -> (theirs[pair] ?: Int.MIN_VALUE) > value },
+        earlier = mine.count { (pair, ride) -> (theirs[pair]?.departure ?: Int.MIN_VALUE) > ride.departure },
         onlyOurs = mine.keys.count { it !in theirs },
         onlyOfficial = theirs.keys.count { it !in mine },
     )

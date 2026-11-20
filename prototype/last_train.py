@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 CHAIN_FROM, BOARD_FROM, DAY_END = 19 * 3600, 20 * 3600, 27 * 3600
-TOLERANCE, AMBIGUOUS, STITCH, ORIGIN_WINDOW, DEFAULT_DWELL = 90, 60, 45, 300, 30
+TOLERANCE, STITCH, ORIGIN_WINDOW, DEFAULT_DWELL = 90, 45, 300, 30
 ALLOW_FLOOR, ALLOW_FACTOR, ALLOW_EXTRA = 600, 2, 300
 DAYS = ("weekday", "saturday", "holiday")
 UNKNOWN, DIRECT, MARGIN_TRANSFER, MARGIN_DIRECT = 0, 1, 2, 3
@@ -106,7 +106,9 @@ def chain_links(rows, neighbours, hops, runs, allowed):
 
     A row continues as the row at the next station with the same terminal whose arrival is where the train would
     arrive (departure + run), or whose departure is where it would leave when the row has no arrival (a passing
-    train). It must be later than this row's departure. A link that cannot be told from another is not made.
+    train). It must be later than this row's departure. A link is made only when it is the only one possible: one
+    candidate within the tolerance, claimed by no other row within the tolerance. A candidate without an arrival
+    may be another train's start, so nothing else to the same terminal may be near it within the origin window.
     """
     by_end = {}
     for station, found in rows.items():
@@ -115,21 +117,18 @@ def chain_links(rows, neighbours, hops, runs, allowed):
             index[end].append(i)
         by_end[station] = index
 
-    def match(station, departure, end, nxt):
+    def near(station, departure, end, nxt):
         hop, run = hops.get((station, nxt)), runs.get((station, nxt))
         if hop is None or run is None or nxt not in rows:
-            return None
+            return []
         found = []
         for j in by_end[nxt].get(end, ()):
             arrival, leaves, _end = rows[nxt][j]
             actual = arrival if arrival >= 0 else leaves
             gap = abs(actual - (departure + (run if arrival >= 0 else hop)))
-            if actual > departure and gap <= TOLERANCE:
-                found.append((gap, j))
-        found.sort()
-        if not found or (len(found) > 1 and found[1][0] - found[0][0] < AMBIGUOUS):
-            return None
-        return found[0][0], nxt, found[0][1]
+            if actual > departure and gap <= ORIGIN_WINDOW:
+                found.append((gap, nxt, j))
+        return found
 
     found, votes = {}, collections.defaultdict(collections.Counter)
     for station in sorted(rows):
@@ -137,22 +136,28 @@ def chain_links(rows, neighbours, hops, runs, allowed):
             if departure < 0:
                 continue
             options = [n for n in sorted(neighbours.get(station, ())) if allowed(station, end, n)]
-            matches = [m for m in (match(station, departure, end, n) for n in options) if m]
-            found[station, i] = matches
-            for _gap, nxt, _j in matches:
+            found[station, i] = [m for n in options for m in near(station, departure, end, n)]
+            for nxt in {m[1] for m in found[station, i] if m[0] <= TOLERANCE}:
                 votes[station, end][nxt] += 1
-    claims = {}
+    sided, close, wide = {}, collections.Counter(), collections.Counter()
     for (station, i), matches in found.items():
         tally = votes[station, rows[station][i][2]]
         side = max(sorted(tally), key=lambda n: tally[n], default=None)
-        best = next((m for m in matches if m[1] == side), None)
-        if best is not None:
-            claims.setdefault((best[1], best[2]), []).append((best[0], (station, i)))
+        sided[station, i] = [m for m in matches if m[1] == side]
+        for gap, nxt, j in sided[station, i]:
+            wide[nxt, j] += 1
+            if gap <= TOLERANCE:
+                close[nxt, j] += 1
     forward = {}
-    for target, claimed in claims.items():
-        ranked = sorted(claimed, key=lambda c: c[0])
-        if len(ranked) == 1 or ranked[1][0] - ranked[0][0] >= AMBIGUOUS:
-            forward[ranked[0][1]] = target
+    for ref, matches in sided.items():
+        candidates = [m for m in matches if m[0] <= TOLERANCE]
+        if len(candidates) != 1:
+            continue
+        target = candidates[0][1], candidates[0][2]
+        passes = rows[target[0]][target[1]][0] < 0
+        contested = passes and (len(matches) > 1 or wide[target] != 1)
+        if close[target] == 1 and not contested:
+            forward[ref] = target
     return forward, by_end
 
 
