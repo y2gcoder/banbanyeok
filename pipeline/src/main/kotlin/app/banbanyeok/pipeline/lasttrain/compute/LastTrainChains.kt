@@ -1,4 +1,18 @@
-package app.banbanyeok.pipeline
+package app.banbanyeok.pipeline.lasttrain.compute
+
+import app.banbanyeok.pipeline.lasttrain.model.LT_CHAIN_FROM
+import app.banbanyeok.pipeline.lasttrain.model.LT_DAY_END
+import app.banbanyeok.pipeline.lasttrain.model.LT_ORIGIN_WINDOW
+import app.banbanyeok.pipeline.lasttrain.model.LT_STITCH_TOLERANCE
+import app.banbanyeok.pipeline.lasttrain.model.LT_TOLERANCE
+import app.banbanyeok.pipeline.lasttrain.model.LtDayRows
+import app.banbanyeok.pipeline.lasttrain.model.LtNumberedStop
+import app.banbanyeok.pipeline.lasttrain.model.LtProblem
+import app.banbanyeok.pipeline.lasttrain.model.LtRow
+import app.banbanyeok.pipeline.lasttrain.model.LtStop
+import app.banbanyeok.pipeline.lasttrain.model.LtTrain
+import app.banbanyeok.schema.DayType
+import kotlin.math.abs
 
 /** A row of an unnumbered station: station id and index in that station's sorted rows. */
 internal data class LtRef(

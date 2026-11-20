@@ -1,5 +1,23 @@
-package app.banbanyeok.pipeline
+package app.banbanyeok.pipeline.lasttrain.gate
 
+import app.banbanyeok.pipeline.Network
+import app.banbanyeok.pipeline.lasttrain.compute.LtChainer
+import app.banbanyeok.pipeline.lasttrain.compute.ltChains
+import app.banbanyeok.pipeline.lasttrain.compute.ltNumberedTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltShown
+import app.banbanyeok.pipeline.lasttrain.model.LtCeiling
+import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
+import app.banbanyeok.pipeline.lasttrain.model.LtFamilies
+import app.banbanyeok.pipeline.lasttrain.model.LtNumberedStop
+import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
+import app.banbanyeok.pipeline.lasttrain.model.LtProblem
+import app.banbanyeok.pipeline.lasttrain.model.LtRow
+import app.banbanyeok.pipeline.lasttrain.model.LtStop
+import app.banbanyeok.pipeline.lasttrain.model.LtTrain
+import app.banbanyeok.pipeline.lasttrain.model.ltRides
+import app.banbanyeok.pipeline.obj
+import app.banbanyeok.pipeline.shortest
+import app.banbanyeok.pipeline.stationNamed
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Station
 import kotlinx.serialization.json.JsonObject
@@ -215,36 +233,6 @@ internal class LtArrivalBound(
     }
 }
 
-/** One row of data/config/last-train-official.csv: a last direct train read from the operator's own timetable. */
-internal data class LtOfficialSample(
-    val meeting: String,
-    val home: String,
-    val day: DayType,
-    /** Minute of the service day as the operator publishes it. */
-    val minute: Int,
-    val bound: String,
-    val family: String,
-    val url: String,
-    val checkedAt: String,
-)
-
-internal fun ltOfficialSamples(text: String): List<LtOfficialSample> =
-    csv(text).drop(1).filter { it.any(String::isNotBlank) }.map { row ->
-        require(row.size == 8) { "last-train-official.csv: meeting,home,day,time,bound,family,url,checkedAt" }
-        val (hour, minute) = row[3].split(':').map(String::toInt)
-        require(hour in 20..26 && minute in 0..59) { "last-train-official.csv: time ${row[3]} must be 20:00–26:59" }
-        LtOfficialSample(
-            row[0],
-            row[1],
-            requireNotNull(DayType.entries.firstOrNull { it.id == row[2] }) { "Unknown day type ${row[2]}" },
-            hour * 60 + minute,
-            row[4],
-            row[5],
-            row[6].also { require(it.startsWith("https://")) { "last-train-official.csv: source URL required" } },
-            row[7],
-        )
-    }
-
 /**
  * Compares the samples with the last single train of each cell. A sample passes only when the departure minute,
  * the train's destination **and its line family** all match: a sample cannot vouch for another family, and a cell
@@ -281,30 +269,6 @@ internal fun ltOfficialReport(
         )
     }
 }
-
-/** One row of data/config/last-train-ceilings.csv: a cell that must never show a time later than the operator's. */
-internal data class LtCeiling(
-    val meeting: String,
-    val home: String,
-    val day: DayType,
-    val notAfter: Int,
-    val url: String,
-    val checkedAt: String,
-)
-
-internal fun ltCeilings(text: String): List<LtCeiling> =
-    csv(text).drop(1).filter { it.any(String::isNotBlank) }.map { row ->
-        require(row.size == 7) { "last-train-ceilings.csv: meeting,home,day,notAfter,url,checkedAt,note" }
-        val (hour, minute) = row[3].split(':').map(String::toInt)
-        LtCeiling(
-            row[0],
-            row[1],
-            requireNotNull(DayType.entries.firstOrNull { it.id == row[2] }) { "Unknown day type ${row[2]}" },
-            hour * 60 + minute,
-            row[4].also { require(it.startsWith("https://")) { "last-train-ceilings.csv: source URL required" } },
-            row[5],
-        )
-    }
 
 /** What each ceiling cell shows (floored for margin kinds); it passes when that is not later than the ceiling. */
 internal fun ltCeilingReport(

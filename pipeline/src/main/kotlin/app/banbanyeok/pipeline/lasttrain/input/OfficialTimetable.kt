@@ -1,7 +1,19 @@
-package app.banbanyeok.pipeline
+package app.banbanyeok.pipeline.lasttrain.input
 
+import app.banbanyeok.pipeline.JdkPipelineHttp
+import app.banbanyeok.pipeline.PipelineHttp
+import app.banbanyeok.pipeline.csv
+import app.banbanyeok.pipeline.csvBytes
+import app.banbanyeok.pipeline.fetch
+import app.banbanyeok.pipeline.jsonValue
+import app.banbanyeok.pipeline.lasttrain.model.OfficialRow
+import app.banbanyeok.pipeline.lasttrain.model.ltSeconds
+import app.banbanyeok.pipeline.obj
+import app.banbanyeok.pipeline.text
+import app.banbanyeok.pipeline.writeJson
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Sha256
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import java.nio.file.Path
@@ -29,18 +41,6 @@ private const val OFFICIAL_NO_TIME = "00:00:00"
 /** Seconds a row's arrival may lie after its departure before the file is refused (one row in the file: 35 s). */
 private const val OFFICIAL_ROW_SLIP = 300
 private val OFFICIAL_DAYS = mapOf("DAY" to DayType.WEEKDAY, "SAT" to DayType.SATURDAY, "END" to DayType.HOLIDAY)
-
-/** One stop of one train in the operator's file. Times are service-day seconds, -1 when the file has none. */
-internal data class OfficialRow(
-    val line: String,
-    val station: String,
-    val day: DayType,
-    /** Unique within a day: line, direction, train code, first and last station. */
-    val train: String,
-    val arrival: Int,
-    val departure: Int,
-    val terminal: String,
-)
 
 /**
  * A time of the file in service-day seconds. **`00:00:00` is the file's mark for "no value"**, not midnight: the

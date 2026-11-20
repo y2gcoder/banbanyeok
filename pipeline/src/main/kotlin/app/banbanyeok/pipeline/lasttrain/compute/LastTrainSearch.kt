@@ -1,5 +1,15 @@
-package app.banbanyeok.pipeline
+package app.banbanyeok.pipeline.lasttrain.compute
 
+import app.banbanyeok.pipeline.lasttrain.model.LT_BOARD_FROM
+import app.banbanyeok.pipeline.lasttrain.model.LT_DAY_END
+import app.banbanyeok.pipeline.lasttrain.model.LtAllowance
+import app.banbanyeok.pipeline.lasttrain.model.LtCell
+import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
+import app.banbanyeok.pipeline.lasttrain.model.LtDayRows
+import app.banbanyeok.pipeline.lasttrain.model.LtDirect
+import app.banbanyeok.pipeline.lasttrain.model.LtProblem
+import app.banbanyeok.pipeline.lasttrain.model.LtTrain
+import app.banbanyeok.pipeline.lasttrain.model.ltRides
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainKind
 import java.util.PriorityQueue

@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.pipeline.lasttrain.model.LtArtifact
 import app.banbanyeok.schema.CandidateList
 import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
@@ -70,22 +71,22 @@ internal fun odFileName(slot: TimeSlot): String = if (slot == TimeSlot.DEFAULT) 
 internal fun publish(
     root: Path,
     net: Network,
-    candidates: CandidateList,
-    matrices: Map<TimeSlot, Pair<IntArray, IntArray>>,
-    lastTrains: LtArtifact,
+    parts: ReleaseParts,
 ) {
-    require(matrices.keys == TimeSlot.ALL.toSet()) { "Every time slot needs a matrix" }
+    require(parts.matrices.keys == TimeSlot.ALL.toSet()) { "Every time slot needs a matrix" }
     val ods =
-        matrices.mapValues { (_, matrix) ->
+        parts.matrices.mapValues { (_, matrix) ->
             OdMatrix(
                 net.registry.registryVersion,
                 net.origins.map { StationCode.parse(it.code).value }.toIntArray(),
-                candidates.candidates.map { StationCode.parse(it).value }.toIntArray(),
+                parts.candidates.candidates
+                    .map { StationCode.parse(it).value }
+                    .toIntArray(),
                 matrix.first,
                 matrix.second,
             )
         }
-    ArtifactWriter(root, net, candidates, ods, lastTrains).write()
+    ArtifactWriter(root, net, parts.candidates, ods, parts.lastTrains).write()
 }
 
 private class ArtifactWriter(

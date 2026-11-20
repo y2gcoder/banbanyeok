@@ -1,5 +1,17 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.pipeline.lasttrain.compute.ltNight
+import app.banbanyeok.pipeline.lasttrain.compute.ltNumberedTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltTable
+import app.banbanyeok.pipeline.lasttrain.gate.ltCrossCheck
+import app.banbanyeok.pipeline.lasttrain.gate.ltHiddenNumbers
+import app.banbanyeok.pipeline.lasttrain.gate.ltInconsistentCells
+import app.banbanyeok.pipeline.lasttrain.gate.ltLaterCells
+import app.banbanyeok.pipeline.lasttrain.model.LtAllowance
+import app.banbanyeok.pipeline.lasttrain.model.LtProblem
+import app.banbanyeok.pipeline.lasttrain.model.ltProblemFromJson
+import app.banbanyeok.pipeline.lasttrain.model.ltProblemToJson
+import app.banbanyeok.pipeline.lasttrain.model.ltRows
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LtBinCodec
 import app.banbanyeok.schema.Sha256
@@ -23,7 +35,7 @@ private fun fixture(name: String): String =
 class LastTrainRealCoreTest :
     DescribeSpec({
         val data = parseObject(fixture("real-core.json"))
-        val on = ltProblem(data)
+        val on = ltProblemFromJson(data)
         val off = on.copy(rebuild = false)
 
         fun cells(
@@ -90,10 +102,10 @@ class LastTrainRealCoreTest :
             }
 
             it("writesTheProblemFileTheOracleReadsAndReadsItBack") {
-                val json = ltProblemJson(on)
-                assertEquals(json, ltProblemJson(ltProblem(json)))
-                assertEquals(on.homes, ltProblem(json).homes)
-                assertEquals(on.meetings, ltProblem(json).meetings)
+                val json = ltProblemToJson(on)
+                assertEquals(json, ltProblemToJson(ltProblemFromJson(json)))
+                assertEquals(on.homes, ltProblemFromJson(json).homes)
+                assertEquals(on.meetings, ltProblemFromJson(json).meetings)
                 assertEquals(
                     setOf("homes", "meetings", "families", "stations", "hops", "sourceMargin", "walks", "stationWalks"),
                     json.keys.take(8).toSet(),
