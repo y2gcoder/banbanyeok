@@ -2,8 +2,9 @@ import { Suspense } from "react";
 import { decodeShareQuery } from "@/lib/link/codec";
 import { toQueryString } from "@/lib/result/share-url";
 import { InvalidLink } from "./invalid-link";
+import { LoadingCard, PANEL, RESULT_GRID, SIDE } from "./parts/candidates";
 import { ResultLoader } from "./result-loader";
-import { LoadingCard, PANEL, RESULT_GRID, type ResultVariant, SIDE } from "./result-screen";
+import type { ResultVariant } from "./result-screen";
 
 export type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

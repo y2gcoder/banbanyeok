@@ -1,20 +1,17 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { roomHashProperty, secondsSinceRoomCreated, track } from "@/lib/analytics";
-import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
-import type { ParticipantInput, Room } from "@/lib/api/types";
+import { roomHashProperty, track } from "@/lib/analytics";
+import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
-import { isRoomGone, isStaleRoom, isTokenRejected, roomErrorMessage } from "@/lib/room/errors";
+import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
 import { roomQueryOptions } from "@/lib/room/queries";
 import {
   canStoreRoomTokens,
-  keepUntilFrom,
   loadRoomRecord,
   type RoomRecord,
   removeRoomRecord,
@@ -41,9 +38,8 @@ import {
 } from "./room-states";
 import { RoomShareSection } from "./share-section";
 import { useIdempotencyKey } from "./use-idempotency-key";
+import { useRoomActions } from "./use-room-actions";
 import { useRoomDecision } from "./use-room-decision";
-
-const FULL_LOCK_REASON = "정한 예상 인원이 다 차서 잠겨 있어요. 누가 나가면 자동으로 다시 열려요.";
 
 const emptyValue = (): ParticipantFormValue => ({ nickname: "", station: null, hidden: false });
 
@@ -78,15 +74,11 @@ function summary(room: Room): string {
  */
 export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const roomId = normalizeRoomId(rawRoomId);
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const keys = useIdempotencyKey();
   // undefined = 아직 기기 저장소를 읽지 않음(서버 렌더링·수화 직후), null = 기록 없음
   const [record, setRecord] = useState<RoomRecord | null | undefined>(undefined);
-  const [editing, setEditing] = useState(false);
   const [joinValue, setJoinValue] = useState<ParticipantFormValue>(emptyValue);
   const [storable, setStorable] = useState(true);
-  const [actionError, setActionError] = useState<string | null>(null);
   // 결과 쿼리가 방 없음(404)을 먼저 받았을 때(방 쿼리는 이전 data를 유지한다). 방이 지워지면 되살릴 수 없다.
   const [resultGone, setResultGone] = useState(false);
 
@@ -135,107 +127,9 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     }
   }, [record, room, gone, query.isPlaceholderData, roomId, commit, keys]);
 
-  const refresh = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ["room", roomId] });
-    void queryClient.invalidateQueries({ queryKey: ["room-result", roomId] });
-    void queryClient.invalidateQueries({ queryKey: ["room-preview", roomId] });
-  }, [queryClient, roomId]);
+  const actions = useRoomActions({ roomId, room, record, commit, keys });
 
-  const reportMutationError = (error: unknown) => {
-    setActionError(roomErrorMessage(error));
-    if (isRoomGone(error)) refresh();
-  };
-
-  const join = useMutation({
-    mutationFn: (input: ParticipantInput) => joinRoom(roomId, input, keys.keyFor(input)),
-    onSuccess: (joined, input) => {
-      commit({
-        v: 1,
-        ...(record?.hostToken ? { hostToken: record.hostToken } : {}),
-        participantToken: joined.participantToken,
-        participantId: joined.participantId,
-        keepUntil: record?.keepUntil ?? keepUntilFrom(),
-        ...(record?.expectedCount ? { expectedCount: record.expectedCount } : {}),
-      });
-      keys.renew();
-      const seconds = secondsSinceRoomCreated(room?.createdAt);
-      track("participant_joined", {
-        hidden: input.hidden === true,
-        ...roomHashProperty({ roomId, roomHash: room?.roomHash }),
-        ...(seconds === undefined ? {} : { seconds_since_room_created: seconds }),
-      });
-      refresh();
-    },
-    onError: (error) => {
-      // 잠김·정원 초과·사라진 방이면 화면의 방 상태가 오래된 것이다. 다시 불러 안내를 바꾼다.
-      if (isStaleRoom(error)) refresh();
-    },
-  });
-
-  const edit = useMutation({
-    mutationFn: (input: ParticipantInput) => {
-      if (!token || !participantId) throw new Error("no participant");
-      return updateParticipant(roomId, participantId, token, input);
-    },
-    onSuccess: () => {
-      setEditing(false);
-      refresh();
-    },
-    onError: (error) => {
-      if (isTokenRejected(error) || isRoomGone(error)) refresh();
-    },
-  });
-
-  const leave = useMutation({
-    mutationFn: () => {
-      if (!token || !participantId) throw new Error("no participant");
-      return removeParticipant(roomId, participantId, token);
-    },
-    onSuccess: () => {
-      if (record) commit(withoutParticipant(record));
-      keys.renew();
-      setEditing(false);
-      refresh();
-    },
-    onError: reportMutationError,
-  });
-
-  const kick = useMutation({
-    mutationFn: (id: string) => {
-      if (!record?.hostToken) throw new Error("no host token");
-      return removeParticipant(roomId, id, record.hostToken);
-    },
-    onSuccess: refresh,
-    onError: reportMutationError,
-  });
-
-  const lock = useMutation({
-    mutationFn: (locked: boolean) => {
-      if (!record?.hostToken) throw new Error("no host token");
-      return updateRoom(roomId, record.hostToken, { locked });
-    },
-    // 방장 토큰으로 받은 방 응답에는 "내 항목" 표시(isSelf)가 없다. 캐시에 넣지 않고 내 토큰으로 다시 불러온다.
-    onSuccess: (updated, locked) => {
-      // 정한 인원이 차서 잠긴 방은 잠금을 풀어도 서버가 계속 잠김으로 답한다(정원 도달도 locked다).
-      if (!locked && updated.locked) setActionError(FULL_LOCK_REASON);
-      refresh();
-    },
-    onError: reportMutationError,
-  });
-
-  const remove = useMutation({
-    mutationFn: () => {
-      if (!record?.hostToken) throw new Error("no host token");
-      return deleteRoom(roomId, record.hostToken);
-    },
-    onSuccess: () => {
-      removeRoomRecord(roomId);
-      router.push("/");
-    },
-    onError: reportMutationError,
-  });
-
-  const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh });
+  const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh: actions.refresh });
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
 
@@ -277,7 +171,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   // 방장이 정한 예상 인원이 찼으면 잠금 버튼으로는 열 수 없다(서버가 정원 도달을 locked로 돌려준다).
   const fullByCount =
     room.locked && Boolean(record?.expectedCount) && room.participants.length >= (record?.expectedCount ?? 5);
-  const busy = leave.isPending || kick.isPending || lock.isPending || remove.isPending;
   const decision: RoomDecisionMode =
     room.shareVersion === undefined
       ? { kind: "local" }
@@ -300,42 +193,32 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           people={people}
           maxPeople={MAX_PEOPLE}
           canKick={isHost}
-          editing={editing}
-          busy={busy}
-          onEditSelf={() => {
-            setActionError(null);
-            edit.reset();
-            setEditing(true);
-          }}
-          onRemoveSelf={() => {
-            setActionError(null);
-            leave.mutate();
-          }}
-          onKick={(id) => {
-            setActionError(null);
-            kick.mutate(id);
-          }}
+          editing={actions.editing}
+          busy={actions.busy}
+          onEditSelf={actions.startEdit}
+          onRemoveSelf={actions.leave}
+          onKick={actions.kick}
         />
-        {actionError && !isHost ? (
+        {actions.actionError && !isHost ? (
           <p role="alert" className="-mt-2 text-sm font-semibold text-destructive">
-            {actionError}
+            {actions.actionError}
           </p>
         ) : null}
 
-        {joined && editing ? (
+        {joined && actions.editing ? (
           <JoinForm
             key="edit"
             mode="edit"
             initial={myValue()}
             personIndex={Math.max(0, selfIndex)}
-            pending={edit.isPending}
+            pending={actions.editPending}
             timeBasis={room.timeBasis}
-            error={edit.isError ? roomErrorMessage(edit.error) : null}
+            error={actions.editError}
             onSubmit={(input, value) => {
               if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
-              edit.mutate(input);
+              actions.edit(input);
             }}
-            onCancel={() => setEditing(false)}
+            onCancel={actions.cancelEdit}
           />
         ) : null}
 
@@ -346,12 +229,12 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
               mode="join"
               initial={joinValue}
               personIndex={room.participants.length}
-              pending={join.isPending}
+              pending={actions.joinPending}
               timeBasis={room.timeBasis}
-              error={join.isError ? roomErrorMessage(join.error) : null}
+              error={actions.joinError}
               onSubmit={(input, value) => {
                 if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
-                join.mutate(input);
+                actions.join(input);
               }}
             />
             {storable ? null : (
@@ -408,16 +291,10 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           <HostControls
             locked={room.locked}
             lockedByCount={fullByCount}
-            busy={busy}
-            error={actionError}
-            onToggleLock={(locked) => {
-              setActionError(null);
-              lock.mutate(locked);
-            }}
-            onDeleteRoom={() => {
-              setActionError(null);
-              remove.mutate();
-            }}
+            busy={actions.busy}
+            error={actions.actionError}
+            onToggleLock={actions.lock}
+            onDeleteRoom={actions.remove}
           />
         ) : null}
 

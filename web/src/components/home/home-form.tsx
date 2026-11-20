@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { personColor } from "@/components/common/person-color";
+import { StationField } from "@/components/common/station-field";
 import { Button } from "@/components/ui/button";
 import { WhenPicker } from "@/components/when/when-picker";
 import { track } from "@/lib/analytics";
@@ -18,7 +19,6 @@ import { resultPath } from "@/lib/result/share-url";
 import { NEW_ROOM_PATH } from "@/lib/room/id";
 import { type Station, stationByCode } from "@/lib/stations";
 import { DEFAULT_SLOT, slotNow, type TimeSlot } from "@/lib/when/time-slot";
-import { StationField } from "./station-field";
 
 /**
  * 이름 칸의 안내 문구(placeholder)와 칸 이름. **표시 이름이 아니다**: 결과·공유 화면의 이름은 서버가 만든 label이다
