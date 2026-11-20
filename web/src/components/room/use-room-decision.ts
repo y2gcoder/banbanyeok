@@ -3,7 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { setDecision } from "@/lib/api/rooms";
-import { isStaleRoom, isTokenRejected, roomErrorMessage } from "@/lib/room/errors";
+import { errorPolicy } from "@/lib/room/action-policy";
+import { roomErrorMessage } from "@/lib/room/errors";
 import { roomKey } from "@/lib/room/queries";
 
 /** 방에서 만날 역 정하기·바꾸기·풀기. 참여한 사람만 쓴다. */
@@ -48,8 +49,9 @@ export function useRoomDecision({
       refresh();
     },
     onError: (error) => {
-      setNotice(roomErrorMessage(error));
-      if (isStaleRoom(error) || isTokenRejected(error)) refresh();
+      const policy = errorPolicy("decide", error);
+      if (policy.report) setNotice(roomErrorMessage(error));
+      if (policy.refresh) refresh();
     },
   });
   return {
