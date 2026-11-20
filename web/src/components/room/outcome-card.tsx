@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { CheckIcon } from "lucide-react";
 import { useId, useState } from "react";
-import { StationField } from "@/components/home/station-field";
+import { StationField } from "@/components/common/station-field";
 import { Button } from "@/components/ui/button";
 import { roomHashProperty, track } from "@/lib/analytics";
 import { answerOutcome } from "@/lib/api/rooms";

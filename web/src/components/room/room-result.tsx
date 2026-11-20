@@ -3,10 +3,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RotateCwIcon } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import type { ChoiceContext, RoomChoice } from "@/components/result/directions";
-import { ModeTabs } from "@/components/result/mode-tabs";
-import { Notices } from "@/components/result/notices";
-import { Candidates, LoadingCard } from "@/components/result/result-screen";
+import { Candidates, LoadingCard } from "@/components/result/parts/candidates";
+import type { ChoiceContext, RoomChoice } from "@/components/result/parts/directions";
+import { ModeTabs } from "@/components/result/parts/mode-tabs";
+import { Notices } from "@/components/result/parts/notices";
 import { Button } from "@/components/ui/button";
 import { TimeBasisNote } from "@/components/when/time-basis";
 import { track, trackResultViewed } from "@/lib/analytics";

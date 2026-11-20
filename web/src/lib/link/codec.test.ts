@@ -93,16 +93,25 @@ describe("링크 코덱 — 벡터 밖 경계", () => {
 });
 
 describe("링크 상태와 추천 요청", () => {
-  it("ShareState는 추천 요청(RecommendQuery)에 그대로 들어간다(lib/api는 링크를 모르므로 이 방향을 타입으로 확인한다)", () => {
-    const state: ShareState = {
-      origins: ["1qs", "70x"],
-      mode: "favor",
-      favorIndex: 0,
-      nicknames: ["지훈", null],
-      timeSlot: "saturday-night",
-      slotDefaulted: true,
-    };
+  // lib/api는 링크를 모르는 잎이라 RecommendQuery를 스스로 정의한다. 두 모양이 서로 갈라지지 않는지(한쪽만 넓어지는 일이 없는지)를
+  // 양방향 할당으로 타입 검사한다: 예) client.ts의 `slotDefaulted?: true`를 `boolean`으로 넓히면 아래 대입이 컴파일되지 않는다.
+  const state: ShareState = {
+    origins: ["1qs", "70x"],
+    mode: "favor",
+    favorIndex: 0,
+    nicknames: ["지훈", null],
+    timeSlot: "saturday-night",
+    slotDefaulted: true,
+  };
+
+  it("ShareState는 추천 요청(RecommendQuery)에 그대로 들어간다", () => {
     const query: RecommendQuery = state;
     expect(query).toEqual(state);
+  });
+
+  it("추천 요청(RecommendQuery)도 ShareState에 그대로 들어간다(어느 한쪽 필드만 넓어지면 컴파일이 막는다)", () => {
+    const query: RecommendQuery = { ...state };
+    const back: ShareState = query;
+    expect(back).toEqual(state);
   });
 });
