@@ -1,6 +1,7 @@
 package app.banbanyeok.architecture
 
 import com.lemonappdev.konsist.api.Konsist
+import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import java.io.File
@@ -177,6 +178,50 @@ class ArchitectureTest :
                     .shouldBeEmpty()
             }
         }
+
+        describe("server app structure (#89)") {
+            val appMain = Konsist.scopeFromDirectory("server/app/src/main").files
+            val http = Konsist.scopeFromDirectory("$APP_MAIN/http").files
+            val application = Konsist.scopeFromDirectory("$APP_MAIN/application").files
+
+            fun importsOf(files: List<KoFileDeclaration>) =
+                files.flatMap { file -> file.imports.map { file.path to it.name } }
+
+            it("the HTTP package knows the narrow station ports, not StationDirectory or the Background adapters") {
+                importsOf(http)
+                    .filter { (_, name) ->
+                        name == "$APP.application.StationDirectory" || name.startsWith("$APP.application.Background")
+                    }.shouldBeEmpty()
+            }
+            it(
+                "the HTTP package goes through use cases: it never calls the recommendation service or builds its requests",
+            ) {
+                importsOf(http)
+                    .filter { (_, name) -> name in HTTP_FORBIDDEN_RECOMMENDATION }
+                    .shouldBeEmpty()
+            }
+            it("application code does not know the HTTP package") {
+                importsOf(application)
+                    .filter { (_, name) -> name.startsWith("$APP.http.") }
+                    .shouldBeEmpty()
+            }
+            it("RecommendationError is translated to response codes in one place, http/Errors.kt") {
+                importsOf(appMain.filterNot { it.path.endsWith("/http/Errors.kt") })
+                    .filter { (_, name) -> name == "$RECOMMENDATION.RecommendationError" }
+                    .shouldBeEmpty()
+            }
+            it("policies and adapters are created only at the composition root (Components.kt)") {
+                val creations =
+                    Regex(
+                        """\bTimeSlotResolver\(|\bHolidayCalendar\.bundled\(|\bExposed\w+Repository\(|\b\w+ArtifactStore\(""",
+                    )
+                appMain
+                    .filterNot { it.path.endsWith("/app/Components.kt") }
+                    .filter { creations.containsMatchIn(it.text) }
+                    .map { it.path }
+                    .shouldBeEmpty()
+            }
+        }
     })
 
 private val FEATURES = listOf("room", "recommendation", "artifact")
@@ -221,4 +266,18 @@ private val RECOMMENDATION_APP_SURFACE =
         "time.DayCertainty",
         "time.TimeSlotResolver",
         "time.HolidayCalendar",
+    )
+
+private const val APP = "app.banbanyeok.server.app"
+
+private const val APP_MAIN = "server/app/src/main/kotlin/app/banbanyeok/server/app"
+
+/** http 패키지가 부르면 안 되는 추천 진입점과 요청 조립 타입. 추천 규칙(요청 만들기, 구분 결정)은 유스케이스와 RoomResultService가 한다. */
+private val HTTP_FORBIDDEN_RECOMMENDATION =
+    setOf(
+        "$RECOMMENDATION.RecommendationService",
+        "$RECOMMENDATION.RecommendRequest",
+        "$RECOMMENDATION.RecommendParticipant",
+        "$RECOMMENDATION.time.DayCertainty",
+        "$RECOMMENDATION.time.HolidayCalendar",
     )
