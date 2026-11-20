@@ -11,6 +11,7 @@ import app.banbanyeok.server.app.http.ApiServices
 import app.banbanyeok.server.artifact.ArtifactLoader
 import app.banbanyeok.server.artifact.ArtifactStore
 import app.banbanyeok.server.artifact.GcsArtifactStore
+import app.banbanyeok.server.artifact.LoadedArtifacts
 import app.banbanyeok.server.artifact.LocalFileArtifactStore
 import app.banbanyeok.server.artifact.PublishedArtifacts
 import app.banbanyeok.server.recommendation.RecommendationService
@@ -24,6 +25,7 @@ import app.banbanyeok.server.room.exposed.DatabaseFactory
 import app.banbanyeok.server.room.exposed.ExposedAnonUserRepository
 import app.banbanyeok.server.room.exposed.ExposedRoomRepository
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -37,6 +39,12 @@ class Components(
     val clock: Clock,
     val services: ApiServices,
     val cleanup: RoomCleanup,
+    /**
+     * 구분 행렬·막차 표를 뒤에서 읽기 시작한다(여러 번 불러도 한 번만 시작한다). 조립은 이 일을 시작하지 않는다: 서버는 Ktor가 첫 응답을
+     * 보낸 뒤에 부른다([startAfterFirstResponse]). 막차 표는 이때까지 `current()`가 null이라 막차 항목만 빠지고, 구분 행렬은 기다리는
+     * 요청이 있으면 그 요청이 먼저 시작한다([BackgroundSlots.awaitReady]).
+     */
+    val startBackground: () -> Unit,
     private val closeResources: () -> Unit,
 ) : AutoCloseable {
     override fun close() = closeResources()
@@ -65,21 +73,21 @@ object CompositionRoot {
             timeline?.mark("assembly-started")
             // 산출물 읽기는 IO 스레드에서 바로 시작한다(로거를 쓰지 않는다). DB 풀(Hikari는 로거를 쓴다)은 로깅 초기화가 끝난 뒤에 만들고
             // 첫 연결을 뒤에서 맺기 시작한다. 둘은 겹쳐서 돈다.
-            val loading = async(ioDispatcher) { ArtifactLoader(store) { timeline?.mark(it) }.load() }
+            // 구분 행렬·막차 표 검사는 LAZY로 두고 서버가 요청을 받기 시작한 뒤에 시작한다(CPU 1개에서 기동과 다투지 않게).
+            val loading =
+                async(ioDispatcher) {
+                    ArtifactLoader(
+                        store,
+                        onPhase = { timeline?.mark(it) },
+                        backgroundStart = CoroutineStart.LAZY,
+                    ).load()
+                }
             timeline?.awaitLoggingReady()
             val owned = if (database == null) DatabaseFactory.connect(config.database) else null
             owned?.warmUp { timeline?.mark("database-connection-warm") }
             val db = (database ?: requireNotNull(owned)).database
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
-            // 수집일은 manifest 검사에서 이미 실제 날짜로 확인했다. 그래도 읽지 못하면 서버는 뜨고 막차만 끈다.
-            val manifest = loaded.dataSet.manifest
-            val lastTrains =
-                BackgroundLastTrains(
-                    loaded.lastTrains,
-                    lastTrainAsOf(manifest.lastTrainAsOf),
-                    lastTrainPartialDays(manifest.lastTrainPartialDays),
-                )
             val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
 
             val clock = Clock.systemUTC()
@@ -93,7 +101,7 @@ object CompositionRoot {
                     directory.travel,
                     directory,
                     locations = directory,
-                    lastTrains = lastTrains,
+                    lastTrains = backgroundLastTrains(loaded),
                     clock = clock,
                 )
             val services =
@@ -111,10 +119,29 @@ object CompositionRoot {
                     published = PublishedArtifacts(store, loaded),
                 )
             timeline?.mark("services-assembled")
-            Components(config, clock, services, RoomCleanup(roomRepository, anonRepository, clock)) {
+            Components(
+                config,
+                clock,
+                services,
+                RoomCleanup(roomRepository, anonRepository, clock),
+                startBackground = {
+                    timeline?.mark("background-started")
+                    loaded.startBackground()
+                },
+            ) {
                 owned?.close()
             }
         }
+
+    /** 수집일은 manifest 검사에서 이미 실제 날짜로 확인했다. 그래도 읽지 못하면 서버는 뜨고 막차만 끈다. */
+    private fun backgroundLastTrains(loaded: LoadedArtifacts): BackgroundLastTrains {
+        val manifest = loaded.dataSet.manifest
+        return BackgroundLastTrains(
+            loaded.lastTrains,
+            lastTrainAsOf(manifest.lastTrainAsOf),
+            lastTrainPartialDays(manifest.lastTrainPartialDays),
+        )
+    }
 
     /** manifest의 `lastTrainPartialDays`. 모르는 id는 manifest 검사에서 이미 걸러졌다. */
     internal fun lastTrainPartialDays(ids: List<String>?): Set<DayType> =

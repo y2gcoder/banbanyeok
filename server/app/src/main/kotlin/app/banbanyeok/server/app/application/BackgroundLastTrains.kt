@@ -10,9 +10,10 @@ import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 시작 뒤 뒤에서 읽는 막차 표(ArtifactLoader). [current]는 **막지 않고, 요청도 이 표를 기다리지 않는다**: 검사가 끝났으면 그 표,
- * 아직이거나 실패했거나 데이터에 막차 표가 없으면 null이고, 그 응답에서는 막차 항목만 빠진다(순위·시간은 그대로). 막차는 덧붙는
- * 정보라, 표를 읽는 일이 늦어져도 추천 응답 시간에 영향을 주지 않는다. 검사 실패는 한 번만 기록한다.
+ * 시작 뒤 뒤에서 읽는 막차 표(ArtifactLoader). 읽기는 서버가 첫 응답을 보낸 뒤에 시작한다(Components.startBackground): CPU 1개에서
+ * 기동과 첫 요청이 이 일에 밀리지 않게 한다. [current]는 **막지 않고, 요청도 이 표를 기다리지 않으며, 읽기를 시작시키지도 않는다**:
+ * 검사가 끝났으면 그 표, 아직(시작 전 포함)이거나 실패했거나 데이터에 막차 표가 없으면 null이고, 그 응답에서는 막차 항목만 빠진다
+ * (순위·시간은 그대로). 막차는 덧붙는 정보라, 표를 읽는 일이 늦어져도 추천 응답 시간에 영향을 주지 않는다. 검사 실패는 한 번만 기록한다.
  */
 class BackgroundLastTrains(
     private val loading: Deferred<LastTrainTable?>,

@@ -8,14 +8,17 @@ import app.banbanyeok.schema.TimeSlot
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CopyOnWriteArrayList
 
 private val devArtifacts: Path = Path.of(System.getProperty("artifacts.dev.dir"))
 
@@ -192,6 +195,42 @@ class ArtifactLoaderTest :
                 od[od.size - 1] = (od[od.size - 1] + 1).toByte()
                 store.put(ArtifactKey("od.bin"), od)
                 shouldThrow<ArtifactLoadException> { ArtifactLoader(store).load() }.message shouldContain "SHA-256"
+            }
+        }
+
+        describe("starting the background reads later") {
+            it("reads neither the slot matrices nor the last-train table until startBackground is called") {
+                val phases = CopyOnWriteArrayList<String>()
+                val loaded =
+                    ArtifactLoader(
+                        LocalFileArtifactStore(devArtifacts, UnconfinedTestDispatcher()),
+                        backgroundStart = CoroutineStart.LAZY,
+                    ) { phases += it }.load()
+                loaded.slots.isActive shouldBe false
+                loaded.lastTrains.isActive shouldBe false
+                phases shouldContain "artifact-validated"
+                phases shouldNotContain "artifact-slots-validated"
+                phases shouldNotContain "artifact-last-trains-validated"
+
+                loaded.startBackground()
+                loaded.startBackground() // 두 번째부터는 아무 일도 하지 않는다
+                loaded.slots.await().size shouldBe 11
+                loaded.lastTrains.await() shouldNotBe null
+                phases.count { it == "artifact-slots-validated" } shouldBe 1
+                phases.count { it == "artifact-last-trains-validated" } shouldBe 1
+            }
+
+            it(
+                "lets a waiting request start the slot matrices before startBackground, and leaves the last-train table",
+            ) {
+                val loaded =
+                    ArtifactLoader(
+                        LocalFileArtifactStore(devArtifacts, UnconfinedTestDispatcher()),
+                        backgroundStart = CoroutineStart.LAZY,
+                    ).load()
+                loaded.slots.join()
+                loaded.slots.isCompleted shouldBe true
+                loaded.lastTrains.isActive shouldBe false
             }
         }
 

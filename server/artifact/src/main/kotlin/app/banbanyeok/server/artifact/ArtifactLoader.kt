@@ -11,6 +11,7 @@ import app.banbanyeok.schema.SchemaException
 import app.banbanyeok.schema.TimeSlot
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,15 +40,27 @@ public class LoadedArtifacts(
     public val lastTrains: Deferred<LastTrainTable?> = CompletableDeferred(null),
 ) {
     public val dataVersion: String get() = dataSet.manifest.dataVersion
+
+    /**
+     * 뒤에서 읽는 일([slots], [lastTrains])을 시작한다. [ArtifactLoader]가 `CoroutineStart.LAZY`로 만들었을 때 서버가 요청을 받기 시작한
+     * 뒤에 부른다. 이미 시작했으면 아무 일도 하지 않는다. 시작 전에 [slots]를 기다리는 쪽(요청 코루틴의 `join`)이 있으면 그것이 먼저 시작한다.
+     */
+    public fun startBackground() {
+        slots.start()
+        lastTrains.start()
+    }
 }
 
 /**
  * `manifest.json`이 가리키는 산출물 전부를 읽어 검증한다. 파일 경로는 manifest 기준 상대 경로이며 키로 그대로 쓴다.
- * 구분 행렬은 [background]에서 읽고 검사하며, 실패하면 [LoadedArtifacts.slots]가 예외로 끝난다(기본 구분으로는 계속 계산한다).
+ * 구분 행렬과 막차 표는 [background]에서 읽고 검사하며, 실패하면 [LoadedArtifacts.slots]·[LoadedArtifacts.lastTrains]가 예외로 끝난다
+ * (구분은 기본 구분으로 계속 계산하고, 막차는 응답에서 빠진다). [backgroundStart]가 LAZY면 [LoadedArtifacts.startBackground]를 부를 때까지
+ * (또는 누가 기다릴 때까지) 읽지 않는다: 서버는 이렇게 해서 이 일이 기동의 CPU를 다투지 않게 한다.
  */
 public class ArtifactLoader(
     private val store: ArtifactStore,
     private val background: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val backgroundStart: CoroutineStart = CoroutineStart.DEFAULT,
     /** 단계 경과를 남기는 훅(시작 시간 측정용). 값은 단계 이름뿐이다. */
     private val onPhase: (String) -> Unit = {},
 ) {
@@ -60,8 +73,8 @@ public class ArtifactLoader(
             dataSet,
             manifest.content,
             manifest.version,
-            background.async { slots(dataSet) },
-            background.async { lastTrains(dataSet) },
+            background.async(start = backgroundStart) { slots(dataSet) },
+            background.async(start = backgroundStart) { lastTrains(dataSet) },
         )
     }
 

@@ -11,7 +11,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * 시작 뒤 뒤에서 검사하는 구분 행렬(ArtifactLoader). [matrix]는 **막지 않는다**: 검사가 끝났으면 그 행렬, 아직이거나 실패했으면 null
+ * 시작 뒤 뒤에서 검사하는 구분 행렬(ArtifactLoader). 서버는 첫 응답을 보낸 뒤에 검사를 시작하고(Components.startBackground), 그 전에
+ * [awaitReady]로 기다리는 요청이 있으면 그 요청이 검사를 먼저 시작시킨다(`join`). [matrix]는 **막지 않는다**: 검사가 끝났으면 그 행렬, 아직이거나 실패했으면 null
  * (그 요청은 기본 구분 = 평일 낮으로 계산되고 응답의 timeBasis도 평일 낮이다). 요청 코루틴은 계산 전에 [awaitReady]로 잠깐(최대 [wait])
  * 기다린다 — 요청 스레드를 붙잡지 않는다. 검사 실패는 한 번만 기록한다.
  */
