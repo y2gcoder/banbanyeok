@@ -1,0 +1,16 @@
+// 아키텍처 지표(scripts/architecture-metrics.sh) 전용 Gradle init 스크립트. 저장소의 빌드·설정 파일은 고치지 않고 이 실행에서만 덧씌운다.
+//   ./gradlew detekt -I scripts/detekt-metrics.init.gradle --continue
+// CI 기준(config/detekt/detekt.yml)은 통과 상태라 경고가 0건이다. 그 위에 임계값을 낮춘 scripts/detekt-metrics.yml을 겹치고
+// 경고가 있어도 빌드를 실패시키지 않는다(보고서만 읽는다).
+allprojects {
+    afterEvaluate { project ->
+        def detekt = project.extensions.findByName("detekt")
+        if (detekt != null) {
+            detekt.config.setFrom(
+                project.rootProject.file("config/detekt/detekt.yml"),
+                project.rootProject.file("scripts/detekt-metrics.yml")
+            )
+            detekt.ignoreFailures.set(true)
+        }
+    }
+}

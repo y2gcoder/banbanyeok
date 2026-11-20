@@ -1,6 +1,7 @@
 # 2주마다 응집도·결합도 지표를 모아 이슈 "아키텍처 지표 (자동)"(라벨 architecture)의 본문을 갱신한다. LLM 없이 숫자만 센다.
-# 코디네이터가 이 이슈를 보고 리팩터링 후보를 따로 이슈로 만든다. 지표 정의는 scripts/architecture-metrics.sh, 이슈 읽기·쓰기는
-# scripts/architecture-metrics-issue.sh에 있다(로컬에서도 같은 스크립트가 돈다).
+# 코디네이터가 이 이슈를 보고 리팩터링 후보를 따로 이슈로 만든다. 지표 5개(hotspot_top10, kotlin_complex_functions, web_package_cycles,
+# server_feature_surface, change_breadth)의 정의는 scripts/architecture-metrics.sh에, 이슈 읽기·쓰기는 scripts/architecture-metrics-issue.sh에
+# 있다(로컬에서도 같은 스크립트가 돈다). 처음 두 회차는 기록만 하고 경보 기준을 두지 않는다("기준값 수집 중").
 # 지표 하나가 실패하면 그 칸에 "측정 실패"를 쓰고 나머지는 계속한다. 워크플로 자체가 실패하면 main의 Actions 결과로
 # GitHub Slack 앱 알림이 간다(별도 웹훅 없음). 이슈 본문은 댓글로 쌓지 않고 덮어쓴다.
 name: architecture-metrics
