@@ -5,10 +5,17 @@ import type { RoomPreview } from "@/lib/api/types";
 import { INVITE_COPY, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
 import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS, UPCOMING_POLICY } from "./policy";
+import { koreanDate, MIN_NOTICE_DAYS } from "./schedule";
 import { FIXTURE_UPCOMING } from "./upcoming.fixture";
 
 const mdPath = resolve(import.meta.dirname, "../../../../docs/legal/privacy-policy.md");
 const markdown = policyMarkdown(POLICY, UPCOMING_POLICY);
+/** 가장 늦게 시행되는 판. 예정 판을 POLICY로 옮긴 뒤에도 같은 검사가 그대로 돈다. */
+const latest = UPCOMING_POLICY?.policy ?? POLICY;
+const sectionText = (id: string) =>
+  (latest.sections.find((s) => s.id === id)?.blocks ?? [])
+    .flatMap((b) => (b.kind === "p" ? [b.text] : b.kind === "list" ? b.items : b.rows.flat()))
+    .join("\n");
 
 describe("개인정보 처리방침", () => {
   it("docs/legal/privacy-policy.md가 페이지와 같은 원본에서 나온다", () => {
@@ -166,6 +173,33 @@ describe("개인정보 처리방침", () => {
     expect(added).toContain(FIXTURE_UPCOMING.summary);
     expect(added).toContain("| 방 정보 보관 기간 (4항) | 마지막 변경 후 7일 | 마지막 변경 후 14일 |");
     expect(withUpcoming).not.toContain(FIXTURE_UPCOMING.policy.title);
+  });
+
+  it("15항(2026-11-28 시행판부터): 변경 알림을 세 단계로 나누고 30일 전 규칙은 없다", () => {
+    const text = sectionText("changes");
+    const rules = text.split("\n").filter((line) => /^(설명 보완|그 밖의 변경|동의를 받아)/.test(line));
+    expect(rules).toHaveLength(3);
+    expect(rules[0]).toContain("바로 시행하고, 아래 변경 이력에 날짜와 요지를 적고 이전 판의 링크를 남깁니다");
+    for (const unchanged of ["항목", "처리 목적", "보유 기간", "처리 위탁과 국외 이전", "제3자 제공"]) {
+      expect(rules[0]).toContain(unchanged);
+    }
+    // schedule.ts의 검사(MIN_NOTICE_DAYS)와 같은 기간을 약속한다.
+    expect(rules[1]).toContain(`시행 ${MIN_NOTICE_DAYS}일 전부터 서비스 화면에 알리고`);
+    // CONSENT_VERSION을 올리면 낡은 기록이 무효가 되어 다시 동의할 때까지 통계를 켜지 않는다(lib/analytics/consent.ts).
+    expect(rules[2]).toContain("동의를 다시 받습니다. 다시 동의하기 전에는 이용 통계를 모으지 않습니다.");
+    expect(rules.join("\n")).not.toContain("30일 전");
+  });
+
+  it("예정 판의 15항 시행일은 effectiveDate와 같고, 이전 판 목록은 2026-11-17 세 번째 개정판(ecd3a47)까지 잇는다", () => {
+    if (!UPCOMING_POLICY) return;
+    const text = sectionText("changes");
+    expect(text).toContain(
+      `이 개인정보 처리방침은 ${koreanDate(UPCOMING_POLICY.effectiveDate, { year: true })}부터 적용됩니다.`,
+    );
+    const line = text.split("\n").find((l) => l.includes("이전 판:")) ?? "";
+    for (const commit of ["57a068a", "267cda0", "bd083b5", "ecd3a47"]) {
+      expect(line).toContain(`https://github.com/y2gcoder/banbanyeok/blob/${commit}/docs/legal/privacy-policy.md`);
+    }
   });
 
   it("목차 앵커가 겹치지 않는다", () => {

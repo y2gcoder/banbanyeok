@@ -5,7 +5,7 @@ import type { Block, Policy, PolicyChange, UpcomingPolicy } from "./policy";
  * 시계(`Date`)는 호출하는 쪽이 넣는다: 서버는 요청 때, 첫 화면의 공지 띠는 브라우저에서 읽는다.
  */
 
-/** 처리방침 15항의 약속: 시행 7일 전부터 알린다. */
+/** 처리방침 15항의 약속: 설명 보완·표현 정리와 이용 통계 재동의가 아닌 변경은 시행 7일 전부터 알린다. */
 export const MIN_NOTICE_DAYS = 7;
 
 const DAY_MS = 86_400_000;
