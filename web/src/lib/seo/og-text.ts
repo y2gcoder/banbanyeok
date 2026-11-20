@@ -30,14 +30,14 @@ export const PAIR_OG_IMAGE_VERSION = "5b206790";
  * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
  * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 `ROOM_OG_IMAGE_VERSION`을 쓴다.
  */
-export const SHARED_OG_IMAGE_VERSION = "c850966f";
+export const SHARED_OG_IMAGE_VERSION = "f392537f";
 
 /**
  * 방 미리보기 그림(`app/r/[roomId]/og/route.tsx`, 노선 그림 `SharedCard`)의 버전. 숫자판과 같은 이유·방식이다: 방의 공유 번호(`sv`)는
  * 방 내용이 바뀔 때만 오르므로, 그림을 그리는 코드·문구만 바뀐 뒤 같은 방을 다시 공유하면 주소가 같아 옛 그림이 캐시에서 나온다.
  * 그래서 `/r/<id>/og` 주소에 `iv=`로 붙인다(`roomImagePath`). 입력이 바뀌면 `components/og/og-image-version.test.ts`가 새 값을 알려 준다.
  */
-export const ROOM_OG_IMAGE_VERSION = "ae94ae44";
+export const ROOM_OG_IMAGE_VERSION = "5d6999ef";
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";

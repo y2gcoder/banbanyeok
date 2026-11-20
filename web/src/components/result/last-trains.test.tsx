@@ -2,7 +2,13 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { RecommendResult } from "@/lib/api/types";
-import { type LastTrainEntry, type LastTrainPerson, type MeetingWhen, toLastTrainView } from "@/lib/result/last-train";
+import {
+  type LastTrainEntry,
+  type LastTrainPerson,
+  type MeetingWhen,
+  recalculatingLastTrainView,
+  toLastTrainView,
+} from "@/lib/result/last-train";
 import { LastTrains } from "./last-trains";
 
 type Basis = NonNullable<RecommendResult["lastTrainBasis"]>;
@@ -176,6 +182,14 @@ describe("집에 가는 막차 칸", () => {
     );
   });
 
+  it("방이 바뀌어 다시 계산하는 중이면 그 말만 보인다(이전 결과의 시각·요일·줄이 없다)", () => {
+    render(<LastTrains view={recalculatingLastTrainView({ name: "강남" })} />);
+    const section = screen.getByRole("region", { name: "강남역 집에 가는 막차" });
+    expect(section).toHaveTextContent("집에 가는 막차방 내용이 바뀌어 막차를 다시 계산하는 중이에요.");
+    expect(within(section).queryByRole("list")).toBeNull();
+    expect(section).not.toHaveTextContent(/\d\d:\d\d|시간표|나서야/);
+  });
+
   it("모두 출발역을 숨긴 방을 다른 사람이 보면 줄 없이 '본인 화면에서만 보여요'만 보인다", () => {
     const people = [person(0, "참가자 1", { hidden: true }), person(1, "참가자 2", { hidden: true })];
     const found = toLastTrainView({ ...weekday, partial: true }, [], station, people);
@@ -205,7 +219,7 @@ describe("집에 가는 막차 칸", () => {
     expect(rows[1]).toHaveTextContent("늦어도22:20엔출발하세요");
     expect(screen.queryByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeNull();
     // 맨 위 줄은 공개 참가자(민수)로 정한다.
-    expect(screen.getByText("민수는 다음 날 00:03 전에 나서야 해요")).toBeInTheDocument();
+    expect(screen.getByText("공개된 시각 중에는 민수의 다음 날 00:03이 가장 일러요.")).toBeInTheDocument();
   });
 
   it("출발역이 바로 그 역인 사람에게는 버튼 없이 한 줄만 보인다", () => {

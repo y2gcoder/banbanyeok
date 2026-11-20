@@ -93,3 +93,75 @@ test("모두 출발역을 숨긴 방: 본인이 아닌 사람에게는 '본인 �
   await expect(section.getByRole("listitem")).toHaveCount(0);
   await expect(section).not.toContainText(/강남|부천|\d\d:\d\d|수집 기준|일부 노선/);
 });
+
+test("열어 둔 방의 약속을 바꾸면: 새 결과가 올 때까지 이전 운행일의 막차를 새 약속 아래에 보이지 않는다", async ({
+  page,
+  request,
+}) => {
+  test.slow(); // 방 변경은 화면의 주기적 갱신(15초)으로 도착한다.
+  const saturday = nextSaturday();
+  const friday = new Date(new Date(`${saturday}T00:00:00Z`).getTime() - 86_400_000).toISOString().slice(0, 10);
+
+  // 강남(공개)·부천(숨김), 금요일 19:30 약속. 참여하지 않은 사람의 화면으로 열어 둔다.
+  const created = await request.post("/api/v1/rooms", {
+    data: { mode: "fair", meetingDate: friday, meetingTime: "19:30", host: { originCode: GANGNAM, hidden: false } },
+  });
+  expect(created.status()).toBe(201);
+  const { roomId, hostToken } = (await created.json()) as { roomId: string; hostToken: string };
+  const joined = await request.post(`/api/v1/rooms/${roomId}/participants`, {
+    data: { originCode: BUCHEON, hidden: true },
+  });
+  expect(joined.status()).toBe(201);
+  const section = await openLastTrain(page, roomId);
+  await expect(section.getByRole("listitem")).toHaveCount(1);
+  const before = (await section.textContent()) ?? "";
+  expect(before).toMatch(/\d\d:\d\d/);
+  expect(await page.locator("body").textContent()).not.toContain("23:30");
+
+  // 프레임마다 본다: 새 약속(23:30)이 화면에 있는데 막차 칸이 이전 약속의 글 그대로인 순간이 한 번도 없어야 한다.
+  await page.evaluate((old) => {
+    const state = window as unknown as { mixedFrames: number };
+    state.mixedFrames = 0;
+    const lastTrain = () =>
+      [...document.querySelectorAll<HTMLElement>("article section")].find((node) =>
+        node.querySelector("h3")?.textContent?.endsWith("집에 가는 막차"),
+      );
+    const tick = () => {
+      if (document.body.textContent.includes("23:30") && lastTrain()?.textContent === old) state.mixedFrames += 1;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, before);
+
+  // 새 결과 응답만 붙잡아 둔다(방 응답은 그대로 지나간다): 방이 먼저 도착한 상태를 만든다.
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/v1/rooms/${roomId}/result**`, async (route) => {
+    await held;
+    await route.continue();
+  });
+
+  // 방장이 약속을 토요일 23:30으로 바꾼다(정상 방 수정 API).
+  const changed = await request.patch(`/api/v1/rooms/${roomId}`, {
+    headers: { authorization: `Bearer ${hostToken}` },
+    data: { meetingDate: saturday, meetingTime: "23:30" },
+  });
+  expect(changed.status()).toBe(200);
+
+  // 화면이 새 약속을 받았다. 결과는 아직 금요일 것이므로 막차 칸은 "다시 계산하는 중"뿐이다.
+  await expect(page.getByText("23:30").first()).toBeVisible({ timeout: 40_000 });
+  await expect(section.getByText("방 내용이 바뀌어 막차를 다시 계산하는 중이에요.")).toBeVisible();
+  await expect(section).not.toContainText(/\d\d:\d\d|다음 날|가장 일러요|나서야 해요|시간표/);
+  await expect(section.getByRole("listitem")).toHaveCount(0);
+
+  // 새 결과가 오면 새 약속과 함께 그린다.
+  release();
+  await expect(section.getByText("방 내용이 바뀌어 막차를 다시 계산하는 중이에요.")).toHaveCount(0, {
+    timeout: 20_000,
+  });
+  await expect(section.getByRole("listitem")).toHaveCount(1);
+  expect(await section.textContent()).not.toBe(before);
+  expect(await page.evaluate(() => (window as unknown as { mixedFrames: number }).mixedFrames)).toBe(0);
+});

@@ -8,7 +8,7 @@ import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "@/l
 import { evaluateNotices, type Notice } from "@/lib/display/notices";
 import { kakaoPlaceUrl, kakaoTransitUrl } from "@/lib/map/kakao";
 import { stationByCode } from "@/lib/stations";
-import { type LastTrainView, type MeetingWhen, toLastTrainView } from "./last-train";
+import { type LastTrainView, type MeetingWhen, recalculatingLastTrainView, toLastTrainView } from "./last-train";
 import { type MapMiddleView, toMapMiddleView } from "./map-middle";
 
 type PersonView = {
@@ -47,9 +47,10 @@ export type CandidateView = {
 export type ResultViewOptions = {
   /**
    * false면 막차 칸을 만들지 않는다. 옛 링크(v=1)는 요일을 고른 적이 없어 서버가 시각을 주지 않으므로(`day_unknown`) 칸 자체를 뺀다.
-   * 기본은 true.
+   * "recalculating"이면 막차를 줄 응답의 칸마다 줄 없이 "다시 계산하는 중"만 보인다: 방이 바뀌어 이 결과가 지금 방의 것이 아닐 때
+   * (방 화면이 방과 결과의 공유 번호를 견줘 정한다). 기본은 true.
    */
-  lastTrains?: boolean;
+  lastTrains?: boolean | "recalculating";
   /** 방의 약속 날짜·시각. 있으면 막차 칸이 약속보다 먼저 떠나는 열차를 가려낸다(새벽 약속). 혼자 입력한 결과에는 없다. */
   meeting?: MeetingWhen;
 };
@@ -98,27 +99,31 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
       };
     });
     // 막차는 돌아가는 길이다: 길찾기는 만날 역 → 각자의 출발역 방향으로 연다.
-    const lastTrain = showLastTrains
-      ? toLastTrainView(
-          result.lastTrainBasis,
-          c.lastTrains,
-          { code: c.stationCode, name: c.stationName },
-          people.map((person, i) => {
-            const participant = result.participants[i];
-            const home = place(person.originCode, person.originName);
-            return {
-              index: person.index,
-              participantId: participant?.participantId ?? "",
-              shortName: person.shortName,
-              hidden: participant?.hidden === true,
-              isSelf: participant?.isSelf === true,
-              originCode: person.originCode,
-              mapUrl: home && destination ? kakaoTransitUrl(destination, home) : null,
-            };
-          }),
-          options.meeting,
-        )
-      : null;
+    const lastTrain = !showLastTrains
+      ? null
+      : options.lastTrains === "recalculating"
+        ? result.lastTrainBasis && c.lastTrains
+          ? recalculatingLastTrainView({ name: c.stationName })
+          : null
+        : toLastTrainView(
+            result.lastTrainBasis,
+            c.lastTrains,
+            { code: c.stationCode, name: c.stationName },
+            people.map((person, i) => {
+              const participant = result.participants[i];
+              const home = place(person.originCode, person.originName);
+              return {
+                index: person.index,
+                participantId: participant?.participantId ?? "",
+                shortName: person.shortName,
+                hidden: participant?.hidden === true,
+                isSelf: participant?.isSelf === true,
+                originCode: person.originCode,
+                mapUrl: home && destination ? kakaoTransitUrl(destination, home) : null,
+              };
+            }),
+            options.meeting,
+          );
     return {
       rank: c.rank,
       stationCode: c.stationCode,

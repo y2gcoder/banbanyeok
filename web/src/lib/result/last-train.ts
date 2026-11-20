@@ -133,7 +133,10 @@ export type LastTrainView = {
   stationName: string;
   /** "평일" · "토요일" · "일요일·공휴일". 계산하지 못한 응답(요일을 모름·공휴일 미확정·오래된 시간표)과 줄이 없는 칸은 null. */
   dayLabel: string | null;
-  /** 계산하지 못한 이유(응답 전체). 있으면 맨 위에 이 말을 먼저 보이고 시각·요일·일부 노선 안내는 없다. */
+  /**
+   * 칸 맨 위의 상태 한 줄: 계산하지 못한 이유(응답 전체), 또는 방이 바뀌어 다시 계산하는 중이라는 말(`recalculatingLastTrainView`).
+   * 있으면 이 말을 먼저 보이고 시각·요일·일부 노선 안내는 없다.
+   */
   notice: string | null;
   /** 맨 위 한 줄: 공개된 시각 가운데 가장 이른 것, 또는 약속 전에 막차가 떠나는 사람이 있다는 말. 없으면 null. */
   lead: string | null;
@@ -194,9 +197,12 @@ function leaveByText(time: LastTrainTime): string {
 /**
  * 맨 위 한 줄. **출발역을 공개한 사람**의 줄만 본다(숨긴 본인의 값은 넣지 않는다: 사람마다 다른 말이 되지 않게).
  * - 약속 시각까지 떠나는 줄이 있으면 그 사실이 먼저다(가장 이른 시각을 귀가 시각처럼 말하지 않는다).
- * - 확인 필요인 줄이 섞여 있으면 "공개된 시각 중에는"으로 범위를 밝힌다. 모두 시각이 있을 때만 "○○은 23시 전에 나서야 해요"다.
+ * - 견주지 못한 사람이 있으면 "공개된 시각 중에는"으로 범위를 밝힌다: 출발역을 숨긴 사람이 있거나(`anyHidden`, 누가 보든 같은 공개
+ *   사실이다. 숨긴 본인 화면에서 본인의 더 이른 줄 위에 전체 비교처럼 읽히지 않게), 공개한 사람의 줄에 확인 필요가 있을 때.
+ *   "막차를 더 확인해야 할 분도 있어요"는 공개한 줄에 확인 필요가 있을 때만 붙인다.
+ * - 모두 공개했고 모두 시각이 있을 때만 "○○은 23시 전에 나서야 해요"다.
  */
-function leadText(rows: readonly LastTrainRow[]): string | null {
+function leadText(rows: readonly LastTrainRow[], anyHidden: boolean): string | null {
   const open = rows.filter((row) => !row.onlyMe);
   const gone = open.flatMap((row) => (row.state.kind === "gone" ? [row.state] : []));
   // 약속 전에 떠나는 줄이 하나라도 있으면 "약속 전", 모두 약속과 같은 분이면 "약속 시각"이라고 말한다.
@@ -218,9 +224,11 @@ function leadText(rows: readonly LastTrainRow[]): string | null {
       null,
     );
   if (!earliest) return null;
-  if (open.some((row) => row.state.kind === "check")) {
+  const unchecked = open.some((row) => row.state.kind === "check");
+  if (anyHidden || unchecked) {
     const clock = withJosa(clockWithDay(earliest.time), "이/가");
-    return `공개된 시각 중에는 ${earliest.row.name}의 ${clock} 가장 일러요. 막차를 더 확인해야 할 분도 있어요.`;
+    const scoped = `공개된 시각 중에는 ${earliest.row.name}의 ${clock} 가장 일러요.`;
+    return unchecked ? `${scoped} 막차를 더 확인해야 할 분도 있어요.` : scoped;
   }
   return `${withJosa(earliest.row.name, "은/는")} ${leaveByText(earliest.time)} 전에 나서야 해요`;
 }
@@ -305,12 +313,33 @@ export function toLastTrainView(
     stationName,
     dayLabel: day,
     notice: null,
-    lead: leadText(rows),
+    lead: leadText(
+      rows,
+      people.some((person) => person.hidden),
+    ),
     rows,
     checkReason: checkReason(basis),
     partialNote: basis.partial ? `${withJosa(day, "은/는")} 일부 노선만 막차를 보여 드려요.` : null,
     hiddenOthers,
     footnote: `${collected} 공사나 행사가 있으면 달라질 수 있으니 타기 전에 한 번 더 확인해 주세요. 승강장까지 걷는 시간은 따로 잡아 주세요.`,
+  };
+}
+
+/**
+ * 방이 바뀌어(약속·참여자·정한 역) 보관 중인 결과가 지금 방의 것이 아닐 때의 막차 칸: 줄과 맨 위 한 줄 없이 이 말만 보인다.
+ * 약속이 바뀐 방에서 새 약속 날짜 아래에 이전 운행일의 막차가 귀가 시각으로 보이지 않게 한다(새 결과가 오면 바뀐다).
+ */
+export function recalculatingLastTrainView(station: { name: string }): LastTrainView {
+  return {
+    stationName: stationLabel(station.name),
+    dayLabel: null,
+    notice: "방 내용이 바뀌어 막차를 다시 계산하는 중이에요.",
+    lead: null,
+    rows: [],
+    checkReason: null,
+    partialNote: null,
+    hiddenOthers: false,
+    footnote: null,
   };
 }
 

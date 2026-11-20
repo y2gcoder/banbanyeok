@@ -105,3 +105,156 @@ describe("방 결과가 방 없음을 받으면", () => {
     expect(onRoomGone).not.toHaveBeenCalled();
   });
 });
+
+describe("방의 약속을 바꾸는 동안의 막차 칸(#83 재검토)", () => {
+  type Result = Awaited<ReturnType<typeof api.getRoomResult>>;
+
+  // 강남(지연, 공개)·부천(숨김). 1위 신도림의 강남 방면 직행 막차: 금요일 운행일 24:27(1467분), 토요일 운행일 23:27(1407분).
+  const people = [
+    participant("p1", {
+      isHost: true,
+      originCode: "k3a",
+      originName: "강남",
+      nickname: "지연",
+      label: "지연",
+      labelKind: "name",
+      shortLabel: "지연",
+    }),
+    participant("p2", {
+      hidden: true,
+      originCode: null,
+      originName: null,
+      label: "참가자 2",
+      labelKind: "ordinal",
+      shortLabel: "참가자 2",
+    }),
+  ];
+  const meetingRoom = (shareVersion: number, meetingDate: string, meetingTime: string): Room => ({
+    ...room,
+    mode: "fair",
+    favorTarget: null,
+    participants: people,
+    shareVersion,
+    roomHash: "0123456789abcdef",
+    decision: null,
+    meetingDate,
+    meetingTime,
+  });
+  const friday = meetingRoom(4, "2026-11-27", "19:30");
+  const saturday = meetingRoom(5, "2026-11-28", "23:30");
+
+  const resultOf = (shareVersion: number, dayType: "weekday" | "saturday", minute: number): Result =>
+    ({
+      status: "ok",
+      mode: "fair",
+      dataVersion: "20261120.4",
+      shareVersion,
+      participants: people,
+      timeBasis: {
+        timeSlot: `${dayType}-night`,
+        requestedTimeSlot: `${dayType}-night`,
+        dayType,
+        band: "night",
+        label: dayType === "weekday" ? "평일 밤" : "토요일 밤",
+        holidayName: null,
+      },
+      lastTrainBasis: { dayType, asOf: "2026-11-16", partial: true },
+      candidates: [
+        {
+          rank: 1,
+          stationCode: "sdr",
+          stationName: "신도림",
+          times: [
+            { participantId: "p1", seconds: 1500, transfers: 0 },
+            { participantId: "p2", seconds: 1320, transfers: 0 },
+          ],
+          maxSeconds: 1500,
+          spreadSeconds: 180,
+          totalSeconds: 2820,
+          reasonCode: "FAIR_MINIMAX",
+          reason: "가장 오래 걸리는 지연도 25분이에요.",
+          lastTrains: [
+            {
+              participantId: "p1",
+              kind: "direct",
+              minute,
+              boundFor: { stationCode: "9k5", stationName: "삼성" },
+            },
+          ],
+        },
+      ],
+    }) as Result;
+
+  function mount(first: Room) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const tree = (target: Room) => (
+      <QueryClientProvider client={client}>
+        <RoomResult
+          roomId={target.roomId}
+          room={target}
+          participantToken={null}
+          participantId={null}
+          isHost={false}
+          decision={{ kind: "viewer" }}
+          onRoomGone={() => {}}
+          onResultSeen={() => {}}
+        />
+      </QueryClientProvider>
+    );
+    const view = render(tree(first));
+    return { show: (target: Room) => view.rerender(tree(target)) };
+  }
+
+  const section = () => screen.getByRole("region", { name: "신도림역 집에 가는 막차" });
+  const RECALCULATING = "방 내용이 바뀌어 막차를 다시 계산하는 중이에요.";
+
+  it("방이 먼저 바뀌면: 새 결과가 올 때까지 새 약속 아래에 이전 운행일의 막차를 보이지 않는다", async () => {
+    let deliver: (result: Result) => void = () => {};
+    vi.mocked(api.getRoomResult)
+      .mockReset()
+      .mockResolvedValueOnce(resultOf(4, "weekday", 1467))
+      .mockImplementationOnce(() => new Promise<Result>((resolve) => (deliver = resolve)));
+    const { show } = mount(friday);
+    // 금요일 19:30 약속: 금요일 운행일의 24:27은 다음 날 00:27이다.
+    await waitFor(() => expect(section()).toHaveTextContent("공개된 시각 중에는 지연의 다음 날 00:27이 가장 일러요."));
+    expect(section()).toHaveTextContent("평일 시간표");
+
+    // 방장이 약속을 토요일 23:30으로 바꿨다. 방이 먼저 도착하고 결과는 아직 금요일 것이다.
+    show(saturday);
+    expect(section()).toHaveTextContent(`집에 가는 막차${RECALCULATING}`);
+    expect(section()).not.toHaveTextContent(/00:27|다음 날|가장 일러요|나서야|평일 시간표|삼성행/);
+    // 번호가 달라 결과를 다시 받는다.
+    await waitFor(() => expect(api.getRoomResult).toHaveBeenCalledTimes(2));
+    expect(section()).not.toHaveTextContent(/00:27|다음 날/);
+
+    // 새 결과(토요일 운행일 23:27)가 오면 새 약속과 함께 그린다: 약속 3분 전에 떠나는 열차다.
+    deliver(resultOf(5, "saturday", 1407));
+    await waitFor(() => expect(section()).toHaveTextContent("11월 28일 23:27 막차는 약속 전에 떠나요."));
+    expect(section()).toHaveTextContent("약속 전에 막차가 떠나는 분이 있어요.");
+    expect(section()).not.toHaveTextContent(RECALCULATING);
+    expect(section()).not.toHaveTextContent(/00:27|다음 날/);
+  });
+
+  it("새 결과가 먼저 와도: 방이 새 약속으로 바뀔 때까지 이전 약속과 섞어 그리지 않는다", async () => {
+    vi.mocked(api.getRoomResult)
+      .mockReset()
+      .mockResolvedValue(resultOf(5, "saturday", 1407));
+    const { show } = mount(friday);
+    // 화면의 방은 아직 금요일 19:30(번호 4)인데 결과는 토요일 것(번호 5)이다. 금요일 약속 기준이면 "막차 23:27"로 보였을 값이다.
+    await waitFor(() => expect(section()).toHaveTextContent(RECALCULATING));
+    expect(section()).not.toHaveTextContent(/23:27|가장 일러요|나서야|토요일 시간표/);
+    show(saturday);
+    await waitFor(() => expect(section()).toHaveTextContent("11월 28일 23:27 막차는 약속 전에 떠나요."));
+    expect(section()).not.toHaveTextContent(RECALCULATING);
+  });
+
+  it("공유 번호를 보내지 않는 옛 서버(둘 다 없음)는 받은 결과를 그대로 그린다", async () => {
+    const { shareVersion: _room, ...oldRoom } = friday;
+    const { shareVersion: _result, ...oldResult } = resultOf(4, "weekday", 1467);
+    vi.mocked(api.getRoomResult)
+      .mockReset()
+      .mockResolvedValue(oldResult as Result);
+    mount(oldRoom as Room);
+    await waitFor(() => expect(section()).toHaveTextContent("막차00:27다음 날· 삼성행"));
+  });
+});
