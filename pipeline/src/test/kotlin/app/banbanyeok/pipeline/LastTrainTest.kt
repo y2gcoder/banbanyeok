@@ -1,5 +1,35 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.pipeline.lasttrain.compute.ltDay
+import app.banbanyeok.pipeline.lasttrain.compute.ltEarlier
+import app.banbanyeok.pipeline.lasttrain.compute.ltMarginShown
+import app.banbanyeok.pipeline.lasttrain.compute.ltNight
+import app.banbanyeok.pipeline.lasttrain.compute.ltNumberedTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltProvenTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltRebuiltDirect
+import app.banbanyeok.pipeline.lasttrain.compute.ltShown
+import app.banbanyeok.pipeline.lasttrain.compute.ltTable
+import app.banbanyeok.pipeline.lasttrain.compute.ltTrains
+import app.banbanyeok.pipeline.lasttrain.gate.ltCeilingReport
+import app.banbanyeok.pipeline.lasttrain.gate.ltCrossCheck
+import app.banbanyeok.pipeline.lasttrain.gate.ltHiddenNumbers
+import app.banbanyeok.pipeline.lasttrain.gate.ltInconsistentCells
+import app.banbanyeok.pipeline.lasttrain.gate.ltLaterCells
+import app.banbanyeok.pipeline.lasttrain.gate.ltOfficialReport
+import app.banbanyeok.pipeline.lasttrain.input.ltCeilings
+import app.banbanyeok.pipeline.lasttrain.input.ltOfficialSamples
+import app.banbanyeok.pipeline.lasttrain.model.LT_SOURCE_MARGIN
+import app.banbanyeok.pipeline.lasttrain.model.LtAllowance
+import app.banbanyeok.pipeline.lasttrain.model.LtCell
+import app.banbanyeok.pipeline.lasttrain.model.LtConfig
+import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
+import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
+import app.banbanyeok.pipeline.lasttrain.model.LtProblem
+import app.banbanyeok.pipeline.lasttrain.model.LtProven
+import app.banbanyeok.pipeline.lasttrain.model.LtTrain
+import app.banbanyeok.pipeline.lasttrain.model.ltProblemFromJson
+import app.banbanyeok.pipeline.lasttrain.model.ltRows
+import app.banbanyeok.pipeline.lasttrain.model.ltSeconds
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainCell
 import app.banbanyeok.schema.LastTrainKind
@@ -10,7 +40,6 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -22,7 +51,7 @@ private fun resource(name: String): String =
 
 /** The toy network of prototype/last_train.py; its expected cells are written by that independent oracle. */
 private val toy: JsonObject = parseObject(resource("toy.json"))
-private val problem = ltProblem(toy)
+private val problem = ltProblemFromJson(toy)
 
 private fun day(
     day: DayType,
@@ -181,7 +210,7 @@ class LastTrainTest :
 
         describe("an express overtaking a waiting local (PR #81 review)") {
             val data = parseObject(resource("overtake.json"))
-            val overtake = ltProblem(data)
+            val overtake = ltProblemFromJson(data)
             val trains = ltTrains(overtake, DayType.WEEKDAY, ltRows(data, DayType.WEEKDAY))
 
             it("keepsTheTwoTrainsApart") {
@@ -236,7 +265,7 @@ class LastTrainTest :
 
             fun night(json: String): Pair<List<LtTrain>, LtCell> {
                 val data = parseObject(json)
-                val problem = ltProblem(data)
+                val problem = ltProblemFromJson(data)
                 val rows = ltRows(data, DayType.WEEKDAY)
                 return ltTrains(problem, DayType.WEEKDAY, rows) to
                     ltNight(problem, DayType.WEEKDAY, rows).cells.single()
@@ -314,7 +343,7 @@ class LastTrainTest :
                 rebuild: Boolean? = null,
             ): List<LtCell> {
                 val data = parseObject(resource(name))
-                val read = ltProblem(data)
+                val read = ltProblemFromJson(data)
                 val used = if (rebuild == null) read else read.copy(rebuild = rebuild)
                 return ltNight(used, DayType.WEEKDAY, ltRows(data, DayType.WEEKDAY)).cells
             }
@@ -322,7 +351,7 @@ class LastTrainTest :
             it("givesNoTimeForTheReviewersCounterexamples") {
                 listOf("lone-candidate.json", "far-pass.json", "short-run.json").forEach { name ->
                     assertFalse(
-                        ltProblem(parseObject(resource(name))).rebuild,
+                        ltProblemFromJson(parseObject(resource(name))).rebuild,
                         "$name: rebuilding is off unless a file asks",
                     )
                     assertTrue(cells(name).all { it == LtCell.UNKNOWN }, name)

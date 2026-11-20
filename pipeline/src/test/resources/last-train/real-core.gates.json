@@ -1,0 +1,59 @@
+{
+ "weekday": {
+  "hidden": {
+   "pairs": 26,
+   "same": 26,
+   "late": 0,
+   "phantom": 0,
+   "early": 0,
+   "missing": 0
+  },
+  "later": 0,
+  "inconsistent": 0,
+  "cross": {
+   "pairs": 20,
+   "same": 20,
+   "otherBound": 0,
+   "later": 0,
+   "maxLaterSeconds": 0,
+   "earlier": 0,
+   "onlyOurs": 0,
+   "onlyOfficial": 112
+  }
+ },
+ "saturday": {
+  "hidden": {
+   "pairs": 26,
+   "same": 26,
+   "late": 0,
+   "phantom": 0,
+   "early": 0,
+   "missing": 0
+  },
+  "later": 0,
+  "inconsistent": 0,
+  "cross": null
+ },
+ "holiday": {
+  "hidden": {
+   "pairs": 26,
+   "same": 26,
+   "late": 0,
+   "phantom": 0,
+   "early": 0,
+   "missing": 0
+  },
+  "later": 0,
+  "inconsistent": 0,
+  "cross": {
+   "pairs": 20,
+   "same": 20,
+   "otherBound": 0,
+   "later": 0,
+   "maxLaterSeconds": 0,
+   "earlier": 0,
+   "onlyOurs": 0,
+   "onlyOfficial": 112
+  }
+ }
+}

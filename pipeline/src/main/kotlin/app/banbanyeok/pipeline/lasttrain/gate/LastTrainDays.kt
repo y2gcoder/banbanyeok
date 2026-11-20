@@ -1,32 +1,36 @@
-package app.banbanyeok.pipeline
+package app.banbanyeok.pipeline.lasttrain.gate
 
-import app.banbanyeok.schema.CandidateList
+import app.banbanyeok.pipeline.jsonValue
+import app.banbanyeok.pipeline.lasttrain.compute.LtSources
+import app.banbanyeok.pipeline.lasttrain.compute.ltDay
+import app.banbanyeok.pipeline.lasttrain.compute.ltEarlier
+import app.banbanyeok.pipeline.lasttrain.compute.ltNumberedTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltProvenTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltRebuiltDirect
+import app.banbanyeok.pipeline.lasttrain.compute.ltSecondTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltTrains
+import app.banbanyeok.pipeline.lasttrain.model.LtAllowance
+import app.banbanyeok.pipeline.lasttrain.model.LtConfig
+import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
+import app.banbanyeok.pipeline.lasttrain.model.LtDayRows
+import app.banbanyeok.pipeline.lasttrain.model.LtDirect
+import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
+import app.banbanyeok.pipeline.lasttrain.model.LtProblem
+import app.banbanyeok.pipeline.lasttrain.model.LtProven
+import app.banbanyeok.pipeline.lasttrain.model.LtTrain
+import app.banbanyeok.pipeline.obj
+import app.banbanyeok.pipeline.sources
+import app.banbanyeok.pipeline.stationNamed
+import app.banbanyeok.pipeline.text
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainKind
-import app.banbanyeok.schema.LastTrainTable
-import app.banbanyeok.schema.StationCode
+import app.banbanyeok.schema.Station
 import kotlinx.serialization.json.JsonObject
-import java.nio.file.Path
-import kotlin.io.path.createDirectories
-import kotlin.io.path.readText
 
 /** Loop lines: rebuilt from train numbers only, never from rows alone. */
 private val LOOP_LINES = setOf("2")
 
-/** The last-train table with what the manifest records about it and the evidence of its gates. */
-internal class LtArtifact(
-    val table: LastTrainTable,
-    /** Oldest fetch date of the timetables used (Seoul date). */
-    val asOf: String,
-    val report: JsonObject,
-    val passed: Boolean,
-    /** Day types computed from some lines only (manifest `lastTrainPartialDays`); null when there is none. */
-    val partialDays: List<String>? = null,
-    /** Identifier of the rules used (manifest `lastTrainModel`). */
-    val model: String = ltModel(rebuild = false),
-)
-
-private class LtDayOutcome(
+internal class LtDayOutcome(
     val result: LtDayResult,
     val json: JsonObject,
     val passed: Boolean,
@@ -156,7 +160,7 @@ private fun rebuiltOutcome(
     )
 }
 
-private fun ltDayOutcome(
+internal fun ltDayOutcome(
     base: LtProblem,
     day: DayType,
     sources: LtSources,
@@ -179,7 +183,7 @@ private fun ltDayOutcome(
  * The direct cells the operator's timetable confirms one by one: the samples that passed, of the unnumbered families
  * marked exact that day. Only these cells get a time from a rebuilt train while rebuilding is off.
  */
-private fun provenRides(
+internal fun provenRides(
     samples: List<LtOfficialSample>,
     official: List<JsonObject>,
     config: LtConfig,
@@ -229,7 +233,7 @@ private fun cellsJson(result: LtDayResult): JsonObject {
 }
 
 /** Every family and day type marked exact in the config needs at least one passing official sample of its own. */
-private fun unbackedExact(
+internal fun unbackedExact(
     config: LtConfig,
     official: List<JsonObject>,
 ): List<String> =
@@ -240,46 +244,8 @@ private fun unbackedExact(
             }.map { "$it/${day.id}" }
     }
 
-internal fun ltTable(
-    problem: LtProblem,
-    registryVersion: Int,
-    results: Map<DayType, LtDayResult>,
-): LastTrainTable {
-    val cells = DayType.entries.flatMap { results.getValue(it).cells }
-    return LastTrainTable(
-        registryVersion,
-        problem.homes.map { StationCode.parse(it).value }.toIntArray(),
-        problem.meetings.map { StationCode.parse(it).value }.toIntArray(),
-        cells.map { it.minute }.toIntArray(),
-        cells.map { it.kind }.toIntArray(),
-        cells.map { cell -> cell.bound?.let { StationCode.parse(it).value } ?: LastTrainTable.NONE }.toIntArray(),
-    )
-}
-
-/** The fixed inputs as computed, for the independent oracle: `build/last-train/problem.json`. */
-private fun writeOracleProblem(
-    root: Path,
-    problem: LtProblem,
-    config: LtConfig,
-) {
-    val allowed =
-        DayType.entries.associate { day ->
-            day.id to
-                obj(
-                    "seoulLines" to config.seoulLines.getValue(day).sorted(),
-                    "tagoGroups" to config.tagoGroups.getValue(day).sorted(),
-                    "secondSource" to (config.tagoGroups.getValue(day) intersect config.secondSourceLines).sorted(),
-                )
-        }
-    root
-        .resolve("build/last-train")
-        .createDirectories()
-        .resolve("problem.json")
-        .writeJson(JsonObject(ltProblemJson(problem) + ("allowed" to JsonObject(allowed))).toString())
-}
-
 /** The report of every day type: its gates, and the cell counts of the final table. */
-private fun daysJson(
+internal fun daysJson(
     problem: LtProblem,
     outcomes: Map<DayType, LtDayOutcome>,
     results: Map<DayType, LtDayResult>,
@@ -298,73 +264,5 @@ private fun daysJson(
                         ),
                 )
         },
-    )
-}
-
-/**
- * Computes the last-train table from the cached timetables (offline) and runs its gates. Also writes the fixed
- * inputs to `build/last-train/problem.json` for the independent oracle (prototype/last_train.py).
- */
-internal fun buildLastTrains(
-    root: Path,
-    input: PipelineInput,
-    net: Network,
-    candidates: CandidateList,
-): LtArtifact {
-    val config = readLtConfig(root, input)
-    val base = ltProblem(net, input, candidates.candidates, config)
-    val sources =
-        LtSources(base, config, input, readSeoulTimetables(root), net.origins, readOfficialTimetable(root))
-    val bound = LtArrivalBound(net, base)
-    val computed = DayType.entries.associateWith { ltDayOutcome(base, it, sources, bound) }
-    val outcomes = computed.mapValues { it.value.first }
-    // The fixed inputs as computed: which numbered lines the comparison confirmed is part of them.
-    val lines = base.copy(exactNumbered = computed.mapValues { it.value.second })
-    val samples = ltOfficialSamples(root.resolve("data/config/last-train-official.csv").readText())
-    // The operator's samples are compared with the last single train of each cell, numbered or rebuilt.
-    val official =
-        ltOfficialReport(
-            samples,
-            lines,
-            net.origins,
-            outcomes.mapValues { ltComparable(it.value.result, it.value.rebuilt) },
-        )
-    val problem =
-        if (lines.rebuild) lines else lines.copy(proven = provenRides(samples, official, config, net.origins))
-    val results =
-        outcomes.mapValues { (day, outcome) ->
-            if (problem.rebuild) outcome.result else ltWithProvenDirect(problem, day, outcome.result, outcome.rebuilt)
-        }
-    val ceilings =
-        ltCeilingReport(
-            ltCeilings(root.resolve("data/config/last-train-ceilings.csv").readText()),
-            problem,
-            net.origins,
-            results,
-        )
-    val unbacked = unbackedExact(config, official)
-    val passed =
-        outcomes.values.all { it.passed } && official.all { it.text("passed") == "true" } && unbacked.isEmpty() &&
-            ceilings.all { it.text("passed") == "true" }
-    val asOf = ltAsOf(root)
-    writeOracleProblem(root, problem, config)
-    return LtArtifact(
-        ltTable(problem, net.registry.registryVersion, results),
-        asOf,
-        obj(
-            "model" to ltModel(problem.rebuild),
-            "asOf" to asOf,
-            "passed" to passed,
-            "rebuild" to problem.rebuild,
-            "days" to daysJson(problem, outcomes, results),
-            "sourceMarginSeconds" to problem.sourceMargin,
-            "official" to official,
-            "ceilings" to ceilings,
-            "exactWithoutPassingSample" to unbacked,
-            "partialDays" to config.partialDays.map { it.id },
-        ),
-        passed,
-        config.partialDays.map { it.id }.ifEmpty { null },
-        ltModel(problem.rebuild),
     )
 }

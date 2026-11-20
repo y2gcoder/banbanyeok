@@ -1,5 +1,13 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.pipeline.lasttrain.compute.ltNight
+import app.banbanyeok.pipeline.lasttrain.input.officialRow
+import app.banbanyeok.pipeline.lasttrain.input.officialSeconds
+import app.banbanyeok.pipeline.lasttrain.model.LtCell
+import app.banbanyeok.pipeline.lasttrain.model.LtDayRows
+import app.banbanyeok.pipeline.lasttrain.model.LtNumberedStop
+import app.banbanyeok.pipeline.lasttrain.model.ltProblemFromJson
+import app.banbanyeok.pipeline.lasttrain.model.ltSeconds
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainKind
 import io.kotest.core.spec.style.DescribeSpec
@@ -31,7 +39,7 @@ class LastTrainOfficialTest :
                 ).map { it.split(',') }
             val names = file.map { it[3] }
             val line =
-                ltProblem(
+                ltProblemFromJson(
                     parseObject(
                         """{"homes":${names.sorted().map { "\"$it\"" }},"meetings":["수원","직산"],"stations":{},""" +
                             """"families":{"1":${names.zipWithNext().map { (a, b) -> "[\"$a\",\"$b\"]" }}},""" +

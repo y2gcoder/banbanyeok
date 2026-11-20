@@ -168,5 +168,32 @@ class ToyNetworkTests(unittest.TestCase):
         self.assertEqual({'weekday', 'holiday'}, set(data['rows']))
 
 
+class RealTimetableExcerptTests(unittest.TestCase):
+    """real-core.json: 실제 시간표의 일부(#92). 만드는 법과 출처 조건은 prototype/gen_real_fixture.py."""
+
+    def test_expected_files_are_reproduced_by_the_oracle(self):
+        path = FIXTURES / 'real-core.json'
+        for name, expected in (('real-core.expected.json', last_train.expect(path)),
+                               ('real-core.off.expected.json', last_train.expect(path, rebuild=False))):
+            self.assertEqual((FIXTURES / name).read_text(encoding='utf-8'), last_train.render(expected),
+                             f'{name}이 오라클과 다릅니다: prototype/last_train.py expect(-off)로 다시 만들고 diff를 검토하세요')
+
+    def test_the_excerpt_has_every_source_kind_and_every_kind_of_cell(self):
+        data = json.loads((FIXTURES / 'real-core.json').read_text(encoding='utf-8'))
+        weekday = data['rows']['weekday']
+        self.assertTrue(weekday['unnumbered'] and weekday['numbered'] and weekday['second'])
+        # 토요일은 서울교통공사 구간(S5)만 켠다: 열차운행시각표(S7)와 TAGO 줄이 없다.
+        self.assertEqual(([], {}), (data['rows']['saturday']['second'], data['rows']['saturday']['unnumbered']))
+        cells = last_train.expect(FIXTURES / 'real-core.json', rebuild=False)
+        self.assertEqual({last_train.DIRECT, last_train.MARGIN_TRANSFER, last_train.MARGIN_DIRECT},
+                         {cell[2] for cell in cells['weekday']})
+
+    def test_rebuilding_changes_cells_only_where_a_family_has_unnumbered_rows(self):
+        path = FIXTURES / 'real-core.json'
+        on, off = last_train.expect(path), last_train.expect(path, rebuild=False)
+        self.assertEqual(on['saturday'], off['saturday'])
+        self.assertNotEqual(on['weekday'], off['weekday'])
+
+
 if __name__ == '__main__':
     unittest.main()
