@@ -3,7 +3,6 @@ package app.banbanyeok.pipeline
 import app.banbanyeok.pipeline.lasttrain.compileLastTrains
 import app.banbanyeok.pipeline.lasttrain.compute.ltLatestTimetableChange
 import app.banbanyeok.pipeline.lasttrain.compute.ltOperatorSamples
-import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_CHANGE_TITLE
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_DIR
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_ID
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_LICENSE
@@ -11,6 +10,7 @@ import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_OPERATOR
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_SOURCE_URL
 import app.banbanyeok.pipeline.lasttrain.input.readLastTrainInputs
 import app.banbanyeok.pipeline.lasttrain.input.readShinbundangPages
+import app.banbanyeok.pipeline.lasttrain.input.shinbundangTimetableTitle
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceiptFiles
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorSource
 import app.banbanyeok.pipeline.lasttrain.output.writeLastTrainReport
@@ -100,7 +100,7 @@ internal fun shinbundangSamples(root: Path) {
             .singleOrNull()
     requireNotNull(fetchedOn) { "$SHINBUNDANG_ID: the pages were not fetched on one Seoul day" }
     val samples = ltOperatorSamples(fetch.timetable, meetings, fetchedOn)
-    val latest = ltLatestTimetableChange(fetch.noticeList, SHINBUNDANG_CHANGE_TITLE)
+    val latest = ltLatestTimetableChange(fetch.noticeList, ::shinbundangTimetableTitle)
     writeOfficialSamples(root, fetch.timetable.family, samples)
     writeOperatorReceipt(
         root,

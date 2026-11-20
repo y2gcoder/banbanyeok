@@ -48,22 +48,40 @@ private fun seoulDate(instant: String): String =
         .toLocalDate()
         .toString()
 
+/**
+ * A field of a receipt the last-train table cannot do without. Missing, it **stops the build** with the receipt and
+ * the field named: the fetch dates are what the table is dated by (120 days) and what switches exact families off.
+ */
+private fun required(
+    receipt: kotlinx.serialization.json.JsonObject,
+    key: String,
+): String {
+    val id = receipt["id"]?.toString()?.trim('"')
+    val value = receipt[key]?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.content }
+    require(!value.isNullOrBlank()) {
+        "receipt $id in source-manifest.json has no $key; last trains cannot be dated, so nothing is published"
+    }
+    return value
+}
+
 /** The older of the two timetable caches' fetch dates (Seoul date): the day the last-train table is "as of". */
 internal fun ltAsOf(root: Path): String =
     receipts(root)
         .filter { it.text("id") in setOf("S5", "S6", OFFICIAL_ID) }
         .also { require(it.size == 3) { "S5, S6 and $OFFICIAL_ID receipts are required for last trains" } }
-        .minBy { Instant.parse(it.text("fetched_at")) }
-        .let { seoulDate(it.text("fetched_at")) }
+        .map { required(it, "fetched_at") }
+        .minBy(Instant::parse)
+        .let(::seoulDate)
 
 /**
  * The receipt of each exact family's operator timetable (`exact.<family>.receipt` in last-train.json), and the Seoul
- * date the TAGO cache (S6) was fetched. A missing receipt is not an error here: it switches the family off.
+ * date the TAGO cache (S6) was fetched. A missing operator receipt is not an error here: it switches the family off.
+ * A receipt without its dates, or no S6 receipt at all, stops the build.
  */
 internal fun ltOperatorReceipts(
     root: Path,
     config: LtConfig,
-): Pair<Map<String, LtOperatorReceipt>, String?> {
+): Pair<Map<String, LtOperatorReceipt>, String> {
     val all = receipts(root).associateBy { it.text("id") }
     val families =
         config.exactReceipts
@@ -72,12 +90,13 @@ internal fun ltOperatorReceipts(
                     family to
                         LtOperatorReceipt(
                             id,
-                            seoulDate(receipt.text("fetched_at")),
-                            receipt.text("latest_timetable_change"),
+                            seoulDate(required(receipt, "fetched_at")),
+                            required(receipt, "latest_timetable_change"),
                         )
                 }
             }.toMap()
-    return families to all["S6"]?.let { seoulDate(it.text("fetched_at")) }
+    val tago = requireNotNull(all["S6"]) { "S6 (TAGO) receipt is required for last trains" }
+    return families to seoulDate(required(tago, "fetched_at"))
 }
 
 /** Reads the configuration, both timetable caches, the operator's samples and ceilings, and the "as of" date. */
@@ -86,6 +105,7 @@ internal fun readLastTrainInputs(
     input: PipelineInput,
 ): LastTrainInputs {
     val config = readLtConfig(root, input)
+    val asOf = ltAsOf(root)
     val (operators, tago) = ltOperatorReceipts(root, config)
     return LastTrainInputs(
         config,
@@ -98,7 +118,7 @@ internal fun readLastTrainInputs(
             operators,
             tago,
         ),
-        ltAsOf(root),
+        asOf,
     )
 }
 

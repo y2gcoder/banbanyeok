@@ -54,9 +54,9 @@ internal val SHINBUNDANG_STATIONS =
 
 /** The only destinations the pages mark in brackets so far (a train that turns back short of the line's end). */
 private val KNOWN_MARKS = setOf("정자")
+private val DOT = setOf(RegexOption.DOT_MATCHES_ALL)
 private val TABS = listOf("평일" to DayType.WEEKDAY, "주말 및 공휴일" to DayType.HOLIDAY)
 private val HEADERS = listOf("신사방면", "시", "광교(경기대)방면")
-internal const val SHINBUNDANG_CHANGE_TITLE = "열차운행시각표 변경"
 internal const val SHINBUNDANG_SOURCE_URL =
     "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB001 … SB016"
 internal const val SHINBUNDANG_LICENSE =
@@ -80,70 +80,128 @@ private fun text(html: String): String =
         .replace(Regex("\\s+"), " ")
         .trim()
 
+/** Text with every blank removed: titles are compared this way, so `열차 운행시각표` is `열차운행시각표`. */
+private fun squeezed(text: String): String = text.replace("&nbsp;", "").replace(Regex("\\s+"), "")
+
+/**
+ * Requires that [html] shows no text once [known] parts are taken out: a note, a legend or a remark anywhere the
+ * reader does not read ("※ 00시 22분 정자행은 청계산입구역을 통과합니다") may change what a minute means, so it stops.
+ */
+private fun requireNoText(
+    code: String,
+    html: String,
+    where: String,
+    vararg known: Regex,
+) {
+    val rest =
+        known.fold(html.replace(Regex("<!--.*?-->", DOT), " ").replace(Regex("<script[^>]*>.*?</script>", DOT), " ")) {
+            acc,
+            part,
+            ->
+            acc.replace(part, " ")
+        }
+    val shown = text(rest)
+    if (shown.isNotEmpty()) stop(code, "text the reader does not know $where: $shown")
+}
+
+private val RED = Regex("<font style='color:red;'>([^<]*)</font>")
+private val MINUTE = Regex("""([0-5][0-9])(?:\(([^()]+)\))?""")
+
 /**
  * The minutes of one cell of a station page: tokens like `13` or `13(정자)`, the bracket naming a terminal short of
- * the line's end. Anything else (a mark never seen, a passing or express sign, minutes out of order) stops.
+ * the line's end. **Every** red minute must carry a known bracket and no other minute may carry one: a red minute
+ * without a bracket, even one sharing its tag with a marked minute (`<font …>10 22(정자)</font>`), is a sign the
+ * reader does not know. Anything else (a mark never seen, a passing or express sign, minutes out of order) stops.
  */
 private fun minutes(
     code: String,
     cell: String,
 ): List<Pair<Int, String?>> {
-    val plain = cell.replace(Regex("<font style='color:red;'>([^<]*)</font>"), " $1 ")
-    if ('<' in plain || '&' in plain.replace("&nbsp;", "")) stop(code, "unexpected markup in a cell: $cell")
-    val tokens =
-        plain
-            .replace("&nbsp;", " ")
-            .trim()
-            .split(Regex("\\s+"))
-            .filter(String::isNotEmpty)
-    val parsed =
-        tokens.map { token ->
-            val match = Regex("""([0-5][0-9])(?:\(([^()]+)\))?""").matchEntire(token) ?: stop(code, "token $token")
-            val mark = match.groupValues[2].ifEmpty { null }
-            if (mark != null && mark !in KNOWN_MARKS) stop(code, "unknown bracket mark ($mark)")
-            match.groupValues[1].toInt() to mark
-        }
-    // A marked minute is printed red, an unmarked one is not: a red minute without a bracket is a sign we do not know.
-    val red = Regex("<font style='color:red;'>([^<]*)</font>").findAll(cell).map { it.groupValues[1].trim() }.toList()
-    if (red.any { !it.endsWith(")") } || red.size != parsed.count { it.second != null }) {
-        stop(code, "red minutes without a bracket: $cell")
+    val pieces = mutableListOf<Pair<String, Boolean>>()
+    var at = 0
+    RED.findAll(cell).forEach { red ->
+        pieces += cell.substring(at, red.range.first) to false
+        pieces += red.groupValues[1] to true
+        at = red.range.last + 1
     }
+    pieces += cell.substring(at) to false
+    val parsed =
+        pieces.flatMap { (piece, red) ->
+            if ('<' in piece || '&' in piece.replace("&nbsp;", "")) stop(code, "unexpected markup in a cell: $cell")
+            piece.replace("&nbsp;", " ").trim().split(Regex("\\s+")).filter(String::isNotEmpty).map { token ->
+                val match = MINUTE.matchEntire(token) ?: stop(code, "token $token")
+                val mark = match.groupValues[2].ifEmpty { null }
+                if (mark != null && mark !in KNOWN_MARKS) stop(code, "unknown bracket mark ($mark)")
+                if (red && mark == null) stop(code, "a red minute without a bracket ($token): $cell")
+                if (!red && mark != null) stop(code, "a bracket not printed red ($token): $cell")
+                match.groupValues[1].toInt() to mark
+            }
+        }
     if (parsed.zipWithNext().any { (a, b) -> a.first >= b.first }) stop(code, "minutes out of order: $cell")
     return parsed
 }
 
+private val TAB =
+    Regex("""<dt[^>]*>\s*<a[^>]*><span class="tab_btn_r">([^<]*)</span></a></dt>\s*<dd>(.*?)</dd>""", DOT)
+private val CAPTION =
+    Regex("""역별시간표 (평일|주말) : [가-힣]+방면, 시, 광교\(경기대\)방면, 시간\(분\), 시간\(분\)으로 구성된 표""")
+
+/** One tab's table: its rows of (toward 신사, hour, toward 광교) cells. Everything else in the tab must be known. */
+private fun tabRows(
+    code: String,
+    tab: String,
+): List<List<String>> {
+    val caption =
+        Regex("<caption>(.*?)</caption>", DOT)
+            .find(tab)
+            ?.groupValues
+            ?.get(1)
+            ?.let(::text)
+    if (caption == null || !CAPTION.matches(caption)) stop(code, "caption $caption")
+    val thead = Regex("<thead>(.*?)</thead>", DOT).find(tab)?.groupValues?.get(1) ?: stop(code, "no thead")
+    val headers = Regex("""<th scope="col"[^>]*>([^<]*)</th>""").findAll(thead).map { it.groupValues[1] }.toList()
+    if (headers != HEADERS + listOf("시간(분)", "시간(분)")) stop(code, "headers $headers")
+    requireNoText(code, thead, "in the table head", Regex("""<th scope="col"[^>]*>[^<]*</th>"""))
+    val body = Regex("<tbody>(.*?)</tbody>", DOT).find(tab)?.groupValues?.get(1) ?: stop(code, "no tbody")
+    // Nothing besides the caption, the column widths, the head and the body: no note before or after the table.
+    requireNoText(
+        code,
+        tab,
+        "in a tab",
+        Regex("<caption>.*?</caption>", DOT),
+        Regex("<thead>.*?</thead>", DOT),
+        Regex("<tbody>.*?</tbody>", DOT),
+    )
+    requireNoText(code, body, "in a table body", Regex("<tr>.*?</tr>", DOT))
+    return Regex("<tr>(.*?)</tr>", DOT)
+        .findAll(body)
+        .map { row ->
+            requireNoText(code, row.groupValues[1], "in a row", Regex("<td[^>]*>.*?</td>", DOT))
+            Regex("<td[^>]*>(.*?)</td>", DOT).findAll(row.groupValues[1]).map { it.groupValues[1] }.toList()
+        }.toList()
+}
+
 /**
  * One station page (EUC-KR decoded): two tabs, 평일 and 주말 및 공휴일, each a table of hours (05 … 01) with the
- * minutes toward 신사 on the left and toward 광교 on the right. Unmarked trains run to the end of the line.
+ * minutes toward 신사 on the left and toward 광교 on the right. Unmarked trains run to the end of the line. The page
+ * shows nothing else: any text outside the two tables (a legend, a note on a passing train) stops the reader.
  */
 internal fun parseShinbundangPage(
     code: String,
     name: String,
     html: String,
 ): LtOperatorStation {
-    val tabs =
-        Regex("""<dt[^>]*>\s*<a[^>]*><span class="tab_btn_r">([^<]*)</span></a></dt>\s*<dd>(.*?)</dd>""", DOT)
-            .findAll(html)
-            .map { it.groupValues[1].trim() to it.groupValues[2] }
-            .toList()
+    val tabs = TAB.findAll(html).map { it.groupValues[1].trim() to it.groupValues[2] }.toList()
     if (tabs.map { it.first } != TABS.map { it.first }) stop(code, "tabs ${tabs.map { it.first }}")
+    requireNoText(code, html, "outside the tabs", TAB, Regex("<style[^>]*>.*?</style>", DOT))
     val departures =
         tabs.zip(TABS).flatMap { (tab, known) ->
-            val headers = Regex("""<th scope="col"[^>]*>([^<]*)</th>""").findAll(tab.second).map { it.groupValues[1] }
-            if (headers.toList().take(3) != HEADERS) stop(code, "headers ${headers.toList()}")
-            val body =
-                Regex("<tbody>(.*?)</tbody>", DOT).find(tab.second)?.groupValues?.get(1) ?: stop(code, "no tbody")
-            val rows =
-                Regex("<tr>(.*?)</tr>", DOT)
-                    .findAll(body)
-                    .map { row ->
-                        Regex("<td[^>]*>(.*?)</td>", DOT).findAll(row.groupValues[1]).map { it.groupValues[1] }.toList()
-                    }.toList()
+            val rows = tabRows(code, tab.second)
             if (rows.isEmpty() || rows.any { it.size != 3 }) stop(code, "a row without three cells")
             val hours =
                 rows.map { cells ->
-                    val hour = text(cells[1]).toIntOrNull() ?: stop(code, "hour ${cells[1]}")
-                    if (hour < 3) hour + 24 else hour
+                    val hour = text(cells[1]).takeIf { Regex("[0-9]{2}").matches(it) } ?: stop(code, "hour ${cells[1]}")
+                    hour.toInt().let { if (it < 3) it + 24 else it }
                 }
             if (hours.zipWithNext().any { (a, b) -> b != a + 1 }) stop(code, "hours out of order: $hours")
             rows.zip(hours).flatMap { (cells, hour) ->
@@ -158,42 +216,53 @@ internal fun parseShinbundangPage(
     return LtOperatorStation(code, name, shinbundangPageUrl(code), departures)
 }
 
+/** Words in a title (blanks removed) that make a notice one about the timetable, which must then say when it applies. */
+private val TIMETABLE_WORDS = listOf("시각표", "시간표", "운행", "막차", "첫차", "배차", "증편", "감편", "열차")
+
+/** Whether a notice title, blanks ignored, is about the timetable (and so may change it). */
+internal fun shinbundangTimetableTitle(title: String): Boolean = TIMETABLE_WORDS.any { it in squeezed(title) }
+
 /**
- * One notice page: its title, registration date, the date a timetable change takes effect (`시행일자`, only on a
- * notice whose title is a timetable change) and the links to its neighbours in the list.
+ * One notice page: its title, registration date, the date it takes effect (`시행일자`) when it is about the timetable,
+ * and the links to its neighbours in the list. A notice about the timetable (by its title, blanks ignored) whose date
+ * the reader cannot read stops: that date is what switches the line off.
  */
 internal fun parseShinbundangNotice(
     viewNo: String,
     html: String,
 ): LtOperatorNotice {
+    val where = "notice $viewNo"
+
     fun field(label: String) =
-        Regex("""<th scope="row">$label</th>\s*<td[^>]*>(.*?)</td>""", DOT).find(html)?.groupValues?.get(1)
+        Regex("""<th scope="row">\s*$label\s*</th>\s*<td[^>]*>(.*?)</td>""", DOT).find(html)?.groupValues?.get(1)
 
+    // A neighbour is either a link to it or the explicit end of the list; anything else stops.
     fun link(label: String): LtNoticeLink? {
-        val cell = field(label) ?: stop("notice $viewNo", "no $label row")
-        val match = Regex("""goView\('(\d+)'\)">([^<]*)</a>""").find(cell) ?: return null
-        return LtNoticeLink(match.groupValues[1], match.groupValues[2].trim())
+        val cell = field(label) ?: stop(where, "no $label row")
+        val match = Regex("""goView\(\s*'?(\d+)'?\s*\)[^>]*>(.*?)</a>""", DOT).find(cell)
+        if (match != null) return LtNoticeLink(match.groupValues[1], text(match.groupValues[2]))
+        if (squeezed(text(cell)) == squeezed("$label 글이 없습니다.") && "goView" !in cell) return null
+        stop(where, "the $label row is neither a link nor the end of the list: ${text(cell)}")
     }
-    val title = field("제목")?.let(::text) ?: stop("notice $viewNo", "no title")
-    val registered = field("등록일")?.let(::text) ?: stop("notice $viewNo", "no registration date")
-    val effective =
-        Regex("""시행일자 : (\d{4})\.(\d{2})\.(\d{2})\.""").find(html)?.destructured?.let { (y, m, d) -> "$y-$m-$d" }
-    if (SHINBUNDANG_CHANGE_TITLE in title &&
-        effective == null
-    ) {
-        stop("notice $viewNo", "a timetable change without 시행일자")
+    val title = field("제목")?.let(::text) ?: stop(where, "no title")
+    val registered = field("등록일")?.let(::text) ?: stop(where, "no registration date")
+    // The notice's own text: the rows linking to its neighbours carry their titles, not this notice's.
+    val plain = text(html.replace(Regex("""<th scope="row">\s*(이전|다음)\s*</th>\s*<td[^>]*>.*?</td>""", DOT), " "))
+    val dates =
+        Regex("""시행\s*일자?\s*[:：]\s*(\d{4})\s*[.\-]\s*(\d{1,2})\s*[.\-]\s*(\d{1,2})""")
+            .findAll(plain)
+            .map { match ->
+                val (y, m, d) = match.destructured
+                "$y-${m.padStart(2, '0')}-${d.padStart(2, '0')}"
+            }.distinct()
+            .toList()
+    val related = shinbundangTimetableTitle(title)
+    if (related && dates.size != 1) stop(where, "a notice about the timetable without one 시행일자 ($dates): $title")
+    if (!related && ("시행일" in squeezed(plain) || "시각표" in squeezed(plain))) {
+        stop(where, "a notice that mentions the timetable or a date it takes effect under the title: $title")
     }
-    return LtOperatorNotice(
-        viewNo,
-        title,
-        registered,
-        effective.takeIf { SHINBUNDANG_CHANGE_TITLE in title },
-        link("이전"),
-        link("다음"),
-    )
+    return LtOperatorNotice(viewNo, title, registered, dates.singleOrNull()?.takeIf { related }, link("이전"), link("다음"))
 }
-
-private val DOT = setOf(RegexOption.DOT_MATCHES_ALL)
 
 /** The 16 station pages and the notice pages of S8, as fetched, with the parsed timetable and notices. */
 internal class ShinbundangFetch(

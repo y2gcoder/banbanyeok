@@ -2,13 +2,18 @@ package app.banbanyeok.pipeline
 
 import app.banbanyeok.pipeline.lasttrain.compute.LtRebuiltDirect
 import app.banbanyeok.pipeline.lasttrain.compute.ltFamilyDirect
+import app.banbanyeok.pipeline.lasttrain.compute.ltLatestTimetableChange
 import app.banbanyeok.pipeline.lasttrain.compute.ltWithProvenDirect
 import app.banbanyeok.pipeline.lasttrain.gate.LT_OPERATOR_MAX_AGE_DAYS
 import app.banbanyeok.pipeline.lasttrain.gate.ltExactSwitches
 import app.banbanyeok.pipeline.lasttrain.gate.ltOfficialReport
 import app.banbanyeok.pipeline.lasttrain.gate.provenRides
 import app.banbanyeok.pipeline.lasttrain.gate.unbackedExact
+import app.banbanyeok.pipeline.lasttrain.input.ltAsOf
 import app.banbanyeok.pipeline.lasttrain.input.ltOfficialSamples
+import app.banbanyeok.pipeline.lasttrain.input.ltOperatorReceipts
+import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangNotice
+import app.banbanyeok.pipeline.lasttrain.input.shinbundangTimetableTitle
 import app.banbanyeok.pipeline.lasttrain.model.LtCell
 import app.banbanyeok.pipeline.lasttrain.model.LtConfig
 import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
@@ -226,6 +231,47 @@ class LastTrainExactSwitchTest :
             }
         }
 
+        describe("receipts without their dates") {
+            fun root(manifest: String): java.nio.file.Path {
+                val dir =
+                    java.nio.file.Files
+                        .createTempDirectory("lt-receipts")
+                java.nio.file.Files
+                    .createDirectories(dir.resolve("data/config"))
+                java.nio.file.Files
+                    .writeString(dir.resolve("data/config/source-manifest.json"), manifest)
+                return dir
+            }
+
+            fun receipt(
+                id: String,
+                fetched: Boolean = true,
+            ) = """{"id":"$id",${if (fetched) "\"fetched_at\":\"2026-11-15T16:06:45Z\"," else ""}""" +
+                """"latest_timetable_change":"2026-11-06"}"""
+
+            it("stopsTheBuildNamingTheReceiptWhenS6HasNoFetchDate") {
+                // #100 review: S6 without fetched_at ended in NoSuchElementException. The table cannot be dated.
+                val missing =
+                    root("[${receipt("S5")},${receipt("S6", fetched = false)},${receipt("S7")},${receipt("S8")}]")
+                val asOf = assertFailsWith<IllegalArgumentException> { ltAsOf(missing) }
+                assertTrue(
+                    "receipt S6" in asOf.message.orEmpty() && "fetched_at" in asOf.message.orEmpty(),
+                    asOf.message,
+                )
+                val tago = assertFailsWith<IllegalArgumentException> { ltOperatorReceipts(missing, CONFIG) }
+                assertTrue("receipt S6" in tago.message.orEmpty(), tago.message)
+                assertFailsWith<IllegalArgumentException> { ltOperatorReceipts(root("[${receipt("S8")}]"), CONFIG) }
+            }
+
+            it("readsTheDatesOfACompleteManifest") {
+                val full = root("[${receipt("S5")},${receipt("S6")},${receipt("S7")},${receipt("S8")}]")
+                assertEquals("2026-11-16", ltAsOf(full))
+                val (receipts, tago) = ltOperatorReceipts(full, CONFIG)
+                assertEquals("2026-11-16", tago)
+                assertEquals(LtOperatorReceipt("S8", "2026-11-16", "2026-11-06"), receipts.getValue("S"))
+            }
+        }
+
         describe("the conditions under which an exact family is not switched on") {
             fun reasons(checks: LtOperatorChecks) =
                 ltExactSwitches(CONFIG, SAMPLES, report(SAMPLES), checks).map { it.on to it.reasons }.distinct()
@@ -248,6 +294,21 @@ class LastTrainExactSwitchTest :
                 assertEquals(
                     listOf("the operator changed its timetable on 2026-11-17, after TAGO was fetched on 2026-11-16"),
                     why,
+                )
+            }
+
+            it("isOffWhenANewestNoticeWithAnOddlySpacedTitleTakesEffectAfterTago") {
+                // #100 review: one more blank in the title hid the date, 11-06 was kept and both days stayed on.
+                val title = "신분당선 열차 운행시각표 변경 시행"
+                val newest = parseShinbundangNotice("1359", operatorNotice(title, "2026.11.20", null, "1358" to CHANGE))
+                val before = parseShinbundangNotice("1358", operatorNotice(CHANGE, "2026.11.06", "1359" to title, null))
+                val latest = ltLatestTimetableChange(listOf(before, newest), ::shinbundangTimetableTitle)
+                assertEquals("2026-11-20", latest)
+                val switches = ltExactSwitches(CONFIG, SAMPLES, report(SAMPLES), checks(latestChange = latest))
+                assertEquals(listOf(false, false), switches.map { it.on })
+                assertEquals(
+                    "the operator changed its timetable on 2026-11-20, after TAGO was fetched on 2026-11-16",
+                    switches.first().reasons.single(),
                 )
             }
 

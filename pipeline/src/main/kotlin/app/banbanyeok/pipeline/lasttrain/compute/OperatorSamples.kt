@@ -67,13 +67,14 @@ internal fun ltOperatorSamples(
 
 /**
  * The date the operator's latest timetable change takes effect, from its notice pages. The pages must include the
- * newest notice of the list; from there the list is walked to older notices through each page's link until a
- * timetable change is found. A notice on the way that is not among the pages is skipped only when its title is known
- * (from a neighbour's link) to be no timetable change and the page after it is there.
+ * newest notice of the list (one whose page says explicitly that there is no newer notice); from there the list is
+ * walked to older notices through each page's link until a notice with a date it takes effect is found. A notice on
+ * the way that is not among the pages is skipped only when its title is known (from a neighbour's link) to be about
+ * something else than the timetable ([aboutTimetable], blanks ignored) and the page after it is there.
  */
 internal fun ltLatestTimetableChange(
     notices: List<LtOperatorNotice>,
-    changeTitle: String,
+    aboutTimetable: (String) -> Boolean,
 ): String {
     val byNo = notices.associateBy { it.viewNo }
     var current =
@@ -82,13 +83,16 @@ internal fun ltLatestTimetableChange(
     while (true) {
         require(seen.add(current.viewNo)) { "the notice list loops at ${current.viewNo}" }
         current.effective?.let { return it }
+        require(!aboutTimetable(current.title)) { "notice ${current.viewNo} is about the timetable but has no date" }
         val older = requireNotNull(current.older) { "no timetable change in the notice list" }
-        current = byNo[older.viewNo]
-            ?: run {
-                require(changeTitle !in older.title) { "notice ${older.viewNo} changes the timetable; fetch it" }
-                requireNotNull(notices.singleOrNull { it.newer?.viewNo == older.viewNo }) {
-                    "the notice after ${older.viewNo} is not among the pages"
-                }
+        val from = current.viewNo
+        current = byNo[older.viewNo]?.also { next ->
+            require(next.newer?.viewNo == from) { "notice ${next.viewNo} does not link back to $from" }
+        } ?: run {
+            require(!aboutTimetable(older.title)) { "notice ${older.viewNo} is about the timetable; fetch it" }
+            requireNotNull(notices.singleOrNull { it.newer?.viewNo == older.viewNo }) {
+                "the notice after ${older.viewNo} is not among the pages"
             }
+        }
     }
 }

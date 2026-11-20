@@ -2,11 +2,11 @@ package app.banbanyeok.pipeline
 
 import app.banbanyeok.pipeline.lasttrain.compute.ltLatestTimetableChange
 import app.banbanyeok.pipeline.lasttrain.compute.ltOperatorSamples
-import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_CHANGE_TITLE
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_STATIONS
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangNotice
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangPage
 import app.banbanyeok.pipeline.lasttrain.input.readShinbundangPages
+import app.banbanyeok.pipeline.lasttrain.input.shinbundangTimetableTitle
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorTimetable
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Sha256
@@ -43,7 +43,7 @@ private fun tab(
     <dt${if (last) " class=\"last\"" else ""}><a href="javascript:tab('tab_d03',0);" class="tab_btn_l"><span class="tab_btn_r">$label</span></a></dt>
     <dd>
         <table class="tb_st01">
-        	<caption>역별시간표 $label : 강남방면, 시, 광교(경기대)방면, 시간(분), 시간(분)으로 구성된 표</caption>
+        	<caption>역별시간표 ${if (label == "평일") label else "주말"} : 강남방면, 시, 광교(경기대)방면, 시간(분), 시간(분)으로 구성된 표</caption>
             <thead>
             	<tr>
                 	<th scope="col">신사방면</th>
@@ -110,31 +110,6 @@ private fun line(middle: String = MIDDLE): LtOperatorTimetable {
     )
 }
 
-private fun notice(
-    title: String,
-    effective: String?,
-    newer: Pair<String, String>?,
-    older: Pair<String, String>?,
-) = """<table><tbody>
-<tr><th scope="row">제목</th><td colspan="3">$title</td></tr>
-<tr><th scope="row">등록일</th><td>2026-11-02</td></tr>
-</tbody></table>
-<p style="MARGIN: 0px"><span>■ 변경대상 : 신사역 ~ 광교역</span></p>
-${effective?.let { "<p><span>■ 시행일자 : $it.(금) 영업개시부터 적용</span></p>" }.orEmpty()}
-<table><tbody>
-<tr><th scope="row">이전</th>
-    <td colspan="3">${newer?.let {
-    "<a href=\"javascript:goView('${it.first}')\">${it.second}</a>"
-} ?: "<a href=\"javascript:void\">이전 글이 없습니다.</a>"}</td></tr>
-<tr><th scope="row">다음</th>
-    <td colspan="3">${older?.let {
-    "<a href=\"javascript:goView('${it.first}')\">${it.second}</a>"
-} ?: "<a href=\"javascript:void\">다음 글이 없습니다.</a>"}</td></tr>
-</tbody></table>"""
-
-private const val CHANGE = "신분당선 열차운행시각표 변경 시행"
-private const val DRILL = "2026 신분당선 안전한국훈련"
-
 class LastTrainOperatorSamplesTest :
     DescribeSpec({
         describe("reading a station page of the operator") {
@@ -198,7 +173,10 @@ class LastTrainOperatorSamplesTest :
                     dir.resolve("$code.html").writeBytes(MIDDLE.toByteArray(EUC_KR))
                 }
                 dir.resolve("SB001.html").writeBytes(ends.toByteArray(EUC_KR))
-                dir.resolve("notice-1358.html").writeBytes(notice(CHANGE, "2026.11.06", null, null).toByteArray(EUC_KR))
+                dir
+                    .resolve(
+                        "notice-1358.html",
+                    ).writeBytes(operatorNotice(CHANGE, "2026.11.06", null, null).toByteArray(EUC_KR))
                 val fetch = readShinbundangPages(root)
                 assertEquals(16, fetch.pages.size)
                 assertEquals("data/raw/shinbundang/SB001.html", fetch.pages.first().file)
@@ -274,6 +252,40 @@ class LastTrainOperatorSamplesTest :
             }
         }
 
+        describe("what the reader does not know stops it (#100 review)") {
+            fun fails(html: String) = assertFailsWith<IllegalArgumentException> { station("SB001", "신사", html) }
+
+            it("readsTheFixtureItself") {
+                // The cases below change one thing of a page the reader accepts.
+                assertTrue(station("SB005", "양재", MIDDLE).departures.isNotEmpty())
+            }
+
+            it("stopsAtANoteOrALegendAnywhereOnThePage") {
+                val passing = "<p>※ 평일 00시 22분 정자행은 청계산입구역을 통과합니다.</p>"
+                // Right after the weekday table, where the review put it: the minutes alone look the same.
+                fails(MIDDLE.replaceFirst("</table>", "</table>$passing"))
+                // Before the table, between the tabs, after the list of tabs.
+                fails(MIDDLE.replaceFirst("<table class=\"tb_st01\">", "$passing<table class=\"tb_st01\">"))
+                fails(MIDDLE.replaceFirst("</dd>", "</dd>$passing"))
+                fails(MIDDLE.replace("</dl>", "</dl>$passing"))
+                // Inside the table: a row of one cell, a footer, a note between head and body, a note in a row.
+                fails(MIDDLE.replaceFirst("</tbody>", "<tr><td colspan=\"3\">$passing</td></tr></tbody>"))
+                fails(MIDDLE.replaceFirst("</tbody>", "</tbody><tfoot><tr><td>$passing</td></tr></tfoot>"))
+                fails(MIDDLE.replaceFirst("<tbody>", "<p>※ 급행</p><tbody>"))
+                fails(MIDDLE.replaceFirst("<tr>", "<tr><th>※</th>"))
+                // A caption other than the one the reader knows.
+                fails(MIDDLE.replaceFirst("으로 구성된 표", "으로 구성된 표(급행 포함)"))
+            }
+
+            it("stopsAtAnUnmarkedRedMinuteEvenWhenItSharesItsTagWithAMarkedOne") {
+                // The review's case: SB001's two red minutes of 00 in one tag. The 10 is red with no bracket.
+                fails(MIDDLE.replace("15 ${red("30(정자)")}", red("15 30(정자)")))
+                // On its own the same red minute stopped before too; a bracket outside red is not known either.
+                fails(MIDDLE.replace("15 ${red("30(정자)")}", "${red("15")} ${red("30(정자)")}"))
+                fails(MIDDLE.replace("15 ${red("30(정자)")}", "15 30(정자)"))
+            }
+        }
+
         describe("the operator's latest timetable change") {
             fun read(
                 viewNo: String,
@@ -281,34 +293,101 @@ class LastTrainOperatorSamplesTest :
             ) = parseShinbundangNotice(viewNo, html)
 
             it("isTheNewestNoticeWhenThatNoticeIsAChange") {
-                val newest = read("1358", notice(CHANGE, "2026.11.06", null, "1357" to DRILL))
-                val older = read("1356", notice(CHANGE, "2026.09.28", "1357" to DRILL, "1347" to "공개검증"))
+                val newest = read("1358", operatorNotice(CHANGE, "2026.11.06", null, "1357" to DRILL))
+                val older = read("1356", operatorNotice(CHANGE, "2026.09.28", "1357" to DRILL, "1347" to "공개검증"))
                 assertEquals("2026-11-06", newest.effective)
-                assertEquals("2026-11-06", ltLatestTimetableChange(listOf(older, newest), SHINBUNDANG_CHANGE_TITLE))
+                assertEquals("2026-11-06", ltLatestTimetableChange(listOf(older, newest), ::shinbundangTimetableTitle))
             }
 
             it("walksPastNoticesWhoseTitleIsNoChangeToTheLatestChange") {
                 // The newest is a drill notice; the one after it (1357) is not fetched but its title is known.
-                val newest = read("1359", notice(DRILL, null, null, "1357" to DRILL))
-                val change = read("1356", notice(CHANGE, "2026.09.28", "1357" to DRILL, null))
+                val newest = read("1359", operatorNotice(DRILL, null, null, "1357" to DRILL))
+                val change = read("1356", operatorNotice(CHANGE, "2026.09.28", "1357" to DRILL, null))
                 assertEquals(null, newest.effective)
-                assertEquals("2026-09-28", ltLatestTimetableChange(listOf(newest, change), SHINBUNDANG_CHANGE_TITLE))
+                assertEquals("2026-09-28", ltLatestTimetableChange(listOf(newest, change), ::shinbundangTimetableTitle))
             }
 
             it("refusesAListWithoutItsNewestNoticeOrWithAChangeNotFetched") {
-                val middle = read("1356", notice(CHANGE, "2026.09.28", "1357" to DRILL, null))
+                val middle = read("1356", operatorNotice(CHANGE, "2026.09.28", "1357" to DRILL, null))
                 assertFailsWith<IllegalArgumentException> {
                     ltLatestTimetableChange(
                         listOf(middle),
-                        SHINBUNDANG_CHANGE_TITLE,
+                        ::shinbundangTimetableTitle,
                     )
                 }
-                val newest = read("1360", notice(DRILL, null, null, "1359" to CHANGE))
+                val newest = read("1360", operatorNotice(DRILL, null, null, "1359" to CHANGE))
                 assertFailsWith<IllegalArgumentException> {
-                    ltLatestTimetableChange(listOf(newest, middle), SHINBUNDANG_CHANGE_TITLE)
+                    ltLatestTimetableChange(listOf(newest, middle), ::shinbundangTimetableTitle)
                 }
                 // A change notice without the date it takes effect is not read at all.
-                assertFailsWith<IllegalArgumentException> { read("1361", notice(CHANGE, null, null, null)) }
+                assertFailsWith<IllegalArgumentException> { read("1361", operatorNotice(CHANGE, null, null, null)) }
+            }
+        }
+
+        describe("notices the reader cannot place stop it (#100 review)") {
+            fun read(
+                viewNo: String,
+                html: String,
+            ) = parseShinbundangNotice(viewNo, html)
+
+            it("readsATimetableNoticeWhateverTheBlanksInItsTitle") {
+                // The review's case: one blank more after 열차 hid the 11-20 date, and 11-06 was kept.
+                listOf("신분당선 열차 운행시각표 변경 시행", "신분당선 열차운행 시각표 변경시행", "신분당선  열차운행시각표\t변경 시행")
+                    .forEach { title ->
+                        val newest = read("1359", operatorNotice(title, "2026.11.20", null, "1358" to CHANGE))
+                        val before = read("1358", operatorNotice(CHANGE, "2026.11.06", "1359" to title, null))
+                        assertEquals("2026-11-20", newest.effective, title)
+                        assertEquals(
+                            "2026-11-20",
+                            ltLatestTimetableChange(listOf(before, newest), ::shinbundangTimetableTitle),
+                        )
+                    }
+            }
+
+            it("stopsAtANoticeAboutTheTimetableWithoutADateItCanRead") {
+                // Any title about the timetable, blanks ignored, needs one date it takes effect.
+                listOf("신분당선 열차 운행 시간표 조정 안내", "막차 연장 운행 안내", "열차운행시각표 변경 시행").forEach { title ->
+                    assertFailsWith<IllegalArgumentException>(title) {
+                        read("1359", operatorNotice(title, null, null, null))
+                    }
+                }
+                assertFailsWith<IllegalArgumentException> {
+                    read("1359", operatorNotice(CHANGE, "2026.11.20", null, null).replace("2026.11.20.", "11월 20일"))
+                }
+                // A title about something else whose body speaks of a date it takes effect is not one the reader can place.
+                assertFailsWith<IllegalArgumentException> {
+                    read(
+                        "1360",
+                        operatorNotice(DRILL, "2026.11.20", null, null),
+                    )
+                }
+            }
+
+            it("takesAnyLinkToANewerNoticeAsANewerNotice") {
+                // The review's case: an unquoted javascript:goView(1359) was read as "no newer notice".
+                val cell = "<a href=\"javascript:goView(1359)\">$CHANGE (11월 20일)</a>"
+                val unquoted =
+                    read("1358", operatorNotice(CHANGE, "2026.11.06", null, "1357" to DRILL, newerCell = cell))
+                assertEquals("1359", unquoted.newer?.viewNo)
+                val older = read("1356", operatorNotice(CHANGE, "2026.09.28", "1357" to DRILL, null))
+                assertFailsWith<IllegalArgumentException> {
+                    ltLatestTimetableChange(listOf(unquoted, older), ::shinbundangTimetableTitle)
+                }
+                // Only the explicit end of the list counts as one; anything else in its place stops.
+                assertFailsWith<IllegalArgumentException> {
+                    read("1358", operatorNotice(CHANGE, "2026.11.06", null, null, newerCell = "<a href=\"#\">새 공지</a>"))
+                }
+                assertFailsWith<IllegalArgumentException> {
+                    read("1358", operatorNotice(CHANGE, "2026.11.06", null, null, newerCell = ""))
+                }
+            }
+
+            it("stopsWhenTheNeighboursDoNotLinkBack") {
+                val newest = read("1358", operatorNotice(DRILL, null, null, "1356" to CHANGE))
+                val other = read("1356", operatorNotice(CHANGE, "2026.09.28", "1350" to DRILL, null))
+                assertFailsWith<IllegalArgumentException> {
+                    ltLatestTimetableChange(listOf(newest, other), ::shinbundangTimetableTitle)
+                }
             }
         }
     })
