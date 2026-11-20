@@ -6,8 +6,7 @@ import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
 import app.banbanyeok.server.recommendation.RecommendationService
-import app.banbanyeok.server.recommendation.TimeBasis
-import app.banbanyeok.server.recommendation.TimeSlotLabels
+import app.banbanyeok.server.recommendation.time.TimeBasis
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.statement.HttpResponse
@@ -117,7 +116,6 @@ class MapMiddleHttpTest :
                 testApplication {
                     application { apiModule(testConfig(), realApi()) }
                     for (slot in TimeSlot.ALL) {
-                        directory.awaitSlots(slot)
                         val response =
                             client.json(
                                 HttpMethod.Post,
@@ -132,9 +130,14 @@ class MapMiddleHttpTest :
                             RecommendRequest(
                                 people,
                                 RecommendMode.FAIR,
-                                time = TimeBasis(slot, TimeSlotLabels.of(slot)),
+                                time = TimeBasis.of(slot),
                             )
-                        val expected = service.timesTo(request, code).orEmpty().map { it?.seconds }
+                        val expected =
+                            service
+                                .evaluate(request)
+                                .timesTo(code)
+                                .orEmpty()
+                                .map { it?.seconds }
                         middle
                             .getValue(
                                 "times",

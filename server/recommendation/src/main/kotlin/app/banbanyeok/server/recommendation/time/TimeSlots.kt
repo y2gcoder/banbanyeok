@@ -1,4 +1,4 @@
-package app.banbanyeok.server.recommendation
+package app.banbanyeok.server.recommendation.time
 
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.TimeBand
@@ -19,18 +19,35 @@ public data class TimeBasis(
     public val slot: TimeSlot,
     public val label: String,
     public val holidayName: String? = null,
-)
+) {
+    public companion object {
+        /** [slot]과 그 표시 이름. 공휴일 이름은 없다(무상태 추천·기본값). */
+        public fun of(slot: TimeSlot): TimeBasis = TimeBasis(slot, TimeSlotLabels.of(slot))
+    }
+}
+
+/** 요일 종류를 얼마나 믿을 수 있는가. 막차는 요일 종류가 틀리면 늦은 쪽으로 틀리므로(평일 막차가 휴일보다 늦다) 확실할 때만 보인다. */
+public enum class DayCertainty {
+    /** 사용자가 고른 구분이거나, 공휴일 목록 범위 안의 약속일에서 정했다. */
+    KNOWN,
+
+    /** 요일 종류가 주어지지 않아 평일로 계산했다(구분 없는 요청, 약속일 없는 방, 옛 `v=1` 링크). */
+    DEFAULTED,
+
+    /** 약속일이 공휴일 목록의 범위 밖이라 평일·토요일이 공휴일일 수 있다. */
+    OUT_OF_RANGE,
+}
 
 /** 구분의 표시 이름. 정의 원본은 contracts/time-slots.json의 label이고 테스트가 대조한다. */
-public object TimeSlotLabels {
-    public fun day(day: DayType): String =
+internal object TimeSlotLabels {
+    fun day(day: DayType): String =
         when (day) {
             DayType.WEEKDAY -> "평일"
             DayType.SATURDAY -> "토요일"
             DayType.HOLIDAY -> "일요일·공휴일"
         }
 
-    public fun band(band: TimeBand): String =
+    fun band(band: TimeBand): String =
         when (band) {
             TimeBand.MORNING -> "아침"
             TimeBand.DAY -> "낮"
@@ -38,7 +55,7 @@ public object TimeSlotLabels {
             TimeBand.NIGHT -> "밤"
         }
 
-    public fun of(slot: TimeSlot): String = "${day(slot.day)} ${band(slot.band)}"
+    fun of(slot: TimeSlot): String = "${day(slot.day)} ${band(slot.band)}"
 }
 
 /**

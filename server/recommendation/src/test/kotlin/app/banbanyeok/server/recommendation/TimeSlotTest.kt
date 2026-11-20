@@ -3,6 +3,11 @@ package app.banbanyeok.server.recommendation
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.server.recommendation.time.HolidayCalendar
+import app.banbanyeok.server.recommendation.time.TimeBasis
+import app.banbanyeok.server.recommendation.time.TimeSlotLabels
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
@@ -140,19 +145,42 @@ class TimeSlotTest :
                 val service = RecommendationService(provider, codeNames)
                 val people = listOf(RecommendParticipant("0", null, "03v"), RecommendParticipant("1", null, "130"))
                 val asked = TimeBasis(night, TimeSlotLabels.of(night))
-                val result = service.recommend(RecommendRequest(people, RecommendMode.FAIR, time = asked))
+                val result = service.evaluate(RecommendRequest(people, RecommendMode.FAIR, time = asked)).recommendation
                 result.timeBasis shouldBe asked
                 result.candidates.first().maxSeconds shouldBe 900
                 val missing = TimeSlot(DayType.HOLIDAY, TimeBand.MORNING)
                 val fallback =
-                    service.recommend(
-                        RecommendRequest(
-                            people,
-                            RecommendMode.FAIR,
-                            time = TimeBasis(missing, TimeSlotLabels.of(missing)),
-                        ),
-                    )
+                    service
+                        .evaluate(
+                            RecommendRequest(
+                                people,
+                                RecommendMode.FAIR,
+                                time = TimeBasis(missing, TimeSlotLabels.of(missing)),
+                            ),
+                        ).recommendation
                 fallback.timeBasis shouldBe TimeBasis(TimeSlot.DEFAULT, "평일 낮")
+            }
+            it("waits for the requested slot's matrix right before the one measurement, after validating the request") {
+                val events = mutableListOf<String>()
+                val measured =
+                    object : TravelTimeProvider by provider {
+                        override fun measure(
+                            origins: List<String>,
+                            slot: TimeSlot,
+                        ): TravelMatrix = provider.measure(origins, slot).also { events += "measure ${slot.id}" }
+                    }
+                val service =
+                    RecommendationService(measured, codeNames, slotsReady = { slot -> events += "await ${slot.id}" })
+                val people = listOf(RecommendParticipant("0", null, "03v"), RecommendParticipant("1", null, "130"))
+                service.evaluate(RecommendRequest(people, RecommendMode.FAIR, time = TimeBasis.of(night)))
+                events shouldBe listOf("await saturday-night", "measure saturday-night")
+
+                events.clear()
+                val unknown = listOf(RecommendParticipant("0", null, "03v"), RecommendParticipant("1", null, "zzz"))
+                shouldThrow<RecommendationException> {
+                    service.evaluate(RecommendRequest(unknown, RecommendMode.FAIR, time = TimeBasis.of(night)))
+                }
+                events shouldBe emptyList()
             }
         }
     })

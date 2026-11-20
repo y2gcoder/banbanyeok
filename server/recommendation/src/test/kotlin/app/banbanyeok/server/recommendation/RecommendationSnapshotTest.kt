@@ -3,6 +3,12 @@ package app.banbanyeok.server.recommendation
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainData
+import app.banbanyeok.server.recommendation.mapmiddle.GeoPoint
+import app.banbanyeok.server.recommendation.mapmiddle.StationLocations
+import app.banbanyeok.server.recommendation.time.DayCertainty
+import app.banbanyeok.server.recommendation.time.TimeBasis
+import app.banbanyeok.server.recommendation.time.TimeSlotLabels
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import java.nio.file.Files
@@ -106,20 +112,23 @@ class RecommendationSnapshotTest :
     })
 
 /** 한 요청에 대해 응용 계층이 꺼내 쓰는 값 전부. 순위 밖의 역(4xz·03v)까지의 시간과 막차도 적는다. */
-private fun snapshot(
+private suspend fun snapshot(
     service: RecommendationService,
     request: RecommendRequest,
 ): List<String> {
-    val (recommendation, mapMiddle) = service.recommendWithMapMiddle(request)
+    val evaluation = service.evaluate(request)
+    val recommendation = evaluation.recommendation
     return listOf(
         "recommendation=$recommendation",
-        "mapMiddle=$mapMiddle",
-        "recommendEqualsRanking=${service.recommend(request) == recommendation}",
+        "mapMiddle=${evaluation.mapMiddle}",
+        "recommendEqualsRanking=${service.evaluate(request).recommendation == recommendation}",
     ) +
         listOf("03v", "4xz", "zzz").flatMap { code ->
+            // 순위 밖 역의 막차는 응답의 막차 기준과 짝이다(기준이 없으면 막차도 없다). 줄 이름은 리팩터링 전 함수 이름 그대로 둔다(기대값 고정).
+            val lastTrains = evaluation.lastTrainsAt(code)?.let { requireNotNull(recommendation.lastTrainBasis) to it }
             listOf(
-                "timesTo($code)=${service.timesTo(request, code)}",
-                "lastTrainsTo($code)=${service.lastTrainsTo(request, code)}",
+                "timesTo($code)=${evaluation.timesTo(code)}",
+                "lastTrainsTo($code)=$lastTrains",
             )
         }
 }

@@ -4,6 +4,11 @@ import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.OdMatrix
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.server.recommendation.mapmiddle.GeoPoint
+import app.banbanyeok.server.recommendation.mapmiddle.MapMiddleRule
+import app.banbanyeok.server.recommendation.mapmiddle.StationLocations
+import app.banbanyeok.server.recommendation.time.TimeBasis
+import app.banbanyeok.server.recommendation.time.TimeSlotLabels
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
@@ -45,8 +50,7 @@ private fun service(
 
 private fun people(vararg codes: String) = codes.mapIndexed { i, c -> RecommendParticipant("p$i", null, c) }
 
-private fun RecommendationService.middleOf(request: RecommendRequest): MapMiddle? =
-    recommendWithMapMiddle(request).mapMiddle
+private suspend fun RecommendationService.middleOf(request: RecommendRequest): MapMiddle? = evaluate(request).mapMiddle
 
 class MapMiddleTest :
     DescribeSpec({
@@ -56,9 +60,9 @@ class MapMiddleTest :
             ) {
                 val request = RecommendRequest(people("03v", "130"), RecommendMode.FAIR)
                 val service = service()
-                val result = service.recommendWithMapMiddle(request).recommendation
+                val result = service.evaluate(request).recommendation
                 result.candidates.first().stationCode shouldBe "130" // 공평 1위(최장 10분)는 그대로다
-                val middle = service.recommendWithMapMiddle(request).mapMiddle.shouldNotBeNull()
+                val middle = service.evaluate(request).mapMiddle.shouldNotBeNull()
                 middle.stationCode shouldBe "225"
                 middle.stationName shouldBe "225역"
                 middle.times.map { it.participantId to it.seconds } shouldContainExactly
@@ -71,12 +75,12 @@ class MapMiddleTest :
                     RecommendationService(
                         OdTravelTimeProvider(od(), "20261120.1"),
                         codeNames,
-                    ).recommend(request)
-                val withMiddle = service().recommendWithMapMiddle(request)
+                    ).evaluate(request).recommendation
+                val withMiddle = service().evaluate(request)
                 withMiddle.mapMiddle.shouldNotBeNull() // 비교가 붙는 응답에서 대조한다
                 withMiddle.recommendation.candidates.size shouldBe 3
                 withMiddle.recommendation shouldBe plain
-                service().recommend(request) shouldBe plain
+                service().evaluate(request).recommendation shouldBe plain
             }
 
             it("is hidden when it is the recommended station itself") {

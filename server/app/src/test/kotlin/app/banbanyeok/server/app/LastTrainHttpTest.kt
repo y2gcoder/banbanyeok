@@ -5,10 +5,10 @@ package app.banbanyeok.server.app
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.http.ApiServices
-import app.banbanyeok.server.recommendation.LastTrainRule
-import app.banbanyeok.server.recommendation.LastTrainSource
+import app.banbanyeok.server.app.http.wire
 import app.banbanyeok.server.recommendation.RecommendationService
-import app.banbanyeok.server.recommendation.wire
+import app.banbanyeok.server.recommendation.lastTrainCell
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainSource
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.statement.HttpResponse
@@ -108,7 +108,7 @@ class LastTrainHttpTest :
                         card.trains().map { it.getValue("participantId").jsonPrimitive.content } shouldBe
                             listOf("0", "1")
                         card.trains().zip(listOf(gangnam, gwanggyo)).forEach { (train, home) ->
-                            val cell = LastTrainRule.cell(table, DayType.WEEKDAY, home, station)
+                            val cell = lastTrainCell(table, DayType.WEEKDAY, home, station)
                             train.getValue("kind").jsonPrimitive.content shouldBe cell.kind.wire
                             train["minute"]?.jsonPrimitive?.int shouldBe cell.minute
                             train["boundFor"]
@@ -125,13 +125,13 @@ class LastTrainHttpTest :
             it("gives the exact minute of a confirmed direct train and its destination") {
                 // 신분당선은 운영사 공식표 대조를 통과한 노선이다: 강남에서 광교행 평일 막차는 24:03.
                 val table = DevArtifacts.lastTrains.current()!!.table
-                val cell = LastTrainRule.cell(table, DayType.WEEKDAY, gwanggyo, gangnam)
+                val cell = lastTrainCell(table, DayType.WEEKDAY, gwanggyo, gangnam)
                 cell.kind.wire shouldBe "direct"
                 cell.minute shouldBe 24 * 60 + 3
                 cell.boundFor?.toString() shouldBe gwanggyo
-                LastTrainRule.cell(table, DayType.HOLIDAY, gwanggyo, gangnam).minute shouldBe 23 * 60 + 30
+                lastTrainCell(table, DayType.HOLIDAY, gwanggyo, gangnam).minute shouldBe 23 * 60 + 30
                 // 토요일은 서울교통공사 1~8호선만 켠다: 신분당선으로 가는 길은 확인 필요다.
-                LastTrainRule.cell(table, DayType.SATURDAY, gwanggyo, gangnam).kind.wire shouldBe "check"
+                lastTrainCell(table, DayType.SATURDAY, gwanggyo, gangnam).kind.wire shouldBe "check"
             }
 
             it("confirms Seoul lines 1 to 8 against the operator's file and keeps line 9 a margin time") {
@@ -143,23 +143,23 @@ class LastTrainHttpTest :
                     DayType.SATURDAY to 23 * 60 + 51,
                     DayType.HOLIDAY to 23 * 60 + 51,
                 ).forEach { (day, minute) ->
-                    val cell = LastTrainRule.cell(table, day, codeOf("합정"), hongdae)
+                    val cell = lastTrainCell(table, day, codeOf("합정"), hongdae)
                     cell.kind.wire shouldBe "direct"
                     cell.minute shouldBe minute
                     cell.boundFor?.toString() shouldBe sindorim
                 }
                 // 9호선은 확정에서 뺀다. 휴일 당산→가양 급행은 운영사 표로 23:48:30이다(PR #81 검토): 보이는 시각은 그보다 늦지 않다.
                 listOf("가양", "마곡나루", "김포공항").forEach { home ->
-                    val cell = LastTrainRule.cell(table, DayType.HOLIDAY, codeOf(home), codeOf("당산"))
+                    val cell = lastTrainCell(table, DayType.HOLIDAY, codeOf(home), codeOf("당산"))
                     cell.kind shouldBe app.banbanyeok.schema.LastTrainKind.MARGIN_DIRECT
                     (cell.minute!! <= 23 * 60 + 48) shouldBe true
                 }
                 // 평일의 9호선은 꺼 둔다(공식 파일이 11-16 평일 개정을 담았는지 확인 전). 9호선으로만 갈 수 있는 가양·마곡나루는
                 // 시각이 없고, 5호선으로도 닿는 김포공항은 9호선 직행이 아니라 다른 노선으로 갈아타는 길이다.
                 listOf("가양", "마곡나루").forEach { home ->
-                    LastTrainRule.cell(table, DayType.WEEKDAY, codeOf(home), codeOf("당산")).kind.wire shouldBe "check"
+                    lastTrainCell(table, DayType.WEEKDAY, codeOf(home), codeOf("당산")).kind.wire shouldBe "check"
                 }
-                LastTrainRule.cell(table, DayType.WEEKDAY, codeOf("김포공항"), codeOf("당산")).kind shouldBe
+                lastTrainCell(table, DayType.WEEKDAY, codeOf("김포공항"), codeOf("당산")).kind shouldBe
                     app.banbanyeok.schema.LastTrainKind.MARGIN_TRANSFER
             }
 
@@ -168,14 +168,14 @@ class LastTrainHttpTest :
                 // 수인분당선(선릉→고색), 인천 1호선(부평→계양)은 열차 번호가 있는 원천이 없다: 시각을 내지 않는다.
                 listOf("선릉" to "고색", "부평" to "계양").forEach { (meeting, home) ->
                     DayType.entries.forEach { day ->
-                        LastTrainRule.cell(table, day, codeOf(home), codeOf(meeting)).kind.wire shouldBe "check"
+                        lastTrainCell(table, day, codeOf(home), codeOf(meeting)).kind.wire shouldBe "check"
                     }
                 }
                 // 신분당선은 운영사 표와 대조한 칸만 낸다: 강남→광교는 표본이 있고, 양재→광교는 없다.
-                LastTrainRule.cell(table, DayType.WEEKDAY, gwanggyo, gangnam).kind.wire shouldBe "direct"
-                LastTrainRule.cell(table, DayType.WEEKDAY, gwanggyo, codeOf("양재")).kind.wire shouldBe "check"
+                lastTrainCell(table, DayType.WEEKDAY, gwanggyo, gangnam).kind.wire shouldBe "direct"
+                lastTrainCell(table, DayType.WEEKDAY, gwanggyo, codeOf("양재")).kind.wire shouldBe "check"
                 // 1호선의 코레일 구간은 서울교통공사 공식 파일에 열차코드로 있다: 부천→인천은 여유 시각(평일 24:11에서 3분).
-                val bucheon = LastTrainRule.cell(table, DayType.WEEKDAY, codeOf("인천"), codeOf("부천"))
+                val bucheon = lastTrainCell(table, DayType.WEEKDAY, codeOf("인천"), codeOf("부천"))
                 bucheon.kind shouldBe app.banbanyeok.schema.LastTrainKind.MARGIN_DIRECT
                 bucheon.minute shouldBe 24 * 60 + 8
             }

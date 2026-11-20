@@ -1,8 +1,5 @@
 package app.banbanyeok.server.app.application
 
-import app.banbanyeok.schema.TimeSlot
-import app.banbanyeok.server.recommendation.HolidayCalendar
-import app.banbanyeok.server.recommendation.ParticipantLastTrain
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
@@ -10,7 +7,9 @@ import app.banbanyeok.server.recommendation.Recommendation
 import app.banbanyeok.server.recommendation.RecommendationError
 import app.banbanyeok.server.recommendation.RecommendationException
 import app.banbanyeok.server.recommendation.RecommendationService
-import app.banbanyeok.server.recommendation.TimeSlotResolver
+import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
+import app.banbanyeok.server.recommendation.time.HolidayCalendar
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.ParticipantView
 import app.banbanyeok.server.room.RoomMode
@@ -44,8 +43,6 @@ class RoomResultService(
     private val recommendation: RecommendationService,
     /** 약속 날짜·시각 → 계산 구분. 없으면 평일 낮. */
     private val times: TimeSlotResolver = TimeSlotResolver(HolidayCalendar.bundled()),
-    /** 구분 행렬 검사가 뒤에서 도는 중이면 잠깐 기다린다(StationDirectory.awaitSlots). */
-    private val awaitSlots: suspend (TimeSlot) -> Unit = {},
 ) {
     suspend fun result(
         roomId: String,
@@ -59,7 +56,7 @@ class RoomResultService(
         }
         val request = requestOf(context, mode, favorId)
         return RoomResult(
-            mapped { recommendation.recommend(request) },
+            mapped { recommendation.evaluate(request) }.recommendation,
             context.view.participants,
             context.view.shareVersion,
         )
@@ -67,7 +64,8 @@ class RoomResultService(
 
     /**
      * 링크 미리보기 내용. 토큰 없이 방을 한 번 읽고(숨긴 출발역은 이미 가려져 있다) 방의 기본 기준으로 계산한다. 정한 역이 상위 후보에
-     * 없으면 그 역까지의 시간을 따로 잰다. 출발역이 지금 데이터에 없으면 STATION_UNAVAILABLE(409)이다.
+     * 없으면 그 역까지의 시간·막차를 같은 평가(한 번 잰 행렬, 한 번 읽은 막차 표)에서 꺼낸다. 출발역이 지금 데이터에 없으면
+     * STATION_UNAVAILABLE(409)이다.
      */
     suspend fun preview(roomId: String): RoomPreview {
         val context = rooms.loadForResult(roomId, viewerToken = null)
@@ -85,7 +83,8 @@ class RoomResultService(
             )
         if (context.computeParticipants.size < MIN_PEOPLE) return RoomPreview.Collecting(room)
         val request = requestOf(context, mode = null, favorId = null)
-        val ranked = mapped { recommendation.recommend(request) }
+        val evaluation = mapped { recommendation.evaluate(request) }
+        val ranked = evaluation.recommendation
         val labels =
             request.participants
                 .map { it.id }
@@ -112,12 +111,10 @@ class RoomResultService(
                 val ranking = ranked.candidates.firstOrNull { it.stationCode == decision.stationCode }
                 val seconds =
                     ranking?.times?.map { it.seconds }
-                        ?: mapped { recommendation.timesTo(request, decision.stationCode) }?.map { it?.seconds }
+                        ?: evaluation.timesTo(decision.stationCode)?.map { it?.seconds }
                         ?: List(request.participants.size) { null }
-                // 순위 밖의 역이면 그 역의 막차를 따로 읽는다(같은 표, 같은 기준).
-                val lastTrains =
-                    ranking?.lastTrains
-                        ?: mapped { recommendation.lastTrainsTo(request, decision.stationCode) }?.second
+                // 순위 밖의 역이면 그 역의 막차를 같은 평가에서 꺼낸다(같은 표, 같은 기준 = ranked.lastTrainBasis).
+                val lastTrains = ranking?.lastTrains ?: evaluation.lastTrainsAt(decision.stationCode)
                 RoomPreview.Decided(
                     room,
                     ranked.dataVersion,
@@ -145,7 +142,7 @@ class RoomResultService(
         }
     }
 
-    private suspend fun requestOf(
+    private fun requestOf(
         context: RoomResultContext,
         mode: RecommendMode?,
         favorId: String?,
@@ -153,7 +150,6 @@ class RoomResultService(
         val view = context.view
         val resolvedMode = mode ?: view.mode.toRecommendMode()
         val time = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand)
-        awaitSlots(time.slot)
         return RecommendRequest(
             participants =
                 context.computeParticipants.map {
@@ -168,7 +164,7 @@ class RoomResultService(
         )
     }
 
-    private fun <T> mapped(block: () -> T): T =
+    private inline fun <T> mapped(block: () -> T): T =
         try {
             block()
         } catch (e: RecommendationException) {

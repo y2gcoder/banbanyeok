@@ -1,10 +1,10 @@
 package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.TimeBand
-import app.banbanyeok.server.recommendation.LastTrainBasis
-import app.banbanyeok.server.recommendation.ParticipantLastTrain
 import app.banbanyeok.server.recommendation.RecommendMode
-import app.banbanyeok.server.recommendation.TimeBasis
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainBasis
+import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
+import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.ShareVersion
 import java.time.Instant
 import java.time.LocalDate

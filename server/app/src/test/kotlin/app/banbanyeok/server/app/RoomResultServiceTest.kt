@@ -8,9 +8,9 @@ import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendationService
-import app.banbanyeok.server.recommendation.TimeBasis
 import app.banbanyeok.server.recommendation.codeNames
 import app.banbanyeok.server.recommendation.sampleOd
+import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.ParticipantInput
