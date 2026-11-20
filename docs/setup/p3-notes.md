@@ -61,7 +61,7 @@ server/
 | Liquibase (테스트용 라이브러리) | 4.33.0 / 2025-07-09 | compose의 마이그레이션 컨테이너와 같은 버전. 5.x는 라이선스가 바뀌어 제외(S1 결정 유지) |
 | openapi-request-validator | 3.0.0 / 2026-05-13 | 4절 계약 검증 참고 |
 | Ktor, Kotest, MockK, Testcontainers, 기존 항목 | 카탈로그 그대로 | Ktor 3.6.1 모듈: server-core·netty·content-negotiation·serialization-kotlinx-json·status-pages·cors·body-limit |
-| JRE 이미지 | `eclipse-temurin:25.0.5_8-jre-noble` | mise.toml의 JDK(temurin 25.0.5+8)와 같은 빌드. 이 태그는 2026-11-12에 OS 패치로 다시 빌드됐다 |
+| JRE 이미지 | `eclipse-temurin:25.0.5.1_2-jre-noble`(다이제스트 고정) | mise.toml의 JDK(25.0.5.1+2)와 같은 빌드. Java4Shell(CVE-2026-114938, #66) 수정판이라 게시 2026-11-20에 7일 규칙 보안 예외로 올렸다. 이전 25.0.5_8은 2026-11-12에 OS 패치로 다시 빌드됐었다 |
 | 테스트 이미지 | `fsouza/fake-gcs-server:1.56.1`(2026-08-24), 비교용 `floci/floci-gcp:0.12.0`(2026-10-31), `postgres:17.6` | |
 
 ### GCS 에뮬레이터: fake-gcs-server 채택
