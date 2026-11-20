@@ -27,10 +27,24 @@ private fun lastTrainDir(file: KoFileDeclaration): String? = lastTrainDir(file.p
 /** The part a file belongs to: the first directory below `lasttrain` ("" for the package itself). */
 private fun lastTrainPart(file: KoFileDeclaration): String? = lastTrainDir(file)?.substringBefore('/')
 
-internal val LAST_TRAIN_REFERENCE = Regex("""${Regex.escape(LAST_TRAIN)}\.(?:([a-z]+)\.)?[A-Za-z_]\w*""")
+private val PARTS = setOf("model", "input", "compute", "gate", "output")
 
-/** Which part of the last-train package a reference to one of its declarations reaches ("" for the package itself). */
-internal fun importedPart(reference: String): String? = LAST_TRAIN_REFERENCE.matchEntire(reference)?.groupValues?.get(1)
+/**
+ * A dotted name that starts with the last-train package: a declaration (`...lasttrain.compute.LtRef`), a whole package
+ * (`...lasttrain.compute`, as in `import ... as c` or `import ...compute.*`), at any depth.
+ */
+internal val LAST_TRAIN_REFERENCE = Regex("""${Regex.escape(LAST_TRAIN)}(?:\.[A-Za-z_]\w*)+""")
+
+/**
+ * Which part of the last-train package a reference reaches: its sub-package, or "" for a declaration of the package
+ * itself. Null when it names no part (the package `lasttrain` alone, or something else).
+ */
+internal fun importedPart(reference: String): String? {
+    val rest = reference.removePrefix("$LAST_TRAIN.").removeSuffix(".*")
+    if (rest == reference || rest.isEmpty()) return null
+    val first = rest.substringBefore('.')
+    return if (first in PARTS) first else ""
+}
 
 /** The code of a file without comments, its package line and its imports: what is left can still name a declaration. */
 internal fun codeBody(text: String): String =
@@ -104,7 +118,8 @@ class PipelineLastTrainArchitectureTest :
                             file.imports
                                 .map { it.name }
                                 .filter { import ->
-                                    ioPrefixes.any { import.startsWith(it) } ||
+                                    // `import java.io as io` names the package itself, without the trailing dot.
+                                    ioPrefixes.any { import.startsWith(it) || import == it.removeSuffix(".") } ||
                                         ioHelpers.matches(import)
                                 }
                         // The same without an import: `java.nio.file.Files.readString(...)` written out.
@@ -169,6 +184,11 @@ class PipelineLastTrainArchitectureTest :
                     listOf("app.banbanyeok.pipeline.lasttrain.compute.LtRef")
                 importedPart("app.banbanyeok.pipeline.lasttrain.compute.LtRef") shouldBe "compute"
                 importedPart("app.banbanyeok.pipeline.lasttrain.compileLastTrains") shouldBe ""
+                // A whole package, wildcard or aliased (`import ...lasttrain.compute as c`), and a nested one.
+                importedPart("app.banbanyeok.pipeline.lasttrain.compute") shouldBe "compute"
+                importedPart("app.banbanyeok.pipeline.lasttrain.compute.*") shouldBe "compute"
+                importedPart("app.banbanyeok.pipeline.lasttrain.compute.internal.Leak") shouldBe "compute"
+                importedPart("app.banbanyeok.pipeline.lasttrain") shouldBe null
             }
         }
     })
