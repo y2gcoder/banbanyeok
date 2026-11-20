@@ -94,8 +94,7 @@ fun main(args: Array<String>) {
 }
 
 private fun build(root: Path) {
-    val input = readInput(root)
-    val context = StageContext(root, input, slotNetworks(input))
+    val context = StageContext(root)
     val parts = ReleaseParts()
     ARTIFACT_STAGES.forEach { it.build(context, parts) }
     publish(root, context.net, parts)
@@ -103,8 +102,7 @@ private fun build(root: Path) {
 
 private fun validate(root: Path) {
     val dataset = loadDevArtifacts(root.resolve("data/artifacts/dev"))
-    val input = readInput(root)
-    val context = StageContext(root, input, slotNetworks(input))
+    val context = StageContext(root)
     ARTIFACT_STAGES.forEach { it.validate(context, dataset) }
     println(
         "Validated artifact hashes, contract, append-only registry, " +

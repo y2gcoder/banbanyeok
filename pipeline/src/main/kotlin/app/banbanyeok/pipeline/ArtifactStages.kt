@@ -6,14 +6,19 @@ import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.TimeSlot
 import java.nio.file.Path
 
-/** What every stage reads: the raw inputs and the networks (one per time slot) the products are computed from. */
+/**
+ * What every stage reads: the raw inputs and the networks (one per time slot) the products are computed from. They
+ * are read when a stage first asks, not before: a check that needs no raw source (the SEO pairs, the control
+ * registry) fails with its own message even where the raw caches are missing.
+ */
 internal class StageContext(
     val root: Path,
-    val input: PipelineInput,
-    val slots: Map<TimeSlot, Network>,
 ) {
+    val input: PipelineInput by lazy { readInput(root) }
+    val slots: Map<TimeSlot, Network> by lazy { slotNetworks(input) }
+
     /** The default slot's network (weekday daytime): the registry and the axes come from it. */
-    val net: Network = slots.getValue(TimeSlot.DEFAULT)
+    val net: Network by lazy { slots.getValue(TimeSlot.DEFAULT) }
 }
 
 /** What a build hands to the release writer ([publish]): each stage fills in its own part. */

@@ -82,11 +82,12 @@ internal object TravelMatrixStage : ArtifactStage {
         dataset: app.banbanyeok.schema.DataSet,
     ) {
         val root = context.root
-        val slots = context.slots
-        val net = context.net
         val registry = RegistryCodec.parse(root.resolve("data/registry/stations.json").readText())
         require(RegistryCompatibility.checkAppendOnly(dataset.registry, registry).isEmpty())
         require(registry == dataset.registry) { "Artifact registry differs from control registry; rebuild required" }
+        // The raw sources are read here, not before: the checks above need none.
+        val slots = context.slots
+        val net = context.net
         require(net.registry == registry) { "Raw sources require a registry rebuild" }
         require(baselineViolations(root, registry).isEmpty()) { "Committed registry append-only gate failed" }
         require(dataset.od.originCount == net.origins.size) { "Origin axis incomplete" }
