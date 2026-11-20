@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { ImageResponse } from "next/og";
 import { PairCard } from "@/components/og/pair-card";
+import { OG_HEIGHT, OG_WIDTH } from "@/lib/copy/og-text";
 import { loadSeoSite } from "@/lib/seo/load";
 import { ogFonts } from "@/lib/seo/og-font";
-import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
 import { findPairPage } from "@/lib/seo/pair-pages";
 
 // 조합 페이지의 미리보기는 **빌드 때** 정적으로 만든다(요청 때 그리면 Cloudflare 무료 플랜의 CPU 10ms를 넘길 수 있다).

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RoomPreview, TimeBasis } from "@/lib/api/types";
-import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
+import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { kakaoFeedSettings } from "@/lib/share/kakao";
 import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomKakaoMessage, roomShareCopy } from "./share-copy";
 

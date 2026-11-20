@@ -1,11 +1,10 @@
 import type { Mode, RecommendResult } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { ShareState } from "@/lib/link/codec";
-import { sharedImagePath } from "@/lib/seo/shared-preview";
 import type { KakaoFeedMessage } from "@/lib/share/kakao";
 import { DEFAULT_SLOT } from "@/lib/when/time-slot";
 import { modeSentence } from "./mode-sentence";
-import { sharePath } from "./share-url";
+import { sharedImagePath, sharePath } from "./share-url";
 import type { CandidateView } from "./view-model";
 
 /**

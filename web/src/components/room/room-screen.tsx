@@ -8,7 +8,6 @@ import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom 
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
-import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/room/dates";
 import { isRoomGone, isStaleRoom, isTokenRejected, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
@@ -24,6 +23,7 @@ import {
 } from "@/lib/room/tokens";
 import { hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
+import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
 import { HostControls } from "./host-controls";
 import { JoinForm } from "./join-form";
 import { OutcomeCard } from "./outcome-card";

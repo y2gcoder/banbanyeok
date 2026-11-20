@@ -3,6 +3,7 @@
 import { ClockIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ChipText, ChoiceChips, chipClass } from "@/components/when/when-picker";
+import { cn } from "@/lib/utils";
 import {
   dayAfter,
   earlyMorningNote,
@@ -12,8 +13,7 @@ import {
   todayInSeoul,
   upcomingSaturday,
   weekdayOf,
-} from "@/lib/room/dates";
-import { cn } from "@/lib/utils";
+} from "@/lib/when/dates";
 import {
   BANDS,
   type Band,

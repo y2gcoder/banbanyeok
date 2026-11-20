@@ -3,11 +3,10 @@
  * 웹은 추천을 직접 계산하지 않는다. 계약 원본은 contracts/openapi.yaml.
  */
 import createClient from "openapi-fetch";
-import type { ShareState } from "@/lib/link/codec";
 import { withTrustHeaders } from "@/lib/proxy/headers";
 import { apiBaseUrl, HEALTHZ_PATH } from "./config";
 import type { paths } from "./schema.gen";
-import type { ApiError, RecommendBody, RecommendResult } from "./types";
+import type { ApiError, Mode, RecommendBody, RecommendResult, TimeSlotId } from "./types";
 
 export class ApiRequestError extends Error {
   constructor(
@@ -42,11 +41,19 @@ export async function trustedServerHeaders(): Promise<Headers | undefined> {
   }
 }
 
-/** 추천에 필요한 상태. 별칭은 서버가 표시 이름(label)과 문장에 쓴다. 구분(timeSlot)이 계산 기준을 정한다. */
-export type RecommendQuery = Pick<
-  ShareState,
-  "origins" | "mode" | "favorIndex" | "nicknames" | "timeSlot" | "slotDefaulted"
->;
+/**
+ * 추천에 필요한 상태. 별칭은 서버가 표시 이름(label)과 문장에 쓴다. 구분(timeSlot)이 계산 기준을 정한다.
+ * `lib/api`는 링크 코덱(`lib/link`)을 모르는 잎이다: 링크가 담는 상태(`ShareState`)가 이 모양을 채우는지는 `lib/link/codec.test.ts`가 타입으로 확인한다.
+ * `slotDefaulted`의 뜻은 `ShareState`에 적혀 있다(옛 링크라 구분을 고른 적이 없을 때만 true).
+ */
+export type RecommendQuery = {
+  origins: string[];
+  mode: Mode;
+  favorIndex: number | null;
+  nicknames: (string | null)[] | null;
+  timeSlot: TimeSlotId;
+  slotDefaulted?: true;
+};
 
 /**
  * `POST /recommend` 본문. favorIndex는 배려 모드일 때만 보낸다. 별칭은 사람이 넣은 것만 보낸다: 넣지 않은 사람은 `null`,

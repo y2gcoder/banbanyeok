@@ -10,7 +10,7 @@
  */
 import type { RecommendResult } from "@/lib/api/types";
 import { stationLabel, withJosa } from "@/lib/display/korean";
-import { dayAfter, formatMeetingDate } from "@/lib/room/dates";
+import { dayAfter, formatMeetingDate } from "@/lib/when/dates";
 import { DAY_TYPES } from "@/lib/when/time-slot";
 
 type Basis = NonNullable<RecommendResult["lastTrainBasis"]>;

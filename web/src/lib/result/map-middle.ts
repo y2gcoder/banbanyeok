@@ -6,9 +6,9 @@
  * 이 파일은 공유 그림(`/s/og`)과 결과 화면이 같은 문장·같은 칭호 규칙을 쓰게 하는 곳이다.
  */
 import type { RecommendResult } from "@/lib/api/types";
+import { OG_TEXT } from "@/lib/copy/og-text";
 import { stationLabel, withJosa } from "@/lib/display/korean";
 import { formatMinutes, minutesFromSeconds } from "@/lib/display/minutes";
-import { OG_TEXT } from "@/lib/seo/og-text";
 
 /** 지도 한가운데 역의 가장 오래 걸리는 시간이 추천 역보다 이만큼(분) 이상 길 때만 보인다. 서버 규칙(`MapMiddleRule`)과 같다. */
 export const MIDDLE_MIN_EXTRA = 5;

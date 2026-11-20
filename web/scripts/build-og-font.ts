@@ -2,8 +2,8 @@
  * 미리보기(OG) 이미지용 한국어 글꼴 서브셋을 만든다.
  *
  * 입력: 의존성 `pretendard`의 Bold(OTF, OFL 1.1), 파이프라인의 `og-glyphs.txt`(역 이름 글자), 웹 역 인덱스의 이름,
- *       `src/lib/seo/og-text.ts`의 고정 문구, ASCII 출력 가능 문자, KS X 1001 한글 2,350자(별칭에 쓰일 흔한 글자).
- * 출력: public/fonts/og-sans-bold.otf, public/fonts/OFL.txt, src/lib/seo/og-glyphs.gen.json(글꼴에 실제로 들어간 글자)
+ *       `src/lib/copy/og-text.ts`의 고정 문구, ASCII 출력 가능 문자, KS X 1001 한글 2,350자(별칭에 쓰일 흔한 글자).
+ * 출력: public/fonts/og-sans-bold.otf, public/fonts/OFL.txt, src/lib/copy/og-glyphs.gen.json(글꼴에 실제로 들어간 글자)
  *
  * 라이선스: Pretendard는 OFL 1.1이며 "Reserved Font Name: Pretendard"다. 서브셋은 수정본이라 그 이름을 쓸 수 없으므로
  * 글꼴 안의 이름(name 표, CFF 이름·문자열)을 `BanbanSans`로 바꾸고, 원 저작권 표기와 라이선스 전문(OFL.txt)을 같이 둔다.
@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import subsetFont from "subset-font";
-import { OG_FONT_FAMILY, OG_FONT_FILE, ogFixedChars } from "../src/lib/seo/og-text.ts";
+import { OG_FONT_FAMILY, OG_FONT_FILE, ogFixedChars } from "../src/lib/copy/og-text.ts";
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const glyphsFile = resolve(web, process.env.OG_GLYPHS_FILE ?? "../data/artifacts/dev/og-glyphs.txt");
@@ -251,6 +251,6 @@ writeFileSync(
     "",
   ].join("\n"),
 );
-writeFileSync(resolve(web, "src/lib/seo/og-glyphs.gen.json"), `${JSON.stringify({ chars }, null, 2)}\n`);
+writeFileSync(resolve(web, "src/lib/copy/og-glyphs.gen.json"), `${JSON.stringify({ chars }, null, 2)}\n`);
 const sha = createHash("sha256").update(output).digest("hex").slice(0, 12);
 process.stdout.write(`og font: ${output.length} bytes, ${[...chars].length} glyphs, sha256:${sha}\n`);

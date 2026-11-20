@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
+import { SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import type { KakaoSdk } from "./kakao-sdk";
 
 const KEY = "a".repeat(32);

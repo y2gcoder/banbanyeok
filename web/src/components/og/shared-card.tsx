@@ -1,6 +1,6 @@
+import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
-import { OG_COLORS, OG_TEXT } from "@/lib/seo/og-text";
-import type { SharedCardData } from "@/lib/seo/shared-preview";
+import type { SharedCardData } from "@/lib/share-card/shared-preview";
 import { OgFrame, personHex } from "./frame";
 
 /** 오른쪽 그림 영역(노선이 만날 역의 환승 고리로 모인다). */

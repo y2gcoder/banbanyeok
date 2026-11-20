@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { OG_COLORS, OG_FONT_FAMILY, OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/seo/og-text";
+import { OG_COLORS, OG_FONT_FAMILY, OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/copy/og-text";
 
 /*
  * 미리보기(OG) 이미지 공통 틀. satori(next/og)가 그리므로 CSS 변수·그리드를 못 쓰고, 여러 자식이 있는 요소는 모두 flex여야 한다.

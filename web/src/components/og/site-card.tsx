@@ -1,4 +1,4 @@
-import { OG_COLORS, OG_TEXT } from "@/lib/seo/og-text";
+import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { OgFrame } from "./frame";
 
 /** 사이트 기본 미리보기. 홈과, 링크 결과를 못 가져왔을 때의 대체 이미지. */

@@ -1,5 +1,5 @@
 import type { Mode } from "@/lib/api/types";
-import { OG_TEXT } from "@/lib/seo/og-text";
+import { OG_TEXT } from "@/lib/copy/og-text";
 
 /**
  * 어떤 기준으로 골랐는지 한 마디: "공평하게 고름" / "가장 빠른 만남으로 고름" / "{짧은 이름} 쪽으로 고름".
