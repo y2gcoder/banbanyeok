@@ -80,6 +80,78 @@ class SourceReferencesTest :
             }
         }
 
+        describe("string templates") {
+            // 회귀(PR #99 재검토): 문자열을 통째로 지우면 `${…}` 안의 실제 파일 접근이 R5 검사를 통과했다.
+            it("sees code inside a template, but not the literal text around it") {
+                val real =
+                    unit("internal fun cacheInfo(path: String) = \"size in bytes: \${java.io.File(path).length()}\"")
+                real.references shouldContain "java.io.File"
+                real.calls shouldContain "java.io.File"
+                val constant = unit("internal val note = \"java.io.File\"")
+                constant.references.filter { it.startsWith("java.") } shouldBe emptyList()
+                constant.calls shouldNotContain "java.io.File"
+            }
+            it("sees a template in a raw string, a nested string and a simple name template") {
+                val raw = unit("val a = \"\"\"x \${java.nio.file.Files.size(p)} java.io.File\"\"\"")
+                raw.references shouldContain "java.nio.file.Files"
+                raw.references shouldNotContain "java.io.File"
+                val nested = unit("val b = \"a \${f(\"} java.io.File\")} \${java.net.URL(u)}\"")
+                nested.references shouldContain "java.net.URL"
+                nested.references shouldNotContain "java.io.File"
+                val simple = unit("import java.io.File as Disk\n\nval c = \"\$Disk.length\"")
+                simple.references shouldContain "java.io.File"
+            }
+            it("keeps the code after a template as code") {
+                val source = unit("val d = \"\${1 + 1}\" + $app.http.ErrorDto(\"c\", \"m\").code")
+                source.calls shouldContain "$app.http.ErrorDto"
+            }
+        }
+
+        describe("names that look like references but are not") {
+            it("prefers an explicit import, an alias and a local declaration over a wildcard import") {
+                val source =
+                    unit(
+                        """
+                        import $app.application.*
+                        import other.pkg.StationDirectory
+                        import other.pkg.Thing as Resolver
+
+                        class LocalName
+
+                        val a = StationDirectory()
+                        val b = Resolver()
+                        val c = LocalName()
+                        val d: CanonicalStations? = null
+                        """.trimIndent(),
+                    )
+                source.allReferences shouldNotContain "$app.application.StationDirectory"
+                source.allReferences shouldNotContain "$app.application.Resolver"
+                source.allReferences shouldNotContain "$app.application.LocalName"
+                source.allReferences shouldContain "$app.application.CanonicalStations"
+                source.calls shouldContain "other.pkg.StationDirectory"
+                source.calls shouldNotContain "$app.application.StationDirectory"
+            }
+            it("does not count a function or class declaration as a call") {
+                val source =
+                    unit(
+                        """
+                        import $rec.time.HolidayCalendar
+
+                        fun HolidayCalendar.bundled() = nameOf(day)
+                        fun <T> HolidayCalendar.other(x: T) = x
+                        class Holder(val a: Int)
+                        val real = HolidayCalendar.bundled()
+                        """.trimIndent(),
+                    )
+                source.calls shouldContain "$rec.time.HolidayCalendar.bundled"
+                source.calls shouldNotContain "$rec.time.HolidayCalendar.other"
+                source.calls shouldNotContain "Holder"
+                val onlyDeclared =
+                    unit("import $rec.time.HolidayCalendar\n\nfun HolidayCalendar.bundled() = nameOf(day)")
+                onlyDeclared.calls shouldNotContain "$rec.time.HolidayCalendar.bundled"
+            }
+        }
+
         describe("the path an exception file is matched by") {
             it("is the whole repository-relative path, so a deeper file of the same name is not the exception") {
                 val errors = "server/app/src/main/kotlin/app/banbanyeok/server/app/http/Errors.kt"

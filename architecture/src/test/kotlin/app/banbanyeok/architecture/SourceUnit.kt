@@ -7,13 +7,15 @@ import java.nio.file.Path
  * 구조 규칙이 소스 한 파일에서 "무엇을 참조하는가"를 읽는 공용 도우미. import 선언만 보면 완전 수식 이름(`a.b.C.d()`)과 별칭
  * import(`import a.b.C as D`)로 우회되고, 글자 검색은 주석·문자열에서 오탐하므로 모든 참조 규칙이 이것을 쓴다.
  *
- * - 주석과 문자열(일반·raw·문자) 안은 보지 않는다.
+ * - 주석과 문자열(일반·raw·문자)의 글자 부분은 보지 않는다. 템플릿의 `${…}`와 `$이름`은 코드이므로 본다(`"${java.io.File(p).length()}"`).
  * - [references]: import(별칭이어도 원래 선언), 코드 본문의 완전 수식 이름, 와일드카드 import로 들어온 이름(`pkg.*` + 본문의 대문자 식별자).
  * - [calls]: 호출 식의 수신 체인을 원래 선언 이름으로 풀어 쓴 것(`Calendar.bundled()` → `…HolidayCalendar.bundled`).
  * - [relativePath]: 저장소 기준 상대 경로(`/` 구분). 허용 파일은 끝부분이 아니라 이 전체 경로로 비교한다.
  *
- * 한계: 같은 패키지 안의 이름은 import가 없어 풀 수 없다(규칙은 다른 패키지·모듈 사이의 참조를 본다). 문자열 템플릿 `${…}` 안의 코드는
- * 문자열로 보고 건너뛴다.
+ * - 이름 풀기의 우선순위: 별칭·명시적 import·이 파일에 선언한 타입 이름이 와일드카드 후보보다 앞선다. 함수·클래스 선언(`fun A.b()`)은 호출이 아니다.
+ *
+ * 알려진 한계: 같은 패키지 안의 이름은 import가 없어 풀 수 없다(규칙은 다른 패키지·모듈 사이의 참조를 본다). 다른 파일에 선언한
+ * typealias(허용된 패키지에 `typealias Catalog = …StationDirectory`를 두고 `Catalog`만 import)는 풀지 못한다. 리플렉션도 못 본다.
  */
 class SourceUnit(
     path: String,
@@ -32,6 +34,9 @@ class SourceUnit(
     private val simpleNames: Map<String, String> =
         imports.filter { !it.wildcard && it.alias == null }.associate { it.name.substringAfterLast('.') to it.name }
     private val wildcardPackages: List<String> = imports.filter { it.wildcard }.map { it.name }
+
+    /** 이 파일이 선언한 타입 이름. 와일드카드로 들어온 같은 이름보다 앞선다. */
+    private val localNames: Set<String> = LOCAL_TYPE.findAll(body).map { it.groupValues[1] }.toSet()
 
     /**
      * 이 파일이 참조하는 선언의 완전 이름(import는 별칭이어도 원래 선언, 와일드카드는 `pkg.*`)과 코드 본문의 완전 수식 이름. 멤버까지 이어진
@@ -53,14 +58,19 @@ class SourceUnit(
             if (wildcardPackages.isEmpty()) {
                 emptySet()
             } else {
-                CAPITALIZED.findAll(body).flatMap { word -> wildcardPackages.map { "$it.${word.value}" } }.toSet()
+                CAPITALIZED
+                    .findAll(body)
+                    .map { it.value }
+                    .filter { it !in aliases && it !in simpleNames && it !in localNames }
+                    .flatMap { word -> wildcardPackages.map { "$it.$word" } }
+                    .toSet()
             }
     }
 
     /** 호출 식(`a.b.C(…)`, `D.e(…)`)의 수신 체인. 첫 이름이 import한 것이면 원래 선언 이름으로 푼다. */
     val calls: Set<String> by lazy {
         buildSet {
-            CALL.findAll(body).forEach { match ->
+            CALL.findAll(body).filterNot { declares(it) }.forEach { match ->
                 val parts = match.groupValues[1].split('.').map { it.trim() }
                 val rest = parts.drop(1).joinToString("") { ".$it" }
                 resolve(parts.first()).forEach { add(it + rest) }
@@ -82,11 +92,17 @@ class SourceUnit(
     private fun resolve(first: String): List<String> =
         aliases[first]?.let { listOf(it) }
             ?: simpleNames[first]?.let { listOf(it) }
-            ?: if (first.firstOrNull()?.isUpperCase() == true && wildcardPackages.isNotEmpty()) {
+            ?: if (first in localNames) {
+                listOf(first)
+            } else if (first.firstOrNull()?.isUpperCase() == true && wildcardPackages.isNotEmpty()) {
                 wildcardPackages.map { "$it.$first" }
             } else {
                 listOf(first)
             }
+
+    /** 호출처럼 보이는 것이 사실은 선언인가(`fun HolidayCalendar.bundled()`, `class Foo(`). */
+    private fun declares(match: MatchResult): Boolean =
+        DECLARATION_KEYWORD.containsMatchIn(body.substring(0, match.range.first))
 
     private class Import(
         val name: String,
@@ -108,6 +124,8 @@ class SourceUnit(
         private val DECLARATION_LINE = Regex("""^\s*(package|import)\s""")
         private val QUALIFIED =
             Regex("""(?<![\w.])(?:app|com|io|org|java|javax|kotlin|kotlinx)(?:\s*\.\s*[A-Za-z_]\w*)+""")
+        private val LOCAL_TYPE = Regex("""\b(?:class|interface|object|typealias)\s+([A-Z]\w*)""")
+        private val DECLARATION_KEYWORD = Regex("""\b(?:fun|class|interface|object|typealias)\s*(?:<[^>]*>\s*)?\z""")
         private val CAPITALIZED = Regex("""(?<![\w.])[A-Z]\w*""")
         private val CALL = Regex("""(?<![\w.])([A-Za-z_]\w*(?:\s*\.\s*[A-Za-z_]\w*)*)\s*\(""")
         private val CAST = Regex("""\bas\??\s+([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)""")
@@ -130,7 +148,10 @@ private fun relativeToRepository(path: String): String {
     return root.relativize(Path.of(path).toAbsolutePath().normalize()).toString().replace('\\', '/')
 }
 
-/** 주석(`//`, 중첩되는 `/* */`)과 문자열(`"…"`, `"""…"""`), 문자 리터럴을 공백으로 바꾼다. 줄바꿈은 남긴다. */
+/**
+ * 주석(`//`, 중첩되는 `/* */`)과 문자 리터럴, 문자열(`"…"`, `"""…"""`)의 글자 부분을 공백으로 바꾼다. 줄바꿈은 남긴다.
+ * 문자열 템플릿의 `${…}`(안의 중첩 문자열 포함)와 `$이름`은 코드라서 남긴다.
+ */
 internal fun stripCommentsAndStrings(src: String): String = SourceStripper(src).strip()
 
 private class SourceStripper(
@@ -140,16 +161,49 @@ private class SourceStripper(
     private var i = 0
 
     fun strip(): String {
+        scan(inTemplate = false)
+        return out.toString()
+    }
+
+    /** 코드를 읽는다. 템플릿 안([inTemplate])이면 짝이 맞는 `}`에서 멈춘다. */
+    private fun scan(inTemplate: Boolean) {
+        var depth = 0
         while (i < src.length) {
+            val c = src[i]
             when {
-                src.startsWith("//", i) -> lineComment()
-                src.startsWith("/*", i) -> blockComment()
-                src.startsWith("\"\"\"", i) -> rawString()
-                src[i] == '"' || src[i] == '\'' -> quoted(src[i])
-                else -> out.append(src[i++])
+                src.startsWith("//", i) -> {
+                    lineComment()
+                }
+
+                src.startsWith("/*", i) -> {
+                    blockComment()
+                }
+
+                src.startsWith("\"\"\"", i) -> {
+                    string(raw = true)
+                }
+
+                c == '"' -> {
+                    string(raw = false)
+                }
+
+                c == '\'' -> {
+                    charLiteral()
+                }
+
+                inTemplate && c == '}' && depth == 0 -> {
+                    blank()
+                    return
+                }
+
+                else -> {
+                    if (c == '{') depth++
+                    if (c == '}') depth--
+                    out.append(c)
+                    i++
+                }
             }
         }
-        return out.toString()
     }
 
     private fun blank() {
@@ -184,15 +238,37 @@ private class SourceStripper(
         } while (depth > 0 && i < src.length)
     }
 
-    private fun rawString() {
-        blank(3)
-        while (i < src.length && !src.startsWith("\"\"\"", i)) blank()
-        blank(3)
+    private fun charLiteral() {
+        blank()
+        while (i < src.length && src[i] != '\'') blank(if (src[i] == '\\') 2 else 1)
+        blank(1)
     }
 
-    private fun quoted(quote: Char) {
-        blank()
-        while (i < src.length && src[i] != quote) blank(if (src[i] == '\\') 2 else 1)
-        blank(1)
+    /** 문자열의 글자를 지우되 `${…}`와 `$이름`은 코드로 남긴다. */
+    private fun string(raw: Boolean) {
+        val quote = if (raw) "\"\"\"" else "\""
+        blank(quote.length)
+        while (i < src.length && !src.startsWith(quote, i)) {
+            when {
+                !raw && src[i] == '\\' -> {
+                    blank(2)
+                }
+
+                src.startsWith("\${", i) -> {
+                    blank(2)
+                    scan(inTemplate = true)
+                }
+
+                src[i] == '$' && i + 1 < src.length && (src[i + 1].isLetter() || src[i + 1] == '_') -> {
+                    blank()
+                    while (i < src.length && (src[i].isLetterOrDigit() || src[i] == '_')) out.append(src[i++])
+                }
+
+                else -> {
+                    blank()
+                }
+            }
+        }
+        blank(quote.length)
     }
 }
