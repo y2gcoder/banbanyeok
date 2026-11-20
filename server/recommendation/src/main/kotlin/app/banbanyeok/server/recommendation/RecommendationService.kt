@@ -30,8 +30,12 @@ public class RecommendationService(
     private val middlePicker = MapMiddlePicker(locations)
     private val lastTrains = LastTrainAttacher(lastTrains, clock, stationNames::nameOf)
 
-    /** 요청을 검사하고 한 번 잰 행렬로 평가한다. 규칙에 맞지 않으면 [RecommendationException]. */
-    public suspend fun evaluate(request: RecommendRequest): Evaluation {
+    /**
+     * 요청을 검사하고 한 번 잰 행렬로 평가한다. 규칙에 맞지 않으면 [RecommendationException]. 참가자 목록은 처음에 한 번 복사해 검사부터
+     * [Evaluation]의 지연 조회까지 그 사본을 쓴다: 호출자가 나중에 목록을 바꿔도 평가는 바뀌지 않는다.
+     */
+    public suspend fun evaluate(requested: RecommendRequest): Evaluation {
+        val request = requested.withParticipants(requested.participants.toList())
         validate(request)
         slotsReady.await(request.time.slot)
         val matrix = travelTimes.measure(request.participants.map { it.originCode }, request.time.slot)
@@ -46,6 +50,9 @@ public class RecommendationService(
         val recommendation = ranking.rank(request, matrix, timeBasis, attached, travelTimes.dataVersion)
         return Evaluation(request, matrix, attached, recommendation, middlePicker, ranking::nameOf)
     }
+
+    private fun RecommendRequest.withParticipants(people: List<RecommendParticipant>) =
+        RecommendRequest(people, mode, favorId, time, dayCertainty, viewerId)
 
     /** 실제로 계산한 구분. 요청한 구분의 행렬이 없으면 기본 구분이다. */
     private fun computedBasis(

@@ -183,6 +183,19 @@ class RecommendationServiceTest :
             }
         }
 
+        describe("an evaluation") {
+            it("keeps the participants it was given even if the caller changes the list afterwards") {
+                val people =
+                    mutableListOf(RecommendParticipant("a", null, "03v"), RecommendParticipant("b", null, "130"))
+                val evaluation = service().evaluate(RecommendRequest(people, RecommendMode.FAIR))
+                val before = evaluation.timesTo("4xz")
+                before shouldContainExactly listOf(ParticipantTime("a", 2400, 2), ParticipantTime("b", 1200, 1))
+                people.reverse()
+                evaluation.timesTo("4xz") shouldBe before
+                evaluation.lastTrainsAt("4xz").shouldBeNull()
+            }
+        }
+
         describe("unreachable stations") {
             it("reports no_common_candidate when nobody can reach a common candidate") {
                 val od =
