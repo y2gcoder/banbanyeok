@@ -4,9 +4,6 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { toResultView } from "@/lib/result/view-model";
-import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
-import { roomImagePath } from "@/lib/room/share-link";
 import {
   OG_COLORS,
   OG_FONT_FILE,
@@ -19,8 +16,11 @@ import {
   SHARED_OG_IMAGE_VERSION,
   SITE_OG_IMAGE_PATH,
   SITE_OG_IMAGE_VERSION,
-} from "@/lib/seo/og-text";
-import { scoreboardCardData } from "@/lib/seo/scoreboard-card-data";
+} from "@/lib/copy/og-text";
+import { toResultView } from "@/lib/result/view-model";
+import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
+import { roomImagePath } from "@/lib/room/share-link";
+import { scoreboardCardData } from "@/lib/share-card/scoreboard-card-data";
 import { ROOM_CASES } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
@@ -114,9 +114,9 @@ const SHARED: Drawn = {
     "src/app/s/og/route.tsx",
     "src/components/og/scoreboard-card.tsx",
     "src/components/og/frame.tsx",
-    "src/lib/seo/scoreboard-card-data.ts",
-    "src/lib/seo/shared-preview.ts",
-    "src/lib/seo/og-coverage.ts",
+    "src/lib/share-card/scoreboard-card-data.ts",
+    "src/lib/share-card/shared-preview.ts",
+    "src/lib/copy/og-coverage.ts",
     "src/lib/result/map-middle.ts",
     "src/lib/result/last-train.ts",
     "src/lib/result/mode-sentence.ts",
@@ -168,8 +168,8 @@ const ROOM: Drawn = {
     "src/components/og/shared-card.tsx",
     "src/components/og/frame.tsx",
     "src/lib/room/share-copy.ts",
-    "src/lib/room/dates.ts",
-    "src/lib/seo/og-coverage.ts",
+    "src/lib/when/dates.ts",
+    "src/lib/copy/og-coverage.ts",
     "src/lib/result/last-train.ts",
     "src/lib/result/mode-sentence.ts",
     "src/lib/display/korean.ts",
@@ -192,28 +192,28 @@ describe("미리보기 그림의 버전(입력이 바뀌었는데 버전이 그�
   it("사이트 기본 그림: SITE_OG_IMAGE_VERSION", () => {
     expect(
       SITE_OG_IMAGE_VERSION,
-      `사이트 기본 그림의 입력이 바뀌었습니다. src/lib/seo/og-text.ts의 SITE_OG_IMAGE_VERSION을 "${inputsHash(SITE)}"로 고치세요.`,
+      `사이트 기본 그림의 입력이 바뀌었습니다. src/lib/copy/og-text.ts의 SITE_OG_IMAGE_VERSION을 "${inputsHash(SITE)}"로 고치세요.`,
     ).toBe(inputsHash(SITE));
   });
 
   it("역 조합 그림의 고정 부분: PAIR_OG_IMAGE_VERSION", () => {
     expect(
       PAIR_OG_IMAGE_VERSION,
-      `역 조합 그림의 입력이 바뀌었습니다. src/lib/seo/og-text.ts의 PAIR_OG_IMAGE_VERSION을 "${inputsHash(PAIR)}"로 고치세요.`,
+      `역 조합 그림의 입력이 바뀌었습니다. src/lib/copy/og-text.ts의 PAIR_OG_IMAGE_VERSION을 "${inputsHash(PAIR)}"로 고치세요.`,
     ).toBe(inputsHash(PAIR));
   });
 
   it("공유 링크 그림(숫자판): SHARED_OG_IMAGE_VERSION", () => {
     expect(
       SHARED_OG_IMAGE_VERSION,
-      `공유 링크 그림의 입력이 바뀌었습니다. src/lib/seo/og-text.ts의 SHARED_OG_IMAGE_VERSION을 "${inputsHash(SHARED)}"로 고치세요.`,
+      `공유 링크 그림의 입력이 바뀌었습니다. src/lib/copy/og-text.ts의 SHARED_OG_IMAGE_VERSION을 "${inputsHash(SHARED)}"로 고치세요.`,
     ).toBe(inputsHash(SHARED));
   });
 
   it("방 미리보기 그림: ROOM_OG_IMAGE_VERSION", () => {
     expect(
       ROOM_OG_IMAGE_VERSION,
-      `방 미리보기 그림의 입력이 바뀌었습니다. src/lib/seo/og-text.ts의 ROOM_OG_IMAGE_VERSION을 "${inputsHash(ROOM)}"로 고치세요.`,
+      `방 미리보기 그림의 입력이 바뀌었습니다. src/lib/copy/og-text.ts의 ROOM_OG_IMAGE_VERSION을 "${inputsHash(ROOM)}"로 고치세요.`,
     ).toBe(inputsHash(ROOM));
   });
 

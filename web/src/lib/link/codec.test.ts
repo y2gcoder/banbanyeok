@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import type { RecommendQuery } from "@/lib/api/client";
 import { decodeShareQuery, encodeShareQuery, type LinkErrorCode, type ShareState } from "./codec";
 
 /** 계약 원본을 복사하지 않고 직접 읽는다(벡터가 바뀌면 이 테스트가 바로 따라간다). */
@@ -88,5 +89,20 @@ describe("링크 코덱 — 벡터 밖 경계", () => {
 
   it("+는 공백이 아니다(별칭 세그먼트에서 거부)", () => {
     expect(decodeShareQuery("v=1&o=03v.130&m=f&n=a+b.7KeA")).toEqual({ ok: false, error: "BAD_NICKNAMES" });
+  });
+});
+
+describe("링크 상태와 추천 요청", () => {
+  it("ShareState는 추천 요청(RecommendQuery)에 그대로 들어간다(lib/api는 링크를 모르므로 이 방향을 타입으로 확인한다)", () => {
+    const state: ShareState = {
+      origins: ["1qs", "70x"],
+      mode: "favor",
+      favorIndex: 0,
+      nicknames: ["지훈", null],
+      timeSlot: "saturday-night",
+      slotDefaulted: true,
+    };
+    const query: RecommendQuery = state;
+    expect(query).toEqual(state);
   });
 });

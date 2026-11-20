@@ -1,4 +1,4 @@
-package app.banbanyeok.server.recommendation
+package app.banbanyeok.server.recommendation.mapmiddle
 
 import app.banbanyeok.applogic.DisplayMinutes
 import kotlin.math.cos
@@ -14,16 +14,6 @@ public data class GeoPoint(
 public fun interface StationLocations {
     public fun locate(code: String): GeoPoint?
 }
-
-/**
- * "지도 한가운데" 역(#68): 출발역 좌표의 평균점에서 가장 가까운, **모두가 갈 수 있는** 만날 역. 공평 순위와 별개로 표시만 더하는 값이다.
- * [times]는 요청 참가자 순서이고 [Recommendation]의 후보 시간과 같은 방식(같은 데이터 버전·같은 구분의 od)으로 꺼낸 값이다.
- */
-public data class MapMiddle(
-    public val stationCode: String,
-    public val stationName: String,
-    public val times: List<ParticipantTime>,
-)
 
 internal object MapMiddleRule {
     /**
@@ -87,4 +77,31 @@ internal object MapMiddleRule {
         middleSeconds: List<Int>,
         topMaxSeconds: Int,
     ): Int = DisplayMinutes.fromSeconds(middleSeconds.max()) - DisplayMinutes.fromSeconds(topMaxSeconds)
+}
+
+/** [locations]로 "지도 한가운데" 역(#68)을 고른다. */
+internal class MapMiddlePicker(
+    private val locations: StationLocations,
+) {
+    /**
+     * 출발역 좌표의 평균점에서 가장 가까운, **모두가 갈 수 있는** 만날 역의 후보 축 인덱스. 보일 조건을 하나라도 어기면 null이다.
+     * - 모든 [origins]의 좌표를 안다.
+     * - 그 역이 1위 추천 역([topCode])과 다르다.
+     * - 그 역의 최장 시간이 1위 추천 역([topMaxSeconds])보다 [MapMiddleRule.MIN_EXTRA_MINUTES]분 이상 길다.
+     * [times]는 출발역 × [candidates] 행렬이고 순위를 낸 행렬과 같아야 한다(같은 데이터 버전·같은 구분).
+     */
+    fun pick(
+        origins: List<String>,
+        candidates: List<String>,
+        times: List<List<Int?>>,
+        topCode: String,
+        topMaxSeconds: Int,
+    ): Int? {
+        val points = origins.mapNotNull { locations.locate(it) }
+        if (points.size != origins.size) return null
+        val column =
+            MapMiddleRule.nearest(points, candidates, locations) { c -> times.all { it[c] != null } } ?: return null
+        val extra = MapMiddleRule.extraMinutes(times.map { requireNotNull(it[column]) }, topMaxSeconds)
+        return column.takeIf { candidates[it] != topCode && extra >= MapMiddleRule.MIN_EXTRA_MINUTES }
+    }
 }

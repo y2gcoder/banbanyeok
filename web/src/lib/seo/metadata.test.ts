@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { describe, expect, it } from "vitest";
+import { SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import fixture from "../../../fixtures/seo-pairs.json";
 import {
   hubMetadata,
@@ -12,7 +13,6 @@ import {
   sharedLinkMetadata,
   siteMetadata,
 } from "./metadata";
-import { SITE_OG_IMAGE_PATH } from "./og-text";
 import { pairOgImagePath } from "./pair-og-image";
 import { buildPairPages, type PairPage } from "./pair-pages";
 import { parseSeoPairs } from "./pairs";

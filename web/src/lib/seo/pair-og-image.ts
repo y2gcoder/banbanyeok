@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { PAIR_OG_IMAGE_VERSION } from "./og-text";
+import { PAIR_OG_IMAGE_VERSION } from "@/lib/copy/og-text";
 import type { PairPage } from "./pair-pages";
 
 /** 그림(`PairCard`)에 그려지는 조합 데이터만. 이유 문장처럼 그림에 안 나오는 값이 바뀌어도 주소는 그대로여야 한다. */

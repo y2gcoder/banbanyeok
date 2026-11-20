@@ -10,7 +10,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { OG_FONT_FAMILY, OG_FONT_FILE } from "./og-text";
+import { OG_FONT_FAMILY, OG_FONT_FILE } from "@/lib/copy/og-text";
 
 type AssetsBinding = { fetch(request: Request): Promise<Response> };
 

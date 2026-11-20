@@ -6,6 +6,17 @@ import app.banbanyeok.schema.LastTrainKind
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainBasis
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainData
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainRule
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainSource
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainUnavailable
+import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
+import app.banbanyeok.server.recommendation.time.DayCertainty
+import app.banbanyeok.server.recommendation.time.HolidayCalendar
+import app.banbanyeok.server.recommendation.time.TimeBasis
+import app.banbanyeok.server.recommendation.time.TimeSlotLabels
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
@@ -61,7 +72,7 @@ class LastTrainTest :
     DescribeSpec({
         describe("last trains on a recommendation") {
             it("attaches each visible person's last train to every candidate, with the classification unchanged") {
-                val result = service().recommend(request())
+                val result = service().evaluate(request()).recommendation
                 result.lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
                 result.candidates.forEach { card ->
                     card.lastTrains.shouldNotBeNull().map { it.participantId } shouldBe
@@ -88,8 +99,8 @@ class LastTrainTest :
                         )
                     }
                 requests.forEach { request ->
-                    val with = service().recommend(request)
-                    val without = service(source = { null }).recommend(request)
+                    val with = service().evaluate(request).recommendation
+                    val without = service(source = { null }).evaluate(request).recommendation
                     with.candidates.map { it.copy(lastTrains = null) } shouldBe without.candidates
                     with.copy(candidates = emptyList(), lastTrainBasis = null) shouldBe
                         without.copy(candidates = emptyList())
@@ -100,14 +111,18 @@ class LastTrainTest :
 
             it("uses the day type of the slot that was actually computed") {
                 val holiday = TimeSlot(DayType.HOLIDAY, TimeBand.EVENING)
-                val result = service().recommend(request(slot = holiday))
+                val result = service().evaluate(request(slot = holiday)).recommendation
                 result.lastTrainBasis shouldBe LastTrainBasis(DayType.HOLIDAY, asOf)
                 result
                     .at("130")
                     .shouldNotBeNull()[0]
                     .cell.minute shouldBe 1410
                 // 토요일은 표에 값이 없다: 시각 없이 확인 필요.
-                val saturday = service().recommend(request(slot = TimeSlot(DayType.SATURDAY, TimeBand.NIGHT)))
+                val saturday =
+                    service()
+                        .evaluate(
+                            request(slot = TimeSlot(DayType.SATURDAY, TimeBand.NIGHT)),
+                        ).recommendation
                 saturday.lastTrainBasis shouldBe LastTrainBasis(DayType.SATURDAY, asOf)
                 saturday.at("130").shouldNotBeNull().map { it.cell } shouldBe
                     listOf(LastTrainCell.UNKNOWN, LastTrainCell.UNKNOWN)
@@ -117,9 +132,10 @@ class LastTrainTest :
                 val partial =
                     service(LastTrainSource { LastTrainData(sampleLastTrains, asOf, setOf(DayType.SATURDAY)) })
                 partial
-                    .recommend(request(slot = TimeSlot(DayType.SATURDAY, TimeBand.NIGHT)))
+                    .evaluate(request(slot = TimeSlot(DayType.SATURDAY, TimeBand.NIGHT)))
+                    .recommendation
                     .lastTrainBasis shouldBe LastTrainBasis(DayType.SATURDAY, asOf, partial = true)
-                partial.recommend(request()).lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
+                partial.evaluate(request()).recommendation.lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
             }
 
             it("leaves last trains out when the requested slot could not be computed") {
@@ -127,14 +143,14 @@ class LastTrainTest :
                 val result =
                     service(
                         slots = emptyMap(),
-                    ).recommend(request(slot = TimeSlot(DayType.HOLIDAY, TimeBand.NIGHT)))
+                    ).evaluate(request(slot = TimeSlot(DayType.HOLIDAY, TimeBand.NIGHT))).recommendation
                 result.timeBasis.slot shouldBe TimeSlot.DEFAULT
                 result.lastTrainBasis.shouldBeNull()
                 result.candidates.forEach { it.lastTrains.shouldBeNull() }
             }
 
             it("leaves last trains out while the table is not ready or failed validation") {
-                val result = service(source = { null }).recommend(request())
+                val result = service(source = { null }).evaluate(request()).recommendation
                 result.lastTrainBasis.shouldBeNull()
                 result.candidates.forEach { it.lastTrains.shouldBeNull() }
             }
@@ -142,13 +158,13 @@ class LastTrainTest :
 
         describe("when the times must not be shown") {
             it("turns every entry into check once the timetable is older than 120 days") {
-                val lastDay = service(clock = clockOn("2027-03-16")).recommend(request())
+                val lastDay = service(clock = clockOn("2027-03-16")).evaluate(request()).recommendation
                 lastDay.lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
                 lastDay
                     .at("130")
                     .shouldNotBeNull()[0]
                     .cell.kind shouldBe LastTrainKind.DIRECT
-                val stale = service(clock = clockOn("2027-03-17")).recommend(request())
+                val stale = service(clock = clockOn("2027-03-17")).evaluate(request()).recommendation
                 stale.lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf, LastTrainUnavailable.STALE)
                 stale.candidates.forEach { card ->
                     card.lastTrains.shouldNotBeNull().map { it.cell } shouldBe
@@ -165,7 +181,7 @@ class LastTrainTest :
             }
 
             it("shows no time when the day type was not chosen or the date is beyond the holiday list") {
-                val defaulted = service().recommend(request(certainty = DayCertainty.DEFAULTED))
+                val defaulted = service().evaluate(request(certainty = DayCertainty.DEFAULTED)).recommendation
                 defaulted.lastTrainBasis?.unavailable shouldBe LastTrainUnavailable.DAY_UNKNOWN
                 defaulted
                     .at("130")
@@ -173,7 +189,7 @@ class LastTrainTest :
                     .map { it.cell.kind }
                     .distinct() shouldBe
                     listOf(LastTrainKind.UNKNOWN)
-                val beyond = service().recommend(request(certainty = DayCertainty.OUT_OF_RANGE))
+                val beyond = service().evaluate(request(certainty = DayCertainty.OUT_OF_RANGE)).recommendation
                 beyond.lastTrainBasis?.unavailable shouldBe LastTrainUnavailable.DATE_OUT_OF_RANGE
                 beyond
                     .at("130")
@@ -188,17 +204,17 @@ class LastTrainTest :
             val people = listOf(person("a", "03v"), person("b", "225", hidden = true), person("c", "31a"))
 
             it("is left out of everyone else's result") {
-                val result = service().recommend(request(people))
+                val result = service().evaluate(request(people)).recommendation
                 result.candidates.forEach { card ->
                     card.lastTrains.shouldNotBeNull().map { it.participantId } shouldContainExactly listOf("a", "c")
                 }
-                service().recommend(request(people, viewer = "a")).candidates.forEach { card ->
+                service().evaluate(request(people, viewer = "a")).recommendation.candidates.forEach { card ->
                     card.lastTrains.shouldNotBeNull().map { it.participantId } shouldContainExactly listOf("a", "c")
                 }
             }
 
             it("sees the own last train on the own request only") {
-                val own = service().recommend(request(people, viewer = "b"))
+                val own = service().evaluate(request(people, viewer = "b")).recommendation
                 own.candidates.forEach { card ->
                     card.lastTrains.shouldNotBeNull().map { it.participantId } shouldBe
                         listOf("a", "b", "c")
@@ -209,11 +225,12 @@ class LastTrainTest :
 
             it("gives others the same answer whatever the hidden origin is") {
                 // 숨긴 사람의 출발역만 다른 두 요청에서, 다른 사람이 받는 막차는 같다(같은 후보에 대해).
-                val one = service().recommend(request(people))
+                val one = service().evaluate(request(people)).recommendation
                 val other =
-                    service().recommend(
-                        request(listOf(person("a", "03v"), person("b", "130", hidden = true), person("c", "31a"))),
-                    )
+                    service()
+                        .evaluate(
+                            request(listOf(person("a", "03v"), person("b", "130", hidden = true), person("c", "31a"))),
+                        ).recommendation
                 val shared =
                     one.candidates.map { it.stationCode }.intersect(
                         other.candidates.map { it.stationCode }.toSet(),
@@ -224,15 +241,13 @@ class LastTrainTest :
 
             it("is also left out of last trains read for a station outside the ranking") {
                 val service = service()
-                val (basis, trains) = service.lastTrainsTo(request(people), "4xz").shouldNotBeNull()
-                basis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
-                trains.map { it.participantId } shouldBe listOf("a", "c")
+                val evaluation = service.evaluate(request(people))
+                evaluation.recommendation.lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
+                evaluation.lastTrainsAt("4xz").shouldNotBeNull().map { it.participantId } shouldBe listOf("a", "c")
                 service
-                    .lastTrainsTo(
-                        request(people, viewer = "b"),
-                        "4xz",
-                    ).shouldNotBeNull()
-                    .second
+                    .evaluate(request(people, viewer = "b"))
+                    .lastTrainsAt("4xz")
+                    .shouldNotBeNull()
                     .map { it.participantId } shouldBe
                     listOf("a", "b", "c")
             }

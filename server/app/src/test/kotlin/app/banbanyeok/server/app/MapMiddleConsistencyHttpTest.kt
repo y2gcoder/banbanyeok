@@ -89,7 +89,6 @@ class MapMiddleConsistencyHttpTest :
             val without = apiWith(RecommendationService(directory.travel, directory))
             var compared = 0
             for (slot in TimeSlot.ALL) {
-                directory.awaitSlots(slot)
                 val body = """{"origins":["$hongdae","$jamsil"],"mode":"fair","timeSlot":"${slot.id}"}"""
                 var a: JsonObject? = null
                 var b: JsonObject? = null

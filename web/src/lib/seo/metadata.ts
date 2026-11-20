@@ -6,11 +6,11 @@
  * 그래서 하위 페이지도 `openGraph`·`twitter`를 빠짐없이 채운다.
  */
 import type { Metadata } from "next";
+import { OG_HEIGHT, OG_WIDTH, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { withJosa } from "@/lib/display/korean";
 import { formatMinutes } from "@/lib/display/minutes";
 import { INVITE_COPY, type RoomShareCopy } from "@/lib/room/share-copy";
 import { APP_NAME } from "./app-manifest";
-import { OG_HEIGHT, OG_WIDTH, SITE_OG_IMAGE_PATH } from "./og-text";
 import { pairOgImagePath } from "./pair-og-image";
 import { PAIR_PATH_PREFIX, type PairPage } from "./pair-pages";
 import { absoluteUrl, isIndexableSite, siteEnv, siteUrl } from "./site";

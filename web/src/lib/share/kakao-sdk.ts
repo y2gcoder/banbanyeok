@@ -9,7 +9,7 @@
  *
  * 한 페이지에 SDK는 한 번만 받는다. 실패하면(SDK를 못 받음, 카카오가 거절) 다시 부를 때 다시 준비한다. 상태: 준비 전 → 준비 중 → 준비됨.
  */
-import { SITE_OG_IMAGE_PATH } from "../seo/og-text";
+import { SITE_OG_IMAGE_PATH } from "../copy/og-text";
 import {
   KAKAO_SDK,
   type KakaoFeedMessage,

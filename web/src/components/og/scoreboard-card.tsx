@@ -1,6 +1,6 @@
+import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
-import { OG_COLORS, OG_TEXT } from "@/lib/seo/og-text";
-import type { ScoreboardCardData } from "@/lib/seo/scoreboard-card-data";
+import type { ScoreboardCardData } from "@/lib/share-card/scoreboard-card-data";
 import { Dot, OgFrame, personHex } from "./frame";
 
 /**

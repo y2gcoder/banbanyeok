@@ -1,10 +1,11 @@
-package app.banbanyeok.server.recommendation
+package app.banbanyeok.server.recommendation.lasttrain
 
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainCell
-import app.banbanyeok.schema.LastTrainKind
 import app.banbanyeok.schema.LastTrainTable
 import app.banbanyeok.schema.StationCode
+import app.banbanyeok.schema.TimeSlot
+import app.banbanyeok.server.recommendation.time.DayCertainty
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
@@ -25,18 +26,6 @@ public class LastTrainData(
  */
 public fun interface LastTrainSource {
     public fun current(): LastTrainData?
-}
-
-/** 요일 종류를 얼마나 믿을 수 있는가. 막차는 요일 종류가 틀리면 늦은 쪽으로 틀리므로(평일 막차가 휴일보다 늦다) 확실할 때만 보인다. */
-public enum class DayCertainty {
-    /** 사용자가 고른 구분이거나, 공휴일 목록 범위 안의 약속일에서 정했다. */
-    KNOWN,
-
-    /** 요일 종류가 주어지지 않아 평일로 계산했다(구분 없는 요청, 약속일 없는 방, 옛 `v=1` 링크). */
-    DEFAULTED,
-
-    /** 약속일이 공휴일 목록의 범위 밖이라 평일·토요일이 공휴일일 수 있다. */
-    OUT_OF_RANGE,
 }
 
 /** 막차 시각을 내지 않는 이유(응답 전체에 해당). 이때 사람별 항목은 모두 확인 필요다. */
@@ -63,19 +52,19 @@ public data class ParticipantLastTrain(
     public val boundName: String? = null,
 )
 
-public object LastTrainRule {
+internal object LastTrainRule {
     /** 수집일에서 이만큼 지나면 시각을 내지 않는다(분기 재수집 주기 + 여유). 시간표가 바뀐 뒤의 옛 시각은 늦은 쪽으로 틀릴 수 있다. */
-    public const val MAX_AGE_DAYS: Long = 120
+    const val MAX_AGE_DAYS: Long = 120
 
-    public val ZONE: ZoneId = ZoneId.of("Asia/Seoul")
+    val ZONE: ZoneId = ZoneId.of("Asia/Seoul")
 
-    public fun stale(
+    fun stale(
         asOf: LocalDate,
         clock: Clock,
     ): Boolean = LocalDate.now(clock.withZone(ZONE)).isAfter(asOf.plusDays(MAX_AGE_DAYS))
 
     /** 요청 전체의 기준. 시각을 낼 수 없는 이유가 여럿이면 요일 쪽을 먼저 알린다(사용자가 고칠 수 있는 것). */
-    public fun basis(
+    fun basis(
         data: LastTrainData,
         day: DayType,
         certainty: DayCertainty,
@@ -94,7 +83,7 @@ public object LastTrainRule {
         )
 
     /** [homeCode]에 사는 사람이 [meetingCode]에서 돌아가는 막차. 축에 없는 역이면 확인 필요다. */
-    public fun cell(
+    fun cell(
         table: LastTrainTable,
         day: DayType,
         homeCode: String,
@@ -108,57 +97,66 @@ public object LastTrainRule {
 
 /**
  * 순위를 다 정한 뒤 만날 역마다 사람별 막차를 붙인다. 순위·시간·이유 문장에는 쓰이지 않는다.
- * **출발역을 숨긴 사람의 막차는 그 사람의 요청([viewerId])에만 넣는다**: 막차 시각으로 숨긴 출발역을 거꾸로 짐작할 수 있다.
+ * **출발역을 숨긴 사람의 막차는 그 사람의 요청([Riders.viewerId])에만 넣는다**: 막차 시각으로 숨긴 출발역을 거꾸로 짐작할 수 있다.
  */
 internal class LastTrainAttacher(
     private val source: LastTrainSource,
     private val clock: Clock,
-    private val names: StationNames,
+    /** 역 코드의 표시 이름(직행 열차의 행선지). */
+    private val names: (String) -> String?,
 ) {
-    /** 이 요청에 막차를 붙일 수 있으면 그 기준과 조회 함수. 표가 없거나 요청한 구분으로 계산하지 못했으면 null(막차 항목을 뺀다). */
+    /** 막차를 받을 사람들(요청 참가자 순서)과 이 결과를 보는 사람. */
+    class Riders(
+        val people: List<Rider>,
+        val viewerId: String?,
+    )
+
+    class Rider(
+        val id: String,
+        val homeCode: String,
+        val hidden: Boolean,
+    )
+
+    /**
+     * 이 요청에 막차를 붙일 수 있으면 그 기준과 조회 함수. 표가 없거나 요청한 구분([requested])으로 계산하지 못했으면([computed]가 다르면)
+     * null(막차 항목을 뺀다). 표는 여기서 **한 번** 읽고, 돌려준 값은 그 표만 쓴다.
+     */
     fun forRequest(
-        request: RecommendRequest,
-        computed: TimeBasis,
+        requested: TimeSlot,
+        computed: TimeSlot,
+        certainty: DayCertainty,
+        riders: Riders,
     ): Attached? {
         val data = source.current() ?: return null
-        if (computed.slot != request.time.slot) return null
-        val basis = LastTrainRule.basis(data, computed.slot.day, request.dayCertainty, clock)
-        return Attached(basis, data.table, request, names)
+        if (computed != requested) return null
+        val basis = LastTrainRule.basis(data, computed.day, certainty, clock)
+        return Attached(basis, data.table, riders, names)
     }
 
     class Attached(
         val basis: LastTrainBasis,
         private val table: LastTrainTable,
-        private val request: RecommendRequest,
-        private val names: StationNames,
+        private val riders: Riders,
+        private val names: (String) -> String?,
     ) {
         fun at(stationCode: String): List<ParticipantLastTrain> =
-            request.participants
-                .filter { !it.hidden || it.id == request.viewerId }
+            riders.people
+                .filter { !it.hidden || it.id == riders.viewerId }
                 .map { person ->
                     val cell =
                         if (basis.unavailable != null) {
                             LastTrainCell.UNKNOWN
                         } else {
-                            LastTrainRule.cell(table, basis.dayType, person.originCode, stationCode)
+                            LastTrainRule.cell(table, basis.dayType, person.homeCode, stationCode)
                         }
                     ParticipantLastTrain(
                         person.id,
                         cell,
                         cell.boundFor?.let {
-                            names.nameOf(it.toString())
+                            names(it.toString())
                                 ?: it.toString()
                         },
                     )
                 }
     }
 }
-
-/** 응답에 쓰는 종류 이름: 직행 확정 / 여유 시각 / 확인 필요. */
-public val LastTrainKind.wire: String
-    get() =
-        when (this) {
-            LastTrainKind.DIRECT -> "direct"
-            LastTrainKind.MARGIN_TRANSFER, LastTrainKind.MARGIN_DIRECT -> "margin"
-            LastTrainKind.UNKNOWN -> "check"
-        }

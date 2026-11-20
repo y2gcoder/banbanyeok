@@ -7,11 +7,11 @@ import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.http.apiJson
 import app.banbanyeok.server.app.http.toDto
-import app.banbanyeok.server.recommendation.LastTrainData
-import app.banbanyeok.server.recommendation.LastTrainUnavailable
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.codeNames
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainData
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainUnavailable
 import app.banbanyeok.server.recommendation.sampleLastTrainAsOf
 import app.banbanyeok.server.recommendation.sampleLastTrains
 import app.banbanyeok.server.recommendation.sampleOd

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RecommendResult } from "@/lib/api/types";
-import { OG_TEXT } from "@/lib/seo/og-text";
+import { OG_TEXT } from "@/lib/copy/og-text";
 import { searchStations } from "@/lib/stations";
 import {
   type LastTrainEntry,

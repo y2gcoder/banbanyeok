@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { ResultPage, type SearchParams } from "@/components/result/result-page";
 import { decodeShareQuery } from "@/lib/link/codec";
-import { toQueryString } from "@/lib/result/share-url";
+import { sharedImagePath, toQueryString } from "@/lib/result/share-url";
 import { sharedLinkMetadata } from "@/lib/seo/metadata";
-import { loadSharedView, sharedImagePath, sharedPreview } from "@/lib/seo/shared-preview";
+import { loadSharedView } from "@/lib/seo/shared-preview";
+import { sharedPreview } from "@/lib/share-card/shared-preview";
 
 type Props = { searchParams: SearchParams };
 

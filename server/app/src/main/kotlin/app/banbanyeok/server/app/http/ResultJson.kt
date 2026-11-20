@@ -1,18 +1,26 @@
 package app.banbanyeok.server.app.http
 
 import app.banbanyeok.schema.LastTrainKind
-import app.banbanyeok.server.recommendation.LastTrainBasis
 import app.banbanyeok.server.recommendation.MapMiddle
-import app.banbanyeok.server.recommendation.ParticipantLastTrain
 import app.banbanyeok.server.recommendation.ParticipantTime
 import app.banbanyeok.server.recommendation.RecommendedStation
-import app.banbanyeok.server.recommendation.wire
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainBasis
+import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 // 결과(Result)의 카드·지도 한가운데는 값이 없을 때 키를 생략해야 해서 직접 만든다.
+
+/** 응답에 쓰는 막차 종류 이름(openapi `LastTrain.kind`): 직행 확정 / 여유 시각 / 확인 필요. */
+internal val LastTrainKind.wire: String
+    get() =
+        when (this) {
+            LastTrainKind.DIRECT -> "direct"
+            LastTrainKind.MARGIN_TRANSFER, LastTrainKind.MARGIN_DIRECT -> "margin"
+            LastTrainKind.UNKNOWN -> "check"
+        }
 
 fun RecommendedStation.candidateJson(): JsonObject =
     buildJsonObject {

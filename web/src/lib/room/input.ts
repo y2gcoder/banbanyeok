@@ -6,8 +6,8 @@
 import type { Mode, OutcomeAnswer, ParticipantInput, RoomCreateRequest } from "@/lib/api/types";
 import { codePointLength, MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/codec";
 import type { Station } from "@/lib/stations";
+import { isMeetingDateInRange } from "@/lib/when/dates";
 import type { Band } from "@/lib/when/time-slot";
-import { isMeetingDateInRange } from "./dates";
 
 export type Checked<T> = { ok: true; value: T } | { ok: false; message: string };
 

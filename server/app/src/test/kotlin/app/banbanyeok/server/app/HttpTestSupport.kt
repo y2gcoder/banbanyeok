@@ -36,7 +36,15 @@ object DevArtifacts {
     val dir: Path = Path.of(requireNotNull(System.getProperty("artifacts.dev.dir")))
     val store = LocalFileArtifactStore(dir, UnconfinedTestDispatcher())
     private val loaded by lazy { runBlocking { ArtifactLoader(store).load() } }
-    val directory: StationDirectory by lazy { StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots)) }
+
+    /**
+     * 구분 행렬 검사를 마친 디렉터리. 서버([CompositionRoot])는 추천 계산이 [BackgroundSlots.await]로 검사를 기다리지만, 테스트가 만드는
+     * RecommendationService는 기다리지 않으므로 여기서 먼저 끝내 둔다(모든 구분 행렬이 보인다).
+     */
+    val directory: StationDirectory by lazy {
+        runBlocking { loaded.slots.join() }
+        StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
+    }
 
     /** manifest의 막차 수집일(`lastTrainAsOf`). */
     val lastTrainAsOf: String by lazy { requireNotNull(loaded.dataSet.manifest.lastTrainAsOf) }

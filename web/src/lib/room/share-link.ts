@@ -3,7 +3,7 @@
  * 방의 공유 번호(`Room.shareVersion`, 서버가 올리고 줄지 않는 번호)를 붙인다. 내용 해시를 쓰지 않는다: 방이 예전 상태로 돌아오면 주소도
  * 예전과 같아져 그때 캐시된 미리보기가 다시 뜬다(#51). `v`(공유 링크 코덱)와 `dv`(역 데이터 버전)는 이미 쓰는 이름이라 `sv`다.
  */
-import { ROOM_OG_IMAGE_VERSION } from "@/lib/seo/og-text";
+import { ROOM_OG_IMAGE_VERSION } from "@/lib/copy/og-text";
 import { roomPath } from "./id";
 
 export const SHARE_VERSION_PARAM = "sv";

@@ -1,5 +1,5 @@
+import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
-import { OG_COLORS, OG_TEXT } from "@/lib/seo/og-text";
 import type { PairPage } from "@/lib/seo/pair-pages";
 import { Dot, OgFrame, personHex } from "./frame";
 

@@ -6,7 +6,7 @@
  * 형식이 틀리면 카카오 공유는 완전히 꺼진다(SDK를 불러오지 않고 CSP에도 카카오 주소를 넣지 않는다).
  */
 // next.config.ts가 CSP를 만들려고 이 파일을 불러오므로 `@/` 별칭 없이 적는다.
-import { OG_HEIGHT, OG_WIDTH } from "../seo/og-text";
+import { OG_HEIGHT, OG_WIDTH } from "../copy/og-text";
 
 /** 사이트 안 경로. 보낼 때 이 페이지의 출처를 붙인다(카카오는 앱에 등록한 도메인의 링크만 받는다). */
 type KakaoButton = { title: string; path: string };

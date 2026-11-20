@@ -13,7 +13,7 @@ import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.recommendation.MapMiddle
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.Recommendation
-import app.banbanyeok.server.recommendation.TimeBasis
+import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.ErrorKind

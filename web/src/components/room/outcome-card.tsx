@@ -7,11 +7,11 @@ import { StationField } from "@/components/home/station-field";
 import { Button } from "@/components/ui/button";
 import { roomHashProperty, track } from "@/lib/analytics";
 import { answerOutcome } from "@/lib/api/rooms";
-import { daysSince } from "@/lib/room/dates";
 import { roomErrorMessage } from "@/lib/room/errors";
 import { type OutcomeChoice, toOutcomeAnswer } from "@/lib/room/input";
 import type { Station } from "@/lib/stations";
 import { cn } from "@/lib/utils";
+import { daysSince } from "@/lib/when/dates";
 
 type Kind = OutcomeChoice["kind"];
 

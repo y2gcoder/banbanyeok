@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { OG_FONT_FAMILY, OG_FONT_FILE } from "@/lib/copy/og-text";
 import { ogFonts } from "./og-font";
-import { OG_FONT_FAMILY, OG_FONT_FILE } from "./og-text";
 
 const fonts = resolve(import.meta.dirname, "../../../public/fonts");
 

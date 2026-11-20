@@ -11,7 +11,7 @@ import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
 import app.banbanyeok.server.recommendation.RecommendationService
-import app.banbanyeok.server.recommendation.TimeBasis
+import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.Decision
 import app.banbanyeok.server.room.ParticipantView
 import app.banbanyeok.server.room.RoomError
@@ -212,7 +212,8 @@ class ShareHttpTest :
                         RecommendationService(
                             DevArtifacts.directory.travel,
                             DevArtifacts.directory,
-                        ).recommend(request)
+                        ).evaluate(request)
+                            .recommendation
                     coEvery { services.results.result(ROOM_ID, null, null, null) } returns
                         RoomResult(recommendation, people, ShareVersion(7))
                     val response = client.json(HttpMethod.Get, "/v1/rooms/$ROOM_ID/result")

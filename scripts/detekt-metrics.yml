@@ -1,9 +1,12 @@
 # 아키텍처 지표 전용 detekt 덧씌움 설정. detekt-metrics.init.gradle이 config/detekt/detekt.yml 뒤에 겹친다(CI 설정에는 영향 없음).
-# 순환 복잡도 10 이상, 인지 복잡도 15 이상 함수를 보고서에 올리려고 임계값을 한 칸 낮춘다. 기준을 바꾸면 이슈의 숫자 기준도 바뀐다.
+# 순환 복잡도 10 이상, 인지 복잡도 15 이상 함수를 보고서에 올리려고 임계값을 한 칸 낮춘다.
+# 순환 복잡도는 단순 when 분기(ignoreSimpleWhenEntries: 분기 본문이 식 하나인 when 항목)를 세지 않는다. 분기가 많아도 단순한 when은 리팩터링 후보가 아니기 때문이다.
+# 이 설정을 바꾸면 이슈의 숫자 기준(baseline)도 바뀐다. 바꿀 때는 scripts/architecture-metrics.sh의 DEFS 버전도 올려 그 지표의 직전·최초 기준을 새로 시작한다.
 complexity:
   CyclomaticComplexMethod:
     active: true
     allowedComplexity: 9
+    ignoreSimpleWhenEntries: true
   CognitiveComplexMethod:
     active: true
     allowedComplexity: 14

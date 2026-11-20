@@ -2,7 +2,7 @@ import { CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Room } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
-import { meetingWhenText } from "@/lib/room/dates";
+import { meetingWhenText } from "@/lib/when/dates";
 
 /**
  * 방에서 정한 만날 역: 역, 정한 사람, 약속. 참여한 사람에게는 풀기 버튼을 둔다(풀면 모두에게서 사라진다).

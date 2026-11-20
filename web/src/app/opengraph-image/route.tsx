@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { SiteCard } from "@/components/og/site-card";
+import { OG_HEIGHT, OG_WIDTH } from "@/lib/copy/og-text";
 import { ogFonts } from "@/lib/seo/og-font";
-import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
 
 // 사이트 기본 미리보기(홈, 그리고 자기 이미지가 없는 페이지). 빌드 때 한 번 만든다.
 // 파일 규약(opengraph-image.tsx)이 아니라 라우트로 둔 이유: 규약은 og:image 주소에 이 파일 내용의 해시만 붙여서,
