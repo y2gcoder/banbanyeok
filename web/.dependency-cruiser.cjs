@@ -4,6 +4,9 @@
  * `scripts/check-package-cycles.ts`가 따로 검사한다(lib/·components/ 디렉터리를 한 점으로 묶은 그래프에 순환 0).
  * 실행: pnpm lint (depcruise src + 그 스크립트).
  *
+ * 화면 디렉터리(components/home·room·result)는 서로를 import하지 않는다(`screens-are-independent`). 같이 쓰는 조각은 common·ui·when·share나
+ * result/parts에 둔다(둘 다 화면이 아니라 조각 묶음이라 어느 화면이든 쓸 수 있다).
+ *
  * lib/ 안의 방향(아래가 잎): seo → room → share-card → result → {share, link} → when → api → proxy, 모두가 copy(잎)를 본다.
  */
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -22,6 +25,25 @@ module.exports = {
       severity: "error",
       from: { path: "^src/components/" },
       to: { path: "^src/app/" },
+    },
+    {
+      name: "screens-are-independent",
+      comment:
+        "화면 디렉터리(home·room·result)는 서로의 파일을 import하지 않는다. 같이 쓰는 조각은 components/common·ui·when·share 또는 result/parts로 옮긴다(허용 목록 밖은 모두 금지).",
+      severity: "error",
+      from: { path: "^src/components/(home|room|result)/" },
+      to: {
+        path: "^src/components/(home|room|result)/",
+        pathNot: ["^src/components/$1/", "^src/components/result/parts/"],
+      },
+    },
+    {
+      name: "result-parts-below-result",
+      comment:
+        "result/parts(결과·방이 같이 쓰는 조각)는 result의 화면 파일을 모른다. 조각이 화면을 import하면 방 화면이 결과 화면에 묶이던 옛 모양으로 돌아간다.",
+      severity: "error",
+      from: { path: "^src/components/result/parts/" },
+      to: { path: "^src/components/result/", pathNot: "^src/components/result/parts/" },
     },
     {
       name: "api-client-only-in-lib-api",

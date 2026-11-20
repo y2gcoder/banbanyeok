@@ -2,7 +2,7 @@
 
 import { PencilIcon } from "lucide-react";
 import { personColor } from "@/components/common/person-color";
-import { StationField } from "@/components/home/station-field";
+import { StationField } from "@/components/common/station-field";
 import { MAX_NICKNAME_CODE_POINTS } from "@/lib/link/codec";
 import type { ParticipantFormValue } from "@/lib/room/input";
 
