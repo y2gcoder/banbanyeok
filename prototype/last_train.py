@@ -36,6 +36,12 @@ def seconds(value):
     return ((h + 24 if h < 3 else h) * 60 + m) * 60 + s
 
 
+def official_seconds(value):
+    """A time of the operator's train-coded file. "00:00:00" is its mark for "no value" (the arrival at a station an
+    express only passes, the arrival of a first stop); midnight itself is written "24:00:00"."""
+    return -1 if str(value).strip() == "00:00:00" else seconds(value)
+
+
 def key_of(arrival, departure):
     return departure if departure >= 0 else arrival
 
@@ -523,7 +529,7 @@ def cache_rows(problem, raw, registry, day):
                     code = terminal(r[3], r[1])
                     if code is not None:
                         second.append((r[1], "|".join((r[1], r[4], r[5], r[7], r[10], r[11])), code,
-                                       seconds(r[8]), seconds(r[9]), terminal(r[11], r[1])))
+                                       official_seconds(r[8]), official_seconds(r[9]), terminal(r[11], r[1])))
     return {"unnumbered": unnumbered, "numbered": numbered, "second": second}
 
 

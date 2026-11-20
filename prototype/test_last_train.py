@@ -135,6 +135,34 @@ class ToyNetworkTests(unittest.TestCase):
         self.assertEqual((last_train.MARGIN_DIRECT, 22 * 60 + 56, 'x06'), cells['holiday']['t00', 'x01'])
         self.assertEqual((last_train.MARGIN_DIRECT, 23 * 60 + 37, 'x02'), cells['holiday']['x02', 'x01'])
 
+    def test_the_operators_file_marks_a_passed_station_with_a_zero_time(self):
+        # 4차 검토: 공식 파일은 급행이 지나가기만 하는 역의 도착을 "00:00:00"으로 적는다(자정은 "24:00:00"). 자정으로 읽으면
+        # 지나가는 역이 몇 시간 뒤에 "도착"하는 정차역이 된다.
+        self.assertEqual(-1, last_train.official_seconds('00:00:00'))
+        self.assertEqual(-1, last_train.official_seconds(''))
+        self.assertEqual(24 * 3600, last_train.official_seconds('24:00:00'))
+        self.assertEqual(24 * 3600 + 330, last_train.official_seconds('00:05:30'))
+        self.assertEqual(21 * 3600 + 450, last_train.official_seconds('21:07:30'))
+        # 1호선 평일 급행 K1949의 실제 줄(청량리 → 천안). 독산·직산은 통과한다.
+        rows = [('청량리', '', '19:15:00'), ('독산', '00:00:00', '20:01:30'), ('수원', '20:27:00', '20:27:30'),
+                ('성환', '21:03:30', '21:04:00'), ('직산', '00:00:00', '21:07:30'), ('두정', '21:11:00', '21:11:30'),
+                ('천안', '21:15:30', '')]
+        stops = [('1', 'K1949', name, last_train.official_seconds(a), last_train.official_seconds(d), '천안')
+                 for name, a, d in rows]
+        names = [name for name, _a, _d in rows]
+        problem = last_train.Problem({
+            'homes': sorted(names), 'meetings': ['수원', '직산'], 'stations': {},
+            'families': {'1': [[a, b] for a, b in zip(names, names[1:])]},
+            'hops': [], 'walks': [], 'stationWalks': {}, 'exact': {}})
+        cells = last_train.day_table(problem, 'weekday', {'unnumbered': {}, 'numbered': [], 'second': stops})
+        # 수원 20:27:30에서 3분을 뺀 20:24: 정차하는 성환·두정·천안에만 내린다. 통과하는 직산에서는 내리지도 타지도 못한다.
+        self.assertEqual({('성환', '수원'), ('두정', '수원'), ('천안', '수원')}, set(cells))
+        self.assertEqual({(last_train.MARGIN_DIRECT, 20 * 60 + 24, '천안')}, set(cells.values()))
+        # 표식을 자정으로 읽으면(고치기 전) 직산이 24:00 도착 정차역이 되어 수원→직산 20:24가 나왔다.
+        wrong = [stop[:3] + (last_train.seconds(a), last_train.seconds(d)) + stop[5:] for stop, (_n, a, d) in zip(stops, rows)]
+        late = last_train.day_table(problem, 'weekday', {'unnumbered': {}, 'numbered': [], 'second': wrong})
+        self.assertIn(('직산', '수원'), late)
+
     def test_fixture_lists_rows_for_the_days_it_covers(self):
         data = json.loads((FIXTURES / 'toy.json').read_text(encoding='utf-8'))
         self.assertEqual({'weekday', 'holiday'}, set(data['rows']))
