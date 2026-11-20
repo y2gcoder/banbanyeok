@@ -27,7 +27,7 @@ export const PAIR_OG_IMAGE_VERSION = "5b206790";
 /**
  * 공유 링크 그림(`app/s/og/route.tsx`, "A 숫자판")의 버전. 이 그림은 결과마다 다르지만 **디자인(문구·색·크기·글꼴·그리는 코드·문장 규칙)이 같으면**
  * 같은 결과는 같은 그림이다. 그래서 `/s/og` 주소에 `iv=`로 붙여(`sharedImagePath`) 디자인이 바뀔 때만 주소가 바뀌게 한다.
- * 입력이 바뀌면 `og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
+ * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
  * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 이 값을 쓰지 않는다.
  */
 export const SHARED_OG_IMAGE_VERSION = "6e456756";

@@ -4,8 +4,6 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ScoreboardCard } from "@/components/og/scoreboard-card";
-import { SHARED_CASES } from "@/components/og/shared-card.cases";
 import { toResultView } from "@/lib/result/view-model";
 import {
   OG_COLORS,
@@ -18,8 +16,10 @@ import {
   SHARED_OG_IMAGE_VERSION,
   SITE_OG_IMAGE_PATH,
   SITE_OG_IMAGE_VERSION,
-} from "./og-text";
-import { scoreboardCardData } from "./scoreboard-card-data";
+} from "@/lib/seo/og-text";
+import { scoreboardCardData } from "@/lib/seo/scoreboard-card-data";
+import { ScoreboardCard } from "./scoreboard-card";
+import { SHARED_CASES } from "./shared-card.cases";
 
 const ROOT = process.cwd();
 
