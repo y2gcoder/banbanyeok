@@ -14,6 +14,10 @@ export async function GET(request: Request) {
     if (!decoded.ok) return null;
     const view = await loadSharedView(decoded.state, signal);
     const data = view ? scoreboardCardData(view, decoded.state) : null;
-    return data ? <ScoreboardCard data={data} /> : null;
+    if (!view || !data) return null;
+    // 막 뜬 서버가 막차 표를 아직 읽는 중이면 막차 줄이 빠진 그림이다: 같은 주소에 곧 완전한 그림이 오므로 짧게 캐시한다.
+    // 옛 링크(v=1, 구분을 고른 적 없음)는 원래 막차 줄을 그리지 않으므로 기다릴 것이 없다.
+    const provisional = view.lastTrainPending && decoded.state.slotDefaulted !== true;
+    return { element: <ScoreboardCard data={data} />, provisional };
   });
 }

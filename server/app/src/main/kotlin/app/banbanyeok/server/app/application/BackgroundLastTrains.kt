@@ -24,6 +24,9 @@ class BackgroundLastTrains(
 ) : LastTrainSource {
     private val failureLogged = AtomicBoolean(false)
 
+    /** 데이터에 막차 표가 있고(`asOf`) 읽기가 아직 끝나지 않았다(시작 전 포함). 실패로 끝났으면 false다(기다려도 붙지 않는다). */
+    override fun pending(): Boolean = asOf != null && !loading.isCompleted
+
     override fun current(): LastTrainData? {
         if (asOf == null || !loading.isCompleted) return null
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

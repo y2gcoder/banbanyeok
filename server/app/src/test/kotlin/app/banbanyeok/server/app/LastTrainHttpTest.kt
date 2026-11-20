@@ -307,8 +307,45 @@ class LastTrainHttpTest :
                         val json = response.body()
                         ("lastTrainBasis" in json) shouldBe false
                         json.cards().forEach { ("lastTrains" in it) shouldBe false }
+                        // 읽는 중이면 그렇다고 알리고(공유 그림이 오래 캐시하지 않게), 실패는 기다려도 붙지 않으므로 알리지 않는다.
+                        json["lastTrainPending"] shouldBe (if (source === pending) JsonPrimitive(true) else null)
                         WithoutLastTrains.expect(json, listOf(gangnam, gwanggyo), "weekday-night", "fair")
                     }
+                }
+            }
+
+            it("says the table is still loading only while it is, and only when waiting would add last trains") {
+                val loading = CompletableDeferred<app.banbanyeok.schema.LastTrainTable?>()
+                val source = BackgroundLastTrains(loading, LocalDate.parse(DevArtifacts.lastTrainAsOf))
+                val noTable = BackgroundLastTrains(CompletableDeferred(), null)
+                testApplication {
+                    application { apiModule(testConfig(), api(source)) }
+                    val request = body(listOf(gangnam, gwanggyo), "weekday-night")
+                    client.json(HttpMethod.Post, "/v1/recommend", request).body()["lastTrainPending"] shouldBe
+                        JsonPrimitive(true)
+                    // 옛 링크(구분 없음)도 표가 붙을 요청이라 같이 알린다(그림 쪽이 쓸지 정한다).
+                    client
+                        .json(HttpMethod.Post, "/v1/recommend", body(listOf(gangnam, gwanggyo), null))
+                        .body()["lastTrainPending"] shouldBe JsonPrimitive(true)
+
+                    loading.complete(DevArtifacts.lastTrains.current()!!.table)
+                    val ready = client.json(HttpMethod.Post, "/v1/recommend", request)
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", ready)
+                    val json = ready.body()
+                    ("lastTrainPending" in json) shouldBe false
+                    ("lastTrainBasis" in json) shouldBe true
+                }
+                // 데이터에 막차 표가 없으면(세대 1·2) 기다려도 붙지 않는다.
+                testApplication {
+                    application { apiModule(testConfig(), api(noTable)) }
+                    val json =
+                        client
+                            .json(
+                                HttpMethod.Post,
+                                "/v1/recommend",
+                                body(listOf(gangnam, gwanggyo), "weekday-night"),
+                            ).body()
+                    ("lastTrainPending" in json) shouldBe false
                 }
             }
         }
@@ -329,7 +366,7 @@ private object WithoutLastTrains {
         }
         val stripped =
             JsonObject(
-                (withLastTrains - "lastTrainBasis") +
+                (withLastTrains - "lastTrainBasis" - "lastTrainPending") +
                     (
                         "candidates" to
                             JsonArray(withLastTrains.cards().map { JsonObject(it - "lastTrains") })

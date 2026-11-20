@@ -66,6 +66,11 @@ export type ResultView = {
   timeBasis: RecommendResult["timeBasis"];
   /** "지도 한가운데였다면?" 비교. 보여 줄 조건을 모두 만족할 때만 있다(`toMapMiddleView`). 옛 서버·방 결과에는 없다. */
   mapMiddle: MapMiddleView | null;
+  /**
+   * 서버가 막 떠서 막차 표를 아직 읽는 중이라 막차가 빠졌다(`lastTrainPending`). 잠시 뒤 같은 요청에는 막차가 붙을 수 있으므로,
+   * 이 값으로 만든 공유 그림은 오래 캐시하지 않는다(`/s/og`).
+   */
+  lastTrainPending: boolean;
 };
 
 function place(code: string | null, name: string | null) {
@@ -155,5 +160,6 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
     mapMiddle: first
       ? toMapMiddleView(result, { stationCode: first.stationCode, minutes: first.aggregate.minutes })
       : null,
+    lastTrainPending: result.lastTrainPending === true,
   };
 }

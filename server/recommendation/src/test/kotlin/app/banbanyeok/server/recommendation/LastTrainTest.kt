@@ -153,6 +153,33 @@ class LastTrainTest :
                 val result = service(source = { null }).evaluate(request()).recommendation
                 result.lastTrainBasis.shouldBeNull()
                 result.candidates.forEach { it.lastTrains.shouldBeNull() }
+                result.lastTrainPending shouldBe false
+            }
+
+            it("says the table is still loading only when waiting would add last trains to this request") {
+                val loading =
+                    object : LastTrainSource {
+                        override fun current(): LastTrainData? = null
+
+                        override fun pending() = true
+                    }
+                val pending = service(source = loading).evaluate(request()).recommendation
+                pending.lastTrainPending shouldBe true
+                pending.lastTrainBasis.shouldBeNull()
+                // 다른 구분으로 대신 계산한 응답에는 표가 와도 막차가 붙지 않는다.
+                service(source = loading, slots = emptyMap())
+                    .evaluate(request(slot = TimeSlot(DayType.HOLIDAY, TimeBand.NIGHT)))
+                    .recommendation.lastTrainPending shouldBe false
+                // 읽기가 끝나 표가 있으면 알리지 않는다(pending을 먼저 보고 current를 읽어도 표가 이긴다).
+                val finished =
+                    object : LastTrainSource {
+                        override fun current() = LastTrainData(sampleLastTrains, asOf)
+
+                        override fun pending() = true
+                    }
+                val ready = service(source = finished).evaluate(request()).recommendation
+                ready.lastTrainPending shouldBe false
+                ready.lastTrainBasis.shouldNotBeNull()
             }
         }
 

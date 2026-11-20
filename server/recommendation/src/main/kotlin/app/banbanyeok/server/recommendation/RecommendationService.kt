@@ -46,8 +46,12 @@ public class RecommendationService(
                 request.viewerId,
             )
         // 막차 표는 여기서 한 번 읽는다. 순위·시간·이유에는 쓰이지 않고, 순위를 다 정한 뒤 카드에 붙는다.
-        val attached = lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
-        val recommendation = ranking.rank(request, matrix, timeBasis, attached, travelTimes.dataVersion)
+        val lookup = lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
+        val attached = lookup.attached
+        val recommendation =
+            ranking
+                .rank(request, matrix, timeBasis, attached, travelTimes.dataVersion)
+                .copy(lastTrainPending = lookup.pending)
         return Evaluation(request, matrix, attached, recommendation, middlePicker, ranking::nameOf)
     }
 
