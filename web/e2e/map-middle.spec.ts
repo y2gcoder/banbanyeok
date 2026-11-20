@@ -66,10 +66,12 @@ test("받은 링크(/s): 옛 링크(v=1)도 열리고, 미리보기 설명에 �
   expect(png.headers()["content-type"]).toBe("image/png");
   await expect(page.getByRole("table")).toBeVisible();
 
-  // 옛 링크(v=1: 구분 없음 = 평일 낮)
+  // 옛 링크(v=1: 구분을 고른 적 없음 = 평일 낮으로 계산). 그림 주소도 v=1 그대로다(`t`를 붙여 구분을 고른 요청으로 바꾸지 않는다).
   await page.goto(`/s?v=1&o=${code("수유")}.${code("홍대입구")}&m=f`);
   await expect(page.getByRole("table")).toBeVisible();
-  expect(await meta(page, 'meta[property="og:image"]')).toContain("/s/og?v=2&o=");
+  const legacyImage = (await meta(page, 'meta[property="og:image"]')) ?? "";
+  expect(legacyImage).toMatch(new RegExp(`^${baseURL}/s/og\\?v=1&o=[^&]+&m=f&dv=[^&]+&iv=[0-9a-f]{8}$`));
+  expect((await page.request.get(legacyImage)).headers()["content-type"]).toBe("image/png");
 
   // 비교가 없는 링크: 설명은 그대로이고 표가 없다.
   await page.goto(`/s?${WITHOUT_MIDDLE}`);
