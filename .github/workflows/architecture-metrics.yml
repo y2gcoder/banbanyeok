@@ -1,0 +1,73 @@
+# 2주마다 응집도·결합도 지표를 모아 이슈 "아키텍처 지표 (자동)"(라벨 architecture)의 본문을 갱신한다. LLM 없이 숫자만 센다.
+# 코디네이터가 이 이슈를 보고 리팩터링 후보를 따로 이슈로 만든다. 지표 정의는 scripts/architecture-metrics.sh, 이슈 읽기·쓰기는
+# scripts/architecture-metrics-issue.sh에 있다(로컬에서도 같은 스크립트가 돈다).
+# 지표 하나가 실패하면 그 칸에 "측정 실패"를 쓰고 나머지는 계속한다. 워크플로 자체가 실패하면 main의 Actions 결과로
+# GitHub Slack 앱 알림이 간다(별도 웹훅 없음). 이슈 본문은 댓글로 쌓지 않고 덮어쓴다.
+name: architecture-metrics
+
+on:
+  schedule:
+    # GitHub cron에는 "격주"가 없어서 매주 월요일에 깨우고, gate 잡이 ISO 주 번호가 짝수인 주에만 진행시킨다.
+    - cron: '0 0 * * 1'   # 월요일 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: architecture-metrics
+  cancel-in-progress: false
+
+jobs:
+  # ISO 주 번호가 짝수인 주에만 측정한다. 주 번호가 53까지 있는 해에는 53주와 다음 해 1주가 모두 홀수라 그 사이만 3주가 비는데(2026-12-21 다음은 2027-01-11),
+  # 그 한 번의 간격은 감수한다. 수동 실행(workflow_dispatch)은 주 번호와 상관없이 언제나 진행한다.
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    outputs:
+      run: ${{ steps.week.outputs.run }}
+    steps:
+      - id: week
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          week="$(date -u +%V)"
+          if [ "$EVENT" = "workflow_dispatch" ] || [ $((10#$week % 2)) -eq 0 ]; then run=true; else run=false; fi
+          echo "event=$EVENT ISO주=$week 진행=$run"
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+  metrics:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write   # 이슈·라벨을 만들고 본문을 갱신한다
+    steps:
+      # 핫스팟이 최근 30일의 git 로그를 읽는다.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # JDK·node·pnpm 버전은 mise.toml이 단일 출처다(로컬과 CI가 같은 버전).
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: java node pnpm
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-read-only: true
+      - name: 지난 이슈 본문 읽기
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/architecture-metrics-issue.sh fetch build/previous-body.md
+      # 실패한 지표는 본문에 "측정 실패"로 남고 이 단계는 성공으로 끝난다.
+      - name: 지표 측정
+        run: bash scripts/architecture-metrics.sh --previous build/previous-body.md --out build/architecture-metrics
+      - name: 이슈 갱신
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/architecture-metrics-issue.sh publish build/architecture-metrics/body.md
+      - name: 실행 요약에 본문 남기기
+        run: cat build/architecture-metrics/body.md >> "$GITHUB_STEP_SUMMARY"

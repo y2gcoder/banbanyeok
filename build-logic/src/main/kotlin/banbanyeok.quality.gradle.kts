@@ -16,7 +16,15 @@ ktlint {
 }
 detekt {
     toolVersion.set(qualityLibs.findVersion("detekt").get().requiredVersion)
-    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    // 아키텍처 지표(scripts/architecture-metrics.sh)만 -PdetektMetrics=true로 낮춘 기준을 겹치고 실패를 무시한다.
+    val metrics = providers.gradleProperty("detektMetrics").getOrElse("false").toBoolean()
+    config.setFrom(
+        listOfNotNull(
+            rootProject.file("config/detekt/detekt.yml"),
+            rootProject.file("config/detekt/metrics.yml").takeIf { metrics },
+        ),
+    )
+    ignoreFailures.set(metrics)
     buildUponDefaultConfig.set(true)
     debug.set(providers.gradleProperty("detektDebug").map { it.toBoolean() }.orElse(false))
     basePath.set(rootProject.layout.projectDirectory)
