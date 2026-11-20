@@ -32,6 +32,9 @@ mkdir -p "$OUT"
 WINDOW="14.days"
 KEEP_HISTORY=3
 BASELINE_RUNS=2
+# 지표 정의 버전. 측정값에 "def"로 함께 저장하고(없으면 1), 정의를 바꾸면 여기 숫자를 올린다. 버전이 다른 지난 값은 직전·최초(기준)로
+# 쓰지 않으므로 그 지표의 기준이 이번 회차부터 새로 시작한다. 2: kotlin_complex_functions가 단순 when 분기를 뺀다(ignoreSimpleWhenEntries).
+DEFS='{"kotlin_complex_functions":2}'
 
 # 제품 코드 파일. 테스트·e2e·생성 파일·목·*.cases.ts와 처리방침 본문(코드가 아니라 글)은 뺀다.
 PRODUCT_EXT='\.(kt|ts|tsx)$'
@@ -67,9 +70,10 @@ annotate_hotspot() {
                streak: ($i < 5 and top5($snaps[0]; $it.file) and top5($snaps[1]; $it.file))}))'
 }
 
-# kotlin_complex_functions: 임계값을 낮춘 detekt 설정(순환 9, 인지 14)을 init 스크립트로 주입해 ./gradlew detekt를 돌린다.
+# kotlin_complex_functions: 임계값을 낮춘 detekt 설정(순환 9, 인지 14, 단순 when 제외)을 init 스크립트로 주입해 ./gradlew detekt를 돌린다.
 # 저장소 설정은 고치지 않는다. main 소스의 SARIF에서 순환 복잡도 10 이상, 인지 복잡도 15 이상 함수를 세고,
 # 같은 실행의 main 보고서(markdown)에서 모듈별 mcc per 1,000 lloc을 낸다.
+# 순환 복잡도는 단순 when 분기를 세지 않는다(scripts/detekt-metrics.yml). 이 정의를 바꾸면 DEFS의 버전을 올린다.
 measure_kotlin_complex_functions() {
   local reports md mod mcc lloc
   find server shared pipeline -path '*/build/reports/detekt/main*' \( -name '*.sarif' -o -name '*.md' \) -delete 2> /dev/null
@@ -87,7 +91,7 @@ measure_kotlin_complex_functions() {
   done | jq -Rn '[inputs | split("\t") | {module: .[0], mcc: (.[1] | tonumber), lloc: (.[2] | tonumber)}
                  | .mccPerKloc = (if .lloc > 0 then (.mcc * 1000 / .lloc | round) else 0 end)]' > "$OUT/kotlin-modules.json"
   # shellcheck disable=SC2086
-  jq -s --slurpfile mods "$OUT/kotlin-modules.json" '
+  jq -s --argjson defs "$DEFS" --slurpfile mods "$OUT/kotlin-modules.json" '
     def num: (capture("\\(complexity: (?<v>[0-9]+)\\)") | .v | tonumber) // 0;
     [.[].runs[0].results[]
       | select(.ruleId == "detekt.complexity.CyclomaticComplexMethod" or .ruleId == "detekt.complexity.CognitiveComplexMethod")
@@ -97,7 +101,8 @@ measure_kotlin_complex_functions() {
          line: .locations[0].physicalLocation.region.startLine,
          fn: (.message.text | capture("function (?<n>[^ ]+)") | .n),
          value: (.message.text | num)}] as $all
-    | {cyclomatic10: ($all | map(select(.rule == "CyclomaticComplexMethod")) | length),
+    | {def: $defs.kotlin_complex_functions,
+       cyclomatic10: ($all | map(select(.rule == "CyclomaticComplexMethod")) | length),
        cognitive15: ($all | map(select(.rule == "CognitiveComplexMethod")) | length),
        functions: ($all | group_by([.file, .fn])
          | map({fn: .[0].fn, file: .[0].file, line: .[0].line,
@@ -392,13 +397,17 @@ main() {
   collecting=false
   [ "$runs" -le "$BASELINE_RUNS" ] && collecting=true
   # 지표별로 가장 최근에 성공한 지난 값. 한 번 실패해도 다음 실행이 그 전 값과 비교할 수 있다.
-  printf '%s' "$snaps" | jq -c '
+  # 정의 버전이 지금과 다른 값(DEFS)은 건너뛴다.
+  printf '%s' "$snaps" | jq -c --argjson defs "$DEFS" '
+    def cur($k): . != null and ((if type == "object" then .def else null end) // 1) == ($defs[$k] // 1);
     . as $s | reduce ("hotspot_top10", "kotlin_complex_functions", "web_package_cycles", "server_feature_surface", "change_breadth") as $k
-      ({}; .[$k] = ([$s[] | .[$k] | select(. != null)] | first // null))' > "$OUT/prev-sections.json"
+      ({}; .[$k] = ([$s[] | .[$k] | select(cur($k))] | first // null))' > "$OUT/prev-sections.json"
   # 최초(기준) 값은 한 번 정해지면 바뀌지 않는다. 최초에 실패한 지표는 처음 성공한 회차의 값이 기준이 된다.
-  jq -c -n --argjson state "$state" --slurpfile cur "$OUT/snapshot.json" '
+  # 정의 버전이 바뀐 지표는 지난 기준을 버리고 이번 값으로 다시 시작한다.
+  jq -c -n --argjson state "$state" --argjson defs "$DEFS" --slurpfile cur "$OUT/snapshot.json" '
+    def cur($k): . != null and ((if type == "object" then .def else null end) // 1) == ($defs[$k] // 1);
     reduce ("hotspot_top10", "kotlin_complex_functions", "web_package_cycles", "server_feature_surface", "change_breadth") as $k
-      ({}; .[$k] = ($state.baseline[$k] // $cur[0][$k]))' > "$OUT/baseline.json"
+      ({}; .[$k] = (($state.baseline[$k] | select(cur($k))) // $cur[0][$k]))' > "$OUT/baseline.json"
 
   jq -c -n --slurpfile cur "$OUT/snapshot.json" --slurpfile prev "$OUT/prev-sections.json" '{cur: $cur[0], prev: $prev[0]}' \
     | jq -r "$CHANGES_JQ" > "$OUT/changes.md"
@@ -428,6 +437,11 @@ main() {
     else
       echo "큰 변화 없음."
     fi
+    # 정의가 바뀐 지표(지난 값에 남은 정의 버전이 지금과 다름)는 이번 회차부터 직전·기준을 새로 시작했다고 알린다.
+    if [ "$(printf '%s' "$state" | jq -r --argjson defs "$DEFS" '[.baseline.kotlin_complex_functions // empty | select((.def // 1) != $defs.kotlin_complex_functions)] | length')" != 0 ]; then
+      echo
+      echo "> Kotlin 복잡 함수의 정의가 바뀌어(단순 when 제외) 이번 회차부터 직전·최초(기준)를 새로 시작합니다. 지난 값과는 비교하지 않습니다."
+    fi
     echo
     echo "## 지표 요약"
     echo
@@ -441,7 +455,7 @@ main() {
     echo
     echo "## 2. Kotlin 복잡 함수 (\`kotlin_complex_functions\`)"
     echo
-    echo "server·shared·pipeline의 main 소스만 본다. 저장소 설정(\`config/detekt/detekt.yml\`)은 그대로 두고, 임계값을 낮춘 설정(순환 9, 인지 14: \`scripts/detekt-metrics.yml\`)을 init 스크립트(\`scripts/detekt-metrics.init.gradle\`)로 주입해 \`./gradlew detekt\`를 돌린다. mcc는 같은 실행의 detekt main 보고서 값이다."
+    echo "server·shared·pipeline의 main 소스만 본다. 저장소 설정(\`config/detekt/detekt.yml\`)은 그대로 두고, 임계값을 낮춘 설정(순환 9, 인지 14, 단순 when 제외: \`scripts/detekt-metrics.yml\`)을 init 스크립트(\`scripts/detekt-metrics.init.gradle\`)로 주입해 \`./gradlew detekt\`를 돌린다. mcc는 같은 실행의 detekt main 보고서 값이다."
     echo
     render_kotlin
     echo
