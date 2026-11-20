@@ -1,23 +1,35 @@
 package app.banbanyeok.architecture
 
 import com.lemonappdev.konsist.api.Konsist
-import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import java.io.File
+
+/** 디렉터리 아래 소스 파일을 [SourceUnit]으로. 규칙은 import뿐 아니라 완전 수식 이름·별칭까지 같은 방식으로 읽는다. */
+private fun sources(dir: String): List<SourceUnit> = Konsist.scopeFromDirectory(dir).files.map { it.source() }
+
+/** 금지된 참조를 "파일 -> 참조"로 모은다. 비어야 통과다. */
+private fun List<SourceUnit>.referencesMatching(
+    all: Boolean = true,
+    forbidden: (String) -> Boolean,
+): List<String> =
+    flatMap { unit ->
+        (if (all) unit.allReferences else unit.references).filter(forbidden).map { "${unit.relativePath} -> $it" }
+    }
+
+/** 참조의 패키지(처음 나오는 대문자 이름 앞까지). */
+private fun packageOf(reference: String): String =
+    reference.split('.').takeWhile { it.firstOrNull()?.isUpperCase() != true }.joinToString(".")
 
 class ArchitectureTest :
     DescribeSpec({
         describe("module boundaries") {
             it("shared sources do not import platform, persistence or server APIs") {
-                Konsist
-                    .scopeFromDirectory("shared")
-                    .files
-                    .filter { it.path.contains("Main/") }
-                    .flatMap { it.imports }
-                    .filter {
+                sources("shared")
+                    .filter { it.relativePath.contains("Main/") }
+                    .referencesMatching {
                         listOf("java.", "javax.", "io.ktor.", "org.jetbrains.exposed.", "kotlin.io.", "kotlinx.io.")
-                            .any { prefix -> it.name.startsWith(prefix) }
+                            .any { prefix -> it.startsWith(prefix) }
                     }.shouldBeEmpty()
             }
             it("pipeline only depends on schema, core and app-logic among shared modules") {
@@ -26,18 +38,15 @@ class ArchitectureTest :
                         .findAll(File("pipeline/build.gradle.kts").readText())
                         .map { it.groupValues[1] }
                         .toList()
-                Konsist
-                    .scopeFromDirectory("pipeline/src")
-                    .files
-                    .flatMap { it.imports }
-                    .filter { it.name.startsWith("app.banbanyeok.") }
-                    .filterNot {
-                        listOf(
-                            "app.banbanyeok.pipeline.",
-                            "app.banbanyeok.schema.",
-                            "app.banbanyeok.core.",
-                            "app.banbanyeok.applogic.",
-                        ).any { prefix -> it.name.startsWith(prefix) }
+                sources("pipeline/src")
+                    .referencesMatching { reference ->
+                        reference.startsWith("app.banbanyeok.") &&
+                            listOf(
+                                "app.banbanyeok.pipeline.",
+                                "app.banbanyeok.schema.",
+                                "app.banbanyeok.core.",
+                                "app.banbanyeok.applogic.",
+                            ).none { prefix -> reference.startsWith(prefix) }
                     }.shouldBeEmpty()
                 dependencies
                     .filterNot {
@@ -58,13 +67,10 @@ class ArchitectureTest :
                 features
                     .filter { File(it, "src").exists() }
                     .flatMap { module ->
-                        Konsist
-                            .scopeFromDirectory("server/${module.name}/src")
-                            .files
-                            .flatMap { it.imports }
-                            .filter { imported ->
+                        sources("server/${module.name}/src")
+                            .referencesMatching { imported ->
                                 features.any { other ->
-                                    other != module && imported.name.startsWith("app.banbanyeok.server.${other.name}.")
+                                    other != module && imported.startsWith("app.banbanyeok.server.${other.name}.")
                                 }
                             }
                     }.shouldBeEmpty()
@@ -77,94 +83,74 @@ class ArchitectureTest :
                     }.shouldBeEmpty()
             }
             it("server feature modules do not depend on the app module or know the HTTP framework") {
-                val featureImports =
-                    listOf("room", "recommendation", "artifact").flatMap { module ->
-                        Konsist
-                            .scopeFromDirectory("server/$module/src/main")
-                            .files
-                            .flatMap { it.imports }
-                    }
-                featureImports
-                    .filter { it.name.startsWith("app.banbanyeok.server.app.") || it.name.startsWith("io.ktor.") }
+                listOf("room", "recommendation", "artifact")
+                    .flatMap { module -> sources("server/$module/src/main") }
+                    .referencesMatching { it.startsWith("app.banbanyeok.server.app.") || it.startsWith("io.ktor.") }
                     .shouldBeEmpty()
             }
             it("only the room exposed package knows Exposed and only the GCS store knows the GCS client") {
-                val serverMain = Konsist.scopeFromDirectory("server").files.filter { it.path.contains("/src/main/") }
+                val serverMain = sources("server").filter { it.relativePath.contains("/src/main/") }
                 serverMain
-                    .filterNot { it.path.contains("/server/room/src/main/") && it.path.contains("/exposed/") }
-                    .flatMap { it.imports }
-                    .filter { it.name.startsWith("org.jetbrains.exposed.") }
+                    .filterNot {
+                        it.relativePath.startsWith("server/room/src/main/") &&
+                            it.relativePath.contains("/exposed/")
+                    }.referencesMatching { it.startsWith("org.jetbrains.exposed.") }
                     .shouldBeEmpty()
                 serverMain
-                    .filterNot { it.path.endsWith("/GcsArtifactStore.kt") }
-                    .flatMap { it.imports }
-                    .filter { it.name.startsWith("com.google.cloud.") }
+                    .filterNot { it.relativePath == GCS_STORE }
+                    .referencesMatching { it.startsWith("com.google.cloud.") }
                     .shouldBeEmpty()
             }
             it("server services and application classes do not know Ktor") {
-                Konsist
-                    .scopeFromDirectory("server/app/src/main/kotlin/app/banbanyeok/server/app/application")
-                    .files
-                    .flatMap { it.imports }
-                    .filter { it.name.startsWith("io.ktor.") }
-                    .shouldBeEmpty()
+                sources(APPLICATION).referencesMatching { it.startsWith("io.ktor.") }.shouldBeEmpty()
             }
             it("feature main code and app application code never downcast a port to its implementation") {
                 // 포트로 받은 값을 구현 클래스로 바꾸면 테스트가 다른 구현을 끼웠을 때 그 동작(예: 구분 행렬 기다림)이 조용히 사라진다.
-                val downcast = Regex("""\bas\??\s+(Background|Od|Exposed|Gcs|LocalFile)\w+""")
-                (
-                    FEATURES.map { "server/$it/src/main" } +
-                        "server/app/src/main/kotlin/app/banbanyeok/server/app/application"
-                ).flatMap { Konsist.scopeFromDirectory(it).files }
-                    .filter { downcast.containsMatchIn(it.text) }
-                    .map { it.path }
-                    .shouldBeEmpty()
+                val implementation = Regex("""(Background|Od|Exposed|Gcs|LocalFile)\w+""")
+                (FEATURES.flatMap { sources("server/$it/src/main") } + sources(APPLICATION))
+                    .flatMap { unit ->
+                        unit.castTargets
+                            .filter { implementation.matches(it.substringAfterLast('.')) }
+                            .map { "${unit.relativePath} -> as $it" }
+                    }.shouldBeEmpty()
             }
             it("server tests use the real database instead of H2 or an Exposed mock") {
-                Konsist
-                    .scopeFromDirectory("server")
-                    .files
-                    .flatMap { it.imports }
-                    .filter {
-                        it.name.startsWith("org.h2.") ||
-                            (it.name.contains("exposed") && it.name.startsWith("io.mockk"))
+                sources("server")
+                    .referencesMatching {
+                        it.startsWith("org.h2.") || (it.contains("exposed") && it.startsWith("io.mockk"))
                     }.shouldBeEmpty()
             }
         }
 
         describe("recommendation module structure (#88)") {
-            val main = Konsist.scopeFromDirectory("server/recommendation/src/main").files
+            val main = sources("server/recommendation/src/main")
 
-            fun subPackageOf(path: String): String? =
-                RECOMMENDATION_SUBPACKAGES.firstOrNull { path.contains("/server/recommendation/$it/") }
+            fun subPackageOf(unit: SourceUnit): String? =
+                RECOMMENDATION_SUBPACKAGES.firstOrNull { unit.relativePath.contains("/server/recommendation/$it/") }
 
             it("concept sub-packages are leaves: they never import the root package (only the root composes them)") {
                 main
-                    .filter { subPackageOf(it.path) != null }
-                    .flatMap { file -> file.imports.map { file.path to it.name } }
-                    .filter { (_, name) -> name.substringBeforeLast('.') == RECOMMENDATION }
+                    .filter { subPackageOf(it) != null }
+                    .referencesMatching { packageOf(it) == RECOMMENDATION }
                     .shouldBeEmpty()
             }
             it("concept sub-packages do not import each other, except the shared time package") {
                 main
-                    .mapNotNull { file -> subPackageOf(file.path)?.let { file to it } }
-                    .flatMap { (file, own) ->
-                        file.imports
-                            .map { it.name }
-                            .filter { name ->
-                                RECOMMENDATION_SUBPACKAGES.any { other ->
-                                    other != own && other != "time" && name.startsWith("$RECOMMENDATION.$other.")
-                                }
-                            }.map { file.path to it }
+                    .mapNotNull { unit -> subPackageOf(unit)?.let { unit to it } }
+                    .flatMap { (unit, own) ->
+                        listOf(unit).referencesMatching { name ->
+                            RECOMMENDATION_SUBPACKAGES.any { other ->
+                                other != own && other != "time" && name.startsWith("$RECOMMENDATION.$other.")
+                            }
+                        }
                     }.shouldBeEmpty()
             }
 
-            val appMain = Konsist.scopeFromDirectory("server/app/src/main").files
+            val appMain = sources("server/app/src/main")
 
             it("the app uses only the listed recommendation surface (grow it on purpose, not by accident)") {
                 appMain
-                    .flatMap { it.imports }
-                    .map { it.name }
+                    .flatMap { it.references }
                     .filter { it.startsWith("$RECOMMENDATION.") }
                     .map { it.removePrefix("$RECOMMENDATION.") }
                     .toSet()
@@ -173,56 +159,81 @@ class ArchitectureTest :
             }
             it("the app never measures travel times itself: one evaluate() per request reads the matrix once") {
                 appMain
-                    .filter { Regex("""\.measure\(""").containsMatchIn(it.text) }
-                    .map { it.path }
+                    .filter { Regex("""\.\s*measure\s*\(""").containsMatchIn(it.code) }
+                    .map { it.relativePath }
                     .shouldBeEmpty()
             }
         }
 
         describe("server app structure (#89)") {
-            val appMain = Konsist.scopeFromDirectory("server/app/src/main").files
-            val http = Konsist.scopeFromDirectory("$APP_MAIN/http").files
-            val application = Konsist.scopeFromDirectory("$APP_MAIN/application").files
-
-            fun importsOf(files: List<KoFileDeclaration>) =
-                files.flatMap { file -> file.imports.map { file.path to it.name } }
+            val appMain = sources("server/app/src/main")
+            val http = sources("$APP_MAIN/http")
+            val application = sources(APPLICATION)
 
             it("the HTTP package knows the narrow station ports, not StationDirectory or the Background adapters") {
-                importsOf(http)
-                    .filter { (_, name) ->
-                        name == "$APP.application.StationDirectory" || name.startsWith("$APP.application.Background")
+                http
+                    .referencesMatching {
+                        it.isOrUnder("$APP.application.StationDirectory") ||
+                            it.startsWith("$APP.application.Background")
                     }.shouldBeEmpty()
             }
             it(
                 "the HTTP package goes through use cases: it never calls the recommendation service or builds its requests",
             ) {
-                importsOf(http)
-                    .filter { (_, name) -> name in HTTP_FORBIDDEN_RECOMMENDATION }
+                http
+                    .referencesMatching { reference -> HTTP_FORBIDDEN_RECOMMENDATION.any { reference.isOrUnder(it) } }
                     .shouldBeEmpty()
             }
             it("application code does not know the HTTP package") {
-                importsOf(application)
-                    .filter { (_, name) -> name.startsWith("$APP.http.") }
-                    .shouldBeEmpty()
+                application.referencesMatching { it.startsWith("$APP.http.") }.shouldBeEmpty()
             }
             it("RecommendationError is translated to response codes in one place, http/Errors.kt") {
-                importsOf(appMain.filterNot { it.path.endsWith("/http/Errors.kt") })
-                    .filter { (_, name) -> name == "$RECOMMENDATION.RecommendationError" }
+                appMain
+                    .filterNot { it.relativePath == ERRORS_FILE }
+                    .referencesMatching { it.isOrUnder("$RECOMMENDATION.RecommendationError") }
                     .shouldBeEmpty()
             }
             it("policies and adapters are created only at the composition root (Components.kt)") {
-                val creations =
-                    Regex(
-                        """\bTimeSlotResolver\(|\bHolidayCalendar\.bundled\(|\bExposed\w+Repository\(|\b\w+ArtifactStore\(""",
-                    )
                 appMain
-                    .filterNot { it.path.endsWith("/app/Components.kt") }
-                    .filter { creations.containsMatchIn(it.text) }
-                    .map { it.path }
-                    .shouldBeEmpty()
+                    .filterNot { it.relativePath == COMPONENTS_FILE }
+                    .flatMap { unit ->
+                        unit.calls.filter(::createsPolicyOrAdapter).map { "${unit.relativePath} -> $it(...)" }
+                    }.shouldBeEmpty()
             }
         }
     })
+
+private const val GCS_STORE = "server/artifact/src/main/kotlin/app/banbanyeok/server/artifact/GcsArtifactStore.kt"
+
+/** 호출 식이 정책(구분 규칙·공휴일 목록)이나 어댑터(Exposed 저장소·산출물 저장소)를 만드는가. 수신 체인은 import 별칭까지 푼 이름이다. */
+private fun createsPolicyOrAdapter(call: String): Boolean {
+    val simple = call.substringAfterLast('.')
+    return call == "$RECOMMENDATION.time.TimeSlotResolver" ||
+        call == "$RECOMMENDATION.time.HolidayCalendar.bundled" ||
+        (call.startsWith("app.banbanyeok.server.room.exposed.") && Regex("""Exposed\w+Repository""").matches(simple)) ||
+        (call.startsWith("app.banbanyeok.server.artifact.") && Regex("""\w+ArtifactStore""").matches(simple))
+}
+
+private const val APP = "app.banbanyeok.server.app"
+
+private const val APP_MAIN = "server/app/src/main/kotlin/app/banbanyeok/server/app"
+
+private const val APPLICATION = "$APP_MAIN/application"
+
+/** 저장소 기준 전체 경로. 예외 파일은 끝부분이 아니라 이 경로 전체로 비교한다. */
+private const val COMPONENTS_FILE = "$APP_MAIN/Components.kt"
+
+private const val ERRORS_FILE = "$APP_MAIN/http/Errors.kt"
+
+/** http 패키지가 부르면 안 되는 추천 진입점과 요청 조립 타입. 추천 규칙(요청 만들기, 구분 결정)은 유스케이스와 RoomResultService가 한다. */
+private val HTTP_FORBIDDEN_RECOMMENDATION =
+    setOf(
+        "$RECOMMENDATION.RecommendationService",
+        "$RECOMMENDATION.RecommendRequest",
+        "$RECOMMENDATION.RecommendParticipant",
+        "$RECOMMENDATION.time.DayCertainty",
+        "$RECOMMENDATION.time.HolidayCalendar",
+    )
 
 private val FEATURES = listOf("room", "recommendation", "artifact")
 
@@ -266,18 +277,4 @@ private val RECOMMENDATION_APP_SURFACE =
         "time.DayCertainty",
         "time.TimeSlotResolver",
         "time.HolidayCalendar",
-    )
-
-private const val APP = "app.banbanyeok.server.app"
-
-private const val APP_MAIN = "server/app/src/main/kotlin/app/banbanyeok/server/app"
-
-/** http 패키지가 부르면 안 되는 추천 진입점과 요청 조립 타입. 추천 규칙(요청 만들기, 구분 결정)은 유스케이스와 RoomResultService가 한다. */
-private val HTTP_FORBIDDEN_RECOMMENDATION =
-    setOf(
-        "$RECOMMENDATION.RecommendationService",
-        "$RECOMMENDATION.RecommendRequest",
-        "$RECOMMENDATION.RecommendParticipant",
-        "$RECOMMENDATION.time.DayCertainty",
-        "$RECOMMENDATION.time.HolidayCalendar",
     )

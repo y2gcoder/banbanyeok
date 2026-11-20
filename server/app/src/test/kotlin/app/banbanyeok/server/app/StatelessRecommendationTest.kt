@@ -149,6 +149,32 @@ class StatelessRecommendationTest :
                     .shouldBeNull()
             }
 
+            it("works on the lists as they were when the request was made, whatever the caller does to them later") {
+                val origins = mutableListOf("03v", "130")
+                val nicknames = mutableListOf<String?>("민수", null)
+                val made = StatelessRequest(origins, nicknames, RecommendMode.FAIR, null, TimeSlot.DEFAULT)
+                // 요청을 만든 뒤 호출자가 가변 목록을 바꾼다(첫 별칭 교체, 비우기).
+                nicknames[0] = "바뀜"
+                origins.clear()
+                nicknames.clear()
+                val result = useCase.recommend(made)
+                result.origins shouldBe listOf("03v", "130")
+                result.nicknames shouldBe listOf("민수", null)
+                // 별칭과 표시 이름은 같은 사본에서 나온다.
+                result.recommendation.labels
+                    .first()
+                    .text shouldBe "민수"
+                // 평가가 끝난 뒤에 바꿔도 결과는 그대로다.
+                origins.add("225")
+                result.origins shouldBe listOf("03v", "130")
+            }
+
+            it("rejects nicknames that do not line up with the origins when the request is made") {
+                shouldThrow<IllegalArgumentException> {
+                    StatelessRequest(listOf("03v", "130"), listOf("민수"), RecommendMode.FAIR, null, null)
+                }
+            }
+
             it("lets the recommendation's own errors through for the HTTP layer to translate") {
                 val e =
                     shouldThrow<RecommendationException> {

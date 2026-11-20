@@ -20,18 +20,22 @@ fun interface CanonicalStations {
  * 참가자는 입력 순서의 인덱스 문자열("0", "1", …)로 구분한다.
  */
 class StatelessRequest(
-    /** 출발역 코드(옛 공유 링크의 폐기된 코드일 수 있다). */
-    val origins: List<String>,
-    /** [origins]와 같은 길이의 별칭. 없는 사람은 null. */
-    val nicknames: List<String?>,
+    origins: List<String>,
+    nicknames: List<String?>,
     val mode: RecommendMode,
     /** [RecommendMode.FAVOR]일 때 우대할 사람의 입력 순서. */
     val favorIndex: Int?,
     /** 요청이 고른 구분. null이면 고르지 않았다(옛 클라이언트, 요일을 고른 적 없는 `v=1` 링크). */
     val slot: TimeSlot?,
 ) {
+    /** 출발역 코드(옛 공유 링크의 폐기된 코드일 수 있다). 요청을 만들 때 복사한다: 호출자가 나중에 목록을 바꿔도 평가와 응답 매핑은 같은 사본을 쓴다. */
+    val origins: List<String> = origins.toList()
+
+    /** [origins]와 같은 길이의 별칭(요청을 만들 때 복사한다). 없는 사람은 null. */
+    val nicknames: List<String?> = nicknames.toList()
+
     init {
-        require(nicknames.size == origins.size) { "nicknames는 origins와 같은 길이여야 합니다" }
+        require(this.nicknames.size == this.origins.size) { "nicknames는 origins와 같은 길이여야 합니다" }
     }
 }
 
