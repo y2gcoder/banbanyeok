@@ -3,6 +3,7 @@ package app.banbanyeok.server.app.http
 import app.banbanyeok.applogic.ParticipantLabel
 import app.banbanyeok.applogic.ParticipantLabels
 import app.banbanyeok.applogic.PersonRef
+import app.banbanyeok.schema.LastTrainKind
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.PreviewBasis
@@ -10,9 +11,14 @@ import app.banbanyeok.server.app.application.PreviewStation
 import app.banbanyeok.server.app.application.RoomPreview
 import app.banbanyeok.server.app.application.RoomResult
 import app.banbanyeok.server.app.application.StatelessResult
+import app.banbanyeok.server.recommendation.MapMiddle
+import app.banbanyeok.server.recommendation.ParticipantTime
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.Recommendation
+import app.banbanyeok.server.recommendation.RecommendedStation
 import app.banbanyeok.server.recommendation.StationNames
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainBasis
+import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
 import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
@@ -122,7 +128,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
         PreviewStationDto(
             stationCode,
             stations.stationName(stationCode),
-            times.map { PreviewTimeDto(it.label, it.seconds, it.lastTrain?.toJson(withParticipant = false)) },
+            times.map { PreviewTimeDto(it.label, it.seconds, it.lastTrain?.toDto(withParticipant = false)) },
         )
 
     return when (this) {
@@ -131,7 +137,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
         }
 
         is RoomPreview.Result -> {
-            RoomPreviewDto.Result(header, dataVersion, basis.dto(), station.dto(), lastTrainBasis?.toJson())
+            RoomPreviewDto.Result(header, dataVersion, basis.dto(), station.dto(), lastTrainBasis?.toDto())
         }
 
         is RoomPreview.Decided -> {
@@ -142,7 +148,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
                 station.dto(),
                 decidedBy,
                 decidedAt.toString(),
-                lastTrainBasis?.toJson(),
+                lastTrainBasis?.toDto(),
             )
         }
     }
@@ -166,9 +172,9 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
         dataVersion = dataVersion,
         participants = participants,
         baselineStationCode = baselineStationCode,
-        candidates = candidates.map { it.candidateJson() },
+        candidates = candidates.map { it.toDto() },
         timeBasis = timeBasis.toDto(requested = requestedSlot),
-        lastTrainBasis = lastTrainBasis?.toJson(),
+        lastTrainBasis = lastTrainBasis?.toDto(),
     )
 
 fun RoomResult.toDto(stations: StationNames): ResultDto =
@@ -195,4 +201,53 @@ fun StatelessResult.toDto(stations: StationNames): ResultDto =
                     shortLabel = label.short,
                 )
             },
-        ).copy(mapMiddle = mapMiddle?.toJson())
+        ).copy(mapMiddle = mapMiddle?.toDto())
+
+/** 응답에 쓰는 막차 종류 이름(openapi `LastTrain.kind`): 직행 확정 / 여유 시각 / 확인 필요. */
+internal val LastTrainKind.wire: String
+    get() =
+        when (this) {
+            LastTrainKind.DIRECT -> "direct"
+            LastTrainKind.MARGIN_TRANSFER, LastTrainKind.MARGIN_DIRECT -> "margin"
+            LastTrainKind.UNKNOWN -> "check"
+        }
+
+private fun ParticipantTime.toDto() = ParticipantTimeDto(participantId, seconds, transfers)
+
+private fun RecommendedStation.toDto() =
+    CandidateDto(
+        rank = rank,
+        stationCode = stationCode,
+        stationName = stationName,
+        times = times.map { it.toDto() },
+        maxSeconds = maxSeconds,
+        spreadSeconds = spreadSeconds,
+        totalSeconds = totalSeconds,
+        favoredSeconds = favoredSeconds,
+        reasonCode = reasonCode,
+        reason = reason,
+        lastTrains = lastTrains?.map { it.toDto(withParticipant = true) },
+    )
+
+private fun MapMiddle.toDto() = MapMiddleDto(stationCode, stationName, times.map { it.toDto() })
+
+/** 막차 한 건. [withParticipant]가 거짓이면 사람 구분을 싣지 않는다(미리보기는 한 역의 한 사람 줄에 붙는다). */
+private fun ParticipantLastTrain.toDto(withParticipant: Boolean): LastTrainDto {
+    val kind = cell.kind
+    val margin = kind == LastTrainKind.MARGIN_TRANSFER || kind == LastTrainKind.MARGIN_DIRECT
+    return LastTrainDto(
+        participantId = participantId.takeIf { withParticipant },
+        kind = kind.wire,
+        minute = cell.minute,
+        transfer = (kind == LastTrainKind.MARGIN_TRANSFER).takeIf { margin },
+        boundFor = cell.boundFor?.let { code -> BoundForDto(code.toString(), boundName ?: code.toString()) },
+    )
+}
+
+private fun LastTrainBasis.toDto() =
+    LastTrainBasisDto(
+        dayType = dayType.id,
+        asOf = asOf.toString(),
+        unavailable = unavailable?.name?.lowercase(),
+        partial = partial,
+    )
