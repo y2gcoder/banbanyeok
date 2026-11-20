@@ -250,25 +250,25 @@ private class SourceStripper(
         blank(quote.length)
         while (i < src.length && !src.startsWith(quote, i)) {
             when {
-                !raw && src[i] == '\\' -> {
-                    blank(2)
-                }
-
-                src.startsWith("\${", i) -> {
-                    blank(2)
-                    scan(inTemplate = true)
-                }
-
-                src[i] == '$' && i + 1 < src.length && (src[i + 1].isLetter() || src[i + 1] == '_') -> {
-                    blank()
-                    while (i < src.length && (src[i].isLetterOrDigit() || src[i] == '_')) out.append(src[i++])
-                }
-
-                else -> {
-                    blank()
-                }
+                !raw && src[i] == '\\' -> blank(2)
+                src.startsWith("\${", i) -> braceTemplate()
+                startsNameTemplate() -> nameTemplate()
+                else -> blank()
             }
         }
         blank(quote.length)
+    }
+
+    private fun braceTemplate() {
+        blank(2)
+        scan(inTemplate = true)
+    }
+
+    private fun startsNameTemplate() =
+        src[i] == '$' && i + 1 < src.length && (src[i + 1].isLetter() || src[i + 1] == '_')
+
+    private fun nameTemplate() {
+        blank()
+        while (i < src.length && (src[i].isLetterOrDigit() || src[i] == '_')) out.append(src[i++])
     }
 }
