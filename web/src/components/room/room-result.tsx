@@ -102,7 +102,12 @@ export function RoomResult({
     roomResultQueryOptions(roomId, { mode: pick.mode, favor: favorId }, participantToken, participantId),
   );
   const data = query.data;
-  const view = useMemo(() => (data ? toResultView(data) : null), [data]);
+  // 약속 날짜·시각을 넘긴다: 새벽 약속이면 그 밤 막차가 약속보다 먼저 떠날 수 있다(막차 칸이 가려낸다).
+  const { meetingDate, meetingTime } = room;
+  const view = useMemo(
+    () => (data ? toResultView(data, { meeting: { date: meetingDate, time: meetingTime } }) : null),
+    [data, meetingDate, meetingTime],
+  );
   const meIndex = data ? data.participants.findIndex((p) => p.isSelf === true) : -1;
 
   const roomGone = query.isError && isRoomGone(query.error);

@@ -48,7 +48,8 @@ async function textWithoutLastTrain(page: Page): Promise<string> {
   return (await topCard(page)).evaluate((card) => {
     const copy = card.cloneNode(true) as HTMLElement;
     for (const section of copy.querySelectorAll("section")) {
-      if (section.querySelector("h3")?.textContent === "집에 가는 막차") section.remove();
+      // 제목 앞에 화면에는 안 보이는 역 이름이 붙는다("양재역 집에 가는 막차").
+      if (section.querySelector("h3")?.textContent?.endsWith("집에 가는 막차")) section.remove();
     }
     return copy.textContent ?? "";
   });

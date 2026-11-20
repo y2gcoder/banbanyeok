@@ -13,6 +13,14 @@ const HIDDEN_PARTICIPANT_TOKEN = "ptok-layout-hidden";
 /** `hidden-self`: 출발역을 숨긴 친구(참가자 2) 본인이 보는 화면. 본인에게만 본인의 출발역과 막차가 온다. */
 export type RoomScenario = "host-alone" | "friend-join" | "host-full" | "hidden-self";
 
+/**
+ * 막차 칸(#62)의 갈래를 보려고 약속과 숨김만 바꾼 방.
+ * - `dawn`: 토요일 02:59 약속(금요일 운행일). 민수의 막차는 토요일 00:27이라 약속보다 먼저 떠난다.
+ * - `undated`: 약속 날짜가 없는 방. 서버는 요일을 몰라 시각을 주지 않는다(`day_unknown`, 기본값 평일·partial은 그대로 온다).
+ * - `all-hidden`: 모두 출발역을 숨긴 방. 본인이 아닌 사람에게는 막차 항목이 하나도 오지 않는다.
+ */
+export type RoomVariant = "default" | "dawn" | "undated" | "all-hidden";
+
 const json = (status: number, body: unknown) => ({
   status,
   contentType: "application/json",
@@ -108,17 +116,62 @@ const CANDIDATES = [
  */
 const LAST_TRAIN_BASIS = { dayType: "saturday", asOf: "2026-11-16", partial: true };
 
-function lastTrains(selfId: string | null) {
+function lastTrains(selfId: string | null, variant: RoomVariant = "default") {
+  if (variant === "all-hidden") return [];
+  if (variant === "undated") {
+    return [
+      { participantId: "h1", kind: "check" },
+      ...(selfId === "f1" ? [{ participantId: "f1", kind: "check" }] : []),
+      { participantId: "f2", kind: "check" },
+    ];
+  }
   return [
     {
       participantId: "h1",
       kind: "direct",
-      minute: 1432,
+      // 금요일 운행일의 24:27은 토요일 00:27이다(새벽 약속 02:59보다 먼저).
+      minute: variant === "dawn" ? 1467 : 1432,
       boundFor: { stationCode: "bvq", stationName: "성수" },
     },
     ...(selfId === "f1" ? [{ participantId: "f1", kind: "margin", minute: 1367, transfer: true }] : []),
     { participantId: "f2", kind: "check" },
   ];
+}
+
+const WEEKDAY_NIGHT_BASIS = {
+  timeSlot: "weekday-night",
+  requestedTimeSlot: "weekday-night",
+  dayType: "weekday",
+  band: "night",
+  label: "평일 밤",
+  holidayName: null,
+};
+
+/** 갈래별 약속과 계산 기준. 기본은 2026-11-21(토) 19:30이다. */
+function meetingOf(variant: RoomVariant) {
+  if (variant === "dawn") {
+    return {
+      meetingDate: "2026-11-28",
+      meetingTime: "02:59",
+      timeBasis: WEEKDAY_NIGHT_BASIS,
+      lastTrainBasis: { dayType: "weekday", asOf: "2026-11-16", partial: true },
+    };
+  }
+  if (variant === "undated") {
+    return {
+      meetingDate: null,
+      meetingTime: null,
+      timeBasis: {
+        ...WEEKDAY_NIGHT_BASIS,
+        timeSlot: "weekday-day",
+        requestedTimeSlot: "weekday-day",
+        band: "day",
+        label: "평일 낮",
+      },
+      lastTrainBasis: { dayType: "weekday", asOf: "2026-11-16", partial: true, unavailable: "day_unknown" },
+    };
+  }
+  return { meetingDate: "2026-11-21", meetingTime: "19:30", timeBasis: ROOM_BASIS, lastTrainBasis: LAST_TRAIN_BASIS };
 }
 
 /** 서버가 약속 날짜·시각(2026-11-21 19:30)에서 정해 주는 계산 기준. 웹은 이 label을 그대로 쓴다. */
@@ -138,8 +191,25 @@ export const FAKE_ROOM_HASH = "0123456789abcdef";
  * 시나리오의 방을 가로채 준비한다. 방장 시나리오는 이 기기에 방장 기록(토큰)을 넣어 둔다. 열 주소를 돌려준다.
  * `shareVersion`을 주면 방이 공유 번호·방 해시를 싣고 링크 미리보기(`/preview`, 결과 단계)도 답한다(공유 칸이 번호 붙은 링크를 쓴다).
  */
-export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersion?: number): Promise<string> {
-  const people = scenario === "host-alone" ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
+export async function prepareRoom(
+  page: Page,
+  scenario: RoomScenario,
+  shareVersion?: number,
+  variant: RoomVariant = "default",
+): Promise<string> {
+  const listed = scenario === "host-alone" ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
+  const people =
+    variant === "all-hidden"
+      ? listed.map((p, i) => ({
+          ...p,
+          hidden: true,
+          originCode: null,
+          originName: null,
+          label: p.nickname ?? `참가자 ${i + 1}`,
+          shortLabel: p.nickname ?? `참가자 ${i + 1}`,
+        }))
+      : listed;
+  const meeting = meetingOf(variant);
   const asHost = scenario === "host-alone" || scenario === "host-full";
   if (asHost || scenario === "hidden-self") {
     const record = asHost
@@ -185,9 +255,9 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
           locked: false,
           expiresAt: "2999-01-01T00:00:00Z",
           dataVersion: "20261114.5",
-          meetingDate: "2026-11-21",
-          meetingTime: "19:30",
-          timeBasis: ROOM_BASIS,
+          meetingDate: meeting.meetingDate,
+          meetingTime: meeting.meetingTime,
+          timeBasis: meeting.timeBasis,
           participants,
           ...(shareVersion === undefined ? {} : { shareVersion, roomHash: FAKE_ROOM_HASH, decision: null }),
         }),
@@ -203,10 +273,10 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
             shareVersion,
             participantCount: people.length,
             canJoin: people.length < 4,
-            meetingDate: "2026-11-21",
-            meetingTime: "19:30",
+            meetingDate: meeting.meetingDate,
+            meetingTime: meeting.meetingTime,
             meetingBand: null,
-            timeBasis: ROOM_BASIS,
+            timeBasis: meeting.timeBasis,
           },
           dataVersion: "20261114.5",
           basis: { mode: "fair", favorLabel: null },
@@ -215,7 +285,7 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
             stationName: top?.stationName,
             // 미리보기는 누가 묻든 같다: 숨긴 사람의 막차는 없다.
             times: people.map((p, i) => {
-              const lastTrain = lastTrains(null).find((t) => t.participantId === p.participantId);
+              const lastTrain = lastTrains(null, variant).find((t) => t.participantId === p.participantId);
               const { participantId: _id, ...entry } = lastTrain ?? { participantId: "" };
               return {
                 label: p.shortLabel,
@@ -224,7 +294,7 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
               };
             }),
           },
-          lastTrainBasis: LAST_TRAIN_BASIS,
+          lastTrainBasis: meeting.lastTrainBasis,
         }),
       );
     }
@@ -236,9 +306,9 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
           dataVersion: "20261114.5",
           participants,
           baselineStationCode: "s1q",
-          candidates: CANDIDATES.map((c) => ({ ...c, lastTrains: lastTrains(selfId) })),
-          timeBasis: ROOM_BASIS,
-          lastTrainBasis: LAST_TRAIN_BASIS,
+          candidates: CANDIDATES.map((c) => ({ ...c, lastTrains: lastTrains(selfId, variant) })),
+          timeBasis: meeting.timeBasis,
+          lastTrainBasis: meeting.lastTrainBasis,
         }),
       );
     }

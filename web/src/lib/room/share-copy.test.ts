@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RoomPreview, TimeBasis } from "@/lib/api/types";
-import { SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
+import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 import { kakaoFeedSettings } from "@/lib/share/kakao";
 import { INVITE_COPY, roomKakaoMessage, roomShareCopy } from "./share-copy";
 
@@ -214,12 +214,23 @@ describe("방 공유 문구", () => {
     const basis = { dayType: "weekday" as const, asOf: "2026-11-16" };
     for (const preview of [result({ station, lastTrainBasis: basis }), decided({ station, lastTrainBasis: basis })]) {
       const copy = roomShareCopy(preview);
-      expect(copy.card?.people.map((p) => p.lastTrain ?? null)).toEqual(["막차 00:03", null, "늦어도 23:00"]);
+      // 자정을 넘긴 시각은 그림에서도 "다음 날"을 붙인다(그림만 보면 "00:03"이 그날 새벽으로 읽힌다).
+      expect(copy.card?.people.map((p) => p.lastTrain ?? null)).toEqual(["막차 다음 날 00:03", null, "늦어도 23:00"]);
       const words = JSON.stringify([copy.preview, copy.message]);
       expect(words).not.toContain("막차");
       expect(words).not.toContain("늦어도");
       expect(words).not.toContain("광교");
     }
+    // 새벽 약속(#83 검토): 토요일 02:59 약속은 금요일 운행일이라 24:03(토요일 00:03) 막차와 23:00 여유 시각이 약속보다 먼저다.
+    // 귀가 시각으로 그리지 않는다. 03:00 약속은 토요일 운행일이라 같은 분이 그날 밤(일요일 00:03)이다.
+    const dawn = (meetingTime: string) =>
+      roomShareCopy(
+        result({ station, lastTrainBasis: basis, room: room({ meetingDate: "2026-11-28", meetingTime }) }),
+      ).card?.people.map((p) => p.lastTrain ?? null);
+    expect(dawn("02:59")).toEqual([null, null, null]);
+    expect(dawn("03:00")).toEqual(["막차 다음 날 00:03", null, "늦어도 23:00"]);
+    // 자정 뒤 약속보다 늦게 떠나는 열차는 약속일과 같은 날이다: "다음 날"을 붙이지 않는다.
+    expect(dawn("00:00")).toEqual(["막차 00:03", null, null]);
     // 확인 필요는 줄이 없다. 막차를 모르는 서버의 미리보기(키 없음)는 그림 값이 예전과 같다.
     const unknown = result({
       station: { ...station, times: station.times.map((t) => ({ ...t, lastTrain: { kind: "check" as const } })) },
@@ -249,7 +260,7 @@ describe("카카오톡 공유 메시지", () => {
       content: {
         title: "지금은 동대문역사문화공원이 제일 공평해요",
         description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분",
-        imageUrl: "https://banbanyeok.app/r/qt7yvmsht3/og?sv=5&dv=20261115.8",
+        imageUrl: `https://banbanyeok.app/r/qt7yvmsht3/og?sv=5&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`,
         imageWidth: 1200,
         imageHeight: 630,
         link: roomLink,
@@ -263,7 +274,9 @@ describe("카카오톡 공유 메시지", () => {
     expect(full.content.title).toBe("동대문역사문화공원에서 볼까?");
     expect(full.buttons).toEqual([{ title: "결과 보기", link: full.content.link }]);
     expect(full.content.link.webUrl).toBe("https://banbanyeok.app/r/qt7yvmsht3?sv=9");
-    expect(full.content.imageUrl).toBe("https://banbanyeok.app/r/qt7yvmsht3/og?sv=9&dv=20261115.8");
+    expect(full.content.imageUrl).toBe(
+      `https://banbanyeok.app/r/qt7yvmsht3/og?sv=9&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`,
+    );
 
     const done = sent(decided());
     expect(done.content.title).toBe("강남에서 만나요");

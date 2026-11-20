@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 /**
  * `sv`(공유 번호)와 `dv`(데이터 버전)가 둘 다 지금 값과 같을 때만 방 카드를 그리고 하루 캐시한다. 주소의 번호와 다른 내용을 그 주소로
  * 캐시하지 않으려는 규칙이다: 오래된 번호·다른 데이터 버전·모으는 중·서버 실패는 사이트 기본 그림(짧은 캐시)이다.
+ * 주소의 `iv`(그림 버전, `roomImagePath`)는 읽지 않는다: 그리는 코드가 바뀌었을 때 주소를 달리해 캐시를 비켜 가는 값일 뿐이다.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;

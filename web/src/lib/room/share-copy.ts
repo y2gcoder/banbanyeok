@@ -7,7 +7,7 @@
 import type { Mode, RoomPreview, TimeBasis } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
-import { lastTrainCardLine, lastTrainTime } from "@/lib/result/last-train";
+import { lastTrainCardLine, lastTrainState } from "@/lib/result/last-train";
 import { modeSentence } from "@/lib/result/mode-sentence";
 import { ogSafeName } from "@/lib/seo/og-coverage";
 import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
@@ -81,12 +81,13 @@ function cardName(preview: Computed, label: string): string {
 
 function card(preview: Computed, suffix: string, modeLine: string, footer?: SharedCardData["footer"]): SharedCardData {
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
+  const meeting = { date: preview.room.meetingDate, time: preview.room.meetingTime };
   return {
     stationName: preview.station.stationName,
     suffix,
     people: preview.station.times.map((t, index) => {
-      // 출발역을 숨긴 사람은 서버가 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다).
-      const lastTrain = lastTrainCardLine(lastTrainTime(t.lastTrain), OG_TEXT);
+      // 출발역을 숨긴 사람은 서버가 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다). 약속보다 먼저 떠나는 열차는 줄을 비운다.
+      const lastTrain = lastTrainCardLine(lastTrainState(t.lastTrain, meeting), OG_TEXT);
       return {
         name: safeName(t.label, index),
         minutes: t.seconds === null ? null : minutesFromSeconds(t.seconds),

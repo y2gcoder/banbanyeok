@@ -27,10 +27,12 @@ function emWidth(text: string): number {
 }
 
 /**
- * 시간 아래의 막차 줄(#62): "막차 00:03" / "늦어도 23:00". 한 사람이라도 있을 때만 줄 자리를 잡는다(없는 그림은 예전과 같다).
+ * 시간 아래의 막차 줄(#62): "막차 23:52" / "늦어도 23:00" / "막차 다음 날 00:03". 한 사람이라도 있을 때만 줄 자리를 잡는다(없는 그림은 예전과 같다).
  * 줄이 생기면 그만큼 큰 숫자를 줄이고 위아래 틈을 좁혀, 맨 아래 문장이 두 줄이어도 넘치지 않게 한다.
  */
 const LAST_TRAIN_ROW = 40;
+/** 가장 긴 줄 "늦어도 다음 날 00:00"이 칸 폭(4명 246px)에 한 줄로 들어가는 크기. */
+const LAST_TRAIN_SIZE: Record<number, number> = { 2: 30, 3: 26, 4: 23 };
 const WITH_LAST_TRAIN = { numberScale: 0.88, headGap: 18, chipGap: 12 } as const;
 const WITHOUT_LAST_TRAIN = { numberScale: 1, headGap: 26, chipGap: 22 } as const;
 
@@ -110,7 +112,7 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
                     display: "flex",
                     alignItems: "center",
                     height: LAST_TRAIN_ROW,
-                    fontSize: count <= 2 ? 30 : 26,
+                    fontSize: LAST_TRAIN_SIZE[count] ?? 23,
                     color: OG_COLORS.inkSoft,
                   }}
                 >

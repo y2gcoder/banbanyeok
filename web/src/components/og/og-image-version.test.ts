@@ -5,6 +5,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { toResultView } from "@/lib/result/view-model";
+import { roomShareCopy } from "@/lib/room/share-copy";
+import { roomImagePath } from "@/lib/room/share-link";
 import {
   OG_COLORS,
   OG_FONT_FILE,
@@ -13,12 +15,15 @@ import {
   OG_TEXT,
   OG_WIDTH,
   PAIR_OG_IMAGE_VERSION,
+  ROOM_OG_IMAGE_VERSION,
   SHARED_OG_IMAGE_VERSION,
   SITE_OG_IMAGE_PATH,
   SITE_OG_IMAGE_VERSION,
 } from "@/lib/seo/og-text";
 import { scoreboardCardData } from "@/lib/seo/scoreboard-card-data";
+import { ROOM_CASES } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
+import { SharedCard } from "./shared-card";
 import { SHARED_CASES } from "./shared-card.cases";
 
 const ROOT = process.cwd();
@@ -79,7 +84,7 @@ function renderedSharedSamples(): string[] {
 
 /**
  * 공유 링크 그림 "A 숫자판"(`/s/og`). 그림 값을 만드는 코드(이름 거르기·칭호·문장 규칙)도 입력이다. 그림에는 역 이름·시간처럼 결과마다
- * 다른 값이 들어가지만 그건 주소의 나머지(`o`·`m`·`t`·`n`·`dv`)가 이미 가른다. 방 미리보기(`/r/og`)는 `SharedCard`라 이 버전과 상관없다.
+ * 다른 값이 들어가지만 그건 주소의 나머지(`o`·`m`·`t`·`n`·`dv`)가 이미 가른다. 방 미리보기(`/r/og`)는 `SharedCard`라 아래 `ROOM`이 따로 센다.
  */
 const SHARED: Drawn = {
   texts: [
@@ -101,6 +106,7 @@ const SHARED: Drawn = {
     "middleLongest",
     "lastTrain",
     "lastTrainBy",
+    "nextDay",
   ],
   constants: { OG_NAME_MAX },
   rendered: renderedSharedSamples,
@@ -112,6 +118,55 @@ const SHARED: Drawn = {
     "src/lib/seo/shared-preview.ts",
     "src/lib/seo/og-coverage.ts",
     "src/lib/result/map-middle.ts",
+    "src/lib/result/last-train.ts",
+    "src/lib/result/mode-sentence.ts",
+    "src/lib/display/korean.ts",
+    "src/lib/display/minutes.ts",
+  ],
+};
+
+/** 방 미리보기 그림 표본(결과·정한 역·4명·새벽 약속)을 서버 미리보기에서 그림 값까지 만들어 그린 마크업. */
+function renderedRoomSamples(): string[] {
+  return ROOM_CASES.map(({ id, preview }) => {
+    const card = roomShareCopy(preview).card;
+    if (!card) throw new Error(`그림 값 없음: ${id}`);
+    return renderToStaticMarkup(createElement(SharedCard, { data: card }));
+  });
+}
+
+/**
+ * 방 미리보기 그림(`/r/<id>/og`, 노선 그림 `SharedCard`). 그림 값은 `roomShareCopy`가 서버 미리보기에서 만든다(이름 거르기·기준 문장·
+ * 약속 문구·막차 줄). 방마다 다른 값(역·시간·사람)은 주소의 `sv`·`dv`가 가르고, 이 버전은 같은 방 내용을 다르게 그리게 되는 변화를 가른다.
+ */
+const ROOM: Drawn = {
+  texts: [
+    "brand",
+    "sharedSuffix",
+    "decidedSuffix",
+    "decidedBy",
+    "noRoute",
+    "longestPrefix",
+    "spreadPrefix",
+    "zeroMinutes",
+    "modeFair",
+    "modeFast",
+    "modeFavorSuffix",
+    "ellipsis",
+    "middleDot",
+    "basisSuffix",
+    "lastTrain",
+    "lastTrainBy",
+    "nextDay",
+  ],
+  constants: { OG_NAME_MAX },
+  rendered: renderedRoomSamples,
+  sources: [
+    "src/app/r/[roomId]/og/route.tsx",
+    "src/components/og/shared-card.tsx",
+    "src/components/og/frame.tsx",
+    "src/lib/room/share-copy.ts",
+    "src/lib/room/dates.ts",
+    "src/lib/seo/og-coverage.ts",
     "src/lib/result/last-train.ts",
     "src/lib/result/mode-sentence.ts",
     "src/lib/display/korean.ts",
@@ -150,6 +205,28 @@ describe("미리보기 그림의 버전(입력이 바뀌었는데 버전이 그�
       SHARED_OG_IMAGE_VERSION,
       `공유 링크 그림의 입력이 바뀌었습니다. src/lib/seo/og-text.ts의 SHARED_OG_IMAGE_VERSION을 "${inputsHash(SHARED)}"로 고치세요.`,
     ).toBe(inputsHash(SHARED));
+  });
+
+  it("방 미리보기 그림: ROOM_OG_IMAGE_VERSION", () => {
+    expect(
+      ROOM_OG_IMAGE_VERSION,
+      `방 미리보기 그림의 입력이 바뀌었습니다. src/lib/seo/og-text.ts의 ROOM_OG_IMAGE_VERSION을 "${inputsHash(ROOM)}"로 고치세요.`,
+    ).toBe(inputsHash(ROOM));
+  });
+
+  it("방 미리보기 그림 주소에 그 버전이 실린다(같은 방을 다시 공유해도 그림이 바뀌었으면 새 주소)", () => {
+    expect(ROOM_OG_IMAGE_VERSION).toMatch(/^[0-9a-f]{8}$/);
+    expect(roomImagePath("qt7yvmsht3", 4, "20261120.4")).toBe(
+      `/r/qt7yvmsht3/og?sv=4&dv=20261120.4&iv=${ROOM_OG_IMAGE_VERSION}`,
+    );
+  });
+
+  it("방 미리보기 그림이 그리는 문구 목록에 빠진 키가 없다(그림 코드와 그림 값을 만드는 코드가 OG_TEXT를 쓰는 만큼 적는다)", () => {
+    for (const file of ["src/components/og/shared-card.tsx", "src/lib/room/share-copy.ts"]) {
+      const code = readFileSync(join(ROOT, file), "utf8");
+      const used = [...code.matchAll(/OG_TEXT\.(\w+)/g)].map((m) => m[1]);
+      for (const key of used) expect(ROOM.texts, `${file}가 OG_TEXT.${key}를 쓴다`).toContain(key);
+    }
   });
 
   it("공유 링크 그림이 그리는 문구 목록에 빠진 키가 없다(그림 코드가 OG_TEXT를 쓰는 만큼 적는다)", () => {

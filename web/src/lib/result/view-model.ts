@@ -8,7 +8,7 @@ import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "@/l
 import { evaluateNotices, type Notice } from "@/lib/display/notices";
 import { kakaoPlaceUrl, kakaoTransitUrl } from "@/lib/map/kakao";
 import { stationByCode } from "@/lib/stations";
-import { type LastTrainView, toLastTrainView } from "./last-train";
+import { type LastTrainView, type MeetingWhen, toLastTrainView } from "./last-train";
 import { type MapMiddleView, toMapMiddleView } from "./map-middle";
 
 type PersonView = {
@@ -50,6 +50,8 @@ export type ResultViewOptions = {
    * 기본은 true.
    */
   lastTrains?: boolean;
+  /** 방의 약속 날짜·시각. 있으면 막차 칸이 약속보다 먼저 떠나는 열차를 가려낸다(새벽 약속). 혼자 입력한 결과에는 없다. */
+  meeting?: MeetingWhen;
 };
 
 export type ResultView = {
@@ -114,6 +116,7 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
               mapUrl: home && destination ? kakaoTransitUrl(destination, home) : null,
             };
           }),
+          options.meeting,
         )
       : null;
     return {

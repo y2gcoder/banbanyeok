@@ -140,6 +140,8 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   expect(result.description).toMatch(/^아직이면 출발역 넣어 주세요 · 민수 \d+분 · 참가자 2 \d+분 · 지연 \d+분$/);
   expect(result.html).not.toContain("홍대입구");
   expect(result.image).toContain(`/r/${roomId}/og?sv=${resultVersion}&dv=`);
+  // 그림 버전(iv)도 실린다: 방 내용이 그대로여도(번호가 같아도) 그리는 코드가 바뀌면 그림 주소가 달라진다.
+  expect(result.image).toMatch(/&iv=[0-9a-f]{8}$/);
   expect(await fetchImage(request, result.image, "result")).toBe("public, max-age=86400, s-maxage=86400");
   // 옛 번호의 링크도 지금 상태를 그리고, 지금보다 큰 번호는 기본 초대 문구다. 옛 번호의 그림 주소는 방 카드를 남기지 않는다.
   expect((await scrape(request, `/r/${roomId}?sv=${collectingVersion}`)).title).toBe(result.title);
@@ -150,12 +152,12 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
 
   // 친구 화면을 지금 결과로 새로 그려 둔다(이 화면이 아래에서 오래된 화면이 된다).
   await friend.page.reload();
-  await friend.page.getByRole("region", { name: "만날 역 후보" }).locator("details > summary").first().click(); // 2위 펼치기
+  await friend.page.getByRole("region", { name: "다른 후보" }).locator(":scope > details > summary").first().click(); // 2위 펼치기
   const friendDecide = friend.page.getByRole("button", { name: "이 역으로 정했어요" });
   await expect(friendDecide.nth(1)).toBeVisible();
 
   // 방장이 1위로 정한다. 정한 뒤 결과가 새 번호로 다시 올 때까지는 다른 역으로 바꿀 수 없다(옛 번호로 보내면 409).
-  await page.getByRole("region", { name: "만날 역 후보" }).locator("details > summary").first().click(); // 2위 펼치기
+  await page.getByRole("region", { name: "다른 후보" }).locator(":scope > details > summary").first().click(); // 2위 펼치기
   let releaseResult = () => {};
   const resultHeld = new Promise<void>((resolve) => {
     releaseResult = resolve;

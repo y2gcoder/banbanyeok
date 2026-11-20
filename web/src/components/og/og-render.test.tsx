@@ -2,7 +2,6 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { describe, expect, it } from "vitest";
-import type { RoomPreview } from "@/lib/api/types";
 import { toResultView } from "@/lib/result/view-model";
 import { roomShareCopy } from "@/lib/room/share-copy";
 import { missingGlyphs } from "@/lib/seo/og-coverage";
@@ -14,6 +13,7 @@ import { scoreboardCardData } from "@/lib/seo/scoreboard-card-data";
 import { sharedCardData, sharedPreview } from "@/lib/seo/shared-preview";
 import fixture from "../../../fixtures/seo-pairs.json";
 import { PairCard } from "./pair-card";
+import { ROOM_CASES } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
 import { HIDDEN_ORIGIN, SHARED_CASES } from "./shared-card.cases";
@@ -99,21 +99,21 @@ describe("OG 이미지 그리기(satori)", () => {
     expect(JSON.stringify([data, preview])).not.toContain(HIDDEN_ORIGIN);
   });
 
-  it("막차 줄: 직행 확정은 분 그대로, 여유 시각은 10분 단위로 내리고, 확인 필요와 숨긴 사람은 줄이 없다", () => {
+  it('막차 줄: 직행 확정은 분 그대로, 여유 시각은 10분 단위로 내리고, 자정을 넘기면 "다음 날"을 붙이고, 확인 필요와 숨긴 사람은 줄이 없다', () => {
     const lines = (id: string) => {
       const c = SHARED_CASES.find((x) => x.id === id);
       if (!c) throw new Error(`표본 없음: ${id}`);
       return scoreboardCardData(toResultView(c.result), c.state)?.people.map((p) => p.lastTrain ?? null);
     };
-    expect(lines("two-last-train")).toEqual(["막차 00:03", "늦어도 23:00"]);
+    expect(lines("two-last-train")).toEqual(["막차 다음 날 00:03", "늦어도 23:00"]);
     // 직행 확정 24:38, 갈아타는 23:51 → 23:50, 열차 한 대 여유 23:45 → 23:40, 확인 필요.
-    expect(lines("four-last-train-middle")).toEqual(["막차 00:38", "늦어도 23:50", "늦어도 23:40", null]);
+    expect(lines("four-last-train-middle")).toEqual(["막차 다음 날 00:38", "늦어도 23:50", "늦어도 23:40", null]);
     // 숨긴 사람의 항목은 서버가 주지 않는다.
-    expect(lines("nickname-hidden")).toEqual(["늦어도 23:20", null, "막차 00:34"]);
+    expect(lines("nickname-hidden")).toEqual(["늦어도 23:20", null, "막차 다음 날 00:34"]);
     // 숨긴 본인에게는 서버가 본인의 막차도 주지만, 누구나 보는 그림에는 넣지 않는다.
     const self = SHARED_CASES.find((x) => x.id === "hidden-self-view");
     expect(JSON.stringify(self?.result)).toContain("숨긴행선지");
-    expect(lines("hidden-self-view")).toEqual(["막차 00:44", null, "늦어도 23:50"]);
+    expect(lines("hidden-self-view")).toEqual(["막차 다음 날 00:44", null, "늦어도 23:50"]);
     // 막차를 모르는 응답(옛 서버·옛 링크)은 줄이 없다: 그림이 예전과 같다.
     expect(lines("four-fair")).toEqual([null, null, null, null]);
     // 미리보기 설명(og:description, 공유 문구와 같은 말)에는 막차를 넣지 않는다: 그림에만 있다.
@@ -125,61 +125,8 @@ describe("OG 이미지 그리기(satori)", () => {
     }
   });
 
-  it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 글꼴에 없는 글자 없음", async () => {
-    const room = {
-      roomId: "qt7yvmsht3",
-      shareVersion: 9,
-      participantCount: 3,
-      canJoin: true,
-      meetingDate: "2026-11-21",
-      meetingTime: "19:30",
-      meetingBand: "evening",
-      timeBasis: {
-        timeSlot: "saturday-evening",
-        requestedTimeSlot: "saturday-evening",
-        dayType: "saturday",
-        band: "evening",
-        label: "토요일 저녁",
-        holidayName: null,
-      },
-    } as const;
-    const station: Extract<RoomPreview, { stage: "result" }>["station"] = {
-      stationCode: "s1q",
-      stationName: "동대문역사문화공원",
-      // 막차(#62): 출발역을 숨긴 "참가자 2"에게는 서버가 키를 주지 않는다.
-      times: [
-        {
-          label: "민수",
-          seconds: 1349,
-          lastTrain: { kind: "direct", minute: 1443, boundFor: { stationCode: "dzc", stationName: "광교" } },
-        },
-        { label: "참가자 2", seconds: 1287 },
-        {
-          label: "지연이와 함께 오는 아주 긴 이름",
-          seconds: 1164,
-          lastTrain: { kind: "margin", minute: 1389, transfer: true },
-        },
-      ],
-    };
-    const cases: [string, RoomPreview][] = [
-      [
-        "room-result-favor",
-        { stage: "result", room, dataVersion: "1", basis: { mode: "favor", favorLabel: "민수" }, station },
-      ],
-      [
-        "room-decided",
-        {
-          stage: "decided",
-          room,
-          dataVersion: "1",
-          basis: { mode: "fair", favorLabel: null },
-          station: { ...station, times: [...station.times.slice(0, 2), { label: "🎂", seconds: null }] },
-          decidedBy: "참가자 2",
-          decidedAt: "2026-11-17T10:00:00Z",
-        },
-      ],
-    ];
-    for (const [id, preview] of cases) {
+  it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 4명, 새벽 약속(02:59·03:00), 글꼴에 없는 글자 없음", async () => {
+    for (const { id, preview, lastTrains } of ROOM_CASES) {
       const card = roomShareCopy(preview).card;
       if (!card) throw new Error(`${id}: 그림 데이터 없음`);
       const text = [
@@ -190,7 +137,11 @@ describe("OG 이미지 그리기(satori)", () => {
         ...card.people.map((p) => p.lastTrain ?? ""),
       ].join("");
       expect(missingGlyphs(text), id).toEqual([]);
-      expect(card.people.map((p) => p.lastTrain ?? null).slice(0, 2), id).toEqual(["막차 00:03", null]);
+      // 자정을 넘긴 시각은 "다음 날"을 붙이고, 숨긴 사람·확인 필요·약속보다 먼저 떠나는 열차는 줄이 없다.
+      expect(
+        card.people.map((p) => p.lastTrain ?? null),
+        id,
+      ).toEqual(lastTrains);
       const drawn = await render(<SharedCard data={card} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-${id}.png`), drawn.bytes);

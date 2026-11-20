@@ -229,8 +229,9 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
     // 새 기준의 결과가 다 들어온 뒤에 후보를 펼친다(이전 결과를 잠시 보여 주는 동안 누르면 줄이 바뀐다).
     await expect(page.getByRole("tabpanel")).toHaveAttribute("aria-busy", "false");
     const others = page.getByRole("region", { name: "다른 후보" });
-    const second = others.locator("details").first();
-    await second.locator("summary").click();
+    // 후보 줄만 고른다(줄 안의 막차 칸도 접는 칸이다).
+    const second = others.locator(":scope > details").first();
+    await second.locator(":scope > summary").click();
     await expect(second).toHaveAttribute("open", "");
     await others.scrollIntoViewIfNeeded();
     const before = await page.evaluate(() => window.scrollY);
