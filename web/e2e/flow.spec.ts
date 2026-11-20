@@ -100,7 +100,9 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   await expect(card.getByText("(나)")).toHaveCount(0);
   await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "참가자 2" }).click();
   await expect(friend).toHaveURL(/me=1/);
-  await expect(card.getByText("참가자 2(나)")).toBeVisible();
+  // 시간 줄과 "집에 가는 막차" 칸 두 곳에 붙는다.
+  await expect(card.getByText("참가자 2(나)")).toHaveCount(2);
+  await expect(card.getByText("참가자 2(나)").first()).toBeVisible();
   await expect(card.getByText("민수(나)")).toHaveCount(0);
   await expect(card.getByRole("link", { name: "내 길찾기" })).toHaveAttribute(
     "href",

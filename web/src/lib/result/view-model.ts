@@ -8,6 +8,7 @@ import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "@/l
 import { evaluateNotices, type Notice } from "@/lib/display/notices";
 import { kakaoPlaceUrl, kakaoTransitUrl } from "@/lib/map/kakao";
 import { stationByCode } from "@/lib/stations";
+import { type LastTrainView, toLastTrainView } from "./last-train";
 import { type MapMiddleView, toMapMiddleView } from "./map-middle";
 
 type PersonView = {
@@ -39,6 +40,16 @@ export type CandidateView = {
   people: PersonTimeView[];
   aggregate: DisplayAggregate;
   placeUrl: string | null;
+  /** "집에 가는 막차" 칸(#62). 서버가 막차를 주지 않았거나 이 화면이 보이지 않기로 했으면 null. */
+  lastTrain: LastTrainView | null;
+};
+
+export type ResultViewOptions = {
+  /**
+   * false면 막차 칸을 만들지 않는다. 옛 링크(v=1)는 요일을 고른 적이 없어 서버가 시각을 주지 않으므로(`day_unknown`) 칸 자체를 뺀다.
+   * 기본은 true.
+   */
+  lastTrains?: boolean;
 };
 
 export type ResultView = {
@@ -60,7 +71,8 @@ function place(code: string | null, name: string | null) {
   return geo ? { name: name.endsWith("역") ? name : `${name}역`, ...geo } : null;
 }
 
-export function toResultView(result: RecommendResult): ResultView {
+export function toResultView(result: RecommendResult, options: ResultViewOptions = {}): ResultView {
+  const showLastTrains = options.lastTrains !== false;
   const people: PersonView[] = result.participants.map((p, index) => ({
     index,
     name: p.label,
@@ -83,6 +95,27 @@ export function toResultView(result: RecommendResult): ResultView {
         directionsUrl: from && destination ? kakaoTransitUrl(from, destination) : null,
       };
     });
+    // 막차는 돌아가는 길이다: 길찾기는 만날 역 → 각자의 출발역 방향으로 연다.
+    const lastTrain = showLastTrains
+      ? toLastTrainView(
+          result.lastTrainBasis,
+          c.lastTrains,
+          { code: c.stationCode, name: c.stationName },
+          people.map((person, i) => {
+            const participant = result.participants[i];
+            const home = place(person.originCode, person.originName);
+            return {
+              index: person.index,
+              participantId: participant?.participantId ?? "",
+              shortName: person.shortName,
+              hidden: participant?.hidden === true,
+              isSelf: participant?.isSelf === true,
+              originCode: person.originCode,
+              mapUrl: home && destination ? kakaoTransitUrl(destination, home) : null,
+            };
+          }),
+        )
+      : null;
     return {
       rank: c.rank,
       stationCode: c.stationCode,
@@ -93,6 +126,7 @@ export function toResultView(result: RecommendResult): ResultView {
       people: timed,
       aggregate: displayAggregate(timed.map((t) => t.seconds)),
       placeUrl: destination ? kakaoPlaceUrl(destination) : null,
+      lastTrain,
     };
   });
   const first = candidates[0];

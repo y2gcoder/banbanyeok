@@ -112,6 +112,24 @@ function Lines({ people }: { people: SharedCardData["people"] }) {
           <span style={{ fontSize: 38 }}>{minutesText(person.minutes)}</span>
         </div>
       ))}
+      {/* 막차 줄(#62): 각자의 노선 바로 아래, 작게. 시각을 모르거나 출발역을 숨긴 사람은 줄이 없다. */}
+      {people.map((person, i) =>
+        person.lastTrain ? (
+          <div
+            key={`last-${String(i)}`}
+            style={{
+              display: "flex",
+              position: "absolute",
+              left: START_X + 26,
+              top: (rows[i] ?? ringY) + 12,
+              fontSize: 24,
+              color: OG_COLORS.muted,
+            }}
+          >
+            {person.lastTrain}
+          </div>
+        ) : null,
+      )}
     </div>
   );
 }

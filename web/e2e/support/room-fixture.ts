@@ -8,8 +8,10 @@ import type { Page } from "@playwright/test";
 export const FAKE_ROOM_ID = "qt7yvmsht3";
 const HOST_TOKEN = "htok-layout-host";
 const HOST_PARTICIPANT_TOKEN = "ptok-layout-host";
+const HIDDEN_PARTICIPANT_TOKEN = "ptok-layout-hidden";
 
-export type RoomScenario = "host-alone" | "friend-join" | "host-full";
+/** `hidden-self`: 출발역을 숨긴 친구(참가자 2) 본인이 보는 화면. 본인에게만 본인의 출발역과 막차가 온다. */
+export type RoomScenario = "host-alone" | "friend-join" | "host-full" | "hidden-self";
 
 const json = (status: number, body: unknown) => ({
   status,
@@ -100,6 +102,25 @@ const CANDIDATES = [
   },
 ];
 
+/**
+ * 집에 가는 막차(#62). 약속일이 토요일이라 일부 노선만 계산한 요일 종류다(`partial`). 민수는 직행 확정, 긴 이름의 친구는 확인 필요,
+ * 출발역을 숨긴 참가자 2는 본인에게만 온다(갈아타는 여유 시각 22:47 → 화면 22:40).
+ */
+const LAST_TRAIN_BASIS = { dayType: "saturday", asOf: "2026-11-16", partial: true };
+
+function lastTrains(selfId: string | null) {
+  return [
+    {
+      participantId: "h1",
+      kind: "direct",
+      minute: 1432,
+      boundFor: { stationCode: "bvq", stationName: "성수" },
+    },
+    ...(selfId === "f1" ? [{ participantId: "f1", kind: "margin", minute: 1367, transfer: true }] : []),
+    { participantId: "f2", kind: "check" },
+  ];
+}
+
 /** 서버가 약속 날짜·시각(2026-11-21 19:30)에서 정해 주는 계산 기준. 웹은 이 label을 그대로 쓴다. */
 export const ROOM_BASIS = {
   timeSlot: "saturday-evening",
@@ -119,15 +140,22 @@ export const FAKE_ROOM_HASH = "0123456789abcdef";
  */
 export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersion?: number): Promise<string> {
   const people = scenario === "host-alone" ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
-  const asHost = scenario !== "friend-join";
-  if (asHost) {
-    const record = {
-      v: 1,
-      hostToken: HOST_TOKEN,
-      participantToken: HOST_PARTICIPANT_TOKEN,
-      participantId: "h1",
-      keepUntil: "2999-01-01T00:00:00.000Z",
-    };
+  const asHost = scenario === "host-alone" || scenario === "host-full";
+  if (asHost || scenario === "hidden-self") {
+    const record = asHost
+      ? {
+          v: 1,
+          hostToken: HOST_TOKEN,
+          participantToken: HOST_PARTICIPANT_TOKEN,
+          participantId: "h1",
+          keepUntil: "2999-01-01T00:00:00.000Z",
+        }
+      : {
+          v: 1,
+          participantToken: HIDDEN_PARTICIPANT_TOKEN,
+          participantId: "f1",
+          keepUntil: "2999-01-01T00:00:00.000Z",
+        };
     await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [
       `bby.room.${FAKE_ROOM_ID}`,
       JSON.stringify(record),
@@ -136,8 +164,19 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
   await page.route("**/api/v1/rooms/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace("/api/v1", "");
-    const self = request.headers().authorization === `Bearer ${HOST_PARTICIPANT_TOKEN}`;
-    const participants = people.map((p) => ({ ...p, isSelf: self && p.participantId === "h1" }));
+    const authorization = request.headers().authorization;
+    const selfId =
+      authorization === `Bearer ${HOST_PARTICIPANT_TOKEN}`
+        ? "h1"
+        : authorization === `Bearer ${HIDDEN_PARTICIPANT_TOKEN}`
+          ? "f1"
+          : null;
+    // 출발역을 숨긴 사람 본인에게는 서버가 본인의 출발역을 준다(다른 사람에게는 null).
+    const participants = people.map((p) => ({
+      ...p,
+      ...(p.participantId === "f1" && selfId === "f1" ? { originCode: "ep4", originName: "합정" } : {}),
+      isSelf: p.participantId === selfId,
+    }));
     if (request.method() === "GET" && path === `/rooms/${FAKE_ROOM_ID}`) {
       return route.fulfill(
         json(200, {
@@ -174,8 +213,18 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
           station: {
             stationCode: top?.stationCode,
             stationName: top?.stationName,
-            times: people.map((p, i) => ({ label: p.shortLabel, seconds: top?.times[i]?.seconds ?? null })),
+            // 미리보기는 누가 묻든 같다: 숨긴 사람의 막차는 없다.
+            times: people.map((p, i) => {
+              const lastTrain = lastTrains(null).find((t) => t.participantId === p.participantId);
+              const { participantId: _id, ...entry } = lastTrain ?? { participantId: "" };
+              return {
+                label: p.shortLabel,
+                seconds: top?.times[i]?.seconds ?? null,
+                ...(lastTrain ? { lastTrain: entry } : {}),
+              };
+            }),
           },
+          lastTrainBasis: LAST_TRAIN_BASIS,
         }),
       );
     }
@@ -187,8 +236,9 @@ export async function prepareRoom(page: Page, scenario: RoomScenario, shareVersi
           dataVersion: "20261114.5",
           participants,
           baselineStationCode: "s1q",
-          candidates: CANDIDATES,
+          candidates: CANDIDATES.map((c) => ({ ...c, lastTrains: lastTrains(selfId) })),
           timeBasis: ROOM_BASIS,
+          lastTrainBasis: LAST_TRAIN_BASIS,
         }),
       );
     }

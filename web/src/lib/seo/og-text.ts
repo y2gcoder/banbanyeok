@@ -30,7 +30,7 @@ export const PAIR_OG_IMAGE_VERSION = "5b206790";
  * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
  * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 이 값을 쓰지 않는다.
  */
-export const SHARED_OG_IMAGE_VERSION = "97b100f4";
+export const SHARED_OG_IMAGE_VERSION = "619d69ea";
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";
@@ -77,6 +77,13 @@ export const OG_TEXT = {
   middleIf: "이면 ",
   middleMore: " 더 걸려요",
   middleLongest: "가장 오래 걸리는 사람",
+  /**
+   * 공유 그림의 막차 줄(#62): "막차 00:03"(직행 확정, 분 그대로), "늦어도 23:00"(여유 시각, 10분 단위로 내린 값).
+   * 시계 숫자와 쌍점은 `clockChars`로 서브셋에 넣는다.
+   */
+  lastTrain: "막차 ",
+  lastTrainBy: "늦어도 ",
+  clockChars: "0123456789:",
   ellipsis: "…",
   middleDot: "·",
   /** "{토요일 저녁} 기준". 구분 라벨은 서버가 주지만 글자는 여기서 서브셋에 넣는다(contracts/time-slots.json의 label). */

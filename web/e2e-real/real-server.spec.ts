@@ -31,12 +31,14 @@ test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 
   );
   const top = page.getByRole("article").first();
   // 시간 행은 서버 짧은 이름(shortLabel), 추천 이유 문장은 label("…에서 오는 분")이다.
+  // 이름은 시간 줄과 "집에 가는 막차" 칸 두 곳에 나온다.
   const rows = top.getByRole("listitem");
-  await expect(rows.getByText("강남", { exact: true })).toBeVisible();
-  await expect(rows.getByText("홍대입구", { exact: true })).toBeVisible();
+  await expect(rows.getByText("강남", { exact: true }).first()).toBeVisible();
+  await expect(rows.getByText("홍대입구", { exact: true }).first()).toBeVisible();
   await expect(top.getByText(/에서 오는 분/).first()).toBeVisible();
   // 결과·문장에 시점 표현이 없다. 만든 사람 화면에는 (나)가 없다.
-  await expect(page.getByRole("main")).not.toContainText(/나는 |나가 |친구1|\(나\)/);
+  // "나는"·"나가"는 낱말로 쓰인 것만 본다("열차가 떠나는 시각"은 시점 표현이 아니다).
+  await expect(page.getByRole("main")).not.toContainText(/(?<![가-힣])나는 |(?<![가-힣])나가 |친구1|\(나\)/);
   await shot(page, "1-result-no-names");
 
   await page.getByRole("button", { name: "링크 복사" }).click();
@@ -55,14 +57,48 @@ test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 
     .getByRole("button", { name: "홍대입구", exact: true })
     .click();
   await expect(friend).toHaveURL(/me=1/);
-  await expect(card.getByText("홍대입구(나)")).toBeVisible();
+  await expect(card.getByText("홍대입구(나)").first()).toBeVisible();
   await expect(card.getByText("강남(나)")).toHaveCount(0);
   await shot(friend, "2-received-pick-friend");
 
   // 다른 사람으로 바꾸면 (나)도 옮겨 간다(예전 버그: "나"가 다른 사람을 가리킴).
   await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "강남", exact: true }).click();
-  await expect(card.getByText("강남(나)")).toBeVisible();
+  await expect(card.getByText("강남(나)").first()).toBeVisible();
   await expect(card.getByText("홍대입구(나)")).toHaveCount(0);
+});
+
+test("집에 가는 막차: 직행 확정은 분 그대로, 갈아타는 길은 10분 단위로 내린 시각, 계산하지 않는 길은 이유만 보인다", async ({
+  page,
+}) => {
+  // 광교(신분당선)·부천(1호선), 평일 밤. dev 산출물에서 1위 고속터미널, 3위 강남이다.
+  await page.goto("/result?v=2&o=dzc.ry7&m=f&t=weekday-night");
+  const top = page.getByRole("article").first();
+  const lastTrain = top.getByRole("region", { name: "집에 가는 막차" });
+  await expect(lastTrain.getByText("평일 시간표")).toBeVisible();
+  // 부천: 갈아타는 여유 시각 23:06 → 23:00. 광교: 고속터미널에서는 대조한 직행이 없어 시각이 없다.
+  await expect(lastTrain.getByText("부천은 23시 전에 나서야 해요")).toBeVisible();
+  const rows = lastTrain.getByRole("listitem");
+  await expect(rows.nth(0)).toContainText("광교이 길은 아직 막차를 계산하지 않아요.");
+  await expect(rows.nth(0)).not.toContainText(/\d\d:\d\d/);
+  await expect(rows.nth(1)).toContainText("부천늦어도23:00엔출발하세요");
+  await expect(rows.nth(1).getByRole("link", { name: "부천, 지도 앱에서 막차 확인하기" })).toHaveAttribute(
+    "href",
+    /^https:\/\/map\.kakao\.com\/link\/by\/traffic\//,
+  );
+  await expect(lastTrain.getByText(/^2026년 11월 16일 시간표로 계산했어요\./)).toBeVisible();
+
+  // 3위 강남: 광교행 신분당선은 운영사 표와 대조한 직행이다(평일 24:03).
+  await page.locator("details").filter({ hasText: "강남" }).locator("summary").click();
+  const gangnam = page.locator("details").filter({ hasText: "강남" }).getByRole("region", { name: "집에 가는 막차" });
+  await expect(gangnam.getByRole("listitem").nth(0)).toContainText(
+    "광교막차00:03다음 날· 광교행강남역에서 열차가 떠나는 시각이에요.",
+  );
+  await shot(page, "3-last-trains");
+
+  // 옛 링크(v=1)에는 칸이 없다.
+  await page.goto("/result?v=1&o=dzc.ry7&m=f");
+  await expect(page.getByRole("article").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "집에 가는 막차" })).toHaveCount(0);
 });
 
 test("폐기된 역 코드가 든 옛 공유 링크도 열린다(공덕 194 → nn9)", async ({ page }) => {

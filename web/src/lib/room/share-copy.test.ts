@@ -192,6 +192,42 @@ describe("방 공유 문구", () => {
     expect(same.card?.people.map((p) => p.name)).toEqual(["참가자 1", "참가자 2"]);
   });
 
+  it("막차(#62): 그림에만 작은 줄로 넣고, 글(미리보기 설명·공유 문구)에는 넣지 않는다", () => {
+    const station = {
+      stationCode: "k3a",
+      stationName: "강남",
+      // 숨긴 "참가자 2"에게는 서버가 막차 키를 주지 않는다. 홍대입구는 갈아타는 여유 시각(23:09 → 23:00)이다.
+      times: [
+        {
+          label: "민수",
+          seconds: 1349,
+          lastTrain: {
+            kind: "direct" as const,
+            minute: 1443,
+            boundFor: { stationCode: "dzc", stationName: "광교" },
+          },
+        },
+        { label: "참가자 2", seconds: 1287 },
+        { label: "홍대입구", seconds: 1164, lastTrain: { kind: "margin" as const, minute: 1389, transfer: true } },
+      ],
+    };
+    const basis = { dayType: "weekday" as const, asOf: "2026-11-16" };
+    for (const preview of [result({ station, lastTrainBasis: basis }), decided({ station, lastTrainBasis: basis })]) {
+      const copy = roomShareCopy(preview);
+      expect(copy.card?.people.map((p) => p.lastTrain ?? null)).toEqual(["막차 00:03", null, "늦어도 23:00"]);
+      const words = JSON.stringify([copy.preview, copy.message]);
+      expect(words).not.toContain("막차");
+      expect(words).not.toContain("늦어도");
+      expect(words).not.toContain("광교");
+    }
+    // 확인 필요는 줄이 없다. 막차를 모르는 서버의 미리보기(키 없음)는 그림 값이 예전과 같다.
+    const unknown = result({
+      station: { ...station, times: station.times.map((t) => ({ ...t, lastTrain: { kind: "check" as const } })) },
+    });
+    expect(roomShareCopy(unknown).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
+    expect(roomShareCopy(result()).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
+  });
+
   it("출발역 이름은 서버가 주지 않으므로 어떤 문구에도 나올 수 없다(숨긴 사람은 '참가자 N')", () => {
     for (const preview of [result(), decided(), result({ room: room({ canJoin: false }) })]) {
       const text = JSON.stringify(roomShareCopy(preview));

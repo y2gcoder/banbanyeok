@@ -8,6 +8,7 @@ import { recommend } from "@/lib/api/client";
 import type { Mode, RecommendResult } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
 import { encodeShareQuery, type ShareState } from "@/lib/link/codec";
+import { type LastTrainView, lastTrainCardLine } from "@/lib/result/last-train";
 import { mapMiddleSentence } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
 import { type ResultView, toResultView } from "@/lib/result/view-model";
@@ -45,7 +46,16 @@ export type SharedCardData = {
    * 입력 순서. 이름은 서버 짧은 이름(shortLabel)을 글꼴에 있는 글자만으로 정리한 값(`ogSafeName`)이다. 출발역을 숨긴 사람은 서버가
    * "참가자 N"으로 주므로 숨긴 출발역은 그림에 나올 수 없다. `favored`는 "누구 쪽으로"에서 고른 사람. `minutes`가 null이면 그 역까지 갈 수 없다.
    */
-  people: { name: string; minutes: number | null; favored: boolean }[];
+  people: {
+    name: string;
+    minutes: number | null;
+    favored: boolean;
+    /**
+     * 시간 아래의 작은 줄 "막차 00:03" / "늦어도 23:00"(#62). 시각을 모르면(확인 필요) 키가 없다. 출발역을 숨긴 사람에게는
+     * 늘 없다(미리보기는 누가 보든 같은 그림이다).
+     */
+    lastTrain?: string;
+  }[];
   /** "공평하게 고름" 같은 기준 한 마디(+ " · 토요일 밤 기준"). */
   modeLine: string;
   /** 왼쪽 아래 두 줄을 직접 정한다(방에서 정한 역: "민수가 정했어요" / "11월 21일 (토) 저녁"). 없으면 최장·차이·기준. */
@@ -65,6 +75,13 @@ export function sharedPreview(view: ResultView, state: ShareState): SharedPrevie
   };
 }
 
+/** 그림에 넣는 막차 줄. 그 사람의 줄에 시각이 있고, 본인에게만 보이는 줄(출발역을 숨긴 본인)이 아닐 때만. */
+function cardLastTrain(lastTrain: LastTrainView | null, index: number): string | null {
+  const row = lastTrain?.rows.find((r) => r.index === index);
+  if (!row || row.onlyMe || (row.state.kind !== "direct" && row.state.kind !== "margin")) return null;
+  return lastTrainCardLine(row.state, OG_TEXT);
+}
+
 /**
  * 이미지에 그릴 값. 이름은 서버 짧은 이름이고, 글꼴에 없는 글자는 거른다(`ogSafeName`). 이모지만으로 된 별칭처럼 남는 글자가 없으면
  * 순번("참가자 N")으로 그린다(시점 표현 "나/친구1"은 쓰지 않는다).
@@ -76,11 +93,15 @@ export function sharedCardData(view: ResultView, state: ShareState): SharedCardD
   const favored = view.mode === "favor" ? state.favorIndex : null;
   return {
     stationName: top.stationName,
-    people: top.people.map((p, index) => ({
-      name: safe(p.shortName, index),
-      minutes: p.minutes,
-      favored: index === favored,
-    })),
+    people: top.people.map((p, index) => {
+      const lastTrain = cardLastTrain(top.lastTrain, index);
+      return {
+        name: safe(p.shortName, index),
+        minutes: p.minutes,
+        favored: index === favored,
+        ...(lastTrain ? { lastTrain } : {}),
+      };
+    }),
     modeLine:
       modeSentence(view.mode, favored === null ? null : safe(view.people[favored]?.shortName ?? "", favored)) +
       basisSuffix(view),

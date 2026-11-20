@@ -7,6 +7,7 @@
 import type { Mode, RoomPreview, TimeBasis } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
+import { lastTrainCardLine, lastTrainTime } from "@/lib/result/last-train";
 import { modeSentence } from "@/lib/result/mode-sentence";
 import { ogSafeName } from "@/lib/seo/og-coverage";
 import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
@@ -83,11 +84,16 @@ function card(preview: Computed, suffix: string, modeLine: string, footer?: Shar
   return {
     stationName: preview.station.stationName,
     suffix,
-    people: preview.station.times.map((t, index) => ({
-      name: safeName(t.label, index),
-      minutes: t.seconds === null ? null : minutesFromSeconds(t.seconds),
-      favored: favored !== null && t.label === favored,
-    })),
+    people: preview.station.times.map((t, index) => {
+      // 출발역을 숨긴 사람은 서버가 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다).
+      const lastTrain = lastTrainCardLine(lastTrainTime(t.lastTrain), OG_TEXT);
+      return {
+        name: safeName(t.label, index),
+        minutes: t.seconds === null ? null : minutesFromSeconds(t.seconds),
+        favored: favored !== null && t.label === favored,
+        ...(lastTrain ? { lastTrain } : {}),
+      };
+    }),
     modeLine,
     ...(footer ? { footer } : {}),
   };

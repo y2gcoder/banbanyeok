@@ -56,6 +56,8 @@ const PAIR: Drawn = {
  * 표본은 `shared-card.cases.ts`에서 고른다(그 값이나 이 목록을 바꿔도 해시가 달라지므로 버전을 함께 올린다).
  */
 const SAMPLE_IDS = [
+  "two-last-train",
+  "four-last-train-middle",
   "two-even-middle",
   "two-middle-saturday",
   "three-middle",
@@ -97,6 +99,8 @@ const SHARED: Drawn = {
     "middleIf",
     "middleMore",
     "middleLongest",
+    "lastTrain",
+    "lastTrainBy",
   ],
   constants: { OG_NAME_MAX },
   rendered: renderedSharedSamples,
@@ -108,6 +112,7 @@ const SHARED: Drawn = {
     "src/lib/seo/shared-preview.ts",
     "src/lib/seo/og-coverage.ts",
     "src/lib/result/map-middle.ts",
+    "src/lib/result/last-train.ts",
     "src/lib/result/mode-sentence.ts",
     "src/lib/display/korean.ts",
     "src/lib/display/minutes.ts",
