@@ -6,7 +6,9 @@
 #    그래서 25 툴체인으로 컴파일·테스트하고, shared 라이브러리의 바이트코드는 17로 낮춘다(Android 소비용).
 #  - Ktor 3.6의 JDK 요구사항은 공식 문서에서 찾지 못했다. 대신 :server:test가 JDK 25에서 통과하는 것을 확인했다.
 #  - 서버 이미지(Cloud Run)는 같은 25를 쓴다. 비-LTS(26, 27)는 쓰지 않는다.
-java = "temurin-25.0.5"
+#  - 25.0.5.1+2는 7일 규칙의 보안 예외다. CVE-2026-114938(Java4Shell, x86-64 HotSpot Base64 디코더 버그, #66)의 수정판이라 게시 당일(2026-11-20) 올렸다.
+#    서버 이미지 eclipse-temurin:25.0.5.1_2-jre-noble 안의 java -version은 25.0.5.1+2-LTS다. mise에서는 이 빌드가 temurin-25.0.5+100000002.0.LTS로 보인다.
+java = "temurin-25.0.5+100000002.0.LTS"
 node = "24.22.2"
 pnpm = "12.16.1"
 gitleaks = "8.30.1"
