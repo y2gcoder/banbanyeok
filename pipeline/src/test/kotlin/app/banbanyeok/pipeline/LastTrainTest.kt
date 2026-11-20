@@ -304,6 +304,169 @@ class LastTrainTest :
             }
         }
 
+        describe("rows that cannot prove which train they belong to (PR #81 third review)") {
+            // The reviewer's three inputs: a lone candidate within the tolerance that is another train (lone-candidate),
+            // the passing row pushed 301 s away so the starting local is the only row within five minutes (far-pass),
+            // and trains ending at c with another starting there 15 s later (short-run). No rule on rows without train
+            // numbers can tell these trains apart, so such rows give no time at all unless rebuilding is turned on.
+            fun cells(
+                name: String,
+                rebuild: Boolean? = null,
+            ): List<LtCell> {
+                val data = parseObject(resource(name))
+                val read = ltProblem(data)
+                val used = if (rebuild == null) read else read.copy(rebuild = rebuild)
+                return ltNight(used, DayType.WEEKDAY, ltRows(data, DayType.WEEKDAY)).cells
+            }
+
+            it("givesNoTimeForTheReviewersCounterexamples") {
+                listOf("lone-candidate.json", "far-pass.json", "short-run.json").forEach { name ->
+                    assertFalse(
+                        ltProblem(parseObject(resource(name))).rebuild,
+                        "$name: rebuilding is off unless a file asks",
+                    )
+                    assertTrue(cells(name).all { it == LtCell.UNKNOWN }, name)
+                }
+                // The two earlier counterexamples turn rebuilding on to test its rules; with it off they give no time.
+                listOf("overtake.json", "start-and-pass.json").forEach { name ->
+                    assertTrue(cells(name, rebuild = false).all { it == LtCell.UNKNOWN }, name)
+                }
+            }
+
+            it("givesTheRealLastTrainWhenTheSameRowsCarryTrainNumbers") {
+                // lone-candidate with its train numbers restored: a to b and a to c both leave last at 23:09.
+                assertEquals(
+                    List(2) {
+                        LtCell(LastTrainKind.MARGIN_DIRECT.raw, 23 * 60 + 9, "d")
+                    },
+                    cells("lone-candidate-numbered.json"),
+                )
+            }
+
+            it("wouldBeLateWithRebuildingOn") {
+                // Why the switch is off: the express (a 23:14) is joined to the local's stop at b, the lone candidate
+                // within 90 s, and both cells come out at 23:11 (shown 23:10), later than the real 23:09. The same
+                // happens to the other two inputs (real last trains 23:00 and 23:09).
+                listOf(
+                    "lone-candidate.json" to 23 * 60 + 9,
+                    "far-pass.json" to 23 * 60,
+                    "short-run.json" to 23 * 60 + 9,
+                ).forEach { (name, truth) ->
+                    val late = cells(name, rebuild = true).filter { it.kind != 0 }
+                    assertTrue(late.isNotEmpty() && late.all { ltShown(it) > truth }, name)
+                }
+            }
+        }
+
+        describe("with rebuilding off (the default)") {
+            val off = problem.copy(rebuild = false)
+
+            fun night(
+                type: DayType,
+                used: LtProblem = off,
+            ) = ltNight(used, type, ltRows(toy, type))
+
+            fun LtDayResult.cell(
+                home: String,
+                meeting: String,
+            ) = cells[off.homes.indexOf(home) * off.meetings.size + off.meetings.indexOf(meeting)]
+
+            it("matchesTheIndependentOracleCellForCell") {
+                // python3 -B prototype/last_train.py expect-off pipeline/src/test/resources/last-train/toy.json
+                val expected = parseObject(resource("toy.off.expected.json"))
+                DayType.entries.forEach { type ->
+                    val cells = night(type).cells
+                    val got =
+                        off.homes.flatMapIndexed { h, home ->
+                            off.meetings.mapIndexedNotNull { m, meeting ->
+                                val cell = cells[h * off.meetings.size + m]
+                                if (cell.kind == 0) null else listOf(home, meeting, cell.kind, cell.minute, cell.bound)
+                            }
+                        }
+                    val want =
+                        expected.getValue(type.id).jsonArray.map { row ->
+                            val cell = row.jsonArray
+                            listOf(
+                                cell[0].jsonPrimitive.content,
+                                cell[1].jsonPrimitive.content,
+                                cell[2].jsonPrimitive.int,
+                                cell[3].jsonPrimitive.int,
+                                if (cell[4] is JsonNull) null else cell[4].jsonPrimitive.content,
+                            )
+                        }
+                    assertEquals(want, got, type.id)
+                }
+            }
+
+            it("givesNoTimeFromRebuiltTrains") {
+                val weekday = night(DayType.WEEKDAY)
+                // Line X has no train numbers. With rebuilding on its 24:10 train from t00 reaches x04; with it off
+                // the cell has no time, and neither has any route that needs line X.
+                assertEquals(LastTrainKind.DIRECT.raw, day(DayType.WEEKDAY).cell("x04", "t00").kind)
+                assertEquals(LtCell.UNKNOWN, weekday.cell("x04", "t00"))
+                assertEquals(LtCell.UNKNOWN, weekday.cell("x06", "x01"))
+                assertEquals(LtCell.UNKNOWN, weekday.cell("x01", "n01"))
+                // The numbered section of line N is untouched.
+                assertEquals(LtCell(LastTrainKind.DIRECT.raw, 23 * 60 + 50, "n03"), weekday.cell("n02", "n01"))
+                // Its trains run on without numbers beyond n03: no time there either.
+                assertEquals(LtCell.UNKNOWN, weekday.cell("n04", "n01"))
+            }
+
+            it("addsOnlyTheDirectCellsTheOperatorsTableConfirmsOneByOne") {
+                val weekday = night(DayType.WEEKDAY)
+                // x01 to x02: the operator's table says 23:45 for x04, and so does the rebuilt train.
+                assertEquals(LtCell(LastTrainKind.DIRECT.raw, 23 * 60 + 45, "x04"), weekday.cell("x02", "x01"))
+                // t00 to x04: the table entry says 24:11, the rebuilt train leaves at 24:10. Not added.
+                assertEquals(LtCell.UNKNOWN, weekday.cell("x04", "t00"))
+                // x01 to x06: the entry names another terminal. Not added.
+                assertEquals(LtCell.UNKNOWN, weekday.cell("x06", "x01"))
+                // Holiday: line X is not a confirmed family that day, so its entry adds nothing. The cell has a time
+                // only because the second source has train numbers (22:59 less the source margin).
+                assertEquals(
+                    LtCell(LastTrainKind.MARGIN_DIRECT.raw, 22 * 60 + 56, "x06"),
+                    night(DayType.HOLIDAY).cell("t00", "x01"),
+                )
+            }
+
+            it("neverUsesAConfirmedCellAsALegOfATransfer") {
+                val rows = ltRows(toy, DayType.WEEKDAY)
+                val index = off.homes.indexOf("t00") * off.meetings.size + off.meetings.indexOf("x01")
+                val train = requireNotNull(ltRebuiltDirect(off, DayType.WEEKDAY, rows)[index])
+                val ride = LtProven("t00", "x01", train.departure / 60, train.bound, "X")
+                val result = night(DayType.WEEKDAY, off.copy(proven = mapOf(DayType.WEEKDAY to listOf(ride))))
+                assertEquals(
+                    LtCell(LastTrainKind.DIRECT.raw, train.departure / 60, train.bound),
+                    result.cell("t00", "x01"),
+                )
+                // With rebuilding on, x01 to n01 changes at t00 (23:10). The confirmed ride to t00 does not open that
+                // route: its arrival at t00 is not in the operator's table.
+                assertEquals(LastTrainKind.MARGIN_TRANSFER.raw, day(DayType.WEEKDAY).cell("n01", "x01").kind)
+                assertEquals(LtCell.UNKNOWN, result.cell("n01", "x01"))
+            }
+
+            it("takesATrainNumberedSecondSourceAsProofOfItsOwnTrains") {
+                // Holiday line X has a second, numbered source. Its 23:40 train to x02 is not in the unnumbered rows;
+                // with rebuilding on it was not trusted (22:57), with it off the numbered source is the proof.
+                assertEquals(22 * 60 + 57, day(DayType.HOLIDAY).cell("x02", "x01").minute)
+                assertEquals(
+                    LtCell(LastTrainKind.MARGIN_DIRECT.raw, 23 * 60 + 37, "x02"),
+                    night(DayType.HOLIDAY).cell("x02", "x01"),
+                )
+                assertTrue(
+                    ltProvenTrains(off, DayType.HOLIDAY, ltRows(toy, DayType.HOLIDAY)).all { train ->
+                        train.group == "N" || train.stops.all { it.margin == LT_SOURCE_MARGIN && !it.verified }
+                    },
+                )
+            }
+
+            it("boardsASecondSourceRowWithoutMarginWhereAConfirmedLineHasTheSameStation") {
+                val stops = ltRows(toy, DayType.WEEKDAY).numbered
+                val settled = setOf("N" to "n01")
+                val trains = ltNumberedTrains(stops, margin = LT_SOURCE_MARGIN, settled = settled)
+                assertTrue(trains.flatMap { it.stops }.all { (it.margin == 0) == (it.code == "n01") && !it.verified })
+            }
+        }
+
         describe("the timetable source itself") {
             fun cell(
                 type: DayType,

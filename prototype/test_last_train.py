@@ -100,6 +100,41 @@ class ToyNetworkTests(unittest.TestCase):
         express = from_a(trains(alone), 23 * 3600 + 14 * 60)
         self.assertEqual([['a', 'b', 'c', 'd']], [[stop[0] for stop in t.stops] for t in express])
 
+    def test_rows_without_train_numbers_give_no_time_unless_rebuilding_is_on(self):
+        # 3차 재검토의 반례 셋: ±90초 안의 유일한 후보가 다른 열차(lone-candidate), 통과 줄을 301초 밖으로 민 것(far-pass),
+        # c 종착 뒤 15초에 c에서 출발하는 열차(short-run). 기본(다시 잇기 꺼짐)에서는 모두 시각이 없다.
+        for name in ('lone-candidate.json', 'far-pass.json', 'short-run.json'):
+            self.assertEqual({'weekday': [], 'saturday': [], 'holiday': []}, last_train.expect(FIXTURES / name), name)
+        # 앞선 두 반례는 다시 잇는 규칙을 시험하느라 파일에서 켜 둔다. 끄면 역시 시각이 없다.
+        for name in ('overtake.json', 'start-and-pass.json'):
+            self.assertEqual([], last_train.expect(FIXTURES / name, rebuild=False)['weekday'], name)
+
+    def test_the_same_rows_with_train_numbers_give_the_real_last_train(self):
+        cells = last_train.expect(FIXTURES / 'lone-candidate-numbered.json')
+        self.assertEqual([['b', 'a', last_train.MARGIN_DIRECT, 23 * 60 + 9, 'd'],
+                          ['c', 'a', last_train.MARGIN_DIRECT, 23 * 60 + 9, 'd']], cells['weekday'])
+
+    def test_rebuilding_would_be_late_on_the_counterexamples(self):
+        # 끈 이유: 켜면 세 입력 모두 참 막차(23:09, 23:00, 23:09)보다 늦은 23:11(화면 23:10)이 나온다.
+        for name, truth in (('lone-candidate.json', 23 * 60 + 9), ('far-pass.json', 23 * 60), ('short-run.json', 23 * 60 + 9)):
+            cells = last_train.expect(FIXTURES / name, rebuild=True)['weekday']
+            self.assertTrue(cells and all(last_train.shown(tuple(cell[2:])) > truth for cell in cells), name)
+
+    def test_expected_file_with_rebuilding_off_is_reproduced_by_the_oracle(self):
+        expected = last_train.expect(FIXTURES / 'toy.json', rebuild=False)
+        self.assertEqual((FIXTURES / 'toy.off.expected.json').read_text(encoding='utf-8'), last_train.render(expected),
+                         'toy.off.expected.json이 오라클과 다릅니다: prototype/last_train.py expect-off로 다시 만드세요')
+        cells = {day: {(home, meeting): (kind, minute, bound) for home, meeting, kind, minute, bound in found}
+                 for day, found in expected.items()}
+        # 번호 없는 X선은 운영사 표로 칸마다 대조한 직행 칸(x01→x02 23:45 x04행)만 시각이 있다.
+        self.assertEqual((last_train.DIRECT, 23 * 60 + 45, 'x04'), cells['weekday']['x02', 'x01'])
+        self.assertNotIn(('x04', 't00'), cells['weekday'])  # 표의 분(24:11)이 다시 이은 열차(24:10)와 다르다
+        self.assertNotIn(('x06', 'x01'), cells['weekday'])  # 표의 행선지가 다르다
+        self.assertNotIn(('x01', 'n01'), cells['weekday'])  # X선을 지나는 환승
+        # 휴일의 X선은 열차 번호가 있는 둘째 원천으로만 낸다(여유 3분). 대조 노선이 아니라 표의 칸은 더해지지 않는다.
+        self.assertEqual((last_train.MARGIN_DIRECT, 22 * 60 + 56, 'x06'), cells['holiday']['t00', 'x01'])
+        self.assertEqual((last_train.MARGIN_DIRECT, 23 * 60 + 37, 'x02'), cells['holiday']['x02', 'x01'])
+
     def test_fixture_lists_rows_for_the_days_it_covers(self):
         data = json.loads((FIXTURES / 'toy.json').read_text(encoding='utf-8'))
         self.assertEqual({'weekday', 'holiday'}, set(data['rows']))

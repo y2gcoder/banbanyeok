@@ -58,6 +58,11 @@ class Problem:
         self.walks = {(c, a, b): s for c, a, b, s in data["walks"]}
         self.station_walks = data["stationWalks"]
         self.exact = {day: set(data["exact"].get(day, [])) for day in DAYS}
+        # Off by default: trains rebuilt from rows without train numbers give no time (nothing proves which train a
+        # row belongs to). A time then comes only from train-numbered sources and from the direct cells of `proven`.
+        self.rebuild = data.get("rebuild", False) is True
+        # day -> [(home, meeting, minute, bound, family)]: direct cells the operator's timetable gives one by one.
+        self.proven = {day: [tuple(row) for row in data.get("proven", {}).get(day, [])] for day in DAYS}
         self.allowed = data.get("allowed")
         self.distances = {}
 
@@ -227,9 +232,10 @@ def unnumbered_trains(problem, rows, day):
     return trains
 
 
-def numbered_trains(stops, verified=frozenset(), margin=0):
+def numbered_trains(stops, verified=frozenset(), margin=0, settled=frozenset()):
     """stops: (group, train id, code, arrival, departure, end code or None). Rows of the lines in `verified` are
-    confirmed rows; rows of every other line are boarded `margin` seconds early."""
+    confirmed rows; rows of every other line are boarded `margin` seconds early, except at the (line, station)
+    pairs in `settled`, whose times another source already confirmed."""
     runs = collections.defaultdict(set)
     meta = {}
     for group, train, code, arrival, departure, end in stops:
@@ -239,9 +245,11 @@ def numbered_trains(stops, verified=frozenset(), margin=0):
     trains = []
     for t in sorted(runs):
         stops = sorted(runs[t], key=stop_order)
-        confirmed = meta[t][0] in verified
-        trains.append(Train(meta[t][0], meta[t][1],
-                            [(*stop, i == 0, 0 if confirmed else margin, confirmed) for i, stop in enumerate(stops)]))
+        group = meta[t][0]
+        confirmed = group in verified
+        trains.append(Train(group, meta[t][1], [
+            (*stop, i == 0, 0 if confirmed or (group, stop[0]) in settled else margin, confirmed)
+            for i, stop in enumerate(stops)]))
     return trains
 
 
@@ -331,7 +339,22 @@ def backward(problem, trains, arrivals, states_at, home):
     return best
 
 
-def day_cells(problem, day, trains):
+def classify(latest, single):
+    """One cell from the latest boarding by any itinerary and the last single train (or None)."""
+    if latest < 0:
+        return None
+    minute = latest // 60
+    if single is None:
+        return (MARGIN_TRANSFER, minute, None)
+    direct_minute, confirmed = single[0] // 60, single[4]
+    shown_direct = direct_minute if confirmed else direct_minute - direct_minute % 10
+    if minute - minute % 10 > shown_direct:
+        return (MARGIN_TRANSFER, minute, None)
+    return (DIRECT if confirmed else MARGIN_DIRECT, direct_minute, single[2])
+
+
+def day_parts(problem, day, trains):
+    """(latest boarding by any itinerary, last single train) per (home, meeting)."""
     arrivals = collections.defaultdict(list)
     states_at = collections.defaultdict(list)
     for t, train in enumerate(trains):
@@ -345,26 +368,48 @@ def day_cells(problem, day, trains):
         found.sort()
     homes, meetings = set(problem.homes), set(problem.meetings)
     direct = direct_matrix(trains, homes, meetings)
-    cells = {}
+    latest = {}
     for home in problem.homes:
         best = backward(problem, trains, arrivals, states_at, home)
         for meeting in problem.meetings:
-            if meeting == home:
-                continue
-            latest = max((best.get((meeting, g), -1) for g in states_at.get(meeting, ())), default=-1)
-            if latest < 0:
-                continue
-            minute, single = latest // 60, direct.get((home, meeting))
-            if single is None:
-                cells[home, meeting] = (MARGIN_TRANSFER, minute, None)
-                continue
-            direct_minute, confirmed = single[0] // 60, single[4]
-            shown = direct_minute if confirmed else direct_minute - direct_minute % 10
-            if minute - minute % 10 > shown:
-                cells[home, meeting] = (MARGIN_TRANSFER, minute, None)
-            else:
-                cells[home, meeting] = (DIRECT if confirmed else MARGIN_DIRECT, direct_minute, single[2])
+            if meeting != home:
+                latest[home, meeting] = max((best.get((meeting, g), -1) for g in states_at.get(meeting, ())), default=-1)
+    return latest, direct
+
+
+def cells_of(latest, direct):
+    cells = {}
+    for key, value in latest.items():
+        cell = classify(value, direct.get(key))
+        if cell is not None:
+            cells[key] = cell
     return cells
+
+
+def day_cells(problem, day, trains):
+    return cells_of(*day_parts(problem, day, trains))
+
+
+def direct_order(single):
+    board, departure, bound, group, verified = single
+    return (-board, not verified, bound, group, departure)
+
+
+def with_proven(problem, day, latest, direct, rebuilt):
+    """Adds the proven direct cells: only where the rebuilt train of the cell is of a family confirmed that day and
+    leaves at the minute and for the terminal the operator's timetable gives. Never a leg of a transfer."""
+    latest, direct = dict(latest), dict(direct)
+    for home, meeting, minute, bound, family in problem.proven[day]:
+        train = rebuilt.get((home, meeting))
+        if train is None or family not in problem.exact[day] or home == meeting:
+            continue
+        if (train[3], train[2], train[1] // 60) != (family, bound, minute):
+            continue
+        confirmed = (train[1], train[1], train[2], train[3], True)
+        old = direct.get((home, meeting))
+        direct[home, meeting] = confirmed if old is None else min(old, confirmed, key=direct_order)
+        latest[home, meeting] = max(latest.get((home, meeting), -1), confirmed[0])
+    return latest, direct
 
 
 def shown(cell):
@@ -399,7 +444,26 @@ def second_trains_of(problem, rows, day):
     return stitch(numbered, unnumbered_trains(problem, others, day))
 
 
+def proven_trains(problem, rows, day):
+    """The trains whose identity the source proves: the first numbered source and the operator's train-coded file.
+    Rows of the operator's file carry the source margin and confirm nothing, except at stations of a line the
+    comparison confirmed that day (there the two sources agree)."""
+    confirmed = problem.exact_numbered[day]
+    settled = {(stop[0], stop[2]) for stop in rows["numbered"] if stop[0] in confirmed}
+    return first_numbered(problem, rows, day) + numbered_trains(
+        rows.get("second", ()), margin=problem.source_margin, settled=settled)
+
+
+def night_trains(problem, rows, day):
+    return trains_of(problem, rows, day) if problem.rebuild else proven_trains(problem, rows, day)
+
+
 def day_table(problem, day, rows):
+    if not problem.rebuild:
+        latest, direct = day_parts(problem, day, proven_trains(problem, rows, day))
+        rebuilt = direct_matrix(unnumbered_trains(problem, rows["unnumbered"], day),
+                                set(problem.homes), set(problem.meetings))
+        return cells_of(*with_proven(problem, day, latest, direct, rebuilt))
     cells = day_cells(problem, day, trains_of(problem, rows, day))
     second = second_trains_of(problem, rows, day)
     return cells if second is None else earlier(cells, day_cells(problem, day, second))
@@ -508,7 +572,7 @@ def compare(problem_path, raw, table_path):
     different = 0
     for day in DAYS:
         rows = cache_rows(problem, Path(raw), registry, day)
-        trains = trains_of(problem, rows, day)
+        trains = night_trains(problem, rows, day)
         cells = day_table(problem, day, rows)
         keys = set(cells) | set(table[day])
         wrong = [k for k in sorted(keys) if cells.get(k) != table[day].get(k)]
@@ -522,8 +586,11 @@ def compare(problem_path, raw, table_path):
     return 1 if different else 0
 
 
-def expect(problem_path):
+def expect(problem_path, rebuild=None):
+    """Expected cells of a problem file with embedded rows. `rebuild` overrides the file's own switch."""
     data = read_json(problem_path)
+    if rebuild is not None:
+        data = dict(data, rebuild=rebuild)
     problem = Problem(data)
     out = {}
     for day in DAYS:
@@ -541,5 +608,8 @@ if __name__ == "__main__":
         sys.exit(compare(*sys.argv[2:]))
     if len(sys.argv) == 3 and sys.argv[1] == "expect":
         print(render(expect(sys.argv[2])), end="")
+        sys.exit(0)
+    if len(sys.argv) == 3 and sys.argv[1] == "expect-off":
+        print(render(expect(sys.argv[2], rebuild=False)), end="")
         sys.exit(0)
     sys.exit(__doc__)

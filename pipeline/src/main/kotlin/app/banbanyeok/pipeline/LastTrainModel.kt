@@ -39,7 +39,11 @@ internal const val LT_ORIGIN_WINDOW = 300
 /** A rebuilt chain and a numbered train are one train when they leave the same station this close together. */
 internal const val LT_STITCH_TOLERANCE = 45
 
-internal const val LT_MODEL = "chain-v3+walk2x5m+source3m"
+/**
+ * Identifier of the rules a table was computed with (manifest `lastTrainModel`). `numbered-v1`: times from
+ * train-numbered sources and cell-by-cell confirmed direct cells only. `chain-v3`: rebuilt trains give times too.
+ */
+internal fun ltModel(rebuild: Boolean): String = (if (rebuild) "chain-v3" else "numbered-v1") + "+walk2x5m+source3m"
 
 /**
  * Time allowed for changing trains: max([floor], walk × [walkFactor] + [extra]). The published table uses
@@ -236,6 +240,18 @@ internal class LtWalks(
             JsonObject(stations.toSortedMap().mapValues { jsonValue(it.value) })
 }
 
+/**
+ * A direct ride the operator's own published timetable gives for one cell: the last departure (minute of the service
+ * day) from [meeting] of a train of [family] bound for [bound] that stops at [home].
+ */
+internal data class LtProven(
+    val home: String,
+    val meeting: String,
+    val minute: Int,
+    val bound: String,
+    val family: String,
+)
+
 /** Everything the computation needs besides the day's rows. */
 internal data class LtProblem(
     /** Home axis (od.bin origins) and meeting axis (od.bin candidates), both in code order. */
@@ -258,6 +274,18 @@ internal data class LtProblem(
      * by the build, pair for pair). Rows of other numbered lines are boarded with the source margin.
      */
     val exactNumbered: Map<DayType, Set<String>> = emptyMap(),
+    /**
+     * Whether trains rebuilt from rows without train numbers may give a time. **Off by default**: nothing in such
+     * rows proves which train a row belongs to, and a wrong link invents a train (a time later than the real last
+     * train). With it off, a time comes only from train-numbered sources, and from the direct cells of [proven].
+     * Rebuilding stays in the code for comparison with a numbered source and for the independent oracle.
+     */
+    val rebuild: Boolean = false,
+    /**
+     * With [rebuild] off: the direct cells the operator's timetable was compared with one by one, per day type. Such
+     * a cell gets its time only when the train rebuilt for it leaves at that minute for that terminal.
+     */
+    val proven: Map<DayType, List<LtProven>> = emptyMap(),
 ) {
     fun margin(
         family: String,
@@ -329,32 +357,40 @@ internal fun ltProblem(data: JsonObject): LtProblem {
         },
         hopRows.associate { (it[0].jsonPrimitive.content to it[1].jsonPrimitive.content) to it[2].jsonPrimitive.int },
         LtWalks(walks, data.getValue("stationWalks").jsonObject.mapValues { it.value.jsonPrimitive.int }),
-        DayType.entries.associateWith { day ->
-            data
-                .getValue("exact")
-                .jsonObject[day.id]
-                ?.jsonArray
-                .orEmpty()
-                .map { it.jsonPrimitive.content }
-                .toSet()
-        },
+        daySets(data.getValue("exact").jsonObject),
         hopRows.associate { row ->
             val run =
                 row.getOrNull(3)?.jsonPrimitive?.int ?: maxOf(row[2].jsonPrimitive.int - LtProblem.DEFAULT_DWELL, 1)
             (row[0].jsonPrimitive.content to row[1].jsonPrimitive.content) to run
         },
         data["sourceMargin"]?.jsonPrimitive?.int ?: LT_SOURCE_MARGIN,
+        daySets(data["exactNumbered"]?.jsonObject),
+        data["rebuild"]?.jsonPrimitive?.content == "true",
         DayType.entries.associateWith { day ->
-            data["exactNumbered"]
-                ?.jsonObject
-                ?.get(day.id)
-                ?.jsonArray
-                .orEmpty()
-                .map { it.jsonPrimitive.content }
-                .toSet()
+            data["proven"]?.jsonObject?.get(day.id)?.jsonArray.orEmpty().map {
+                val row = it.jsonArray
+                LtProven(
+                    row[0].jsonPrimitive.content,
+                    row[1].jsonPrimitive.content,
+                    row[2].jsonPrimitive.int,
+                    row[3].jsonPrimitive.content,
+                    row[4].jsonPrimitive.content,
+                )
+            }
         },
     )
 }
+
+/** `{dayType: [name, …]}` of a problem file as a set per day type (empty for a day type or a key left out). */
+private fun daySets(data: JsonObject?): Map<DayType, Set<String>> =
+    DayType.entries.associateWith { day ->
+        data
+            ?.get(day.id)
+            ?.jsonArray
+            .orEmpty()
+            .map { it.jsonPrimitive.content }
+            .toSet()
+    }
 
 private fun ltNumbered(rows: kotlinx.serialization.json.JsonArray): List<LtNumberedStop> =
     rows.map {
@@ -405,5 +441,12 @@ internal fun ltProblemJson(problem: LtProblem): JsonObject {
         "exact" to JsonObject(problem.exact.entries.associate { it.key.id to jsonValue(it.value.sorted()) }),
         "exactNumbered" to
             JsonObject(problem.exactNumbered.entries.associate { it.key.id to jsonValue(it.value.sorted()) }),
+        "rebuild" to problem.rebuild,
+        "proven" to
+            JsonObject(
+                problem.proven.entries.associate { (day, list) ->
+                    day.id to jsonValue(list.map { listOf(it.home, it.meeting, it.minute, it.bound, it.family) })
+                },
+            ),
     )
 }

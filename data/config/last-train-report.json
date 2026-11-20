@@ -36,12 +36,11 @@
     "holiday": {
       "beyondLastArrival": 0,
       "cells": {
-        "direct": 4447,
-        "margin_direct": 3195,
-        "margin_transfer": 73422,
-        "unknown": 1867
+        "direct": 4400,
+        "margin_direct": 2676,
+        "margin_transfer": 39049,
+        "unknown": 36806
       },
-      "cellsChangedBySecondSource": 426,
       "confirmedNumberedLines": [
         "1",
         "2",
@@ -52,6 +51,20 @@
         "7",
         "8"
       ],
+      "coverage": {
+        "bothOnNumberedLines": {
+          "direct": 4389,
+          "margin_direct": 115,
+          "margin_transfer": 18582,
+          "unknown": 97
+        },
+        "other": {
+          "direct": 11,
+          "margin_direct": 2561,
+          "margin_transfer": 20467,
+          "unknown": 36582
+        }
+      },
       "hiddenNumbers": {
         "early": 0,
         "late": 0,
@@ -62,6 +75,7 @@
       },
       "inconsistentCells": 0,
       "laterWithWiderAllowance": 0,
+      "provenDirectCells": 12,
       "secondSource": {
         "numberedLines": {
           "1": {
@@ -145,70 +159,9 @@
             "same": 342
           }
         },
-        "rebuiltFamilies": {
-          "1": {
-            "earlier": 425,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 0,
-            "onlyOurs": 0,
-            "otherBound": 0,
-            "pairs": 7043,
-            "same": 6618
-          },
-          "3": {
-            "earlier": 0,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 680,
-            "onlyOurs": 0,
-            "otherBound": 0,
-            "pairs": 1212,
-            "same": 1212
-          },
-          "4": {
-            "earlier": 468,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 765,
-            "onlyOurs": 68,
-            "otherBound": 0,
-            "pairs": 1687,
-            "same": 1151
-          },
-          "7": {
-            "earlier": 0,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 517,
-            "onlyOurs": 0,
-            "otherBound": 0,
-            "pairs": 2239,
-            "same": 2239
-          },
-          "8": {
-            "earlier": 0,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 207,
-            "onlyOurs": 0,
-            "otherBound": 3,
-            "pairs": 345,
-            "same": 342
-          },
-          "9": {
-            "earlier": 1162,
-            "later": 225,
-            "maxLaterSeconds": 120,
-            "onlyOfficial": 0,
-            "onlyOurs": 0,
-            "otherBound": 0,
-            "pairs": 1406,
-            "same": 19
-          }
-        }
+        "rebuiltFamilies": {}
       },
-      "trains": 2746
+      "trains": 1661
     },
     "saturday": {
       "beyondLastArrival": 0,
@@ -218,7 +171,6 @@
         "margin_transfer": 18659,
         "unknown": 59845
       },
-      "cellsChangedBySecondSource": 0,
       "confirmedNumberedLines": [
         "1",
         "2",
@@ -229,6 +181,20 @@
         "7",
         "8"
       ],
+      "coverage": {
+        "bothOnNumberedLines": {
+          "direct": 4427,
+          "margin_direct": 0,
+          "margin_transfer": 18659,
+          "unknown": 97
+        },
+        "other": {
+          "direct": 0,
+          "margin_direct": 0,
+          "margin_transfer": 0,
+          "unknown": 59621
+        }
+      },
       "hiddenNumbers": {
         "early": 0,
         "late": 0,
@@ -239,6 +205,7 @@
       },
       "inconsistentCells": 0,
       "laterWithWiderAllowance": 0,
+      "provenDirectCells": 0,
       "secondSource": {
         "numberedLines": {
           "1": {
@@ -329,12 +296,11 @@
     "weekday": {
       "beyondLastArrival": 0,
       "cells": {
-        "direct": 4515,
-        "margin_direct": 3055,
-        "margin_transfer": 73276,
-        "unknown": 2085
+        "direct": 4427,
+        "margin_direct": 2243,
+        "margin_transfer": 35005,
+        "unknown": 41256
       },
-      "cellsChangedBySecondSource": 40,
       "confirmedNumberedLines": [
         "1",
         "2",
@@ -345,6 +311,20 @@
         "7",
         "8"
       ],
+      "coverage": {
+        "bothOnNumberedLines": {
+          "direct": 4416,
+          "margin_direct": 12,
+          "margin_transfer": 18658,
+          "unknown": 97
+        },
+        "other": {
+          "direct": 11,
+          "margin_direct": 2231,
+          "margin_transfer": 16347,
+          "unknown": 41032
+        }
+      },
       "hiddenNumbers": {
         "early": 136,
         "late": 0,
@@ -355,6 +335,7 @@
       },
       "inconsistentCells": 0,
       "laterWithWiderAllowance": 0,
+      "provenDirectCells": 12,
       "secondSource": {
         "numberedLines": {
           "1": {
@@ -438,74 +419,13 @@
             "same": 342
           }
         },
-        "rebuiltFamilies": {
-          "1": {
-            "earlier": 756,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 32,
-            "onlyOurs": 0,
-            "otherBound": 60,
-            "pairs": 6915,
-            "same": 6099
-          },
-          "3": {
-            "earlier": 0,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 680,
-            "onlyOurs": 0,
-            "otherBound": 0,
-            "pairs": 1212,
-            "same": 1212
-          },
-          "4": {
-            "earlier": 468,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 765,
-            "onlyOurs": 68,
-            "otherBound": 0,
-            "pairs": 1687,
-            "same": 1151
-          },
-          "7": {
-            "earlier": 0,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 517,
-            "onlyOurs": 0,
-            "otherBound": 0,
-            "pairs": 2239,
-            "same": 2239
-          },
-          "8": {
-            "earlier": 1,
-            "later": 0,
-            "maxLaterSeconds": 0,
-            "onlyOfficial": 206,
-            "onlyOurs": 0,
-            "otherBound": 3,
-            "pairs": 346,
-            "same": 342
-          },
-          "9": {
-            "earlier": 37,
-            "later": 18,
-            "maxLaterSeconds": 35,
-            "onlyOfficial": 0,
-            "onlyOurs": 0,
-            "otherBound": 0,
-            "pairs": 1406,
-            "same": 1351
-          }
-        }
+        "rebuiltFamilies": {}
       },
-      "trains": 3707
+      "trains": 2013
     }
   },
   "exactWithoutPassingSample": [],
-  "model": "chain-v3+walk2x5m+source3m",
+  "model": "numbered-v1+walk2x5m+source3m",
   "official": [
     {
       "checkedAt": "2026-11-20",
@@ -1839,8 +1759,10 @@
     }
   ],
   "partialDays": [
+    "weekday",
     "saturday"
   ],
   "passed": true,
+  "rebuild": false,
   "sourceMarginSeconds": 180
 }

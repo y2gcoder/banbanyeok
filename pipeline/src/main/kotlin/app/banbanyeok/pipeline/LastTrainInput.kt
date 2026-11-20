@@ -34,6 +34,17 @@ internal class LtConfig(
     val exact: Map<DayType, Set<String>>
 
     /**
+     * Whether trains rebuilt from rows without train numbers may give a time ([LtProblem.rebuild]). Off unless the
+     * config turns it on: `"rebuild": {"enabled": true}`.
+     */
+    val rebuild: Boolean =
+        data["rebuild"]
+            ?.jsonObject
+            ?.get("enabled")
+            ?.jsonPrimitive
+            ?.content == "true"
+
+    /**
      * Day types computed from some lines only: their allowlist leaves out a line that another day type has. A route
      * through a line left out is unknown there, and the manifest says so (`lastTrainPartialDays`).
      */
@@ -159,6 +170,7 @@ internal fun ltProblem(
         LtWalks(pairWalks, stationWalks),
         config.exact,
         ltHops(net.tagoReport, "runSeconds"),
+        rebuild = config.rebuild,
     )
 }
 

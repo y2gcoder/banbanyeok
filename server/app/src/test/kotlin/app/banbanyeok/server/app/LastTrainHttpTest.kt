@@ -100,7 +100,8 @@ class LastTrainHttpTest :
                     OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", response)
                     val json = response.body()
                     json.getValue("lastTrainBasis").toString() shouldBe
-                        """{"dayType":"weekday","asOf":"${DevArtifacts.lastTrainAsOf}"}"""
+                        // 평일은 9호선을 끈 요일 종류라 일부 노선만 계산한 것으로 알린다(`lastTrainPartialDays`).
+                        """{"dayType":"weekday","asOf":"${DevArtifacts.lastTrainAsOf}","partial":true}"""
                     val table = DevArtifacts.lastTrains.current()!!.table
                     json.cards().forEach { card ->
                         val station = card.getValue("stationCode").jsonPrimitive.content
@@ -153,6 +154,30 @@ class LastTrainHttpTest :
                     cell.kind shouldBe app.banbanyeok.schema.LastTrainKind.MARGIN_DIRECT
                     (cell.minute!! <= 23 * 60 + 48) shouldBe true
                 }
+                // 평일의 9호선은 꺼 둔다(공식 파일이 11-16 평일 개정을 담았는지 확인 전). 9호선으로만 갈 수 있는 가양·마곡나루는
+                // 시각이 없고, 5호선으로도 닿는 김포공항은 9호선 직행이 아니라 다른 노선으로 갈아타는 길이다.
+                listOf("가양", "마곡나루").forEach { home ->
+                    LastTrainRule.cell(table, DayType.WEEKDAY, codeOf(home), codeOf("당산")).kind.wire shouldBe "check"
+                }
+                LastTrainRule.cell(table, DayType.WEEKDAY, codeOf("김포공항"), codeOf("당산")).kind shouldBe
+                    app.banbanyeok.schema.LastTrainKind.MARGIN_TRANSFER
+            }
+
+            it("gives no time for a route that needs a line without train numbers") {
+                val table = DevArtifacts.lastTrains.current()!!.table
+                // 수인분당선(선릉→고색), 인천 1호선(부평→계양)은 열차 번호가 있는 원천이 없다: 시각을 내지 않는다.
+                listOf("선릉" to "고색", "부평" to "계양").forEach { (meeting, home) ->
+                    DayType.entries.forEach { day ->
+                        LastTrainRule.cell(table, day, codeOf(home), codeOf(meeting)).kind.wire shouldBe "check"
+                    }
+                }
+                // 신분당선은 운영사 표와 대조한 칸만 낸다: 강남→광교는 표본이 있고, 양재→광교는 없다.
+                LastTrainRule.cell(table, DayType.WEEKDAY, gwanggyo, gangnam).kind.wire shouldBe "direct"
+                LastTrainRule.cell(table, DayType.WEEKDAY, gwanggyo, codeOf("양재")).kind.wire shouldBe "check"
+                // 1호선의 코레일 구간은 서울교통공사 공식 파일에 열차코드로 있다: 부천→인천은 여유 시각(평일 24:11에서 3분).
+                val bucheon = LastTrainRule.cell(table, DayType.WEEKDAY, codeOf("인천"), codeOf("부천"))
+                bucheon.kind shouldBe app.banbanyeok.schema.LastTrainKind.MARGIN_DIRECT
+                bucheon.minute shouldBe 24 * 60 + 8
             }
 
             it("keeps the ranking, times and reasons of every slot exactly as without last trains") {
@@ -216,7 +241,8 @@ class LastTrainHttpTest :
                     OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", response)
                     val json = response.body()
                     json.getValue("lastTrainBasis").toString() shouldBe
-                        """{"dayType":"weekday","asOf":"${DevArtifacts.lastTrainAsOf}","unavailable":"day_unknown"}"""
+                        """{"dayType":"weekday","asOf":"${DevArtifacts.lastTrainAsOf}","unavailable":"day_unknown",""" +
+                        """"partial":true}"""
                     json.cards().forEach { card ->
                         card.trains().map { it.toString() } shouldBe
                             listOf(

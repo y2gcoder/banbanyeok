@@ -219,17 +219,20 @@ private val stopOrder = compareBy<LtStop>({ it.key }, { it.code })
 
 /**
  * Trains of the numbered lines: stops of one train number in time order; trains in train-id order. Rows of the
- * lines in [verified] are confirmed rows; rows of every other line are boarded [margin] seconds early.
+ * lines in [verified] are confirmed rows; rows of every other line are boarded [margin] seconds early, except at
+ * the (line, station) pairs in [settled], whose times another source already confirmed.
  */
 internal fun ltNumberedTrains(
     stops: List<LtNumberedStop>,
     verified: Set<String> = emptySet(),
     margin: Int = 0,
+    settled: Set<Pair<String, String>> = emptySet(),
 ): List<LtTrain> =
     stops
         .map {
             val confirmed = it.group in verified
-            it to LtStop(it.code, it.arrival, it.departure, margin = if (confirmed) 0 else margin, verified = confirmed)
+            val early = if (confirmed || (it.group to it.code) in settled) 0 else margin
+            it to LtStop(it.code, it.arrival, it.departure, margin = early, verified = confirmed)
         }.filter { (_, stop) -> stop.key in LT_CHAIN_FROM until LT_DAY_END }
         .groupBy({ it.first.train }, { it })
         .toSortedMap()
@@ -289,7 +292,30 @@ internal fun ltStitch(
     return alone + whole + numbered.filterIndexed { index, _ -> index !in merged }
 }
 
-/** All trains of one day type from the first source of every line family. */
+/**
+ * The trains whose identity the source itself proves (a train number on every row): the first numbered source,
+ * and the operator's train-coded file for the families it covers. These are all the trains a time may come from
+ * when [LtProblem.rebuild] is off.
+ *
+ * Rows of the operator's file are boarded with the source margin (nothing else confirms their times) and confirm
+ * nothing, except at the stations of a line the comparison confirmed that day: there the two sources agree.
+ */
+internal fun ltProvenTrains(
+    problem: LtProblem,
+    day: app.banbanyeok.schema.DayType,
+    rows: LtDayRows,
+): List<LtTrain> {
+    val confirmed = problem.exactNumbered[day].orEmpty()
+    val settled =
+        rows.numbered
+            .filter { it.group in confirmed }
+            .map { it.group to it.code }
+            .toSet()
+    return ltNumberedTrains(rows.numbered, confirmed, problem.sourceMargin) +
+        ltNumberedTrains(rows.second, margin = problem.sourceMargin, settled = settled)
+}
+
+/** All trains of one day type from the first source of every line family (with [LtProblem.rebuild] on). */
 internal fun ltTrains(
     problem: LtProblem,
     day: app.banbanyeok.schema.DayType,

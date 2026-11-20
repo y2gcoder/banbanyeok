@@ -198,7 +198,7 @@ private class ArtifactWriter(
                 receipt(LT_FILE),
             ),
         lastTrainAsOf = lastTrains.asOf,
-        lastTrainModel = LT_MODEL,
+        lastTrainModel = lastTrains.model,
         lastTrainPartialDays = lastTrains.partialDays,
     )
 
@@ -221,7 +221,7 @@ private class ArtifactWriter(
 
     private fun unchanged(): Boolean {
         if (!output.resolve(ManifestNames.GENERATION_THREE).exists()) return false
-        if (previous?.lastTrainAsOf != lastTrains.asOf || previous.lastTrainModel != LT_MODEL) return false
+        if (previous?.lastTrainAsOf != lastTrains.asOf || previous.lastTrainModel != lastTrains.model) return false
         if (previous.lastTrainPartialDays != lastTrains.partialDays) return false
         val old = previous.files
         if (old.odSlots?.mapValues { it.value.path } !=

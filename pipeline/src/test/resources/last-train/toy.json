@@ -1,5 +1,5 @@
 {
- "about": "Toy network for the last-train rules (#62). Line X has no train numbers (express, short run, mid-line start, passing head); line N has numbers (confirmed against the operator's file on weekdays) and continues without numbers beyond n03. Expected cells: toy.expected.json, written by spikes/last-train-design/oracle.py. On the holiday line X also has a second, numbered source that differs by a minute.",
+ "about": "Toy network for the last-train rules (#62). Line X has no train numbers (express, short run, mid-line start, passing head); line N has numbers (confirmed against the operator's file on weekdays) and continues without numbers beyond n03. Expected cells: toy.expected.json, written by spikes/last-train-design/oracle.py. On the holiday line X also has a second, numbered source that differs by a minute. The file turns rebuilding on (\"rebuild\": true) because it tests the rebuilding rules; toy.off.expected.json is the same network with rebuilding off (the default), where line X gives a time only for the cells of \"proven\" that the rebuilt train agrees with.",
  "homes": [
   "n01",
   "n02",
@@ -836,6 +836,41 @@
  "exactNumbered": {
   "weekday": [
    "N"
+  ]
+ },
+ "rebuild": true,
+ "proven": {
+  "weekday": [
+   [
+    "x02",
+    "x01",
+    1425,
+    "x04",
+    "X"
+   ],
+   [
+    "x04",
+    "t00",
+    1451,
+    "x06",
+    "X"
+   ],
+   [
+    "x06",
+    "x01",
+    1410,
+    "x05",
+    "X"
+   ]
+  ],
+  "holiday": [
+   [
+    "t00",
+    "x01",
+    1380,
+    "x06",
+    "X"
+   ]
   ]
  }
 }

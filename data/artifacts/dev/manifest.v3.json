@@ -1,6 +1,6 @@
 {
   "candidateCount": 127,
-  "dataVersion": "20261120.3",
+  "dataVersion": "20261120.4",
   "files": {
     "candidates": {
       "bytes": 1468,
@@ -10,7 +10,7 @@
     "lastTrain": {
       "bytes": 1245557,
       "path": "lt.bin",
-      "sha256": "4eedb7a13292efe95736fb29050b14f5610a7c44b2ba814b9ff6ec8da7bebd47"
+      "sha256": "25f956da92970f38d1fcdb3a9513a240a1cd7f8f0ab91e09643fa27dcb6ea867"
     },
     "od": {
       "bytes": 250385,
@@ -82,18 +82,19 @@
     "seoPages": {
       "bytes": 947497,
       "path": "seo-pairs.json",
-      "sha256": "a78aa572f606eaf6337bc0007f04dffd81b4f65355b6489999a24a101f5c79a1"
+      "sha256": "3398bf40c0ef4cb1d67a719a7baceb87a4393a3dda9c724e583ad205e1077c20"
     }
   },
-  "generatedAt": "2026-11-20T14:03:35Z",
+  "generatedAt": "2026-11-20T14:59:36Z",
   "lastTrainAsOf": "2026-11-16",
-  "lastTrainModel": "chain-v3+walk2x5m+source3m",
+  "lastTrainModel": "numbered-v1+walk2x5m+source3m",
   "lastTrainPartialDays": [
+    "weekday",
     "saturday"
   ],
   "minClientSchema": 3,
   "originCount": 653,
-  "previousDataVersion": "20261120.2",
+  "previousDataVersion": "20261120.3",
   "registryVersion": 5,
   "schemaVersion": 3,
   "timeModel": "slot-half-headway"

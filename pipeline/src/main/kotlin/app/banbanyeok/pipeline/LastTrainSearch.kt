@@ -126,6 +126,13 @@ private class LtBackward(
     }
 }
 
+/**
+ * The latest train; among trains boarded at the same time a confirmed one, then the smaller destination code, so
+ * the result does not depend on the order of the trains.
+ */
+internal val LT_DIRECT_ORDER =
+    compareBy<LtDirect>({ -it.boardBy }, { !it.verified }, { it.bound }, { it.group }, { it.departure })
+
 /** Latest single-train boarding per (home, meeting), with that train's destination and family. */
 private fun ltDirect(
     trains: List<LtTrain>,
@@ -133,9 +140,6 @@ private fun ltDirect(
     meetings: Map<String, Int>,
 ): Map<Pair<Int, Int>, LtDirect> {
     val best = mutableMapOf<Pair<Int, Int>, LtDirect>()
-    // The latest train; among trains boarded at the same time the smaller destination code, so the result does
-    // not depend on the order of the trains.
-    val order = compareBy<LtDirect>({ -it.boardBy }, { !it.verified }, { it.bound }, { it.group }, { it.departure })
     trains.forEach { train ->
         train.stops.forEachIndexed { to, target ->
             val home = homes[target.code] ?: return@forEachIndexed
@@ -144,7 +148,7 @@ private fun ltDirect(
                 if (meeting != null && ltRides(origin, target)) {
                     val verified = origin.verified && target.verified
                     val found = LtDirect(origin.boardBy, origin.departure, train.bound, train.group, verified)
-                    best.merge(home to meeting, found) { old, new -> minOf(old, new, order) }
+                    best.merge(home to meeting, found) { old, new -> minOf(old, new, LT_DIRECT_ORDER) }
                 }
             }
         }
@@ -252,7 +256,81 @@ internal fun ltNight(
     rows: LtDayRows,
     allowance: LtAllowance = LtAllowance.DEFAULT,
 ): LtDayResult {
+    if (!problem.rebuild) {
+        val proven = ltDay(problem, ltProvenTrains(problem, day, rows), allowance)
+        return ltWithProvenDirect(problem, day, proven, ltRebuiltDirect(problem, day, rows))
+    }
     val first = ltDay(problem, ltTrains(problem, day, rows), allowance)
     val second = ltSecondTrains(problem, day, rows) ?: return first
     return ltEarlier(first, ltDay(problem, second, allowance))
+}
+
+/**
+ * The last single train of every cell among the trains rebuilt from unnumbered rows. With [LtProblem.rebuild] off
+ * these never give a time by themselves: they are what the operator's timetable is compared with, cell by cell.
+ */
+internal fun ltRebuiltDirect(
+    problem: LtProblem,
+    day: DayType,
+    rows: LtDayRows,
+): List<LtDirect?> {
+    val trains = ltUnnumberedTrains(problem, rows.unnumbered, { problem.margin(it, day) }, problem.exact[day].orEmpty())
+    val homes = problem.homes.withIndex().associate { it.value to it.index }
+    val meetings = problem.meetings.withIndex().associate { it.value to it.index }
+    val direct = ltDirect(trains, homes, meetings)
+    val width = problem.meetings.size
+    return List(problem.homes.size * width) { direct[it / width to it % width] }
+}
+
+/**
+ * The same result with, per cell, the later of its own last single train and the rebuilt one: what an operator's
+ * sample is compared with. With rebuilding on [rebuilt] is empty and the result is returned as it is.
+ */
+internal fun ltComparable(
+    result: LtDayResult,
+    rebuilt: List<LtDirect?>,
+): LtDayResult =
+    if (rebuilt.isEmpty()) {
+        result
+    } else {
+        val direct =
+            result.direct.indices.map {
+                listOfNotNull(
+                    result.direct[it],
+                    rebuilt[it],
+                ).minWithOrNull(LT_DIRECT_ORDER)
+            }
+        LtDayResult(result.cells, result.latest, direct)
+    }
+
+/**
+ * Adds the direct cells of [LtProblem.proven] to a table computed from train-numbered sources only. A proven cell
+ * is added only when the rebuilt train for it ([rebuilt]) is of a family confirmed that day and leaves at the
+ * minute and for the terminal the operator's timetable gives; then that departure is published as a confirmed
+ * direct train. It is never used as a leg of a transfer: its arrival time is not in the operator's table.
+ */
+internal fun ltWithProvenDirect(
+    problem: LtProblem,
+    day: DayType,
+    result: LtDayResult,
+    rebuilt: List<LtDirect?>,
+): LtDayResult {
+    val cells = result.cells.toMutableList()
+    val latest = result.latest.copyOf()
+    val direct = result.direct.toMutableList()
+    val width = problem.meetings.size
+    problem.proven[day].orEmpty().forEach { ride ->
+        val index = problem.homes.indexOf(ride.home) * width + problem.meetings.indexOf(ride.meeting)
+        val train = rebuilt.getOrNull(index)?.takeIf { ride.family in problem.exact[day].orEmpty() } ?: return@forEach
+        val same =
+            train.group == ride.family && train.bound == ride.bound &&
+                train.departure / SECONDS_PER_MINUTE == ride.minute
+        if (!same || ride.home == ride.meeting) return@forEach
+        val confirmed = LtDirect(train.departure, train.departure, train.bound, train.group, verified = true)
+        val best = listOfNotNull(result.direct[index], confirmed).minWithOrNull(LT_DIRECT_ORDER)
+        latest[index] = maxOf(latest[index], confirmed.boardBy)
+        direct[index] = best
+        cells[index] = ltCell(latest[index], best)
+    }
+    return LtDayResult(cells, latest, direct)
 }

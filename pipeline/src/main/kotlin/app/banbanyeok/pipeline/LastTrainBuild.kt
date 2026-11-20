@@ -22,12 +22,18 @@ internal class LtArtifact(
     val passed: Boolean,
     /** Day types computed from some lines only (manifest `lastTrainPartialDays`); null when there is none. */
     val partialDays: List<String>? = null,
+    /** Identifier of the rules used (manifest `lastTrainModel`). */
+    val model: String = ltModel(rebuild = false),
 )
 
 private class LtDayOutcome(
     val result: LtDayResult,
     val json: JsonObject,
     val passed: Boolean,
+    /** Stations of the first numbered source that day (Seoul Metro's own sections), for the coverage counts. */
+    val numberedStations: Set<String>,
+    /** With rebuilding off: the last single rebuilt train of every cell, for the cell-by-cell comparison. */
+    val rebuilt: List<LtDirect?> = emptyList(),
 )
 
 /** One source choice of a night with the gates that look at its own trains. */
@@ -70,16 +76,60 @@ private fun numberedChecks(
 
 private fun checksJson(checks: Map<String, LtCrossCheck>) = JsonObject(checks.toSortedMap().mapValues { it.value.json })
 
-private fun ltDayOutcome(
-    base: LtProblem,
+/** Gate counts of one day type in the report. Cell counts are added once the table is final. */
+private fun gatesJson(
+    trains: Int,
+    hidden: LtHiddenCheck,
+    confirmed: Set<String>,
+    checks: Pair<Map<String, LtCrossCheck>, Map<String, LtCrossCheck>>,
+    variants: List<LtVariant>,
+) = mapOf(
+    "trains" to jsonValue(trains),
+    "hiddenNumbers" to hidden.json,
+    "confirmedNumberedLines" to jsonValue(confirmed.sorted()),
+    "secondSource" to obj("numberedLines" to checksJson(checks.first), "rebuiltFamilies" to checksJson(checks.second)),
+    "laterWithWiderAllowance" to jsonValue(variants.sumOf { it.later }),
+    "inconsistentCells" to jsonValue(variants.sumOf { it.inconsistent }),
+    "beyondLastArrival" to jsonValue(variants.sumOf { it.beyond }),
+)
+
+private fun List<LtVariant>.clean() = all { it.later == 0 && it.inconsistent == 0 && it.beyond == 0 }
+
+/**
+ * One day type with rebuilding **off** (the default): every time comes from trains whose identity the source proves
+ * (train numbers). Rebuilt trains are computed only to be compared with the operator's table cell by cell.
+ */
+private fun provenOutcome(
+    problem: LtProblem,
     day: DayType,
-    sources: LtSources,
+    rows: LtDayRows,
+    checks: Map<String, LtCrossCheck>,
     bound: LtArrivalBound,
-): Pair<LtDayOutcome, Set<String>> {
-    val rows = sources.rows(day)
-    val numbered = numberedChecks(day, sources, rows)
-    val confirmed = numbered.filterValues { it.identical }.keys
-    val problem = base.copy(exactNumbered = base.exactNumbered + (day to confirmed))
+): LtDayOutcome {
+    val trains = ltProvenTrains(problem, day, rows)
+    val variant = ltVariant(problem, trains, bound)
+    val hidden = ltHiddenNumbers(problem.families, rows.numbered, LOOP_LINES)
+    val confirmed = problem.exactNumbered[day].orEmpty()
+    return LtDayOutcome(
+        variant.result,
+        JsonObject(gatesJson(trains.size, hidden, confirmed, checks to emptyMap(), listOf(variant))),
+        hidden.passed && checks.values.all { it.maxLaterSeconds <= problem.sourceMargin } && listOf(variant).clean(),
+        rows.numbered.map { it.code }.toSet(),
+        ltRebuiltDirect(problem, day, rows),
+    )
+}
+
+/**
+ * One day type with rebuilding **on**: rebuilt trains give times too. Where the operator's file also covers a rebuilt
+ * family the table is computed from both and the earlier answer kept.
+ */
+private fun rebuiltOutcome(
+    problem: LtProblem,
+    day: DayType,
+    rows: LtDayRows,
+    checks: Map<String, LtCrossCheck>,
+    bound: LtArrivalBound,
+): LtDayOutcome {
     val trains = ltTrains(problem, day, rows)
     val first = ltVariant(problem, trains, bound)
     val second = ltSecondTrains(problem, day, rows)?.let { ltVariant(problem, it, bound) }
@@ -92,39 +142,90 @@ private fun ltDayOutcome(
             ltCrossCheck(trains.filter { it.group == family }, ltNumberedTrains(stops))
         }
     // No source may be later than the operator's file by more than the margin it is boarded early by.
-    val withinMargin = (numbered.values + rebuilt.values).all { it.maxLaterSeconds <= problem.sourceMargin }
-    val kinds = result.cells.groupingBy { it.kind }.eachCount()
+    val withinMargin = (checks.values + rebuilt.values).all { it.maxLaterSeconds <= problem.sourceMargin }
+    val changed = if (second == null) 0 else result.cells.indices.count { result.cells[it] != first.result.cells[it] }
+    val confirmed = problem.exactNumbered[day].orEmpty()
+    return LtDayOutcome(
+        result,
+        JsonObject(
+            gatesJson(trains.size, hidden, confirmed, checks to rebuilt, variants) +
+                ("cellsChangedBySecondSource" to jsonValue(changed)),
+        ),
+        hidden.passed && withinMargin && variants.clean(),
+        rows.numbered.map { it.code }.toSet(),
+    )
+}
+
+private fun ltDayOutcome(
+    base: LtProblem,
+    day: DayType,
+    sources: LtSources,
+    bound: LtArrivalBound,
+): Pair<LtDayOutcome, Set<String>> {
+    val rows = sources.rows(day)
+    val numbered = numberedChecks(day, sources, rows)
+    val confirmed = numbered.filterValues { it.identical }.keys
+    val problem = base.copy(exactNumbered = base.exactNumbered + (day to confirmed))
     val outcome =
-        LtDayOutcome(
-            result,
-            obj(
-                "trains" to trains.size,
-                "cells" to
-                    JsonObject(
-                        LastTrainKind.entries.associate { it.name.lowercase() to jsonValue(kinds[it.raw] ?: 0) },
-                    ),
-                "hiddenNumbers" to hidden.json,
-                "confirmedNumberedLines" to confirmed.sorted(),
-                "secondSource" to
-                    obj(
-                        "numberedLines" to checksJson(numbered),
-                        "rebuiltFamilies" to checksJson(rebuilt),
-                    ),
-                "cellsChangedBySecondSource" to
-                    if (second ==
-                        null
-                    ) {
-                        0
-                    } else {
-                        result.cells.indices.count { result.cells[it] != first.result.cells[it] }
-                    },
-                "laterWithWiderAllowance" to variants.sumOf { it.later },
-                "inconsistentCells" to variants.sumOf { it.inconsistent },
-                "beyondLastArrival" to variants.sumOf { it.beyond },
-            ),
-            hidden.passed && withinMargin && variants.all { it.later == 0 && it.inconsistent == 0 && it.beyond == 0 },
-        )
+        if (problem.rebuild) {
+            rebuiltOutcome(problem, day, rows, numbered, bound)
+        } else {
+            provenOutcome(problem, day, rows, numbered, bound)
+        }
     return outcome to confirmed
+}
+
+/**
+ * The direct cells the operator's timetable confirms one by one: the samples that passed, of the unnumbered families
+ * marked exact that day. Only these cells get a time from a rebuilt train while rebuilding is off.
+ */
+private fun provenRides(
+    samples: List<LtOfficialSample>,
+    official: List<JsonObject>,
+    config: LtConfig,
+    origins: List<app.banbanyeok.schema.Station>,
+): Map<DayType, List<LtProven>> =
+    samples
+        .zip(official)
+        .filter { (sample, report) ->
+            report.text("passed") == "true" &&
+                sample.family in config.exact.getValue(sample.day)
+        }.groupBy({ it.first.day }) { (sample, _) ->
+            LtProven(
+                stationNamed(origins, sample.home).code,
+                stationNamed(origins, sample.meeting).code,
+                sample.minute,
+                stationNamed(origins, sample.bound).code,
+                sample.family,
+            )
+        }
+
+/** Cells with and without a time, split by whether both ends are stations of the first numbered source. */
+private fun coverageJson(
+    problem: LtProblem,
+    result: LtDayResult,
+    numberedStations: Set<String>,
+): JsonObject {
+    val width = problem.meetings.size
+    val counts = mutableMapOf<Pair<Boolean, Int>, Int>()
+    result.cells.forEachIndexed { index, cell ->
+        val home = problem.homes[index / width]
+        val meeting = problem.meetings[index % width]
+        if (home !=
+            meeting
+        ) {
+            counts.merge((home in numberedStations && meeting in numberedStations) to cell.kind, 1, Int::plus)
+        }
+    }
+
+    fun scope(inside: Boolean) =
+        JsonObject(LastTrainKind.entries.associate { it.name.lowercase() to jsonValue(counts[inside to it.raw] ?: 0) })
+    return obj("bothOnNumberedLines" to scope(true), "other" to scope(false))
+}
+
+private fun cellsJson(result: LtDayResult): JsonObject {
+    val kinds = result.cells.groupingBy { it.kind }.eachCount()
+    return JsonObject(LastTrainKind.entries.associate { it.name.lowercase() to jsonValue(kinds[it.raw] ?: 0) })
 }
 
 /** Every family and day type marked exact in the config needs at least one passing official sample of its own. */
@@ -177,6 +278,29 @@ private fun writeOracleProblem(
         .writeJson(JsonObject(ltProblemJson(problem) + ("allowed" to JsonObject(allowed))).toString())
 }
 
+/** The report of every day type: its gates, and the cell counts of the final table. */
+private fun daysJson(
+    problem: LtProblem,
+    outcomes: Map<DayType, LtDayOutcome>,
+    results: Map<DayType, LtDayResult>,
+): JsonObject {
+    val numberedStations = outcomes.values.flatMap { it.numberedStations }.toSet()
+    return JsonObject(
+        outcomes.entries.associate { (day, outcome) ->
+            val result = results.getValue(day)
+            day.id to
+                JsonObject(
+                    outcome.json +
+                        mapOf(
+                            "cells" to cellsJson(result),
+                            "coverage" to coverageJson(problem, result, numberedStations),
+                            "provenDirectCells" to jsonValue(problem.proven[day].orEmpty().size),
+                        ),
+                )
+        },
+    )
+}
+
 /**
  * Computes the last-train table from the cached timetables (offline) and runs its gates. Also writes the fixed
  * inputs to `build/last-train/problem.json` for the independent oracle (prototype/last_train.py).
@@ -195,20 +319,28 @@ internal fun buildLastTrains(
     val computed = DayType.entries.associateWith { ltDayOutcome(base, it, sources, bound) }
     val outcomes = computed.mapValues { it.value.first }
     // The fixed inputs as computed: which numbered lines the comparison confirmed is part of them.
-    val problem = base.copy(exactNumbered = computed.mapValues { it.value.second })
+    val lines = base.copy(exactNumbered = computed.mapValues { it.value.second })
+    val samples = ltOfficialSamples(root.resolve("data/config/last-train-official.csv").readText())
+    // The operator's samples are compared with the last single train of each cell, numbered or rebuilt.
+    val official =
+        ltOfficialReport(
+            samples,
+            lines,
+            net.origins,
+            outcomes.mapValues { ltComparable(it.value.result, it.value.rebuilt) },
+        )
+    val problem =
+        if (lines.rebuild) lines else lines.copy(proven = provenRides(samples, official, config, net.origins))
+    val results =
+        outcomes.mapValues { (day, outcome) ->
+            if (problem.rebuild) outcome.result else ltWithProvenDirect(problem, day, outcome.result, outcome.rebuilt)
+        }
     val ceilings =
         ltCeilingReport(
             ltCeilings(root.resolve("data/config/last-train-ceilings.csv").readText()),
             problem,
             net.origins,
-            outcomes.mapValues { it.value.result },
-        )
-    val official =
-        ltOfficialReport(
-            ltOfficialSamples(root.resolve("data/config/last-train-official.csv").readText()),
-            problem,
-            net.origins,
-            outcomes.mapValues { it.value.result },
+            results,
         )
     val unbacked = unbackedExact(config, official)
     val passed =
@@ -217,13 +349,14 @@ internal fun buildLastTrains(
     val asOf = ltAsOf(root)
     writeOracleProblem(root, problem, config)
     return LtArtifact(
-        ltTable(problem, net.registry.registryVersion, outcomes.mapValues { it.value.result }),
+        ltTable(problem, net.registry.registryVersion, results),
         asOf,
         obj(
-            "model" to LT_MODEL,
+            "model" to ltModel(problem.rebuild),
             "asOf" to asOf,
             "passed" to passed,
-            "days" to JsonObject(outcomes.entries.associate { it.key.id to it.value.json }),
+            "rebuild" to problem.rebuild,
+            "days" to daysJson(problem, outcomes, results),
             "sourceMarginSeconds" to problem.sourceMargin,
             "official" to official,
             "ceilings" to ceilings,
@@ -232,5 +365,6 @@ internal fun buildLastTrains(
         ),
         passed,
         config.partialDays.map { it.id }.ifEmpty { null },
+        ltModel(problem.rebuild),
     )
 }

@@ -114,5 +114,6 @@
    "numbered": []
   }
  },
- "about": "A local train waits at b to be overtaken (arrives 23:02, leaves 23:12); an express leaves a at 23:10 and only passes b and c. The express must not be joined to the local's rows: a to c is the 23:00 local (PR #81 review)."
+ "about": "A local train waits at b to be overtaken (arrives 23:02, leaves 23:12); an express leaves a at 23:10 and only passes b and c. The express must not be joined to the local's rows: a to c is the 23:00 local (PR #81 review).",
+ "rebuild": true
 }
