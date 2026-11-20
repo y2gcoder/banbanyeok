@@ -92,9 +92,10 @@
         "weekday",
         "holiday"
       ],
-      "checkedAt": "2026-11-20",
-      "source": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB004",
-      "basis": "신분당선 운영사 역별 시간표(신사·논현·신논현·강남·양재·판교, 양방향)의 평일·주말 및 공휴일 막차 24건이 분과 행선지까지 일치(last-train-official.csv). 운영사 표는 토요일과 공휴일이 한 표이지만 토요일은 TAGO 시간표가 없어 계산하지 않는다."
+      "checkedAt": "2026-11-21",
+      "source": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB001",
+      "receipt": "S8",
+      "basis": "신분당선 운영사(DX라인) 역별 시간표 16개 역(sb_cd=SB001~SB016) 전체에서 shinbundang-samples 명령이 만든 표본 240건(만날 역 8개 × 집 역 15개 × 평일·주말 및 공휴일, last-train-official.csv). 운영사 표는 대조용으로만 쓴다(2026-11-21 운영자 결정, #64): 원문은 커밋하지 않고 칸마다 막차 출발 분·행선지만 적으며, 화면 시각은 TAGO(S6)에서 계산한다. 표본은 그 칸에서 같은 노선(신분당선)의 마지막 직행과 견준다(다른 노선의 직행이 더 늦은 칸도 신분당 표본은 통과하고, 칸은 둘 가운데 늦은 쪽을 낸다). 한 요일의 표본이 하나라도 틀리면 그 요일의 신분당 확정 칸을 모두 끄고 발행은 계속한다. 운영사 공지의 최신 시각표 변경 시행일(영수증 S8의 latest_timetable_change)이 TAGO 수집일 뒤이거나, 운영사 페이지를 받은 날과 TAGO 수집일이 14일 넘게 떨어지면 두 요일 모두 끈다. 운영사 표는 토요일과 공휴일이 한 표이지만 토요일은 TAGO 시간표가 없어 계산하지 않는다(다른 요일로 대체하지 않는다)."
     }
   },
   "rebuild": {

@@ -402,11 +402,12 @@ def direct_order(single):
 
 
 def with_proven(problem, day, latest, direct, rebuilt):
-    """Adds the proven direct cells: only where the rebuilt train of the cell is of a family confirmed that day and
-    leaves at the minute and for the terminal the operator's timetable gives. Never a leg of a transfer."""
+    """Adds the proven direct cells: only where the last rebuilt train of the ride's own family in the cell
+    (`rebuilt`: family -> cell -> train) is of a family confirmed that day and leaves at the minute and for the
+    terminal the operator's timetable gives. Never a leg of a transfer."""
     latest, direct = dict(latest), dict(direct)
     for home, meeting, minute, bound, family in problem.proven[day]:
-        train = rebuilt.get((home, meeting))
+        train = rebuilt.get(family, {}).get((home, meeting))
         if train is None or family not in problem.exact[day] or home == meeting:
             continue
         if (train[3], train[2], train[1] // 60) != (family, bound, minute):
@@ -467,8 +468,10 @@ def night_trains(problem, rows, day):
 def day_table(problem, day, rows):
     if not problem.rebuild:
         latest, direct = day_parts(problem, day, proven_trains(problem, rows, day))
-        rebuilt = direct_matrix(unnumbered_trains(problem, rows["unnumbered"], day),
-                                set(problem.homes), set(problem.meetings))
+        unnumbered = unnumbered_trains(problem, rows["unnumbered"], day)
+        rebuilt = {family: direct_matrix([t for t in unnumbered if t.group == family],
+                                         set(problem.homes), set(problem.meetings))
+                   for family in {t.group for t in unnumbered}}
         return cells_of(*with_proven(problem, day, latest, direct, rebuilt))
     cells = day_cells(problem, day, trains_of(problem, rows, day))
     second = second_trains_of(problem, rows, day)

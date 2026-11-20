@@ -82,5 +82,176 @@
     "rows": 423107,
     "sha256": "fd7e7b6edc18a5ac4f40f53b594d460d5cbd96d90919aaeb54b957890080d606",
     "source_url": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000007671122&fileDetailSn=1"
+  },
+  {
+    "bytes": 186694,
+    "content_type": "text/html; charset=EUC-KR",
+    "effective_date": "2026-11-06 (신분당선 운영사 DX라인 공지의 최신 시각표 변경 시행일)",
+    "estimated": false,
+    "fetched_at": "2026-11-20T22:08:57Z",
+    "file": "data/raw/shinbundang",
+    "id": "S8",
+    "latest_timetable_change": "2026-11-06",
+    "license": "이용 조건 표기 없음(사이트 하단 'COPYRIGHT ⓒ DXLINE. ALL RIGHTS RESERVED.'만, 2026-11-21 확인). 대조용으로만 쓴다: 원문은 커밋하지 않고 칸마다 막차 출발 분·행선지만 last-train-official.csv에 적는다. lt.bin의 값은 TAGO(S6)에서 계산한다(2026-11-21 운영자 결정, #64 법률 검토 목록)",
+    "notices": [
+      {
+        "bytes": 4197,
+        "effective": "2026-09-28",
+        "fetched_at": "2026-11-20T22:22:44Z",
+        "file": "data/raw/shinbundang/notice-1356.html",
+        "newest": false,
+        "registered": "2026-10-02",
+        "sha256": "4d7954b38b3cff186ba4f569cdc251fdfe0f48da56ff00a59bddfd8e76cf80b9",
+        "source_url": "https://www.shinbundang.co.kr/notice/notice1_view.jsp?viewNo=1356",
+        "title": "신분당선 열차운행시각표 변경 시행",
+        "viewNo": "1356"
+      },
+      {
+        "bytes": 3884,
+        "effective": "2026-11-06",
+        "fetched_at": "2026-11-20T22:22:44Z",
+        "file": "data/raw/shinbundang/notice-1358.html",
+        "newest": true,
+        "registered": "2026-11-02",
+        "sha256": "bed5cb7edf0df3a5d63222c238095ea2207d4fe839ad12f268ed03243ed0f1fc",
+        "source_url": "https://www.shinbundang.co.kr/notice/notice1_view.jsp?viewNo=1358",
+        "title": "신분당선 열차운행시각표 변경 시행",
+        "viewNo": "1358"
+      }
+    ],
+    "pages": [
+      {
+        "bytes": 10567,
+        "fetched_at": "2026-11-20T22:08:57Z",
+        "file": "data/raw/shinbundang/SB001.html",
+        "sha256": "9fe106f52d5f9968617c97b5fefa2fbd9435f9b5e1587111cdc7b37cc3de61bf",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB001",
+        "station": "신사"
+      },
+      {
+        "bytes": 11421,
+        "fetched_at": "2026-11-20T22:09:12Z",
+        "file": "data/raw/shinbundang/SB002.html",
+        "sha256": "65e12a730fd60bedfdabda4e221e2d43af132bfb7394c5977020298a59ba608d",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB002",
+        "station": "논현"
+      },
+      {
+        "bytes": 11421,
+        "fetched_at": "2026-11-20T22:09:28Z",
+        "file": "data/raw/shinbundang/SB003.html",
+        "sha256": "b20818ce27c932c1a27354c7e72d39184031bf8b3fc565a1817f224698d987ce",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB003",
+        "station": "신논현"
+      },
+      {
+        "bytes": 11421,
+        "fetched_at": "2026-11-20T22:09:43Z",
+        "file": "data/raw/shinbundang/SB004.html",
+        "sha256": "83c15e401d22d20d8482f3c1ebef0130a5101ff8be27e0fcae087a7635e98293",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB004",
+        "station": "강남"
+      },
+      {
+        "bytes": 11422,
+        "fetched_at": "2026-11-20T22:09:58Z",
+        "file": "data/raw/shinbundang/SB005.html",
+        "sha256": "13641c6d95ea14b12dd5dd950845151a1a3507894841557479a0e9ae60cf6700",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB005",
+        "station": "양재"
+      },
+      {
+        "bytes": 11422,
+        "fetched_at": "2026-11-20T22:10:13Z",
+        "file": "data/raw/shinbundang/SB006.html",
+        "sha256": "1b8c609edb2981fd589475e244ffea0394c8f1632d6ffafd41920492b0244c1f",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB006",
+        "station": "양재시민의숲"
+      },
+      {
+        "bytes": 11421,
+        "fetched_at": "2026-11-20T22:10:28Z",
+        "file": "data/raw/shinbundang/SB007.html",
+        "sha256": "c8de406625a8994e59268cdc2c955cfe9975cae589eee28fa2b344abe116fc96",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB007",
+        "station": "청계산입구"
+      },
+      {
+        "bytes": 11421,
+        "fetched_at": "2026-11-20T22:10:44Z",
+        "file": "data/raw/shinbundang/SB008.html",
+        "sha256": "b7a2bd3a972c9a049e90e43129f40c3f4c9ab83dbbbf3fb19f0dc5fd3aba39fb",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB008",
+        "station": "판교"
+      },
+      {
+        "bytes": 11094,
+        "fetched_at": "2026-11-20T22:10:59Z",
+        "file": "data/raw/shinbundang/SB009.html",
+        "sha256": "dfcd4efec2a395bc567b49d5fdb8ad8ff9f2bf93090d1d42ba1619c75ad8f98c",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB009",
+        "station": "정자"
+      },
+      {
+        "bytes": 11120,
+        "fetched_at": "2026-11-20T22:11:14Z",
+        "file": "data/raw/shinbundang/SB010.html",
+        "sha256": "dfcc6c5a5c53f3205997e3c236546522787ff2a91bbdc283269d5f9feaebeb48",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB010",
+        "station": "미금"
+      },
+      {
+        "bytes": 11120,
+        "fetched_at": "2026-11-20T22:11:29Z",
+        "file": "data/raw/shinbundang/SB011.html",
+        "sha256": "c734ac17a9a1727b92285d34887c132df0c4da6e654370e9d4c00b0a401aa296",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB011",
+        "station": "동천"
+      },
+      {
+        "bytes": 11120,
+        "fetched_at": "2026-11-20T22:11:45Z",
+        "file": "data/raw/shinbundang/SB012.html",
+        "sha256": "2979794c0f409949b99a5977b5e61ff55b76a0f31f0425fe40fbf35153ac3afd",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB012",
+        "station": "수지구청"
+      },
+      {
+        "bytes": 11120,
+        "fetched_at": "2026-11-20T22:12:00Z",
+        "file": "data/raw/shinbundang/SB013.html",
+        "sha256": "8d6f88563c64389088313e23f435787b720a79c759591ea3d349eb0340790491",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB013",
+        "station": "성복"
+      },
+      {
+        "bytes": 11119,
+        "fetched_at": "2026-11-20T22:12:15Z",
+        "file": "data/raw/shinbundang/SB014.html",
+        "sha256": "8accce3d05f76e19def88f13c0f8f30fd40d2723d51f874f484d8a76d1240e63",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB014",
+        "station": "상현"
+      },
+      {
+        "bytes": 11119,
+        "fetched_at": "2026-11-20T22:12:30Z",
+        "file": "data/raw/shinbundang/SB015.html",
+        "sha256": "49622fee7054f5dd5d31d6a6eec06dcc072fd8e1e761c915d79636b9d2a19082",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB015",
+        "station": "광교중앙"
+      },
+      {
+        "bytes": 10285,
+        "fetched_at": "2026-11-20T22:12:46Z",
+        "file": "data/raw/shinbundang/SB016.html",
+        "sha256": "2d8b89bde11fc47f83f85ccf4b53311ca9a7e7d9df9e0d3006a45ac5e4bade3e",
+        "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB016",
+        "station": "광교"
+      }
+    ],
+    "request_body": null,
+    "rows": 240,
+    "sha256": "4a9d47bbad7d54ef4c47aa5419a68de3bed7e109f1b0e2adbfb143ef628c5110",
+    "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB001 … SB016"
   }
 ]

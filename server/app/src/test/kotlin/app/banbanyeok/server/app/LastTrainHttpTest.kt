@@ -171,9 +171,13 @@ class LastTrainHttpTest :
                         lastTrainCell(table, day, codeOf(home), codeOf(meeting)).kind.wire shouldBe "check"
                     }
                 }
-                // 신분당선은 운영사 표와 대조한 칸만 낸다: 강남→광교는 표본이 있고, 양재→광교는 없다.
+                // 신분당선은 운영사 표와 대조한 칸만 낸다(#82: 만날 역 8개 × 집 역 15개 전부). 양재→광교 평일 24:05.
+                // 토요일은 TAGO에 시간표가 없어 켜지 않는다(운영사 표가 주말·공휴일 한 표여도 휴일로 대체하지 않음).
                 lastTrainCell(table, DayType.WEEKDAY, gwanggyo, gangnam).kind.wire shouldBe "direct"
-                lastTrainCell(table, DayType.WEEKDAY, gwanggyo, codeOf("양재")).kind.wire shouldBe "check"
+                val yangjae = lastTrainCell(table, DayType.WEEKDAY, gwanggyo, codeOf("양재"))
+                yangjae.kind.wire shouldBe "direct"
+                yangjae.minute shouldBe 24 * 60 + 5
+                lastTrainCell(table, DayType.SATURDAY, gwanggyo, codeOf("양재")).kind.wire shouldBe "check"
                 // 1호선의 코레일 구간은 서울교통공사 공식 파일에 열차코드로 있다: 부천→인천은 여유 시각(평일 24:11에서 3분).
                 val bucheon = lastTrainCell(table, DayType.WEEKDAY, codeOf("인천"), codeOf("부천"))
                 bucheon.kind shouldBe app.banbanyeok.schema.LastTrainKind.MARGIN_DIRECT

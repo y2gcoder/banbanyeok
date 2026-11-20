@@ -99,7 +99,8 @@ if [[ "$stale" != stale ]]; then
   code="$(http "$tmp/k" -X POST "$base/v1/recommend" -H 'Content-Type: application/json' \
     -d '{"origins":["k3a","dzc"],"mode":"fair","timeSlot":"weekday-night"}')"
   [[ "$code" == 200 ]] || fail "/v1/recommend(강남·광교) 상태 $code"
-  # 신분당선은 표본이 있는 칸만 시각을 낸다. 상위 후보에 표본의 만날 역이 없으면 직행이 안 나올 수 있어, 없을 때는 알리기만 한다.
+  # 신분당선은 운영사 표와 대조한 칸만 시각을 내고(#82부터 만날 역 8개 전부), 표본이 틀리거나 운영사 표가 TAGO와 같은 때의
+  # 것이 아니면 그 요일이 꺼진 채로 발행된다(last-train-report.json의 exactSwitches). 꺼진 것도 정상 발행이라 알리기만 한다.
   python3 -I - "$tmp/k" <<'PY' || fail "신분당선 막차 응답을 읽지 못함"
 import json, sys
 r = json.load(open(sys.argv[1]))
@@ -109,7 +110,7 @@ if found:
     name, train = found[0]
     print("   %s에서 광교행 직행 확정 %02d:%02d" % (name, train["minute"] // 60 % 24, train["minute"] % 60))
 else:
-    print("   경고: 상위 후보에 신분당선 대조 칸이 없음(후보 순위가 바뀌었거나 표본이 줄었는지 확인)")
+    print("   경고: 상위 후보에 신분당선 대조 칸이 없음(후보 순위, 또는 보고서의 exactSwitches에서 신분당이 꺼졌는지 확인)")
 PY
 fi
 

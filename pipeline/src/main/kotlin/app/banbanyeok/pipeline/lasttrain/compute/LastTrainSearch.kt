@@ -276,6 +276,29 @@ internal fun ltNight(
 }
 
 /**
+ * The last single train of every cell among the trains rebuilt from unnumbered rows, **per line family**. A family's
+ * own last train is what that family's operator timetable is compared with: where another line's direct train is
+ * later (신사 → 양재 by line 3), the cell's last train overall says nothing about the family's own.
+ */
+internal class LtRebuiltDirect(
+    private val byFamily: Map<String, Map<Int, LtDirect>>,
+) {
+    /** The last rebuilt train of [family] that serves [cell] on its own. */
+    fun of(
+        family: String,
+        cell: Int,
+    ): LtDirect? = byFamily[family]?.get(cell)
+
+    /** The last rebuilt train of any family. */
+    operator fun get(cell: Int): LtDirect? = byFamily.values.mapNotNull { it[cell] }.minWithOrNull(LT_DIRECT_ORDER)
+
+    companion object {
+        /** With rebuilding on: nothing is compared this way. */
+        val NONE = LtRebuiltDirect(emptyMap())
+    }
+}
+
+/**
  * The last single train of every cell among the trains rebuilt from unnumbered rows. With [LtProblem.rebuild] off
  * these never give a time by themselves: they are what the operator's timetable is compared with, cell by cell.
  */
@@ -283,47 +306,45 @@ internal fun ltRebuiltDirect(
     problem: LtProblem,
     day: DayType,
     rows: LtDayRows,
-): List<LtDirect?> {
+): LtRebuiltDirect {
     val trains = ltUnnumberedTrains(problem, rows.unnumbered, { problem.margin(it, day) }, problem.exact[day].orEmpty())
     val homes = problem.homes.withIndex().associate { it.value to it.index }
     val meetings = problem.meetings.withIndex().associate { it.value to it.index }
-    val direct = ltDirect(trains, homes, meetings)
     val width = problem.meetings.size
-    return List(problem.homes.size * width) { direct[it / width to it % width] }
+    return LtRebuiltDirect(
+        trains.groupBy { it.group }.mapValues { (_, family) ->
+            ltDirect(family, homes, meetings).mapKeys { (cell, _) -> cell.first * width + cell.second }
+        },
+    )
 }
 
 /**
- * The same result with, per cell, the later of its own last single train and the rebuilt one: what an operator's
- * sample is compared with. With rebuilding on [rebuilt] is empty and the result is returned as it is.
+ * The last single train of [family] in [cell], numbered or rebuilt: what an operator's sample of that family is
+ * compared with. A numbered train counts only when it is the cell's last single train (the table keeps no other).
  */
-internal fun ltComparable(
+internal fun ltFamilyDirect(
     result: LtDayResult,
-    rebuilt: List<LtDirect?>,
-): LtDayResult =
-    if (rebuilt.isEmpty()) {
-        result
-    } else {
-        val direct =
-            result.direct.indices.map {
-                listOfNotNull(
-                    result.direct[it],
-                    rebuilt[it],
-                ).minWithOrNull(LT_DIRECT_ORDER)
-            }
-        LtDayResult(result.cells, result.latest, direct)
-    }
+    rebuilt: LtRebuiltDirect,
+    family: String,
+    cell: Int,
+): LtDirect? =
+    listOfNotNull(
+        result.direct[cell]?.takeIf { it.group == family },
+        rebuilt.of(family, cell),
+    ).minWithOrNull(LT_DIRECT_ORDER)
 
 /**
  * Adds the direct cells of [LtProblem.proven] to a table computed from train-numbered sources only. A proven cell
- * is added only when the rebuilt train for it ([rebuilt]) is of a family confirmed that day and leaves at the
- * minute and for the terminal the operator's timetable gives; then that departure is published as a confirmed
- * direct train. It is never used as a leg of a transfer: its arrival time is not in the operator's table.
+ * is added only when the rebuilt train of the ride's family for it ([rebuilt]) is of a family confirmed that day and
+ * leaves at the minute and for the terminal the operator's timetable gives; then that departure is published as a
+ * confirmed direct train, and the cell shows the later of it and the cell's own last train. It is never used as a
+ * leg of a transfer: its arrival time is not in the operator's table.
  */
 internal fun ltWithProvenDirect(
     problem: LtProblem,
     day: DayType,
     result: LtDayResult,
-    rebuilt: List<LtDirect?>,
+    rebuilt: LtRebuiltDirect,
 ): LtDayResult {
     val cells = result.cells.toMutableList()
     val latest = result.latest.copyOf()
@@ -331,7 +352,8 @@ internal fun ltWithProvenDirect(
     val width = problem.meetings.size
     problem.proven[day].orEmpty().forEach { ride ->
         val index = problem.homes.indexOf(ride.home) * width + problem.meetings.indexOf(ride.meeting)
-        val train = rebuilt.getOrNull(index)?.takeIf { ride.family in problem.exact[day].orEmpty() } ?: return@forEach
+        val train =
+            rebuilt.of(ride.family, index)?.takeIf { ride.family in problem.exact[day].orEmpty() } ?: return@forEach
         val same =
             train.group == ride.family && train.bound == ride.bound &&
                 train.departure / SECONDS_PER_MINUTE == ride.minute

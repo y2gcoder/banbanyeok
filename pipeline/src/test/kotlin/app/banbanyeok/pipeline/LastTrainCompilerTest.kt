@@ -1,9 +1,11 @@
 package app.banbanyeok.pipeline
 
 import app.banbanyeok.pipeline.lasttrain.compileLastTrains
+import app.banbanyeok.pipeline.lasttrain.input.ltOfficialSamples
 import app.banbanyeok.pipeline.lasttrain.model.LastTrainInputs
 import app.banbanyeok.pipeline.lasttrain.model.LtConfig
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorChecks
+import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceipt
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainKind
 import app.banbanyeok.schema.Registry
@@ -17,9 +19,11 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 private val STATIONS = listOf("A", "B", "C")
@@ -57,11 +61,29 @@ private fun s5Row(
         put("SUBWAYENAME", "C")
     }
 
-private val CONFIG =
+private val CONFIG = config(exact = false)
+
+/** Line 1 everywhere; [exact] marks it exact on weekdays (its samples then switch it off instead of failing). */
+private fun config(exact: Boolean) =
     LtConfig(
         buildJsonObject {
             put("secondSource", buildJsonObject { putJsonArray("lines") {} })
-            put("exact", buildJsonObject {})
+            put(
+                "exact",
+                buildJsonObject {
+                    if (exact) {
+                        put(
+                            "1",
+                            buildJsonObject {
+                                putJsonArray("days") { add("weekday") }
+                                put("source", "https://example.test/t")
+                                put("checkedAt", "2026-11-21")
+                                put("receipt", "S8")
+                            },
+                        )
+                    }
+                },
+            )
             put(
                 "days",
                 buildJsonObject {
@@ -81,7 +103,10 @@ private val CONFIG =
     )
 
 /** A tiny line 1 (A–B–C, Seoul Metro rows only) in memory: nothing here is a file. */
-private fun inputs(): Pair<LastTrainInputs, Network> {
+private fun inputs(
+    config: LtConfig = CONFIG,
+    checks: LtOperatorChecks = LtOperatorChecks(emptyList(), emptyList()),
+): Pair<LastTrainInputs, Network> {
     val rules =
         NetworkRules(
             parseObject("""{"aliases":{},"predecessors":{},"oneWay":{},"services":{},"sourceLineOverrides":{}}"""),
@@ -113,11 +138,11 @@ private fun inputs(): Pair<LastTrainInputs, Network> {
             s5Row("C", "23:38:00", "00:00:00"),
         )
     return LastTrainInputs(
-        CONFIG,
+        config,
         PipelineInput(Registry(1, 1, emptyList()), records, emptyList(), emptyList(), rules, mapOf("1" to 120)),
         DayType.entries.associateWith { rows },
         emptyList(),
-        LtOperatorChecks(emptyList(), emptyList()),
+        checks,
         "2026-11-16",
     ) to net
 }
@@ -171,6 +196,38 @@ class LastTrainCompilerTest :
                 )
                 assertEquals(listOf("001"), problem.getValue("meetings").jsonArray.map { it.toString().trim('"') })
                 assertTrue("allowed" in problem)
+            }
+
+            it("switchesAnExactFamilyOffWhenItsSampleFailsButStopsForAnyOtherFailingSample") {
+                // A→C weekday: the 23:30 train to C. A sample a minute off fails.
+                val wrong =
+                    ltOfficialSamples(
+                        "meeting,home,day,time,bound,family,url,checkedAt\n" +
+                            "A,C,weekday,23:31,C,1,https://example.test/t,2026-11-21\n",
+                    )
+                val receipts = mapOf("1" to LtOperatorReceipt("S8", "2026-11-21", "2026-11-06"))
+                val checks = LtOperatorChecks(wrong, emptyList(), receipts, "2026-11-16")
+                val (soft, softNet) = inputs(config(exact = true), checks)
+                val off = compileLastTrains(soft, softNet, listOf("001"))
+                assertTrue(off.passed)
+                val switch =
+                    off.report
+                        .getValue("exactSwitches")
+                        .jsonArray
+                        .single()
+                        .jsonObject
+                assertEquals(false, switch.text("on").toBoolean())
+                assertEquals(
+                    "1 of 1 samples failed",
+                    switch
+                        .getValue("reasons")
+                        .jsonArray
+                        .single()
+                        .jsonPrimitive.content,
+                )
+                // The same sample of a line that is not exact stops the build, as before.
+                val (hard, hardNet) = inputs(CONFIG, checks)
+                assertFalse(compileLastTrains(hard, hardNet, listOf("001")).passed)
             }
 
             it("givesTheSameTableEveryTime") {

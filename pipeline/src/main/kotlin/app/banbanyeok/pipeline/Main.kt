@@ -25,6 +25,11 @@ private fun fetchOrStage(
             officialFetch(root)
         }
 
+        // The 신분당선 operator samples from the station pages a person fetched (S8); fetches nothing.
+        args.singleOrNull() == "shinbundang-samples" -> {
+            shinbundangSamples(root)
+        }
+
         // The only command that needs SEOUL_OPENAPI_KEY. Exit 2 = limit reached; rerun to resume.
         args.singleOrNull() == "seoul-fetch" -> {
             kotlin.system.exitProcess(seoulFetch(root))
@@ -85,7 +90,8 @@ fun main(args: Array<String>) {
 
         else -> {
             error(
-                "Usage: fetch|seoul-fetch|official-fetch|headways|build|validate|all|spotcheck|refresh|" +
+                "Usage: fetch|seoul-fetch|official-fetch|shinbundang-samples|headways|build|validate|all|spotcheck|" +
+                    "refresh|" +
                     "tago-fetch [probe]|" +
                     "stage-release [outDir]",
             )

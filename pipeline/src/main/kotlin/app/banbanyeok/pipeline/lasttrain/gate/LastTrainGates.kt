@@ -7,6 +7,7 @@ import app.banbanyeok.pipeline.lasttrain.compute.ltNumberedTrains
 import app.banbanyeok.pipeline.lasttrain.compute.ltShown
 import app.banbanyeok.pipeline.lasttrain.model.LtCeiling
 import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
+import app.banbanyeok.pipeline.lasttrain.model.LtDirect
 import app.banbanyeok.pipeline.lasttrain.model.LtFamilies
 import app.banbanyeok.pipeline.lasttrain.model.LtNumberedStop
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
@@ -234,25 +235,27 @@ internal class LtArrivalBound(
 }
 
 /**
- * Compares the samples with the last single train of each cell. A sample passes only when the departure minute,
- * the train's destination **and its line family** all match: a sample cannot vouch for another family, and a cell
- * where no single train runs never passes.
+ * Compares the samples with the last single train **of the sample's own line family** in each cell ([direct]: day,
+ * cell index, family). A sample passes only when the departure minute, the train's destination **and its line
+ * family** all match: a sample cannot vouch for another family, and a cell where no train of the family runs alone
+ * never passes. Another family's later direct train (신사 → 양재 by line 3) does not fail the sample: the cell still
+ * shows the later of the two.
  */
 internal fun ltOfficialReport(
     samples: List<LtOfficialSample>,
     problem: LtProblem,
     origins: List<Station>,
-    results: Map<DayType, LtDayResult>,
+    direct: (DayType, Int, String) -> LtDirect?,
 ): List<JsonObject> {
     val names = origins.associate { it.code to it.name }
     return samples.map { sample ->
         val home = problem.homes.indexOf(stationNamed(origins, sample.home).code)
         val meeting = problem.meetings.indexOf(stationNamed(origins, sample.meeting).code)
         require(home >= 0 && meeting >= 0) { "Official sample ${sample.meeting}→${sample.home} is outside the axes" }
-        val direct = results.getValue(sample.day).direct[home * problem.meetings.size + meeting]
-        val minute = direct?.departure?.div(60)
-        val bound = direct?.bound?.let(names::get)
-        val family = direct?.group
+        val train = direct(sample.day, home * problem.meetings.size + meeting, sample.family)
+        val minute = train?.departure?.div(60)
+        val bound = train?.bound?.let(names::get)
+        val family = train?.group
         obj(
             "meeting" to sample.meeting,
             "home" to sample.home,
@@ -269,6 +272,17 @@ internal fun ltOfficialReport(
         )
     }
 }
+
+/** [ltOfficialReport] against tables whose direct trains are all there is (rebuilding on, or a test's toy table). */
+internal fun ltOfficialReport(
+    samples: List<LtOfficialSample>,
+    problem: LtProblem,
+    origins: List<Station>,
+    results: Map<DayType, LtDayResult>,
+): List<JsonObject> =
+    ltOfficialReport(samples, problem, origins) { day, cell, family ->
+        results.getValue(day).direct[cell]?.takeIf { it.group == family }
+    }
 
 /** What each ceiling cell shows (floored for margin kinds); it passes when that is not later than the ceiling. */
 internal fun ltCeilingReport(

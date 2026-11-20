@@ -1,6 +1,7 @@
 package app.banbanyeok.pipeline.lasttrain.gate
 
 import app.banbanyeok.pipeline.jsonValue
+import app.banbanyeok.pipeline.lasttrain.compute.LtRebuiltDirect
 import app.banbanyeok.pipeline.lasttrain.compute.LtSources
 import app.banbanyeok.pipeline.lasttrain.compute.ltDay
 import app.banbanyeok.pipeline.lasttrain.compute.ltEarlier
@@ -13,7 +14,6 @@ import app.banbanyeok.pipeline.lasttrain.model.LtAllowance
 import app.banbanyeok.pipeline.lasttrain.model.LtConfig
 import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
 import app.banbanyeok.pipeline.lasttrain.model.LtDayRows
-import app.banbanyeok.pipeline.lasttrain.model.LtDirect
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
 import app.banbanyeok.pipeline.lasttrain.model.LtProblem
 import app.banbanyeok.pipeline.lasttrain.model.LtProven
@@ -36,8 +36,8 @@ internal class LtDayOutcome(
     val passed: Boolean,
     /** Stations of the first numbered source that day (Seoul Metro's own sections), for the coverage counts. */
     val numberedStations: Set<String>,
-    /** With rebuilding off: the last single rebuilt train of every cell, for the cell-by-cell comparison. */
-    val rebuilt: List<LtDirect?> = emptyList(),
+    /** With rebuilding off: the last single rebuilt train of every cell per family, for the cell-by-cell comparison. */
+    val rebuilt: LtRebuiltDirect = LtRebuiltDirect.NONE,
 )
 
 /** One source choice of a night with the gates that look at its own trains. */
@@ -181,19 +181,22 @@ internal fun ltDayOutcome(
 
 /**
  * The direct cells the operator's timetable confirms one by one: the samples that passed, of the unnumbered families
- * marked exact that day. Only these cells get a time from a rebuilt train while rebuilding is off.
+ * marked exact that day and not switched off ([off], family to day types). Only these cells get a time from a
+ * rebuilt train while rebuilding is off.
  */
 internal fun provenRides(
     samples: List<LtOfficialSample>,
     official: List<JsonObject>,
     config: LtConfig,
     origins: List<app.banbanyeok.schema.Station>,
+    off: Set<Pair<String, DayType>> = emptySet(),
 ): Map<DayType, List<LtProven>> =
     samples
         .zip(official)
         .filter { (sample, report) ->
             report.text("passed") == "true" &&
-                sample.family in config.exact.getValue(sample.day)
+                sample.family in config.exact.getValue(sample.day) &&
+                (sample.family to sample.day) !in off
         }.groupBy({ it.first.day }) { (sample, _) ->
             LtProven(
                 stationNamed(origins, sample.home).code,
@@ -232,16 +235,18 @@ private fun cellsJson(result: LtDayResult): JsonObject {
     return JsonObject(LastTrainKind.entries.associate { it.name.lowercase() to jsonValue(kinds[it.raw] ?: 0) })
 }
 
-/** Every family and day type marked exact in the config needs at least one passing official sample of its own. */
+/**
+ * Every family and day type marked exact in the config needs official samples of its own. A family-day with none
+ * is a mistake in the config and stops the build; one whose samples fail is switched off instead ([ltExactSwitches]).
+ */
 internal fun unbackedExact(
     config: LtConfig,
-    official: List<JsonObject>,
+    samples: List<LtOfficialSample>,
 ): List<String> =
     config.exact.flatMap { (day, families) ->
         families
-            .filter { family ->
-                official.none { it.text("family") == family && it.text("day") == day.id && it.text("passed") == "true" }
-            }.map { "$it/${day.id}" }
+            .filter { family -> samples.none { it.family == family && it.day == day } }
+            .map { "$it/${day.id}" }
     }
 
 /** The report of every day type: its gates, and the cell counts of the final table. */
