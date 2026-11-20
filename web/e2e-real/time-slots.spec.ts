@@ -43,13 +43,27 @@ test("같은 출발역이라도 평일 낮과 토요일 밤의 순위·시간이
   await shot(page, "2-saturday-night");
 });
 
-test("옛 공유 링크(v=1)는 평일 낮으로 계산해 v=2 평일 낮과 같은 결과다", async ({ page }) => {
+/** 카드의 글에서 "집에 가는 막차" 칸을 뺀 것. 옛 링크(v=1)에는 그 칸이 없다(요일을 고른 적이 없어서). */
+async function textWithoutLastTrain(page: Page): Promise<string> {
+  return (await topCard(page)).evaluate((card) => {
+    const copy = card.cloneNode(true) as HTMLElement;
+    for (const section of copy.querySelectorAll("section")) {
+      // 제목 앞에 화면에는 안 보이는 역 이름이 붙는다("양재역 집에 가는 막차").
+      if (section.querySelector("h3")?.textContent?.endsWith("집에 가는 막차")) section.remove();
+    }
+    return copy.textContent ?? "";
+  });
+}
+
+test("옛 공유 링크(v=1)는 평일 낮으로 계산해 v=2 평일 낮과 같은 결과다(막차 칸만 없다)", async ({ page }) => {
   await page.goto(`/s?v=1&o=${ORIGINS}&m=f`);
   const legacy = await topCard(page);
   await expect(page.getByText("역에서 역까지, 평일 낮 기준 시간이에요.")).toBeVisible();
+  await expect(legacy.getByRole("region", { name: "집에 가는 막차" })).toHaveCount(0);
   const legacyText = await legacy.textContent();
   await page.goto(`/s?v=2&o=${ORIGINS}&m=f&t=weekday-day`);
-  expect(await (await topCard(page)).textContent()).toBe(legacyText);
+  await expect((await topCard(page)).getByRole("region", { name: "집에 가는 막차" })).toBeVisible();
+  expect(await textWithoutLastTrain(page)).toBe(legacyText);
 });
 
 test("입력 화면에서 고른 요일·시간대가 결과·공유 링크에 담긴다", async ({ page, context }) => {

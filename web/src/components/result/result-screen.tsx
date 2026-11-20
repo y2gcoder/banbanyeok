@@ -142,7 +142,9 @@ export function ResultScreen({
     variant === "received" && search.me !== null && search.me >= 0 && search.me < count ? search.me : null;
   const query = useQuery({ ...recommendQueryOptions(state), placeholderData: (previous) => previous });
   const data = query.data;
-  const view = useMemo(() => (data ? toResultView(data) : null), [data]);
+  // 옛 링크(v=1)는 요일·시간대를 고른 적이 없다: 막차 칸 자체를 보이지 않는다(서버도 시각을 주지 않는다).
+  const lastTrains = initial.slotDefaulted !== true;
+  const view = useMemo(() => (data ? toResultView(data, { lastTrains }) : null), [data, lastTrains]);
   // 표시 이름은 모드와 무관하므로 모드를 바꾸는 동안 보이는 이전 결과의 이름을 그대로 써도 같다.
   // 첫 결과가 오기 전에는 이름을 모르니 "나는 누구?"와 배려 대상 고르기를 그리지 않는다.
   // 알약(나는 누구?·배려 대상)은 좁은 칸이라 짧은 이름(shortLabel)을 쓴다.

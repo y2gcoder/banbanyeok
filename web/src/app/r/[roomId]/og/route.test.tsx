@@ -58,6 +58,15 @@ describe("/r/[roomId]/og", () => {
     expect(loadRoomPreview).toHaveBeenCalledWith(ROOM, expect.any(AbortSignal));
   });
 
+  it("그림 버전(iv)은 캐시를 비켜 가는 값일 뿐이다: 있든 없든, 옛 값이든 지금 방 카드를 준다", async () => {
+    loadRoomPreview.mockResolvedValue(DECIDED);
+    // 배포 전에 열어 둔 화면은 옛 iv(또는 iv 없는) 주소로 공유한다. 그 메시지도 기본 그림이 아니라 방 카드를 받는다.
+    for (const search of ["?sv=9&dv=20261115.8&iv=0a1b2c3d", "?sv=9&dv=20261115.8&iv=", "?sv=9&dv=20261115.8"]) {
+      const response = await get(search);
+      expect(response.headers.get("cache-control"), search).toBe("public, max-age=86400, s-maxage=86400");
+    }
+  });
+
   it("번호나 데이터 버전이 지금과 다르면 그 주소에 방 카드를 남기지 않고 기본 그림(짧은 캐시)", async () => {
     loadRoomPreview.mockResolvedValue(DECIDED);
     for (const search of ["?sv=8&dv=20261115.8", "?sv=10&dv=20261115.8", "?sv=9&dv=20261114.1"]) {

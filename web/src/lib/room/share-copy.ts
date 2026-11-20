@@ -7,6 +7,7 @@
 import type { Mode, RoomPreview, TimeBasis } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
+import { lastTrainCardLine, lastTrainState } from "@/lib/result/last-train";
 import { modeSentence } from "@/lib/result/mode-sentence";
 import { ogSafeName } from "@/lib/seo/og-coverage";
 import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
@@ -29,6 +30,18 @@ export type RoomShareCopy = {
 };
 
 type Computed = Exclude<RoomPreview, { stage: "collecting" }>;
+
+/**
+ * 방 미리보기 그림(`/r/<id>/og`)에 귀갓길 막차 줄(#62)을 그릴지. **지금은 끈다.** 처리방침 6항이 방 링크 미리보기에 보이는 것을
+ * 목록으로 적고 있고("1위 역이나 방에서 정한 역, 참여자별 이름과 소요시간, …") 그 목록에 막차 시각이 없다. 6항에 막차를 적는 판을
+ * 시행할 때 `true`로 바꾼다(`policy.test.ts`가 6항에 "막차"가 없는데 켜져 있으면 실패한다). 켜면 그림이 달라지므로
+ * `ROOM_OG_IMAGE_VERSION`도 그때 바뀐다. 꺼진 동안의 그림 값은 막차를 모르던 때와 같다(서버가 미리보기에 막차를 주어도 쓰지 않는다).
+ * 결과·방 화면의 막차 칸과 공유 링크 숫자판(`/s/og`)은 이 스위치와 상관없다.
+ */
+export const ROOM_PREVIEW_LAST_TRAIN: boolean = false;
+
+/** `lastTrain`은 그림 값에 막차 줄을 넣을지. 기본은 `ROOM_PREVIEW_LAST_TRAIN`이고, 테스트가 켠 모습과 끈 모습을 둘 다 보려고 받는다. */
+type ShareCopyOptions = { lastTrain?: boolean };
 
 /** 모으는 중의 초대. 미리보기를 못 받았을 때(서버 실패·옛 서버·번호가 지금보다 큼)도 이 문구를 쓴다. */
 export const INVITE_COPY: RoomShareCopy = {
@@ -78,22 +91,34 @@ function cardName(preview: Computed, label: string): string {
   );
 }
 
-function card(preview: Computed, suffix: string, modeLine: string, footer?: SharedCardData["footer"]): SharedCardData {
+function card(
+  preview: Computed,
+  suffix: string,
+  modeLine: string,
+  showLastTrain: boolean,
+  footer?: SharedCardData["footer"],
+): SharedCardData {
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
+  const meeting = { date: preview.room.meetingDate, time: preview.room.meetingTime };
   return {
     stationName: preview.station.stationName,
     suffix,
-    people: preview.station.times.map((t, index) => ({
-      name: safeName(t.label, index),
-      minutes: t.seconds === null ? null : minutesFromSeconds(t.seconds),
-      favored: favored !== null && t.label === favored,
-    })),
+    people: preview.station.times.map((t, index) => {
+      // 출발역을 숨긴 사람은 서버가 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다). 약속보다 먼저 떠나는 열차는 줄을 비운다.
+      const lastTrain = showLastTrain ? lastTrainCardLine(lastTrainState(t.lastTrain, meeting), OG_TEXT) : null;
+      return {
+        name: safeName(t.label, index),
+        minutes: t.seconds === null ? null : minutesFromSeconds(t.seconds),
+        favored: favored !== null && t.label === favored,
+        ...(lastTrain ? { lastTrain } : {}),
+      };
+    }),
     modeLine,
     ...(footer ? { footer } : {}),
   };
 }
 
-function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomShareCopy {
+function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLastTrain: boolean): RoomShareCopy {
   const { stationName } = preview.station;
   const times = timesText(preview);
   const basisLine = modeSentence(preview.basis.mode, preview.basis.favorLabel) + basisSuffix(preview.room.timeBasis);
@@ -112,11 +137,12 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomSha
       preview,
       OG_TEXT.sharedSuffix,
       modeSentence(preview.basis.mode, favorName) + basisSuffix(preview.room.timeBasis),
+      showLastTrain,
     ),
   };
 }
 
-function decidedCopy(preview: Extract<RoomPreview, { stage: "decided" }>): RoomShareCopy {
+function decidedCopy(preview: Extract<RoomPreview, { stage: "decided" }>, showLastTrain: boolean): RoomShareCopy {
   const { room } = preview;
   const when = meetingWhenText(room.meetingDate, room.meetingTime, room.meetingBand);
   const decided = (name: string) => `${withJosa(name, "이/가")}${OG_TEXT.decidedBy}`;
@@ -129,18 +155,19 @@ function decidedCopy(preview: Extract<RoomPreview, { stage: "decided" }>): RoomS
     stage: "decided",
     preview: { title, description },
     message: { title, text: description, button: "카톡으로 정한 역 알리기" },
-    card: card(preview, OG_TEXT.decidedSuffix, by, { main: by, sub }),
+    card: card(preview, OG_TEXT.decidedSuffix, by, showLastTrain, { main: by, sub }),
   };
 }
 
-export function roomShareCopy(preview: RoomPreview): RoomShareCopy {
+export function roomShareCopy(preview: RoomPreview, options: ShareCopyOptions = {}): RoomShareCopy {
+  const showLastTrain = options.lastTrain ?? ROOM_PREVIEW_LAST_TRAIN;
   switch (preview.stage) {
     case "collecting":
       return INVITE_COPY;
     case "result":
-      return resultCopy(preview);
+      return resultCopy(preview, showLastTrain);
     case "decided":
-      return decidedCopy(preview);
+      return decidedCopy(preview, showLastTrain);
   }
 }
 

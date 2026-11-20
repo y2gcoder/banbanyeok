@@ -159,7 +159,12 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   const top = hostResult.getByRole("article").first();
   await expect(top.getByText("참가자 2", { exact: true })).toBeVisible();
   await expect(top.getByText("출발역 비공개")).toBeVisible(); // 시간·환승은 보이고 역 이름만 가려진다
-  await expect(top.getByText("민수(나)")).toBeVisible();
+  await expect(top.getByText("민수(나)").first()).toBeVisible();
+  // 집에 가는 막차: 출발역을 숨긴 참가자 2의 줄은 방장 화면에 없다.
+  const hostLastTrain = top.getByRole("region", { name: "집에 가는 막차" });
+  await expect(hostLastTrain).toBeVisible();
+  await expect(hostLastTrain).not.toContainText("참가자 2");
+  await expect(hostLastTrain.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeVisible();
   await expectNoA11yViolations(page);
   await shot(page, "6-host-with-result");
   // 반응형(U1): 방장 화면(목록·결과·방장 설정)을 폰~데스크톱 크기로 바꿔 가며 본다. 넓으면 목록과 결과가 나란히.

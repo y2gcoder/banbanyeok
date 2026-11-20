@@ -102,7 +102,22 @@ export function RoomResult({
     roomResultQueryOptions(roomId, { mode: pick.mode, favor: favorId }, participantToken, participantId),
   );
   const data = query.data;
-  const view = useMemo(() => (data ? toResultView(data) : null), [data]);
+  // 약속 날짜·시각을 넘긴다: 새벽 약속이면 그 밤 막차가 약속보다 먼저 떠날 수 있다(막차 칸이 가려낸다).
+  // 방과 결과는 따로 받는다. 둘의 공유 번호가 같을 때만 그 결과의 막차를 이 방의 약속과 함께 그린다: 약속을 바꾼 직후에는 새 약속
+  // 날짜와 이전 운행일의 막차가 한 카드에 섞이므로, 번호가 다르면(어느 쪽이 먼저 오든) 막차 칸은 "다시 계산하는 중"만 보인다.
+  // 번호를 보내지 않는 옛 서버는 둘 다 없어 같다고 본다.
+  const { meetingDate, meetingTime } = room;
+  const lastTrainsCurrent = data?.shareVersion === room.shareVersion;
+  const view = useMemo(
+    () =>
+      data
+        ? toResultView(data, {
+            meeting: { date: meetingDate, time: meetingTime },
+            lastTrains: lastTrainsCurrent ? true : "recalculating",
+          })
+        : null,
+    [data, meetingDate, meetingTime, lastTrainsCurrent],
+  );
   const meIndex = data ? data.participants.findIndex((p) => p.isSelf === true) : -1;
 
   const roomGone = query.isError && isRoomGone(query.error);

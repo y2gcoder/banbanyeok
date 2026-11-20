@@ -19,6 +19,17 @@ type Person = {
 
 type Basis = { slot: TimeSlot; label: string };
 const WEEKDAY_DAY: Basis = { slot: "weekday-day", label: "평일 낮" };
+const WEEKDAY_NIGHT: Basis = { slot: "weekday-night", label: "평일 밤" };
+
+/** 한 사람의 막차(#62). 서버 응답의 `lastTrains[]`에서 참가자 ID를 뺀 모양이고, 사람 순서대로 적는다. */
+type LastTrain = Omit<NonNullable<RecommendResult["candidates"][number]["lastTrains"]>[number], "participantId">;
+const direct = (minute: number, bound: string): LastTrain => ({
+  kind: "direct",
+  minute,
+  boundFor: { stationCode: "002", stationName: bound },
+});
+const changing = (minute: number): LastTrain => ({ kind: "margin", minute, transfer: true });
+const noTime: LastTrain = { kind: "check" };
 
 function person(origin: string, seconds: number): Person {
   return { label: `${origin}에서 오는 분`, shortLabel: origin, kind: "origin", origin, seconds };
@@ -33,12 +44,17 @@ function build(
     favorIndex = null,
     basis = WEEKDAY_DAY,
     middle,
+    lastTrains,
   }: {
     mode?: Mode;
     favorIndex?: number | null;
     basis?: Basis;
     /** 서버가 주는 "지도 한가운데" 역과 각자 시간(초). 없으면 키가 없는 응답(옛 서버·조건 미달)이다. */
     middle?: { station: string; seconds: number[] };
+    /**
+     * 사람 순서대로의 막차. `null`은 서버가 항목을 주지 않은 사람(출발역을 숨긴 다른 사람)이다. 없으면 막차를 모르는 응답이다.
+     */
+    lastTrains?: (LastTrain | null)[];
   } = {},
 ): { id: string; result: RecommendResult; state: ShareState } {
   const [day = "weekday", band = "day"] = basis.slot.split("-");
@@ -59,6 +75,8 @@ function build(
     participants: people.map((p, i) => ({
       participantId: String(i),
       hidden: p.hidden ?? p.origin === null,
+      // 숨겼는데 출발역이 오는 사람은 이 화면을 보는 본인이다(서버는 본인에게만 본인 출발역을 준다).
+      ...(p.hidden && p.origin !== null ? { isSelf: true } : {}),
       originCode: p.origin === null ? null : "000",
       originName: p.origin,
       label: p.label,
@@ -68,7 +86,8 @@ function build(
     candidates: [
       {
         rank: 1,
-        stationCode: "000",
+        // 출발역 코드("000")와 다른 코드다: 같으면 "출발역이 바로 이 역"으로 읽혀 막차 줄이 빠진다.
+        stationCode: "00s",
         stationName: station,
         times: people.map((p, i) => ({ participantId: String(i), seconds: p.seconds, transfers: 1 })),
         maxSeconds: Math.max(...seconds),
@@ -76,8 +95,14 @@ function build(
         totalSeconds: seconds.reduce((a, b) => a + b, 0),
         reasonCode: "FAIR_MINIMAX",
         reason: "",
+        ...(lastTrains
+          ? {
+              lastTrains: lastTrains.flatMap((entry, i) => (entry ? [{ participantId: String(i), ...entry }] : [])),
+            }
+          : {}),
       },
     ],
+    ...(lastTrains ? { lastTrainBasis: { dayType: day, asOf: "2026-11-16" } } : {}),
     ...(middle
       ? {
           mapMiddle: {
@@ -100,8 +125,30 @@ function build(
 
 /** 숨긴 사람의 출발역(그림·설명 어디에도 나오면 안 된다). */
 export const HIDDEN_ORIGIN = "선릉";
+/** 숨긴 사람 본인에게만 오는 막차의 행선지. 이것도 그림·설명 어디에도 나오면 안 된다. */
+const HIDDEN_BOUND = "숨긴행선지";
 
 export const SHARED_CASES = [
+  // 막차 줄(#62): 직행 확정은 분 그대로("막차 00:03"), 여유 시각은 10분 단위로 내려("늦어도 23:00"), 확인 필요는 줄이 빈다.
+  build("two-last-train", "강남", [person("광교", 2400), person("부천", 3000)], {
+    basis: WEEKDAY_NIGHT,
+    lastTrains: [direct(1443, "광교"), changing(1389)],
+  }),
+  build(
+    "four-last-train-middle",
+    "을지로3가",
+    [person("홍대입구", 1101), person("서울대입구", 1650), person("김포공항", 2941), person("고색", 4020)],
+    {
+      basis: WEEKDAY_NIGHT,
+      middle: { station: "동대문역사문화공원", seconds: [1500, 1700, 3300, 3700] },
+      lastTrains: [
+        direct(1478, "신도림"),
+        changing(1431),
+        { kind: "margin", minute: 1425, transfer: false, boundFor: { stationCode: "003", stationName: "김포공항" } },
+        noTime,
+      ],
+    },
+  ),
   // 공유 카드 "A 숫자판"(#68): 지도 한가운데 비교가 붙는 경우. 시간은 로컬 서버 응답에서 옮긴 근사값이다(홍대입구·잠실은 신당 21분 안팎, 한강진 24·36분).
   build("two-even-middle", "신당", [person("홍대입구", 1260), person("잠실", 1260)], {
     middle: { station: "한강진", seconds: [1380, 2100] },
@@ -175,7 +222,8 @@ export const SHARED_CASES = [
       { label: "참가자 2", shortLabel: "참가자 2", kind: "ordinal", origin: null, seconds: 1500 },
       person("잠실", 1800),
     ],
-    { mode: "favor", favorIndex: 1 },
+    // 숨긴 사람의 막차는 서버가 주지 않는다.
+    { mode: "favor", favorIndex: 1, lastTrains: [changing(1402), null, direct(1474, "성수")] },
   ),
   // 출발역을 숨긴 사람 본인이 보는 경우: 서버가 본인에게만 출발역 이름(HIDDEN_ORIGIN)을 주지만 이름은 여전히 "참가자 N"이다.
   // 미리보기는 링크를 받는 모두가 보므로 이 출발역이 그림·설명에 나오면 안 된다.
@@ -187,7 +235,8 @@ export const SHARED_CASES = [
       { label: "참가자 2", shortLabel: "참가자 2", kind: "ordinal", origin: HIDDEN_ORIGIN, hidden: true, seconds: 240 },
       person("홍대입구", 2100),
     ],
-    { mode: "favor", favorIndex: 1 },
+    // 본인에게는 서버가 본인의 막차도 준다. 미리보기 그림에는 넣지 않는다.
+    { mode: "favor", favorIndex: 1, lastTrains: [direct(1484, "성수"), direct(1479, HIDDEN_BOUND), changing(1432)] },
   ),
   build("same-station", "신논현", [
     { ...person("강남", 600), label: "강남에서 오는 분 1", shortLabel: "강남 1" },

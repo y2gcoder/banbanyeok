@@ -28,9 +28,16 @@ export const PAIR_OG_IMAGE_VERSION = "5b206790";
  * 공유 링크 그림(`app/s/og/route.tsx`, "A 숫자판")의 버전. 이 그림은 결과마다 다르지만 **디자인(문구·색·크기·글꼴·그리는 코드·문장 규칙)이 같으면**
  * 같은 결과는 같은 그림이다. 그래서 `/s/og` 주소에 `iv=`로 붙여(`sharedImagePath`) 디자인이 바뀔 때만 주소가 바뀌게 한다.
  * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
- * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 이 값을 쓰지 않는다.
+ * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 `ROOM_OG_IMAGE_VERSION`을 쓴다.
  */
-export const SHARED_OG_IMAGE_VERSION = "97b100f4";
+export const SHARED_OG_IMAGE_VERSION = "f392537f";
+
+/**
+ * 방 미리보기 그림(`app/r/[roomId]/og/route.tsx`, 노선 그림 `SharedCard`)의 버전. 숫자판과 같은 이유·방식이다: 방의 공유 번호(`sv`)는
+ * 방 내용이 바뀔 때만 오르므로, 그림을 그리는 코드·문구만 바뀐 뒤 같은 방을 다시 공유하면 주소가 같아 옛 그림이 캐시에서 나온다.
+ * 그래서 `/r/<id>/og` 주소에 `iv=`로 붙인다(`roomImagePath`). 입력이 바뀌면 `components/og/og-image-version.test.ts`가 새 값을 알려 준다.
+ */
+export const ROOM_OG_IMAGE_VERSION = "5d6999ef";
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";
@@ -77,6 +84,15 @@ export const OG_TEXT = {
   middleIf: "이면 ",
   middleMore: " 더 걸려요",
   middleLongest: "가장 오래 걸리는 사람",
+  /**
+   * 공유 그림의 막차 줄(#62): "막차 23:52"(직행 확정, 분 그대로), "늦어도 23:00"(여유 시각, 10분 단위로 내린 값).
+   * 시계 숫자와 쌍점은 `clockChars`로 서브셋에 넣는다.
+   */
+  lastTrain: "막차 ",
+  lastTrainBy: "늦어도 ",
+  /** 자정을 넘긴 시각 앞에 붙인다: "막차 다음 날 00:03". 그림만 봐도 그날 새벽으로 읽히지 않게. */
+  nextDay: "다음 날 ",
+  clockChars: "0123456789:",
   ellipsis: "…",
   middleDot: "·",
   /** "{토요일 저녁} 기준". 구분 라벨은 서버가 주지만 글자는 여기서 서브셋에 넣는다(contracts/time-slots.json의 label). */

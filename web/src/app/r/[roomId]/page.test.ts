@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiRequestError } from "@/lib/api/client";
 import type { RoomPreview } from "@/lib/api/types";
 import { roomLinkMetadata } from "@/lib/seo/metadata";
-import { SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
+import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 
 const getRoomPreview = vi.fn<(roomId: string) => Promise<RoomPreview>>();
 vi.mock("@/lib/api/rooms", () => ({ getRoomPreview: (roomId: string) => getRoomPreview(roomId) }));
@@ -73,7 +73,7 @@ describe("방 링크 미리보기(/r/[roomId])", () => {
       expect(m.description).toBe("아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 19분");
       expect(og(m)).toMatchObject({
         title: "지금은 신촌이 제일 공평해요 | 반반역",
-        images: [{ url: `/r/${ROOM}/og?sv=6&dv=20261115.8`, width: 1200, height: 630 }],
+        images: [{ url: `/r/${ROOM}/og?sv=6&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`, width: 1200, height: 630 }],
       });
       expect(m.robots).toEqual({ index: false, follow: false });
       expect(m.alternates).toEqual({ canonical: null });

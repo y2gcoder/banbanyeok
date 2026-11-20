@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { RoomPreview, TimeBasis } from "@/lib/api/types";
-import { SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
+import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 import { kakaoFeedSettings } from "@/lib/share/kakao";
-import { INVITE_COPY, roomKakaoMessage, roomShareCopy } from "./share-copy";
+import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomKakaoMessage, roomShareCopy } from "./share-copy";
 
 const WEEKDAY_DAY: TimeBasis = {
   timeSlot: "weekday-day",
@@ -192,6 +192,92 @@ describe("방 공유 문구", () => {
     expect(same.card?.people.map((p) => p.name)).toEqual(["참가자 1", "참가자 2"]);
   });
 
+  it("막차(#62) 스위치가 꺼진 지금: 서버가 미리보기에 막차를 주어도 그림 값·글 어디에도 넣지 않는다(막차를 모르던 때와 같다)", () => {
+    // 처리방침 6항이 방 링크 미리보기에 보이는 것을 목록으로 적고 있어, 그 목록에 막차를 적기 전에는 끈다.
+    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(false);
+    const withLastTrain = (label: string, seconds: number, minute: number) => ({
+      label,
+      seconds,
+      lastTrain: { kind: "direct" as const, minute, boundFor: { stationCode: "dzc", stationName: "광교" } },
+    });
+    const times = [withLastTrain("민수", 1349, 1443), TIMES[1], withLastTrain("홍대입구", 1164, 1389)].flatMap((t) =>
+      t ? [t] : [],
+    );
+    const basis = { dayType: "weekday" as const, asOf: "2026-11-16" };
+    const station = { stationCode: "s1q", stationName: "동대문역사문화공원", times };
+    const plain = { ...station, times: TIMES };
+    const pairs: [RoomPreview, RoomPreview][] = [
+      [result({ station, lastTrainBasis: basis }), result({ station: plain })],
+      [decided({ station, lastTrainBasis: basis }), decided({ station: plain })],
+      [
+        result({ station, lastTrainBasis: basis, room: room({ meetingDate: "2026-11-28", meetingTime: "02:59" }) }),
+        result({ station: plain, room: room({ meetingDate: "2026-11-28", meetingTime: "02:59" }) }),
+      ],
+    ];
+    for (const [withTrains, without] of pairs) {
+      // 막차가 실린 미리보기와 막차를 모르는 서버의 미리보기(지금 main이 받는 모양)가 같은 문구·같은 그림 값이 된다.
+      expect(roomShareCopy(withTrains)).toEqual(roomShareCopy(without));
+      expect(roomShareCopy(withTrains).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
+      expect(JSON.stringify(roomShareCopy(withTrains))).not.toMatch(/막차|늦어도|다음 날|광교/);
+      // 카카오톡 메시지도 같다.
+      expect(roomKakaoMessage("qt7yvmsht3", withTrains)).toEqual(roomKakaoMessage("qt7yvmsht3", without));
+    }
+  });
+
+  it("막차(#62) 스위치를 켰을 때: 그림에만 작은 줄로 넣고, 글(미리보기 설명·공유 문구)에는 넣지 않는다", () => {
+    const on = { lastTrain: true };
+    const station = {
+      stationCode: "k3a",
+      stationName: "강남",
+      // 숨긴 "참가자 2"에게는 서버가 막차 키를 주지 않는다. 홍대입구는 갈아타는 여유 시각(23:09 → 23:00)이다.
+      times: [
+        {
+          label: "민수",
+          seconds: 1349,
+          lastTrain: {
+            kind: "direct" as const,
+            minute: 1443,
+            boundFor: { stationCode: "dzc", stationName: "광교" },
+          },
+        },
+        { label: "참가자 2", seconds: 1287 },
+        { label: "홍대입구", seconds: 1164, lastTrain: { kind: "margin" as const, minute: 1389, transfer: true } },
+      ],
+    };
+    const basis = { dayType: "weekday" as const, asOf: "2026-11-16" };
+    for (const preview of [result({ station, lastTrainBasis: basis }), decided({ station, lastTrainBasis: basis })]) {
+      const copy = roomShareCopy(preview, on);
+      // 자정을 넘긴 시각은 그림에서도 "다음 날"을 붙인다(그림만 보면 "00:03"이 그날 새벽으로 읽힌다).
+      expect(copy.card?.people.map((p) => p.lastTrain ?? null)).toEqual(["막차 다음 날 00:03", null, "늦어도 23:00"]);
+      const words = JSON.stringify([copy.preview, copy.message]);
+      expect(words).not.toContain("막차");
+      expect(words).not.toContain("늦어도");
+      expect(words).not.toContain("광교");
+    }
+    // 새벽 약속(#83 검토): 토요일 02:59 약속은 금요일 운행일이라 24:03(토요일 00:03) 막차와 23:00 여유 시각이 약속보다 먼저다.
+    // 귀가 시각으로 그리지 않는다. 03:00 약속은 토요일 운행일이라 같은 분이 그날 밤(일요일 00:03)이다.
+    const dawn = (meetingTime: string) =>
+      roomShareCopy(
+        result({ station, lastTrainBasis: basis, room: room({ meetingDate: "2026-11-28", meetingTime }) }),
+        on,
+      ).card?.people.map((p) => p.lastTrain ?? null);
+    expect(dawn("02:59")).toEqual([null, null, null]);
+    expect(dawn("03:00")).toEqual(["막차 다음 날 00:03", null, "늦어도 23:00"]);
+    // 자정 뒤 약속보다 늦게 떠나는 열차는 약속일과 같은 날이다: "다음 날"을 붙이지 않는다.
+    expect(dawn("00:00")).toEqual(["막차 00:03", null, null]);
+    // 약속과 같은 분에 떠나는 열차도 그리지 않는다(약속을 시작하는 순간 떠나 귀갓길에 탈 수 없다). 1분 뒤부터 그린다.
+    expect(dawn("00:03")).toEqual([null, null, null]);
+    expect(dawn("00:02")).toEqual(["막차 00:03", null, null]);
+    // 확인 필요는 줄이 없다. 막차를 모르는 서버의 미리보기(키 없음)는 그림 값이 예전과 같다.
+    const unknown = result({
+      station: { ...station, times: station.times.map((t) => ({ ...t, lastTrain: { kind: "check" as const } })) },
+    });
+    expect(roomShareCopy(unknown, on).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
+    expect(roomShareCopy(result(), on).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
+    // 켜도 막차를 모르는 미리보기의 그림 값은 끈 것과 같다.
+    expect(roomShareCopy(result(), on)).toEqual(roomShareCopy(result()));
+  });
+
   it("출발역 이름은 서버가 주지 않으므로 어떤 문구에도 나올 수 없다(숨긴 사람은 '참가자 N')", () => {
     for (const preview of [result(), decided(), result({ room: room({ canJoin: false }) })]) {
       const text = JSON.stringify(roomShareCopy(preview));
@@ -213,7 +299,7 @@ describe("카카오톡 공유 메시지", () => {
       content: {
         title: "지금은 동대문역사문화공원이 제일 공평해요",
         description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분",
-        imageUrl: "https://banbanyeok.app/r/qt7yvmsht3/og?sv=5&dv=20261115.8",
+        imageUrl: `https://banbanyeok.app/r/qt7yvmsht3/og?sv=5&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`,
         imageWidth: 1200,
         imageHeight: 630,
         link: roomLink,
@@ -227,7 +313,9 @@ describe("카카오톡 공유 메시지", () => {
     expect(full.content.title).toBe("동대문역사문화공원에서 볼까?");
     expect(full.buttons).toEqual([{ title: "결과 보기", link: full.content.link }]);
     expect(full.content.link.webUrl).toBe("https://banbanyeok.app/r/qt7yvmsht3?sv=9");
-    expect(full.content.imageUrl).toBe("https://banbanyeok.app/r/qt7yvmsht3/og?sv=9&dv=20261115.8");
+    expect(full.content.imageUrl).toBe(
+      `https://banbanyeok.app/r/qt7yvmsht3/og?sv=9&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`,
+    );
 
     const done = sent(decided());
     expect(done.content.title).toBe("강남에서 만나요");

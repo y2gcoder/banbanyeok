@@ -4,6 +4,7 @@ import { formatMinutes } from "@/lib/display/minutes";
 import type { MapMiddleView } from "@/lib/result/map-middle";
 import type { CandidateView } from "@/lib/result/view-model";
 import { type ChoiceContext, Directions } from "./directions";
+import { LastTrains } from "./last-trains";
 import { MapMiddleCompare } from "./map-middle-compare";
 import { TimeRails } from "./time-rails";
 
@@ -81,13 +82,14 @@ export function TopCandidateCard({
       <TimeRails people={candidate.people} maxMinutes={candidate.aggregate.max} meIndex={meIndex} />
       <Stats candidate={candidate} />
       <Reason text={candidate.reason} />
+      {candidate.lastTrain ? <LastTrains view={candidate.lastTrain} meIndex={meIndex} /> : null}
       {mapMiddle ? <MapMiddleCompare candidate={candidate} middle={mapMiddle} /> : null}
       <Directions candidate={candidate} choice={choice} meIndex={meIndex} />
     </article>
   );
 }
 
-/** 2·3위: 접힌 줄에 최장·차이, 펼치면 사람별 시간과 이유. */
+/** 2·3위: 접힌 줄에 최장·차이, 펼치면 사람별 시간과 이유, 집에 가는 막차. */
 export function OtherCandidateRow({
   candidate,
   choice,
@@ -121,6 +123,7 @@ export function OtherCandidateRow({
       <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
         <TimeRails people={candidate.people} maxMinutes={max} meIndex={meIndex} size="compact" />
         <Reason text={candidate.reason} />
+        {candidate.lastTrain ? <LastTrains view={candidate.lastTrain} meIndex={meIndex} /> : null}
         <Directions candidate={candidate} choice={choice} meIndex={meIndex} />
       </div>
     </details>

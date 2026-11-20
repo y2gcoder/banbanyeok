@@ -166,6 +166,48 @@ const REASON_CODES: Record<Mode, [Candidate["reasonCode"], Candidate["reasonCode
   favor: ["FAVOR_CAPPED", "FAVOR_ALTERNATIVE"],
 };
 
+const LAST_TRAIN_AS_OF = "2026-11-16";
+/** 요일 종류별 가짜 막차 기준 시각(운행일의 분). 평일이 가장 늦다. */
+const LAST_TRAIN_BASE = { weekday: 24 * 60 + 25, saturday: 23 * 60 + 52, holiday: 23 * 60 + 41 } as const;
+
+/**
+ * 가짜 "집에 가는 막차"(#62). **실제 시간표가 아니다.** 화면의 세 가지 모양을 고르게 볼 수 있게 노선과 거리로 꾸민다.
+ * - 구분 없이 온 요청(옛 `v=1` 링크): 모두 확인 필요, 기준에 `day_unknown`.
+ * - 만날 역과 같은 노선: 열차 한 대(9호선은 여유 시각, 그 밖은 직행 확정), 행선지는 그 사람의 출발역.
+ * - 다른 노선: 갈아타는 여유 시각(10분 단위가 아닌 분: 화면이 내려 보이는지 볼 수 있게). 30km가 넘으면 확인 필요.
+ * - 토요일: 일부 노선만 계산한 요일 종류(`partial`)이고, 갈아타는 길은 확인 필요.
+ */
+function lastTrains(r: Row, people: MockStation[], slot: TimeSlot | undefined): NonNullable<Candidate["lastTrains"]> {
+  return people.map((home, p) => {
+    const participantId = String(p);
+    const time = r.times[p];
+    if (!slot || !time || home.code === r.station.code) return { participantId, kind: "check" as const };
+    const day = splitSlot(slot).day;
+    const ride = minutesFromSeconds(time.seconds);
+    const line = home.lines.find((name) => r.station.lines.includes(name));
+    if (line) {
+      const minute = LAST_TRAIN_BASE[day] - Math.floor(ride / 3);
+      const boundFor = { stationCode: home.code, stationName: home.name };
+      return line.includes("9호선")
+        ? { participantId, kind: "margin" as const, minute: minute - 3, transfer: false, boundFor }
+        : { participantId, kind: "direct" as const, minute, boundFor };
+    }
+    if (day === "saturday" || km(home, r.station) > 30) return { participantId, kind: "check" as const };
+    return {
+      participantId,
+      kind: "margin" as const,
+      minute: LAST_TRAIN_BASE[day] - 47 - Math.floor(ride / 2),
+      transfer: true,
+    };
+  });
+}
+
+function lastTrainBasis(slot: TimeSlot | undefined): NonNullable<Result["lastTrainBasis"]> {
+  if (!slot) return { dayType: "weekday", asOf: LAST_TRAIN_AS_OF, unavailable: "day_unknown" };
+  const dayType = splitSlot(slot).day;
+  return { dayType, asOf: LAST_TRAIN_AS_OF, ...(dayType === "saturday" ? { partial: true } : {}) };
+}
+
 /** 계약의 `POST /v1/recommend` 응답을 만든다. 입력 검증은 호출하는 쪽(server.ts)이 한다. */
 export function mockRecommend(data: MockData, body: RecommendBody): Result {
   const people = body.origins.map((code) => data.origins.get(code)).filter((s): s is MockStation => s !== undefined);
@@ -202,6 +244,7 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
       label: slotLabel(slot),
       holidayName: null,
     },
+    lastTrainBasis: lastTrainBasis(body.timeSlot),
     candidates: top.map((r, i) => ({
       rank: i + 1,
       stationCode: r.station.code,
@@ -213,6 +256,7 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
       ...(favorIndex >= 0 ? { favoredSeconds: r.times[favorIndex]?.seconds ?? 0 } : {}),
       reasonCode: i === 0 ? firstCode : restCode,
       reason: reason(body.mode, r, i, top, names, favorIndex),
+      lastTrains: lastTrains(r, people, body.timeSlot),
     })),
   };
 }

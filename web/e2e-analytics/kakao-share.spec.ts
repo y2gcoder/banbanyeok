@@ -1,6 +1,6 @@
 import { type BrowserContext, devices, expect, type Locator, type Page, test } from "@playwright/test";
 import { FAKE_ROOM_ID, prepareRoom } from "../e2e/support/room-fixture";
-import { SITE_OG_IMAGE_PATH } from "../src/lib/seo/og-text";
+import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "../src/lib/seo/og-text";
 
 // 카카오 앱 키(가짜, 형식만 맞음)를 박아 빌드한 앱에서 "카톡으로 보내기"가 카카오톡 공유 API로 가는지 본다. SDK는 카카오 CDN의 실제
 // 파일을 받고(SRI 해시가 맞아야 실행된다), 카카오로 가는 요청(템플릿 확인 API, PC 공유 창 폼, iPhone 카카오톡 열기 주소)은 브라우저에서
@@ -200,7 +200,8 @@ async function expectRoomMessage(probe: Probe, page: Page, baseURL: string | und
     content: {
       title: "지금은 동대문역사문화공원이 제일 공평해요",
       description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 지연이와 함께 오는 아주 긴 이름 19분",
-      image_url: `${baseURL}/r/${FAKE_ROOM_ID}/og?sv=5&dv=20261114.5`,
+      // 그림 버전(iv)이 붙는다: 방 내용이 그대로여도 그리는 코드가 바뀌면 다시 공유한 메시지가 새 그림을 받는다.
+      image_url: `${baseURL}/r/${FAKE_ROOM_ID}/og?sv=5&dv=20261114.5&iv=${ROOM_OG_IMAGE_VERSION}`,
       link: { web_url: link, mobile_web_url: link },
     },
     buttons: [{ title: "내 출발역 넣기", link: { web_url: link, mobile_web_url: link } }],

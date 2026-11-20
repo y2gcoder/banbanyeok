@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 import { describe, expect, it } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
 import { toResultView } from "@/lib/result/view-model";
-import { roomShareCopy } from "@/lib/room/share-copy";
+import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { missingGlyphs } from "@/lib/seo/og-coverage";
 import { ogFonts } from "@/lib/seo/og-font";
 import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
@@ -14,6 +14,7 @@ import { scoreboardCardData } from "@/lib/seo/scoreboard-card-data";
 import { sharedCardData, sharedPreview } from "@/lib/seo/shared-preview";
 import fixture from "../../../fixtures/seo-pairs.json";
 import { PairCard } from "./pair-card";
+import { ROOM_CASES } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
 import { HIDDEN_ORIGIN, SHARED_CASES } from "./shared-card.cases";
@@ -56,6 +57,7 @@ describe("OG 이미지 그리기(satori)", () => {
       if (!data) throw new Error(`${c.id}: 그림 데이터 없음`);
       // 숨긴 출발역은 그림 값·미리보기 설명 어디에도 없다(입력에 본인 시점의 출발역 이름이 들어 있어도: hidden-self-view).
       expect(JSON.stringify([data, sharedPreview(view, c.state)])).not.toContain(HIDDEN_ORIGIN);
+      expect(missingGlyphs(data.people.map((p) => p.lastTrain ?? "").join("")), c.id).toEqual([]);
       const drawn = await render(<SharedCard data={data} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-${c.id}.png`), drawn.bytes);
@@ -75,6 +77,7 @@ describe("OG 이미지 그리기(satori)", () => {
         data.basisLine ?? "",
         data.title ?? "",
         ...data.people.map((p) => p.name),
+        ...data.people.map((p) => p.lastTrain ?? ""),
       ].join("");
       expect(missingGlyphs(text), c.id).toEqual([]);
       expect(JSON.stringify(data), c.id).not.toContain(HIDDEN_ORIGIN);
@@ -97,52 +100,34 @@ describe("OG 이미지 그리기(satori)", () => {
     expect(JSON.stringify([data, preview])).not.toContain(HIDDEN_ORIGIN);
   });
 
-  it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 글꼴에 없는 글자 없음", async () => {
-    const room = {
-      roomId: "qt7yvmsht3",
-      shareVersion: 9,
-      participantCount: 3,
-      canJoin: true,
-      meetingDate: "2026-11-21",
-      meetingTime: "19:30",
-      meetingBand: "evening",
-      timeBasis: {
-        timeSlot: "saturday-evening",
-        requestedTimeSlot: "saturday-evening",
-        dayType: "saturday",
-        band: "evening",
-        label: "토요일 저녁",
-        holidayName: null,
-      },
-    } as const;
-    const station = {
-      stationCode: "s1q",
-      stationName: "동대문역사문화공원",
-      times: [
-        { label: "민수", seconds: 1349 },
-        { label: "참가자 2", seconds: 1287 },
-        { label: "지연이와 함께 오는 아주 긴 이름", seconds: 1164 },
-      ],
+  it('막차 줄: 직행 확정은 분 그대로, 여유 시각은 10분 단위로 내리고, 자정을 넘기면 "다음 날"을 붙이고, 확인 필요와 숨긴 사람은 줄이 없다', () => {
+    const lines = (id: string) => {
+      const c = SHARED_CASES.find((x) => x.id === id);
+      if (!c) throw new Error(`표본 없음: ${id}`);
+      return scoreboardCardData(toResultView(c.result), c.state)?.people.map((p) => p.lastTrain ?? null);
     };
-    const cases: [string, RoomPreview][] = [
-      [
-        "room-result-favor",
-        { stage: "result", room, dataVersion: "1", basis: { mode: "favor", favorLabel: "민수" }, station },
-      ],
-      [
-        "room-decided",
-        {
-          stage: "decided",
-          room,
-          dataVersion: "1",
-          basis: { mode: "fair", favorLabel: null },
-          station: { ...station, times: [...station.times.slice(0, 2), { label: "🎂", seconds: null }] },
-          decidedBy: "참가자 2",
-          decidedAt: "2026-11-17T10:00:00Z",
-        },
-      ],
-    ];
-    for (const [id, preview] of cases) {
+    expect(lines("two-last-train")).toEqual(["막차 다음 날 00:03", "늦어도 23:00"]);
+    // 직행 확정 24:38, 갈아타는 23:51 → 23:50, 열차 한 대 여유 23:45 → 23:40, 확인 필요.
+    expect(lines("four-last-train-middle")).toEqual(["막차 다음 날 00:38", "늦어도 23:50", "늦어도 23:40", null]);
+    // 숨긴 사람의 항목은 서버가 주지 않는다.
+    expect(lines("nickname-hidden")).toEqual(["늦어도 23:20", null, "막차 다음 날 00:34"]);
+    // 숨긴 본인에게는 서버가 본인의 막차도 주지만, 누구나 보는 그림에는 넣지 않는다.
+    const self = SHARED_CASES.find((x) => x.id === "hidden-self-view");
+    expect(JSON.stringify(self?.result)).toContain("숨긴행선지");
+    expect(lines("hidden-self-view")).toEqual(["막차 다음 날 00:44", null, "늦어도 23:50"]);
+    // 막차를 모르는 응답(옛 서버·옛 링크)은 줄이 없다: 그림이 예전과 같다.
+    expect(lines("four-fair")).toEqual([null, null, null, null]);
+    // 미리보기 설명(og:description, 공유 문구와 같은 말)에는 막차를 넣지 않는다: 그림에만 있다.
+    for (const id of ["two-last-train", "four-last-train-middle"]) {
+      const c = SHARED_CASES.find((x) => x.id === id);
+      if (!c) throw new Error(`표본 없음: ${id}`);
+      const description = sharedPreview(toResultView(c.result), c.state)?.description ?? "";
+      expect(description, id).not.toMatch(/막차|늦어도/);
+    }
+  });
+
+  it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 4명, 새벽 약속(02:59·03:00), 글꼴에 없는 글자 없음", async () => {
+    for (const { id, preview } of ROOM_CASES) {
       const card = roomShareCopy(preview).card;
       if (!card) throw new Error(`${id}: 그림 데이터 없음`);
       const text = [card.stationName, card.suffix, card.modeLine, ...card.people.map((p) => p.name)].join("");
@@ -150,6 +135,44 @@ describe("OG 이미지 그리기(satori)", () => {
       const drawn = await render(<SharedCard data={card} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-${id}.png`), drawn.bytes);
+    }
+  });
+
+  it("방 링크 이미지의 막차 줄은 지금 꺼져 있다: 서버가 막차를 주어도 막차를 모르던 때와 같은 그림이다", async () => {
+    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(false);
+    for (const { id, preview } of ROOM_CASES) {
+      if (preview.stage === "collecting") continue;
+      // 같은 미리보기에서 막차 키만 뺀 것(막차를 모르는 서버·지금 main이 그리는 입력).
+      const plain: RoomPreview = {
+        ...preview,
+        station: { ...preview.station, times: preview.station.times.map(({ lastTrain: _lastTrain, ...time }) => time) },
+      };
+      const card = roomShareCopy(preview).card;
+      const before = roomShareCopy(plain).card;
+      if (!card || !before) throw new Error(`${id}: 그림 데이터 없음`);
+      expect(card, id).toEqual(before);
+      expect(JSON.stringify(card), id).not.toMatch(/막차|늦어도|다음 날/);
+      // 그린 결과도 바이트까지 같다.
+      const [drawn, old] = await Promise.all([
+        render(<SharedCard data={card} />),
+        render(<SharedCard data={before} />),
+      ]);
+      expect(Buffer.from(drawn.bytes).equals(Buffer.from(old.bytes)), id).toBe(true);
+    }
+  });
+
+  it("방 링크 이미지의 막차 줄을 켰을 때: 자정을 넘기면 '다음 날', 숨긴 사람·확인 필요·약속 시각까지 떠나는 열차는 줄이 없다", async () => {
+    for (const { id, preview, lastTrains } of ROOM_CASES) {
+      const card = roomShareCopy(preview, { lastTrain: true }).card;
+      if (!card) throw new Error(`${id}: 그림 데이터 없음`);
+      expect(missingGlyphs(card.people.map((p) => p.lastTrain ?? "").join("")), id).toEqual([]);
+      expect(
+        card.people.map((p) => p.lastTrain ?? null),
+        id,
+      ).toEqual(lastTrains);
+      const drawn = await render(<SharedCard data={card} />);
+      expectPng(drawn);
+      if (screensDir) writeFileSync(join(screensDir, `og-${id}-last-train-on.png`), drawn.bytes);
     }
   });
 

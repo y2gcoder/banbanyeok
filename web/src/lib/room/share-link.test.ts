@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ROOM_OG_IMAGE_VERSION } from "@/lib/seo/og-text";
 import { parseDataVersion, parseShareVersion, roomImagePath, roomShareLink, SHARE_VERSION_PARAM } from "./share-link";
 
 describe("방 공유 링크", () => {
@@ -16,8 +17,14 @@ describe("방 공유 링크", () => {
     expect(roomShareLink("qt7yvmsht3", 1)).not.toBe(roomShareLink("qt7yvmsht3", 3));
   });
 
-  it("그림 주소는 번호와 데이터 버전을 함께 싣는다", () => {
-    expect(roomImagePath("qt7yvmsht3", 7, "20261115.8")).toBe("/r/qt7yvmsht3/og?sv=7&dv=20261115.8");
+  it("그림 주소는 번호와 데이터 버전, 그림 버전을 함께 싣는다", () => {
+    expect(roomImagePath("qt7yvmsht3", 7, "20261115.8")).toBe(
+      `/r/qt7yvmsht3/og?sv=7&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`,
+    );
+    // 방 내용이 그대로라 번호가 같아도(다시 공유) 그림 버전이 주소를 가른다. 그림 버전은 값만 붙고 번호·데이터 버전 읽기를 바꾸지 않는다.
+    const image = new URL(roomImagePath("qt7yvmsht3", 7, "20261115.8"), "https://banbanyeok.app");
+    expect(parseShareVersion(image.searchParams.get(SHARE_VERSION_PARAM))).toBe(7);
+    expect(parseDataVersion(image.searchParams)).toBe("20261115.8");
     expect(parseDataVersion(new URLSearchParams("sv=7&dv=20261115.8"))).toBe("20261115.8");
     expect(parseDataVersion(new URLSearchParams("sv=7&dv="))).toBeNull();
     expect(parseDataVersion(new URLSearchParams("sv=7"))).toBeNull();
