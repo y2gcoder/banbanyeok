@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import type { ReactElement } from "react";
+import { OG_HEIGHT, OG_WIDTH, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { ogFonts } from "@/lib/seo/og-font";
-import { OG_HEIGHT, OG_WIDTH, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 import { absoluteUrl } from "@/lib/seo/site";
 import { SiteCard } from "./site-card";
 

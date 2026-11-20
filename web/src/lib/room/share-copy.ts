@@ -5,16 +5,16 @@
  * 넣을 때만 `ogSafeName`으로 거른다.
  */
 import type { Mode, RoomPreview, TimeBasis } from "@/lib/api/types";
+import { ogSafeName } from "@/lib/copy/og-coverage";
+import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
 import { lastTrainCardLine, lastTrainState } from "@/lib/result/last-train";
 import { modeSentence } from "@/lib/result/mode-sentence";
-import { ogSafeName } from "@/lib/seo/og-coverage";
-import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
-import type { SharedCardData } from "@/lib/seo/shared-preview";
 import type { KakaoFeedMessage } from "@/lib/share/kakao";
+import type { SharedCardData } from "@/lib/share-card/shared-preview";
+import { meetingWhenText } from "@/lib/when/dates";
 import { DEFAULT_SLOT } from "@/lib/when/time-slot";
-import { meetingWhenText } from "./dates";
 import { roomImagePath, roomShareLink } from "./share-link";
 
 export type ShareStage = RoomPreview["stage"];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ROOM_OG_IMAGE_VERSION } from "@/lib/seo/og-text";
+import { ROOM_OG_IMAGE_VERSION } from "@/lib/copy/og-text";
 import { parseDataVersion, parseShareVersion, roomImagePath, roomShareLink, SHARE_VERSION_PARAM } from "./share-link";
 
 describe("방 공유 링크", () => {

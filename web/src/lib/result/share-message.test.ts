@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RecommendResult } from "@/lib/api/types";
+import { SHARED_OG_IMAGE_VERSION } from "@/lib/copy/og-text";
 import type { ShareState } from "@/lib/link/codec";
-import { SHARED_OG_IMAGE_VERSION } from "@/lib/seo/og-text";
 import { kakaoFeedSettings } from "@/lib/share/kakao";
 import { shareMessage, soloKakaoMessage } from "./share-message";
 import { toResultView } from "./view-model";

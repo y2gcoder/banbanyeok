@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { SITE_OG_IMAGE_PATH } from "../src/lib/seo/og-text";
+import { SITE_OG_IMAGE_PATH } from "../src/lib/copy/og-text";
 
 // SEO 페이지(조합·허브), 사이트맵·robots, 정적/동적 OG 이미지. 특정 조합·문장에 의존하지 않는다(데이터는 파이프라인이 다시 만든다):
 // 허브에서 첫 조합 링크를 따라간다. 빌드의 SITE_URL은 playwright.config.ts가 baseURL과 같게 둔다(localhost류 → 색인 막힘).

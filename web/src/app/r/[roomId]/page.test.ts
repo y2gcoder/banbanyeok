@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiRequestError } from "@/lib/api/client";
 import type { RoomPreview } from "@/lib/api/types";
+import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { roomLinkMetadata } from "@/lib/seo/metadata";
-import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/seo/og-text";
 
 const getRoomPreview = vi.fn<(roomId: string) => Promise<RoomPreview>>();
 vi.mock("@/lib/api/rooms", () => ({ getRoomPreview: (roomId: string) => getRoomPreview(roomId) }));
