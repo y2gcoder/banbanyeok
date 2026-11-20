@@ -17,7 +17,8 @@ class Seeder(
             components.config.profile != app.banbanyeok.server.app.config.Profile.PROD,
         ) { "운영 프로필에서는 seed를 실행하지 않습니다" }
         val services = components.services
-        val origins = services.directory.originCodes
+        val directory = components.directory
+        val origins = directory.originCodes
         val picks = listOf(origins.first(), origins[origins.size / 2], origins.last())
         val created =
             services.rooms.create(
@@ -25,7 +26,7 @@ class Seeder(
             )
         services.rooms.join(created.roomId, ParticipantInput("지연", picks[1], hidden = true), null)
         services.rooms.join(created.roomId, ParticipantInput("서준", picks[2]), null)
-        println("예시 방을 만들었습니다 (출발역 ${picks.map { services.directory.displayName(it) }})")
+        println("예시 방을 만들었습니다 (출발역 ${picks.map { directory.displayName(it) }})")
         println("roomId=${created.roomId}")
         println("hostToken=${created.hostToken}")
         println("participantToken=${created.participantToken}")

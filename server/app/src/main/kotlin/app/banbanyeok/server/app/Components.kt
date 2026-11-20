@@ -4,6 +4,7 @@ import app.banbanyeok.schema.DayType
 import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
+import app.banbanyeok.server.app.application.StatelessRecommendation
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.config.AppConfig
 import app.banbanyeok.server.app.config.ArtifactStoreKind
@@ -15,6 +16,8 @@ import app.banbanyeok.server.artifact.LoadedArtifacts
 import app.banbanyeok.server.artifact.LocalFileArtifactStore
 import app.banbanyeok.server.artifact.PublishedArtifacts
 import app.banbanyeok.server.recommendation.RecommendationService
+import app.banbanyeok.server.recommendation.time.HolidayCalendar
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.AnonUserService
 import app.banbanyeok.server.room.RoomCleanup
 import app.banbanyeok.server.room.RoomService
@@ -33,11 +36,16 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.LocalDate
 
-/** 조립된 서버: 서비스 묶음과 정리용 자원. */
+/**
+ * 조립된 서버: 서비스 묶음과 정리용 자원. 인자 일곱 개는 조립 결과를 모아 둔 것이라 묶을 단위가 없다. LongParameterList는 끈다.
+ */
+@Suppress("LongParameterList")
 class Components(
     val config: AppConfig,
     val clock: Clock,
     val services: ApiServices,
+    /** 현재 산출물의 역 정보. 개발용 도구(Seeder)가 쓴다. 서비스는 이것을 좁은 포트로만 받는다. */
+    val directory: StationDirectory,
     val cleanup: RoomCleanup,
     /**
      * 구분 행렬·막차 표를 뒤에서 읽기 시작한다(여러 번 불러도 한 번만 시작한다). 조립은 이 일을 시작하지 않는다: 서버는 Ktor가 첫 응답을
@@ -106,20 +114,24 @@ object CompositionRoot {
                     clock = clock,
                     slotsReady = slots,
                 )
+            // 약속 날짜·시각 → 구분 규칙은 한 번만 만들어 방 결과 계산과 방 응답이 함께 쓴다.
+            val times = TimeSlotResolver(HolidayCalendar.bundled())
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
                     rooms = rooms,
-                    results = RoomResultService(rooms, recommendation),
-                    recommendation = recommendation,
-                    directory = directory,
+                    results = RoomResultService(rooms, recommendation, times),
+                    stateless = StatelessRecommendation(recommendation, directory),
+                    stations = directory,
                     published = PublishedArtifacts(store, loaded),
+                    times = times,
                 )
             timeline?.mark("services-assembled")
             Components(
                 config,
                 clock,
                 services,
+                directory,
                 RoomCleanup(roomRepository, anonRepository, clock),
                 startBackground = {
                     timeline?.mark("background-started")

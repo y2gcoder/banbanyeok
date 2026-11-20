@@ -48,7 +48,7 @@ private suspend fun decidedOutsideTop(
     time: LocalTime?,
 ): Pair<RoomResultService, String> {
     val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
-    val results = RoomResultService(fixture.service, recommendation)
+    val results = RoomResultService(fixture.service, recommendation, testTimes)
     val created =
         fixture.service.create(
             CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v", false), null, null, time),

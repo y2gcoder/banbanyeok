@@ -21,6 +21,7 @@ class StationDirectory(
      */
     slots: SlotMatrices = SlotMatrices { dataSet.odSlots[it] },
 ) : StationCatalog,
+    CanonicalStations,
     StationNames,
     StationLocations {
     private val names: Map<String, String> = dataSet.registry.stations.associate { it.code to it.name }

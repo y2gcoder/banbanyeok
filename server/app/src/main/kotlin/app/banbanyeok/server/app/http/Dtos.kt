@@ -8,7 +8,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 
 // contracts/openapi.yaml의 스키마와 이름·모양을 맞춘다. 요청 DTO는 문자열을 그대로 받고 검증은 서비스가 한다.
 
@@ -134,6 +133,78 @@ data class OutcomeRequestDto(
     val stationCode: String? = null,
 )
 
+// 응답 모양을 타입으로 둔다. 값이 없을 때 키를 생략하는 필드는 `@EncodeDefault(NEVER)`와 기본값이다(전역 `explicitNulls`는 켜 두어, 그 밖의
+// null 필드는 `null`로 나간다). 필드 선언 순서가 곧 응답의 키 순서다.
+
+/** 사람 한 명이 어떤 역까지 걸리는 시간. */
+@Serializable
+data class ParticipantTimeDto(
+    val participantId: String,
+    val seconds: Int,
+    val transfers: Int,
+)
+
+/** 순위 카드(openapi `Candidate`). `favoredSeconds`는 배려 모드에서만, `lastTrains`는 막차 표를 쓸 수 있을 때만 있다. */
+@Serializable
+data class CandidateDto(
+    val rank: Int,
+    val stationCode: String,
+    val stationName: String,
+    val times: List<ParticipantTimeDto>,
+    val maxSeconds: Int,
+    val spreadSeconds: Int,
+    val totalSeconds: Int,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val favoredSeconds: Int? = null,
+    val reasonCode: String,
+    val reason: String,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val lastTrains: List<LastTrainDto>? = null,
+)
+
+/** "지도 한가운데" 비교(openapi `MapMiddle`). */
+@Serializable
+data class MapMiddleDto(
+    val stationCode: String,
+    val stationName: String,
+    val times: List<ParticipantTimeDto>,
+)
+
+/**
+ * 막차 한 건(openapi `LastTrain`). 값과 분류만 싣는다: `margin`의 10분 단위 내림과 문구는 클라이언트가 한다. 확인 필요(`check`)면 시각이 없다.
+ * `transfer`는 여유 시각(`margin`)에만 있고, 행선지(`boundFor`)는 열차 한 대로 가는 길에만 있다. 사람 구분(`participantId`)은 순위 카드에만 있다.
+ */
+@Serializable
+data class LastTrainDto(
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val participantId: String? = null,
+    val kind: String,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val minute: Int? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val transfer: Boolean? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val boundFor: BoundForDto? = null,
+)
+
+/** 직행 열차의 행선지(종착역). */
+@Serializable
+data class BoundForDto(
+    val stationCode: String,
+    val stationName: String,
+)
+
+/** 귀갓길 막차의 기준(openapi `LastTrainBasis`). `unavailable`은 시각을 내지 않는 이유이고 `partial`은 참일 때만 있다. */
+@Serializable
+data class LastTrainBasisDto(
+    val dayType: String,
+    val asOf: String,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val unavailable: String? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val partial: Boolean = false,
+)
+
 /** 계산 기준. `label`은 화면 문구("토요일 저녁")이고 클라이언트는 그대로 쓴다. */
 @Serializable
 data class TimeBasisDto(
@@ -153,18 +224,17 @@ data class ResultDto(
     val dataVersion: String,
     val participants: List<ParticipantDto>,
     val baselineStationCode: String?,
-    /** 카드. `favoredSeconds`는 정수 필드라 값이 없으면 키를 생략하므로 [candidateJson]으로 직접 만든다. */
-    val candidates: List<JsonObject>,
+    val candidates: List<CandidateDto>,
     val timeBasis: TimeBasisDto,
-    /** "지도 한가운데" 비교(#68). 조건을 모두 만족할 때만 있고, 방 결과에는 아직 없다. 키를 생략하므로 [candidateJson]처럼 직접 만든다. */
+    /** "지도 한가운데" 비교(#68). 조건을 모두 만족할 때만 있고, 방 결과에는 아직 없다. 없으면 키를 생략한다. */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val mapMiddle: JsonObject? = null,
+    val mapMiddle: MapMiddleDto? = null,
     /** 방 결과에만 있다(`/recommend`에는 키가 없다). */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val shareVersion: Long? = null,
     /** 귀갓길 막차의 기준(#62). 막차 표를 쓸 수 없으면 키가 없고, 그때는 후보의 `lastTrains`도 없다. */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val lastTrainBasis: JsonObject? = null,
+    val lastTrainBasis: LastTrainBasisDto? = null,
 )
 
 @Serializable
@@ -191,7 +261,7 @@ data class PreviewTimeDto(
     val seconds: Int?,
     /** 그 역에서 돌아가는 막차. 막차 표를 쓸 수 없거나 출발역을 숨긴 사람이면 키가 없다. */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val lastTrain: JsonObject? = null,
+    val lastTrain: LastTrainDto? = null,
 )
 
 @Serializable
@@ -221,7 +291,7 @@ sealed interface RoomPreviewDto {
         val basis: PreviewBasisDto,
         val station: PreviewStationDto,
         @EncodeDefault(EncodeDefault.Mode.NEVER)
-        val lastTrainBasis: JsonObject? = null,
+        val lastTrainBasis: LastTrainBasisDto? = null,
     ) : RoomPreviewDto
 
     @Serializable
@@ -234,6 +304,6 @@ sealed interface RoomPreviewDto {
         val decidedBy: String,
         val decidedAt: String,
         @EncodeDefault(EncodeDefault.Mode.NEVER)
-        val lastTrainBasis: JsonObject? = null,
+        val lastTrainBasis: LastTrainBasisDto? = null,
     ) : RoomPreviewDto
 }

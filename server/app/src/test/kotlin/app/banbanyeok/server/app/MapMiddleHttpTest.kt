@@ -24,7 +24,7 @@ import kotlinx.serialization.json.jsonPrimitive
 private fun realApi(): ApiServices {
     val mocks = MockedServices()
     val directory = DevArtifacts.directory
-    return ApiServices(
+    return apiServices(
         mocks.anon,
         mocks.rooms,
         mocks.results,

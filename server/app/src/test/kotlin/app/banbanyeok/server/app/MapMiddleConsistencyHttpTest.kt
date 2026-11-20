@@ -27,7 +27,7 @@ private fun apiWith(
     directory: StationDirectory = DevArtifacts.directory,
 ): ApiServices {
     val mocks = MockedServices()
-    return ApiServices(mocks.anon, mocks.rooms, mocks.results, recommendation, directory, DevArtifacts.published)
+    return apiServices(mocks.anon, mocks.rooms, mocks.results, recommendation, directory, DevArtifacts.published)
 }
 
 private fun String.json(): JsonObject = Json.parseToJsonElement(this).jsonObject

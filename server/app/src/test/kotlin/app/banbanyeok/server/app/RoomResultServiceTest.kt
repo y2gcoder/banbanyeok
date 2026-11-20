@@ -7,6 +7,8 @@ import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.RecommendMode
+import app.banbanyeok.server.recommendation.RecommendationError
+import app.banbanyeok.server.recommendation.RecommendationException
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.codeNames
 import app.banbanyeok.server.recommendation.sampleOd
@@ -30,7 +32,7 @@ private fun resultTest(body: suspend (RoomFixture, RoomResultService) -> Unit) =
     runTest {
         val fixture = RoomFixture()
         val recommendation = RecommendationService(OdTravelTimeProvider(sampleOd, "20261112.1"), codeNames)
-        body(fixture, RoomResultService(fixture.service, recommendation))
+        body(fixture, RoomResultService(fixture.service, recommendation, testTimes))
     }
 
 private fun create(
@@ -49,7 +51,7 @@ class RoomResultServiceTest :
                     val everySlot = TimeSlot.ALL.filter { it != TimeSlot.DEFAULT }.associateWith { sampleOd }
                     val recommendation =
                         RecommendationService(OdTravelTimeProvider(sampleOd, "20261112.1", everySlot), codeNames)
-                    val results = RoomResultService(fixture.service, recommendation)
+                    val results = RoomResultService(fixture.service, recommendation, testTimes)
 
                     suspend fun basis(
                         date: String?,
@@ -190,14 +192,16 @@ class RoomResultServiceTest :
                 resultTest { fixture, results ->
                     val created = fixture.service.create(create())
                     fixture.service.join(created.roomId, ParticipantInput("지연", "225", false), null)
+                    // 오류 코드로 바꾸는 일은 HTTP 계층의 방 표가 한다(RecommendationErrorTableTest).
                     val e =
-                        shouldThrow<AppException> { results.result(created.roomId, null, RecommendMode.FAVOR, null) }
-                    e.kind shouldBe ErrorKind.INVALID
-                    e.code shouldBe "FAVOR_TARGET_REQUIRED"
+                        shouldThrow<RecommendationException> {
+                            results.result(created.roomId, null, RecommendMode.FAVOR, null)
+                        }
+                    e.error shouldBe RecommendationError.FAVOR_TARGET_REQUIRED
                 }
             }
 
-            it("reports a station that is no longer in the data as a conflict") {
+            it("rejects a station that is no longer in the data") {
                 resultTest { fixture, _ ->
                     val created = fixture.service.create(create())
                     fixture.service.join(created.roomId, ParticipantInput("지연", "225", false), null)
@@ -214,13 +218,14 @@ class RoomResultServiceTest :
                             codeNames,
                         )
                     val e =
-                        shouldThrow<AppException> {
+                        shouldThrow<RecommendationException> {
                             RoomResultService(
                                 fixture.service,
                                 shrunk,
+                                testTimes,
                             ).result(created.roomId, null, null, null)
                         }
-                    e.code shouldBe "STATION_UNAVAILABLE"
+                    e.error shouldBe RecommendationError.UNKNOWN_STATION
                 }
             }
         }

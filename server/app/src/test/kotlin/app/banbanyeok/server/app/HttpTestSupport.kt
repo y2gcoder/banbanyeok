@@ -5,6 +5,7 @@ package app.banbanyeok.server.app
 import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
+import app.banbanyeok.server.app.application.StatelessRecommendation
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.config.AppConfig
 import app.banbanyeok.server.app.http.ApiServices
@@ -12,6 +13,8 @@ import app.banbanyeok.server.artifact.ArtifactLoader
 import app.banbanyeok.server.artifact.LocalFileArtifactStore
 import app.banbanyeok.server.artifact.PublishedArtifacts
 import app.banbanyeok.server.recommendation.RecommendationService
+import app.banbanyeok.server.recommendation.time.HolidayCalendar
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.AnonUserService
 import app.banbanyeok.server.room.RoomService
 import io.ktor.client.HttpClient
@@ -62,6 +65,27 @@ object DevArtifacts {
     val origins: List<String> get() = directory.originCodes
 }
 
+/** 계산 기준 규칙(번들 공휴일 목록). 서버는 CompositionRoot가 한 번 만들고, 테스트는 이것을 공유한다. */
+val testTimes = TimeSlotResolver(HolidayCalendar.bundled())
+
+/** 라우트가 쓰는 서비스 묶음. 무상태 유스케이스는 [recommendation]을 감싸서 만든다. */
+fun apiServices(
+    anon: AnonUserService,
+    rooms: RoomService,
+    results: RoomResultService,
+    recommendation: RecommendationService,
+    directory: StationDirectory,
+    published: PublishedArtifacts = DevArtifacts.published,
+) = ApiServices(
+    anon,
+    rooms,
+    results,
+    StatelessRecommendation(recommendation, directory),
+    directory,
+    published,
+    testTimes,
+)
+
 /** HTTP 계층 테스트용: 서비스는 MockK로 대체하고 라우트·오류 형식·인증 헤더·플러그인만 실제로 돌린다. */
 class MockedServices {
     val anon = mockk<AnonUserService>()
@@ -69,7 +93,7 @@ class MockedServices {
     val results = mockk<RoomResultService>()
     val recommendation = mockk<RecommendationService>()
 
-    fun api() = ApiServices(anon, rooms, results, recommendation, DevArtifacts.directory, DevArtifacts.published)
+    fun api() = apiServices(anon, rooms, results, recommendation, DevArtifacts.directory)
 }
 
 fun testConfig(env: Map<String, String> = emptyMap()): AppConfig = AppConfig.load(env)
