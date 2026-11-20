@@ -21,8 +21,10 @@ public data class ManifestFiles(
     /** 기본 구분([TimeSlot.DEFAULT], 평일 낮)의 행렬. */
     val od: ManifestFile,
     val seoPages: ManifestFile? = null,
-    /** 세대 2: 기본 구분을 뺀 구분 11개의 행렬(키 = 구분 id). 세대 1에는 없다. */
+    /** 세대 2부터: 기본 구분을 뺀 구분 11개의 행렬(키 = 구분 id). 세대 1에는 없다. */
     val odSlots: Map<String, ManifestFile>? = null,
+    /** 세대 3: 귀갓길 막차 표(lt.bin, data-format §10). 세대 1·2에는 없다. */
+    val lastTrain: ManifestFile? = null,
 )
 
 /** manifest.json — 발행 포인터. 필드 의미는 contracts/data-format.md §5. */
@@ -38,6 +40,10 @@ public data class Manifest(
     val originCount: Int,
     val candidateCount: Int,
     val files: ManifestFiles,
+    /** 세대 3: 막차 계산에 쓴 시간표 가운데 가장 오래된 수집일(`YYYY-MM-DD`, 서울 날짜). 서버가 이 날짜로 유효 기간을 센다. */
+    val lastTrainAsOf: String? = null,
+    /** 세대 3: 막차 계산 규칙의 식별자. 규칙이 바뀌면 값이 바뀐다. */
+    val lastTrainModel: String? = null,
 )
 
 public object ManifestCodec {
@@ -51,6 +57,7 @@ public object ManifestCodec {
 
     private val dataVersionPattern = Regex("^[0-9]{8}\\.[0-9]{1,3}$")
     private val timestampPattern = Regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")
+    private val datePattern = Regex("^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$")
 
     public fun parse(json: String): Manifest {
         val manifest =
@@ -103,6 +110,24 @@ public object ManifestCodec {
             "seoPages" to files.seoPages,
         ).forEach { (key, file) -> if (file != null) validateFile(key, file) }
         validateSlots(manifest)
+        validateLastTrain(manifest)
+    }
+
+    /** 세대 3은 막차 표와 수집일·규칙 식별자를 모두 가져야 하고, 세대 1·2에는 셋 다 없어야 한다. */
+    private fun validateLastTrain(manifest: Manifest) {
+        val file = manifest.files.lastTrain
+        if (manifest.schemaVersion < LAST_TRAIN_GENERATION) {
+            schemaCheck(file == null && manifest.lastTrainAsOf == null && manifest.lastTrainModel == null) {
+                "schemaVersion ${manifest.schemaVersion} manifest에는 막차 항목(files.lastTrain, lastTrainAsOf, lastTrainModel)이 없어야 합니다"
+            }
+            return
+        }
+        schemaCheck(file != null) { "schemaVersion ${manifest.schemaVersion} manifest에는 files.lastTrain이 있어야 합니다" }
+        validateFile("lastTrain", requireNotNull(file))
+        schemaCheck(manifest.lastTrainAsOf?.let(datePattern::matches) == true) {
+            "lastTrainAsOf는 YYYY-MM-DD여야 합니다: '${manifest.lastTrainAsOf}'"
+        }
+        schemaCheck(manifest.lastTrainModel?.isNotBlank() == true) { "lastTrainModel이 비어 있습니다" }
     }
 
     /** 세대 1은 구분 행렬이 없고, 세대 2는 기본 구분을 뺀 11개가 빠짐없이 있어야 한다. */
@@ -169,26 +194,50 @@ public class DataSet(
 }
 
 /**
- * 세대별 manifest 객체 이름(data-format §5). 발행은 두 개를 함께 쓴다: [GENERATION_ONE]은 세대 1(평일 낮 행렬만)이라 세대 2를 모르는
- * 옛 서버·클라이언트가 계속 읽고, [GENERATION_TWO]는 구분 행렬까지 담는다. 세대 2를 아는 reader는 [GENERATION_TWO]를 먼저 읽고
- * 없으면 [GENERATION_ONE]을 읽는다. 둘은 같은 dataVersion과 같은 해시 파일을 가리킨다.
+ * 세대별 manifest 객체 이름(data-format §5). 발행은 셋을 함께 쓴다: [GENERATION_ONE]은 세대 1(평일 낮 행렬만), [GENERATION_TWO]는
+ * 구분 행렬까지, [GENERATION_THREE]는 막차 표까지 담는다. reader는 자기가 아는 가장 높은 세대부터 읽고 없으면 아래 세대를 읽는다(옛 서버·
+ * 클라이언트는 아는 이름만 읽으므로 새 세대가 생겨도 계속 기동한다). 셋은 같은 dataVersion과 같은 해시 파일을 가리킨다.
  */
 public object ManifestNames {
     public const val GENERATION_ONE: String = "manifest.json"
     public const val GENERATION_TWO: String = "manifest.v2.json"
+    public const val GENERATION_THREE: String = "manifest.v3.json"
+
+    /** 높은 세대부터. */
+    public val NEWEST_FIRST: List<String> = listOf(GENERATION_THREE, GENERATION_TWO, GENERATION_ONE)
 }
+
+/** 막차 표가 들어온 manifest 세대. */
+public const val LAST_TRAIN_GENERATION: Int = 3
+
+/** 구분 행렬이 들어온 manifest 세대. */
+public const val SLOT_GENERATION: Int = 2
 
 /** 세대 1 timeModel(평일 낮 행렬, 배차/2 대기). */
 public const val GENERATION_ONE_TIME_MODEL: String = "weekday-offpeak-half-headway"
 
-/** 세대 2 manifest에서 구분 행렬을 뺀 세대 1 manifest(같은 dataVersion·같은 파일). 옛 reader용으로 함께 발행한다. */
+/** 세대 2·3 manifest에서 구분 행렬과 막차 표를 뺀 세대 1 manifest(같은 dataVersion·같은 파일). 옛 reader용으로 함께 발행한다. */
 public fun Manifest.generationOne(): Manifest =
     copy(
         schemaVersion = 1,
         minClientSchema = 1,
         timeModel = GENERATION_ONE_TIME_MODEL,
-        files = files.copy(odSlots = null),
+        files = files.copy(odSlots = null, lastTrain = null),
+        lastTrainAsOf = null,
+        lastTrainModel = null,
     )
+
+/** 세대 3 manifest에서 막차 표를 뺀 세대 2 manifest(같은 dataVersion·같은 파일). 세대 3을 모르는 reader용으로 함께 발행한다. */
+public fun Manifest.generationTwo(): Manifest {
+    schemaCheck(schemaVersion >= SLOT_GENERATION) { "세대 1 manifest로는 세대 2를 만들 수 없습니다" }
+    return copy(
+        schemaVersion = SLOT_GENERATION,
+        minClientSchema = SLOT_GENERATION,
+        files = files.copy(lastTrain = null),
+        lastTrainAsOf = null,
+        lastTrainModel = null,
+    )
+}
 
 /** 데이터 세트를 이루는 파일 내용. [odSlots]는 세대 2 manifest의 `files.odSlots` 파일(키 = 구분 id), 세대 1이면 비어 있다. */
 public class DataSetBytes(
@@ -237,7 +286,7 @@ public object DataSetLoader {
         val candidates = RegistryCodec.parseCandidates(candidatesBytes.decodeToString(throwOnInvalidSequence = true))
         val od = OdBinCodec.decode(odBytes)
 
-        // 구성 형식(레지스트리·후보 JSON, od.bin)은 manifest 세대 1·2 모두 1판이다(data-format §1).
+        // 구성 형식(레지스트리·후보 JSON, od.bin)은 manifest 모든 세대에서 1판이다(data-format §1).
         schemaCheck(registry.schemaVersion == SCHEMA_VERSION && candidates.schemaVersion == SCHEMA_VERSION) {
             "manifest 세대 ${manifest.schemaVersion}의 레지스트리/후보 schemaVersion은 $SCHEMA_VERSION 이어야 합니다"
         }
@@ -272,6 +321,22 @@ public object DataSetLoader {
         core: DataSet,
         odSlotBytes: Map<String, ByteArray>,
     ): Map<TimeSlot, OdMatrix> = slotMatrices(core.manifest, core.od, odSlotBytes)
+
+    /**
+     * 막차 표(data-format §5 ⑨): 해시·길이, 헤더·길이·칸 불변식([LtBinCodec]), 레지스트리 버전, 기본 행렬과 같은 축. 세대 3 manifest에서만
+     * 부른다. 실패해도 나머지 데이터는 쓸 수 있으므로 호출자는 막차만 끈다.
+     */
+    public fun lastTrains(
+        core: DataSet,
+        bytes: ByteArray,
+    ): LastTrainTable {
+        val file = core.manifest.files.lastTrain ?: schemaFail("manifest에 files.lastTrain이 없습니다")
+        schemaCheck(file.matches(bytes)) { "lt.bin의 길이/SHA-256이 manifest와 다릅니다" }
+        val table = LtBinCodec.decode(bytes)
+        schemaCheck(table.registryVersion == core.od.registryVersion) { "lt.bin의 registryVersion이 다릅니다" }
+        schemaCheck(table.sameAxesAs(core.od)) { "lt.bin의 집 역·만날 역 축이 od.bin의 출발역·후보 축과 다릅니다" }
+        return table
+    }
 
     /** 구분 행렬마다 ③ 해시·길이, ④ 헤더·길이, ⑤ 레지스트리 버전, 그리고 기본 행렬과 같은 축인지 검사한다. */
     private fun slotMatrices(

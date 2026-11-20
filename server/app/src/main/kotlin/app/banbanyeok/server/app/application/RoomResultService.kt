@@ -2,6 +2,7 @@ package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.recommendation.HolidayCalendar
+import app.banbanyeok.server.recommendation.ParticipantLastTrain
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
@@ -95,26 +96,36 @@ class RoomResultService(
         fun station(
             code: String,
             seconds: List<Int?>,
-        ) = PreviewStation(code, request.participants.zip(seconds) { p, s -> PreviewTime(labels.getValue(p.id), s) })
+            lastTrains: List<ParticipantLastTrain>?,
+        ): PreviewStation {
+            val trains = lastTrains.orEmpty().associateBy { it.participantId }
+            return PreviewStation(
+                code,
+                request.participants.zip(seconds) { p, s -> PreviewTime(labels.getValue(p.id), s, trains[p.id]) },
+            )
+        }
 
         val decision = view.decision
         val top = ranked.candidates.firstOrNull()
         return when {
             decision != null -> {
+                val ranking = ranked.candidates.firstOrNull { it.stationCode == decision.stationCode }
                 val seconds =
-                    ranked.candidates
-                        .firstOrNull { it.stationCode == decision.stationCode }
-                        ?.times
-                        ?.map { it.seconds }
+                    ranking?.times?.map { it.seconds }
                         ?: mapped { recommendation.timesTo(request, decision.stationCode) }?.map { it?.seconds }
                         ?: List(request.participants.size) { null }
+                // 순위 밖의 역이면 그 역의 막차를 따로 읽는다(같은 표, 같은 기준).
+                val lastTrains =
+                    ranking?.lastTrains
+                        ?: mapped { recommendation.lastTrainsTo(request, decision.stationCode) }?.second
                 RoomPreview.Decided(
                     room,
                     ranked.dataVersion,
                     basis,
-                    station(decision.stationCode, seconds),
+                    station(decision.stationCode, seconds, lastTrains),
                     labels.getValue(decision.decidedBy),
                     decision.decidedAt,
+                    ranked.lastTrainBasis,
                 )
             }
 
@@ -127,7 +138,8 @@ class RoomResultService(
                     room,
                     ranked.dataVersion,
                     basis,
-                    station(top.stationCode, top.times.map { it.seconds }),
+                    station(top.stationCode, top.times.map { it.seconds }, top.lastTrains),
+                    ranked.lastTrainBasis,
                 )
             }
         }
@@ -150,6 +162,9 @@ class RoomResultService(
             mode = resolvedMode,
             favorId = favorTarget(resolvedMode, favorId, view, roomDefault = mode == null),
             time = time,
+            dayCertainty = times.certainty(view.meetingDate, view.meetingTime),
+            // 토큰으로 확인한 본인. 숨긴 사람의 막차는 본인 요청에만 붙는다(미리보기는 토큰 없이 읽으므로 늘 null이다).
+            viewerId = view.participants.firstOrNull { it.isSelf }?.id,
         )
     }
 

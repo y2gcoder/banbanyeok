@@ -102,6 +102,21 @@ public class TimeSlotResolver(
         return TimeBasis(slot, TimeSlotLabels.of(slot), holiday)
     }
 
+    /**
+     * [resolve]가 정한 요일 종류를 믿을 수 있는가(막차 시각을 낼지 정한다). 날짜가 없으면 평일은 기본값일 뿐이고, 공휴일 목록의 범위 밖
+     * 날짜는 일요일만 확실하다(평일·토요일이 공휴일일 수 있다).
+     */
+    public fun certainty(
+        date: LocalDate?,
+        time: LocalTime?,
+    ): DayCertainty {
+        val serviceDay =
+            (if (time != null && time < SERVICE_DAY_START) date?.minusDays(1) else date)
+                ?: return DayCertainty.DEFAULTED
+        val known = serviceDay in calendar.coverage || serviceDay.dayOfWeek == DayOfWeek.SUNDAY
+        return if (known) DayCertainty.KNOWN else DayCertainty.OUT_OF_RANGE
+    }
+
     private companion object {
         val SERVICE_DAY_START: LocalTime = LocalTime.of(3, 0)
     }

@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app
 
+import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
@@ -27,6 +28,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import java.nio.file.Path
 import java.time.Clock
+import java.time.LocalDate
 
 /** 조립된 서버: 서비스 묶음과 정리용 자원. */
 class Components(
@@ -69,7 +71,13 @@ object CompositionRoot {
             val db = (database ?: requireNotNull(owned)).database
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
-            val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
+            val lastTrains =
+                BackgroundLastTrains(
+                    loaded.lastTrains,
+                    loaded.dataSet.manifest.lastTrainAsOf
+                        ?.let(LocalDate::parse),
+                )
+            val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots), lastTrains)
 
             val clock = Clock.systemUTC()
             val ids = SecureRandomIdGenerator()
@@ -77,7 +85,14 @@ object CompositionRoot {
             val roomRepository = ExposedRoomRepository(db, ioDispatcher)
             val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
             val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
-            val recommendation = RecommendationService(directory.travel, directory, locations = directory)
+            val recommendation =
+                RecommendationService(
+                    directory.travel,
+                    directory,
+                    locations = directory,
+                    lastTrains = lastTrains,
+                    clock = clock,
+                )
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
@@ -86,7 +101,10 @@ object CompositionRoot {
                         RoomResultService(
                             rooms,
                             recommendation,
-                            awaitSlots = directory::awaitSlots,
+                            awaitSlots = { slot ->
+                                directory.awaitSlots(slot)
+                                directory.awaitLastTrains()
+                            },
                         ),
                     recommendation = recommendation,
                     directory = directory,

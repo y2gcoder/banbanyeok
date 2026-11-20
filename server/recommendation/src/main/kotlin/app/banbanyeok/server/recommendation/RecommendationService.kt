@@ -14,6 +14,7 @@ import app.banbanyeok.core.RankInput
 import app.banbanyeok.core.RankResult
 import app.banbanyeok.core.rank
 import app.banbanyeok.schema.TimeSlot
+import java.time.Clock
 import app.banbanyeok.core.Candidate as CoreCandidate
 
 public enum class RecommendMode { FAIR, FAST, FAVOR }
@@ -36,6 +37,10 @@ public class RecommendRequest(
     public val favorId: String? = null,
     /** 언제 만나는가. 무상태 추천은 요청의 구분, 방은 약속 날짜·시각에서 정한 구분([TimeSlotResolver]). */
     public val time: TimeBasis = TimeBasis(TimeSlot.DEFAULT, TimeSlotLabels.of(TimeSlot.DEFAULT)),
+    /** [time]의 요일 종류를 믿을 수 있는가. 막차 시각은 [DayCertainty.KNOWN]일 때만 낸다. */
+    public val dayCertainty: DayCertainty = DayCertainty.KNOWN,
+    /** 이 결과를 보는 참가자의 [RecommendParticipant.id](방에서 토큰으로 확인한 본인). 숨긴 사람의 막차는 본인 요청에만 붙는다. */
+    public val viewerId: String? = null,
 )
 
 public data class ParticipantTime(
@@ -55,6 +60,8 @@ public data class RecommendedStation(
     public val favoredSeconds: Int?,
     public val reasonCode: String,
     public val reason: String,
+    /** 이 역에서 돌아가는 사람별 막차(#62). 막차 표를 쓸 수 없으면 null. 숨긴 사람은 본인 요청일 때만 들어 있다. */
+    public val lastTrains: List<ParticipantLastTrain>? = null,
 )
 
 public data class Recommendation(
@@ -70,6 +77,8 @@ public data class Recommendation(
     public val timeBasis: TimeBasis = TimeBasis(TimeSlot.DEFAULT, TimeSlotLabels.of(TimeSlot.DEFAULT)),
     /** 요청한(방은 약속 날짜·시각에서 정한) 구분. [timeBasis]와 다르면 기본 구분으로 대신 계산한 것이다. */
     public val requestedSlot: TimeSlot = TimeSlot.DEFAULT,
+    /** 막차의 기준(요일 종류·시간표 수집일). null이면 이 응답에는 막차가 없다(후보의 `lastTrains`도 null). */
+    public val lastTrainBasis: LastTrainBasis? = null,
 )
 
 /** [RecommendationService.recommendWithMapMiddle]의 결과. [mapMiddle]은 보일 조건을 채울 때만 있다. */
@@ -101,7 +110,11 @@ public class RecommendationService(
     private val stationNames: StationNames,
     private val toleranceSeconds: Int = 0,
     private val locations: StationLocations = StationLocations { null },
+    lastTrains: LastTrainSource = LastTrainSource { null },
+    clock: Clock = Clock.systemUTC(),
 ) {
+    private val lastTrains = LastTrainAttacher(lastTrains, clock, stationNames)
+
     public fun recommend(request: RecommendRequest): Recommendation {
         validate(request)
         return recommendFrom(request, measure(request))
@@ -142,6 +155,9 @@ public class RecommendationService(
         val top = result.recommendations.take(MAX_CARDS)
         val refs = personRefs(people)
         val favor = if (favorIndex >= 0) favorContext(result, matrix, favorIndex) else null
+        val timeBasis = computedBasis(request, matrix)
+        // 순위(top)를 다 정한 뒤에 붙인다. 순위·시간·이유에는 쓰이지 않는다.
+        val attached = lastTrains.forRequest(request, timeBasis)
         return Recommendation(
             status = result.status,
             mode = request.mode,
@@ -149,12 +165,8 @@ public class RecommendationService(
             baselineStationCode = result.baselineStationCode,
             labels = ParticipantLabels.of(refs),
             requestedSlot = request.time.slot,
-            timeBasis =
-                if (matrix.slot == request.time.slot) {
-                    request.time
-                } else {
-                    TimeBasis(matrix.slot, TimeSlotLabels.of(matrix.slot))
-                },
+            timeBasis = timeBasis,
+            lastTrainBasis = attached?.basis,
             candidates =
                 top.mapIndexed { index, card ->
                     val input = reasonInput(CardContext(request.mode, result, top, refs, favor), index)
@@ -169,6 +181,7 @@ public class RecommendationService(
                         favoredSeconds = card.favoredSeconds,
                         reasonCode = card.reasonCode,
                         reason = ReasonGenerator.generate(input),
+                        lastTrains = attached?.at(card.stationCode),
                     )
                 },
         )
@@ -191,6 +204,26 @@ public class RecommendationService(
             }
         }
     }
+
+    /**
+     * [stationCode]에서 돌아가는 사람별 막차와 그 기준. 순위와 상관없는 역(방에서 정한 역)에도 쓴다. 막차 표를 쓸 수 없거나 요청한 구분의
+     * 행렬이 없으면 null이다. 숨긴 사람은 [RecommendRequest.viewerId]일 때만 들어 있다.
+     */
+    public fun lastTrainsTo(
+        request: RecommendRequest,
+        stationCode: String,
+    ): Pair<LastTrainBasis, List<ParticipantLastTrain>>? {
+        validate(request)
+        val attached = lastTrains.forRequest(request, computedBasis(request, measure(request))) ?: return null
+        return attached.basis to attached.at(stationCode)
+    }
+
+    /** 실제로 계산한 구분. 요청한 구분의 행렬이 없으면 기본 구분이다. */
+    private fun computedBasis(
+        request: RecommendRequest,
+        matrix: TravelMatrix,
+    ): TimeBasis =
+        if (matrix.slot == request.time.slot) request.time else TimeBasis(matrix.slot, TimeSlotLabels.of(matrix.slot))
 
     /**
      * "지도 한가운데" 비교(#68)를 보일 때만 값을 준다. 하나라도 어기면 null이다.

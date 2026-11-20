@@ -3,6 +3,8 @@ package app.banbanyeok.pipeline
 import app.banbanyeok.schema.CandidateList
 import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
+import app.banbanyeok.schema.LastTrainTable
+import app.banbanyeok.schema.LtBinCodec
 import app.banbanyeok.schema.MANIFEST_SCHEMA_VERSION
 import app.banbanyeok.schema.Manifest
 import app.banbanyeok.schema.ManifestCodec
@@ -16,6 +18,7 @@ import app.banbanyeok.schema.Sha256
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.schema.generationOne
+import app.banbanyeok.schema.generationTwo
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
 import java.time.Clock
@@ -45,9 +48,21 @@ internal fun loadDevArtifacts(output: Path): app.banbanyeok.schema.DataSet {
     )
 }
 
-/** The newest manifest generation present in [dir] (generation 2 first, then the generation-1 `manifest.json`). */
+/** The newest manifest generation present in [dir] (generation 3, then 2, then the generation-1 `manifest.json`). */
 internal fun latestManifest(dir: Path): Path =
-    dir.resolve(ManifestNames.GENERATION_TWO).takeIf { it.exists() } ?: dir.resolve(ManifestNames.GENERATION_ONE)
+    ManifestNames.NEWEST_FIRST.map(dir::resolve).firstOrNull { it.exists() }
+        ?: dir.resolve(ManifestNames.GENERATION_ONE)
+
+/** The dev artifact set's last-train table, validated against [dataSet] (null for data before generation 3). */
+internal fun loadDevLastTrains(
+    output: Path,
+    dataSet: app.banbanyeok.schema.DataSet,
+): LastTrainTable? =
+    dataSet.manifest.files.lastTrain
+        ?.let { DataSetLoader.lastTrains(dataSet, output.resolve(it.path).readBytes()) }
+
+/** Dev file name of the last-train table. */
+internal const val LT_FILE = "lt.bin"
 
 /** Dev file name of a slot matrix: `od.bin` for the default slot, `od-<slot>.bin` for the others. */
 internal fun odFileName(slot: TimeSlot): String = if (slot == TimeSlot.DEFAULT) "od.bin" else "od-${slot.id}.bin"
@@ -57,7 +72,7 @@ internal fun publish(
     net: Network,
     candidates: CandidateList,
     matrices: Map<TimeSlot, Pair<IntArray, IntArray>>,
-    clock: Clock = Clock.systemUTC(),
+    lastTrains: LtArtifact,
 ) {
     require(matrices.keys == TimeSlot.ALL.toSet()) { "Every time slot needs a matrix" }
     val ods =
@@ -70,7 +85,7 @@ internal fun publish(
                 matrix.second,
             )
         }
-    ArtifactWriter(root, net, candidates, ods, clock).write()
+    ArtifactWriter(root, net, candidates, ods, lastTrains).write()
 }
 
 private class ArtifactWriter(
@@ -78,6 +93,7 @@ private class ArtifactWriter(
     private val net: Network,
     private val candidates: CandidateList,
     ods: Map<TimeSlot, OdMatrix>,
+    private val lastTrains: LtArtifact,
     private val clock: Clock = Clock.systemUTC(),
 ) {
     /** SEO pages stay on the default slot (weekday daytime): static pages carry no time choice. */
@@ -97,6 +113,7 @@ private class ArtifactWriter(
             "candidates.json" to jsonText(RegistryCodec.encodeCandidates(candidates)).toByteArray(),
             "od.bin" to OdBinCodec.encode(od),
             "seo-pairs.json" to jsonText(seo).toByteArray(),
+            LT_FILE to LtBinCodec.encode(lastTrains.table),
         )
 
     /**
@@ -132,40 +149,24 @@ private class ArtifactWriter(
         val version = "$date.$revision"
         files["seo-pairs.json"] = jsonText(JsonObject(seo + ("dataVersion" to jsonValue(version)))).toByteArray()
         require(files.getValue("seo-pairs.json").size <= 1_048_576) { "SEO pairs exceed 1 MiB; reduce selected hubs" }
-        val manifest =
-            Manifest(
-                MANIFEST_SCHEMA_VERSION,
-                MANIFEST_SCHEMA_VERSION,
-                version,
-                previousDataVersion = previous?.dataVersion,
-                generatedAt = now.toString(),
-                registryVersion = net.registry.registryVersion,
-                timeModel = "slot-half-headway",
-                originCount = od.originCount,
-                candidateCount = od.candidateCount,
-                files =
-                    ManifestFiles(
-                        receipt("stations.json"),
-                        receipt("candidates.json"),
-                        receipt("od.bin"),
-                        receipt("seo-pairs.json"),
-                        slots.associate { it.id to receipt(slotFiles.getValue(it)) },
-                    ),
-            )
+        val manifest = manifest(version, now.toString())
         val manifestText = jsonText(ManifestCodec.encode(manifest))
-        DataSetLoader.load(
-            DataSetBytes(
-                manifestText,
-                files.getValue("stations.json"),
-                files.getValue("candidates.json"),
-                files.getValue("od.bin"),
-                slots.associate { it.id to files.getValue(slotFiles.getValue(it)) },
-            ),
-        )
+        DataSetLoader
+            .load(
+                DataSetBytes(
+                    manifestText,
+                    files.getValue("stations.json"),
+                    files.getValue("candidates.json"),
+                    files.getValue("od.bin"),
+                    slots.associate { it.id to files.getValue(slotFiles.getValue(it)) },
+                ),
+            ).also { DataSetLoader.lastTrains(it, files.getValue(LT_FILE)) }
         files.forEach { (name, bytes) -> output.resolve(name).writeBytes(bytes) }
         removeStaleSlotFiles()
-        // Generation 2 first, then the generation-1 pointer that older readers keep using (same files, no slots).
-        output.resolve(ManifestNames.GENERATION_TWO).writeText(manifestText)
+        // Newest generation first, the generation-1 pointer last: older readers keep reading the name they know
+        // (same data version, same files, without the parts they do not understand).
+        output.resolve(ManifestNames.GENERATION_THREE).writeText(manifestText)
+        output.resolve(ManifestNames.GENERATION_TWO).writeText(jsonText(ManifestCodec.encode(manifest.generationTwo())))
         output.resolve(ManifestNames.GENERATION_ONE).writeText(jsonText(ManifestCodec.encode(manifest.generationOne())))
         println(
             "Published dev artifacts: ${files.values.sumOf { it.size }} bytes; SEO ${files.getValue(
@@ -173,6 +174,32 @@ private class ArtifactWriter(
             ).size} bytes",
         )
     }
+
+    private fun manifest(
+        version: String,
+        generatedAt: String,
+    ) = Manifest(
+        MANIFEST_SCHEMA_VERSION,
+        MANIFEST_SCHEMA_VERSION,
+        version,
+        previousDataVersion = previous?.dataVersion,
+        generatedAt = generatedAt,
+        registryVersion = net.registry.registryVersion,
+        timeModel = "slot-half-headway",
+        originCount = od.originCount,
+        candidateCount = od.candidateCount,
+        files =
+            ManifestFiles(
+                receipt("stations.json"),
+                receipt("candidates.json"),
+                receipt("od.bin"),
+                receipt("seo-pairs.json"),
+                slots.associate { it.id to receipt(slotFiles.getValue(it)) },
+                receipt(LT_FILE),
+            ),
+        lastTrainAsOf = lastTrains.asOf,
+        lastTrainModel = LT_MODEL,
+    )
 
     private fun receipt(name: String): ManifestFile =
         files.getValue(name).let {
@@ -192,8 +219,9 @@ private class ArtifactWriter(
             .forEach { it.delete() }
 
     private fun unchanged(): Boolean {
-        if (!output.resolve(ManifestNames.GENERATION_TWO).exists()) return false
-        val old = previous?.files ?: return false
+        if (!output.resolve(ManifestNames.GENERATION_THREE).exists()) return false
+        if (previous?.lastTrainAsOf != lastTrains.asOf || previous.lastTrainModel != LT_MODEL) return false
+        val old = previous.files
         if (old.odSlots?.mapValues { it.value.path } !=
             slots.associate { it.id to slotFiles.getValue(it) }
         ) {
@@ -205,6 +233,7 @@ private class ArtifactWriter(
                 "candidates.json" to old.candidates,
                 "od.bin" to old.od,
                 "seo-pairs.json" to old.seoPages,
+                LT_FILE to old.lastTrain,
             ) + slots.associate { slotFiles.getValue(it) to old.odSlots?.get(it.id) }
         return files.all { (name, bytes) ->
             val path = output.resolve(name)

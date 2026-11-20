@@ -24,7 +24,7 @@ class ReleaseStageTest :
                 val manifest = stageRelease(devArtifacts, out)
                 val files = manifest.files
                 (
-                    listOfNotNull(files.registry, files.candidates, files.od, files.seoPages) +
+                    listOfNotNull(files.registry, files.candidates, files.od, files.seoPages, files.lastTrain) +
                         files.odSlots.orEmpty().values
                 ).forEach { file ->
                     assertTrue(file.path.startsWith("versions/${manifest.dataVersion}/"), file.path)
@@ -37,13 +37,43 @@ class ReleaseStageTest :
                     assertTrue(file.path.contains(".${file.sha256.take(16)}."), file.path)
                     assertTrue(file.matches(out.resolve(file.path).readBytes()), file.path)
                 }
-                assertEquals(manifest, ManifestCodec.parse(out.resolve("manifest.v2.json").readText()))
+                assertEquals(manifest, ManifestCodec.parse(out.resolve("manifest.v3.json").readText()))
+            }
+
+            it("alsoWritesAGenerationTwoManifestWithoutTheLastTrainTable") {
+                val out = Files.createTempDirectory("release-stage").resolve("out")
+                val published = stageRelease(devArtifacts, out)
+                assertEquals(3, published.schemaVersion)
+                val lastTrain = requireNotNull(published.files.lastTrain)
+                assertTrue(Regex("^versions/[0-9.]+/lt\\.[0-9a-f]{16}\\.bin$").matches(lastTrain.path), lastTrain.path)
+                val two = ManifestCodec.parse(out.resolve("manifest.v2.json").readText())
+                assertEquals(2, two.schemaVersion)
+                assertEquals(2, two.minClientSchema)
+                assertEquals(null, two.files.lastTrain)
+                assertEquals(null, two.lastTrainAsOf)
+                assertEquals(published.files.odSlots, two.files.odSlots)
+                assertEquals(published.dataVersion, two.dataVersion)
+                // 세대 2까지만 아는 reader(운영 중인 서버)는 모르는 키를 거부하므로 v2 파일에 막차 항목이 남으면 안 된다.
+                assertTrue("lastTrain" !in out.resolve("manifest.v2.json").readText())
+                // 발행된 막차 표는 같은 데이터 세트의 축·버전으로 읽힌다.
+                val dataSet =
+                    DataSetLoader.load(
+                        app.banbanyeok.schema.DataSetBytes(
+                            out.resolve("manifest.v3.json").readText(),
+                            out.resolve(published.files.registry.path).readBytes(),
+                            out.resolve(published.files.candidates.path).readBytes(),
+                            out.resolve(published.files.od.path).readBytes(),
+                        ),
+                        deferSlots = true,
+                    )
+                val table = DataSetLoader.lastTrains(dataSet, out.resolve(lastTrain.path).readBytes())
+                assertEquals(dataSet.od.originCount, table.homeCount)
+                assertEquals(dataSet.od.candidateCount, table.meetingCount)
             }
 
             it("alsoWritesAGenerationOneManifestForOlderServers") {
                 val out = Files.createTempDirectory("release-stage").resolve("out")
                 val published = stageRelease(devArtifacts, out)
-                assertEquals(2, published.schemaVersion)
                 assertEquals(11, published.files.odSlots?.size)
                 val old = ManifestCodec.parse(out.resolve("manifest.json").readText())
                 assertEquals(1, old.schemaVersion)
@@ -64,7 +94,7 @@ class ReleaseStageTest :
             it("keepsContentAndReceiptsUnchanged") {
                 val out = Files.createTempDirectory("release-stage").resolve("out")
                 val published = stageRelease(devArtifacts, out)
-                val original = ManifestCodec.parse(devArtifacts.resolve("manifest.v2.json").readText())
+                val original = ManifestCodec.parse(devArtifacts.resolve("manifest.v3.json").readText())
                 assertEquals(original.files.od.sha256, published.files.od.sha256)
                 assertEquals(original.files.registry.bytes, published.files.registry.bytes)
                 assertEquals(original.dataVersion, published.dataVersion)
@@ -79,6 +109,7 @@ class ReleaseStageTest :
                 assertFailsWith<IllegalArgumentException> { stageRelease(source, out) }
                 assertTrue(!out.resolve("manifest.json").exists(), "manifest는 검증 전에 쓰지 않는다")
                 assertTrue(!out.resolve("manifest.v2.json").exists(), "manifest는 검증 전에 쓰지 않는다")
+                assertTrue(!out.resolve("manifest.v3.json").exists(), "manifest는 검증 전에 쓰지 않는다")
             }
 
             it("isDeterministic") {
@@ -87,8 +118,16 @@ class ReleaseStageTest :
                 stageRelease(devArtifacts, a)
                 stageRelease(devArtifacts, b)
                 assertEquals(
-                    Sha256.hex(a.resolve("manifest.json").readBytes() + a.resolve("manifest.v2.json").readBytes()),
-                    Sha256.hex(b.resolve("manifest.json").readBytes() + b.resolve("manifest.v2.json").readBytes()),
+                    Sha256.hex(
+                        listOf("manifest.json", "manifest.v2.json", "manifest.v3.json")
+                            .map { a.resolve(it).readBytes() }
+                            .reduce(ByteArray::plus),
+                    ),
+                    Sha256.hex(
+                        listOf("manifest.json", "manifest.v2.json", "manifest.v3.json")
+                            .map { b.resolve(it).readBytes() }
+                            .reduce(ByteArray::plus),
+                    ),
                 )
             }
         }

@@ -1,6 +1,6 @@
 {
   "candidateCount": 127,
-  "dataVersion": "20261115.8",
+  "dataVersion": "20261120.1",
   "files": {
     "candidates": {
       "bytes": 1468,
@@ -20,13 +20,13 @@
     "seoPages": {
       "bytes": 947497,
       "path": "seo-pairs.json",
-      "sha256": "9250bcd85f8e02b9b8d82c4888a245f5e6bff9e856ad9d3958cb79fae2602373"
+      "sha256": "f6940088355207427f62b870e91a6f8f900388e8a6dd209f64c155f9747aa71f"
     }
   },
-  "generatedAt": "2026-11-15T17:34:27Z",
+  "generatedAt": "2026-11-20T12:00:49Z",
   "minClientSchema": 1,
   "originCount": 653,
-  "previousDataVersion": "20261115.7",
+  "previousDataVersion": "20261115.8",
   "registryVersion": 5,
   "schemaVersion": 1,
   "timeModel": "weekday-offpeak-half-headway"

@@ -2,6 +2,7 @@
 
 package app.banbanyeok.server.app
 
+import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
@@ -36,6 +37,15 @@ object DevArtifacts {
     val store = LocalFileArtifactStore(dir, UnconfinedTestDispatcher())
     private val loaded by lazy { runBlocking { ArtifactLoader(store).load() } }
     val directory: StationDirectory by lazy { StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots)) }
+
+    /** manifest의 막차 수집일(`lastTrainAsOf`). */
+    val lastTrainAsOf: String by lazy { requireNotNull(loaded.dataSet.manifest.lastTrainAsOf) }
+
+    /** 검사를 마친 dev 막차 표(lt.bin). */
+    val lastTrains: BackgroundLastTrains by lazy {
+        runBlocking { loaded.lastTrains.join() }
+        BackgroundLastTrains(loaded.lastTrains, java.time.LocalDate.parse(lastTrainAsOf))
+    }
     val published: PublishedArtifacts by lazy { PublishedArtifacts(store, loaded) }
     val origins: List<String> get() = directory.originCodes
 }

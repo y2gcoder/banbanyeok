@@ -4,6 +4,8 @@
 근거: [가능성 확인 보고서](https://github.com/y2gcoder/banbanyeok/blob/ad3c0d0/docs/research/last-train-spike.md)(브랜치 `y2gcoder/w20-lasttrain-spike`), [D1](../setup/d1-notes.md), [T2](../setup/t2-notes.md), [data-format](../../contracts/data-format.md), 이 문서를 쓰며 돌린 오프라인 실험 [`spikes/last-train-design/confirm.py`](../../spikes/last-train-design/confirm.py).
 "확인"은 이번에 직접 재거나 읽은 것, "추정"은 재지 않은 것이다.
 
+> **구현 상태(2026-11-20 덧붙임).** 운영자가 이 안의 계산을 골랐고 1차(파이프라인·서버·계약)를 구현했다. 실제 형식·측정·대조 결과는 [docs/setup/w21-notes.md](../setup/w21-notes.md)와 [data-format §10](../../contracts/data-format.md)이 기준이다. 이 문서와 달라진 것: ① 급행은 통과역에 줄이 없다는 가정이 틀렸다(TAGO는 도착 시각 없는 줄을 싣는다). "도착 시각이 없는 줄은 정차가 아니다" 규칙을 더했다. ② 표와 API에는 내리지 않은 분이 들어가고 10분 단위 내림은 화면이 한다. ③ 토요일은 요일 스위치가 아니라 노선별 허용 목록이다(서울 1~8호선만 켬). ④ API 분류 이름은 `direct`/`margin`/`check`다. ⑤ lt.bin 머리에 요일 스위치 비트가 없다.
+
 ## 결론 / 권고
 
 **1. 계산의 뼈대를 "열차 다시 잇기"로 바꾼다.** 가능성 확인 실험은 "떠난 열차는 종착역까지 모든 역에 선다"고 가정했다. 이 가정이 틀리면 없는 열차를 있다고 하게 되고, 그것이 유일하게 **늦은 쪽**으로 틀리는 길이다. 대신 역별 시간표의 줄을 "같은 종착역, 다음 역에 예상한 시각(±90초)"으로 이어 열차를 다시 만든다. 내릴 역의 시간표에 그 열차가 실제로 있을 때만 탈 수 있다고 본다. 급행 통과와 단축 운행은 줄이 없으므로 저절로 빠지고, 이어지지 않으면 결과가 이르거나 비게 된다(안전한 쪽).
@@ -266,7 +268,7 @@ LastTrain:                 # Candidate.lastTrains[] (참가자 순서, 숨긴 �
 
 ## 5. 화면
 
-시안(정적 HTML, [`spikes/last-train-design/mock/screens.html`](../../spikes/last-train-design/mock/screens.html), 시각과 소요시간은 예시 값). PNG는 저장소 밖 `$TMPDIR/banbanyeok-62-fable/`에 있다.
+시안은 정적 HTML로 그려 저장소 밖에 PNG로 두었다(시각과 소요시간은 예시 값). 화면은 다음 PR에서 다시 정한다.
 
 | 파일 | 내용 |
 |---|---|

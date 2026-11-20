@@ -8,6 +8,7 @@ import app.banbanyeok.schema.ManifestFile
 import app.banbanyeok.schema.ManifestFiles
 import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.generationOne
+import app.banbanyeok.schema.generationTwo
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
@@ -61,8 +62,10 @@ internal fun stageRelease(
     val od = stage(entries.od)
     val seoPages = entries.seoPages?.let(::stage)
     val odSlots = entries.odSlots?.mapValues { stage(it.value) }
+    val lastTrain = entries.lastTrain?.let(::stage)
     // 내용이 같은 구분 행렬은 한 파일을 함께 가리킨다(같은 해시 = 같은 발행 이름). 한 번만 쓴다.
-    val staged = (listOfNotNull(registry, candidates, od, seoPages) + odSlots?.values.orEmpty()).distinctBy { it.key }
+    val staged =
+        (listOfNotNull(registry, candidates, od, seoPages, lastTrain) + odSlots?.values.orEmpty()).distinctBy { it.key }
     require(staged.map { it.sourceName }.toSet().size == staged.size) { "발행 파일 이름이 겹칩니다" }
     val published =
         manifest.copy(
@@ -73,11 +76,10 @@ internal fun stageRelease(
                     od.published(),
                     seoPages?.published(),
                     odSlots?.mapValues { it.value.published() },
+                    lastTrain?.published(),
                 ),
         )
     val publishedText = jsonText(ManifestCodec.encode(published))
-    // 세대 2면 세대 1(구분 행렬 없음)도 함께 쓴다: 세대 2를 모르는 옛 서버가 발행 뒤에도 계속 기동할 수 있게(되돌리기 포함).
-    val generationOne = if (published.files.odSlots != null) published.generationOne() else null
     if (out.exists()) out.deleteRecursively()
     out.createDirectories()
     staged.forEach { file ->
@@ -86,41 +88,53 @@ internal fun stageRelease(
         target.writeBytes(file.content)
     }
     // 발행 형식 그대로 다시 읽어 검증한다(서버가 시작할 때 하는 일과 같다).
-    DataSetLoader.load(
-        DataSetBytes(
-            publishedText,
-            out.resolve(published.files.registry.path).readBytes(),
-            out.resolve(published.files.candidates.path).readBytes(),
-            out.resolve(published.files.od.path).readBytes(),
-            published.files.odSlots
-                .orEmpty()
-                .mapValues { out.resolve(it.value.path).readBytes() },
-        ),
-    )
-    writeManifests(out, publishedText, generationOne)
-    val manifests = if (generationOne == null) "manifest.json" else "manifest.v2.json + manifest.json"
-    println("Staged release $version: ${staged.size} files + $manifests")
+    val dataSet =
+        DataSetLoader.load(
+            DataSetBytes(
+                publishedText,
+                out.resolve(published.files.registry.path).readBytes(),
+                out.resolve(published.files.candidates.path).readBytes(),
+                out.resolve(published.files.od.path).readBytes(),
+                published.files.odSlots
+                    .orEmpty()
+                    .mapValues { out.resolve(it.value.path).readBytes() },
+            ),
+        )
+    published.files.lastTrain?.let { DataSetLoader.lastTrains(dataSet, out.resolve(it.path).readBytes()) }
+    val names = writeManifests(out, published, publishedText)
+    println("Staged release $version: ${staged.size} files + ${names.joinToString(" + ")}")
     return published
 }
 
-/** 세대 2면 `manifest.v2.json`을 쓰고 세대 1을 검증해 `manifest.json`에 마지막으로 쓴다. 세대 1뿐이면 `manifest.json`만. */
+/**
+ * 가장 높은 세대의 manifest와, 그 세대를 모르는 옛 서버가 발행 뒤에도 계속 기동할 수 있게(되돌리기 포함) 아래 세대를 모두 쓴다:
+ * 세대 3이면 `manifest.v3.json` → `manifest.v2.json`(막차 표 없음) → `manifest.json`(구분 행렬도 없음, 마지막). 세대 1뿐이면
+ * `manifest.json`만. 세대 1은 세대 1만 아는 reader의 규칙으로 다시 읽어 검증한다.
+ */
 private fun writeManifests(
     out: Path,
+    published: Manifest,
     publishedText: String,
-    generationOne: Manifest?,
-) {
-    if (generationOne == null) {
+): List<String> {
+    if (published.files.odSlots == null) {
         out.resolve(ManifestNames.GENERATION_ONE).writeText(publishedText)
-    } else {
-        val generationOneText = jsonText(ManifestCodec.encode(generationOne))
-        DataSetLoader.load(
-            generationOneText,
-            out.resolve(generationOne.files.registry.path).readBytes(),
-            out.resolve(generationOne.files.candidates.path).readBytes(),
-            out.resolve(generationOne.files.od.path).readBytes(),
-            supportedSchema = 1,
-        )
-        out.resolve(ManifestNames.GENERATION_TWO).writeText(publishedText)
-        out.resolve(ManifestNames.GENERATION_ONE).writeText(generationOneText)
+        return listOf(ManifestNames.GENERATION_ONE)
     }
+    val generationOne = published.generationOne()
+    val generationOneText = jsonText(ManifestCodec.encode(generationOne))
+    DataSetLoader.load(
+        generationOneText,
+        out.resolve(generationOne.files.registry.path).readBytes(),
+        out.resolve(generationOne.files.candidates.path).readBytes(),
+        out.resolve(generationOne.files.od.path).readBytes(),
+        supportedSchema = 1,
+    )
+    val written = mutableListOf<String>()
+    if (published.files.lastTrain != null) {
+        out.resolve(ManifestNames.GENERATION_THREE).writeText(publishedText)
+        written.add(ManifestNames.GENERATION_THREE)
+    }
+    out.resolve(ManifestNames.GENERATION_TWO).writeText(jsonText(ManifestCodec.encode(published.generationTwo())))
+    out.resolve(ManifestNames.GENERATION_ONE).writeText(generationOneText)
+    return written + ManifestNames.GENERATION_TWO + ManifestNames.GENERATION_ONE
 }

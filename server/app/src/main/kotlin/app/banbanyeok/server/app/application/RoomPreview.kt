@@ -1,6 +1,8 @@
 package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.TimeBand
+import app.banbanyeok.server.recommendation.LastTrainBasis
+import app.banbanyeok.server.recommendation.ParticipantLastTrain
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.TimeBasis
 import app.banbanyeok.server.room.ShareVersion
@@ -13,6 +15,8 @@ data class PreviewTime(
     val label: String,
     /** 그 역까지 걸리는 시간(초). 갈 수 없으면 null. */
     val seconds: Int?,
+    /** 그 역에서 돌아가는 막차(#62). 막차 표를 쓸 수 없거나 출발역을 숨긴 사람이면 null(미리보기는 누가 묻든 같아야 한다). */
+    val lastTrain: ParticipantLastTrain? = null,
 )
 
 data class PreviewStation(
@@ -59,6 +63,8 @@ sealed interface RoomPreview {
         val dataVersion: String,
         val basis: PreviewBasis,
         val station: PreviewStation,
+        /** 막차의 기준. null이면 이 미리보기에는 막차가 없다. */
+        val lastTrainBasis: LastTrainBasis? = null,
     ) : RoomPreview
 
     /** 정한 역. 순위 밖이어도 그 역까지의 시간을 싣는다. */
@@ -70,5 +76,6 @@ sealed interface RoomPreview {
         /** 정한 사람의 짧은 이름. */
         val decidedBy: String,
         val decidedAt: Instant,
+        val lastTrainBasis: LastTrainBasis? = null,
     ) : RoomPreview
 }

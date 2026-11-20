@@ -19,6 +19,8 @@ class StationDirectory(
     dataSet: DataSet,
     /** 기본 구분을 뺀 구분 행렬. 서버는 [BackgroundSlots], 테스트는 이미 읽은 데이터 세트의 행렬. */
     private val slots: SlotMatrices = SlotMatrices { dataSet.odSlots[it] },
+    /** 뒤에서 읽는 막차 표. 테스트처럼 뒤에서 읽지 않으면 null이다(기다릴 것이 없다). */
+    private val lastTrains: BackgroundLastTrains? = null,
 ) : StationCatalog,
     StationNames,
     StationLocations {
@@ -61,6 +63,11 @@ class StationDirectory(
     /** 구분 행렬 검사가 아직 뒤에서 도는 중이면 잠깐 기다린다(기본 구분 요청은 기다리지 않는다). 요청 스레드를 붙잡지 않는다. */
     suspend fun awaitSlots(slot: TimeSlot) {
         if (slot != TimeSlot.DEFAULT) (slots as? BackgroundSlots)?.awaitReady()
+    }
+
+    /** 막차 표 검사가 아직 뒤에서 도는 중이면 잠깐 기다린다. 요청 스레드를 붙잡지 않는다. */
+    suspend fun awaitLastTrains() {
+        lastTrains?.awaitReady()
     }
 
     /** 출발역 표시 이름. 레지스트리에 없으면 null. */

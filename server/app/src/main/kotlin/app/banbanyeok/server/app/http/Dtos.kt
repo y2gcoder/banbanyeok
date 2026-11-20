@@ -162,6 +162,9 @@ data class ResultDto(
     /** 방 결과에만 있다(`/recommend`에는 키가 없다). */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val shareVersion: Long? = null,
+    /** 귀갓길 막차의 기준(#62). 막차 표를 쓸 수 없으면 키가 없고, 그때는 후보의 `lastTrains`도 없다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val lastTrainBasis: JsonObject? = null,
 )
 
 @Serializable
@@ -186,6 +189,9 @@ data class PreviewBasisDto(
 data class PreviewTimeDto(
     val label: String,
     val seconds: Int?,
+    /** 그 역에서 돌아가는 막차. 막차 표를 쓸 수 없거나 출발역을 숨긴 사람이면 키가 없다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val lastTrain: JsonObject? = null,
 )
 
 @Serializable
@@ -214,6 +220,8 @@ sealed interface RoomPreviewDto {
         val dataVersion: String,
         val basis: PreviewBasisDto,
         val station: PreviewStationDto,
+        @EncodeDefault(EncodeDefault.Mode.NEVER)
+        val lastTrainBasis: JsonObject? = null,
     ) : RoomPreviewDto
 
     @Serializable
@@ -225,5 +233,7 @@ sealed interface RoomPreviewDto {
         val station: PreviewStationDto,
         val decidedBy: String,
         val decidedAt: String,
+        @EncodeDefault(EncodeDefault.Mode.NEVER)
+        val lastTrainBasis: JsonObject? = null,
     ) : RoomPreviewDto
 }

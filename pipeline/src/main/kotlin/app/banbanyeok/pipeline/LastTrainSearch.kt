@@ -1,0 +1,221 @@
+package app.banbanyeok.pipeline
+
+import app.banbanyeok.schema.DayType
+import app.banbanyeok.schema.LastTrainKind
+import java.util.PriorityQueue
+
+private const val SECONDS_PER_MINUTE = 60
+private const val MARGIN_STEP_MINUTES = 10
+
+/** The value a client shows for a margin kind: the minute floored to ten minutes. */
+internal fun ltMarginShown(minute: Int): Int = minute - minute % MARGIN_STEP_MINUTES
+
+/**
+ * Trains of one night indexed for the backward search. A state is (physical station, line family): "the latest
+ * time a rider can leave this station on a train of this family and still get home".
+ */
+internal class LtNight(
+    val trains: List<LtTrain>,
+) {
+    private val stateIds = linkedMapOf<Pair<String, String>, Int>()
+    private val arrivals = mutableListOf<MutableList<Triple<Int, Int, Int>>>()
+
+    init {
+        trains.forEachIndexed { t, train ->
+            train.stops.forEachIndexed { i, stop ->
+                val state = state(stop.code, train.group)
+                if (stop.alights) arrivals[state].add(Triple(stop.arrival, t, i))
+            }
+        }
+        arrivals.forEach { list -> list.sortWith(compareBy({ it.first }, { it.second }, { it.third })) }
+    }
+
+    private fun state(
+        code: String,
+        group: String,
+    ): Int =
+        stateIds.getOrPut(code to group) {
+            arrivals.add(mutableListOf())
+            arrivals.size - 1
+        }
+
+    val stateCount: Int get() = arrivals.size
+    val stateKeys: List<Pair<String, String>> = stateIds.keys.toList()
+
+    /** Family → state id, per physical station. */
+    val statesAt: Map<String, List<Pair<String, Int>>> =
+        stateIds.entries.groupBy({ it.key.first }, { it.key.second to it.value })
+
+    fun stateOf(
+        code: String,
+        group: String,
+    ): Int = stateIds.getValue(code to group)
+
+    /** (platform time, train, stop) of every stop of a state's family at its station, in time order. */
+    fun arrivalsAt(state: Int): List<Triple<Int, Int, Int>> = arrivals[state]
+}
+
+/**
+ * Latest departure towards one home station from every state, by label setting from the largest value down. A stop
+ * is activated when a rider arriving there can still get home; every earlier stop of that train is then a
+ * candidate first boarding. Changing trains costs the allowance of that station and pair of families.
+ */
+private class LtBackward(
+    private val night: LtNight,
+    private val allowance: (code: String, from: String, to: String) -> Int,
+    private val home: String,
+) {
+    val best = IntArray(night.stateCount) { -1 }
+    private val scanned = IntArray(night.stateCount)
+    private val reached = IntArray(night.trains.size)
+    private val waiting = mutableMapOf<Int, MutableList<Int>>()
+    private val queue = PriorityQueue<Pair<Int, Int>>(compareBy({ -it.first }, { it.second }))
+
+    fun run(): IntArray {
+        night.statesAt[home].orEmpty().forEach { (_, state) -> scan(state, LT_DAY_END) }
+        while (queue.isNotEmpty()) {
+            val (value, state) = queue.remove()
+            if (best[state] != value) continue
+            val (code, group) = night.stateKeys[state]
+            night.statesAt.getValue(code).forEach { (from, other) -> scan(other, value - allowance(code, from, group)) }
+        }
+        return best
+    }
+
+    /** Activates the stops of [state] a rider reaches by [deadline] that were not activated before. */
+    private fun scan(
+        state: Int,
+        deadline: Int,
+    ) {
+        val list = night.arrivalsAt(state)
+        while (scanned[state] < list.size && list[scanned[state]].first <= deadline) {
+            val (_, train, stop) = list[scanned[state]++]
+            activate(train, stop)
+        }
+    }
+
+    private fun activate(
+        train: Int,
+        stop: Int,
+    ) {
+        val late = waiting[train]
+        late?.removeAll { board(train, it, stop) }
+        for (earlier in reached[train] until stop) {
+            if (!board(train, earlier, stop)) waiting.getOrPut(train) { mutableListOf() }.add(earlier)
+        }
+        reached[train] = maxOf(reached[train], stop)
+    }
+
+    /** True when boarding at [from] is settled: used with [to], or never usable. False to retry with a later stop. */
+    private fun board(
+        train: Int,
+        from: Int,
+        to: Int,
+    ): Boolean {
+        val run = night.trains[train]
+        val origin = run.stops[from]
+        val target = run.stops[to]
+        if (!origin.boards || origin.departure < LT_BOARD_FROM || origin.code == home) return true
+        if (from >= to || !ltRides(origin, target)) return false
+        val state = night.stateOf(origin.code, run.group)
+        if (origin.departure > best[state]) {
+            best[state] = origin.departure
+            queue.add(origin.departure to state)
+        }
+        return true
+    }
+}
+
+private data class LtDirect(
+    val departure: Int,
+    val bound: String,
+    val group: String,
+)
+
+/** Latest single-train departure per (home, meeting), with that train's destination and family. */
+private fun ltDirect(
+    trains: List<LtTrain>,
+    homes: Map<String, Int>,
+    meetings: Map<String, Int>,
+): Map<Pair<Int, Int>, LtDirect> {
+    val best = mutableMapOf<Pair<Int, Int>, LtDirect>()
+    val order = compareBy<LtDirect>({ it.departure }, { it.bound }, { it.group })
+    trains.forEach { train ->
+        train.stops.forEachIndexed { to, target ->
+            val home = homes[target.code] ?: return@forEachIndexed
+            train.stops.subList(0, to).forEach { origin ->
+                val meeting = meetings[origin.code]
+                if (meeting != null && ltRides(origin, target)) {
+                    val found = LtDirect(origin.departure, train.bound, train.group)
+                    // The latest train; among trains leaving together the smaller destination code, so the
+                    // result does not depend on the order of the trains.
+                    best.merge(home to meeting, found) { old, new ->
+                        if (new.departure > old.departure ||
+                            (new.departure == old.departure && order.compare(new, old) < 0)
+                        ) {
+                            new
+                        } else {
+                            old
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return best
+}
+
+/**
+ * Classifies one cell. [latest] is the latest departure by any itinerary and [direct] by one train (so
+ * `latest >= direct`). A transfer itinerary wins only when what a client would show for it (floored to ten
+ * minutes) is later than what it would show for the direct train.
+ */
+private fun ltCell(
+    latest: Int,
+    direct: LtDirect?,
+    exact: Set<String>,
+): LtCell {
+    if (latest < 0) return LtCell.UNKNOWN
+    val minute = latest / SECONDS_PER_MINUTE
+    if (direct == null) return LtCell(LastTrainKind.MARGIN_TRANSFER.raw, minute, null)
+    val directMinute = direct.departure / SECONDS_PER_MINUTE
+    val confirmed = direct.group in exact
+    val directShown = if (confirmed) directMinute else ltMarginShown(directMinute)
+    return when {
+        ltMarginShown(minute) > directShown -> LtCell(LastTrainKind.MARGIN_TRANSFER.raw, minute, null)
+        confirmed -> LtCell(LastTrainKind.DIRECT.raw, directMinute, direct.bound)
+        else -> LtCell(LastTrainKind.MARGIN_DIRECT.raw, directMinute, direct.bound)
+    }
+}
+
+/** Last trains of one day type for every (home, meeting) cell. */
+internal fun ltDay(
+    problem: LtProblem,
+    day: DayType,
+    trains: List<LtTrain>,
+    allowance: LtAllowance = LtAllowance.DEFAULT,
+): LtDayResult {
+    val night = LtNight(trains)
+    val homes = problem.homes.withIndex().associate { it.value to it.index }
+    val meetings = problem.meetings.withIndex().associate { it.value to it.index }
+    val direct = ltDirect(trains, homes, meetings)
+    val exact = problem.exact[day].orEmpty()
+    val width = problem.meetings.size
+    val latestAll = IntArray(problem.homes.size * width) { -1 }
+    val directAll = IntArray(problem.homes.size * width) { -1 }
+    val cells = MutableList(problem.homes.size * width) { LtCell.UNKNOWN }
+    val allow = { code: String, from: String, to: String -> allowance.seconds(problem.walks.seconds(code, from, to)) }
+    problem.homes.forEachIndexed { h, home ->
+        val best = LtBackward(night, allow, home).run()
+        problem.meetings.forEachIndexed { m, meeting ->
+            if (meeting != home) {
+                val latest = night.statesAt[meeting].orEmpty().maxOfOrNull { best[it.second] } ?: -1
+                val single = direct[h to m]
+                latestAll[h * width + m] = latest
+                directAll[h * width + m] = single?.departure ?: -1
+                cells[h * width + m] = ltCell(latest, single, exact)
+            }
+        }
+    }
+    return LtDayResult(cells, latestAll, directAll)
+}

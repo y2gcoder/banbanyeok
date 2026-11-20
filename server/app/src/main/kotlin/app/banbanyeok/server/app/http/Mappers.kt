@@ -119,7 +119,7 @@ fun RoomPreview.toDto(directory: StationDirectory): RoomPreviewDto {
         PreviewStationDto(
             stationCode,
             directory.stationName(stationCode),
-            times.map { PreviewTimeDto(it.label, it.seconds) },
+            times.map { PreviewTimeDto(it.label, it.seconds, it.lastTrain?.toJson(withParticipant = false)) },
         )
 
     return when (this) {
@@ -128,11 +128,19 @@ fun RoomPreview.toDto(directory: StationDirectory): RoomPreviewDto {
         }
 
         is RoomPreview.Result -> {
-            RoomPreviewDto.Result(header, dataVersion, basis.dto(), station.dto())
+            RoomPreviewDto.Result(header, dataVersion, basis.dto(), station.dto(), lastTrainBasis?.toJson())
         }
 
         is RoomPreview.Decided -> {
-            RoomPreviewDto.Decided(header, dataVersion, basis.dto(), station.dto(), decidedBy, decidedAt.toString())
+            RoomPreviewDto.Decided(
+                header,
+                dataVersion,
+                basis.dto(),
+                station.dto(),
+                decidedBy,
+                decidedAt.toString(),
+                lastTrainBasis?.toJson(),
+            )
         }
     }
 }
@@ -157,6 +165,7 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
         baselineStationCode = baselineStationCode,
         candidates = candidates.map { it.candidateJson() },
         timeBasis = timeBasis.toDto(requested = requestedSlot),
+        lastTrainBasis = lastTrainBasis?.toJson(),
     )
 
 fun RoomResult.toDto(directory: StationDirectory): ResultDto =

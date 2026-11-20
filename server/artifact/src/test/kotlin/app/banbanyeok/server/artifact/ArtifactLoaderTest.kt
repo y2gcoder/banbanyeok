@@ -7,6 +7,7 @@ import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -48,23 +49,81 @@ class ArtifactLoaderTest :
                 slots.getValue(TimeSlot(DayType.SATURDAY, TimeBand.NIGHT)) shouldBeSameInstanceAs
                     slots.getValue(TimeSlot(DayType.HOLIDAY, TimeBand.NIGHT))
                 slots.values.forEach { it.originCount shouldBe loaded.dataSet.od.originCount }
-                phases.last() shouldBe "artifact-slots-validated"
+                phases shouldContain "artifact-slots-validated"
                 phases.indexOf("artifact-validated") shouldBeLessThan phases.indexOf("artifact-slots-validated")
             }
 
             it("reads generation 1 when generation 2 is absent (data published before T2)") {
                 val store = LocalFileArtifactStore(Files.createTempDirectory("gen1-only"), UnconfinedTestDispatcher())
-                copyDev(store) { it != ArtifactLoader.MANIFEST_V2_KEY.value }
+                copyDev(store) {
+                    it != ArtifactLoader.MANIFEST_V2_KEY.value &&
+                        it != ArtifactLoader.MANIFEST_V3_KEY.value
+                }
                 val loaded = ArtifactLoader(store).load()
                 loaded.dataSet.manifest.schemaVersion shouldBe 1
                 loaded.slots.await() shouldBe emptyMap()
+                loaded.lastTrains.await() shouldBe null
+            }
+
+            it("verifies the last-train table in the background against the same data set") {
+                val phases = mutableListOf<String>()
+                val loaded =
+                    ArtifactLoader(LocalFileArtifactStore(devArtifacts, UnconfinedTestDispatcher())) { phases += it }
+                        .load()
+                loaded.dataSet.manifest.schemaVersion shouldBe 3
+                val table = loaded.lastTrains.await()!!
+                table.homeCount shouldBe loaded.dataSet.od.originCount
+                table.meetingCount shouldBe loaded.dataSet.od.candidateCount
+                table.registryVersion shouldBe loaded.dataSet.manifest.registryVersion
+                phases shouldContain "artifact-last-trains-validated"
+                phases.indexOf("artifact-validated") shouldBeLessThan phases.indexOf("artifact-last-trains-validated")
+            }
+
+            it("reads generation 2 when generation 3 is absent (data published before last trains)") {
+                val store = LocalFileArtifactStore(Files.createTempDirectory("gen2-only"), UnconfinedTestDispatcher())
+                copyDev(store) { it != ArtifactLoader.MANIFEST_V3_KEY.value }
+                val loaded = ArtifactLoader(store).load()
+                loaded.dataSet.manifest.schemaVersion shouldBe 2
+                loaded.slots.await().size shouldBe 11
+                loaded.lastTrains.await() shouldBe null
+            }
+
+            it("ignores a generation 3 manifest whose dataVersion differs and falls back to generation 2") {
+                val store = LocalFileArtifactStore(Files.createTempDirectory("stale-v3"), UnconfinedTestDispatcher())
+                copyDev(store)
+                val v3 = store.get(ArtifactLoader.MANIFEST_V3_KEY)!!.content.decodeToString()
+                val stale = Regex("\"dataVersion\": \"[0-9.]+\"").replace(v3, "\"dataVersion\": \"29991231.1\"")
+                store.put(ArtifactLoader.MANIFEST_V3_KEY, stale.encodeToByteArray())
+                val loaded = ArtifactLoader(store).load()
+                loaded.dataSet.manifest.schemaVersion shouldBe 2
+                loaded.dataVersion shouldNotBe "29991231.1"
+                loaded.lastTrains.await() shouldBe null
+            }
+
+            it(
+                "still starts and serves every slot when the last-train table is tampered, and reports only that failure",
+            ) {
+                val store =
+                    LocalFileArtifactStore(Files.createTempDirectory("tampered-lt"), UnconfinedTestDispatcher())
+                copyDev(store)
+                val key = ArtifactKey("lt.bin")
+                val bytes =
+                    store
+                        .get(key)!!
+                        .content
+                        .copyOf()
+                        .also { it[it.size - 1] = (it[it.size - 1] + 1).toByte() }
+                store.put(key, bytes)
+                val loaded = ArtifactLoader(store).load()
+                loaded.slots.await().size shouldBe 11
+                shouldThrow<ArtifactLoadException> { loaded.lastTrains.await() }.message shouldContain "막차"
             }
 
             it(
                 "ignores a generation 2 manifest whose dataVersion differs from manifest.json (stale after a rollback)",
             ) {
                 val store = LocalFileArtifactStore(Files.createTempDirectory("stale-v2"), UnconfinedTestDispatcher())
-                copyDev(store)
+                copyDev(store) { it != ArtifactLoader.MANIFEST_V3_KEY.value }
                 val v2 = store.get(ArtifactLoader.MANIFEST_V2_KEY)!!.content.decodeToString()
                 val stale = Regex("\"dataVersion\": \"[0-9.]+\"").replace(v2, "\"dataVersion\": \"29991231.1\"")
                 store.put(ArtifactLoader.MANIFEST_V2_KEY, stale.encodeToByteArray())

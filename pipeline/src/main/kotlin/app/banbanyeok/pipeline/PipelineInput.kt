@@ -92,7 +92,7 @@ internal fun slotNetworks(
         }
     }
 
-internal fun slotNetworks(root: Path): Map<TimeSlot, Network> {
-    val input = readInput(root)
-    return slotNetworks(input, network(input, secureCodes()))
-}
+internal fun slotNetworks(root: Path): Map<TimeSlot, Network> = slotNetworks(readInput(root))
+
+internal fun slotNetworks(input: PipelineInput): Map<TimeSlot, Network> =
+    slotNetworks(input, network(input, secureCodes()))
