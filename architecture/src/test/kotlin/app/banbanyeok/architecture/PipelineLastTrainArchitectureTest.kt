@@ -4,6 +4,7 @@ import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 
 private const val PIPELINE_MAIN = "pipeline/src/main/kotlin/app/banbanyeok/pipeline"
@@ -30,12 +31,6 @@ private fun lastTrainPart(file: KoFileDeclaration): String? = lastTrainDir(file)
 private val PARTS = setOf("model", "input", "compute", "gate", "output")
 
 /**
- * A dotted name that starts with the last-train package: a declaration (`...lasttrain.compute.LtRef`), a whole package
- * (`...lasttrain.compute`, as in `import ... as c` or `import ...compute.*`), at any depth.
- */
-internal val LAST_TRAIN_REFERENCE = Regex("""${Regex.escape(LAST_TRAIN)}(?:\.[A-Za-z_]\w*)+""")
-
-/**
  * Which part of the last-train package a reference reaches: its sub-package, or "" for a declaration of the package
  * itself. Null when it names no part (the package `lasttrain` alone, or something else).
  */
@@ -46,18 +41,13 @@ internal fun importedPart(reference: String): String? {
     return if (first in PARTS) first else ""
 }
 
-/** The code of a file without comments, its package line and its imports: what is left can still name a declaration. */
-internal fun codeBody(text: String): String =
-    text
-        .replace(Regex("""/\*.*?\*/|//[^\n]*""", RegexOption.DOT_MATCHES_ALL), "")
-        .lineSequence()
-        .filterNot { it.startsWith("import ") || it.startsWith("package ") }
-        .joinToString("\n")
-
-/** Every reference a file makes to a last-train declaration: its imports and the fully qualified names in its code. */
-private fun lastTrainReferences(file: KoFileDeclaration): List<String> =
-    file.imports.map { it.name }.filter { it.startsWith("$LAST_TRAIN.") } +
-        LAST_TRAIN_REFERENCE.findAll(codeBody(file.text)).map { it.value }.toList()
+/**
+ * Every reference a file makes to a last-train declaration: its imports (an alias resolves to the original, a package
+ * import stays `pkg` or `pkg.*`) and the fully qualified names in its code. Comments and strings are left out. This is the
+ * shared reference reader (SourceUnit), the same one ArchitectureTest uses.
+ */
+private fun lastTrainReferences(unit: SourceUnit): List<String> =
+    unit.references.filter { it.startsWith("$LAST_TRAIN.") }
 
 /**
  * #92 (R5): the pipeline's last-train code is split into packages by what it may touch.
@@ -81,6 +71,7 @@ class PipelineLastTrainArchitectureTest :
                 "" to setOf("model", "compute", "gate"),
             )
         val files = Konsist.scopeFromDirectory(PIPELINE_MAIN).files
+        val units = files.associateWith { it.source() }
         val lastTrain = files.filter { lastTrainDir(it) != null }
 
         describe("pipeline last-train packages") {
@@ -114,18 +105,16 @@ class PipelineLastTrainArchitectureTest :
                 lastTrain
                     .filter { lastTrainPart(it) !in setOf("input", "output") }
                     .flatMap { file ->
-                        val imports =
-                            file.imports
-                                .map { it.name }
-                                .filter { import ->
-                                    // `import java.io as io` names the package itself, without the trailing dot.
-                                    ioPrefixes.any { import.startsWith(it) || import == it.removeSuffix(".") } ||
-                                        ioHelpers.matches(import)
-                                }
-                        // The same without an import: `java.nio.file.Files.readString(...)` written out.
-                        val body = codeBody(file.text)
-                        val qualified = ioPrefixes.filter { body.contains(it) }
-                        (imports + qualified).map { "${file.path}: $it" }
+                        // Imports (also aliased or wildcard) and fully qualified names in the code
+                        // (`java.nio.file.Files.readString(...)` written out) both count.
+                        units
+                            .getValue(file)
+                            .references
+                            .filter { reference ->
+                                // `import java.io as io` names the package itself, without the trailing dot.
+                                ioPrefixes.any { reference.startsWith(it) || reference == it.removeSuffix(".") } ||
+                                    ioHelpers.matches(reference)
+                            }.map { "${file.path}: $it" }
                     }.shouldBeEmpty()
             }
 
@@ -134,7 +123,7 @@ class PipelineLastTrainArchitectureTest :
                 lastTrain
                     .flatMap { file ->
                         val part = requireNotNull(lastTrainPart(file))
-                        lastTrainReferences(file)
+                        lastTrainReferences(units.getValue(file))
                             .mapNotNull { reference -> importedPart(reference)?.let { reference to it } }
                             .filter { (_, target) -> target != part && target !in allowed.getValue(part) }
                             .map { (reference, _) -> "${file.path} (${part.ifEmpty { "lasttrain" }}) uses $reference" }
@@ -153,7 +142,7 @@ class PipelineLastTrainArchitectureTest :
                                 "Main" -> { reference: String -> reference == "$LAST_TRAIN.input.officialFetch" }
                                 else -> { reference: String -> reference.startsWith("$LAST_TRAIN.model.") }
                             }
-                        lastTrainReferences(file)
+                        lastTrainReferences(units.getValue(file))
                             .filter { !permitted(it) }
                             .map { "${file.path} uses $it" }
                     }.shouldBeEmpty()
@@ -173,15 +162,29 @@ class PipelineLastTrainArchitectureTest :
             }
 
             it("see a fully qualified reference in the code as well as an import") {
-                val body =
-                    codeBody(
+                val unit =
+                    SourceUnit(
+                        "pipeline/src/main/kotlin/app/banbanyeok/pipeline/lasttrain/model/Leak.kt",
                         "package app.banbanyeok.pipeline.lasttrain.model\n" +
                             "import app.banbanyeok.pipeline.lasttrain.compute.ltDay\n" +
                             "// app.banbanyeok.pipeline.lasttrain.gate.NotCode\n" +
                             "internal fun leak() = app.banbanyeok.pipeline.lasttrain.compute.LtRef(\"station\", 0)\n",
                     )
-                LAST_TRAIN_REFERENCE.findAll(body).map { it.value }.toList() shouldBe
-                    listOf("app.banbanyeok.pipeline.lasttrain.compute.LtRef")
+                lastTrainReferences(unit) shouldContainExactlyInAnyOrder
+                    listOf(
+                        "app.banbanyeok.pipeline.lasttrain.compute.ltDay",
+                        "app.banbanyeok.pipeline.lasttrain.compute.LtRef",
+                    )
+                // An alias resolves to the package it names, a wildcard stays a package import.
+                val packages =
+                    SourceUnit(
+                        "pipeline/src/main/kotlin/app/banbanyeok/pipeline/lasttrain/model/Leak.kt",
+                        "package app.banbanyeok.pipeline.lasttrain.model\n" +
+                            "import app.banbanyeok.pipeline.lasttrain.compute as c\n" +
+                            "import app.banbanyeok.pipeline.lasttrain.gate.*\n",
+                    )
+                lastTrainReferences(packages) shouldContainExactlyInAnyOrder
+                    listOf("app.banbanyeok.pipeline.lasttrain.compute", "app.banbanyeok.pipeline.lasttrain.gate.*")
                 importedPart("app.banbanyeok.pipeline.lasttrain.compute.LtRef") shouldBe "compute"
                 importedPart("app.banbanyeok.pipeline.lasttrain.compileLastTrains") shouldBe ""
                 // A whole package, wildcard or aliased (`import ...lasttrain.compute as c`), and a nested one.
