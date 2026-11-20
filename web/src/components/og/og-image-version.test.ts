@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { toResultView } from "@/lib/result/view-model";
-import { roomShareCopy } from "@/lib/room/share-copy";
+import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { roomImagePath } from "@/lib/room/share-link";
 import {
   OG_COLORS,
@@ -125,7 +125,10 @@ const SHARED: Drawn = {
   ],
 };
 
-/** 방 미리보기 그림 표본(결과·정한 역·4명·새벽 약속)을 서버 미리보기에서 그림 값까지 만들어 그린 마크업. */
+/**
+ * 방 미리보기 그림 표본(결과·정한 역·4명·새벽 약속)을 서버 미리보기에서 그림 값까지 만들어 그린 마크업. 실제 경로와 같이 기본값으로
+ * 그린다: 막차 줄 스위치(`ROOM_PREVIEW_LAST_TRAIN`)가 꺼져 있으면 막차 줄 없는 그림이 버전의 기준이고, 켜면 마크업이 달라져 버전이 바뀐다.
+ */
 function renderedRoomSamples(): string[] {
   return ROOM_CASES.map(({ id, preview }) => {
     const card = roomShareCopy(preview).card;
@@ -158,7 +161,7 @@ const ROOM: Drawn = {
     "lastTrainBy",
     "nextDay",
   ],
-  constants: { OG_NAME_MAX },
+  constants: { OG_NAME_MAX, ROOM_PREVIEW_LAST_TRAIN },
   rendered: renderedRoomSamples,
   sources: [
     "src/app/r/[roomId]/og/route.tsx",
@@ -212,6 +215,27 @@ describe("미리보기 그림의 버전(입력이 바뀌었는데 버전이 그�
       ROOM_OG_IMAGE_VERSION,
       `방 미리보기 그림의 입력이 바뀌었습니다. src/lib/seo/og-text.ts의 ROOM_OG_IMAGE_VERSION을 "${inputsHash(ROOM)}"로 고치세요.`,
     ).toBe(inputsHash(ROOM));
+  });
+
+  it("방 미리보기 그림의 버전은 막차 줄 스위치의 지금 상태로 센다(켜거나 끄면 버전이 바뀐다)", () => {
+    const flipped = inputsHash({
+      ...ROOM,
+      constants: { OG_NAME_MAX, ROOM_PREVIEW_LAST_TRAIN: !ROOM_PREVIEW_LAST_TRAIN },
+      rendered: () =>
+        ROOM_CASES.map(({ preview }) => {
+          const card = roomShareCopy(preview, { lastTrain: !ROOM_PREVIEW_LAST_TRAIN }).card;
+          return card ? renderToStaticMarkup(createElement(SharedCard, { data: card })) : "";
+        }),
+    });
+    expect(flipped).not.toBe(inputsHash(ROOM));
+    // 표본에는 막차가 실린 미리보기가 있다: 스위치에 따라 그린 마크업이 실제로 달라진다.
+    const drawn = (lastTrain: boolean) =>
+      ROOM_CASES.map(({ preview }) => {
+        const card = roomShareCopy(preview, { lastTrain }).card;
+        return card ? renderToStaticMarkup(createElement(SharedCard, { data: card })) : "";
+      }).join("");
+    expect(drawn(true)).toContain("막차");
+    expect(drawn(false)).not.toMatch(/막차|늦어도/);
   });
 
   it("방 미리보기 그림 주소에 그 버전이 실린다(같은 방을 다시 공유해도 그림이 바뀌었으면 새 주소)", () => {

@@ -1,6 +1,7 @@
 /**
  * 방 미리보기 그림(`/r/<id>/og`, `SharedCard`)의 표본. 그리기 검사(`og-render.test.tsx`)와 그림 버전 해시(`og-image-version.test.ts`)가
  * 같이 쓴다: 여기 값을 바꾸면 해시가 달라지므로 `ROOM_OG_IMAGE_VERSION`을 함께 올린다. 입력은 서버 미리보기(`RoomPreview`) 그대로다.
+ * `lastTrains`는 막차 줄 스위치(`ROOM_PREVIEW_LAST_TRAIN`)를 **켰을 때** 사람마다 그려지는 줄이다. 꺼진 지금은 모두 줄이 없다.
  */
 import type { RoomPreview } from "@/lib/api/types";
 

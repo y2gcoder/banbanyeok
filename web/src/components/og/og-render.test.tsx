@@ -2,8 +2,9 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { describe, expect, it } from "vitest";
+import type { RoomPreview } from "@/lib/api/types";
 import { toResultView } from "@/lib/result/view-model";
-import { roomShareCopy } from "@/lib/room/share-copy";
+import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { missingGlyphs } from "@/lib/seo/og-coverage";
 import { ogFonts } from "@/lib/seo/og-font";
 import { OG_HEIGHT, OG_WIDTH } from "@/lib/seo/og-text";
@@ -126,25 +127,52 @@ describe("OG 이미지 그리기(satori)", () => {
   });
 
   it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 4명, 새벽 약속(02:59·03:00), 글꼴에 없는 글자 없음", async () => {
-    for (const { id, preview, lastTrains } of ROOM_CASES) {
+    for (const { id, preview } of ROOM_CASES) {
       const card = roomShareCopy(preview).card;
       if (!card) throw new Error(`${id}: 그림 데이터 없음`);
-      const text = [
-        card.stationName,
-        card.suffix,
-        card.modeLine,
-        ...card.people.map((p) => p.name),
-        ...card.people.map((p) => p.lastTrain ?? ""),
-      ].join("");
+      const text = [card.stationName, card.suffix, card.modeLine, ...card.people.map((p) => p.name)].join("");
       expect(missingGlyphs(text), id).toEqual([]);
-      // 자정을 넘긴 시각은 "다음 날"을 붙이고, 숨긴 사람·확인 필요·약속보다 먼저 떠나는 열차는 줄이 없다.
+      const drawn = await render(<SharedCard data={card} />);
+      expectPng(drawn);
+      if (screensDir) writeFileSync(join(screensDir, `og-${id}.png`), drawn.bytes);
+    }
+  });
+
+  it("방 링크 이미지의 막차 줄은 지금 꺼져 있다: 서버가 막차를 주어도 막차를 모르던 때와 같은 그림이다", async () => {
+    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(false);
+    for (const { id, preview } of ROOM_CASES) {
+      if (preview.stage === "collecting") continue;
+      // 같은 미리보기에서 막차 키만 뺀 것(막차를 모르는 서버·지금 main이 그리는 입력).
+      const plain: RoomPreview = {
+        ...preview,
+        station: { ...preview.station, times: preview.station.times.map(({ lastTrain: _lastTrain, ...time }) => time) },
+      };
+      const card = roomShareCopy(preview).card;
+      const before = roomShareCopy(plain).card;
+      if (!card || !before) throw new Error(`${id}: 그림 데이터 없음`);
+      expect(card, id).toEqual(before);
+      expect(JSON.stringify(card), id).not.toMatch(/막차|늦어도|다음 날/);
+      // 그린 결과도 바이트까지 같다.
+      const [drawn, old] = await Promise.all([
+        render(<SharedCard data={card} />),
+        render(<SharedCard data={before} />),
+      ]);
+      expect(Buffer.from(drawn.bytes).equals(Buffer.from(old.bytes)), id).toBe(true);
+    }
+  });
+
+  it("방 링크 이미지의 막차 줄을 켰을 때: 자정을 넘기면 '다음 날', 숨긴 사람·확인 필요·약속 시각까지 떠나는 열차는 줄이 없다", async () => {
+    for (const { id, preview, lastTrains } of ROOM_CASES) {
+      const card = roomShareCopy(preview, { lastTrain: true }).card;
+      if (!card) throw new Error(`${id}: 그림 데이터 없음`);
+      expect(missingGlyphs(card.people.map((p) => p.lastTrain ?? "").join("")), id).toEqual([]);
       expect(
         card.people.map((p) => p.lastTrain ?? null),
         id,
       ).toEqual(lastTrains);
       const drawn = await render(<SharedCard data={card} />);
       expectPng(drawn);
-      if (screensDir) writeFileSync(join(screensDir, `og-${id}.png`), drawn.bytes);
+      if (screensDir) writeFileSync(join(screensDir, `og-${id}-last-train-on.png`), drawn.bytes);
     }
   });
 

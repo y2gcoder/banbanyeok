@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
-import { INVITE_COPY, roomShareCopy } from "@/lib/room/share-copy";
+import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
 import { CONTACT_EMAIL, POLICY, PROCESSOR_CONTACT_EMAILS, UPCOMING_POLICY } from "./policy";
 import { koreanDate, MIN_NOTICE_DAYS } from "./schedule";
@@ -109,6 +109,15 @@ describe("개인정보 처리방침", () => {
     expect(shown).toContain("19:30");
     const line = markdown.split("\n").find((l) => l.includes("방 링크의 미리보기에는"));
     expect(line).toContain("약속 날짜·시각");
+  });
+
+  it("방 미리보기 그림의 막차 줄은 6항의 미리보기 목록에 막차를 적은 뒤에만 켠다", () => {
+    // 6항은 방 링크 미리보기에 보이는 것을 목록으로 적는다. 목록에 없는 것(귀갓길 막차 시각)을 그림에 먼저 싣지 않는다.
+    const line = markdown.split("\n").find((l) => l.includes("방 링크의 미리보기에는")) ?? "";
+    expect(
+      !ROOM_PREVIEW_LAST_TRAIN || line.includes("막차"),
+      "ROOM_PREVIEW_LAST_TRAIN을 켜려면 6항의 '방 링크의 미리보기에는 …' 목록에 귀갓길 막차 시각을 먼저 적으세요.",
+    ).toBe(true);
   });
 
   it("카카오톡 공유: 모든 공유 버튼 이름으로, 공유 칸이 보일 때 카카오로 가는 것과 누를 때만 메시지 내용이 간다는 것을 적는다", () => {
