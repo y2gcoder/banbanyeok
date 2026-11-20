@@ -4,14 +4,13 @@ import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.artifact.PublishedArtifacts
-import app.banbanyeok.server.recommendation.DayCertainty
-import app.banbanyeok.server.recommendation.HolidayCalendar
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
 import app.banbanyeok.server.recommendation.RecommendationService
-import app.banbanyeok.server.recommendation.TimeBasis
-import app.banbanyeok.server.recommendation.TimeSlotLabels
-import app.banbanyeok.server.recommendation.TimeSlotResolver
+import app.banbanyeok.server.recommendation.time.DayCertainty
+import app.banbanyeok.server.recommendation.time.HolidayCalendar
+import app.banbanyeok.server.recommendation.time.TimeBasis
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.AnonUserService
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.Outcome
@@ -183,7 +182,6 @@ private fun Route.resultRoutes(services: ApiServices) {
                 RecommendParticipant(index.toString(), nicknames[index], code)
             }
         val slot = requireTimeSlot(body.timeSlot)
-        services.directory.awaitSlots(slot)
         // 구분을 보내지 않은 요청(옛 클라이언트, 요일을 고른 적 없는 `v=1` 링크)은 평일 낮으로 계산하되 막차 시각은 내지 않는다:
         // 평일은 고른 값이 아니라 기본값이고, 휴일 막차는 평일보다 이르다.
         val chosen = body.timeSlot != null && body.timeSlot !is JsonNull
@@ -192,12 +190,15 @@ private fun Route.resultRoutes(services: ApiServices) {
                 people,
                 requireRecommendMode(body.mode),
                 body.favorIndex?.toString(),
-                TimeBasis(slot, TimeSlotLabels.of(slot)),
+                TimeBasis.of(slot),
                 dayCertainty = if (chosen) DayCertainty.KNOWN else DayCertainty.DEFAULTED,
             )
-        val (result, mapMiddle) = services.recommendation.recommendWithMapMiddle(request)
+        // 구분 행렬 대기·측정·막차 표 읽기는 evaluate가 한 번씩 한다. 순위와 지도 한가운데 비교가 같은 행렬에서 나온다.
+        val evaluation = services.recommendation.evaluate(request)
         // 이 경로의 참가자는 출발역을 숨길 수 없다(hidden = false). 지도 한가운데 비교는 조건을 모두 만족할 때만 붙는다.
-        call.respond(result.toStatelessDto(origins, nicknames, services.directory, mapMiddle))
+        call.respond(
+            evaluation.recommendation.toStatelessDto(origins, nicknames, services.directory, evaluation.mapMiddle),
+        )
     }
 }
 

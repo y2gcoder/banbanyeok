@@ -6,6 +6,7 @@ import app.banbanyeok.schema.LastTrainKind
 import app.banbanyeok.schema.LastTrainTable
 import app.banbanyeok.schema.OdMatrix
 import app.banbanyeok.schema.StationCode
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainRule
 import java.time.LocalDate
 
 /** 손으로 만든 작은 행렬. 도달 불가는 null. 출발역·후보 코드는 오름차순이어야 한다. */
@@ -108,3 +109,11 @@ val sampleLastTrains: LastTrainTable =
                     LastTrainCell(LastTrainKind.DIRECT, 1410, StationCode.parse("4xz")),
             ),
     )
+
+/** 막차 표에서 [homeCode]에 사는 사람이 [meetingCode]에서 돌아가는 칸(서버 규칙 그대로). 다른 모듈의 테스트가 기대값을 만들 때 쓴다. */
+fun lastTrainCell(
+    table: LastTrainTable,
+    day: DayType,
+    homeCode: String,
+    meetingCode: String,
+): LastTrainCell = LastTrainRule.cell(table, day, homeCode, meetingCode)

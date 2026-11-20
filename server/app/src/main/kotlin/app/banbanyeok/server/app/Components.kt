@@ -88,7 +88,8 @@ object CompositionRoot {
             val db = (database ?: requireNotNull(owned)).database
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
-            val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
+            val slots = BackgroundSlots(loaded.slots)
+            val directory = StationDirectory(loaded.dataSet, slots)
 
             val clock = Clock.systemUTC()
             val ids = SecureRandomIdGenerator()
@@ -103,17 +104,13 @@ object CompositionRoot {
                     locations = directory,
                     lastTrains = backgroundLastTrains(loaded),
                     clock = clock,
+                    slotsReady = slots,
                 )
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
                     rooms = rooms,
-                    results =
-                        RoomResultService(
-                            rooms,
-                            recommendation,
-                            awaitSlots = directory::awaitSlots,
-                        ),
+                    results = RoomResultService(rooms, recommendation),
                     recommendation = recommendation,
                     directory = directory,
                     published = PublishedArtifacts(store, loaded),

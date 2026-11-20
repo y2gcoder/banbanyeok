@@ -1,5 +1,6 @@
 package app.banbanyeok.server.recommendation
 
+import app.banbanyeok.schema.OdMatrix
 import app.banbanyeok.schema.TimeSlot
 
 /**
@@ -33,4 +34,21 @@ public interface TravelTimeProvider {
 /** 역 코드의 표시 이름. */
 public fun interface StationNames {
     public fun nameOf(code: String): String?
+}
+
+/**
+ * 기본 구분을 뺀 구분의 행렬을 내준다. 없는 구분(manifest 1세대 데이터, 검사 실패)이면 null. **막지 않는다**: 서버는 시작 뒤 뒤에서
+ * 검사하는 동안 null을 주고(app의 BackgroundSlots), 기다림은 [SlotReadiness]가 맡는다.
+ */
+public fun interface SlotMatrices {
+    public fun matrix(slot: TimeSlot): OdMatrix?
+}
+
+/**
+ * [slot]의 행렬을 쓸 수 있을 때까지(또는 기다릴 만큼) 기다린다. [RecommendationService.evaluate]가 측정 바로 전에 부른다. 기본 구분은
+ * 기다릴 것이 없다. 서버 구현(app의 BackgroundSlots)은 뒤에서 도는 구분 행렬 검사를 최대 몇 초 기다리고 요청 스레드를 붙잡지 않는다.
+ * 시간을 넘기거나 검사가 실패해도 그냥 돌아온다(그 요청은 기본 구분으로 계산된다).
+ */
+public fun interface SlotReadiness {
+    public suspend fun await(slot: TimeSlot)
 }

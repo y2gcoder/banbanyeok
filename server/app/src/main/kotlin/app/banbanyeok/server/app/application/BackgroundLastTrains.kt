@@ -2,8 +2,8 @@ package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainTable
-import app.banbanyeok.server.recommendation.LastTrainData
-import app.banbanyeok.server.recommendation.LastTrainSource
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainData
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainSource
 import kotlinx.coroutines.Deferred
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
