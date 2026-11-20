@@ -75,6 +75,7 @@ private fun serve(
     val server =
         embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
             apiModule(config, components.services, components.clock)
+            startAfterFirstResponse(components.startBackground)
             monitor.subscribe(ApplicationStopped) { components.close() }
             monitor.subscribe(ApplicationStarted) { timeline.mark("ktor-started") }
         }
