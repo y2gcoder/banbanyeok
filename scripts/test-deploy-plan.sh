@@ -244,8 +244,8 @@ DIG="sha256:$(printf 'a%.0s' $(seq 64))"
 DIMG="r-docker.pkg.dev/p/server/server@$DIG"
 PKGP="projects/p/locations/l/repositories/server/packages/server"
 tags_set() { # 인자: 이 다이제스트를 가리키는 태그들 (+ 다른 다이제스트의 40자리 태그 하나)
-  jq -n --arg d "$DIG" --arg pk "$PKGP" '($ARGS.positional | map({name: ($pk + "/tags/" + .), version: ($pk + "/versions/" + $d)}))
-    + [{name: ($pk + "/tags/ffffffffffffffffffffffffffffffffffffffff"), version: ($pk + "/versions/sha256:other")}]' --args "$@" > "$GCS/tags.json"
+  jq -n --arg d "$DIG" --arg pk "$PKGP" '($ARGS.positional | map({image: "r-docker.pkg.dev/p/server/server", tag: ($pk + "/tags/" + .), version: ($pk + "/versions/" + $d)}))
+    + [{image: "r-docker.pkg.dev/p/server/server", tag: ($pk + "/tags/ffffffffffffffffffffffffffffffffffffffff"), version: ($pk + "/versions/sha256:other")}]' --args "$@" > "$GCS/tags.json"
 }
 RUNNING='[{"revisionName":"server-00042-abc","percent":100}]'
 gc_reset "$RUNNING" "$DIMG"; tags_set latest "$SHA40"
