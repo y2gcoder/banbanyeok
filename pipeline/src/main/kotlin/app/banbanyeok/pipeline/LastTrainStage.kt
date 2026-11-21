@@ -103,11 +103,15 @@ private fun fetchDay(files: List<LtFetchedFile>): String =
  * pages a person fetched into `data/raw/shinbundang/` (S8, never fetched here), and writes the S8 receipt.
  *
  * **Only pages a person reviewed are read** (an allowlist): every page's skeleton and the newest notice must be the
- * ones in the reviewed baseline. Whenever it stops (a page or notice that differs, anything the reader does not
- * know), it removes the S8 receipt, so the next `build` switches 신분당 off until a person has looked at the pages
- * and run `shinbundang-baseline`. Run `build` afterwards.
+ * ones in the reviewed baseline. **The first thing it does is remove the S8 receipt**, so a run that stops or dies
+ * anywhere (a page or notice that differs, anything the reader does not know, a file it cannot read) leaves 신분당
+ * switched off at the next `build`. Only after every check has passed does it write, each file replaced in one step:
+ * the samples, the baseline's record of this fetch of the reviewed notice, and last the receipt that switches the
+ * line on. Run `build` afterwards.
  */
 internal fun shinbundangSamples(root: Path) {
+    removeOperatorReceipt(root, SHINBUNDANG_ID)
+    println("$SHINBUNDANG_ID: receipt removed until this run has passed every check (신분당 is off until then)")
     try {
         val baseline =
             requireNotNull(readShinbundangBaseline(root, SHINBUNDANG_BASELINE)) { "no reviewed $SHINBUNDANG_BASELINE" }
@@ -124,7 +128,16 @@ internal fun shinbundangSamples(root: Path) {
         val fetchedOn = fetchDay(fetch.pages)
         val samples = ltOperatorSamples(fetch.timetable, meetings, fetchedOn)
         val latest = ltLatestTimetableChange(fetch.noticeList, ::shinbundangTimetableTitle)
+        val reviewed = fetch.notices.single { it.url.endsWith("viewNo=${baseline.latestNotice.viewNo}") }
         writeOfficialSamples(root, fetch.timetable.family, samples)
+        // The reviewed notice as this fetch saw it (same fingerprint; its view count may differ). The build matches the
+        // receipt's newest notice with this in full, so only the receipt of this very fetch switches the line on.
+        writeOperatorBaseline(
+            root,
+            SHINBUNDANG_BASELINE,
+            baseline.copy(latestNotice = baseline.latestNotice.copy(sha256 = reviewed.sha256)),
+            raw.structure,
+        )
         writeOperatorReceipt(
             root,
             LtOperatorReceiptFiles(
@@ -148,10 +161,9 @@ internal fun shinbundangSamples(root: Path) {
                 "pages fetched on $fetchedOn; latest timetable change $latest",
         )
     } catch (stop: IllegalArgumentException) {
-        removeOperatorReceipt(root, SHINBUNDANG_ID)
         throw IllegalStateException(
-            "$SHINBUNDANG_ID: ${stop.message}. Receipt $SHINBUNDANG_ID removed from source-manifest.json: 신분당 is " +
-                "switched off at the next build until a person looks at the pages, runs shinbundang-baseline " +
+            "$SHINBUNDANG_ID: ${stop.message}. Receipt $SHINBUNDANG_ID stays removed from source-manifest.json: 신분당 " +
+                "is switched off at the next build until a person looks at the pages, runs shinbundang-baseline " +
                 "and this command again (docs/setup/w21-notes.md §5)",
             stop,
         )
@@ -160,9 +172,12 @@ internal fun shinbundangSamples(root: Path) {
 
 /**
  * `shinbundang-baseline`: after a person has looked at the fetched pages and notices, records them as the reviewed
- * baseline (fingerprints and structure counts only). The pages must still be readable and give samples.
+ * baseline (fingerprints and structure counts only). The pages must still be readable and give samples. It removes
+ * the S8 receipt first: a receipt made before this review does not belong to it, so `shinbundang-samples` must run
+ * again before 신분당 is switched on.
  */
 internal fun shinbundangBaseline(root: Path) {
+    removeOperatorReceipt(root, SHINBUNDANG_ID)
     val raw = readShinbundangRaw(root)
     val fetch = parseShinbundangRaw(raw)
     ltOperatorSamples(
@@ -189,6 +204,7 @@ internal fun shinbundangBaseline(root: Path) {
     writeOperatorBaseline(root, SHINBUNDANG_BASELINE, baseline, raw.structure)
     println(
         "$SHINBUNDANG_ID: baseline of ${fetch.pages.size} pages (${fetch.pageFingerprints.values.distinct().size} " +
-            "skeletons) and notice ${newest.first.viewNo} written to $SHINBUNDANG_BASELINE",
+            "skeletons) and notice ${newest.first.viewNo} written to $SHINBUNDANG_BASELINE; receipt " +
+            "$SHINBUNDANG_ID removed, run shinbundang-samples next",
     )
 }

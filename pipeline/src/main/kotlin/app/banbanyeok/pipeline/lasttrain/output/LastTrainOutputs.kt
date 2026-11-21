@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline.lasttrain.output
 
+import app.banbanyeok.pipeline.jsonText
 import app.banbanyeok.pipeline.jsonValue
 import app.banbanyeok.pipeline.lasttrain.model.LtArtifact
 import app.banbanyeok.pipeline.lasttrain.model.LtFetchedFile
@@ -14,8 +15,11 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.createDirectories
+import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -74,7 +78,7 @@ internal fun writeOfficialSamples(
                 .joinToString(",")
         }
     val kept = rows.take(first)
-    path.writeText((listOf(header) + kept + ours + others.drop(kept.size)).joinToString("\n", postfix = "\n"))
+    path.replaceWith((listOf(header) + kept + ours + others.drop(kept.size)).joinToString("\n", postfix = "\n"))
 }
 
 /** A fetched file in a receipt. */
@@ -137,7 +141,7 @@ internal fun writeOperatorReceipt(
             .jsonArray
             .map { it.jsonObject }
             .filter { it.text("id") != receipt.source.id }
-    path.writeJson(jsonValue(others + json).toString())
+    path.replaceWith(jsonText(jsonValue(others + json).toString()))
 }
 
 /**
@@ -150,14 +154,8 @@ internal fun removeOperatorReceipt(
 ) {
     val path = root.resolve("data/config/source-manifest.json")
     val receipts = Json.parseToJsonElement(path.readText()).jsonArray.map { it.jsonObject }
-    if (receipts.any {
-            it.text(
-                "id",
-            ) == id
-        }
-    ) {
-        path.writeJson(jsonValue(receipts.filter { it.text("id") != id }).toString())
-    }
+    val kept = receipts.filter { it.text("id") != id }
+    if (kept.size != receipts.size) path.replaceWith(jsonText(jsonValue(kept).toString()))
 }
 
 /**
@@ -171,14 +169,15 @@ internal fun writeOperatorBaseline(
     structure: List<Map<String, Int>>,
 ) {
     val notice = baseline.latestNotice
-    root.resolve(path).writeJson(
+    val json =
         obj(
             "receipt" to baseline.receipt,
             "reviewedOn" to baseline.reviewedOn,
             "basis" to
                 "사람이 운영사 페이지를 보고 확인한 기준(#100 검토, 허용 목록). pageSkeleton은 역 페이지에서 분 칸만 비우고 " +
                 "공백을 정규화한 전체(표 구조·머리글·표 제목·범례·주석·tbody 수·표 밖 글자)의 SHA-256이다. latestNotice는 " +
-                "그때의 가장 새 공지다(fingerprint는 조회수만 비운 본문의 SHA-256, sha256은 받은 파일 그대로). 페이지 골격이나 " +
+                "그때의 가장 새 공지다(fingerprint는 조회수(숫자만)를 비운 본문의 SHA-256, sha256은 그 지문으로 마지막에 받은 " +
+                "파일 그대로: 표본 명령이 받을 때마다 고쳐 쓰고, build는 영수증의 가장 새 공지와 이 값을 견준다). 페이지 골격이나 " +
                 "공지가 하나라도 다르면 shinbundang-samples가 멈추고 영수증 ${baseline.receipt}을 지워 신분당을 끈다. 사람이 " +
                 "페이지를 보고 shinbundang-baseline으로 이 파일을 다시 쓴다(docs/setup/w21-notes.md 5절). 원문은 담지 않는다.",
             "structure" to structure.map { counts -> JsonObject(counts.mapValues { jsonValue(it.value) }) },
@@ -190,6 +189,16 @@ internal fun writeOperatorBaseline(
                     "fingerprint" to notice.fingerprint,
                     "sha256" to notice.sha256,
                 ),
-        ).toString(),
-    )
+        )
+    root.resolve(path).replaceWith(jsonText(json.toString()))
+}
+
+/**
+ * Replaces the file with [text] in one step: written beside it, then moved over it. A run that dies half way leaves
+ * the old file or the new one, never half of one.
+ */
+private fun Path.replaceWith(text: String) {
+    val next = resolveSibling(".$name.next")
+    next.writeText(text)
+    Files.move(next, this, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
 }

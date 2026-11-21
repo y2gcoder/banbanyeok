@@ -5,8 +5,10 @@ import app.banbanyeok.pipeline.lasttrain.compute.ltLatestTimetableChange
 import app.banbanyeok.pipeline.lasttrain.compute.ltOperatorSamples
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_BASELINE
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_STATIONS
+import app.banbanyeok.pipeline.lasttrain.input.ltOfficialSamples
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangNotice
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangPage
+import app.banbanyeok.pipeline.lasttrain.input.readShinbundangBaseline
 import app.banbanyeok.pipeline.lasttrain.input.readShinbundangPages
 import app.banbanyeok.pipeline.lasttrain.input.readShinbundangRaw
 import app.banbanyeok.pipeline.lasttrain.input.shinbundangNoticeFingerprint
@@ -544,6 +546,139 @@ class LastTrainOperatorSamplesTest :
                 fetched(root)
                 assertFailsWith<IllegalStateException> { shinbundangSamples(root) }
                 assertEquals("[]", Files.readString(manifest).trim().replace(Regex("\\s"), ""))
+            }
+
+            it("removesTheReceiptFirstSoThatNoFailureLeavesTheOldOneOn") {
+                // #100 third review: a page that could not be read (permissions) ended the run before the old receipt
+                // was removed, and the build kept it on. Now the receipt goes first and comes back only at the end.
+                val root = Files.createTempDirectory("sb-line")
+                val repo =
+                    java.nio.file.Path
+                        .of("..")
+                Files.createDirectories(root.resolve("data/config"))
+                Files.copy(
+                    repo.resolve("data/config/last-train-official.csv"),
+                    root.resolve("data/config/last-train-official.csv"),
+                )
+                Files.createDirectories(root.resolve("data/artifacts/dev"))
+                Files.list(repo.resolve("data/artifacts/dev")).use { files ->
+                    files.forEach { Files.copy(it, root.resolve("data/artifacts/dev").resolve(it.fileName)) }
+                }
+                val manifest = root.resolve("data/config/source-manifest.json")
+
+                fun ids() =
+                    parseObject("""{"r":${Files.readString(manifest)}}""").getValue("r").jsonArray.map {
+                        it.jsonObject.text("id")
+                    }
+
+                fun oldReceipt() =
+                    Files.writeString(manifest, """[{"id":"S6","fetched_at":"2026-11-15T16:06:45Z"},{"id":"S8"}]""")
+                // A whole line without short trains: start, 14 middle stations, end.
+                val start =
+                    page(
+                        listOf(row("", "23", "10 40"), row("", "00", "05")),
+                        listOf(row("", "23", "20"), row("", "00", "")),
+                    )
+                val middle =
+                    page(
+                        listOf(row("30", "23", "40"), row("05", "00", "15")),
+                        listOf(row("20", "23", "25"), row("", "00", "")),
+                    )
+                val end =
+                    page(
+                        listOf(row("50", "23", ""), row("10", "00", "")),
+                        listOf(row("30", "23", ""), row("", "00", "")),
+                    )
+                val line =
+                    SHINBUNDANG_STATIONS.associate { (code, _) -> code to middle } + ("SB001" to start) +
+                        ("SB016" to end)
+                fetched(root, pages = line)
+                // A person reviewed these pages: the baseline command removes the old receipt (it was not made from them).
+                oldReceipt()
+                shinbundangBaseline(root)
+                assertEquals(listOf("S6"), ids())
+                // The samples come back with the receipt, which names the reviewed notice exactly as the baseline does.
+                shinbundangSamples(root)
+                assertEquals(listOf("S6", "S8"), ids())
+                val receipt =
+                    parseObject(
+                        """{"r":${Files.readString(manifest)}}""",
+                    ).getValue("r").jsonArray.last().jsonObject
+                val newestEntry =
+                    receipt.getValue("notices").jsonArray.map { it.jsonObject }.single {
+                        it.text("newest") == "true"
+                    }
+                val reviewedNotice = readShinbundangBaseline(root, SHINBUNDANG_BASELINE)!!.latestNotice
+                assertEquals(newestEntry.text("sha256"), reviewedNotice.sha256)
+                assertEquals(
+                    240,
+                    ltOfficialSamples(Files.readString(root.resolve("data/config/last-train-official.csv"))).count {
+                        it.family ==
+                            "신분당"
+                    },
+                )
+                assertTrue(
+                    Files.list(root.resolve("data/config")).use { files ->
+                        files.noneMatch { it.fileName.toString().endsWith(".next") }
+                    },
+                )
+
+                fun stopsAndRemoves(change: () -> Unit) {
+                    fetched(root, pages = line)
+                    oldReceipt()
+                    change()
+                    assertFailsWith<Exception> { shinbundangSamples(root) }
+                    assertEquals(listOf("S6"), ids())
+                }
+                val dir = root.resolve("data/raw/shinbundang")
+                // A page the run cannot read: an I/O error, not a page that differs, and still the line goes off.
+                stopsAndRemoves {
+                    val page = dir.resolve("SB001.html")
+                    Files.setPosixFilePermissions(page, emptySet())
+                    if (Files.isReadable(page)) Files.delete(page) // running as a user who reads anything: gone instead
+                }
+                Files.setPosixFilePermissions(
+                    dir.resolve("SB001.html"),
+                    java.nio.file.attribute.PosixFilePermissions
+                        .fromString("rw-r--r--"),
+                )
+                // The view count of the reviewed notice is left out only when it is a number (the review's case).
+                stopsAndRemoves {
+                    val viewed =
+                        newest.replace(
+                            "<tr><th scope=\"row\">등록일</th>",
+                            "<tr><th scope=\"row\">조회수</th><td>2476 · 정정일 2026-11-20 (평일 신사발 정자행 막차 00:10으로 변경)</td></tr><tr><th scope=\"row\">등록일</th>",
+                        )
+                    dir.resolve("notice-1358.html").writeBytes(viewed.toByteArray(EUC_KR))
+                }
+                // The reviewed notice corrected in place (same number and title, another date): not the reviewed one.
+                stopsAndRemoves {
+                    dir
+                        .resolve(
+                            "notice-1358.html",
+                        ).writeBytes(newest.replace("2026.11.06", "2026.11.20").toByteArray(EUC_KR))
+                }
+                // A person runs only the baseline command on the corrected notice: the old receipt is removed with it.
+                oldReceipt()
+                shinbundangBaseline(root)
+                assertEquals(listOf("S6"), ids())
+            }
+
+            it("leavesOutTheViewCountOnlyWhenItIsANumber") {
+                fun counted(count: String) =
+                    newest.replace(
+                        "<tr><th scope=\"row\">등록일</th>",
+                        "<tr><th scope=\"row\">조회수</th><td>$count</td></tr><tr><th scope=\"row\">등록일</th>",
+                    )
+                assertEquals(
+                    shinbundangNoticeFingerprint(counted("2476")),
+                    shinbundangNoticeFingerprint(counted(" 4011 ")),
+                )
+                val notCounts =
+                    listOf("2476 · 정정일 2026-11-20 (막차 00:10으로 변경)", "2,476", "", "2476<span>*</span>", "２４７６")
+                notCounts.forEach { count ->
+                    assertFailsWith<IllegalArgumentException>(count) { shinbundangNoticeFingerprint(counted(count)) }
+                }
             }
         }
     })

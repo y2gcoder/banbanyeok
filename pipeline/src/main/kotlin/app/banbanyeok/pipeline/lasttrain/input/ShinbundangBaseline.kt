@@ -17,6 +17,7 @@ import kotlin.io.path.readText
 // person looked at. Anything else, however harmless, waits for a person.
 
 private val DOT = setOf(RegexOption.DOT_MATCHES_ALL)
+private val VIEW_COUNT = Regex("""(<th scope="row">\s*조회수\s*</th>\s*<td[^>]*>)(.*?)(</td>)""", DOT)
 
 /** The minute cells of a station page: the only parts of it that may change without a person looking at it. */
 private val MINUTE_CELL = Regex("""(<td class="a[rl]">)(.*?)(</td>)""", DOT)
@@ -40,15 +41,23 @@ internal fun shinbundangPageFingerprint(html: String): String = Sha256.hex(shinb
  * A notice page with its blanks normalized and its view count (조회수, which grows with every visit) emptied. The
  * newest notice's fingerprint covers its "이전 글이 없습니다" cell: any newer notice in the list changes it.
  */
-internal fun shinbundangNoticeFingerprint(html: String): String =
-    Sha256.hex(
+internal fun shinbundangNoticeFingerprint(html: String): String {
+    // The view count is the one value left out, and only when it is a count: digits and nothing else. Anything else
+    // in that cell ("2476 · 정정일 …") is a notice the reader does not know.
+    VIEW_COUNT.findAll(html).forEach { cell ->
+        require(Regex("""\s*[0-9]+\s*""").matches(cell.groupValues[2])) {
+            "$SHINBUNDANG_ID: the view count of a notice is not a number: ${cell.groupValues[2].trim()}"
+        }
+    }
+    return Sha256.hex(
         html
-            .replace(Regex("""(<th scope="row">\s*조회수\s*</th>\s*<td[^>]*>)[^<]*(</td>)""", DOT), "$1$2")
+            .replace(VIEW_COUNT, "$1$3")
             .replace(Regex("\\s+"), " ")
             .replace(Regex(">\\s+<"), "><")
             .trim()
             .toByteArray(),
     )
+}
 
 /** Counts of a page's structure, for the baseline's summary (no text of the page). */
 internal fun shinbundangStructure(html: String): Map<String, Int> =

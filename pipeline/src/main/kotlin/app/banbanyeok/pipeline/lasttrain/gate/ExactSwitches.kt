@@ -75,8 +75,9 @@ private fun receiptReasons(
     return listOfNotNull(
         "no reviewed baseline of the operator's pages".takeIf { reviewed == null },
         (
-            "the newest notice ${receipt.newestNotice?.let { "${it.viewNo} (${it.title})" }} is not the one reviewed " +
-                "(${reviewed?.viewNo} ${reviewed?.title}); a person must look at it and update the baseline"
+            "the newest notice ${receipt.newestNotice?.let { "${it.viewNo} (${it.title}, ${it.sha256.take(8)})" }} " +
+                "is not the one reviewed (${reviewed?.viewNo} ${reviewed?.title}, ${reviewed?.sha256?.take(8)}); " +
+                "a person must look at it and update the baseline"
         ).takeIf { reviewed != null && receipt.newestNotice != reviewed },
         "the operator changed its timetable on $change, after TAGO was fetched on $tago".takeIf { change > tago },
         (

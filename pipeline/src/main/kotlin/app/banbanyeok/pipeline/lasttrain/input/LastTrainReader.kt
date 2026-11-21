@@ -5,7 +5,7 @@ import app.banbanyeok.pipeline.csv
 import app.banbanyeok.pipeline.lasttrain.model.LastTrainInputs
 import app.banbanyeok.pipeline.lasttrain.model.LtCeiling
 import app.banbanyeok.pipeline.lasttrain.model.LtConfig
-import app.banbanyeok.pipeline.lasttrain.model.LtNoticeLink
+import app.banbanyeok.pipeline.lasttrain.model.LtNoticeSeen
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorChecks
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceipt
@@ -98,7 +98,7 @@ internal fun ltOperatorReceipts(
                                 ?.jsonArray
                                 ?.map { it.jsonObject }
                                 ?.singleOrNull { it["newest"]?.toString() == "true" }
-                                ?.let { LtNoticeLink(it.text("viewNo"), it.text("title")) },
+                                ?.let { LtNoticeSeen(it.text("viewNo"), it.text("title"), it.text("sha256")) },
                         )
                 }
             }.toMap()
@@ -113,12 +113,12 @@ internal fun ltOperatorReceipts(
 internal fun ltReviewedNotices(
     root: Path,
     config: LtConfig,
-): Map<String, LtNoticeLink> =
+): Map<String, LtNoticeSeen> =
     config.exactBaselines
         .mapNotNull { (family, path) ->
             root.resolve(path).takeIf { it.exists() }?.let { file ->
                 val notice = parseObject(file.readText()).getValue("latestNotice").jsonObject
-                family to LtNoticeLink(notice.text("viewNo"), notice.text("title"))
+                family to LtNoticeSeen(notice.text("viewNo"), notice.text("title"), notice.text("sha256"))
             }
         }.toMap()
 

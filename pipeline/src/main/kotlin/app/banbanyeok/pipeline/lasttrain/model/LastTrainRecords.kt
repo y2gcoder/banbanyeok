@@ -49,7 +49,7 @@ internal class LtOperatorChecks(
     val receipts: Map<String, LtOperatorReceipt> = emptyMap(),
     val tagoFetchedOn: String? = null,
     /** The newest notice a person reviewed, per exact family (from its baseline). */
-    val reviewed: Map<String, LtNoticeLink> = emptyMap(),
+    val reviewed: Map<String, LtNoticeSeen> = emptyMap(),
 )
 
 /**
@@ -105,7 +105,18 @@ internal data class LtOperatorReceipt(
     val fetchedOn: String,
     val latestChange: String,
     /** The notice the receipt's pages say is the newest of the list, null when none does. */
-    val newestNotice: LtNoticeLink? = null,
+    val newestNotice: LtNoticeSeen? = null,
+)
+
+/**
+ * A notice as one fetch saw it: number, title and the SHA-256 of the file. The build compares the receipt's newest
+ * notice with the baseline's in full: the sample command writes both from the same fetch, after the notice's
+ * fingerprint matched the reviewed one, so a receipt from any other fetch does not match.
+ */
+internal data class LtNoticeSeen(
+    val viewNo: String,
+    val title: String,
+    val sha256: String,
 )
 
 /**
@@ -122,7 +133,10 @@ internal data class LtOperatorBaseline(
     val latestNotice: LtReviewedNotice,
 )
 
-/** The newest notice at the review: its number, title, the fingerprint the reader compares and its raw SHA-256. */
+/**
+ * The newest notice at the review: its number, title, the fingerprint the reader compares (view count left out) and
+ * the SHA-256 of the file as last fetched with that fingerprint (the sample command refreshes it with each fetch).
+ */
 internal data class LtReviewedNotice(
     val viewNo: String,
     val title: String,

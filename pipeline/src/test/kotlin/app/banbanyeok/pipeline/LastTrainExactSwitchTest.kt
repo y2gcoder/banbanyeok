@@ -19,7 +19,7 @@ import app.banbanyeok.pipeline.lasttrain.model.LtConfig
 import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
 import app.banbanyeok.pipeline.lasttrain.model.LtDirect
 import app.banbanyeok.pipeline.lasttrain.model.LtFamilies
-import app.banbanyeok.pipeline.lasttrain.model.LtNoticeLink
+import app.banbanyeok.pipeline.lasttrain.model.LtNoticeSeen
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorChecks
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceipt
@@ -122,15 +122,15 @@ private val CONFIG =
         setOf("S", "Q"),
     )
 
-private val REVIEWED = LtNoticeLink("1358", "신분당선 열차운행시각표 변경 시행")
+private val REVIEWED = LtNoticeSeen("1358", "신분당선 열차운행시각표 변경 시행", "bed5cb7e")
 
 private fun checks(
     fetchedOn: String = "2026-11-21",
     latestChange: String = "2026-11-06",
     tago: String? = "2026-11-16",
     receipt: String = "S8",
-    newest: LtNoticeLink? = REVIEWED,
-    reviewed: LtNoticeLink? = REVIEWED,
+    newest: LtNoticeSeen? = REVIEWED,
+    reviewed: LtNoticeSeen? = REVIEWED,
 ) = LtOperatorChecks(
     emptyList(),
     emptyList(),
@@ -292,11 +292,11 @@ class LastTrainExactSwitchTest :
                     root(
                         "[${receipt("S5")},${receipt("S6")},${receipt("S7")}," +
                             receipt("S8").removeSuffix("}") +
-                            ""","notices":[{"viewNo":"1358","title":"t","newest":true},""" +
-                            """{"viewNo":"1356","title":"u","newest":false}]}]""",
+                            ""","notices":[{"viewNo":"1358","title":"t","sha256":"s1","newest":true},""" +
+                            """{"viewNo":"1356","title":"u","sha256":"s2","newest":false}]}]""",
                     )
                 assertEquals(
-                    LtNoticeLink("1358", "t"),
+                    LtNoticeSeen("1358", "t", "s1"),
                     ltOperatorReceipts(noticed, CONFIG).first.getValue("S").newestNotice,
                 )
             }
@@ -345,10 +345,14 @@ class LastTrainExactSwitchTest :
             it("isOffWhenTheReceiptShowsANewerNoticeThanTheReviewedOneWhateverItsTitle") {
                 // #100 re-review: a notice under a plain title ("고객 안내") with a table of new last trains. Whatever it
                 // says, a notice newer than the one a person reviewed switches the line off.
-                val newer = LtNoticeLink("1359", "고객 안내")
+                val newer = LtNoticeSeen("1359", "고객 안내", "c0ffee")
                 val (on, why) = reasons(checks(newest = newer)).single()
                 assertFalse(on)
-                assertTrue("1359 (고객 안내) is not the one reviewed" in why.single(), why.single())
+                assertTrue("1359 (고객 안내, c0ffee) is not the one reviewed" in why.single(), why.single())
+                // #100 third review: the same number and title from another fetch (the notice corrected in place, a
+                // baseline written without new samples) is not the reviewed notice either: compared in full.
+                assertFalse(reasons(checks(newest = REVIEWED.copy(sha256 = "c574a089"))).single().first)
+                assertTrue(reasons(checks(newest = REVIEWED.copy())).single().first)
                 // No notice marked newest, or no reviewed baseline at all, is the same.
                 assertFalse(reasons(checks(newest = null)).single().first)
                 assertEquals(
