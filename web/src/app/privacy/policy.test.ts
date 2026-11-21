@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 import type { RoomPreview } from "@/lib/api/types";
 import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
@@ -49,7 +50,7 @@ function one(sentences: readonly string[], word: string): string {
 
 /** 고정한 보존본의 SHA-256. 보존본은 그 판의 기록이라 고치지 않는다. */
 const FROZEN_HISTORY: Record<string, string> = {
-  [HISTORY.withdrawn.file]: "1b28754fa43251d2e634ad77a77e0bfc2233c8eec819b7bc57fae90b65496532",
+  [HISTORY.withdrawn.file]: "682d82f24a02f0d11cf0a438a2bbb8307681fac773f6d62ec91919d6a297561e",
 };
 
 describe("개인정보 처리방침", () => {
@@ -74,11 +75,16 @@ describe("개인정보 처리방침", () => {
     );
   });
 
-  it("11월 28일 예정 판 보존본은 그 판의 전문이고, 시행하지 않은 예정 판이라고 밝힌다", () => {
+  it("11월 28일 예정 판 보존본은 그 판의 전문이고, 제목 바로 아래 보이는 글로 공지했으나 시행하지 않은 판이라고 밝힌다", () => {
     const text = readFileSync(resolve(historyDir, HISTORY.withdrawn.file), "utf8");
     expect(text.startsWith(`# ${POLICY.title}\n`)).toBe(true);
-    expect(text.split("\n")[2]).toContain("시행 예정 판");
-    expect(text.split("\n")[2]).toContain("시행하지 않았고");
+    // 주석(<!-- -->)은 렌더된 화면에 보이지 않으므로, 표시는 제목 바로 아래 인용문이다.
+    const banner = text.split("\n")[2] ?? "";
+    expect(banner.startsWith("> **공지했으나 시행하지 않은 판입니다.**")).toBe(true);
+    expect(banner).toContain("2026년 11월 28일 시행 예정");
+    expect(banner).toContain("시행하지 않았");
+    // 대신한 판은 날짜 없이 적는다(이 판의 시행일이 바뀌어도 보존본을 고치지 않게).
+    expect(text).not.toMatch(/2026-11-2[2-7] 시행판|11월 2[2-7]일 시행판/);
     expect(text).toContain("이 개인정보 처리방침은 2026년 11월 28일부터 적용됩니다.");
     expect(text).toContain("- 설명 보완·표현 정리: ");
     expect(text).toContain(HISTORY.withdrawn.source);
@@ -188,14 +194,18 @@ describe("개인정보 처리방침", () => {
       "방 링크를 가진 사람 누구에게나 방 화면에서 보이는 정보와 그 정보로 계산한 값의 일부",
     );
     expect(sentences[1]).toBe("출발역을 숨긴 사람의 출발역과 귀갓길 막차 시각은 넣지 않습니다.");
-    expect(one(sentences, "지금 미리보기에 보이는 것")).toContain(
-      "1위 역이나 방에서 정한 역, 참여자별 이름과 소요시간, 정한 사람과 약속 날짜·시각·시간대",
-    );
+    const shown = one(sentences, "지금 미리보기에 보이는 것");
+    expect(shown).toContain("1위 역이나 방에서 정한 역, 참여자별 이름과 소요시간");
+    expect(shown).toContain("누구를 배려하는 방이면 그 사람의 이름");
+    expect(shown).toContain("정한 사람과 약속 날짜·시각·시간대");
+    expect(one(sentences, "모으는 중이면")).toContain("방의 내용이 없는 초대 문구와 기본 그림");
+    expect(one(sentences, "요약")).toContain("가장 오래 걸리는 시간과 시간 차이");
+    // 그림의 막차 줄은 확인할 수 있고 약속 이후에 탈 수 있을 때만 그린다(약속보다 먼저 떠나거나 '확인 필요'면 줄이 없다).
     expect(one(sentences, "작은 줄")).toBe(
-      "미리보기 그림에는 출발역을 공개한 참여자의 귀갓길 막차 시각도 작은 줄로 보입니다.",
+      "출발역을 공개한 참여자의 귀갓길 막차 중 확인할 수 있고 약속 이후에 탈 수 있는 막차는 그 시각 또는 여유 시각을 미리보기 그림에 작은 줄로 표시할 수 있습니다.",
     );
     const middle = one(sentences, "견준 문장");
-    expect(middle).toContain("만남 후보 중 출발역들의 가운데에 가장 가까운 역");
+    expect(middle).toContain("모두가 갈 수 있는 만남 후보 중 출발역들의 가운데에 가장 가까운 역");
     expect(middle).toContain("미리보기 그림과 글, 카카오톡 공유 메시지, 기기 공유 창으로 보내는 본문");
     expect(middle).toContain("출발역을 숨긴 사람이 있으면 넣지 않습니다");
     expect(one(sentences, "링크를 보낸 뒤")).toContain("메신저가 처음 가져갈 때의 바뀐 상태로 만듭니다");
@@ -209,43 +219,175 @@ describe("개인정보 처리방침", () => {
     expect(markdown.split("## 최근 중요한 변경")[0]).not.toContain("보내는 때");
   });
 
-  it("6항 미리보기 응답: 계약(openapi)의 RoomPreviewResult·RoomPreviewDecided 항목이 빠짐없이 안내에 있다", () => {
-    const yaml = readFileSync(resolve(root, "contracts/openapi.yaml"), "utf8");
-    const keysOf = (schema: string) => {
-      const start = yaml.indexOf(`    ${schema}:\n`);
-      const rest = yaml.slice(start + schema.length + 6);
-      const block = rest.slice(0, rest.search(/\n {4}\S/));
-      return [...block.matchAll(/^ {8}(\w+):/gm)].map(([, key]) => key);
+  it("6항 미리보기 응답: 계약(openapi)의 모으는 중·결과·정한 역 응답의 키가 중첩까지 빠짐없이 6항과 비교표에 있다", () => {
+    type Schema = {
+      $ref?: string;
+      properties?: Record<string, Schema>;
+      items?: Schema;
+      oneOf?: Schema[];
+      anyOf?: Schema[];
+      allOf?: Schema[];
     };
-    // 미리보기 응답의 항목마다 6항이 그것을 적는 말. 계약에 항목이 늘면 이 표와 6항을 함께 고친다.
+    const doc = parse(readFileSync(resolve(root, "contracts/openapi.yaml"), "utf8")) as {
+      components: { schemas: Record<string, Schema> };
+    };
+    const deref = (schema: Schema | undefined): Schema | undefined =>
+      schema?.$ref ? deref(doc.components.schemas[schema.$ref.split("/").pop() ?? ""]) : schema;
+    /** 스키마의 키를 "station.times[].lastTrain.kind"처럼 점으로 이은 경로로 모은다($ref·oneOf·배열 안까지). */
+    const paths = (schema: Schema | undefined, prefix: string, out: Set<string>) => {
+      const s = deref(schema);
+      if (!s) return out;
+      for (const alt of [...(s.oneOf ?? []), ...(s.anyOf ?? []), ...(s.allOf ?? [])]) paths(alt, prefix, out);
+      if (s.items) paths(s.items, `${prefix}[]`, out);
+      for (const [key, value] of Object.entries(s.properties ?? {})) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        out.add(path);
+        paths(value, path, out);
+      }
+      return out;
+    };
+    const all = new Set<string>();
+    for (const stage of ["RoomPreviewCollecting", "RoomPreviewResult", "RoomPreviewDecided"]) {
+      paths({ $ref: `#/components/schemas/${stage}` }, "", all);
+    }
+    // 값이 있는 끝 키만 센다(room, station처럼 다른 키를 담는 키는 그 안의 키로 센다).
+    const leaves = [...all].filter(
+      (path) => ![...all].some((other) => other.startsWith(`${path}.`) || other.startsWith(`${path}[]`)),
+    );
+    // 미리보기 응답의 끝 키마다 6항이 그것을 적는 말. 계약에 키가 늘면 이 표와 6항을 함께 고친다(표에 없으면 실패).
     const described: Record<string, string> = {
-      stage: "미리보기",
-      room: "약속 날짜·시각·시간대",
-      dataVersion: "미리보기",
-      basis: "미리보기",
-      station: "1위 역이나 정한 역의 역 코드와 이름, 참여자별 이름과 소요시간",
-      lastTrainBasis: "출발역을 공개한 참여자의 막차 정보",
-      mapMiddle: "지도 한가운데 역의 역 코드·이름과 그 역까지 참여자별 소요시간",
+      stage: "방 단계(모으는 중·결과·정한 역)",
+      "room.roomId": "방 ID와 공유 번호",
+      "room.shareVersion": "방 ID와 공유 번호",
+      "room.participantCount": "참여 인원",
+      "room.canJoin": "지금 새로 참여할 수 있는지",
+      "room.meetingDate": "약속 날짜·시각·시간대",
+      "room.meetingTime": "약속 날짜·시각·시간대",
+      "room.meetingBand": "약속 날짜·시각·시간대",
+      "room.timeBasis.timeSlot": "요청한 구분과 실제로 쓴 구분",
+      "room.timeBasis.requestedTimeSlot": "요청한 구분과 실제로 쓴 구분",
+      "room.timeBasis.label": "그것으로 정한 계산 기준",
+      "room.timeBasis.dayType": "계산 기준(요일 종류",
+      "room.timeBasis.band": "요일 종류·시간대",
+      "room.timeBasis.holidayName": "공휴일 이름",
+      dataVersion: "계산에 쓴 데이터 버전",
+      "basis.mode": "추천 기준과 배려 대상의 이름",
+      "basis.favorLabel": "추천 기준과 배려 대상의 이름",
+      "station.stationCode": "1위 역이나 정한 역의 역 코드와 이름",
+      "station.stationName": "1위 역이나 정한 역의 역 코드와 이름",
+      "station.times[].label": "참여자별 이름과 소요시간",
+      "station.times[].seconds": "참여자별 이름과 소요시간",
+      "station.times[].lastTrain.kind": "막차의 종류(직행 확정·여유 시각·확인 필요)",
+      "station.times[].lastTrain.minute": "만날 역에서 타는 시각(분)",
+      "station.times[].lastTrain.transfer": "갈아타는 길인지",
+      "station.times[].lastTrain.boundFor.stationCode": "그 열차의 행선지 역 코드와 이름",
+      "station.times[].lastTrain.boundFor.stationName": "그 열차의 행선지 역 코드와 이름",
+      "lastTrainBasis.dayType": "막차 자료의 기준(요일 종류",
+      "lastTrainBasis.asOf": "시간표 기준일",
+      "lastTrainBasis.unavailable": "시각을 낼 수 없는 이유",
+      "lastTrainBasis.partial": "일부 노선만 안내하는지",
+      decidedBy: "정한 사람과 정한 시각",
+      decidedAt: "정한 사람과 정한 시각",
+      // 이 판에 더한 키.
+      "mapMiddle.stationCode": "지도 한가운데 역의 역 코드·이름",
+      "mapMiddle.stationName": "지도 한가운데 역의 역 코드·이름",
+      "mapMiddle.times[].label": "그 역까지 참여자별 소요시간",
+      "mapMiddle.times[].seconds": "그 역까지 참여자별 소요시간",
       lastTrainPending: "막차 표 준비 중 표시",
-      decidedBy: "정한 사람",
-      decidedAt: "정한 사람과 약속 날짜·시각·시간대",
     };
-    const keys = [...new Set([...keysOf("RoomPreviewResult"), ...keysOf("RoomPreviewDecided")])];
-    expect(keys.sort()).toEqual(Object.keys(described).sort());
+    expect(leaves.sort()).toEqual(Object.keys(described).sort());
     const sentences = previewSentences(POLICY);
     const api = one(sentences, "서버 응답");
     expect(api).toContain("방 ID만 있으면 누구나 받을 수 있으며");
     const preview = sentences.join(" ");
     for (const [key, phrase] of Object.entries(described)) expect(preview, key).toContain(phrase);
     expect(one(sentences, "막차 표 준비 중 표시")).toContain("서버의 상태이고 참여자의 정보가 아닙니다");
+    // 이 판 전부터 응답에 있던 키는 비교표의 '바뀌기 전'에도 적는다(이 판에 더한 키는 '바뀐 후').
+    const row = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("방 미리보기 응답"));
+    for (const [key, phrase] of Object.entries(described)) {
+      const added = key.startsWith("mapMiddle.") || key === "lastTrainPending";
+      expect(added ? row?.after : row?.before, key).toContain(phrase);
+      if (added) expect(row?.before, key).not.toContain(phrase);
+    }
+  });
+
+  it("6항 미리보기: 배려 방은 배려 대상을, 정한 방은 정한 사람과 약속 시각을 그림과 글에 싣고, 모으는 중은 초대 문구다", () => {
+    const room = {
+      roomId: "qt7yvmsht3",
+      shareVersion: 4,
+      participantCount: 2,
+      canJoin: true,
+      meetingDate: "2026-11-27",
+      meetingTime: "19:30",
+      meetingBand: null,
+      timeBasis: {
+        timeSlot: "weekday-evening",
+        requestedTimeSlot: "weekday-evening",
+        label: "평일 저녁",
+        dayType: "weekday",
+        band: "evening",
+        holidayName: null,
+      },
+    } satisfies RoomPreview["room"];
+    const station = {
+      stationCode: "s1c",
+      stationName: "시청",
+      times: [
+        { label: "민수", seconds: 1200 },
+        { label: "수진", seconds: 900 },
+      ],
+    };
+    const sentences = previewSentences(POLICY);
+    // 배려 방: 배려 대상의 이름이 제목·그림의 기준 줄에 나간다(그 사람이 출발역을 숨겼어도 이름표는 나간다).
+    const favor = roomShareCopy({
+      stage: "result",
+      room,
+      dataVersion: "20261120.5",
+      basis: { mode: "favor", favorLabel: "수진" },
+      station,
+    });
+    expect(favor.preview.title).toContain("수진 쪽으로");
+    expect(favor.message.title).toBe(favor.preview.title);
+    expect(favor.card?.modeLine).toContain("수진 쪽으로 고름");
+    expect(one(sentences, "지금 미리보기에 보이는 것")).toContain("그림의 '○○ 쪽으로 고름'과 제목의 '○○ 쪽으로'");
+    // 정한 방: 그림과 글에는 정한 사람과 약속 시각이 나가고, 정한 시각(decidedAt)은 응답에만 있다.
+    const decided = roomShareCopy({
+      stage: "decided",
+      room: { ...room, canJoin: false },
+      dataVersion: "20261120.5",
+      basis: { mode: "fair", favorLabel: null },
+      station,
+      decidedBy: "민수",
+      decidedAt: "2026-11-21T03:40:19Z",
+    });
+    expect(decided.preview.description).toContain("민수");
+    expect(decided.preview.description).toContain("19:30");
+    expect(decided.message.text).toBe(decided.preview.description);
+    expect(JSON.stringify(decided)).not.toContain("03:40");
+    expect(JSON.stringify(decided)).not.toContain("12:40");
+    expect(one(sentences, "서버 응답")).toContain("정한 사람과 정한 시각");
+    // 모으는 중: 방의 내용이 없는 초대 문구와 기본 그림. 공유 창 본문도 초대 문구다(미리보기 글과는 말이 조금 다르다).
+    const collecting = roomShareCopy({ stage: "collecting", room });
+    expect(collecting).toBe(INVITE_COPY);
+    expect(collecting.card).toBeNull();
+    expect(JSON.stringify(collecting)).not.toContain(room.roomId);
+    expect(lineOf(POLICY, "third-party", "카카오톡 공유를 쓸 수 없을 때")).toContain(
+      "아직 모으는 중이면 초대 문구입니다",
+    );
   });
 
   it("6항: 기기 공유 창(시스템 공유 시트)으로 넘기는 제목·본문·링크와, 그 본문이 미리보기 글과 같다는 것을 적는다", () => {
     const share = lineOf(POLICY, "third-party", "카카오톡 공유를 쓸 수 없을 때");
     expect(share).toContain("기기의 공유 창(시스템 공유 시트)을 열어 제목과 본문, 링크 주소를 넘기고");
-    expect(share).toContain("방 링크의 본문은 아래 미리보기 글과 같고");
+    expect(share).toContain("방 링크의 본문은 결과와 정한 역 단계에서는 아래 미리보기 글과 같고");
     expect(share).toContain("지도 한가운데 비교 문장이 붙을 수 있습니다");
-    expect(share).toContain("'링크 복사'는 링크 주소만 복사합니다");
+    // 공유 창이 없으면 복사 대화상자에 제목·본문·주소가 보이고(외부 전송 없음), 복사는 주소 하나다(share-actions.tsx).
+    expect(share).toContain("공유 창을 열 수 없으면 같은 제목과 본문, 링크 주소를 화면의 대화상자에 보여 주며");
+    expect(share).toContain("'링크 복사'는 링크 주소 하나만 복사합니다");
+    expect(share).not.toContain("링크 주소만 보여 주고");
+    // 메신저가 읽는 링크 주소: 출발역·이름이 담기는 것은 혼자 입력한 링크뿐이다(방 링크는 /r/<방 ID>?sv=).
+    const messenger = lineOf(POLICY, "third-party", "카카오톡 같은 메신저로");
+    expect(messenger).toContain("링크 주소(혼자 입력한 결과의 링크는 출발역·이름 포함)");
     // 코드: 방의 공유 시트 본문은 미리보기 글(og:description)과 같다.
     const preview: RoomPreview = {
       stage: "result",
@@ -423,7 +565,7 @@ describe("개인정보 처리방침", () => {
     expect(versions).toHaveLength(5);
     expect(versions.map((l) => [...l.matchAll(/\]\(https:/g)].length)).toEqual(versions.map(() => 1));
     expect(text).toContain(
-      `세 번째 개정판](https://github.com/y2gcoder/banbanyeok/blob/ecd3a47/docs/legal/privacy-policy.md): 2026년 11월 17일부터 ${koreanDate(addDays(REVISION_DATE, -1), { year: true })}까지 적용했습니다.`,
+      `세 번째 개정판](https://github.com/y2gcoder/banbanyeok/blob/ecd3a47/docs/legal/privacy-policy.md): 2026년 11월 17일부터 ${koreanDate(REVISION_DATE, { year: true })} 이 판 시행 전까지 적용했습니다.`,
     );
     expect(text).toContain("2026년 11월 21일부터 알렸으나 시행하지 않았습니다.");
   });
@@ -432,7 +574,8 @@ describe("개인정보 처리방침", () => {
     expect(REVISION_DATE).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(new Date(`${REVISION_DATE}T00:00:00Z`).toISOString().slice(0, 10)).toBe(REVISION_DATE);
     // main의 예정 판(11-28 시행)이 시행된 뒤라면 '시행하지 않았다'는 이력이 틀린다. 그때는 이력을 고쳐 쓴다.
-    expect(REVISION_DATE >= "2026-11-22" && REVISION_DATE < WITHDRAWN_EFFECTIVE_DATE).toBe(true);
+    // 하한은 이 판을 정하고 배포하는 날(2026-11-21)이다.
+    expect(REVISION_DATE >= "2026-11-21" && REVISION_DATE < WITHDRAWN_EFFECTIVE_DATE).toBe(true);
     expect(textOf(POLICY, "changes").split("\n")[0]).toBe(
       `이 개인정보 처리방침은 ${koreanDate(REVISION_DATE, { year: true })}부터 적용됩니다.`,
     );
@@ -451,7 +594,7 @@ describe("개인정보 처리방침", () => {
     const row = (item: string) => rows.find((r) => r.item.startsWith(item));
     expect(row("방 미리보기 응답")?.after).toContain("역 코드·이름과 그 역까지 참여자별 소요시간");
     expect(row("방 미리보기 응답")?.after).toContain("막차 표 준비 중 표시");
-    expect(row("메신저 미리보기 그림")?.after).toContain("귀갓길 막차 시각");
+    expect(row("메신저 미리보기 그림")?.after).toContain("약속 이후에 탈 수 있는 막차의 시각 또는 여유 시각");
     expect(row("메신저 미리보기 글")?.item).toContain("기기 공유 창으로 보내는 본문");
     expect(row("미리보기에 보이는 방 상태")?.after).toContain("메신저가 그 링크의 미리보기를 처음 가져갈 때");
     expect(row("2026년 11월 28일 시행 예정 판")?.after).toBe("시행하지 않고 이 판으로 대신함");

@@ -5,7 +5,7 @@ import type { Block, ChangeNotice, Policy, PolicyChange, UpcomingPolicy } from "
  * 시계(`Date`)는 호출하는 쪽이 넣는다: 서버는 요청 때, 첫 화면의 공지 띠는 브라우저에서 읽는다.
  */
 
-/** 예정 판(`UpcomingPolicy`)을 쓸 때 공지 기간의 최소 일수. 2026-11-22 시행판부터 15항은 미리 알리기를 요구하지 않는다(장치만 남겨 둠). */
+/** 예정 판(`UpcomingPolicy`)을 쓸 때 공지 기간의 최소 일수. 2026-11-21 시행판부터 15항은 미리 알리기를 요구하지 않는다(장치만 남겨 둠). */
 export const MIN_NOTICE_DAYS = 7;
 
 const DAY_MS = 86_400_000;
@@ -19,6 +19,11 @@ export type NoticeWindow = Pick<UpcomingPolicy, "noticeFrom" | "effectiveDate">;
 /** 한국 시간 기준 오늘(YYYY-MM-DD). */
 export function kstDate(now: Date): string {
   return new Date(now.getTime() + KST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** 다음 한국 시간 0시까지 남은 밀리초(0시 정각이면 하루). 자정을 넘긴 뒤에 깨도록 1ms를 더한다. */
+export function msUntilNextKstMidnight(now: Date): number {
+  return DAY_MS - ((now.getTime() + KST_OFFSET_MS) % DAY_MS) + 1;
 }
 
 /** 실제 달력에 있는 YYYY-MM-DD이면 그 날의 일수(1970-01-01부터), 아니면 null. */

@@ -37,7 +37,7 @@ async function renderPageAt(now: Date) {
 const effectiveLine = (iso: string) => `이 개인정보 처리방침은 ${koreanDate(iso, { year: true })}부터 적용됩니다.`;
 
 /**
- * 이 판(REVISION_DATE, 기본 2026-11-22)은 병합·배포하는 날 바로 시행한다. 공개 범위가 넓어지는 중요한 변경이라 시행일부터 7일 동안
+ * 이 판(REVISION_DATE, 2026-11-21)은 병합·배포하는 날 바로 시행한다. 공개 범위가 넓어지는 중요한 변경이라 시행일부터 7일 동안
  * /privacy 맨 위에 안내 상자(전후 비교표)를 보여 주고, 그 뒤에는 재배포 없이 사라진다.
  */
 describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
@@ -61,7 +61,9 @@ describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
     expect(document.getElementById("policy-notice")).toBeNull();
     const main = screen.getByRole("main");
     expect(main).toHaveTextContent(effectiveLine(REVISION_DATE));
-    expect(main).toHaveTextContent("미리보기 그림에는 출발역을 공개한 참여자의 귀갓길 막차 시각도 작은 줄로 보입니다");
+    expect(main).toHaveTextContent(
+      "약속 이후에 탈 수 있는 막차는 그 시각 또는 여유 시각을 미리보기 그림에 작은 줄로 표시할 수 있습니다",
+    );
   });
 
   it.each([

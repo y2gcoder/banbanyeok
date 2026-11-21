@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PolicyChangeStrip, PolicyNoticeStrip } from "./policy-notice-strip";
 import { FIXTURE_UPCOMING, KST_BOUNDARIES } from "./upcoming.fixture";
@@ -66,6 +66,44 @@ describe("첫 화면 중요한 변경 안내 띠", () => {
     expect(screen.getByRole("link", { name: "자세히" })).toBeInTheDocument();
     cleanup();
     expect(at("2026-12-07T15:00:00Z").container).toBeEmptyDOMElement();
+  });
+
+  it("열어 둔 탭도 안내 시작·끝 자정(KST)을 지나면 새로고침 없이 띠가 나타나고 사라진다", () => {
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-11-30T14:59:55Z")); // 11-30 23:59:55 KST
+    const view = render(<PolicyChangeStrip since={since} until={until} />);
+    expect(view.container).toBeEmptyDOMElement();
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(screen.getByRole("link", { name: "자세히" })).toBeInTheDocument();
+    // 같은 탭을 그대로 둔 채 마지막 날(12-07) 23:59:55까지 → 자정 뒤.
+    act(() => {
+      vi.advanceTimersByTime(Date.parse("2026-12-07T14:59:55Z") - Date.now());
+    });
+    expect(screen.getByRole("link", { name: "자세히" })).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(view.container).toBeEmptyDOMElement();
+  });
+
+  it("타이머가 늦어도(잠자기·백그라운드 탭) 탭으로 돌아오면 날짜를 다시 읽는다", () => {
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+    vi.setSystemTime(new Date("2026-11-30T10:00:00Z"));
+    const view = render(<PolicyChangeStrip since={since} until={until} />);
+    expect(view.container).toBeEmptyDOMElement();
+    // 타이머를 돌리지 않고 시계만 다음 날로(잠자기에서 깨어난 탭).
+    vi.setSystemTime(new Date("2026-12-01T01:00:00Z"));
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(screen.getByRole("link", { name: "자세히" })).toBeInTheDocument();
+    vi.setSystemTime(new Date("2026-12-08T01:00:00Z"));
+    act(() => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(view.container).toBeEmptyDOMElement();
   });
 
   it("서버 렌더 결과(정적 HTML)에는 안내가 없다", async () => {

@@ -7,6 +7,7 @@ import {
   koreanDate,
   kstDate,
   MIN_NOTICE_DAYS,
+  msUntilNextKstMidnight,
   noticePhase,
   resolveChangeNotice,
   resolvePolicy,
@@ -24,6 +25,17 @@ describe("kstDate", () => {
 
   it("해가 바뀌는 경계도 한국 시간으로 본다", () => {
     expect(kstDate(new Date("2026-12-31T15:00:00Z"))).toBe("2027-01-01");
+  });
+});
+
+describe("msUntilNextKstMidnight", () => {
+  it("다음 한국 시간 0시 바로 뒤까지 남은 시간이다", () => {
+    const now = new Date("2026-11-21T14:59:55Z"); // 11-21 23:59:55 KST
+    const wake = new Date(now.getTime() + msUntilNextKstMidnight(now));
+    expect(kstDate(wake)).toBe("2026-11-22");
+    expect(wake.getTime() - now.getTime()).toBe(5_001);
+    const midnight = new Date("2026-11-21T15:00:00Z");
+    expect(msUntilNextKstMidnight(midnight)).toBe(86_400_001);
   });
 });
 

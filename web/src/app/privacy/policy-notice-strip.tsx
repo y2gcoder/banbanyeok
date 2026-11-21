@@ -7,11 +7,38 @@ import {
   changeNoticeShown,
   koreanDate,
   kstDate,
+  msUntilNextKstMidnight,
   type NoticeWindow,
   noticePhase,
 } from "./schedule";
 
-const subscribe = () => () => {};
+/**
+ * 오늘(한국 시간)이 바뀔 때 알린다: 다음 KST 자정에, 그리고 탭으로 돌아올 때(잠자기·백그라운드 탭에서는 타이머가 늦게 돌 수 있다).
+ * 열어 둔 첫 화면도 안내 시작·끝 자정을 지나면 새로고침 없이 띠가 나타나거나 사라진다.
+ */
+function subscribe(onChange: () => void): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const arm = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      onChange();
+      arm();
+    }, msUntilNextKstMidnight(new Date()));
+  };
+  const onVisible = () => {
+    if (document.visibilityState !== "visible") return;
+    onChange();
+    arm();
+  };
+  arm();
+  document.addEventListener("visibilitychange", onVisible);
+  window.addEventListener("focus", onVisible);
+  return () => {
+    clearTimeout(timer);
+    document.removeEventListener("visibilitychange", onVisible);
+    window.removeEventListener("focus", onVisible);
+  };
+}
 const today = () => kstDate(new Date());
 /** 서버(정적 HTML)와 첫 하이드레이션에서는 오늘을 모른다: 공지를 그리지 않고, 브라우저가 이어받은 뒤 날짜를 보고 정한다. */
 const serverToday = () => null;
