@@ -323,10 +323,14 @@ class LastTrainHttpTest :
                     val request = body(listOf(gangnam, gwanggyo), "weekday-night")
                     client.json(HttpMethod.Post, "/v1/recommend", request).body()["lastTrainPending"] shouldBe
                         JsonPrimitive(true)
-                    // 옛 링크(구분 없음)도 표가 붙을 요청이라 같이 알린다(그림 쪽이 쓸지 정한다).
+                    // 구분을 직접 고른 평일 낮(v=2)은 기다리면 시각이 붙으므로 알린다.
                     client
-                        .json(HttpMethod.Post, "/v1/recommend", body(listOf(gangnam, gwanggyo), null))
+                        .json(HttpMethod.Post, "/v1/recommend", body(listOf(gangnam, gwanggyo), "weekday-day"))
                         .body()["lastTrainPending"] shouldBe JsonPrimitive(true)
+                    // 구분을 고르지 않은 옛 링크(v=1)는 표가 와도 요일을 몰라 모두 확인 필요라 알리지 않는다.
+                    val legacy = client.json(HttpMethod.Post, "/v1/recommend", body(listOf(gangnam, gwanggyo), null))
+                    OpenApiContract.assertValid(HttpMethod.Post, "/v1/recommend", legacy)
+                    ("lastTrainPending" in legacy.body()) shouldBe false
 
                     loading.complete(DevArtifacts.lastTrains.current()!!.table)
                     val ready = client.json(HttpMethod.Post, "/v1/recommend", request)

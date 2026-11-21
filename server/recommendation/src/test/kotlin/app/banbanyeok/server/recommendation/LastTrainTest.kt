@@ -166,6 +166,12 @@ class LastTrainTest :
                 val pending = service(source = loading).evaluate(request()).recommendation
                 pending.lastTrainPending shouldBe true
                 pending.lastTrainBasis.shouldBeNull()
+                // 요일을 믿을 수 없는 요청(구분을 고르지 않음·날짜 없는 방·공휴일 목록 밖)은 표가 와도 모두 확인 필요다.
+                for (certainty in listOf(DayCertainty.DEFAULTED, DayCertainty.OUT_OF_RANGE)) {
+                    service(source = loading)
+                        .evaluate(request(certainty = certainty))
+                        .recommendation.lastTrainPending shouldBe false
+                }
                 // 다른 구분으로 대신 계산한 응답에는 표가 와도 막차가 붙지 않는다.
                 service(source = loading, slots = emptyMap())
                     .evaluate(request(slot = TimeSlot(DayType.HOLIDAY, TimeBand.NIGHT)))

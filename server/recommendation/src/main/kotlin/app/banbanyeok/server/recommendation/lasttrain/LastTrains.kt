@@ -126,7 +126,9 @@ internal class LastTrainAttacher(
     /**
      * 이 요청에 막차를 붙일 수 있으면 그 기준과 조회 함수([Lookup.attached]). 표가 없거나 요청한 구분([requested])으로 계산하지
      * 못했으면([computed]가 다르면) null(막차 항목을 뺀다). 표는 여기서 **한 번** 읽고, 돌려준 값은 그 표만 쓴다.
-     * [Lookup.pending]은 표를 아직 읽는 중이라서 빠졌을 때만 true다(구분이 달라 빠진 것은 기다려도 붙지 않으므로 false).
+     * [Lookup.pending]은 표를 아직 읽는 중이라서 빠졌고 **기다리면 시각이 붙을 요청**일 때만 true다. 구분이 달라 빠졌거나, 요일을
+     * 믿을 수 없어([certainty]가 [DayCertainty.KNOWN]이 아니다: 구분을 고르지 않은 무상태 요청(v=1 링크), 날짜 없는 방, 공휴일 목록 밖)
+     * 표가 와도 모두 확인 필요가 되는 요청은 false다.
      */
     fun forRequest(
         requested: TimeSlot,
@@ -136,7 +138,9 @@ internal class LastTrainAttacher(
     ): Lookup {
         // 읽는 중인지 먼저 본다: 그 사이 읽기가 끝나면 아래 current()가 표를 주므로, 준비 중이라고 잘못 알리는 일이 없다.
         val pending = source.pending()
-        val data = source.current() ?: return Lookup(null, pending && computed == requested)
+        val data =
+            source.current()
+                ?: return Lookup(null, pending && computed == requested && certainty == DayCertainty.KNOWN)
         if (computed != requested) return Lookup(null, false)
         val basis = LastTrainRule.basis(data, computed.day, certainty, clock)
         return Lookup(Attached(basis, data.table, riders, names), false)

@@ -658,8 +658,9 @@ export interface components {
             lastTrainBasis?: components["schemas"]["LastTrainBasis"];
             /**
              * @description 서버가 막 떠서 막차 표를 **아직 읽는 중**이라 이 응답에 막차(`lastTrainBasis`·`candidates[].lastTrains`)가 없을 때만 `true`다.
-             *     잠시 뒤 같은 요청에는 막차가 붙을 수 있으므로, 이 응답으로 만든 공유 그림은 오래 캐시하지 않는다. 데이터에 막차 표가 없거나,
-             *     검증에 실패했거나, 요청한 구분 대신 기본 구분으로 계산해 막차가 없는 경우에는 키가 없다(기다려도 붙지 않는다).
+             *     잠시 뒤 같은 요청에는 막차가 붙을 수 있으므로, 이 응답으로 만든 공유 그림은 오래 캐시하지 않는다. 기다려도 시각이 붙지 않는
+             *     요청에는 키가 없다: 데이터에 막차 표가 없거나, 검증에 실패했거나, 요청한 구분 대신 기본 구분으로 계산했거나, 요일을 믿을 수
+             *     없다(`/recommend`에 `timeSlot`이 없는 요청(v=1 링크), 약속 날짜가 없거나 공휴일 목록 밖인 방: 표가 와도 `lastTrainBasis.unavailable`).
              * @enum {boolean}
              */
             lastTrainPending?: true;
