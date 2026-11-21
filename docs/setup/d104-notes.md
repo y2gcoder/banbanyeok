@@ -21,8 +21,8 @@ push(main) ─▶ plan ─┬─ 기본(서버 먼저):  deploy-server ─▶ de
 | 웹 | **100% 트래픽을 받는 Worker 버전 하나**의 tag(`wrangler deploy --tag <SHA 7자>`) | `web/scripts/worker-version.sh deployed-tag` |
 
 - 그래서 ① 대기 중인 실행이 GitHub 대기열에서 취소돼도(대기가 둘 이상이면 앞의 것이 취소된다) 마지막 실행이 밀린 변경을 모두 배포하고, ② 여러 커밋이 한 번에 들어오거나 ③ 앞 배포가 실패·되돌려져도 다음 실행이 다시 배포한다. 재실행해도 같은 기준으로 다시 계산한다.
-- **운영 커밋을 모르면 그 서비스는 배포한다**(안전한 기본값): 조회 실패(인증·권한·네트워크), 트래픽이 나뉘어 있음, 태그가 SHA가 아님(예: `wrangler secret put`이 만든 버전), 저장소에 없거나 짧은 SHA가 모호, HEAD의 조상이 아님(다른 브랜치에서 수동 배포). `plan` 요약과 경고에 이유가 남는다.
-- 경로 비교는 `git diff --no-renames --name-only -z`: 이름이 바뀐 파일은 **옛 경로·새 경로 둘 다** 보고(`server/a → docs/a`도 서버 배포), NUL 구분이라 한글·탭·줄바꿈 파일명도 그대로 맞춘다. 경로 목록은 예전 `on.push.paths`와 같다(`scripts/test-deploy-plan.sh`가 main의 목록을 고정해 비교한다. 웹은 자기 워크플로 `deploy-web.yml` 변경도 배포하도록 1건 추가).
+- **운영 커밋을 모르면 그 서비스는 배포한다**(안전한 기본값): 조회 실패(인증·권한·네트워크), 트래픽이 나뉘어 있음, 태그가 SHA가 아님(예: `wrangler secret put`이 만든 버전), 저장소에 없거나 짧은 SHA가 모호, HEAD의 조상이 아님(다른 브랜치에서 수동 배포). `plan` 요약과 경고에 이유가 남는다. 조회 단계가 **시간 초과**로 끝나도(`continue-on-error`) 빈 값으로 이어져 같은 결과다(plan 잡 40분은 단계 상한 합 27분보다 크다). 단, **둘 다 배포 대상인데 운영 커밋을 하나라도 모르면** 아래 "순서를 정하지 못할 때"가 적용된다.
+- 경로 비교는 `git diff --no-renames --name-only -z`: 이름이 바뀐 파일은 **옛 경로·새 경로 둘 다** 보고(`server/a → docs/a`도 서버 배포), NUL 구분이라 한글·탭·줄바꿈 파일명도 그대로 맞춘다. `git diff` 자체가 실패하면(종료 코드≠0, 예: 객체 손상) "바뀐 것 없음"으로 보지 않고 그 서비스를 **배포 대상**으로 본다(NUL 경로 목록을 끝까지 만든 경우에만 "없음"). 경로 목록은 예전 `on.push.paths`와 같다(`scripts/test-deploy-plan.sh`가 main의 목록을 고정해 비교한다. 웹은 자기 워크플로 `deploy-web.yml` 변경도 배포하도록 1건 추가).
 - **한쪽만 바뀌면 그쪽만** 돈다. 둘 다 바뀌면 순서대로 돈다. 앞 단계가 실패(또는 취소)하면 뒷 단계는 **돌지 않는다**. 서버 변경이 없어 건너뛴 단계는 실패로 보지 않는다.
 - 겹침 방지: 오케스트레이터는 `concurrency: deploy-pipeline`(대기, 취소 없음). `deploy-server`·`deploy-web`은 예전 그룹(`deploy-server`·`deploy-web`)을 그대로 쓴다.
 - `deploy-server.yml`·`deploy-web.yml`은 **`workflow_dispatch`가 그대로 있다**(한쪽만 수동 배포).
@@ -39,7 +39,8 @@ push(main) ─▶ plan ─┬─ 기본(서버 먼저):  deploy-server ─▶ de
 | 기본(서버 API가 먼저 나가야 하는 변경, 새 데이터, 계약 추가) | 없음 | 서버 → 웹 |
 | 웹이 먼저 나가야 하는 변경(예: 처리방침이 가리키는 표시가 서버보다 늦으면 안 되는 PR) | `deploy:web-first` | 웹 → 서버 |
 
-- 라벨은 서버·웹이 **둘 다** 배포될 때만 본다. 범위는 **운영 커밋(서버·웹 중 오래된 쪽, push의 before 포함) 이후의 모든 커밋**이고, 각 커밋에 연결된 **병합된 PR** 중 하나라도 이름이 정확히 `deploy:web-first`인 라벨을 가지면 웹 먼저다(대소문자·비슷한 이름은 무시). 운영 커밋을 둘 다 모르고 before도 없으면 **HEAD 커밋의 PR은 반드시** 본다.
+- 라벨은 서버·웹이 **둘 다** 배포될 때만 본다. 범위는 **운영 커밋(서버·웹 중 오래된 쪽) 이후의 모든 커밋**이고, 각 커밋에 연결된 **병합된 PR**(API의 모든 페이지, `--paginate`) 중 하나라도 이름이 정확히 `deploy:web-first`인 라벨을 가지면 웹 먼저다(대소문자·비슷한 이름은 무시).
+- **순서를 정하지 못할 때**: 둘 다 배포 대상인데 운영 커밋(서버·웹)을 하나라도 읽지 못하면 밀린 범위의 시작을 알 수 없다. push의 before나 HEAD만 보는 것은 추측이라(앞 배포가 취소돼 밀린 PR의 라벨을 놓친다) 하지 않고, **plan을 종료 6으로 실패**시켜 아무것도 배포하지 않는다. 이때는 **main에서 `deploy.yml`을 수동 실행**(`targets=both`, `order`를 직접 선택)한다. 새 환경의 첫 실행처럼 처음부터 태그가 없던 경우도 같다.
 - 범위가 100커밋을 넘거나 라벨 조회가 실패하면 순서를 알 수 없으므로 `plan`이 실패해 아무것도 배포하지 않는다(다시 실행하거나, 수동 실행에서 `order`를 고른다).
 - 라벨은 **병합 전에** PR에 붙인다. `plan`이 도는 시점에 읽으므로 그 뒤에 붙인 라벨은 반영되지 않는다(그때는 `deploy.yml`을 `targets=both`, `order=web-first`로 수동 실행한다).
 - 웹 먼저 순서에서는 `deploy-web`의 "서버 데이터 대기"를 건너뛴다(서버가 아직 옛 상태이므로). 그래서 **`data/artifacts/`가 같이 바뀌는 PR에는 `deploy:web-first`를 쓰지 않는다**: 새 역 색인으로 옛 서버를 부르면 스모크가 400으로 실패하고 웹이 되돌려진다. `plan`이 이 조합이면 경고를 남긴다.
@@ -81,7 +82,7 @@ bash scripts/test-deploy-plan.sh          # 경로 목록 = main, 운영 커밋 
 (cd web && pnpm install) && bash web/scripts/test-worker-version.sh   # 가짜 wrangler + 실제 wrangler 4.158.0을 루프백 가짜 API에
 ```
 
-- `test-deploy-plan.sh`: 임시 저장소에 커밋을 쌓고 가짜 `gh`로 PR 라벨을 준다. 이름 바뀜(`server/a → docs/a`), 한글·탭 파일명, 중간 push 취소(서버 변경 B 뒤 문서 C만 돌아도 서버 배포), 운영 커밋 모름·형식 오류·없는 커밋·다른 브랜치, 가장 오래된 커밋에만 라벨, 쉼표 든 한 이름·비슷한 이름·병합 안 된 PR, before가 0일 때 HEAD 조회, 조회 실패·한도 초과, main이 아닌 ref의 서버 포함 수동 실행 거부. 가짜 `gcloud`로 100% 리비전·후보 태그·분할·SHA 아닌 태그·조회 실패.
+- `test-deploy-plan.sh`: 임시 저장소에 커밋을 쌓고 가짜 `gh`로 PR 라벨을 준다. 이름 바뀜(`server/a → docs/a`), 한글·탭 파일명, 중간 push 취소(서버 변경 B 뒤 문서 C만 돌아도 서버 배포), 운영 커밋 모름·형식 오류·없는 커밋·다른 브랜치, 가장 오래된 커밋에만 라벨, 쉼표 든 한 이름·비슷한 이름·병합 안 된 PR, before가 0일 때 HEAD 조회, 조회 실패·한도 초과, main이 아닌 ref의 서버 포함 수동 실행 거부. 운영 커밋을 하나라도 모르면 순서 결정 실패(종료 6), 여러 페이지 응답과 `--paginate`, 기준 커밋의 트리 객체를 치워 `git diff`를 실패시킨 회귀(변경 없음이 아니라 배포). 가짜 `gcloud`로 100% 리비전·후보 태그·분할·SHA 아닌 태그·조회 실패.
 - `test-worker-version.sh` 1부(가짜 wrangler): 첫 배포 두 종류(빈 목록·10007)와 인증 오류 구분, JSON 아님·빈 versions 실패, 일시 오류 재시도, 분할에서 큰 쪽 기록, 대상이 60%뿐이면 생략하지 않고 100%로, 사후 분할 남음·사후 조회 실패는 실패, 첫 조회가 끝내 실패해도 되돌리기 시도, rollback 재시도, 출력에 배포 JSON의 메일 주소가 나오지 않음.
 - 2부(실제 wrangler): `test-worker-version-api.py`가 127.0.0.1에 Cloudflare API v4 형식으로 답하고 `CLOUDFLARE_API_BASE_URL`로 붙인다. 배포 객체 + `versions[{percentage}]`, 60/40 분할, 빈 목록, 404/10007, 403/10000, `versions view`의 `workers/tag`, 실제 `wrangler rollback`이 보내는 100% 배포 요청까지 본다. CI는 `REQUIRE_REAL_WRANGLER=1`이라 wrangler가 없으면 실패한다.
 - 워크플로 문법은 `actionlint`로 확인했다. Actions 위의 실제 오케스트레이션·GCP/Cloudflare 조회·되돌리기는 병합 뒤 첫 실행에서 처음 돈다(아래 첫 실행 확인).
@@ -96,7 +97,7 @@ bash scripts/test-deploy-plan.sh          # 경로 목록 = main, 운영 커밋 
 
 ### 병합 뒤 첫 실행에서 볼 것
 
-1. `plan` 요약: 운영 서버·웹 커밋이 "모름"이 아니라 SHA로 읽혔는지(병합 전 운영 웹 tag는 예전 배포의 7자 SHA, 서버는 이미지 태그). 이 PR은 `deploy-server.yml`·`deploy-web.yml`·`web/`을 바꿔 둘 다 대상이고 라벨이 없으면 서버 → 웹이다. 반대편 잡의 skipped도 확인한다.
+1. `plan` 요약: 운영 서버·웹 커밋이 "모름"이 아니라 SHA로 읽혔는지(병합 전 운영 웹 tag는 예전 배포의 7자 SHA, 서버는 이미지 태그). 이 PR은 `deploy-server.yml`·`deploy-web.yml`·`web/`을 바꿔 둘 다 대상이고 라벨이 없으면 서버 → 웹이다. 운영 커밋을 하나라도 못 읽으면 plan이 순서를 추측하지 않고 실패하므로(종료 6) main에서 `deploy.yml`을 수동 실행해 order를 고른다. 반대편 잡의 skipped도 확인한다.
 2. 서버: main ref의 WIF 인증(plan과 deploy-server 둘 다), 후보·공개 스모크 성공. 토큰·시크릿은 출력하지 않는다.
 3. 웹: "현재 Worker 버전 기록"이 UUID를 남겼고 경고(분할) 없이 단독 100%였는지, 데이터 대기·스모크 성공 뒤 `rollback` 잡이 **skipped**인지. 다음 push의 `plan`이 운영 웹 커밋을 이번 SHA로 읽는지.
 4. 실패가 자연히 생기면: `rollback` 잡이 돌아 기록한 UUID가 단독 100%가 됐는지, 도메인·정적 페이지·서버 프록시가 정상인지, 뒤 단계가 건너뛰어졌는지. 성공 실행만으로 실제 롤백 검증을 완료로 보지 않는다.

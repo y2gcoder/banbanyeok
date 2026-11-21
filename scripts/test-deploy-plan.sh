@@ -127,6 +127,21 @@ plan_run "형식이 다른 값은 모름" "$W" SERVER_DEPLOYED="$C6" WEB_DEPLOYE
 plan_run "저장소에 없는 커밋은 모름" "$W" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="deadbee"
 g checkout -q -b side "$A"; SIDE="$(commit 'side' 'docs/side.md=1')"; g checkout -q main
 plan_run "이력에 없는 커밋(다른 브랜치 수동 배포)은 모름" "$W" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="${SIDE:0:7}"
+# git diff 실패 ≠ 변경 없음: 기준 커밋(C4)의 트리 객체만 치우면 커밋 확인·조상 검사는 통과하고 diff만 종료 128로 실패한다.
+# C4 이후 웹 변경은 없으므로(서버 b.kt, 문서뿐) 정상이면 웹 없음이다. 실패를 "변경 없음"으로 보면 웹이 빠진다.
+plan_run "정상 비교: C4 이후 웹 변경 없음" "$N" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="$C4"
+tree="$(git -C "$repo" rev-parse "${C4}^{tree}")"
+obj="$repo/.git/objects/${tree:0:2}/${tree:2}"
+if [ -f "$obj" ]; then
+  mv "$obj" "$tmp/tree-hidden"
+  if git -C "$repo" diff --no-renames --name-only -z "$C4" "$C6" >/dev/null 2>&1; then fail "재현 실패: 트리 객체를 치웠는데 git diff가 성공한다"; fi
+  plan_run "git diff 실패(트리 객체 없음)는 변경 없음이 아니라 배포 대상" "$W" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="$C4"
+  if grep -q 'git diff 종료' "$tmp/err"; then pass "diff 실패 경고"; else fail "diff 실패 경고가 없다"; fi
+  mv "$tmp/tree-hidden" "$obj"
+else
+  fail "트리 객체가 느슨한 파일이 아니라 diff 실패를 재현하지 못했다: $obj"
+fi
+plan_run "트리 복원 뒤 다시 정상 비교" "$N" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="$C4"
 
 echo "== 순서: 배포 범위의 모든 병합 PR 라벨"
 gh_reset
@@ -145,12 +160,23 @@ plan_run "비슷한 라벨·대소문자 다른 라벨은 무시" "$B" SERVER_DE
 gh_reset; pr "$D3" 99 false 'deploy:web-first'
 plan_run "병합 안 된 PR의 라벨은 무시" "$B" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="$C6"
 gh_reset; pr "$D3" 13 true 'deploy:web-first'
-plan_run "운영 커밋을 둘 다 모르고 before도 0이면 HEAD PR은 반드시 조회" "$BW" SERVER_DEPLOYED="" WEB_DEPLOYED="" BEFORE=0000000000000000000000000000000000000000
-expect "HEAD 하나만 조회" "$(cat "$GHS/calls")" "api repos/o/r/commits/$D3/pulls"
+# 둘 다 배포 대상인데 운영 커밋을 하나라도 모르면 범위의 시작을 증명할 수 없다 → 순서를 추측하지 않고 실패(종료 6), gh 호출·배포 없음
+plan_run "운영 커밋을 둘 다 모르면 순서를 정하지 못해 실패(before 0)" "exit:6" SERVER_DEPLOYED="" WEB_DEPLOYED="" BEFORE=0000000000000000000000000000000000000000
+if grep -q 'deploy.yml을 수동 실행' "$tmp/err"; then pass "실패 메시지가 수동 실행을 안내"; else fail "수동 실행 안내가 없다"; fi
+expect "추측하지 않으므로 PR 조회 없음" "$(grep -c . "$GHS/calls")" 0
 gh_reset; pr "$D2" 12 true 'deploy:web-first'
-plan_run "운영 커밋을 몰라도 before가 있으면 before 이후 범위를 조회" "$BW" SERVER_DEPLOYED="" WEB_DEPLOYED="" BEFORE="$D1"
+plan_run "운영 커밋을 몰라도 before가 있다고 추측하지 않는다" "exit:6" SERVER_DEPLOYED="" WEB_DEPLOYED="" BEFORE="$D1"
 gh_reset; pr "$D1" 11 true 'deploy:web-first'
-plan_run "서버는 모르고 웹만 알면 웹 운영 커밋 이후 범위" "$BW" SERVER_DEPLOYED="" WEB_DEPLOYED="$C6" BEFORE="$D2"
+plan_run "서버만 모르면 실패(범위의 시작을 증명 못 함)" "exit:6" SERVER_DEPLOYED="" WEB_DEPLOYED="$C6" BEFORE="$D2"
+plan_run "웹만 모르면 실패" "exit:6" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="" BEFORE="$D2"
+plan_run "수동 order를 주면 운영 커밋을 몰라도 라벨 없이 진행" "$B" ORDER=server-first SERVER_DEPLOYED="" WEB_DEPLOYED=""
+# 라벨 조회는 --paginate로 모든 페이지를 읽는다(앞 페이지가 비어 있고 뒤 페이지에 라벨 PR이 있어도 웹 먼저)
+gh_reset
+jq -n '[]' > "$GHS/pulls/$D3.json"
+pr "$D1" 11 false; cp "$GHS/pulls/$D1.json" "$GHS/p1"
+pr "$D1" 21 true 'deploy:web-first'; cat "$GHS/pulls/$D1.json" >> "$GHS/p1"; mv "$GHS/p1" "$GHS/pulls/$D1.json"
+plan_run "여러 페이지로 이어 붙은 응답의 뒤 페이지 라벨도 읽는다" "$BW" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="$C6"
+if grep -q -- '--paginate' "$GHS/calls"; then pass "gh api에 --paginate"; else fail "--paginate 없이 호출한다"; fi
 gh_reset; touch "$GHS/FAIL"
 plan_run "라벨 조회 실패는 배포 전에 실패" "exit:4" SERVER_DEPLOYED="$C6" WEB_DEPLOYED="$C6"
 gh_reset; printf 'not json' > "$GHS/pulls/$D3.json"
