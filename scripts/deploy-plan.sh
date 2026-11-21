@@ -1,14 +1,33 @@
 #!/usr/bin/env bash
-# 배포 계획: 바뀐 파일 목록(표준 입력, 한 줄에 하나)으로 서버·웹 중 무엇을 배포할지와 순서를 정한다.
-# .github/workflows/deploy.yml 의 plan 잡이 부른다. 결과는 `이름=값` 줄로 표준 출력에 나가서 $GITHUB_OUTPUT 에 그대로 붙인다.
-#   server=true|false   서버 배포 여부
-#   web=true|false      웹 배포 여부
-#   order=server-first|web-first
+# 배포 계획: 서버·웹 중 무엇을 배포할지와 순서를 정한다. .github/workflows/deploy.yml 의 plan 잡이 저장소 루트에서 부른다.
+#
+# 기준은 "직전 push"가 아니라 **지금 운영에 나가 있는 커밋**이다.
+#   서버: Cloud Run에서 100% 트래픽을 받는 리비전의 이미지 태그(scripts/deployed-server-sha.sh)
+#   웹:   100% 트래픽을 받는 Worker 버전의 tag(web/scripts/worker-version.sh deployed-tag, 배포 때 `--tag <sha 7자>`)
+# 각 서비스마다 `git diff <배포된 커밋> HEAD`에 그 서비스 경로가 있으면 배포한다. 그래서 대기 중이던 실행이 취소되거나
+# 여러 커밋이 한꺼번에 들어와도, 앞 배포가 실패해도 다음 실행이 밀린 변경을 모두 배포한다.
+# 배포된 커밋을 모르면(조회 실패, main 이력에 없음, 형식 오류) 그 서비스는 배포한다(안전한 기본값).
+#
+# 결과는 `이름=값` 줄로 표준 출력에 나가서 $GITHUB_OUTPUT 에 그대로 붙인다.
+#   server=true|false  web=true|false  order=server-first|web-first
+# 설명(마크다운)은 SUMMARY_FILE이 있으면 거기에, 경고는 표준 오류에.
+#
 # 환경 변수:
-#   PR_LABELS  병합된 PR의 라벨(줄바꿈 또는 쉼표로 구분). `deploy:web-first`가 있으면 웹 먼저, 없으면 서버 먼저.
-#   TARGETS    auto(기본: 바뀐 파일로 결정) | both | server | web   (수동 실행에서 쓴다)
-#   ORDER      비우면 라벨로 결정. server-first | web-first 면 라벨을 무시하고 그대로 쓴다(수동 실행)
-# 경로 목록은 예전에 deploy-server.yml / deploy-web.yml 의 `on.push.paths` 에 있던 것과 같다. 한쪽을 고치면 scripts/test-deploy-plan.sh 도 고친다.
+#   EVENT_NAME       push | workflow_dispatch
+#   GIT_REF          실행 ref(GITHUB_REF). 서버를 배포하는 계획은 refs/heads/main 에서만 허용한다(GCP 인증이 main 한정)
+#   HEAD_SHA         배포할 커밋(기본: git rev-parse HEAD)
+#   BEFORE           push 이벤트의 before(라벨 조회 범위 보충용. 0000…이면 무시)
+#   SERVER_DEPLOYED  운영 서버의 커밋(40자). 비우면 모름
+#   WEB_DEPLOYED     운영 웹의 커밋(7~40자). 비우면 모름
+#   TARGETS          auto(기본: 위 비교로 결정) | both | server | web   (수동 실행)
+#   ORDER            비우면 라벨로 결정(push). server-first | web-first 면 그대로(수동 실행)
+#   REPO             owner/name (라벨 조회). GH  gh 실행 명령(기본 gh, 테스트는 가짜로 바꿔 끼운다)
+#   MAX_LABEL_COMMITS  라벨을 조회할 커밋 수 한도(기본 100). 넘으면 순서를 확정할 수 없어 실패한다
+# 다른 사용법(테스트용):
+#   deploy-plan.sh --paths server|web        경로 패턴 목록을 한 줄에 하나씩 출력
+#   deploy-plan.sh --match server|web        표준 입력의 NUL 구분 경로 중 하나라도 맞으면 true, 아니면 false
+# 경로 목록은 예전에 deploy-server.yml / deploy-web.yml 의 `on.push.paths` 에 있던 것과 같다(`**` → bash case의 `*`,
+# `*`는 `/`도 맞춘다). 고치면 scripts/test-deploy-plan.sh 의 고정 목록도 고친다.
 # 비밀값은 다루지 않는다.
 set -euo pipefail
 
@@ -36,13 +55,7 @@ WEB_PATHS=(
   'pnpm-workspace.yaml'
   '.github/workflows/deploy-web.yml'
 )
-
-TARGETS="${TARGETS:-auto}"
-ORDER="${ORDER:-}"
 LABEL_WEB_FIRST='deploy:web-first'
-
-case "$TARGETS" in auto | both | server | web) ;; *) echo "TARGETS 값이 올바르지 않습니다: $TARGETS" >&2; exit 2 ;; esac
-case "$ORDER" in '' | server-first | web-first) ;; *) echo "ORDER 값이 올바르지 않습니다: $ORDER" >&2; exit 2 ;; esac
 
 matches_any() { # <파일> <패턴...>
   local file="$1" pattern
@@ -54,27 +67,139 @@ matches_any() { # <파일> <패턴...>
   return 1
 }
 
+# 표준 입력의 NUL 구분 경로 중 하나라도 <패턴...>에 맞으면 0
+any_path_matches() {
+  local file found=1
+  while IFS= read -r -d '' file; do
+    if matches_any "$file" "$@"; then found=0; fi
+  done
+  return "$found"
+}
+
+paths_for() {
+  case "$1" in
+    server) printf '%s\n' "${SERVER_PATHS[@]}" ;;
+    web) printf '%s\n' "${WEB_PATHS[@]}" ;;
+    *) echo "server 또는 web" >&2; return 2 ;;
+  esac
+}
+
+case "${1:-}" in
+  --paths) paths_for "${2:-}"; exit $? ;;
+  --match)
+    case "${2:-}" in
+      server) any_path_matches "${SERVER_PATHS[@]}" && echo true || echo false ;;
+      web) any_path_matches "${WEB_PATHS[@]}" && echo true || echo false ;;
+      *) echo "server 또는 web" >&2; exit 2 ;;
+    esac
+    exit 0 ;;
+  '') ;;
+  *) echo "사용법: deploy-plan.sh [--paths|--match server|web]" >&2; exit 2 ;;
+esac
+
+EVENT_NAME="${EVENT_NAME:-push}"
+GIT_REF="${GIT_REF:-}"
+TARGETS="${TARGETS:-auto}"
+ORDER="${ORDER:-}"
+GH="${GH:-gh}"
+MAX_LABEL_COMMITS="${MAX_LABEL_COMMITS:-100}"
+HEAD_SHA="$(git rev-parse --verify "${HEAD_SHA:-HEAD}^{commit}")"
+
+case "$TARGETS" in auto | both | server | web) ;; *) echo "TARGETS 값이 올바르지 않습니다: $TARGETS" >&2; exit 2 ;; esac
+case "$ORDER" in '' | server-first | web-first) ;; *) echo "ORDER 값이 올바르지 않습니다: $ORDER" >&2; exit 2 ;; esac
+
+summary() { if [ -n "${SUMMARY_FILE:-}" ]; then printf '%s\n' "$*" >> "$SUMMARY_FILE"; fi; }
+short() { printf '%s' "${1:0:7}"; }
+
+# 배포된 커밋 → HEAD의 조상인 전체 SHA. 모르면 빈 문자열(이유는 표준 오류)
+resolve_base() { # <이름> <값>
+  local name="$1" value="$2" full
+  if [ -z "$value" ]; then echo "::warning::${name}: 운영에 나가 있는 커밋을 읽지 못했습니다. ${name}을(를) 배포합니다." >&2; return 0; fi
+  if ! [[ "$value" =~ ^[0-9a-f]{7,40}$ ]]; then echo "::warning::${name}: 배포된 커밋 값의 형식이 다릅니다. ${name}을(를) 배포합니다." >&2; return 0; fi
+  if ! full="$(git rev-parse --verify --quiet "${value}^{commit}" 2>/dev/null)"; then
+    echo "::warning::${name}: 배포된 커밋 $(short "$value")을(를) 저장소에서 찾지 못했습니다(없거나 짧은 SHA가 모호). ${name}을(를) 배포합니다." >&2; return 0
+  fi
+  if ! git merge-base --is-ancestor "$full" "$HEAD_SHA"; then
+    echo "::warning::${name}: 배포된 커밋 $(short "$full")이(가) 이 커밋의 이력에 없습니다(다른 브랜치에서 수동 배포?). ${name}을(를) 배포합니다." >&2; return 0
+  fi
+  printf '%s' "$full"
+}
+
+# <기준 커밋> 이후 바뀐 경로(이름 바뀜은 옛·새 경로 둘 다, -z라 한글·탭·줄바꿈 파일명도 그대로)가 패턴에 맞는가
+changed_since() { # <기준> <패턴...>
+  local base="$1"
+  shift
+  git diff --no-renames --name-only -z "$base" "$HEAD_SHA" | any_path_matches "$@"
+}
+
+server_base=""
+web_base=""
 server=false
 web=false
 data_changed=false
-while IFS= read -r file || [ -n "$file" ]; do
-  [ -z "$file" ] && continue
-  matches_any "$file" "${SERVER_PATHS[@]}" && server=true
-  matches_any "$file" "${WEB_PATHS[@]}" && web=true
-  matches_any "$file" 'data/artifacts/*' && data_changed=true
-done
 
-case "$TARGETS" in
-  both) server=true; web=true ;;
-  server) server=true; web=false ;;
-  web) server=false; web=true ;;
-esac
+if [ "$TARGETS" = auto ]; then
+  server_base="$(resolve_base 서버 "${SERVER_DEPLOYED:-}")"
+  web_base="$(resolve_base 웹 "${WEB_DEPLOYED:-}")"
+  if [ -z "$server_base" ] || changed_since "$server_base" "${SERVER_PATHS[@]}"; then server=true; fi
+  if [ -z "$web_base" ] || changed_since "$web_base" "${WEB_PATHS[@]}"; then web=true; fi
+  if [ -n "$web_base" ] && changed_since "$web_base" 'data/artifacts/*'; then data_changed=true; fi
+  summary "- 운영 서버 커밋: \`$( [ -n "$server_base" ] && short "$server_base" || echo 모름)\` → 서버 배포 \`$server\`"
+  summary "- 운영 웹 커밋: \`$( [ -n "$web_base" ] && short "$web_base" || echo 모름)\` → 웹 배포 \`$web\`"
+else
+  case "$TARGETS" in
+    both) server=true; web=true ;;
+    server) server=true ;;
+    web) web=true ;;
+  esac
+  summary "- 수동 지정: \`$TARGETS\`"
+fi
+
+if [ "$server" = true ] && [ "$GIT_REF" != "refs/heads/main" ]; then
+  echo "::error::서버를 포함한 배포는 main에서만 실행할 수 있습니다(지금 ref: ${GIT_REF:-없음}). GCP 인증이 main으로 한정되어 있어 뒤 단계에서 거부됩니다. main에서 다시 실행하거나 targets=web으로 고르세요." >&2
+  exit 5
+fi
 
 order='server-first'
 if [ -n "$ORDER" ]; then
   order="$ORDER"
-elif tr ',' '\n' <<<"${PR_LABELS:-}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -qxF "$LABEL_WEB_FIRST"; then
-  order='web-first'
+elif [ "$server" = true ] && [ "$web" = true ]; then
+  # 순서가 의미 있을 때만 라벨을 본다. 배포 범위(운영 커밋 이후 들어온 모든 커밋)의 병합 PR 중 하나라도 라벨이 있으면 웹 먼저.
+  # 범위의 시작: 알고 있는 운영 커밋들과 push의 before 중 가장 오래된 공통 조상. 하나도 모르면 HEAD만 본다.
+  bases=""
+  [ -n "$server_base" ] && bases+=" $server_base"
+  [ -n "$web_base" ] && bases+=" $web_base"
+  if [[ -n "${BEFORE:-}" && ! "${BEFORE}" =~ ^0+$ ]] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null && git merge-base --is-ancestor "$BEFORE" "$HEAD_SHA"; then
+    bases+=" $(git rev-parse "${BEFORE}^{commit}")"
+  fi
+  commits="$HEAD_SHA"
+  if [ -n "$bases" ]; then
+    # shellcheck disable=SC2086  # 공백으로 나눈 SHA 목록
+    root="$(git merge-base --octopus $bases)"
+    commits="$( { echo "$HEAD_SHA"; git rev-list "${root}..${HEAD_SHA}"; } | awk '!seen[$0]++')"
+  else
+    echo "::warning::배포 범위의 시작 커밋을 몰라 HEAD 커밋의 PR 라벨만 봅니다." >&2
+  fi
+  count="$(grep -c . <<<"$commits")"
+  if [ "$count" -gt "$MAX_LABEL_COMMITS" ]; then
+    echo "::error::배포 범위의 커밋이 ${count}개라(한도 $MAX_LABEL_COMMITS) PR 라벨을 다 볼 수 없어 순서를 정하지 못했습니다. deploy.yml을 targets=both, order를 직접 골라 수동 실행하세요." >&2
+    exit 3
+  fi
+  web_first_prs=""
+  for c in $commits; do
+    if ! json="$($GH api "repos/${REPO:?REPO가 필요합니다}/commits/${c}/pulls")"; then
+      echo "::error::커밋 $(short "$c")의 PR 라벨을 읽지 못해 순서를 정할 수 없습니다. 다시 실행하거나 수동 실행에서 order를 고르세요." >&2
+      exit 4
+    fi
+    # 병합된 PR만, 라벨 이름은 정확히 같을 때만
+    if ! prs="$(jq -r --arg l "$LABEL_WEB_FIRST" '.[] | select(.merged_at != null) | select(any(.labels[]?; .name == $l)) | .number' <<<"$json")"; then
+      echo "::error::커밋 $(short "$c")의 PR 응답을 해석하지 못했습니다." >&2
+      exit 4
+    fi
+    while IFS= read -r n; do if [ -n "$n" ]; then web_first_prs+=" #$n"; fi; done <<<"$prs"
+  done
+  if [ -n "$web_first_prs" ]; then order='web-first'; fi
+  summary "- 라벨 조회: 커밋 ${count}개, \`$LABEL_WEB_FIRST\` PR:${web_first_prs:- 없음}"
 fi
 
 if [ "$order" = "web-first" ] && [ "$server" = true ] && [ "$web" = true ] && [ "$data_changed" = true ]; then

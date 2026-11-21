@@ -65,9 +65,13 @@ jobs:
               - '.github/workflows/ci.yml'
             deploy:
               - 'scripts/deploy-plan.sh'
+              - 'scripts/deployed-server-sha.sh'
               - 'scripts/test-deploy-plan.sh'
               - 'web/scripts/worker-version.sh'
               - 'web/scripts/test-worker-version.sh'
+              - 'web/scripts/test-worker-version-api.py'
+              - 'web/package.json'
+              - 'pnpm-lock.yaml'
               - '.github/workflows/deploy*.yml'
               - '.github/workflows/ci.yml'
 
@@ -212,16 +216,24 @@ jobs:
           path: web/playwright-report/
           retention-days: 7
 
-  # 배포 스크립트 단위 테스트(실제 배포·Cloudflare 호출 없음): 서버·웹 순서 계획, 웹 직전 버전 기록·되돌리기(가짜 wrangler).
+  # 배포 스크립트 단위 테스트(실제 배포·Cloudflare·GCP 호출 없음): 서버·웹 배포 계획(임시 git 저장소·가짜 gh·가짜 gcloud),
+  # 웹 직전 버전 기록·되돌리기(가짜 wrangler + 핀된 실제 wrangler를 루프백 가짜 API에 붙여 JSON·오류 형식 확인).
   deploy-scripts:
     needs: changes
     if: needs.changes.outputs.deploy == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: node pnpm
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
       - run: bash scripts/test-deploy-plan.sh
       - run: bash web/scripts/test-worker-version.sh
+        env:
+          REQUIRE_REAL_WRANGLER: '1'
 
   # 브랜치 보호에서 필수로 지정할 단일 체크. 경로 필터로 건너뛴 잡은 통과로 본다.
   ci-ok:

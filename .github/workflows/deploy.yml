@@ -1,6 +1,8 @@
 # 배포 오케스트레이터. main push 하나로 서버(deploy-server.yml)와 웹(deploy-web.yml)을 정해진 순서로 배포한다.
-#   plan   바뀐 파일(before..sha)로 서버·웹 중 무엇을 배포할지, 병합된 PR의 라벨로 순서를 정한다(scripts/deploy-plan.sh).
-#   순서   기본 서버 먼저 → 웹. PR 라벨 `deploy:web-first`가 있으면 웹 먼저 → 서버.
+#   plan   지금 운영에 나가 있는 커밋(서버: Cloud Run 100% 리비전의 이미지 태그, 웹: Worker 100% 버전의 tag)과 이 커밋을 비교해
+#          서버·웹 중 무엇을 배포할지 정하고, 그 범위의 병합 PR 라벨로 순서를 정한다(scripts/deploy-plan.sh).
+#          운영 커밋을 읽지 못하면 그 서비스는 배포한다. 그래서 대기 중인 실행이 취소되거나 앞 배포가 실패해도 다음 실행이 따라잡는다.
+#   순서   기본 서버 먼저 → 웹. 범위의 PR 중 하나라도 라벨 `deploy:web-first`가 있으면 웹 먼저 → 서버.
 #   실패   앞 단계가 실패하면 뒷 단계는 돌지 않는다(서버·웹 각자 배포 뒤 확인 실패는 스스로 직전 상태로 되돌린다).
 #   한쪽만 바뀌면 그쪽만 돈다.
 # 두 워크플로는 `workflow_dispatch`도 그대로 있다(한쪽만 수동 배포). 이 워크플로의 수동 실행은 둘을 순서대로 돌린다.
@@ -13,12 +15,12 @@ on:
   workflow_dispatch:
     inputs:
       targets:
-        description: '무엇을 배포할까(둘 다 / 서버만 / 웹만)'
+        description: '무엇을 배포할까(둘 다 / 서버만 / 웹만 / auto: 운영 커밋과 비교해 밀린 쪽만). 서버를 포함하면 main에서만'
         type: choice
-        options: [both, server, web]
+        options: [both, server, web, auto]
         default: both
       order:
-        description: '둘 다일 때의 순서'
+        description: '둘 다일 때의 순서(수동 실행은 라벨을 보지 않는다)'
         type: choice
         options: [server-first, web-first]
         default: server-first
@@ -27,6 +29,7 @@ permissions:
   contents: read
 
 # 오케스트레이터 실행끼리 겹치지 않는다. 진행 중인 실행은 취소하지 않고 기다린다.
+# 대기 중인 실행이 둘 이상이면 GitHub가 앞의 대기 실행을 취소하지만, 마지막 실행의 plan이 운영 커밋 기준으로 밀린 변경을 모두 배포한다.
 # 이름이 deploy-server·deploy-web과 달라야 한다(호출되는 워크플로가 같은 그룹을 쓰면 서로 기다리다 멈춘다).
 concurrency:
   group: deploy-pipeline
@@ -35,54 +38,98 @@ concurrency:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: read   # 커밋에 연결된 PR의 라벨을 읽는다
+      id-token: write       # 운영 서버 리비전 조회(GCP WIF, main 한정)
     outputs:
       server: ${{ steps.plan.outputs.server }}
       web: ${{ steps.plan.outputs.web }}
       order: ${{ steps.plan.outputs.order }}
+    env:
+      # 운영 커밋 비교가 필요한가(push, 또는 수동 auto). 수동으로 대상을 고르면 비교·라벨 조회를 하지 않는다.
+      COMPARE: ${{ github.event_name == 'push' || inputs.targets == 'auto' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0   # before..sha 비교에 필요
+          fetch-depth: 0   # 운영 커밋..HEAD 비교에 필요
+      # ── 운영 서버 커밋: 읽지 못해도 실패시키지 않는다(그때는 서버를 배포한다) ──
+      - name: GCP 인증(운영 서버 리비전 읽기)
+        id: gcp
+        if: ${{ env.COMPARE == 'true' && github.ref == 'refs/heads/main' }}
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - name: 운영 서버 커밋 읽기
+        id: server
+        if: ${{ steps.gcp.outcome == 'success' }}
+        timeout-minutes: 3
+        env:
+          CLOUDSDK_CORE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          CLOUDSDK_CORE_DISABLE_PROMPTS: '1'
+          REGION: ${{ vars.GCP_REGION }}
+        run: |
+          if sha="$(bash scripts/deployed-server-sha.sh)"; then
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "운영 서버 커밋: ${sha:0:7}"
+          else
+            echo "::warning::운영 서버 커밋을 읽지 못했습니다. 서버를 배포 대상으로 봅니다."
+          fi
+      # ── 운영 웹 커밋: Worker 버전 tag(wrangler, web/의 고정 버전). 읽지 못하면 웹을 배포한다 ──
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        id: mise
+        if: ${{ env.COMPARE == 'true' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        with:
+          install_args: node pnpm
+      - name: wrangler 설치
+        id: install
+        if: ${{ steps.mise.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+      - name: 운영 웹 커밋 읽기
+        id: web
+        if: ${{ steps.install.outcome == 'success' }}
+        timeout-minutes: 3
+        working-directory: web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if tag="$(bash scripts/worker-version.sh deployed-tag)"; then
+            echo "sha=$tag" >> "$GITHUB_OUTPUT"
+            echo "운영 웹 커밋: $tag"
+          else
+            echo "::warning::운영 웹 커밋을 읽지 못했습니다. 웹을 배포 대상으로 봅니다."
+          fi
       - name: 배포 계획
         id: plan
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+          HEAD_SHA: ${{ github.sha }}
           BEFORE: ${{ github.event.before }}
+          SERVER_DEPLOYED: ${{ steps.server.outputs.sha }}
+          WEB_DEPLOYED: ${{ steps.web.outputs.sha }}
           IN_TARGETS: ${{ inputs.targets }}
           IN_ORDER: ${{ inputs.order }}
         run: |
           set -euo pipefail
-          files="$RUNNER_TEMP/changed-files.txt"
-          : > "$files"
-          labels=""
-          targets=auto
-          if [ "$EVENT_NAME" = "push" ]; then
-            if [[ "$BEFORE" =~ ^0+$ ]] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-              # 강제 푸시 등으로 이전 커밋을 모르면 안전하게 둘 다 배포한다.
-              echo "::warning::이전 커밋(${BEFORE:0:7})을 찾지 못해 서버·웹을 모두 배포합니다."
-              targets=both
-            else
-              git diff --name-only "$BEFORE" "$GITHUB_SHA" > "$files"
-              # 이 푸시에 든 커밋들(보통 스쿼시 커밋 하나)에 연결된 PR의 라벨. 조회가 실패하면 순서를 알 수 없으므로 실패로 멈춘다.
-              for sha in $(git rev-list --max-count=20 "${BEFORE}..${GITHUB_SHA}"); do
-                labels+="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}/pulls" --jq '.[].labels[].name')"$'\n'
-              done
-            fi
-          else
-            targets="$IN_TARGETS"
-          fi
-          result="$(TARGETS="$targets" ORDER="${IN_ORDER:-}" PR_LABELS="$labels" bash scripts/deploy-plan.sh < "$files")"
+          if [ "$EVENT_NAME" = "push" ]; then targets=auto; order=""; else targets="$IN_TARGETS"; order="$IN_ORDER"; fi
+          echo "### 배포 계획 (\`${EVENT_NAME}\`, 대상 \`${targets}\`)" >> "$GITHUB_STEP_SUMMARY"
+          result="$(TARGETS="$targets" ORDER="$order" SUMMARY_FILE="$GITHUB_STEP_SUMMARY" bash scripts/deploy-plan.sh)"
           echo "$result" >> "$GITHUB_OUTPUT"
-          {
-            echo "### 배포 계획"
-            echo "- 변경 파일 $(wc -l < "$files" | tr -d ' ')개, 대상 \`${targets}\`, 이벤트 \`${EVENT_NAME}\`"
-            echo "- $(paste -sd' ' - <<<"$result")"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "- 결과: $(paste -sd' ' - <<<"$result")" >> "$GITHUB_STEP_SUMMARY"
           echo "$result"
 
   # ── 서버 먼저(기본) ──────────────────────────────────────────────
