@@ -216,10 +216,10 @@ esac
 FAKE
 chmod +x "$tmp/gcloud-fake"
 GCS="$tmp/gc"
-gc_reset() { # <traffic JSON 배열> <이미지>
+gc_reset() { # <traffic JSON 배열> <이미지> [리비전 commit-sha 라벨]
   rm -rf "$GCS"; mkdir -p "$GCS"; echo server-00042-abc > "$GCS/rev"
   jq -n --argjson t "$1" '{metadata: {name: "server"}, status: {url: "https://server.example.invalid", latestCreatedRevisionName: "server-00043-new", traffic: $t}}' > "$GCS/service.json"
-  jq -n --arg img "$2" '{metadata: {name: "server-00042-abc"}, spec: {containers: [{image: $img}]}}' > "$GCS/revision.json"
+  jq -n --arg img "$2" --arg lbl "${3:-}" '{metadata: ({name: "server-00042-abc"} + (if $lbl == "" then {} else {labels: {"commit-sha": $lbl}} end)), spec: {containers: [{image: $img}]}}' > "$GCS/revision.json"
 }
 srv() { GCS="$GCS" GCLOUD="$tmp/gcloud-fake" REGION=r bash "$server_sha" 2>/dev/null; echo "exit:$?"; }
 IMG="r-docker.pkg.dev/p/server/server:$SHA40"
@@ -237,5 +237,20 @@ gc_reset '[{"revisionName":"server-00042-abc","percent":100}]' "$IMG"; touch "$G
 expect "서버: 리비전 조회 실패는 모름" "$(srv)" "exit:1"
 gc_reset '[]' "$IMG"
 expect "서버: 트래픽 정보 없음은 모름" "$(srv)" "exit:1"
+
+
+# Cloud Run은 리비전에 플랫폼 매니페스트 다이제스트(태그 없음)를 저장한다 → 라벨 commit-sha가 주 경로
+DIMG="r-docker.pkg.dev/p/server/server@sha256:$(printf 'a%.0s' $(seq 64))"
+RUNNING='[{"revisionName":"server-00042-abc","percent":100}]'
+gc_reset "$RUNNING" "$DIMG" "$SHA40"
+expect "서버: 다이제스트 이미지라도 라벨이 있으면 SHA" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
+gc_reset "$RUNNING" "$IMG" "$SHA40"
+expect "서버: 태그 이미지에 라벨도 있으면 SHA" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
+gc_reset "$RUNNING" "$DIMG"
+expect "서버: 다이제스트 이미지에 라벨이 없으면 모름" "$(srv)" "exit:1"
+gc_reset "$RUNNING" "$DIMG" "not-a-sha"
+expect "서버: 라벨이 SHA 형식이 아니면 모름" "$(srv)" "exit:1"
+gc_reset "$RUNNING" "$IMG" "not-a-sha"
+expect "서버: 잘못된 라벨이어도 SHA 태그 이미지는 태그로" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
 
 exit $failed
