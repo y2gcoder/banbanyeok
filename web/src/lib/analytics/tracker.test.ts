@@ -308,6 +308,7 @@ describe("posthogOptions(개인정보 설정)", () => {
       person_profiles: "identified_only",
       persistence: "localStorage",
       save_referrer: false,
+      save_campaign_params: false,
       respect_dnt: true,
       property_denylist: ["$raw_user_agent"],
     });

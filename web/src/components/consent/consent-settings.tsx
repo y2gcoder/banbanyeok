@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { setAnalyticsConsent } from "@/lib/analytics";
 import { parenSafe } from "@/lib/text/paren-safe";
 import { cn } from "@/lib/utils";
+import { ConsentNotice } from "./consent-notice";
 import { CONSENT_COPY } from "./consent-text";
 import { useAnalyticsId, useConsentScopes, useConsentState } from "./use-consent";
 
@@ -125,6 +126,7 @@ function IdentifierBox({ id, heading, note }: { id: string; heading: string; not
 /**
  * /privacy의 통계 설정: 현재 동의 상태와 두 항목(수집·이용, 국외 이전)의 스위치. 둘 다 켜져야 통계를 모은다.
  * 하나라도 끄면(철회) 바로 통계를 멈추고 이 기기에 저장된 통계 식별자를 지운다. 철회는 동의만큼 쉬워야 하므로 한 번 누르면 끝난다.
+ * 스위치 아래에 세부 고지([ConsentNotice])를 늘 펼쳐 둔다(배너의 '자세히 보기'·'언제든 변경'이 오는 곳).
  */
 export function ConsentSettings() {
   const state = useConsentState();
@@ -171,6 +173,10 @@ export function ConsentSettings() {
         disabled={!adjustable}
         onToggle={() => toggle("transfer")}
       />
+      {/* 세부 고지(법정 고지 사항 전부, 이전받는 자의 연락처 포함). 배너의 '자세히 보기'와 같은 내용이고 여기서는 늘 펼쳐 둔다. */}
+      <div className="rounded-xl border border-rule p-4">
+        <ConsentNotice />
+      </div>
       {granted && id ? <IdentifierBox id={id} heading="이 브라우저의 통계 식별자" note={DELETE_REQUEST_NOTE} /> : null}
       {!granted && clearedId ? (
         <IdentifierBox

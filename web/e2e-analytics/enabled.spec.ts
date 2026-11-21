@@ -391,7 +391,17 @@ test("배너 접근성: axe 위반 0, 기본 해제, 키보드로 고를 수 있
   expect(await transferBox(page).evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe("none");
   await page.keyboard.press("Space");
   await page.keyboard.press("Tab");
-  await expect(region.getByRole("link", { name: "자세히 보기·언제든 변경" })).toBeFocused(); // 화면 순서대로
+  // 화면 순서대로: '자세히 보기'(같은 자리에서 펼침) → 변경 링크
+  const details = region.getByRole("button", { name: /자세히 보기/ });
+  await expect(details).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(details).toHaveAttribute("aria-expanded", "true");
+  await expect(region.getByText(/privacy@posthog\.com/)).toBeVisible();
+  const expanded = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+  expect(expanded.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+  await expect(saveButton(page)).toBeInViewport({ ratio: 1 }); // 펼쳐도 버튼은 화면 안에 있다
+  await page.keyboard.press("Tab");
+  await expect(region.getByRole("link", { name: "언제든 변경" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(region.getByRole("button", { name: "모두 거부" })).toBeFocused();
   await page.keyboard.press("Tab");
@@ -692,20 +702,22 @@ test("오류 추적: 동의 전 오류는 요청 0건, 동의한 뒤 오류 1건
     page.evaluate(
       ([room, token, tag]) => {
         setTimeout(() => {
-          throw new Error(
-            `${tag} room ${room} failed at https://banbanyeok.example/result?v=2&o=k3a.ryf&n=%EB%AF%BC%EC%88%98 Bearer ${token}`,
+          const error = new Error(
+            `room ${room} failed at https://banbanyeok.example/result?v=2&o=k3a.ryf&n=%EB%AF%BC%EC%88%98 Bearer ${token}`,
           );
+          error.name = tag ?? "Error"; // 메시지의 자유 글은 형식만 남으므로(redact.ts maskMessage) 어느 오류인지는 종류로 가른다
+          throw error;
         }, 0);
       },
       [FAKE_ROOM, FAKE_TOKENS.host, label],
     );
-  await throwError("before-consent");
+  await throwError("BeforeConsent");
   await page.waitForTimeout(BATCH_WAIT_MS);
   expect(probe.outside).toEqual([]); // 동의 전: 처리기도 없고 요청도 없다
 
   await acceptAll(page);
   await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
-  await throwError("after-consent");
+  await throwError("AfterConsent");
   await expect.poll(() => probe.events.filter((e) => e.event === "$exception").length, { timeout: 20_000 }).toBe(1);
   await page.waitForTimeout(BATCH_WAIT_MS);
 
@@ -713,18 +725,17 @@ test("오류 추적: 동의 전 오류는 요청 0건, 동의한 뒤 오류 1건
   expect(exceptions).toHaveLength(1); // 동의 전 오류는 나중에도 보내지 않는다
   const [exception] = exceptions;
   const text = JSON.stringify(exception);
-  expect(text).toContain("after-consent");
-  expect(text).not.toContain("before-consent");
+  expect(text).toContain("AfterConsent");
+  expect(text).not.toContain("BeforeConsent");
   const scanned = JSON.stringify({ ...exception, properties: withoutRandomIds(exception?.properties ?? {}) });
   for (const needle of [FAKE_ROOM, ...Object.values(FAKE_TOKENS), "k3a", "ryf", "o=", "%EB%AF%BC", "민수", "강남"]) {
     expect(scanned, `$exception에 "${needle}"`).not.toContain(needle);
   }
   expect(exception?.properties).toMatchObject({ platform: "web", $geoip_disable: true });
   expect(String(exception?.properties.$current_url)).toMatch(/\/r\/\[room\]$/);
-  const list = exception?.properties.$exception_list as { value?: string }[] | undefined;
-  expect(list?.[0]?.value).toMatch(
-    /after-consent room \[redacted\] failed at https:\/\/banbanyeok\.example\/result Bearer \[token\]/,
-  );
+  const list = exception?.properties.$exception_list as { type?: string; value?: string }[] | undefined;
+  expect(list?.[0]?.type).toBe("AfterConsent");
+  expect(list?.[0]?.value).toBe("… [redacted] failed at https://banbanyeok.example/result … [token]");
   // 웹 바이탈: 방 주소로 새로 연 화면의 수치(첫 수치부터 5초 모아 보냄). 수치마다 붙은 주소도 방 ID 없이 나간다.
   await page.reload();
   await expect(page).toHaveURL(new RegExp(`/r/${FAKE_ROOM}$`));
@@ -745,4 +756,71 @@ test("오류 추적: 동의 전 오류는 요청 0건, 동의한 뒤 오류 1건
   // 오류·속도 이벤트도 수집 주소 하나로만 나간다(확장 스크립트를 따로 받지 않는다).
   expect([...new Set(probe.outside)]).toEqual([`POST ${COLLECT}`]);
   expect(probe.events.filter((e) => e.event.startsWith("$") && !SDK_EVENTS.includes(e.event))).toEqual([]);
+});
+
+test("유입 태그·평문 오류(#116 검토 재현): 공유 링크에 utm_term=별명·utm_content=역 코드를 붙이고 평문 오류를 내도 요청 본문에 나오지 않는다", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  test.setTimeout(90_000);
+  const probe = await attachProbe(context, baseURL ?? "");
+  const NICK = "검토별명";
+  // 별명과 출발역 두 개가 든 정상 공유 링크를 만든다(동의 전이라 요청 0건).
+  await page.goto("/");
+  await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill(NICK);
+  await pickStation(page, `${NICK}의 출발역`, "강남", /^강남\s?2호선/);
+  await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
+  await page.getByRole("button", { name: "만날 역 찾기" }).click();
+  await expect(page).toHaveURL(/\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}/);
+  const shared = new URL(page.url().replace("/result", "/s"));
+  const o = shared.searchParams.get("o") ?? "";
+  const codes = o.split(".");
+  expect(codes).toHaveLength(2);
+  expect(probe.outside).toEqual([]);
+
+  // 외부 유입 태그에 별명과 역 코드를 넣어 연다(링크를 퍼뜨린 사람이 붙일 수 있는 자유 글).
+  shared.searchParams.set("utm_source", "kakao");
+  shared.searchParams.set("utm_term", NICK);
+  shared.searchParams.set("utm_content", o);
+  shared.searchParams.set("gclid", o);
+  await page.goto(shared.toString());
+  await acceptAll(page);
+  await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
+  await page.getByRole("group", { name: "나는 누구?" }).getByRole("button").nth(1).click();
+  await page.waitForTimeout(BATCH_WAIT_MS);
+  // 새로 고친 화면(동의한 채로 연 페이지)의 웹 바이탈과, 별명·역 코드를 그대로 담은 평문 오류.
+  await page.reload();
+  await expect(page.getByRole("group", { name: "나는 누구?" })).toBeVisible();
+  await page.evaluate(
+    ([nick, pair]) => {
+      setTimeout(() => {
+        throw new Error(`${nick} ${pair} 강남에서 실패`);
+      }, 0);
+    },
+    [NICK, o],
+  );
+  await expect.poll(() => probe.events.filter((e) => e.event === "$exception").length, { timeout: 20_000 }).toBe(1);
+  await expect.poll(() => probe.events.some((e) => e.event === "$web_vitals"), { timeout: 25_000 }).toBe(true);
+  await page.waitForTimeout(BATCH_WAIT_MS);
+
+  const names = new Set(probe.events.map((e) => e.event));
+  for (const event of ["analytics_consent_changed", "link_opened", "$exception", "$web_vitals"]) {
+    expect(names, event).toContain(event);
+  }
+  for (const { event, properties } of probe.events) {
+    // 유입 태그 속성은 어느 판(그대로, $session_entry_, $initial_)으로도 없다.
+    expect(
+      Object.keys(properties).filter((key) => /utm_|gclid|ph_keyword/i.test(key)),
+      event,
+    ).toEqual([]);
+    const { meeting_station_code: _meeting, top1_station_code: _top, ...rest } = properties;
+    const text = JSON.stringify(withoutRandomIds(rest));
+    for (const needle of [NICK, ...codes, "강남", "홍대"]) {
+      expect(text, `${event} 속성에 "${needle}"`).not.toContain(needle);
+    }
+  }
+  const exception = probe.events.find((e) => e.event === "$exception");
+  const list = exception?.properties.$exception_list as { type?: string; value?: string }[] | undefined;
+  expect(list?.[0]).toMatchObject({ type: "Error", value: "…" }); // 메시지는 형식만 남는다
 });

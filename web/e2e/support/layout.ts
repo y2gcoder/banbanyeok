@@ -100,7 +100,8 @@ export function smallTouchTargets(page: Page): Promise<string[]> {
       .filter((el) => {
         const r = el.getBoundingClientRect();
         if (r.width <= 1 || r.height <= 1) return false;
-        if (el.tagName === "A" && el.closest("p, li > p, dd")) return false; // 문장 안 링크
+        // 문장 안 링크·단추(WCAG 2.5.8 '문장 안' 예외. 예: 동의 배너의 '자세히 보기')
+        if ((el.tagName === "A" || el.tagName === "BUTTON") && el.closest("p, li > p, dd")) return false;
         const t = targetOf(el).getBoundingClientRect();
         return t.height < 43.5 || t.width < 43.5;
       })

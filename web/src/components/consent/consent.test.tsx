@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readChoice, readScopes, writeChoice } from "@/lib/analytics/consent";
 import { ConsentBanner } from "./consent-banner";
 import { ConsentSettings } from "./consent-settings";
-import { CONSENT_COPY } from "./consent-text";
+import { CONSENT_COPY, CONSENT_NOTICE } from "./consent-text";
 
 // 통계가 켜진 빌드·브라우저 추적 거부 여부만 바꿔 가며 실제 동의 저장소(localStorage)를 쓴다.
 const env = vi.hoisted(() => ({ available: true, declined: false, id: null as string | null }));
@@ -54,18 +54,23 @@ describe("동의 배너", () => {
     expect(region).toHaveTextContent("통계에는 출발역과 이름이 들어가지 않아요");
     expect(region).toHaveTextContent("만 14세 이상만 동의할 수 있어요");
     expect(region).toHaveTextContent("동의하지 않아도 모든 기능을 그대로 쓸 수 있어요");
-    // 처리방침 링크는 한 번만, 세부 고지와 철회·변경 방법(통계 설정)으로 간다.
+    // 처리방침 링크는 한 번만, 철회·변경 방법(통계 설정)으로 간다. 세부 고지는 같은 자리에서 펼친다('자세히 보기').
     const links = screen.getAllByRole("link");
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute("href", "/privacy#analytics-settings");
-    expect(links[0]).toHaveTextContent("자세히 보기·언제든 변경");
+    expect(links[0]).toHaveTextContent("언제든 변경");
     expect(collectBox()).not.toBeChecked();
     expect(transferBox()).not.toBeChecked();
     expect(screen.queryByText("두 가지 모두 체크해야 통계를 모아요.")).toBeNull(); // 하나만 체크했을 때만 보인다
     expect(save()).toHaveTextContent("이대로 닫기");
     expect(save().className).toBe(rejectAll().className);
     expect(save().parentElement).toBe(rejectAll().parentElement);
-    expect(screen.getAllByRole("button")).toHaveLength(2); // X·나중에·모두 동의 같은 다른 길이 없다
+    // X·나중에·모두 동의 같은 다른 길이 없다(그 밖의 단추는 세부 고지를 펼치는 '자세히 보기'뿐).
+    expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual([
+      "자세히 보기▾",
+      "모두 거부",
+      "이대로 닫기",
+    ]);
   });
 
   it("/privacy에서는 띄우지 않는다(같은 동의를 고르는 통계 설정 카드가 있다). 다른 경로에서는 그대로 뜬다", () => {
@@ -144,7 +149,7 @@ describe("동의 배너", () => {
     expect(CONSENT_COPY.transfer.detail).toContain("1년 보관");
   });
 
-  it("법이 정한 알릴 사항이 휴대폰에서도 접히지 않고 화면에 보인다(#114: 순화는 배치·순서·톤으로만)", () => {
+  it("요약(목적·대표 항목·이전받는 자·국가·시기·방법·보유 기간·불이익 없음·연령)은 접히지 않고 늘 보인다(#114)", () => {
     render(<ConsentBanner />);
     const region = screen.getByRole("region", { name: /이용 통계를 모아도 될까요/ });
     // 제15조②·제22조(수집·이용): 목적, 항목, 보유 기간, 거부권과 불이익 없음 / 제22조의2: 만 14세
@@ -162,13 +167,20 @@ describe("동의 배너", () => {
       "이전 목적": "분석하고",
       "거부 방법": "모두 거부",
     };
+    const notice = document.getElementById(
+      within(region)
+        .getByRole("button", { name: /자세히 보기/ })
+        .getAttribute("aria-controls") ?? "",
+    );
     for (const [what, text] of Object.entries(required)) {
       expect(region, what).toHaveTextContent(text);
       // 접거나(details) 숨긴(hidden·aria-hidden) 곳에 있지 않다.
       // 이 글자를 담은 가장 안쪽 요소(괄호 묶음 span처럼 글자가 여러 요소로 나뉘어도 찾는다).
+      // 접힌 세부 고지(두 번째 층)에 같은 말이 있어도 요약 쪽 글자를 본다.
       const holder = within(region)
         .queryAllByText(
           (_, el) =>
+            !notice?.contains(el) &&
             (el?.textContent ?? "").includes(text) &&
             ![...(el?.children ?? [])].some((child) => (child.textContent ?? "").includes(text)),
         )
@@ -177,6 +189,55 @@ describe("동의 배너", () => {
       expect(holder, what).toBeVisible();
       expect(holder?.closest("details,[hidden],[aria-hidden='true']"), what).toBeNull();
     }
+  });
+
+  it("'자세히 보기'를 한 번 누르면 같은 자리에서 법정 고지 사항 전부가 펼쳐지고, 고른 체크는 그대로다(#116)", async () => {
+    const user = userEvent.setup();
+    render(<ConsentBanner />);
+    const region = screen.getByRole("region", { name: /이용 통계를 모아도 될까요/ });
+    const toggle = within(region).getByRole("button", { name: /자세히 보기/ });
+    const notice = document.getElementById(toggle.getAttribute("aria-controls") ?? "") as HTMLElement;
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(notice).not.toBeVisible();
+    await user.click(transferBox());
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(notice).toBeVisible();
+    expect(region).toContainElement(notice); // 다른 화면으로 가지 않는다
+    expect(transferBox()).toBeChecked();
+    // 제15조②(목적·항목·보유 기간·거부 권리와 불이익), 제28조의8②(이전받는 자와 연락처·국가·항목·시기와 방법·목적과 보유 기간·거부 방법과 효과)
+    for (const text of [
+      "서비스 개선",
+      "기능 이용·오류·속도 기록",
+      "무작위 식별자",
+      "브라우저·운영체제·기기 종류",
+      "화면 크기",
+      "방문한 페이지와 직전 페이지 주소",
+      "접속 IP 주소",
+      "수집한 날부터 1년",
+      "동의하지 않아도 모든 기능을 그대로 쓸 수 있어요",
+      "PostHog, Inc.",
+      "privacy@posthog.com",
+      "미국",
+      "위 수집 항목 전부",
+      "이용할 때마다 암호화된 네트워크",
+      "이용 통계 분석, 수집한 날부터 1년",
+      "통계 설정에서 언제든 철회",
+    ]) {
+      expect(notice, text).toHaveTextContent(text);
+    }
+    await user.click(toggle);
+    expect(notice).not.toBeVisible();
+  });
+
+  it("세부 고지는 두 묶음(수집·이용, 국외 이전)에 법정 고지 사항을 하나씩 적는다", () => {
+    expect(CONSENT_NOTICE.map((group) => [group.title, group.rows.map((row) => row.term)])).toEqual([
+      ["이용 통계 수집·이용", ["목적", "항목", "보유 기간", "거부할 권리"]],
+      [
+        "통계의 국외 이전",
+        ["이전받는 자", "이전되는 국가", "이전되는 항목", "시기와 방법", "목적과 보유 기간", "거부 방법과 효과"],
+      ],
+    ]);
   });
 
   it("안심할 사실이 세부 고지보다 먼저 온다: 질문 → 출발역·이름 없음·불이익 없음 → 체크박스(국외 이전 세부) → 연령·링크", () => {
@@ -188,10 +249,12 @@ describe("동의 배너", () => {
     const transferDetail = document.getElementById(transferBox().getAttribute("aria-describedby") ?? "") as HTMLElement;
     expect(transferDetail).toHaveTextContent(CONSENT_COPY.transfer.detail);
     const link = screen.getByRole("link");
+    const toggle = screen.getByRole("button", { name: /자세히 보기/ });
     expect(precedes(question, reassure)).toBe(true);
     expect(precedes(noPenalty, collectBox())).toBe(true);
     expect(precedes(collectBox(), transferBox())).toBe(true);
-    expect(precedes(transferDetail, link)).toBe(true);
+    expect(precedes(transferDetail, toggle)).toBe(true);
+    expect(precedes(toggle, link)).toBe(true);
     // 질문과 안심 문구, 체크박스 라벨에는 '미국'이 없다(국가는 국외 이전 세부 줄에 이유와 함께 있다).
     for (const text of [
       CONSENT_COPY.question,
@@ -271,7 +334,7 @@ describe("동의 배너", () => {
     expect(region.className).toContain("safe-area-inset-bottom");
   });
 
-  it("키보드로 고를 수 있다(화면 순서대로 Tab: 체크박스 → 링크 → 버튼, Space로 체크, Enter로 저장)", async () => {
+  it("키보드로 고를 수 있다(화면 순서대로 Tab: 체크박스 → 자세히 → 링크 → 버튼, Space로 체크, Enter로 펼치고 저장)", async () => {
     const user = userEvent.setup();
     render(<ConsentBanner />);
     await user.tab();
@@ -280,6 +343,11 @@ describe("동의 배너", () => {
     await user.tab();
     expect(transferBox()).toHaveFocus();
     await user.keyboard(" ");
+    await user.tab();
+    const toggle = screen.getByRole("button", { name: /자세히 보기/ });
+    expect(toggle).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
     await user.tab();
     expect(screen.getByRole("link")).toHaveFocus();
     await user.tab();
@@ -362,6 +430,10 @@ describe("통계 설정(/privacy)", () => {
       "이용할 때마다 암호화해 보내 분석하고", // 시기·방법·목적
       "1년 보관", // 보유 기간
       "하나라도 끄면 바로 통계를 멈추고", // 철회는 한 번에
+      // 세부 고지는 늘 펼쳐 둔다(배너의 '자세히 보기'와 같은 내용): 항목 전체, 이전받는 자의 연락처
+      "브라우저·운영체제·기기 종류, 화면 크기, 방문한 페이지와 직전 페이지 주소",
+      "PostHog, Inc. · 연락처 privacy@posthog.com",
+      "수집한 날부터 1년",
     ]) {
       expect(card).toHaveTextContent(text);
     }
