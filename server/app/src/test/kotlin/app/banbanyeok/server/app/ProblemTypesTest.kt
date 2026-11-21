@@ -24,7 +24,9 @@ class ProblemTypesTest :
                 .parseToJsonElement(
                     Files.readString(Path.of(requireNotNull(System.getProperty("contracts.dir")), "problems.json")),
                 ).jsonObject
-        val problems = table.getValue("problems").jsonArray.map { it.jsonObject }
+        val all = table.getValue("problems").jsonArray.map { it.jsonObject }
+        // 서버가 내는 코드만(웹 프록시가 만드는 `source: proxy` 코드는 서버 표에 없다).
+        val problems = all.filter { it["source"]?.jsonPrimitive?.content != "proxy" }
         val titles =
             problems.associate {
                 it.getValue("code").jsonPrimitive.content to
@@ -37,6 +39,12 @@ class ProblemTypesTest :
 
         it("has the same codes and titles as contracts/problems.json") {
             ProblemTypes.titles shouldBe titles
+        }
+
+        it("keeps the proxy-made codes out of the server table") {
+            val proxy = all.filter { it["source"]?.jsonPrimitive?.content == "proxy" }
+            proxy.map { it.getValue("code").jsonPrimitive.content } shouldBe
+                listOf("UPSTREAM_UNAVAILABLE", "UPSTREAM_NOT_CONFIGURED", "UPSTREAM_TIMEOUT")
         }
 
         it("lists each code once") {

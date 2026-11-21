@@ -116,6 +116,14 @@ export const PROBLEMS = {
       meaning: "유효한 토큰이지만 이 작업을 할 수 없습니다(남의 항목 수정, 방장 전용 작업 등).",
     },
     {
+      code: "CORS_REJECTED",
+      slug: "cors-rejected",
+      status: 403,
+      title: "허용되지 않는 출처",
+      meaning:
+        "웹 허용 출처 목록에 없는 출처에서 온 브라우저 요청이거나, 허용되지 않는 메서드를 물어본 사전 요청(preflight)입니다. 요청의 출처·메서드 값은 응답에 싣지 않습니다.",
+    },
+    {
       code: "ROOM_NOT_FOUND",
       slug: "room-not-found",
       status: 404,
@@ -142,6 +150,14 @@ export const PROBLEMS = {
       status: 405,
       title: "허용되지 않는 메서드",
       meaning: "이 경로에서 쓸 수 없는 HTTP 메서드입니다.",
+    },
+    {
+      code: "NOT_ACCEPTABLE",
+      slug: "not-acceptable",
+      status: 406,
+      title: "요청한 응답 형식이 없음",
+      meaning:
+        "`Accept` 헤더가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받아 주지 않습니다. 이 오류 응답은 `Accept`와 상관없이 항상 `application/problem+json`입니다.",
     },
     {
       code: "ROOM_FULL",
@@ -186,6 +202,13 @@ export const PROBLEMS = {
       meaning: "요청 본문이 16 KiB를 넘습니다.",
     },
     {
+      code: "UNSUPPORTED_MEDIA_TYPE",
+      slug: "unsupported-media-type",
+      status: 415,
+      title: "지원하지 않는 요청 형식",
+      meaning: "본문이 있는 요청의 `Content-Type`이 `application/json`이 아닙니다(본문 문법 오류는 `INVALID_REQUEST`).",
+    },
+    {
       code: "RATE_LIMITED",
       slug: "rate-limited",
       status: 429,
@@ -198,6 +221,27 @@ export const PROBLEMS = {
       status: 500,
       title: "서버 오류",
       meaning: "서버에서 예상하지 못한 오류가 났습니다. 내용은 응답에 싣지 않습니다.",
+    },
+    {
+      code: "UPSTREAM_UNAVAILABLE",
+      slug: "upstream-unavailable",
+      status: 502,
+      title: "서버에 연결하지 못함",
+      meaning: "웹의 `/api` 프록시가 서버에 연결하지 못했습니다. 서버가 내는 오류가 아니라 프록시가 만듭니다.",
+    },
+    {
+      code: "UPSTREAM_NOT_CONFIGURED",
+      slug: "upstream-not-configured",
+      status: 503,
+      title: "서버 주소가 설정되지 않음",
+      meaning: "웹의 `/api` 프록시에 서버 주소가 설정되지 않았습니다(서버 없이 띄운 환경). 프록시가 만듭니다.",
+    },
+    {
+      code: "UPSTREAM_TIMEOUT",
+      slug: "upstream-timeout",
+      status: 504,
+      title: "서버가 응답하지 않음",
+      meaning: "웹의 `/api` 프록시가 15초 안에 서버의 응답을 받지 못했습니다. 프록시가 만듭니다.",
     },
   ],
 } as const;

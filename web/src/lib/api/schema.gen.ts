@@ -303,9 +303,14 @@ export interface components {
          *     예 `.../room-full`)이고 `title`은 코드별 짧은 제목이다. 코드 표는 contracts/problems.json에 있고 같은 내용이 웹의
          *     `/problems`에 사람이 읽는 문서로 있다.
          *
-         *     **호환 필드 `message`**: 옛 웹이 읽던 `{code, message}`와 같이 쓸 수 있게 한동안 `detail`과 같은 값을 함께 보낸다(서버를 먼저
-         *     배포하고 웹이 `detail ?? message`로 읽는다). 다음 정리 때 `message`를 뺀다. 새 코드는 `message`를 읽지 않는다.
-         *     500은 내용 없이 `detail`이 일반 문구다. 서버가 내는 코드:
+         *     **호환 필드 `message`(deprecated, 제거 예정)**: 옛 웹이 읽던 `{code, message}`와 같이 쓸 수 있게 한동안 `detail`과 같은 값을
+         *     함께 보낸다(서버를 먼저 배포하고 웹이 `detail ?? message`로 읽는다). 이 변경이 배포된 뒤 다음 정리 PR에서 `message`를 뺀다.
+         *     새 코드는 `message`를 읽지 않는다. 500은 내용 없이 `detail`이 일반 문구다.
+         *
+         *     **`Accept`와 상관없이 항상 `application/problem+json`**: 오류 응답(406 포함)은 요청의 `Accept`를 다시 협상하지 않고 이 형식으로
+         *     직접 보낸다. 라우트 밖에서 끝나는 응답(CORS 403, 406, 404·405)도 같다. 405는 이 경로가 받는 메서드를 `Allow` 헤더로 알린다.
+         *
+         *     서버가 내는 코드와, 웹 `/api` 프록시가 서버 앞에서 내는 코드(`UPSTREAM_*`, 서버는 내지 않는다):
          *
          *     | 상태 | code | 뜻 |
          *     |---|---|---|
@@ -316,14 +321,20 @@ export interface components {
          *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
+         *     | 403 | `CORS_REJECTED` | 허용 목록에 없는 출처의 브라우저 요청이거나 허용되지 않는 메서드의 사전 요청(preflight). 출처·메서드 값은 응답에 싣지 않는다 |
          *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
-         *     | 405 | `METHOD_NOT_ALLOWED` | 이 경로에서 쓸 수 없는 메서드다 |
+         *     | 405 | `METHOD_NOT_ALLOWED` | 이 경로에서 쓸 수 없는 메서드다(`Allow` 헤더) |
+         *     | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
          *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
          *     | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기를 받지 않았다(`setDecision`). 방을 다시 불러 확인한 뒤 다시 누른다 |
          *     | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
+         *     | 415 | `UNSUPPORTED_MEDIA_TYPE` | 본문이 있는 요청의 `Content-Type`이 `application/json`이 아니다(본문 문법 오류는 `INVALID_REQUEST`) |
          *     | 429 | `RATE_LIMITED` | 속도 제한. `Retry-After`(초)를 따른다 |
          *     | 500 | `INTERNAL_ERROR` | 서버 오류. 내용은 응답에 싣지 않는다 |
+         *     | 502 | `UPSTREAM_UNAVAILABLE` | (웹 프록시) 서버에 연결하지 못했다 |
+         *     | 503 | `UPSTREAM_NOT_CONFIGURED` | (웹 프록시) 서버 주소가 설정되지 않았다 |
+         *     | 504 | `UPSTREAM_TIMEOUT` | (웹 프록시) 15초 안에 서버가 응답하지 않았다 |
          *
          *     출발역에서 갈 수 없는 후보가 있어 공통 후보가 없는 경우는 오류가 아니라 `Result.status = no_common_candidate`다.
          */
@@ -356,7 +367,7 @@ export interface components {
             code: string;
             /**
              * @deprecated
-             * @description 호환용. `detail`과 같은 값이다. 다음 정리 때 뺀다
+             * @description 호환용(deprecated, 제거 예정). `detail`과 같은 값이다. 이 변경이 배포된 뒤 다음 정리 PR에서 뺀다
              */
             message: string;
         };

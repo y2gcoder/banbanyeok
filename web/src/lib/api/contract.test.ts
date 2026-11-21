@@ -10,6 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { mockRecommend } from "../../../mock/recommend";
 import { loadMockData, problem, validateRecommend } from "../../../mock/server";
+import { PROBLEM_DOCS, problemType } from "../problems/problems";
 import { type CreateRoomForm, toCreateRoomRequest, toOutcomeAnswer, toParticipantInput } from "../room/input";
 import { searchStations } from "../stations";
 import { recommendBody } from "./client";
@@ -83,6 +84,32 @@ describe("가짜 서버가 계약을 지킨다", () => {
       const checked = validateRecommend(data, bad);
       expect("code" in checked && errorSchema(problem(400, checked.code, checked.message))).toBe(true);
     }
+  });
+
+  it("가짜 서버가 내는 오류의 type은 열리는 /problems 문서이거나 about:blank다", () => {
+    const known = new Set(PROBLEM_DOCS.map((p) => problemType(p)));
+    const bodies: unknown[] = [
+      { origins: supported.slice(0, 1), mode: "fair" },
+      { origins: ["zzz", "zzy"], mode: "fair" },
+      { origins: ["!", "?"], mode: "fair" },
+      { origins: supported.slice(0, 2), mode: "x" },
+      { origins: supported.slice(0, 2), mode: "favor" },
+      { origins: supported.slice(0, 2), mode: "favor", favorIndex: 3 },
+      { origins: supported.slice(0, 2), mode: "fair", favorIndex: "a" },
+      { origins: supported.slice(0, 2), mode: "fair", nicknames: ["a"] },
+      { origins: supported.slice(0, 2), mode: "fair", timeSlot: "nope" },
+      "not an object",
+    ];
+    const issued = bodies.map((body) => validateRecommend(data, body));
+    const problems = issued.flatMap((checked) =>
+      "code" in checked ? [problem(400, checked.code, checked.message)] : [],
+    );
+    expect(problems).toHaveLength(bodies.length);
+    for (const body of [...problems, problem(404, "NOT_FOUND", "x"), problem(500, "INTERNAL_ERROR", "x")]) {
+      expect(known.has(body.type), `${body.code} → ${body.type}`).toBe(true);
+    }
+    // 실제 서버에 없는 경로는 문서 주소를 약속하지 않는다.
+    expect(problem(501, "NOT_IMPLEMENTED", "x").type).toBe("about:blank");
   });
 
   it("오류 스키마는 Problem Details 필드를 모두 요구하고 옛 {code, message}는 받지 않는다", () => {

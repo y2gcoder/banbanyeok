@@ -10,7 +10,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PROBLEMS } from "../src/lib/problems/problems.gen.ts";
+import { PROBLEM_JSON_TYPE, problemBody } from "../src/lib/problems/problems.ts";
 import { isTimeSlot, type TimeSlot } from "../src/lib/when/time-slot.ts";
 import { type MockData, type MockStation, mockRecommend, type RecommendBody } from "./recommend.ts";
 
@@ -48,15 +48,14 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-/** 계약의 오류 본문(RFC 9457 Problem Details). 가짜 서버는 실제 서버에 없는 코드도 쓰므로 표에 없으면 일반 제목을 준다. */
-export function problem(status: number, code: string, detail: string) {
-  const slug = code.toLowerCase().replaceAll("_", "-");
-  const title = PROBLEMS.items.find((item) => item.code === code)?.title ?? "요청을 처리하지 못함";
-  return { type: `${PROBLEMS.baseUri}${slug}`, title, status, detail, code, message: detail };
-}
+/**
+ * 계약의 오류 본문(RFC 9457 Problem Details). 실제 서버와 대응되는 오류는 계약의 코드를 그대로 쓰므로 type 주소가 /problems 문서로 열린다.
+ * 대응되는 코드가 없는 오류(`NOT_IMPLEMENTED`)만 `type: "about:blank"`다(contract.test.ts가 이 둘만 나오는지 본다).
+ */
+export const problem = problemBody;
 
 function error(res: ServerResponse, status: number, code: string, message: string): void {
-  res.writeHead(status, { "content-type": "application/problem+json; charset=utf-8", "cache-control": "no-store" });
+  res.writeHead(status, { "content-type": PROBLEM_JSON_TYPE, "cache-control": "no-store" });
   res.end(JSON.stringify(problem(status, code, message)));
 }
 
@@ -69,24 +68,27 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
 /** 계약의 요청 스키마 검사(origins 2~4개·역 코드 형식, mode, favorIndex 0~3) + 출발 가능 역 확인. */
 export function validateRecommend(data: MockData, input: unknown): RecommendBody | { code: string; message: string } {
   if (typeof input !== "object" || input === null)
-    return { code: "BAD_REQUEST", message: "본문이 JSON 객체가 아니에요." };
+    return { code: "INVALID_REQUEST", message: "본문이 JSON 객체가 아니에요." };
   const { origins, mode, favorIndex, nicknames, timeSlot } = input as Record<string, unknown>;
   if (!Array.isArray(origins) || origins.length < 2 || origins.length > 4) {
-    return { code: "BAD_ORIGIN_COUNT", message: "출발역은 2~4개여야 해요." };
+    return { code: "INVALID_PEOPLE_COUNT", message: "출발역은 2~4개여야 해요." };
   }
   if (!origins.every((o): o is string => typeof o === "string" && STATION_CODE.test(o))) {
-    return { code: "BAD_STATION_CODE", message: "역 코드 형식이 올바르지 않아요." };
+    return { code: "INVALID_STATION", message: "역 코드 형식이 올바르지 않아요." };
   }
   if (mode !== "fair" && mode !== "fast" && mode !== "favor")
-    return { code: "BAD_MODE", message: "모드가 올바르지 않아요." };
+    return { code: "INVALID_MODE", message: "모드가 올바르지 않아요." };
   if (
     favorIndex !== undefined &&
     (typeof favorIndex !== "number" || !Number.isInteger(favorIndex) || favorIndex < 0 || favorIndex > 3)
   ) {
-    return { code: "BAD_FAVOR_INDEX", message: "배려 대상 위치가 올바르지 않아요." };
+    return { code: "INVALID_REQUEST", message: "배려 대상 위치가 올바르지 않아요." };
   }
-  if (mode === "favor" && (favorIndex === undefined || favorIndex >= origins.length)) {
-    return { code: "BAD_FAVOR_INDEX", message: "배려 대상 위치가 올바르지 않아요." };
+  if (mode === "favor" && favorIndex === undefined) {
+    return { code: "FAVOR_TARGET_REQUIRED", message: "배려할 사람을 정해야 해요." };
+  }
+  if (mode === "favor" && favorIndex !== undefined && favorIndex >= origins.length) {
+    return { code: "FAVOR_TARGET_UNKNOWN", message: "배려 대상 위치가 올바르지 않아요." };
   }
   if (
     nicknames !== undefined &&
@@ -100,7 +102,7 @@ export function validateRecommend(data: MockData, input: unknown): RecommendBody
     return { code: "INVALID_TIME_SLOT", message: "timeSlot이 올바르지 않아요." };
   }
   const unknown = origins.find((o) => !data.origins.has(o));
-  if (unknown) return { code: "UNSUPPORTED_ORIGIN", message: "아직 수도권 지하철역만 계산할 수 있어요." };
+  if (unknown) return { code: "INVALID_STATION", message: "아직 수도권 지하철역만 계산할 수 있어요." };
   return {
     origins,
     mode,
@@ -131,7 +133,7 @@ export function createMockServer(data: MockData = loadMockData()): Server {
         try {
           body = await readJson(req);
         } catch {
-          error(res, 400, "BAD_REQUEST", "본문이 JSON이 아니에요.");
+          error(res, 400, "INVALID_REQUEST", "본문이 JSON이 아니에요.");
           return;
         }
         const checked = validateRecommend(data, body);
@@ -147,7 +149,7 @@ export function createMockServer(data: MockData = loadMockData()): Server {
     };
     handle().catch((cause: unknown) => {
       console.error(cause);
-      error(res, 500, "INTERNAL", "가짜 서버 오류");
+      error(res, 500, "INTERNAL_ERROR", "가짜 서버 오류");
     });
   });
 }

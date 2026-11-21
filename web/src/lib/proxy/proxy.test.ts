@@ -181,17 +181,26 @@ describe("proxyApiRequest", () => {
     expect(await response?.json()).toEqual({ code: "NOT_FOUND", message: "찾을 수 없습니다" });
   });
 
-  it("서버 주소가 없으면 503 JSON 오류", async () => {
+  it("서버 주소가 없으면 503 problem+json 오류", async () => {
     const response = await proxyApiRequest(new Request("https://web.test/api/healthz"), {
       origin: "",
       secret: "s",
       fetchImpl: capture().fetchImpl,
     });
     expect(response?.status).toBe(503);
-    expect(await response?.json()).toMatchObject({ code: "UPSTREAM_NOT_CONFIGURED" });
+    expect(response?.headers.get("content-type")).toBe("application/problem+json; charset=utf-8");
+    expect(response?.headers.get("cache-control")).toBe("no-store");
+    expect(await response?.json()).toEqual({
+      type: "https://banbanyeok.app/problems/upstream-not-configured",
+      title: "서버 주소가 설정되지 않음",
+      status: 503,
+      detail: "서버 주소가 설정되지 않았어요.",
+      code: "UPSTREAM_NOT_CONFIGURED",
+      message: "서버 주소가 설정되지 않았어요.",
+    });
   });
 
-  it("연결 실패는 502, 시간 초과는 504(계약의 오류 형식)", async () => {
+  it("연결 실패는 502, 시간 초과는 504(서버와 같은 problem+json)", async () => {
     const down = async () => {
       throw new TypeError("fetch failed");
     };
@@ -201,10 +210,20 @@ describe("proxyApiRequest", () => {
     const request = () => new Request("https://web.test/api/v1/recommend", { method: "POST", body: "{}" });
     const unavailable = await proxyApiRequest(request(), { origin: ORIGIN, secret: "s", fetchImpl: down });
     expect(unavailable?.status).toBe(502);
-    expect(await unavailable?.json()).toMatchObject({ code: "UPSTREAM_UNAVAILABLE" });
+    expect(unavailable?.headers.get("content-type")).toBe("application/problem+json; charset=utf-8");
+    expect(await unavailable?.json()).toMatchObject({
+      type: "https://banbanyeok.app/problems/upstream-unavailable",
+      status: 502,
+      code: "UPSTREAM_UNAVAILABLE",
+    });
     const timeout = await proxyApiRequest(request(), { origin: ORIGIN, secret: "s", fetchImpl: slow });
     expect(timeout?.status).toBe(504);
-    expect(await timeout?.json()).toMatchObject({ code: "UPSTREAM_TIMEOUT" });
+    expect(timeout?.headers.get("content-type")).toBe("application/problem+json; charset=utf-8");
+    expect(await timeout?.json()).toMatchObject({
+      type: "https://banbanyeok.app/problems/upstream-timeout",
+      status: 504,
+      code: "UPSTREAM_TIMEOUT",
+    });
   });
 
   it("서버가 리다이렉트해도 따라가지 않는다", async () => {

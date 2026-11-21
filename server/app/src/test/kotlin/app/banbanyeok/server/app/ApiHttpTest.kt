@@ -22,10 +22,14 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.slot
@@ -74,7 +78,7 @@ private fun errorCode(body: String) =
         .jsonPrimitive.content
 
 /** 오류 응답은 `application/problem+json`이고 본문이 정확히 이 모양이다(`message`는 `detail`과 같은 호환 필드). */
-private suspend fun io.ktor.client.statement.HttpResponse.shouldBeProblem(
+internal suspend fun io.ktor.client.statement.HttpResponse.shouldBeProblem(
     status: HttpStatusCode,
     code: String,
     title: String,
@@ -350,14 +354,52 @@ class ApiHttpTest :
                 }
             }
 
-            it("answers a known path with the wrong method with 405 METHOD_NOT_ALLOWED") {
+            it("answers a known path with the wrong method with 405 METHOD_NOT_ALLOWED and an Allow header") {
                 withMockedApi {
-                    client.json(HttpMethod.Delete, "/v1/manifest").shouldBeProblem(
+                    val response = client.json(HttpMethod.Delete, "/v1/manifest")
+                    response.shouldBeProblem(
                         HttpStatusCode.MethodNotAllowed,
                         "METHOD_NOT_ALLOWED",
                         "허용되지 않는 메서드",
                         "허용되지 않는 메서드입니다",
                     )
+                    response.headers[HttpHeaders.Allow] shouldBe "GET"
+                    client.json(HttpMethod.Post, "/v1/healthz").headers[HttpHeaders.Allow] shouldBe "GET"
+                    client.json(HttpMethod.Get, "/v1/rooms").headers[HttpHeaders.Allow] shouldBe "POST"
+                }
+            }
+
+            it("answers a body that is not application/json with 415 UNSUPPORTED_MEDIA_TYPE, not 500") {
+                withMockedApi {
+                    val response =
+                        client.request("/v1/recommend") {
+                            method = HttpMethod.Post
+                            contentType(ContentType.Text.Plain)
+                            setBody("""{"origins":["aaa","bbb"],"mode":"fair"}""")
+                        }
+                    response.shouldBeProblem(
+                        HttpStatusCode.UnsupportedMediaType,
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "지원하지 않는 요청 형식",
+                        "요청 본문의 Content-Type은 application/json이어야 합니다",
+                    )
+                }
+            }
+
+            it("answers an Accept the server cannot satisfy with 406 NOT_ACCEPTABLE as problem+json") {
+                withMockedApi(testConfig(mapOf("ANON_ENABLED" to "true"))) { services ->
+                    coEvery { services.anon.issue() } returns IssuedAnonUser("u_abc", "device-token")
+                    // 정상 요청 + 오류 형식만 받겠다는 Accept, 그리고 아무 표현도 받지 못하는 Accept 둘 다 같은 오류다.
+                    for (accept in listOf("application/problem+json", "text/plain")) {
+                        client
+                            .json(HttpMethod.Post, "/v1/anon") { headers.append(HttpHeaders.Accept, accept) }
+                            .shouldBeProblem(
+                                HttpStatusCode.NotAcceptable,
+                                "NOT_ACCEPTABLE",
+                                "요청한 응답 형식이 없음",
+                                "요청한 응답 형식(Accept)으로 답할 수 없습니다",
+                            )
+                    }
                 }
             }
         }

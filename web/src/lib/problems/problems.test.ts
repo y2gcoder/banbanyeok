@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findProblem, PROBLEM_DOCS, problemType } from "./problems";
+import { findProblem, PROBLEM_DOCS, problemBody, problemType } from "./problems";
 
 describe("오류 코드 문서", () => {
   it("type 주소의 slug는 code의 kebab-case이고 겹치지 않는다", () => {
@@ -24,11 +24,29 @@ describe("오류 코드 문서", () => {
       "ROOM_CHANGED",
       "RATE_LIMITED",
       "INTERNAL_ERROR",
+      "CORS_REJECTED",
+      "NOT_ACCEPTABLE",
+      "UNSUPPORTED_MEDIA_TYPE",
+      "UPSTREAM_UNAVAILABLE",
+      "UPSTREAM_NOT_CONFIGURED",
+      "UPSTREAM_TIMEOUT",
     ]) {
       expect(
         PROBLEM_DOCS.some((p) => p.code === code),
         code,
       ).toBe(true);
     }
+  });
+
+  it("웹 쪽이 만드는 오류 본문: 표의 코드는 표의 type·제목, 없는 코드는 about:blank", () => {
+    expect(problemBody(502, "UPSTREAM_UNAVAILABLE", "연결하지 못했어요")).toEqual({
+      type: "https://banbanyeok.app/problems/upstream-unavailable",
+      title: "서버에 연결하지 못함",
+      status: 502,
+      detail: "연결하지 못했어요",
+      code: "UPSTREAM_UNAVAILABLE",
+      message: "연결하지 못했어요",
+    });
+    expect(problemBody(501, "NOT_IMPLEMENTED", "x")).toMatchObject({ type: "about:blank", title: "Not Implemented" });
   });
 });
