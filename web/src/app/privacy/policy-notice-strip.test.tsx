@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PolicyNoticeStrip } from "./policy-notice-strip";
+import { PolicyChangeStrip, PolicyNoticeStrip } from "./policy-notice-strip";
 import { FIXTURE_UPCOMING, KST_BOUNDARIES } from "./upcoming.fixture";
 
 const { noticeFrom, effectiveDate } = FIXTURE_UPCOMING;
@@ -42,5 +42,36 @@ describe("첫 화면 공지 띠", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(KST_BOUNDARIES.noticeStart);
     expect(renderToString(<PolicyNoticeStrip noticeFrom={noticeFrom} effectiveDate={effectiveDate} />)).toBe("");
+  });
+});
+
+describe("첫 화면 중요한 변경 안내 띠", () => {
+  // 시험용 안내 기간: 2026-12-01 ~ 2026-12-07(한국 시간).
+  const since = "2026-12-01";
+  const until = "2026-12-07";
+  const at = (iso: string) => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(iso));
+    return render(<PolicyChangeStrip since={since} until={until} />);
+  };
+
+  it("시행일 0시(KST)부터 끝나는 날 24시까지만 보이고, /privacy 안내 상자로 잇는다", () => {
+    expect(at("2026-11-30T14:59:59Z").container).toBeEmptyDOMElement();
+    cleanup();
+    at("2026-11-30T15:00:00Z");
+    expect(screen.getByText("개인정보 처리방침이 12월 1일부터 바뀌었습니다")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "자세히" })).toHaveAttribute("href", "/privacy#policy-change");
+    cleanup();
+    at("2026-12-07T14:59:59Z");
+    expect(screen.getByRole("link", { name: "자세히" })).toBeInTheDocument();
+    cleanup();
+    expect(at("2026-12-07T15:00:00Z").container).toBeEmptyDOMElement();
+  });
+
+  it("서버 렌더 결과(정적 HTML)에는 안내가 없다", async () => {
+    const { renderToString } = await import("react-dom/server");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-12-02T00:00:00Z"));
+    expect(renderToString(<PolicyChangeStrip since={since} until={until} />)).toBe("");
   });
 });

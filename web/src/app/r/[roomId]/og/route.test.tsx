@@ -58,6 +58,20 @@ describe("/r/[roomId]/og", () => {
     expect(loadRoomPreview).toHaveBeenCalledWith(ROOM, expect.any(AbortSignal));
   });
 
+  it("막차 표를 아직 읽는 중(lastTrainPending)이면 방 카드를 짧게만 캐시한다(막차 줄이 붙은 카드로 곧 바뀐다)", async () => {
+    const { room, dataVersion, basis, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
+    const pending: RoomPreview[] = [
+      { ...DECIDED, lastTrainPending: true },
+      { stage: "result", room, dataVersion, basis, station, lastTrainPending: true },
+    ];
+    for (const preview of pending) {
+      loadRoomPreview.mockResolvedValue(preview);
+      const response = await get("?sv=9&dv=20261115.8");
+      expect(response.headers.get("content-type"), preview.stage).toBe("image/png");
+      expect(response.headers.get("cache-control"), preview.stage).toBe("public, max-age=60, s-maxage=60");
+    }
+  });
+
   it("그림 버전(iv)은 캐시를 비켜 가는 값일 뿐이다: 있든 없든, 옛 값이든 지금 방 카드를 준다", async () => {
     loadRoomPreview.mockResolvedValue(DECIDED);
     // 배포 전에 열어 둔 화면은 옛 iv(또는 iv 없는) 주소로 공유한다. 그 메시지도 기본 그림이 아니라 방 카드를 받는다.

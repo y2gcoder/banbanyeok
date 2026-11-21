@@ -164,6 +164,10 @@ export function SharedCard({ data }: { data: SharedCardData }) {
             {lines.main ? <span style={{ fontSize: 40, color: OG_COLORS.inkSoft }}>{lines.main}</span> : null}
             {/* 한국어도 낱말 단위로 줄을 바꾼다("저녁"이 "저/녁"으로 갈리지 않게). */}
             <span style={{ fontSize: 30, color: OG_COLORS.muted, wordBreak: "keep-all" }}>{lines.sub}</span>
+            {/* 지도 한가운데 비교(#68 2단계): 방 미리보기 1위 단계에서 조건을 채울 때만. */}
+            {data.middleLine ? (
+              <span style={{ fontSize: 30, color: OG_COLORS.inkSoft, wordBreak: "keep-all" }}>{data.middleLine}</span>
+            ) : null}
           </div>
         </div>
         <Lines people={data.people} />

@@ -126,7 +126,7 @@ const SHARED: Drawn = {
 };
 
 /**
- * 방 미리보기 그림 표본(결과·정한 역·4명·새벽 약속)을 서버 미리보기에서 그림 값까지 만들어 그린 마크업. 실제 경로와 같이 기본값으로
+ * 방 미리보기 그림 표본(결과·정한 역·4명·새벽 약속·지도 한가운데 비교)을 서버 미리보기에서 그림 값까지 만들어 그린 마크업. 실제 경로와 같이 기본값으로
  * 그린다: 막차 줄 스위치(`ROOM_PREVIEW_LAST_TRAIN`)가 꺼져 있으면 막차 줄 없는 그림이 버전의 기준이고, 켜면 마크업이 달라져 버전이 바뀐다.
  */
 function renderedRoomSamples(): string[] {
@@ -160,6 +160,10 @@ const ROOM: Drawn = {
     "lastTrain",
     "lastTrainBy",
     "nextDay",
+    "middleLead",
+    "middleIf",
+    "middleMore",
+    "middleLongest",
   ],
   constants: { OG_NAME_MAX, ROOM_PREVIEW_LAST_TRAIN },
   rendered: renderedRoomSamples,
@@ -168,6 +172,7 @@ const ROOM: Drawn = {
     "src/components/og/shared-card.tsx",
     "src/components/og/frame.tsx",
     "src/lib/room/share-copy.ts",
+    "src/lib/result/map-middle.ts",
     "src/lib/when/dates.ts",
     "src/lib/copy/og-coverage.ts",
     "src/lib/result/last-train.ts",

@@ -52,6 +52,11 @@ export type SharedCardData = {
   modeLine: string;
   /** 왼쪽 아래 두 줄을 직접 정한다(방에서 정한 역: "민수가 정했어요" / "11월 21일 (토) 저녁"). 없으면 최장·차이·기준. */
   footer?: { main: string; sub: string };
+  /**
+   * 방 미리보기의 "지도 한가운데였다면" 비교 문장(#68 2단계). 왼쪽 아래 맨 끝 줄에 둔다. 서버는 출발역을 숨긴 사람이 있으면 값을 주지
+   * 않으므로 숨긴 사람이 있는 방에는 이 줄이 없다. 무상태 링크는 숫자판(`ScoreboardCard`)의 `compareLine`을 쓴다.
+   */
+  middleLine?: string;
 };
 
 export type SharedPreview = { title: string; description: string };

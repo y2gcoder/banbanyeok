@@ -1,4 +1,4 @@
-import type { Block, Policy, UpcomingPolicy } from "./policy";
+import type { Block, ChangeNotice, Policy, UpcomingPolicy } from "./policy";
 import { changesTable, koreanDate } from "./schedule";
 
 const cell = (text: string) => text.replaceAll("|", "\\|");
@@ -33,11 +33,28 @@ function upcomingSection(upcoming: UpcomingPolicy): string[] {
   ];
 }
 
+function changeSection(change: ChangeNotice): string[] {
+  return [
+    "## 최근 중요한 변경",
+    [
+      `- 시행일: ${koreanDate(change.since, { year: true })}`,
+      `- 화면 안내: ${koreanDate(change.since, { year: true })}부터 ${koreanDate(change.until, { year: true })}까지`,
+      `- 바뀌기 전 판: [${change.previous.label}](${change.previous.url})`,
+    ].join("\n"),
+    change.summary,
+    block(changesTable(change.rows)),
+  ];
+}
+
 /**
  * docs/legal/privacy-policy.md 본문. 페이지와 같은 원본(policy.ts)에서 만든다. 항상 지금 시행 중인 판(POLICY)이고,
- * 예정된 다음 판이 있으면 끝에 '예정된 변경' 절을 붙인다. 오늘 날짜에 따라 달라지지 않는다.
+ * 중요한 변경 안내가 있으면 끝에 '최근 중요한 변경' 절을, 예정된 다음 판이 있으면 '예정된 변경' 절을 붙인다. 오늘 날짜에 따라 달라지지 않는다.
  */
-export function policyMarkdown(policy: Policy, upcoming: UpcomingPolicy | null = null): string {
+export function policyMarkdown(
+  policy: Policy,
+  upcoming: UpcomingPolicy | null = null,
+  change: ChangeNotice | null = null,
+): string {
   const parts = [
     `# ${policy.title}`,
     "<!-- 이 파일은 web/src/app/privacy/policy.ts에서 만든다. 직접 고치지 말고 policy.ts를 고친 뒤 `UPDATE_PRIVACY_MD=1 pnpm test src/app/privacy`를 실행한다. -->",
@@ -47,6 +64,7 @@ export function policyMarkdown(policy: Policy, upcoming: UpcomingPolicy | null =
     "## 목차",
     policy.sections.map((s, i) => `${i + 1}. ${s.title.replace(/^\d+\.\s*/, "")}`).join("\n"),
     ...policy.sections.flatMap((s) => [`## ${s.title}`, ...s.blocks.map(block)]),
+    ...(change ? changeSection(change) : []),
     ...(upcoming ? upcomingSection(upcoming) : []),
   ];
   return `${parts.join("\n\n")}\n`;

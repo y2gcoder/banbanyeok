@@ -1,11 +1,11 @@
-import type { Block, Policy, PolicyChange, UpcomingPolicy } from "./policy";
+import type { Block, ChangeNotice, Policy, PolicyChange, UpcomingPolicy } from "./policy";
 
 /**
  * 처리방침 예정 판의 날짜 판정. 모두 한국 시간(KST, 일광절약 없음) 날짜(YYYY-MM-DD)로 견준다.
  * 시계(`Date`)는 호출하는 쪽이 넣는다: 서버는 요청 때, 첫 화면의 공지 띠는 브라우저에서 읽는다.
  */
 
-/** 처리방침 15항의 약속: 설명 보완·표현 정리와 이용 통계 재동의가 아닌 변경은 시행 7일 전부터 알린다. */
+/** 예정 판(`UpcomingPolicy`)을 쓸 때 공지 기간의 최소 일수. 2026-11-22 시행판부터 15항은 미리 알리기를 요구하지 않는다(장치만 남겨 둠). */
 export const MIN_NOTICE_DAYS = 7;
 
 const DAY_MS = 86_400_000;
@@ -78,5 +78,37 @@ export function upcomingProblems(upcoming: UpcomingPolicy | null): string[] {
     if ([item, before, after].some((text) => text.trim() === "")) problems.push(`비교 행 '${item}'에 빈 칸이 있습니다`);
   }
   if (upcoming.policy.sections.length === 0) problems.push("다음 판 본문이 비어 있습니다");
+  return problems;
+}
+
+/** 중요한 변경 안내의 기간. */
+export type ChangeNoticeWindow = Pick<ChangeNotice, "since" | "until">;
+
+/** 오늘(한국 시간)이 안내 기간(`since` 0시 ~ `until` 24시)이면 true. */
+export function changeNoticeShown({ since, until }: ChangeNoticeWindow, today: string): boolean {
+  return today >= since && today <= until;
+}
+
+/** 지금 /privacy 맨 위에 보여 줄 중요한 변경 안내. 기간 밖이면 null(재배포 없이 사라진다). */
+export function resolveChangeNotice(notice: ChangeNotice | null, now: Date): ChangeNotice | null {
+  return notice && changeNoticeShown(notice, kstDate(now)) ? notice : null;
+}
+
+/** 안내 데이터가 약속(15항: 시행일부터 `days`일)을 지키는지. 문제마다 한 줄. 없으면 빈 배열(테스트가 실제 데이터에 쓴다). */
+export function changeNoticeProblems(notice: ChangeNotice | null, days: number): string[] {
+  if (!notice) return [];
+  const problems: string[] = [];
+  const since = dayNumber(notice.since);
+  const until = dayNumber(notice.until);
+  if (since === null) problems.push(`시작일 ${notice.since}은 실제 날짜(YYYY-MM-DD)가 아닙니다`);
+  if (until === null) problems.push(`끝나는 날 ${notice.until}은 실제 날짜(YYYY-MM-DD)가 아닙니다`);
+  if (since !== null && until !== null && until - since + 1 !== days) {
+    problems.push(`안내 기간은 시행일부터 ${days}일이어야 합니다(지금 ${until - since + 1}일)`);
+  }
+  if (notice.summary.trim() === "") problems.push("요약이 비어 있습니다");
+  if (notice.rows.length === 0) problems.push("바뀌기 전과 후를 견주는 행이 없습니다");
+  for (const { item, before, after } of notice.rows) {
+    if ([item, before, after].some((text) => text.trim() === "")) problems.push(`비교 행 '${item}'에 빈 칸이 있습니다`);
+  }
   return problems;
 }

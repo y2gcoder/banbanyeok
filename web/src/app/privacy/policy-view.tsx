@@ -1,18 +1,47 @@
+import { Fragment, type ReactNode } from "react";
 import { Wordmark } from "@/components/common/wordmark";
 import { ConsentSettings } from "@/components/consent/consent-settings";
 import { parenSafe } from "@/lib/text/paren-safe";
-import type { Block, UpcomingPolicy } from "./policy";
+import type { Block, ChangeNotice, UpcomingPolicy } from "./policy";
 import { changesTable, koreanDate, type ResolvedPolicy } from "./schedule";
+
+/** 본문의 md 링크 `[이름](https://…)`. policy.ts의 `link`가 만든다(이전 판 목록 등). */
+const LINK = /\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g;
+
+/** 글 속 md 링크를 눌러 열 수 있는 링크로 바꾼다. 나머지 글은 `parenSafe` 그대로. md(markdown.ts)는 링크를 그대로 둔다. */
+function linkedText(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(LINK)) {
+    const [whole, label, href] = match;
+    if (match.index > last)
+      parts.push(<Fragment key={`t${last}`}>{parenSafe(text.slice(last, match.index))}</Fragment>);
+    parts.push(
+      // 목차 링크처럼 누르기 좋은 높이(44px)를 준다. 이전 판 목록은 한 줄에 링크 하나라 서로 겹치지 않는다.
+      <a
+        key={`a${match.index}`}
+        href={href}
+        className="inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-4"
+      >
+        <span>{parenSafe(label)}</span>
+      </a>,
+    );
+    last = match.index + whole.length;
+  }
+  if (last === 0) return parenSafe(text);
+  if (last < text.length) parts.push(<Fragment key={`t${last}`}>{parenSafe(text.slice(last))}</Fragment>);
+  return parts;
+}
 
 function PolicyBlock({ block }: { block: Block }) {
   switch (block.kind) {
     case "p":
-      return <p>{parenSafe(block.text)}</p>;
+      return <p>{linkedText(block.text)}</p>;
     case "list":
       return (
         <ul className="flex list-disc flex-col gap-1.5 pl-5">
           {block.items.map((item) => (
-            <li key={item}>{parenSafe(item)}</li>
+            <li key={item}>{linkedText(item)}</li>
           ))}
         </ul>
       );
@@ -87,7 +116,7 @@ function blockKey(block: Block): string {
  * 처리방침이 곧 바뀐다는 공지 상자(공지 기간에만). 시행일, 요약, 바뀌기 전과 후를 견주는 표를 싣는다.
  * 첫 화면의 공지 띠(policy-notice-strip.tsx)가 이 상자(#policy-notice)로 연결한다.
  */
-function ChangeNotice({ notice }: { notice: UpcomingPolicy }) {
+function UpcomingNotice({ notice }: { notice: UpcomingPolicy }) {
   const effective = koreanDate(notice.effectiveDate, { year: true });
   return (
     <section
@@ -105,7 +134,30 @@ function ChangeNotice({ notice }: { notice: UpcomingPolicy }) {
   );
 }
 
-export function PolicyView({ policy, notice }: ResolvedPolicy) {
+/**
+ * 중요한 변경의 안내 상자(시행일부터 15항이 약속한 기간에만). 시행일, 요약, 바뀌기 전과 후를 견주는 표, 직전 판 링크를 싣는다.
+ * 첫 화면의 한 줄 안내(policy-notice-strip.tsx의 `PolicyChangeStrip`)가 이 상자(#policy-change)로 연결한다.
+ */
+function ChangeNoticeBox({ change }: { change: ChangeNotice }) {
+  const since = koreanDate(change.since, { year: true });
+  return (
+    <section
+      aria-labelledby="policy-change-title"
+      id="policy-change"
+      className="flex scroll-mt-4 flex-col gap-3 rounded-2xl border-2 border-ink bg-surface p-5"
+    >
+      <h2 id="policy-change-title" className="text-[18px] leading-snug font-bold text-ink">
+        {parenSafe(`개인정보 처리방침이 ${since}부터 바뀌었습니다`)}
+      </h2>
+      <p>{parenSafe(change.summary)}</p>
+      <PolicyTable block={changesTable(change.rows)} />
+      <p>{linkedText(`바뀌기 전 판: [${change.previous.label}](${change.previous.url})`)}</p>
+      <p>아래가 지금 시행 중인 처리방침입니다. 바뀐 내용과 이유는 15항의 변경 이력에도 있습니다.</p>
+    </section>
+  );
+}
+
+export function PolicyView({ policy, notice, change = null }: ResolvedPolicy & { change?: ChangeNotice | null }) {
   return (
     // 폰·태블릿은 한 칸(읽기 폭 최대 42rem). 넓은 화면(lg)에서는 목차가 왼쪽 칸에 붙어 있고 본문이 오른쪽 칸에 온다.
     // 문서 순서는 그대로(요약·설정 → 목차 → 본문)이고 칸만 정한다.
@@ -114,7 +166,8 @@ export function PolicyView({ policy, notice }: ResolvedPolicy) {
         <Wordmark />
       </header>
       <div className="flex min-w-0 flex-col gap-8 lg:col-start-2">
-        {notice ? <ChangeNotice notice={notice} /> : null}
+        {change ? <ChangeNoticeBox change={change} /> : null}
+        {notice ? <UpcomingNotice notice={notice} /> : null}
         <section aria-labelledby="privacy-title" className="flex flex-col gap-4">
           <h1 id="privacy-title" className="text-[28px] leading-tight font-extrabold tracking-[-0.02em] text-ink">
             {policy.title}

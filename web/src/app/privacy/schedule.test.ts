@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { POLICY, UPCOMING_POLICY } from "./policy";
 import {
+  changeNoticeProblems,
+  changeNoticeShown,
   changesTable,
   koreanDate,
   kstDate,
   MIN_NOTICE_DAYS,
   noticePhase,
+  resolveChangeNotice,
   resolvePolicy,
   upcomingProblems,
 } from "./schedule";
@@ -111,5 +114,35 @@ describe("upcomingProblems", () => {
     expect(
       upcomingProblems({ ...FIXTURE_UPCOMING, changes: [{ item: "보관 기간", before: "", after: "14일" }] }),
     ).toEqual([expect.stringContaining("빈 칸")]);
+  });
+});
+
+describe("중요한 변경 안내(15항)", () => {
+  const notice = {
+    since: "2026-12-01",
+    until: "2026-12-07",
+    summary: "보관 기간을 바꿨습니다.",
+    rows: [{ item: "보관 기간 (4항)", before: "7일", after: "14일" }],
+    previous: { label: "이전 판", url: "https://example.org/old.md" },
+  };
+
+  it("시행일부터 끝나는 날까지(양쪽 포함, 한국 시간)만 보인다", () => {
+    expect(changeNoticeShown(notice, "2026-11-30")).toBe(false);
+    expect(changeNoticeShown(notice, "2026-12-01")).toBe(true);
+    expect(changeNoticeShown(notice, "2026-12-07")).toBe(true);
+    expect(changeNoticeShown(notice, "2026-12-08")).toBe(false);
+    expect(resolveChangeNotice(notice, new Date("2026-11-30T15:00:00Z"))).toBe(notice);
+    expect(resolveChangeNotice(notice, new Date("2026-12-07T15:00:00Z"))).toBeNull();
+    expect(resolveChangeNotice(null, new Date("2026-12-02T00:00:00Z"))).toBeNull();
+  });
+
+  it("약속한 일수·빈 칸·실제 날짜를 검사한다", () => {
+    expect(changeNoticeProblems(notice, 7)).toEqual([]);
+    expect(changeNoticeProblems(null, 7)).toEqual([]);
+    expect(changeNoticeProblems({ ...notice, until: "2026-12-05" }, 7)).toEqual([
+      "안내 기간은 시행일부터 7일이어야 합니다(지금 5일)",
+    ]);
+    expect(changeNoticeProblems({ ...notice, since: "2026-02-30" }, 7)[0]).toContain("실제 날짜");
+    expect(changeNoticeProblems({ ...notice, rows: [] }, 7)).toContain("바뀌기 전과 후를 견주는 행이 없습니다");
   });
 });

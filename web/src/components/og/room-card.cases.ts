@@ -1,7 +1,8 @@
 /**
  * 방 미리보기 그림(`/r/<id>/og`, `SharedCard`)의 표본. 그리기 검사(`og-render.test.tsx`)와 그림 버전 해시(`og-image-version.test.ts`)가
  * 같이 쓴다: 여기 값을 바꾸면 해시가 달라지므로 `ROOM_OG_IMAGE_VERSION`을 함께 올린다. 입력은 서버 미리보기(`RoomPreview`) 그대로다.
- * `lastTrains`는 막차 줄 스위치(`ROOM_PREVIEW_LAST_TRAIN`)를 **켰을 때** 사람마다 그려지는 줄이다. 꺼진 지금은 모두 줄이 없다.
+ * `lastTrains`는 막차 줄 스위치(`ROOM_PREVIEW_LAST_TRAIN`, 지금 켜져 있다)를 켰을 때 사람마다 그려지는 줄이다. `middle`은 그림 맨 아래의
+ * "지도 한가운데였다면" 비교 문장(#68 2단계)이고, 없으면 null이다.
  */
 import type { RoomPreview } from "@/lib/api/types";
 
@@ -70,7 +71,12 @@ function sindorim(directMinute: number): Result["station"] {
   };
 }
 
-export const ROOM_CASES: { id: string; preview: RoomPreview; lastTrains: (string | null)[] }[] = [
+export const ROOM_CASES: {
+  id: string;
+  preview: RoomPreview;
+  lastTrains: (string | null)[];
+  middle?: string | null;
+}[] = [
   {
     id: "room-result-favor",
     preview: {
@@ -139,5 +145,69 @@ export const ROOM_CASES: { id: string; preview: RoomPreview; lastTrains: (string
       station: sindorim(1407),
     },
     lastTrains: ["막차 23:27", "늦어도 23:00"],
+  },
+  {
+    // 지도 한가운데(#68 2단계): 홍대입구·잠실 방(공평, 아무도 숨기지 않음). 1위 신당(21분·22분), 지도 한가운데 한강진(23분·36분).
+    id: "room-result-middle",
+    preview: {
+      stage: "result",
+      room: { ...ROOM, participantCount: 2 },
+      dataVersion: "1",
+      basis: { mode: "fair", favorLabel: null },
+      station: {
+        stationCode: "7gf",
+        stationName: "신당",
+        times: [
+          {
+            label: "민수",
+            seconds: 1271,
+            lastTrain: { kind: "direct", minute: 1447, boundFor: { stationCode: "ryf", stationName: "홍대입구" } },
+          },
+          { label: "잠실", seconds: 1301, lastTrain: { kind: "check" } },
+        ],
+      },
+      mapMiddle: {
+        stationCode: "j7v",
+        stationName: "한강진",
+        times: [
+          { label: "민수", seconds: 1412 },
+          { label: "잠실", seconds: 2159 },
+        ],
+      },
+    },
+    lastTrains: ["막차 다음 날 00:07", null],
+    middle: "지도 한가운데인 한강진역이면 잠실은 14분 더 걸려요",
+  },
+  {
+    // 가장 긴 비교 문장: 4명, 들어올 수 없는 방, 평일 낮이 아닌 기준, 긴 역 이름, 이름이 6자를 넘어 "가장 오래 걸리는 사람은".
+    id: "room-four-middle-long",
+    preview: {
+      stage: "result",
+      room: { ...ROOM, participantCount: 4, canJoin: false },
+      dataVersion: "1",
+      basis: { mode: "fair", favorLabel: null },
+      station: {
+        stationCode: "g0m",
+        stationName: "금정",
+        times: [
+          { label: "강남", seconds: 2340, lastTrain: { kind: "margin", minute: 1449, transfer: true } },
+          { label: "지연이와 함께 오는 아주 긴 이름", seconds: 2400 },
+          { label: "고색", seconds: 1500, lastTrain: { kind: "check" } },
+          { label: "홍대입구", seconds: 2520, lastTrain: { kind: "margin", minute: 1423, transfer: true } },
+        ],
+      },
+      mapMiddle: {
+        stationCode: "s1q",
+        stationName: "동대문역사문화공원",
+        times: [
+          { label: "강남", seconds: 1500 },
+          { label: "지연이와 함께 오는 아주 긴 이름", seconds: 3600 },
+          { label: "고색", seconds: 3300 },
+          { label: "홍대입구", seconds: 1400 },
+        ],
+      },
+    },
+    lastTrains: ["늦어도 다음 날 00:00", null, null, "늦어도 23:40"],
+    middle: "지도 한가운데인 동대문역사문화공원역이면 가장 오래 걸리는 사람은 20분 더 걸려요",
   },
 ];
