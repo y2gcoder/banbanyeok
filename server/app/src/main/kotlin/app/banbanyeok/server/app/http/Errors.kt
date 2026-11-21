@@ -5,8 +5,10 @@ import app.banbanyeok.server.recommendation.RecommendationError
 import app.banbanyeok.server.recommendation.RecommendationException
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.RoomException
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.withCharset
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
@@ -14,7 +16,7 @@ import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.PayloadTooLargeException
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.header
-import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import kotlinx.serialization.SerializationException
 import org.slf4j.LoggerFactory
 
@@ -35,10 +37,16 @@ suspend fun ApplicationCall.respondError(
     message: String,
 ) {
     if (status == HttpStatusCode.Unauthorized) response.header(HttpHeaders.WWWAuthenticate, "Bearer")
-    respond(status, ErrorDto(code, message))
+    val problem = ProblemDto(ProblemTypes.typeUri(code), ProblemTypes.title(code), status.value, message, code, message)
+    respondText(apiJson.encodeToString(ProblemDto.serializer(), problem), PROBLEM_JSON, status)
 }
 
-/** 모든 오류는 `{code, message}`로 돌려준다. 예상하지 못한 오류의 내용은 응답에 싣지 않고 로그에만 남긴다. */
+private val PROBLEM_JSON = ContentType("application", "problem+json").withCharset(Charsets.UTF_8)
+
+/**
+ * 모든 오류는 `application/problem+json`(`{type, title, status, detail, code, message}`)으로 돌려준다. 예상하지 못한 오류의 내용은
+ * 응답에 싣지 않고 로그에만 남긴다.
+ */
 fun Application.installErrorHandling() {
     install(StatusPages) {
         exception<RoomException> {

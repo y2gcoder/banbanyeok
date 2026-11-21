@@ -298,7 +298,14 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * @description 모든 오류 응답의 형식. `message`는 사람이 읽는 설명이고 `code`로 분기한다. 서버가 내는 코드:
+         * @description 모든 오류 응답의 형식(`Content-Type: application/problem+json`, RFC 9457 Problem Details). 분기는 확장 필드 `code`로 하고,
+         *     사람에게 보이는 설명은 `detail`이다. `type`은 코드별 문서 주소(`https://banbanyeok.app/problems/<code를 kebab-case로>`,
+         *     예 `.../room-full`)이고 `title`은 코드별 짧은 제목이다. 코드 표는 contracts/problems.json에 있고 같은 내용이 웹의
+         *     `/problems`에 사람이 읽는 문서로 있다.
+         *
+         *     **호환 필드 `message`**: 옛 웹이 읽던 `{code, message}`와 같이 쓸 수 있게 한동안 `detail`과 같은 값을 함께 보낸다(서버를 먼저
+         *     배포하고 웹이 `detail ?? message`로 읽는다). 다음 정리 때 `message`를 뺀다. 새 코드는 `message`를 읽지 않는다.
+         *     500은 내용 없이 `detail`이 일반 문구다. 서버가 내는 코드:
          *
          *     | 상태 | code | 뜻 |
          *     |---|---|---|
@@ -310,6 +317,7 @@ export interface components {
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
+         *     | 405 | `METHOD_NOT_ALLOWED` | 이 경로에서 쓸 수 없는 메서드다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
          *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
          *     | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기를 받지 않았다(`setDecision`). 방을 다시 불러 확인한 뒤 다시 누른다 |
@@ -319,9 +327,37 @@ export interface components {
          *
          *     출발역에서 갈 수 없는 후보가 있어 공통 후보가 없는 경우는 오류가 아니라 `Result.status = no_common_candidate`다.
          */
-        Error: {
-            /** @example ROOM_FULL */
+        Problem: {
+            /**
+             * Format: uri
+             * @description 코드별 문서 주소(`code`의 kebab-case)
+             * @example https://banbanyeok.app/problems/room-full
+             */
+            type: string;
+            /**
+             * @description 코드별 짧은 제목
+             * @example 방이 가득 참
+             */
+            title: string;
+            /**
+             * @description HTTP 상태 코드와 같은 값
+             * @example 409
+             */
+            status: number;
+            /**
+             * @description 이 응답에 대한 사람이 읽는 설명
+             * @example 방이 가득 찼습니다
+             */
+            detail: string;
+            /**
+             * @description 분기에 쓰는 오류 코드(확장 필드)
+             * @example ROOM_FULL
+             */
             code: string;
+            /**
+             * @deprecated
+             * @description 호환용. `detail`과 같은 값이다. 다음 정리 때 뺀다
+             */
             message: string;
         };
         /**
@@ -809,7 +845,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["Error"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
     };
@@ -873,7 +909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             429: components["responses"]["Error"];
@@ -1023,7 +1059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             429: components["responses"]["Error"];
@@ -1067,7 +1103,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             429: components["responses"]["Error"];
@@ -1166,7 +1202,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
@@ -1199,7 +1235,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
             429: components["responses"]["Error"];

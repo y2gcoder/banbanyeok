@@ -1,6 +1,6 @@
 /**
  * `/api/*` 같은 출처 프록시(Worker 진입점이 부른다). `/api/healthz` → `<origin>/v1/healthz`(Cloud Run 앞단이 루트 `/healthz`를 예약해 404를 준다), `/api/v1/*` → `<origin>/v1/*`.
- * 그 밖의 경로는 `null`(Next가 처리). 서버 오류·시간 초과는 계약의 오류 형식 `{code, message}`로 돌려준다.
+ * 그 밖의 경로는 `null`(Next가 처리). 서버 오류·시간 초과는 `{code, message}` JSON으로 돌려준다(서버의 Problem Details와 같지 않지만 웹의 오류 파싱이 둘 다 받는다).
  */
 import { CLIENT_IP_HEADER, PROXY_SECRET_HEADER, upstreamHeaders } from "./headers";
 

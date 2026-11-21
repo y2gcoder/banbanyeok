@@ -1,6 +1,6 @@
 /**
  * contracts/openapi.yaml 기반 가짜 서버(개발·e2e 전용). 화면이 쓰는 `GET /healthz`·`GET /v1/healthz`, `POST /v1/recommend`를 구현하고
- * 나머지 경로는 계약의 오류 모양 `{code, message}`로 501을 준다. 응답이 계약 스키마를 지키는지는
+ * 나머지 경로는 계약의 오류 모양(`application/problem+json`)으로 501을 준다. 응답이 계약 스키마를 지키는지는
  * src/lib/api/contract.test.ts가 ajv로 검사한다. 도구 선택 근거는 docs/setup/p4-notes.md.
  *
  * 환경 변수: MOCK_DELAY_MS(모든 응답 지연), MOCK_COLD_START_MS(첫 요청만 지연, 콜드스타트 흉내).
@@ -10,6 +10,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PROBLEMS } from "../src/lib/problems/problems.gen.ts";
 import { isTimeSlot, type TimeSlot } from "../src/lib/when/time-slot.ts";
 import { type MockData, type MockStation, mockRecommend, type RecommendBody } from "./recommend.ts";
 
@@ -47,8 +48,16 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
+/** 계약의 오류 본문(RFC 9457 Problem Details). 가짜 서버는 실제 서버에 없는 코드도 쓰므로 표에 없으면 일반 제목을 준다. */
+export function problem(status: number, code: string, detail: string) {
+  const slug = code.toLowerCase().replaceAll("_", "-");
+  const title = PROBLEMS.items.find((item) => item.code === code)?.title ?? "요청을 처리하지 못함";
+  return { type: `${PROBLEMS.baseUri}${slug}`, title, status, detail, code, message: detail };
+}
+
 function error(res: ServerResponse, status: number, code: string, message: string): void {
-  send(res, status, { code, message });
+  res.writeHead(status, { "content-type": "application/problem+json; charset=utf-8", "cache-control": "no-store" });
+  res.end(JSON.stringify(problem(status, code, message)));
 }
 
 async function readJson(req: IncomingMessage): Promise<unknown> {

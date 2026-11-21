@@ -312,7 +312,18 @@ export async function prepareRoom(
         }),
       );
     }
-    return route.fulfill(json(404, { code: "ROOM_NOT_FOUND", message: "없는 방이에요" }));
+    return route.fulfill({
+      status: 404,
+      contentType: "application/problem+json",
+      body: JSON.stringify({
+        type: "https://banbanyeok.app/problems/room-not-found",
+        title: "방을 찾을 수 없음",
+        status: 404,
+        detail: "없는 방이에요",
+        code: "ROOM_NOT_FOUND",
+        message: "없는 방이에요",
+      }),
+    });
   });
   return `/r/${FAKE_ROOM_ID}`;
 }

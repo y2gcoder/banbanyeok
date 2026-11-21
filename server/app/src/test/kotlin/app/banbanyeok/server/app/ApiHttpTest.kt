@@ -30,9 +30,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.slot
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import java.time.Instant
 import java.time.LocalDate
 
@@ -70,6 +72,26 @@ private fun errorCode(body: String) =
         .parseToJsonElement(body)
         .jsonObject["code"]!!
         .jsonPrimitive.content
+
+/** 오류 응답은 `application/problem+json`이고 본문이 정확히 이 모양이다(`message`는 `detail`과 같은 호환 필드). */
+private suspend fun io.ktor.client.statement.HttpResponse.shouldBeProblem(
+    status: HttpStatusCode,
+    code: String,
+    title: String,
+    detail: String,
+) {
+    this.status shouldBe status
+    headers[HttpHeaders.ContentType]!!.substringBefore(';') shouldBe "application/problem+json"
+    Json.parseToJsonElement(bodyAsText()) shouldBe
+        buildJsonObject {
+            put("type", "https://banbanyeok.app/problems/${code.lowercase().replace('_', '-')}")
+            put("title", title)
+            put("status", status.value)
+            put("detail", detail)
+            put("code", code)
+            put("message", detail)
+        }
+}
 
 class ApiHttpTest :
     DescribeSpec({
@@ -277,6 +299,12 @@ class ApiHttpTest :
                     val unauthorized = client.json(HttpMethod.Delete, "/v1/rooms/$ROOM_ID")
                     unauthorized.status shouldBe HttpStatusCode.Unauthorized
                     unauthorized.headers[HttpHeaders.WWWAuthenticate] shouldBe "Bearer"
+                    unauthorized.shouldBeProblem(
+                        HttpStatusCode.Unauthorized,
+                        "UNAUTHORIZED",
+                        "인증이 필요함",
+                        "인증이 필요합니다",
+                    )
                     OpenApiContract.assertValid(HttpMethod.Delete, "/v1/rooms/$ROOM_ID", unauthorized)
 
                     coEvery { services.rooms.delete(ROOM_ID, "wrong") } throws
@@ -305,7 +333,12 @@ class ApiHttpTest :
                         IllegalStateException("jdbc:postgresql://secret-host/db password=hunter2")
                     val response = client.json(HttpMethod.Get, "/v1/rooms/$ROOM_ID")
                     response.status shouldBe HttpStatusCode.InternalServerError
-                    errorCode(response.bodyAsText()) shouldBe "INTERNAL_ERROR"
+                    response.shouldBeProblem(
+                        HttpStatusCode.InternalServerError,
+                        "INTERNAL_ERROR",
+                        "서버 오류",
+                        "서버 오류가 발생했습니다",
+                    )
                     response.bodyAsText() shouldNotContain "hunter2"
                 }
             }
@@ -313,8 +346,18 @@ class ApiHttpTest :
             it("answers unknown routes with a JSON error") {
                 withMockedApi {
                     val response = client.json(HttpMethod.Get, "/v1/nothing-here")
-                    response.status shouldBe HttpStatusCode.NotFound
-                    errorCode(response.bodyAsText()) shouldBe "NOT_FOUND"
+                    response.shouldBeProblem(HttpStatusCode.NotFound, "NOT_FOUND", "찾을 수 없음", "찾을 수 없습니다")
+                }
+            }
+
+            it("answers a known path with the wrong method with 405 METHOD_NOT_ALLOWED") {
+                withMockedApi {
+                    client.json(HttpMethod.Delete, "/v1/manifest").shouldBeProblem(
+                        HttpStatusCode.MethodNotAllowed,
+                        "METHOD_NOT_ALLOWED",
+                        "허용되지 않는 메서드",
+                        "허용되지 않는 메서드입니다",
+                    )
                 }
             }
         }

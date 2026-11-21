@@ -14,8 +14,15 @@ const gone = (page: Page) =>
   page.route("**/api/v1/rooms/**", (route) =>
     route.fulfill({
       status: 404,
-      contentType: "application/json",
-      body: JSON.stringify({ code: "ROOM_NOT_FOUND", message: "없는 방이에요" }),
+      contentType: "application/problem+json",
+      body: JSON.stringify({
+        type: "https://banbanyeok.app/problems/room-not-found",
+        title: "방을 찾을 수 없음",
+        status: 404,
+        detail: "없는 방이에요",
+        code: "ROOM_NOT_FOUND",
+        message: "없는 방이에요",
+      }),
     }),
   );
 
