@@ -3,8 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { horizontalOverflow } from "./support/layout";
 
 /**
- * 오류 응답이 `application/problem+json`(RFC 9457)으로 바뀐 뒤: ① 웹은 새 형식과 옛 `{code, message}`를 둘 다 받아 사람에게 보이는 문구를
- * `detail ?? message`로 쓴다(서버를 먼저 배포하므로 옛 서버와도 동작해야 한다) ② 응답의 `type` 주소(`/problems/<code>`)가 열린다.
+ * 오류 응답이 `application/problem+json`(RFC 9457)으로 바뀐 뒤: ① 웹은 사람에게 보이는 문구를 `detail`로 쓴다 ② 응답의 `type` 주소(`/problems/<code>`)가 열린다.
  */
 
 // 방 만들기에서 서버가 준 문구를 그대로 보여 주는 경로: 웹이 모르는 code의 4xx(알려진 code는 웹 문구를 쓴다).
@@ -37,19 +36,9 @@ test("새 형식(application/problem+json)이면 detail을 보여 준다", async
       status: 400,
       detail: "새 형식의 설명이에요",
       code: NEW_CODE,
-      message: "호환 필드는 쓰지 않아요",
     },
   });
   await expect(formAlert(page)).toContainText("새 형식의 설명이에요");
-  await expect(formAlert(page)).not.toContainText("호환 필드는 쓰지 않아요");
-});
-
-test("옛 형식(application/json {code, message})이면 message를 보여 준다", async ({ page }) => {
-  await submitWith(page, {
-    contentType: "application/json",
-    body: { code: NEW_CODE, message: "옛 형식의 설명이에요" },
-  });
-  await expect(formAlert(page)).toContainText("옛 형식의 설명이에요");
 });
 
 test("형식 없는 500(HTML 본문)이면 서버 문구 없이 연결 안내를 보여 준다", async ({ page }) => {

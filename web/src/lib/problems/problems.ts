@@ -24,7 +24,7 @@ const STATUS_TITLES: Readonly<Record<number, string>> = { 501: "Not Implemented"
 
 /**
  * 웹 쪽이 직접 만드는 오류 응답의 본문(`application/problem+json`, 서버의 `ProblemDto`와 같은 필드). 표에 있는 코드는 표의 type·제목을 쓰고,
- * 없는 코드는 `type: "about:blank"`다(문서 주소를 약속하지 않는다). `message`는 서버와 같은 호환 필드로 `detail`과 같다(제거 예정).
+ * 없는 코드는 `type: "about:blank"`다(문서 주소를 약속하지 않는다).
  */
 export function problemBody(status: number, code: string, detail: string) {
   const doc = PROBLEM_DOCS.find((problem) => problem.code === code);
@@ -35,9 +35,8 @@ export function problemBody(status: number, code: string, detail: string) {
       status,
       detail,
       code,
-      message: detail,
     };
-  return { type: problemType(doc), title: doc.title, status, detail, code, message: detail };
+  return { type: problemType(doc), title: doc.title, status, detail, code };
 }
 
 export const PROBLEM_JSON_TYPE = "application/problem+json; charset=utf-8";

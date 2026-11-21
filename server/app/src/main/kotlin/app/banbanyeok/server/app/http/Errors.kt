@@ -47,14 +47,14 @@ suspend fun ApplicationCall.respondError(
     message: String,
 ) {
     if (status == HttpStatusCode.Unauthorized) response.header(HttpHeaders.WWWAuthenticate, "Bearer")
-    val problem = ProblemDto(ProblemTypes.typeUri(code), ProblemTypes.title(code), status.value, message, code, message)
+    val problem = ProblemDto(ProblemTypes.typeUri(code), ProblemTypes.title(code), status.value, message, code)
     respondText(apiJson.encodeToString(ProblemDto.serializer(), problem), PROBLEM_JSON, status)
 }
 
 private val PROBLEM_JSON = ContentType("application", "problem+json").withCharset(Charsets.UTF_8)
 
 /**
- * 모든 오류는 `application/problem+json`(`{type, title, status, detail, code, message}`)으로 돌려준다. 예상하지 못한 오류의 내용은
+ * 모든 오류는 `application/problem+json`(`{type, title, status, detail, code}`)으로 돌려준다. 예상하지 못한 오류의 내용은
  * 응답에 싣지 않고 로그에만 남긴다.
  *
  * 라우트 밖에서 Ktor 플러그인이 본문 없이 끝내는 응답(CORS 403, 콘텐츠 협상 406, 경로·메서드 404·405)도 `status(...)`로 같은 형식에 맞춘다.

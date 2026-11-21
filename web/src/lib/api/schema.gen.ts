@@ -303,9 +303,7 @@ export interface components {
          *     예 `.../room-full`)이고 `title`은 코드별 짧은 제목이다. 코드 표는 contracts/problems.json에 있고 같은 내용이 웹의
          *     `/problems`에 사람이 읽는 문서로 있다.
          *
-         *     **호환 필드 `message`(deprecated, 제거 예정)**: 옛 웹이 읽던 `{code, message}`와 같이 쓸 수 있게 한동안 `detail`과 같은 값을
-         *     함께 보낸다(서버를 먼저 배포하고 웹이 `detail ?? message`로 읽는다). 이 변경이 배포된 뒤 다음 정리 PR에서 `message`를 뺀다.
-         *     새 코드는 `message`를 읽지 않는다. 500은 내용 없이 `detail`이 일반 문구다.
+         *     500은 내용 없이 `detail`이 일반 문구다.
          *
          *     **`Accept`와 상관없이 항상 `application/problem+json`**: 오류 응답(406 포함)은 요청의 `Accept`를 다시 협상하지 않고 이 형식으로
          *     직접 보낸다. 라우트 밖에서 끝나는 응답(CORS 403, 406, 404·405)도 같다. 405는 이 경로가 받는 메서드를 `Allow` 헤더로 알린다.
@@ -365,11 +363,6 @@ export interface components {
              * @example ROOM_FULL
              */
             code: string;
-            /**
-             * @deprecated
-             * @description 호환용(deprecated, 제거 예정). `detail`과 같은 값이다. 이 변경이 배포된 뒤 다음 정리 PR에서 뺀다
-             */
-            message: string;
         };
         /**
          * @description 3자 역 코드 (contracts/data-format.md §2)

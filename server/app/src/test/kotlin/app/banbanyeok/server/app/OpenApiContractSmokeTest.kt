@@ -6,7 +6,7 @@ import io.ktor.http.HttpMethod
 
 private const val PROBLEM =
     """{"type":"https://banbanyeok.app/problems/rate-limited","title":"요청이 너무 많음","status":429,""" +
-        """"detail":"d","code":"RATE_LIMITED","message":"d"}"""
+        """"detail":"d","code":"RATE_LIMITED"}"""
 
 class OpenApiContractSmokeTest :
     DescribeSpec({

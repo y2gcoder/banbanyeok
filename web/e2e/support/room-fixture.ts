@@ -321,7 +321,6 @@ export async function prepareRoom(
         status: 404,
         detail: "없는 방이에요",
         code: "ROOM_NOT_FOUND",
-        message: "없는 방이에요",
       }),
     });
   });
