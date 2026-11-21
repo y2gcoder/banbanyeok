@@ -1,18 +1,47 @@
+import { Fragment, type ReactNode } from "react";
 import { Wordmark } from "@/components/common/wordmark";
 import { ConsentSettings } from "@/components/consent/consent-settings";
 import { parenSafe } from "@/lib/text/paren-safe";
 import type { Block, UpcomingPolicy } from "./policy";
 import { changesTable, koreanDate, type ResolvedPolicy } from "./schedule";
 
+/** 본문의 md 링크 `[이름](https://…)`. policy.ts의 `link`가 만든다(이전 판 목록 등). */
+const LINK = /\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g;
+
+/** 글 속 md 링크를 눌러 열 수 있는 링크로 바꾼다. 나머지 글은 `parenSafe` 그대로. md(markdown.ts)는 링크를 그대로 둔다. */
+function linkedText(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(LINK)) {
+    const [whole, label, href] = match;
+    if (match.index > last)
+      parts.push(<Fragment key={`t${last}`}>{parenSafe(text.slice(last, match.index))}</Fragment>);
+    parts.push(
+      // 목차 링크처럼 누르기 좋은 높이(44px)를 준다. 이전 판 목록은 한 줄에 링크 하나라 서로 겹치지 않는다.
+      <a
+        key={`a${match.index}`}
+        href={href}
+        className="inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-4"
+      >
+        <span>{parenSafe(label)}</span>
+      </a>,
+    );
+    last = match.index + whole.length;
+  }
+  if (last === 0) return parenSafe(text);
+  if (last < text.length) parts.push(<Fragment key={`t${last}`}>{parenSafe(text.slice(last))}</Fragment>);
+  return parts;
+}
+
 function PolicyBlock({ block }: { block: Block }) {
   switch (block.kind) {
     case "p":
-      return <p>{parenSafe(block.text)}</p>;
+      return <p>{linkedText(block.text)}</p>;
     case "list":
       return (
         <ul className="flex list-disc flex-col gap-1.5 pl-5">
           {block.items.map((item) => (
-            <li key={item}>{parenSafe(item)}</li>
+            <li key={item}>{linkedText(item)}</li>
           ))}
         </ul>
       );
