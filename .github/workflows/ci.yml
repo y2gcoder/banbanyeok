@@ -24,6 +24,7 @@ jobs:
       kotlin: ${{ steps.filter.outputs.kotlin }}
       oracle: ${{ steps.filter.outputs.oracle }}
       web: ${{ steps.filter.outputs.web }}
+      deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -61,6 +62,17 @@ jobs:
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'mise.toml'
+              - '.github/workflows/ci.yml'
+            deploy:
+              - 'scripts/deploy-plan.sh'
+              - 'scripts/deployed-server-sha.sh'
+              - 'scripts/test-deploy-plan.sh'
+              - 'web/scripts/worker-version.sh'
+              - 'web/scripts/test-worker-version.sh'
+              - 'web/scripts/test-worker-version-api.py'
+              - 'web/package.json'
+              - 'pnpm-lock.yaml'
+              - '.github/workflows/deploy*.yml'
               - '.github/workflows/ci.yml'
 
   # Kotlin: ./gradlew build = 컴파일 + jvm 테스트(shared 모듈은 commonTest를 jvm으로 실행) + commonMain 순수성 검사
@@ -204,14 +216,33 @@ jobs:
           path: web/playwright-report/
           retention-days: 7
 
+  # 배포 스크립트 단위 테스트(실제 배포·Cloudflare·GCP 호출 없음): 서버·웹 배포 계획(임시 git 저장소·가짜 gh·가짜 gcloud),
+  # 웹 직전 버전 기록·되돌리기(가짜 wrangler + 핀된 실제 wrangler를 루프백 가짜 API에 붙여 JSON·오류 형식 확인).
+  deploy-scripts:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+        with:
+          install_args: node pnpm
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - run: bash scripts/test-deploy-plan.sh
+      - run: bash web/scripts/test-worker-version.sh
+        env:
+          REQUIRE_REAL_WRANGLER: '1'
+
   # 브랜치 보호에서 필수로 지정할 단일 체크. 경로 필터로 건너뛴 잡은 통과로 본다.
   ci-ok:
     if: always()
-    needs: [changes, unit, lint, integration, oracle, web, e2e-real]
+    needs: [changes, unit, lint, integration, oracle, web, e2e-real, deploy-scripts]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "changes=${{ needs.changes.result }} unit=${{ needs.unit.result }} lint=${{ needs.lint.result }} integration=${{ needs.integration.result }} oracle=${{ needs.oracle.result }} web=${{ needs.web.result }} e2e-real=${{ needs.e2e-real.result }}"
+          echo "changes=${{ needs.changes.result }} unit=${{ needs.unit.result }} lint=${{ needs.lint.result }} integration=${{ needs.integration.result }} oracle=${{ needs.oracle.result }} web=${{ needs.web.result }} e2e-real=${{ needs.e2e-real.result }} deploy-scripts=${{ needs.deploy-scripts.result }}"
           if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
             exit 1
           fi

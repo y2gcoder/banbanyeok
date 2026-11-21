@@ -3,6 +3,8 @@
 #   BASE_URL   배포된 웹 주소(필수). /api/v1/manifest는 Worker 프록시를 거쳐 서버 manifest를 돌려준다
 #   EXPECTED   기다릴 dataVersion(없으면 src/lib/stations/index.gen.json의 값)
 #   INTERVAL   확인 간격 초(기본 30), MAX_WAIT 최대 대기 초(기본 1500 = 25분)
+#              MAX_WAIT는 요청 시간까지 포함한 경과 시간 기준이다. 마지막 요청(최대 20초)까지 합쳐 MAX_WAIT+20초 안에 끝난다.
+#              (워크플로 단계 timeout과 뒤의 되돌리기 시간을 이 상한으로 계산한다: .github/workflows/deploy-web.yml)
 #
 # 같은 커밋의 deploy-server와 deploy-web은 따로 돈다. 웹이 먼저 끝나면 새 역 색인(새 출발역 코드)으로 아직 옛 데이터인
 # 서버를 불러 /api/v1/recommend가 400이 된다. 그래서 서버 dataVersion이 웹 빌드의 값 이상이 될 때까지 기다린다.
@@ -31,7 +33,7 @@ compare() {
 
 body="$(mktemp)"
 trap 'rm -f "$body"' EXIT
-waited=0
+start=$SECONDS
 reason="아직 확인 전"
 echo "== 서버 데이터 대기: $BASE_URL/api/v1/manifest 의 dataVersion >= $EXPECTED (최대 ${MAX_WAIT}초)"
 while :; do
@@ -51,12 +53,14 @@ while :; do
   else
     reason="/api/v1/manifest status=$status"
   fi
+  waited=$((SECONDS - start))
   if ((waited >= MAX_WAIT)); then
     echo "FAIL ${MAX_WAIT}초 안에 서버가 웹 빌드의 데이터($EXPECTED)를 발행하지 않았습니다: $reason"
     echo "     같은 커밋의 deploy-server(데이터 발행)가 끝났는지 확인한 뒤 이 워크플로를 다시 실행하세요."
     exit 1
   fi
-  echo "   (${waited}s) $reason, ${INTERVAL}초 뒤 다시 확인"
-  sleep "$INTERVAL"
-  waited=$((waited + INTERVAL))
+  pause=$((MAX_WAIT - waited))
+  ((pause > INTERVAL)) && pause=$INTERVAL
+  echo "   (${waited}s) $reason, ${pause}초 뒤 다시 확인"
+  sleep "$pause"
 done

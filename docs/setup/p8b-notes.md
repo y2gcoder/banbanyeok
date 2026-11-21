@@ -5,7 +5,7 @@
 
 ## 한눈에
 
-- 배포는 `.github/workflows/deploy-web.yml`(수동 + main의 `web/`·`contracts/`·`data/artifacts/` 변경). **https://banbanyeok.app 에 배포·검증 완료**(www와 workers.dev는 301로 정식 주소로 이동).
+- 배포는 `.github/workflows/deploy-web.yml`(수동 + main push 때 `deploy.yml`이 서버와 순서를 맞춰 호출, 실패하면 직전 Worker 버전으로 자동 되돌림: [d104-notes.md](d104-notes.md)). **https://banbanyeok.app 에 배포·검증 완료**(www와 workers.dev는 301로 정식 주소로 이동).
 - `/api/*`는 Next를 거치지 않고 Worker 진입점(`web/worker.ts`)이 서버로 바로 프록시한다. 신뢰 헤더 규칙·오류 응답은 `web/src/lib/proxy/`.
 - **무료 플랜에는 맞지 않는다**: 동적 OG(`/s/og`)는 CPU 한도(10ms)를 넘어 `exceededCpu`(503)로 실패하고, 서버 렌더 페이지(`/s`, `/result`)도 중앙값이 10ms를 넘는다. 권고: Workers 유료(월 $5). 아래 "결정 필요".
 - 검색 노출은 **꺼 둔 채** 배포했다(`SITE_INDEX` 출시 스위치). 개인정보처리방침이 아직 초안이라서다.

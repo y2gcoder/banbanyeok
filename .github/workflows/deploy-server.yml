@@ -5,24 +5,11 @@
 # 사전 조건: infra/gcp/bootstrap.sh 실행, 저장소 변수 DATABASE_URL·DATABASE_USER(docs/setup/p8a-notes.md).
 name: deploy-server
 
+# 트리거: 수동 실행, 또는 deploy.yml(main push)이 부른다(workflow_call). 어떤 경로가 바뀌면 서버를 배포하는지는
+# scripts/deploy-plan.sh 가 정한다(예전 `on.push.paths`). 웹과의 순서·라벨: docs/setup/d104-notes.md.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'server/**'          # server/db/changelog 포함
-      - 'contracts/**'
-      - 'shared/**'
-      - 'build-logic/**'
-      - 'gradle/**'
-      - 'data/artifacts/dev/**'   # 새 데이터 발행 = 새 리비전(docs/setup/p3-notes.md 8절 1번)
-      - 'pipeline/src/main/kotlin/app/banbanyeok/pipeline/ReleaseStage.kt'
-      - 'scripts/publish-artifacts.sh'
-      - 'scripts/db-backup.sh'      # backup 이미지에 들어간다
-      - 'infra/backup/**'
-      - 'scripts/smoke-server.sh'
-      - 'scripts/build-server-image.sh'
-      - '.github/workflows/deploy-server.yml'
+  workflow_call:
 
 permissions:
   contents: read
