@@ -1,20 +1,29 @@
 package app.banbanyeok.pipeline
 
 import app.banbanyeok.pipeline.lasttrain.compileLastTrains
+import app.banbanyeok.pipeline.lasttrain.compute.ltBaselineDifferences
 import app.banbanyeok.pipeline.lasttrain.compute.ltLatestTimetableChange
 import app.banbanyeok.pipeline.lasttrain.compute.ltOperatorSamples
+import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_BASELINE
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_DIR
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_ID
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_LICENSE
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_OPERATOR
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_SOURCE_URL
+import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangRaw
 import app.banbanyeok.pipeline.lasttrain.input.readLastTrainInputs
-import app.banbanyeok.pipeline.lasttrain.input.readShinbundangPages
+import app.banbanyeok.pipeline.lasttrain.input.readShinbundangBaseline
+import app.banbanyeok.pipeline.lasttrain.input.readShinbundangRaw
 import app.banbanyeok.pipeline.lasttrain.input.shinbundangTimetableTitle
+import app.banbanyeok.pipeline.lasttrain.model.LtFetchedFile
+import app.banbanyeok.pipeline.lasttrain.model.LtOperatorBaseline
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceiptFiles
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorSource
+import app.banbanyeok.pipeline.lasttrain.model.LtReviewedNotice
+import app.banbanyeok.pipeline.lasttrain.output.removeOperatorReceipt
 import app.banbanyeok.pipeline.lasttrain.output.writeLastTrainReport
 import app.banbanyeok.pipeline.lasttrain.output.writeOfficialSamples
+import app.banbanyeok.pipeline.lasttrain.output.writeOperatorBaseline
 import app.banbanyeok.pipeline.lasttrain.output.writeOperatorReceipt
 import app.banbanyeok.pipeline.lasttrain.output.writeOracleProblem
 import app.banbanyeok.schema.DataSet
@@ -75,21 +84,10 @@ internal object LastTrainStage : ArtifactStage {
     }
 }
 
-/**
- * `shinbundang-samples`: makes the 신분당선 official samples (last-train-official.csv) from the operator's station
- * pages a person fetched into `data/raw/shinbundang/` (S8, never fetched here), and writes the S8 receipt. Stops when
- * a page or the notice list is not what the reader knows. Run `build` afterwards.
- */
-internal fun shinbundangSamples(root: Path) {
-    val fetch = readShinbundangPages(root)
-    val dataset = loadDevArtifacts(root.resolve("data/artifacts/dev"))
-    val names = dataset.registry.stations.associate { it.code to it.name }
-    val meetings =
-        dataset.candidates.candidates
-            .map(names::getValue)
-            .toSet()
-    val fetchedOn =
-        fetch.pages
+/** The Seoul day all of [files] were fetched on; stops when they were not fetched on one day. */
+private fun fetchDay(files: List<LtFetchedFile>): String =
+    requireNotNull(
+        files
             .map {
                 Instant
                     .parse(it.fetchedAt)
@@ -97,31 +95,100 @@ internal fun shinbundangSamples(root: Path) {
                     .toLocalDate()
                     .toString()
             }.distinct()
-            .singleOrNull()
-    requireNotNull(fetchedOn) { "$SHINBUNDANG_ID: the pages were not fetched on one Seoul day" }
-    val samples = ltOperatorSamples(fetch.timetable, meetings, fetchedOn)
-    val latest = ltLatestTimetableChange(fetch.noticeList, ::shinbundangTimetableTitle)
-    writeOfficialSamples(root, fetch.timetable.family, samples)
-    writeOperatorReceipt(
-        root,
-        LtOperatorReceiptFiles(
-            LtOperatorSource(
-                SHINBUNDANG_ID,
-                SHINBUNDANG_OPERATOR,
-                SHINBUNDANG_DIR,
-                SHINBUNDANG_SOURCE_URL,
-                SHINBUNDANG_LICENSE,
+            .singleOrNull(),
+    ) { "$SHINBUNDANG_ID: the pages were not fetched on one Seoul day" }
+
+/**
+ * `shinbundang-samples`: makes the 신분당선 official samples (last-train-official.csv) from the operator's station
+ * pages a person fetched into `data/raw/shinbundang/` (S8, never fetched here), and writes the S8 receipt.
+ *
+ * **Only pages a person reviewed are read** (an allowlist): every page's skeleton and the newest notice must be the
+ * ones in the reviewed baseline. Whenever it stops (a page or notice that differs, anything the reader does not
+ * know), it removes the S8 receipt, so the next `build` switches 신분당 off until a person has looked at the pages
+ * and run `shinbundang-baseline`. Run `build` afterwards.
+ */
+internal fun shinbundangSamples(root: Path) {
+    try {
+        val baseline =
+            requireNotNull(readShinbundangBaseline(root, SHINBUNDANG_BASELINE)) { "no reviewed $SHINBUNDANG_BASELINE" }
+        val raw = readShinbundangRaw(root)
+        val differences = ltBaselineDifferences(baseline, raw.pageFingerprints, raw.noticeFingerprints)
+        require(differences.isEmpty()) { differences.joinToString("; ") }
+        val fetch = parseShinbundangRaw(raw)
+        val dataset = loadDevArtifacts(root.resolve("data/artifacts/dev"))
+        val names = dataset.registry.stations.associate { it.code to it.name }
+        val meetings =
+            dataset.candidates.candidates
+                .map(names::getValue)
+                .toSet()
+        val fetchedOn = fetchDay(fetch.pages)
+        val samples = ltOperatorSamples(fetch.timetable, meetings, fetchedOn)
+        val latest = ltLatestTimetableChange(fetch.noticeList, ::shinbundangTimetableTitle)
+        writeOfficialSamples(root, fetch.timetable.family, samples)
+        writeOperatorReceipt(
+            root,
+            LtOperatorReceiptFiles(
+                LtOperatorSource(
+                    SHINBUNDANG_ID,
+                    SHINBUNDANG_OPERATOR,
+                    SHINBUNDANG_DIR,
+                    SHINBUNDANG_SOURCE_URL,
+                    SHINBUNDANG_LICENSE,
+                ),
+                fetch.timetable.stations
+                    .map { it.name }
+                    .zip(fetch.pages),
+                fetch.noticeList.zip(fetch.notices),
+                latest,
+                samples.size,
             ),
-            fetch.timetable.stations
-                .map { it.name }
-                .zip(fetch.pages),
-            fetch.noticeList.zip(fetch.notices),
-            latest,
-            samples.size,
-        ),
+        )
+        println(
+            "$SHINBUNDANG_ID: ${samples.size} samples of ${fetch.timetable.family} from ${fetch.pages.size} reviewed " +
+                "pages fetched on $fetchedOn; latest timetable change $latest",
+        )
+    } catch (stop: IllegalArgumentException) {
+        removeOperatorReceipt(root, SHINBUNDANG_ID)
+        throw IllegalStateException(
+            "$SHINBUNDANG_ID: ${stop.message}. Receipt $SHINBUNDANG_ID removed from source-manifest.json: 신분당 is " +
+                "switched off at the next build until a person looks at the pages, runs shinbundang-baseline " +
+                "and this command again (docs/setup/w21-notes.md §5)",
+            stop,
+        )
+    }
+}
+
+/**
+ * `shinbundang-baseline`: after a person has looked at the fetched pages and notices, records them as the reviewed
+ * baseline (fingerprints and structure counts only). The pages must still be readable and give samples.
+ */
+internal fun shinbundangBaseline(root: Path) {
+    val raw = readShinbundangRaw(root)
+    val fetch = parseShinbundangRaw(raw)
+    ltOperatorSamples(
+        fetch.timetable,
+        fetch.timetable.stations
+            .map { it.name }
+            .toSet(),
+        "0000-00-00",
     )
+    ltLatestTimetableChange(fetch.noticeList, ::shinbundangTimetableTitle)
+    val newest = fetch.noticeList.zip(fetch.notices).single { it.first.newer == null }
+    val baseline =
+        LtOperatorBaseline(
+            SHINBUNDANG_ID,
+            fetchDay(fetch.pages),
+            fetch.pageFingerprints,
+            LtReviewedNotice(
+                newest.first.viewNo,
+                newest.first.title,
+                fetch.noticeFingerprints.getValue(newest.first.viewNo),
+                newest.second.sha256,
+            ),
+        )
+    writeOperatorBaseline(root, SHINBUNDANG_BASELINE, baseline, raw.structure)
     println(
-        "$SHINBUNDANG_ID: ${samples.size} samples of ${fetch.timetable.family} from ${fetch.pages.size} pages " +
-            "fetched on $fetchedOn; latest timetable change $latest",
+        "$SHINBUNDANG_ID: baseline of ${fetch.pages.size} pages (${fetch.pageFingerprints.values.distinct().size} " +
+            "skeletons) and notice ${newest.first.viewNo} written to $SHINBUNDANG_BASELINE",
     )
 }

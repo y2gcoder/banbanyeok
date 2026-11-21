@@ -1,6 +1,7 @@
 package app.banbanyeok.pipeline.lasttrain.compute
 
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
+import app.banbanyeok.pipeline.lasttrain.model.LtOperatorBaseline
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorNotice
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorTimetable
 import app.banbanyeok.schema.DayType
@@ -95,4 +96,34 @@ internal fun ltLatestTimetableChange(
             }
         }
     }
+}
+
+/**
+ * How the fetched pages differ from what a person reviewed ([baseline]); empty when they do not. [pages] is `sb_cd`
+ * to the page's skeleton fingerprint, [notices] viewNo to the notice's fingerprint. Any page whose skeleton (all but
+ * its minutes) changed, a reviewed newest notice that is missing or changed (a newer notice changes its "이전" cell),
+ * or a notice newer than it among the pages is a difference, whatever the change says.
+ */
+internal fun ltBaselineDifferences(
+    baseline: LtOperatorBaseline,
+    pages: Map<String, String>,
+    notices: Map<String, String>,
+): List<String> {
+    val reviewed = baseline.latestNotice
+    val pageDifferences =
+        (pages.keys + baseline.pages.keys).sorted().filter { pages[it] != baseline.pages[it] }.map { code ->
+            "$code: page is not the reviewed one (all but its minutes changed)"
+        }
+    val noticeDifference =
+        when (notices[reviewed.viewNo]) {
+            null -> "notice ${reviewed.viewNo}, the newest reviewed, is not among the pages"
+            reviewed.fingerprint -> null
+            else -> "notice ${reviewed.viewNo} is not the reviewed one (a newer notice, or the notice changed)"
+        }
+    val newer =
+        notices.keys
+            .filter { (it.toLongOrNull() ?: Long.MAX_VALUE) > (reviewed.viewNo.toLongOrNull() ?: Long.MAX_VALUE) }
+            .sorted()
+            .map { "notice $it is newer than the reviewed ${reviewed.viewNo}" }
+    return pageDifferences + listOfNotNull(noticeDifference) + newer
 }

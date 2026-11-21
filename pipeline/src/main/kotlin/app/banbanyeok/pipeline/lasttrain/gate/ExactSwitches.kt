@@ -27,7 +27,10 @@ internal const val LT_OPERATOR_MAX_AGE_DAYS = 14
  * - the operator's latest timetable change took effect after the TAGO cache was fetched: both sources may then
  *   agree on the old timetable;
  * - the operator's pages and the TAGO cache were fetched more than [LT_OPERATOR_MAX_AGE_DAYS] days apart;
- * - its samples were not read on the day its receipt says the pages were fetched, or there is no receipt.
+ * - its samples were not read on the day its receipt says the pages were fetched, or there is no receipt (the
+ *   sample command removes the receipt whenever it stops on pages it does not know);
+ * - the newest notice the receipt's pages show is not the one a person reviewed (any newer notice, whatever its
+ *   title), or nobody reviewed one.
  *
  * Nothing else is affected: the table is still published.
  */
@@ -68,7 +71,13 @@ private fun receiptReasons(
     val change = LocalDate.parse(receipt.latestChange)
     val apart = kotlin.math.abs(ChronoUnit.DAYS.between(fetched, tago))
     val stale = samples.count { it.checkedAt != receipt.fetchedOn }
+    val reviewed = checks.reviewed[family]
     return listOfNotNull(
+        "no reviewed baseline of the operator's pages".takeIf { reviewed == null },
+        (
+            "the newest notice ${receipt.newestNotice?.let { "${it.viewNo} (${it.title})" }} is not the one reviewed " +
+                "(${reviewed?.viewNo} ${reviewed?.title}); a person must look at it and update the baseline"
+        ).takeIf { reviewed != null && receipt.newestNotice != reviewed },
         "the operator changed its timetable on $change, after TAGO was fetched on $tago".takeIf { change > tago },
         (
             "the operator's pages ($fetched) and TAGO ($tago) were fetched $apart days apart, " +

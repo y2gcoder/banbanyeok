@@ -5,6 +5,7 @@ import app.banbanyeok.pipeline.csv
 import app.banbanyeok.pipeline.lasttrain.model.LastTrainInputs
 import app.banbanyeok.pipeline.lasttrain.model.LtCeiling
 import app.banbanyeok.pipeline.lasttrain.model.LtConfig
+import app.banbanyeok.pipeline.lasttrain.model.LtNoticeLink
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorChecks
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceipt
@@ -17,6 +18,7 @@ import kotlinx.serialization.json.jsonObject
 import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.io.path.exists
 import kotlin.io.path.readText
 
 private val SEOUL_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
@@ -92,12 +94,33 @@ internal fun ltOperatorReceipts(
                             id,
                             seoulDate(required(receipt, "fetched_at")),
                             required(receipt, "latest_timetable_change"),
+                            receipt["notices"]
+                                ?.jsonArray
+                                ?.map { it.jsonObject }
+                                ?.singleOrNull { it["newest"]?.toString() == "true" }
+                                ?.let { LtNoticeLink(it.text("viewNo"), it.text("title")) },
                         )
                 }
             }.toMap()
     val tago = requireNotNull(all["S6"]) { "S6 (TAGO) receipt is required for last trains" }
     return families to seoulDate(required(tago, "fetched_at"))
 }
+
+/**
+ * The newest notice a person reviewed for each exact family, from its baseline file (`exact.<family>.baseline`). A
+ * missing file is not an error here: it switches the family off.
+ */
+internal fun ltReviewedNotices(
+    root: Path,
+    config: LtConfig,
+): Map<String, LtNoticeLink> =
+    config.exactBaselines
+        .mapNotNull { (family, path) ->
+            root.resolve(path).takeIf { it.exists() }?.let { file ->
+                val notice = parseObject(file.readText()).getValue("latestNotice").jsonObject
+                family to LtNoticeLink(notice.text("viewNo"), notice.text("title"))
+            }
+        }.toMap()
 
 /** Reads the configuration, both timetable caches, the operator's samples and ceilings, and the "as of" date. */
 internal fun readLastTrainInputs(
@@ -117,6 +140,7 @@ internal fun readLastTrainInputs(
             ltCeilings(root.resolve("data/config/last-train-ceilings.csv").readText()),
             operators,
             tago,
+            ltReviewedNotices(root, config),
         ),
         asOf,
     )

@@ -48,6 +48,8 @@ internal class LtOperatorChecks(
     val ceilings: List<LtCeiling>,
     val receipts: Map<String, LtOperatorReceipt> = emptyMap(),
     val tagoFetchedOn: String? = null,
+    /** The newest notice a person reviewed, per exact family (from its baseline). */
+    val reviewed: Map<String, LtNoticeLink> = emptyMap(),
 )
 
 /**
@@ -102,6 +104,30 @@ internal data class LtOperatorReceipt(
     val id: String,
     val fetchedOn: String,
     val latestChange: String,
+    /** The notice the receipt's pages say is the newest of the list, null when none does. */
+    val newestNotice: LtNoticeLink? = null,
+)
+
+/**
+ * What a person reviewed of an operator's pages (#100 review: an allowlist, not a list of bad patterns): the
+ * fingerprint of every station page with its minute cells left out, and the newest notice of the list then. Pages
+ * that differ in anything but their minutes, or a notice list with anything newer, are not used until a person has
+ * looked at them and updated this baseline.
+ */
+internal data class LtOperatorBaseline(
+    val receipt: String,
+    val reviewedOn: String,
+    /** `sb_cd` to the SHA-256 of the page's skeleton (see `shinbundangSkeleton`). */
+    val pages: Map<String, String>,
+    val latestNotice: LtReviewedNotice,
+)
+
+/** The newest notice at the review: its number, title, the fingerprint the reader compares and its raw SHA-256. */
+internal data class LtReviewedNotice(
+    val viewNo: String,
+    val title: String,
+    val fingerprint: String,
+    val sha256: String,
 )
 
 /** One file of an operator's timetable as fetched by a person, as its receipt records it. */

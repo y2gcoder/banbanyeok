@@ -4,6 +4,7 @@ import app.banbanyeok.pipeline.jsonValue
 import app.banbanyeok.pipeline.lasttrain.model.LtArtifact
 import app.banbanyeok.pipeline.lasttrain.model.LtFetchedFile
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
+import app.banbanyeok.pipeline.lasttrain.model.LtOperatorBaseline
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceiptFiles
 import app.banbanyeok.pipeline.obj
 import app.banbanyeok.pipeline.text
@@ -137,4 +138,58 @@ internal fun writeOperatorReceipt(
             .map { it.jsonObject }
             .filter { it.text("id") != receipt.source.id }
     path.writeJson(jsonValue(others + json).toString())
+}
+
+/**
+ * Removes receipt [id] from `source-manifest.json`. Without its receipt an exact family is switched off at the next
+ * `build`: this is what the sample command does when it stops on pages it does not know.
+ */
+internal fun removeOperatorReceipt(
+    root: Path,
+    id: String,
+) {
+    val path = root.resolve("data/config/source-manifest.json")
+    val receipts = Json.parseToJsonElement(path.readText()).jsonArray.map { it.jsonObject }
+    if (receipts.any {
+            it.text(
+                "id",
+            ) == id
+        }
+    ) {
+        path.writeJson(jsonValue(receipts.filter { it.text("id") != id }).toString())
+    }
+}
+
+/**
+ * Writes the reviewed baseline of an operator's pages to [path]: fingerprints and counts of their structure only,
+ * never their text (the pages have no terms of use and are not committed).
+ */
+internal fun writeOperatorBaseline(
+    root: Path,
+    path: String,
+    baseline: LtOperatorBaseline,
+    structure: List<Map<String, Int>>,
+) {
+    val notice = baseline.latestNotice
+    root.resolve(path).writeJson(
+        obj(
+            "receipt" to baseline.receipt,
+            "reviewedOn" to baseline.reviewedOn,
+            "basis" to
+                "사람이 운영사 페이지를 보고 확인한 기준(#100 검토, 허용 목록). pageSkeleton은 역 페이지에서 분 칸만 비우고 " +
+                "공백을 정규화한 전체(표 구조·머리글·표 제목·범례·주석·tbody 수·표 밖 글자)의 SHA-256이다. latestNotice는 " +
+                "그때의 가장 새 공지다(fingerprint는 조회수만 비운 본문의 SHA-256, sha256은 받은 파일 그대로). 페이지 골격이나 " +
+                "공지가 하나라도 다르면 shinbundang-samples가 멈추고 영수증 ${baseline.receipt}을 지워 신분당을 끈다. 사람이 " +
+                "페이지를 보고 shinbundang-baseline으로 이 파일을 다시 쓴다(docs/setup/w21-notes.md 5절). 원문은 담지 않는다.",
+            "structure" to structure.map { counts -> JsonObject(counts.mapValues { jsonValue(it.value) }) },
+            "pageSkeleton" to JsonObject(baseline.pages.toSortedMap().mapValues { jsonValue(it.value) }),
+            "latestNotice" to
+                obj(
+                    "viewNo" to notice.viewNo,
+                    "title" to notice.title,
+                    "fingerprint" to notice.fingerprint,
+                    "sha256" to notice.sha256,
+                ),
+        ).toString(),
+    )
 }

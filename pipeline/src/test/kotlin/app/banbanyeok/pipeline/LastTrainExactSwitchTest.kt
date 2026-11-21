@@ -19,6 +19,7 @@ import app.banbanyeok.pipeline.lasttrain.model.LtConfig
 import app.banbanyeok.pipeline.lasttrain.model.LtDayResult
 import app.banbanyeok.pipeline.lasttrain.model.LtDirect
 import app.banbanyeok.pipeline.lasttrain.model.LtFamilies
+import app.banbanyeok.pipeline.lasttrain.model.LtNoticeLink
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorChecks
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceipt
@@ -116,17 +117,27 @@ private val CONFIG =
                 "saturday":{"seoulLines":["3"],"tagoGroups":[]},
                 "holiday":{"seoulLines":["3"],"tagoGroups":["S","Q"]}},
                 "exact":{"S":{"days":["weekday","holiday"],"source":"https://example.test/sb","checkedAt":"2026-11-21",
-                "receipt":"S8"}},"secondSource":{"lines":[]}}""",
+                "receipt":"S8","baseline":"data/config/shinbundang-baseline.json"}},"secondSource":{"lines":[]}}""",
         ),
         setOf("S", "Q"),
     )
+
+private val REVIEWED = LtNoticeLink("1358", "신분당선 열차운행시각표 변경 시행")
 
 private fun checks(
     fetchedOn: String = "2026-11-21",
     latestChange: String = "2026-11-06",
     tago: String? = "2026-11-16",
     receipt: String = "S8",
-) = LtOperatorChecks(emptyList(), emptyList(), mapOf("S" to LtOperatorReceipt(receipt, fetchedOn, latestChange)), tago)
+    newest: LtNoticeLink? = REVIEWED,
+    reviewed: LtNoticeLink? = REVIEWED,
+) = LtOperatorChecks(
+    emptyList(),
+    emptyList(),
+    mapOf("S" to LtOperatorReceipt(receipt, fetchedOn, latestChange, newest)),
+    tago,
+    listOfNotNull(reviewed).associateBy { "S" },
+)
 
 class LastTrainExactSwitchTest :
     DescribeSpec({
@@ -178,17 +189,24 @@ class LastTrainExactSwitchTest :
                 )
             val source = """"source":"https://example.test/sb","checkedAt":"2026-11-21""""
 
-            it("namesTheReceiptOfItsOperatorTimetable") {
+            it("namesTheReceiptAndTheReviewedBaselineOfItsOperatorTimetable") {
                 assertEquals(mapOf("S" to "S8"), CONFIG.exactReceipts)
+                assertEquals(mapOf("S" to "data/config/shinbundang-baseline.json"), CONFIG.exactBaselines)
                 assertFailsWith<IllegalArgumentException> {
-                    LtConfig(config("""{"days":["weekday"],$source}"""), setOf("S"))
+                    LtConfig(config("""{"days":["weekday"],$source,"baseline":"data/config/b.json"}"""), setOf("S"))
+                }
+                assertFailsWith<IllegalArgumentException> {
+                    LtConfig(config("""{"days":["weekday"],$source,"receipt":"S8"}"""), setOf("S"))
                 }
             }
 
             it("isNeverExactOnSaturdayWhereNoTagoFamilyIsComputed") {
                 // The operator's table is one table for weekends and holidays; Saturday borrows no other day's rows.
                 assertFailsWith<IllegalArgumentException> {
-                    LtConfig(config("""{"days":["saturday"],$source,"receipt":"S8"}"""), setOf("S"))
+                    LtConfig(
+                        config("""{"days":["saturday"],$source,"receipt":"S8","baseline":"data/config/b.json"}"""),
+                        setOf("S"),
+                    )
                 }
             }
         }
@@ -269,6 +287,18 @@ class LastTrainExactSwitchTest :
                 val (receipts, tago) = ltOperatorReceipts(full, CONFIG)
                 assertEquals("2026-11-16", tago)
                 assertEquals(LtOperatorReceipt("S8", "2026-11-16", "2026-11-06"), receipts.getValue("S"))
+                // The receipt's newest notice, when its notices say which one is.
+                val noticed =
+                    root(
+                        "[${receipt("S5")},${receipt("S6")},${receipt("S7")}," +
+                            receipt("S8").removeSuffix("}") +
+                            ""","notices":[{"viewNo":"1358","title":"t","newest":true},""" +
+                            """{"viewNo":"1356","title":"u","newest":false}]}]""",
+                    )
+                assertEquals(
+                    LtNoticeLink("1358", "t"),
+                    ltOperatorReceipts(noticed, CONFIG).first.getValue("S").newestNotice,
+                )
             }
         }
 
@@ -309,6 +339,21 @@ class LastTrainExactSwitchTest :
                 assertEquals(
                     "the operator changed its timetable on 2026-11-20, after TAGO was fetched on 2026-11-16",
                     switches.first().reasons.single(),
+                )
+            }
+
+            it("isOffWhenTheReceiptShowsANewerNoticeThanTheReviewedOneWhateverItsTitle") {
+                // #100 re-review: a notice under a plain title ("고객 안내") with a table of new last trains. Whatever it
+                // says, a notice newer than the one a person reviewed switches the line off.
+                val newer = LtNoticeLink("1359", "고객 안내")
+                val (on, why) = reasons(checks(newest = newer)).single()
+                assertFalse(on)
+                assertTrue("1359 (고객 안내) is not the one reviewed" in why.single(), why.single())
+                // No notice marked newest, or no reviewed baseline at all, is the same.
+                assertFalse(reasons(checks(newest = null)).single().first)
+                assertEquals(
+                    listOf(false to listOf("no reviewed baseline of the operator's pages")),
+                    reasons(checks(reviewed = null)),
                 )
             }
 

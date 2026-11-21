@@ -26,6 +26,9 @@ import kotlin.io.path.readBytes
 internal const val SHINBUNDANG_ID = "S8"
 internal const val SHINBUNDANG_FAMILY = "신분당"
 internal const val SHINBUNDANG_DIR = "data/raw/shinbundang"
+
+/** The reviewed baseline of the pages (`exact.신분당.baseline` in last-train.json names the same file). */
+internal const val SHINBUNDANG_BASELINE = "data/config/shinbundang-baseline.json"
 internal const val SHINBUNDANG_OPERATOR = "신분당선 운영사 DX라인"
 private const val SHINBUNDANG_PAGE_URL = "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd="
 private const val SHINBUNDANG_NOTICE_URL = "https://www.shinbundang.co.kr/notice/notice1_view.jsp?viewNo="
@@ -151,6 +154,10 @@ private fun tabRows(
     code: String,
     tab: String,
 ): List<List<String>> {
+    listOf("table", "caption", "thead", "tbody").forEach { tag ->
+        val count = Regex("<$tag[\\s>]").findAll(tab).count()
+        if (count != 1) stop(code, "$count <$tag> in a tab, one expected")
+    }
     val caption =
         Regex("<caption>(.*?)</caption>", DOT)
             .find(tab)
@@ -264,23 +271,30 @@ internal fun parseShinbundangNotice(
     return LtOperatorNotice(viewNo, title, registered, dates.singleOrNull()?.takeIf { related }, link("이전"), link("다음"))
 }
 
-/** The 16 station pages and the notice pages of S8, as fetched, with the parsed timetable and notices. */
+/**
+ * The 16 station pages and the notice pages of S8, as fetched, with the parsed timetable and notices, and the
+ * fingerprints the reviewed baseline is compared with (`sb_cd` → page skeleton, viewNo → notice).
+ */
 internal class ShinbundangFetch(
-    val pages: List<LtFetchedFile>,
-    val notices: List<LtFetchedFile>,
+    val raw: ShinbundangRaw,
     val timetable: LtOperatorTimetable,
     val noticeList: List<LtOperatorNotice>,
-)
+) {
+    val pages: List<LtFetchedFile> get() = raw.pages.map { it.first }
+    val notices: List<LtFetchedFile> get() = raw.notices.map { it.first }
+    val pageFingerprints: Map<String, String> get() = raw.pageFingerprints
+    val noticeFingerprints: Map<String, String> get() = raw.noticeFingerprints
+}
 
 /** Reads `data/raw/shinbundang/SB001.html` … `SB016.html` and `notice-<viewNo>.html` (git-excluded, never fetched here). */
-internal fun readShinbundangPages(root: Path): ShinbundangFetch {
+internal fun readShinbundangRaw(root: Path): ShinbundangRaw {
     val dir = root.resolve(SHINBUNDANG_DIR)
     require(dir.exists()) { "$SHINBUNDANG_ID: $SHINBUNDANG_DIR is missing; see docs/setup/w21-notes.md §5" }
 
     fun fetched(
         path: Path,
         url: String,
-    ): Pair<LtFetchedFile, ByteArray> {
+    ): Pair<LtFetchedFile, String> {
         val bytes = path.readBytes()
         val at =
             path
@@ -288,7 +302,8 @@ internal fun readShinbundangPages(root: Path): ShinbundangFetch {
                 .toInstant()
                 .truncatedTo(ChronoUnit.SECONDS)
                 .toString()
-        return LtFetchedFile("$SHINBUNDANG_DIR/${path.name}", url, Sha256.hex(bytes), bytes.size, at) to bytes
+        return LtFetchedFile("$SHINBUNDANG_DIR/${path.name}", url, Sha256.hex(bytes), bytes.size, at) to
+            String(bytes, EUC_KR)
     }
     val pages =
         SHINBUNDANG_STATIONS.map { (code, _) ->
@@ -301,18 +316,19 @@ internal fun readShinbundangPages(root: Path): ShinbundangFetch {
             .listDirectoryEntries("notice-*.html")
             .sortedBy { it.name }
             .map { fetched(it, shinbundangNoticeUrl(it.name.removePrefix("notice-").removeSuffix(".html"))) }
+    return ShinbundangRaw(pages, notices)
+}
+
+/** Parses what [readShinbundangRaw] read: stops at anything in a page or notice the reader does not know. */
+internal fun parseShinbundangRaw(raw: ShinbundangRaw): ShinbundangFetch {
     val stations =
-        pages.zip(SHINBUNDANG_STATIONS).map { (page, station) ->
-            parseShinbundangPage(station.first, station.second, String(page.second, EUC_KR))
+        raw.pages.zip(SHINBUNDANG_STATIONS).map { (page, station) ->
+            parseShinbundangPage(station.first, station.second, page.second)
         }
     val noticeList =
-        notices.map { (file, bytes) ->
-            parseShinbundangNotice(file.url.substringAfter("viewNo="), String(bytes, EUC_KR))
-        }
-    return ShinbundangFetch(
-        pages.map { it.first },
-        notices.map { it.first },
-        LtOperatorTimetable(SHINBUNDANG_FAMILY, stations),
-        noticeList,
-    )
+        raw.notices.map { (file, html) -> parseShinbundangNotice(file.url.substringAfter("viewNo="), html) }
+    return ShinbundangFetch(raw, LtOperatorTimetable(SHINBUNDANG_FAMILY, stations), noticeList)
 }
+
+/** [readShinbundangRaw] and [parseShinbundangRaw]. */
+internal fun readShinbundangPages(root: Path): ShinbundangFetch = parseShinbundangRaw(readShinbundangRaw(root))

@@ -4,6 +4,7 @@ import app.banbanyeok.pipeline.lasttrain.compileLastTrains
 import app.banbanyeok.pipeline.lasttrain.input.ltOfficialSamples
 import app.banbanyeok.pipeline.lasttrain.model.LastTrainInputs
 import app.banbanyeok.pipeline.lasttrain.model.LtConfig
+import app.banbanyeok.pipeline.lasttrain.model.LtNoticeLink
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorChecks
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceipt
 import app.banbanyeok.schema.DayType
@@ -79,6 +80,7 @@ private fun config(exact: Boolean) =
                                 put("source", "https://example.test/t")
                                 put("checkedAt", "2026-11-21")
                                 put("receipt", "S8")
+                                put("baseline", "data/config/shinbundang-baseline.json")
                             },
                         )
                     }
@@ -205,8 +207,9 @@ class LastTrainCompilerTest :
                         "meeting,home,day,time,bound,family,url,checkedAt\n" +
                             "A,C,weekday,23:31,C,1,https://example.test/t,2026-11-21\n",
                     )
-                val receipts = mapOf("1" to LtOperatorReceipt("S8", "2026-11-21", "2026-11-06"))
-                val checks = LtOperatorChecks(wrong, emptyList(), receipts, "2026-11-16")
+                val notice = LtNoticeLink("1358", "변경")
+                val receipts = mapOf("1" to LtOperatorReceipt("S8", "2026-11-21", "2026-11-06", notice))
+                val checks = LtOperatorChecks(wrong, emptyList(), receipts, "2026-11-16", mapOf("1" to notice))
                 val (soft, softNet) = inputs(config(exact = true), checks)
                 val off = compileLastTrains(soft, softNet, listOf("001"))
                 assertTrue(off.passed)

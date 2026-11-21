@@ -34,6 +34,9 @@ internal class LtConfig(
      */
     val exactReceipts: Map<String, String>
 
+    /** The reviewed baseline of each exact family's operator pages (a path below the repository root). */
+    val exactBaselines: Map<String, String>
+
     /**
      * Whether trains rebuilt from rows without train numbers may give a time ([LtProblem.rebuild]). Off unless the
      * config turns it on: `"rebuild": {"enabled": true}`.
@@ -121,6 +124,17 @@ internal class LtConfig(
                         ?.takeIf(String::isNotBlank),
                 ) {
                     "last-train.json: exact family $family needs the receipt id of its operator timetable"
+                }
+            }
+        exactBaselines =
+            entries.mapValues { (family, rule) ->
+                requireNotNull(
+                    rule.jsonObject["baseline"]
+                        ?.jsonPrimitive
+                        ?.content
+                        ?.takeIf { it.startsWith("data/config/") },
+                ) {
+                    "last-train.json: exact family $family needs the reviewed baseline of its operator pages"
                 }
             }
         // A family is exact only on a day type it is computed: Saturday has no TAGO rows and borrows no other day's.

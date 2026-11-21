@@ -1,16 +1,26 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.pipeline.lasttrain.compute.ltBaselineDifferences
 import app.banbanyeok.pipeline.lasttrain.compute.ltLatestTimetableChange
 import app.banbanyeok.pipeline.lasttrain.compute.ltOperatorSamples
+import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_BASELINE
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_STATIONS
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangNotice
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangPage
 import app.banbanyeok.pipeline.lasttrain.input.readShinbundangPages
+import app.banbanyeok.pipeline.lasttrain.input.readShinbundangRaw
+import app.banbanyeok.pipeline.lasttrain.input.shinbundangNoticeFingerprint
+import app.banbanyeok.pipeline.lasttrain.input.shinbundangPageFingerprint
 import app.banbanyeok.pipeline.lasttrain.input.shinbundangTimetableTitle
+import app.banbanyeok.pipeline.lasttrain.model.LtOperatorBaseline
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorTimetable
+import app.banbanyeok.pipeline.lasttrain.model.LtReviewedNotice
+import app.banbanyeok.pipeline.lasttrain.output.writeOperatorBaseline
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Sha256
 import io.kotest.core.spec.style.DescribeSpec
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import java.nio.charset.Charset
 import java.nio.file.Files
 import kotlin.io.path.writeBytes
@@ -388,6 +398,152 @@ class LastTrainOperatorSamplesTest :
                 assertFailsWith<IllegalArgumentException> {
                     ltLatestTimetableChange(listOf(newest, other), ::shinbundangTimetableTitle)
                 }
+            }
+        }
+
+        describe("only pages and notices a person reviewed are read (#100 re-review: an allowlist)") {
+            val ends = page(listOf(row("", "23", "10")), listOf(row("", "23", "20")))
+            val newest = operatorNotice(CHANGE, "2026.11.06", null, "1357" to DRILL)
+
+            /** A fetched set in [root]: 16 pages (SB001 an end page, the rest [MIDDLE]) and notice 1358. */
+            fun fetched(
+                root: java.nio.file.Path,
+                pages: Map<String, String> = emptyMap(),
+                notices: Map<String, String> = mapOf("1358" to newest),
+            ) {
+                val dir = root.resolve("data/raw/shinbundang")
+                Files.createDirectories(dir)
+                dir.toFile().listFiles()?.forEach { it.delete() }
+                SHINBUNDANG_STATIONS.forEach { (code, _) ->
+                    val html = pages[code] ?: if (code == "SB001") ends else MIDDLE
+                    dir.resolve("$code.html").writeBytes(html.toByteArray(EUC_KR))
+                }
+                notices.forEach { (no, html) -> dir.resolve("notice-$no.html").writeBytes(html.toByteArray(EUC_KR)) }
+            }
+
+            /** The baseline of the set [fetched] writes with no changes, as `shinbundang-baseline` would record it. */
+            fun reviewed(): LtOperatorBaseline {
+                val root = Files.createTempDirectory("sb-reviewed")
+                fetched(root)
+                val raw = readShinbundangRaw(root)
+                return LtOperatorBaseline(
+                    "S8",
+                    "2026-11-21",
+                    raw.pageFingerprints,
+                    LtReviewedNotice("1358", CHANGE, raw.noticeFingerprints.getValue("1358"), "-"),
+                )
+            }
+            val baseline = reviewed()
+
+            fun differences(
+                pages: Map<String, String> = emptyMap(),
+                notices: Map<String, String> = mapOf("1358" to newest),
+            ): List<String> {
+                val root = Files.createTempDirectory("sb-fetched")
+                fetched(root, pages, notices)
+                val raw = readShinbundangRaw(root)
+                return ltBaselineDifferences(baseline, raw.pageFingerprints, raw.noticeFingerprints)
+            }
+
+            it("acceptsThePagesItReviewedWithOtherMinutesAndAnotherViewCount") {
+                assertEquals(emptyList(), differences())
+                // Minutes change at every revision: the skeleton does not.
+                val other = MIDDLE.replace("10 ${red("40(정자)")} 50", "12 ${red("41(정자)")} 55")
+                assertEquals(emptyList(), differences(pages = mapOf("SB005" to other)))
+                assertEquals(shinbundangPageFingerprint(MIDDLE), shinbundangPageFingerprint(other))
+                // The view count of a notice grows with every visit.
+                val viewed =
+                    newest.replace(
+                        "<tr><th scope=\"row\">등록일</th>",
+                        "<tr><th scope=\"row\">조회수</th><td>1</td></tr><tr><th scope=\"row\">등록일</th>",
+                    )
+                val more = viewed.replace("<td>1</td>", "<td>2476</td>")
+                assertEquals(shinbundangNoticeFingerprint(viewed), shinbundangNoticeFingerprint(more))
+            }
+
+            it("refusesAPageThatChangedAnywhereButItsMinutes") {
+                val passing = "※ 평일 00시 22분 정자행은 청계산입구역을 통과합니다."
+                // Counterexamples 1 (a note after the table) and 6 (a second body), and markup the reader never saw.
+                listOf(
+                    MIDDLE.replaceFirst("</table>", "</table><p>$passing</p>"),
+                    MIDDLE.replaceFirst("</tbody>", "</tbody><tbody><tr><td colspan=\"3\">$passing</td></tr></tbody>"),
+                    MIDDLE.replaceFirst("<td class=\"ac time\">23</td>", "<td class=\"ac time\">23*</td>"),
+                    MIDDLE.replaceFirst("광교(경기대)방면</th>", "광교방면</th>"),
+                    MIDDLE.replaceFirst("<td class=\"al\">", "<td class=\"al note\">"),
+                ).forEach { changed ->
+                    assertEquals(
+                        listOf("SB005: page is not the reviewed one (all but its minutes changed)"),
+                        differences(pages = mapOf("SB005" to changed)),
+                    )
+                }
+                // The second body stops the reader itself too: one body per tab.
+                assertFailsWith<IllegalArgumentException> {
+                    station(
+                        "SB005",
+                        "양재",
+                        MIDDLE.replaceFirst(
+                            "</tbody>",
+                            "</tbody><tbody><tr><td>1</td><td>23</td><td>2</td></tr></tbody>",
+                        ),
+                    )
+                }
+            }
+
+            it("refusesANoticeListWithAnythingNewerThanTheReviewedNotice") {
+                // Counterexamples 2 (a timetable notice with an odd title), 3 (an unquoted link) and 7 (a plain title
+                // over a table of new last trains): the reviewed notice's "이전" cell is no longer the end of the list.
+                val linked = operatorNotice(CHANGE, "2026.11.06", "1359" to "고객 안내", "1357" to DRILL)
+                val customer =
+                    operatorNotice("고객 안내", null, null, "1358" to CHANGE).replace(
+                        "■ 변경대상 : 신사역 ~ 광교역",
+                        "<table><caption>변경 시간표</caption><tr><td>2026년 11월20일</td><td>신사→정자</td><td>00:10</td></tr></table>",
+                    )
+                val unquoted =
+                    operatorNotice(
+                        CHANGE,
+                        "2026.11.06",
+                        null,
+                        "1357" to DRILL,
+                        newerCell = "<a href=\"javascript:goView(1359)\">$CHANGE (11월 20일)</a>",
+                    )
+                val spaced = operatorNotice("신분당선 열차 운행시각표 변경 시행", "2026.11.20", null, "1358" to CHANGE)
+                assertTrue(differences(notices = mapOf("1358" to linked, "1359" to customer)).size == 2)
+                assertTrue(differences(notices = mapOf("1358" to unquoted)).single().startsWith("notice 1358 is not"))
+                assertTrue(differences(notices = mapOf("1358" to linked, "1359" to spaced)).isNotEmpty())
+                // The reviewed notice not fetched, or one notice newer fetched on its own, are differences too.
+                assertEquals(
+                    listOf("notice 1358, the newest reviewed, is not among the pages"),
+                    differences(notices = mapOf("1356" to operatorNotice(CHANGE, "2026.09.28", "1357" to DRILL, null))),
+                )
+                assertEquals(
+                    listOf("notice 1360 is newer than the reviewed 1358"),
+                    differences(notices = mapOf("1358" to newest, "1360" to operatorNotice(DRILL, null, null, null))),
+                )
+            }
+
+            it("stopsTheSampleCommandAndRemovesTheReceiptSoThatTheBuildSwitchesTheLineOff") {
+                val root = Files.createTempDirectory("sb-command")
+                Files.createDirectories(root.resolve("data/config"))
+                writeOperatorBaseline(root, SHINBUNDANG_BASELINE, baseline, emptyList())
+                val manifest = root.resolve("data/config/source-manifest.json")
+                Files.writeString(manifest, """[{"id":"S6","fetched_at":"2026-11-15T16:06:45Z"},{"id":"S8"}]""")
+                fetched(root, pages = mapOf("SB005" to MIDDLE.replaceFirst("</table>", "</table><p>※ 통과</p>")))
+                val stop = assertFailsWith<IllegalStateException> { shinbundangSamples(root) }
+                assertTrue("SB005" in stop.message.orEmpty() && "removed" in stop.message.orEmpty(), stop.message)
+                assertEquals(
+                    listOf(
+                        "S6",
+                    ),
+                    parseObject("""{"r":${Files.readString(manifest)}}""").getValue("r").jsonArray.map {
+                        it.jsonObject.text("id")
+                    },
+                )
+                // Without a reviewed baseline nothing is read either.
+                Files.writeString(manifest, """[{"id":"S8"}]""")
+                Files.delete(root.resolve(SHINBUNDANG_BASELINE))
+                fetched(root)
+                assertFailsWith<IllegalStateException> { shinbundangSamples(root) }
+                assertEquals("[]", Files.readString(manifest).trim().replace(Regex("\\s"), ""))
             }
         }
     })

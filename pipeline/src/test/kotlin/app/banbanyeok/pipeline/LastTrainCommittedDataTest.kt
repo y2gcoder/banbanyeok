@@ -77,6 +77,28 @@ class LastTrainCommittedDataTest :
                 // Each sample names the page of its meeting station, one of the receipt's pages.
                 assertTrue(pages.map { it.text("source_url") }.containsAll(samples.map { it.url }.toSet()))
                 assertEquals("2026-11-06", receipt.text("latest_timetable_change"))
+                // The reviewed baseline (#100 re-review): one skeleton for all 16 pages, and the newest notice it names
+                // is the one the receipt's pages show as newest. Only fingerprints and counts, no text of the pages.
+                assertEquals(mapOf("신분당" to "data/config/shinbundang-baseline.json"), config.exactBaselines)
+                val baseline = parseObject(repo.resolve("data/config/shinbundang-baseline.json").readText())
+                assertEquals(
+                    setOf("receipt", "reviewedOn", "basis", "structure", "pageSkeleton", "latestNotice"),
+                    baseline.keys,
+                )
+                val skeletons = baseline.getValue("pageSkeleton").jsonObject
+                assertEquals((1..16).map { "SB${it.toString().padStart(3, '0')}" }, skeletons.keys.toList())
+                assertEquals(1, skeletons.values.toSet().size)
+                val reviewed = baseline.getValue("latestNotice").jsonObject
+                val newest =
+                    receipt.getValue("notices").jsonArray.map { it.jsonObject }.single {
+                        it.text("newest") ==
+                            "true"
+                    }
+                assertEquals(
+                    newest.text("viewNo") to newest.text("title"),
+                    reviewed.text("viewNo") to reviewed.text("title"),
+                )
+                assertEquals(newest.text("sha256"), reviewed.text("sha256"))
                 assertEquals("240", receipt.text("rows"))
             }
         }

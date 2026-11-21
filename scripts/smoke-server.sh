@@ -9,6 +9,7 @@ base="${1:?usage: smoke-server.sh <base-url> [expected-dataVersion]}"
 base="${base%/}"
 expected="${2:-}"
 tmp="$(mktemp -d)"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 trap 'rm -rf "$tmp"' EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -99,18 +100,42 @@ if [[ "$stale" != stale ]]; then
   code="$(http "$tmp/k" -X POST "$base/v1/recommend" -H 'Content-Type: application/json' \
     -d '{"origins":["k3a","dzc"],"mode":"fair","timeSlot":"weekday-night"}')"
   [[ "$code" == 200 ]] || fail "/v1/recommend(강남·광교) 상태 $code"
-  # 신분당선은 운영사 표와 대조한 칸만 시각을 내고(#82부터 만날 역 8개 전부), 표본이 틀리거나 운영사 표가 TAGO와 같은 때의
-  # 것이 아니면 그 요일이 꺼진 채로 발행된다(last-train-report.json의 exactSwitches). 꺼진 것도 정상 발행이라 알리기만 한다.
-  python3 -I - "$tmp/k" <<'PY' || fail "신분당선 막차 응답을 읽지 못함"
-import json, sys
-r = json.load(open(sys.argv[1]))
-found = [(c["stationName"], t) for c in r["candidates"] for t in c.get("lastTrains", [])
-         if t["participantId"] == "1" and t["kind"] == "direct" and t.get("boundFor", {}).get("stationCode") == "dzc"]
-if found:
-    name, train = found[0]
-    print("   %s에서 광교행 직행 확정 %02d:%02d" % (name, train["minute"] // 60 % 24, train["minute"] % 60))
+  # 신분당선은 운영사 표와 대조한 칸만 시각을 낸다. 이 저장소의 보고서(exactSwitches)에서 평일 신분당이 꺼져 있으면
+  # 직행이 없는 것이 맞으므로 알리기만 한다. 켜져 있으면 응답의 후보 가운데 신분당 표본이 있는 만날 역은 모두 광교행
+  # 직행 확정이 표본의 분 그대로 나와야 한다(없으면 배포 실패). 서버의 데이터 버전이 이 저장소의 것과 다르면 알리기만 한다.
+  python3 -I - "$tmp/k" "$root" "$version" <<'PY' || fail "신분당선 막차 직행 확정이 기대와 다름"
+import csv, json, sys
+response, root, version = sys.argv[1], sys.argv[2], sys.argv[3]
+r = json.load(open(response))
+report = json.load(open(root + "/data/config/last-train-report.json"))
+ours = json.load(open(root + "/data/artifacts/dev/manifest.json"))["dataVersion"]
+switch = [s for s in report.get("exactSwitches", []) if s["family"] == "신분당" and s["day"] == "weekday"]
+on = bool(switch) and switch[0]["on"]
+samples = {row["meeting"]: int(row["time"][:2]) * 60 + int(row["time"][3:])
+           for row in csv.DictReader(open(root + "/data/config/last-train-official.csv"))
+           if row["family"] == "신분당" and row["home"] == "광교" and row["day"] == "weekday"}
+def train(candidate):
+    return next((t for t in candidate.get("lastTrains", []) if t["participantId"] == "1"), None)
+checked = [(c["stationName"], train(c)) for c in r["candidates"] if c["stationName"] in samples]
+if version != ours:
+    print("   경고: 서버 dataVersion %s가 이 저장소의 %s와 달라 신분당 칸을 대조하지 않음" % (version, ours))
+elif not on:
+    print("   경고: 평일 신분당이 꺼진 채 발행됨(보고서 exactSwitches: %s). 직행이 없는 것이 맞다"
+          % (switch[0]["reasons"] if switch else "없음"))
+elif not checked:
+    print("   경고: 상위 후보에 신분당선 표본이 있는 만날 역이 없음(후보 순위가 바뀌었는지 확인)")
 else:
-    print("   경고: 상위 후보에 신분당선 대조 칸이 없음(후보 순위, 또는 보고서의 exactSwitches에서 신분당이 꺼졌는지 확인)")
+    bad = []
+    for name, t in checked:
+        want = samples[name]
+        ok = (t is not None and t["kind"] == "direct" and t.get("minute") == want
+              and t.get("boundFor", {}).get("stationCode") == "dzc")
+        print("   %s에서 광교행 직행 확정 %s (표본 %02d:%02d)%s" % (
+            name, "%02d:%02d" % (t["minute"] // 60 % 24, t["minute"] % 60) if t and "minute" in t else t,
+            want // 60 % 24, want % 60, "" if ok else "  ← 다름"))
+        if not ok:
+            bad.append(name)
+    sys.exit(1 if bad else 0)
 PY
 fi
 
