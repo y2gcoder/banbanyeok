@@ -41,6 +41,11 @@ afterEach(() => vi.unstubAllGlobals());
 
 const json = (status: number, body: unknown) => () =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const problemJson = (status: number, body: unknown) => () =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/problem+json; charset=UTF-8" },
+  });
 
 describe("방 API 호출", () => {
   it("방 만들기: POST /rooms, Idempotency-Key, 토큰 없음", async () => {
@@ -141,5 +146,22 @@ describe("방 API 호출", () => {
     await expect(removeParticipant(ROOM, "pid", SECRET)).rejects.toBeInstanceOf(ApiRequestError);
     respond = () => new Response(null, { status: 204 });
     await expect(removeParticipant(ROOM, "pid", SECRET)).resolves.toBeUndefined();
+  });
+
+  it("application/problem+json 오류도 code와 detail로 ApiRequestError가 된다", async () => {
+    respond = problemJson(409, {
+      type: "https://banbanyeok.app/problems/room-full",
+      title: "방이 가득 참",
+      status: 409,
+      detail: "방이 가득 찼습니다",
+      code: "ROOM_FULL",
+      message: "방이 가득 찼습니다",
+    });
+    await expect(joinRoom(ROOM, { originCode: "03v", hidden: false }, "k")).rejects.toMatchObject({
+      status: 409,
+      code: "ROOM_FULL",
+      message: "방이 가득 찼습니다",
+      name: "ApiRequestError",
+    });
   });
 });

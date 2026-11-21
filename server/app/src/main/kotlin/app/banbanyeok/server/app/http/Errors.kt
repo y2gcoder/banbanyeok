@@ -5,16 +5,28 @@ import app.banbanyeok.server.recommendation.RecommendationError
 import app.banbanyeok.server.recommendation.RecommendationException
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.RoomException
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.withCharset
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
+import io.ktor.server.application.pluginOrNull
 import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.CannotTransformContentToTypeException
 import io.ktor.server.plugins.PayloadTooLargeException
+import io.ktor.server.plugins.UnsupportedMediaTypeException
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.path
 import io.ktor.server.response.header
-import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.HttpMethodRouteSelector
+import io.ktor.server.routing.PathSegmentConstantRouteSelector
+import io.ktor.server.routing.PathSegmentParameterRouteSelector
+import io.ktor.server.routing.RoutingNode
+import io.ktor.server.routing.RoutingRoot
 import kotlinx.serialization.SerializationException
 import org.slf4j.LoggerFactory
 
@@ -35,10 +47,20 @@ suspend fun ApplicationCall.respondError(
     message: String,
 ) {
     if (status == HttpStatusCode.Unauthorized) response.header(HttpHeaders.WWWAuthenticate, "Bearer")
-    respond(status, ErrorDto(code, message))
+    val problem = ProblemDto(ProblemTypes.typeUri(code), ProblemTypes.title(code), status.value, message, code, message)
+    respondText(apiJson.encodeToString(ProblemDto.serializer(), problem), PROBLEM_JSON, status)
 }
 
-/** 모든 오류는 `{code, message}`로 돌려준다. 예상하지 못한 오류의 내용은 응답에 싣지 않고 로그에만 남긴다. */
+private val PROBLEM_JSON = ContentType("application", "problem+json").withCharset(Charsets.UTF_8)
+
+/**
+ * 모든 오류는 `application/problem+json`(`{type, title, status, detail, code, message}`)으로 돌려준다. 예상하지 못한 오류의 내용은
+ * 응답에 싣지 않고 로그에만 남긴다.
+ *
+ * 라우트 밖에서 Ktor 플러그인이 본문 없이 끝내는 응답(CORS 403, 콘텐츠 협상 406, 경로·메서드 404·405)도 `status(...)`로 같은 형식에 맞춘다.
+ * 응답은 `respondText`로 직접 직렬화한다. 콘텐츠 협상을 다시 거치지 않으므로 요청의 `Accept`가 무엇이든(예: 406의 원인인 `text/plain`)
+ * 오류 본문은 항상 `application/problem+json`이다.
+ */
 fun Application.installErrorHandling() {
     install(StatusPages) {
         exception<RoomException> {
@@ -64,6 +86,9 @@ fun Application.installErrorHandling() {
         exception<SerializationException> { call, _ ->
             call.respondError(HttpStatusCode.BadRequest, "INVALID_REQUEST", "요청 형식이 올바르지 않습니다")
         }
+        // 요청의 Content-Type을 읽을 변환기가 없다(예: `text/plain`으로 보낸 JSON). 본문 문법 오류(400)와 다르다.
+        exception<UnsupportedMediaTypeException> { call, _ -> call.respondUnsupportedMediaType() }
+        exception<CannotTransformContentToTypeException> { call, _ -> call.respondUnsupportedMediaType() }
         exception<Throwable> { call, e ->
             logger.error("처리하지 못한 오류", e)
             call.respondError(HttpStatusCode.InternalServerError, "INTERNAL_ERROR", "서버 오류가 발생했습니다")
@@ -72,10 +97,65 @@ fun Application.installErrorHandling() {
             HttpStatusCode.NotFound,
         ) { call, _ -> call.respondError(HttpStatusCode.NotFound, "NOT_FOUND", "찾을 수 없습니다") }
         status(HttpStatusCode.MethodNotAllowed) { call, _ ->
+            // RFC 9110 §15.5.6: 405는 이 경로가 지원하는 메서드를 `Allow`로 알려야 한다.
+            val allowed = call.allowedMethods()
+            if (allowed.isNotEmpty()) call.response.header(HttpHeaders.Allow, allowed.joinToString(", "))
             call.respondError(HttpStatusCode.MethodNotAllowed, "METHOD_NOT_ALLOWED", "허용되지 않는 메서드입니다")
+        }
+        // CORS 플러그인이 허용 목록에 없는 출처·메서드를 본문 없이 403으로 끝낸다. 요청의 출처·메서드 값은 싣지 않는다.
+        // 방 권한 403(`FORBIDDEN`)은 라우트가 본문과 함께 답하므로 여기로 오지 않는다.
+        status(HttpStatusCode.Forbidden) { call, _ ->
+            call.respondError(HttpStatusCode.Forbidden, "CORS_REJECTED", "허용되지 않는 출처 또는 메서드의 요청입니다")
+        }
+        // 콘텐츠 협상이 `Accept`에 맞는 표현을 만들지 못했다. `Accept`가 오류 형식(application/problem+json)을 받아 주더라도
+        // 성공 응답은 application/json뿐이라 같은 406이 난다.
+        status(HttpStatusCode.NotAcceptable) { call, _ ->
+            call.respondError(HttpStatusCode.NotAcceptable, "NOT_ACCEPTABLE", "요청한 응답 형식(Accept)으로 답할 수 없습니다")
         }
     }
 }
+
+private suspend fun ApplicationCall.respondUnsupportedMediaType() =
+    respondError(
+        HttpStatusCode.UnsupportedMediaType,
+        "UNSUPPORTED_MEDIA_TYPE",
+        "요청 본문의 Content-Type은 application/json이어야 합니다",
+    )
+
+/** 이 요청의 경로에서 라우트가 받는 메서드(405의 `Allow`). 경로 조각이 모두 맞는 끝 노드의 메서드 선택자를 모은다. */
+private fun ApplicationCall.allowedMethods(): List<String> {
+    val root = application.pluginOrNull(RoutingRoot) ?: return emptyList()
+    val segments = request.path().split('/').filter { it.isNotEmpty() }
+    return root
+        .methodsFor(segments)
+        .map { it.value }
+        .distinct()
+        .sorted()
+}
+
+private fun RoutingNode.methodsFor(segments: List<String>): List<HttpMethod> =
+    when (val selector = selector) {
+        is HttpMethodRouteSelector -> {
+            if (segments.isEmpty()) listOf(selector.method) else emptyList()
+        }
+
+        is PathSegmentConstantRouteSelector -> {
+            if (segments.firstOrNull() == selector.value) {
+                children.flatMap { it.methodsFor(segments.drop(1)) }
+            } else {
+                emptyList()
+            }
+        }
+
+        // `{param}`은 경로 조각 하나를 받는다. 남은 조각이 없으면 이 아래 메서드는 이 요청의 경로가 아니다.
+        is PathSegmentParameterRouteSelector -> {
+            if (segments.isNotEmpty()) children.flatMap { it.methodsFor(segments.drop(1)) } else emptyList()
+        }
+
+        else -> {
+            children.flatMap { it.methodsFor(segments) }
+        }
+    }
 
 // RecommendationError → 응답. 경로마다 표가 따로 있고 같은 오류에도 일부러 다른 코드를 쓴다. 두 표는 여기에서만 정한다.
 // 라우트는 추천을 부르는 곳을 아래 래퍼 중 하나로 감싼다. 감싸지 않은 RecommendationException은 처리하지 못한 오류(500)다.

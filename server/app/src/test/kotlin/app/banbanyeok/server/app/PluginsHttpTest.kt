@@ -45,6 +45,34 @@ class PluginsHttpTest :
                 }
             }
 
+            it("answers a rejected origin and a rejected preflight with a CORS_REJECTED problem that echoes nothing") {
+                withMockedApi(config) {
+                    val rejected =
+                        client.json(
+                            HttpMethod.Get,
+                            "/v1/manifest",
+                        ) { headers.append(HttpHeaders.Origin, "https://evil.example") }
+                    rejected.shouldBeProblem(
+                        HttpStatusCode.Forbidden,
+                        "CORS_REJECTED",
+                        "허용되지 않는 출처",
+                        "허용되지 않는 출처 또는 메서드의 요청입니다",
+                    )
+                    rejected.bodyAsText() shouldNotContain "evil.example"
+                    val preflight =
+                        client.json(HttpMethod.Options, "/v1/rooms") {
+                            headers.append(HttpHeaders.Origin, "https://web.example")
+                            headers.append(HttpHeaders.AccessControlRequestMethod, "TRACE")
+                        }
+                    preflight.shouldBeProblem(
+                        HttpStatusCode.Forbidden,
+                        "CORS_REJECTED",
+                        "허용되지 않는 출처",
+                        "허용되지 않는 출처 또는 메서드의 요청입니다",
+                    )
+                }
+            }
+
             it("answers a preflight for the Authorization and Idempotency-Key headers") {
                 withMockedApi(config) {
                     val response =

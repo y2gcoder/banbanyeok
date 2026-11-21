@@ -9,13 +9,16 @@ import addFormats from "ajv-formats";
 import { beforeAll, describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { mockRecommend } from "../../../mock/recommend";
-import { loadMockData, validateRecommend } from "../../../mock/server";
+import { loadMockData, problem, validateRecommend } from "../../../mock/server";
+import { PROBLEM_DOCS, problemType } from "../problems/problems";
 import { type CreateRoomForm, toCreateRoomRequest, toOutcomeAnswer, toParticipantInput } from "../room/input";
 import { searchStations } from "../stations";
 import { recommendBody } from "./client";
 
+type ResponseObject = { content?: Record<string, unknown> } & { $ref?: string };
+type OperationResponses = { responses?: Record<string, ResponseObject> };
 type OpenApi = {
-  components: { schemas: Record<string, unknown> };
+  components: { schemas: Record<string, unknown>; responses?: Record<string, { content?: Record<string, unknown> }> };
   paths: Record<string, Record<string, { requestBody?: { content: Record<string, { schema: unknown }> } }>>;
 };
 
@@ -28,7 +31,7 @@ const ajv = new Ajv2020({ allErrors: true, strict: true, strictTypes: false });
 addFormats.default(ajv);
 ajv.addSchema({ $id: "contract", $defs: rebased(doc.components.schemas) });
 const resultSchema = ajv.compile({ $ref: "contract#/$defs/Result" });
-const errorSchema = ajv.compile({ $ref: "contract#/$defs/Error" });
+const errorSchema = ajv.compile({ $ref: "contract#/$defs/Problem" });
 const requestSchema = ajv.compile(
   rebased(doc.paths["/recommend"]?.post?.requestBody?.content["application/json"]?.schema) as object,
 );
@@ -79,7 +82,72 @@ describe("가짜 서버가 계약을 지킨다", () => {
       { origins: supported.slice(0, 2), mode: "x" },
     ]) {
       const checked = validateRecommend(data, bad);
-      expect("code" in checked && errorSchema(checked)).toBe(true);
+      expect("code" in checked && errorSchema(problem(400, checked.code, checked.message))).toBe(true);
+    }
+  });
+
+  it("가짜 서버가 내는 오류의 type은 열리는 /problems 문서이거나 about:blank다", () => {
+    const known = new Set(PROBLEM_DOCS.map((p) => problemType(p)));
+    const bodies: unknown[] = [
+      { origins: supported.slice(0, 1), mode: "fair" },
+      { origins: ["zzz", "zzy"], mode: "fair" },
+      { origins: ["!", "?"], mode: "fair" },
+      { origins: supported.slice(0, 2), mode: "x" },
+      { origins: supported.slice(0, 2), mode: "favor" },
+      { origins: supported.slice(0, 2), mode: "favor", favorIndex: 3 },
+      { origins: supported.slice(0, 2), mode: "fair", favorIndex: "a" },
+      { origins: supported.slice(0, 2), mode: "fair", nicknames: ["a"] },
+      { origins: supported.slice(0, 2), mode: "fair", timeSlot: "nope" },
+      "not an object",
+    ];
+    const issued = bodies.map((body) => validateRecommend(data, body));
+    const problems = issued.flatMap((checked) =>
+      "code" in checked ? [problem(400, checked.code, checked.message)] : [],
+    );
+    expect(problems).toHaveLength(bodies.length);
+    for (const body of [...problems, problem(404, "NOT_FOUND", "x"), problem(500, "INTERNAL_ERROR", "x")]) {
+      expect(known.has(body.type), `${body.code} → ${body.type}`).toBe(true);
+    }
+    // 실제 서버에 없는 경로는 문서 주소를 약속하지 않는다.
+    expect(problem(501, "NOT_IMPLEMENTED", "x").type).toBe("about:blank");
+  });
+
+  it("오류 스키마는 Problem Details 필드를 모두 요구하고 옛 {code, message}는 받지 않는다", () => {
+    expect(errorSchema(problem(409, "ROOM_FULL", "방이 가득 찼습니다"))).toBe(true);
+    expect(errorSchema({ code: "ROOM_FULL", message: "방이 가득 찼습니다" })).toBe(false);
+  });
+
+  it("contracts/problems.json의 코드와 openapi의 코드 표가 같다", () => {
+    const description = (doc.components.schemas.Problem as { description: string }).description;
+    const inTable = new Set(
+      description
+        .split("\n")
+        .filter((line) => /^\s*\| \d{3} \|/.test(line))
+        .flatMap((line) => [...(line.split("|")[2] ?? "").matchAll(/`([A-Z_]+)`/g)].map((m) => m[1])),
+    );
+    const table = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, "../../../../contracts/problems.json"), "utf8"),
+    ) as { problems: { code: string; status: number }[] };
+    expect([...inTable].sort()).toEqual(table.problems.map((p) => p.code).sort());
+    // 상태는 표의 줄 앞머리(`| 409 |`)와 같다.
+    for (const { code, status } of table.problems) {
+      const line = description.split("\n").find((l) => l.split("|")[2]?.includes(`\`${code}\``));
+      expect(Number(line?.split("|")[1]), code).toBe(status);
+    }
+  });
+
+  it("오류 응답은 모두 application/problem+json이다", () => {
+    const responses = JSON.stringify(doc);
+    expect(responses).not.toContain("components/schemas/Error");
+    for (const [path, methods] of Object.entries(doc.paths)) {
+      for (const [method, operation] of Object.entries(methods)) {
+        const failures = (operation as OperationResponses).responses ?? {};
+        for (const [status, response] of Object.entries(failures)) {
+          if (Number(status) < 400) continue;
+          const content = "$ref" in response ? doc.components.responses?.Error?.content : response.content;
+          expect(Object.keys(content ?? {}), `${method} ${path} ${status}`).toEqual(["application/problem+json"]);
+        }
+      }
     }
   });
 });

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { problemBody } from "../src/lib/problems/problems";
 
-// 프록시(worker.ts)가 서버 오류·시간 초과를 계약의 오류 형식 JSON(502/504)으로 돌려줄 때 사용자에게 보이는 처리.
+// 프록시(worker.ts)가 서버 오류·시간 초과를 서버와 같은 `application/problem+json`(502/503/504)으로 돌려줄 때 사용자에게 보이는 처리.
 // 브라우저의 /api/v1/recommend 호출만 가로채 같은 응답을 흉내 낸다(프록시 자체는 src/lib/proxy 단위 테스트가 본다).
 for (const [status, code] of [
   [504, "UPSTREAM_TIMEOUT"],
@@ -14,8 +15,8 @@ for (const [status, code] of [
     await page.route("**/api/v1/recommend", (route) =>
       route.fulfill({
         status,
-        contentType: "application/json",
-        body: JSON.stringify({ code, message: "서버가 응답하지 않아요." }),
+        contentType: "application/problem+json; charset=utf-8",
+        body: JSON.stringify(problemBody(status, code, "서버가 응답하지 않아요.")),
       }),
     );
     await page.getByRole("tab", { name: "빨리 만나기" }).click();

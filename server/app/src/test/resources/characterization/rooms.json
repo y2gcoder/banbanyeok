@@ -833,6 +833,10 @@
     "no-date result mode=favor": {
         "status": 400,
         "body": {
+            "type": "https://banbanyeok.app/problems/favor-target-required",
+            "title": "우대 대상이 필요함",
+            "status": 400,
+            "detail": "우대 대상이 필요합니다",
             "code": "FAVOR_TARGET_REQUIRED",
             "message": "우대 대상이 필요합니다"
         }
@@ -2229,6 +2233,10 @@
     "friday-evening-hidden result mode=favor": {
         "status": 400,
         "body": {
+            "type": "https://banbanyeok.app/problems/favor-target-required",
+            "title": "우대 대상이 필요함",
+            "status": 400,
+            "detail": "우대 대상이 필요합니다",
             "code": "FAVOR_TARGET_REQUIRED",
             "message": "우대 대상이 필요합니다"
         }
@@ -4157,6 +4165,10 @@
     "saturday-night-band result mode=favor": {
         "status": 400,
         "body": {
+            "type": "https://banbanyeok.app/problems/favor-target-required",
+            "title": "우대 대상이 필요함",
+            "status": 400,
+            "detail": "우대 대상이 필요합니다",
             "code": "FAVOR_TARGET_REQUIRED",
             "message": "우대 대상이 필요합니다"
         }
@@ -7023,6 +7035,10 @@
     "christmas-decided-outside-top result mode=favor": {
         "status": 400,
         "body": {
+            "type": "https://banbanyeok.app/problems/favor-target-required",
+            "title": "우대 대상이 필요함",
+            "status": 400,
+            "detail": "우대 대상이 필요합니다",
             "code": "FAVOR_TARGET_REQUIRED",
             "message": "우대 대상이 필요합니다"
         }
@@ -8110,6 +8126,10 @@
     "weekday-decided-top result mode=favor": {
         "status": 400,
         "body": {
+            "type": "https://banbanyeok.app/problems/favor-target-required",
+            "title": "우대 대상이 필요함",
+            "status": 400,
+            "detail": "우대 대상이 필요합니다",
             "code": "FAVOR_TARGET_REQUIRED",
             "message": "우대 대상이 필요합니다"
         }
@@ -9102,6 +9122,10 @@
     "out-of-range result mode=favor": {
         "status": 400,
         "body": {
+            "type": "https://banbanyeok.app/problems/favor-target-required",
+            "title": "우대 대상이 필요함",
+            "status": 400,
+            "detail": "우대 대상이 필요합니다",
             "code": "FAVOR_TARGET_REQUIRED",
             "message": "우대 대상이 필요합니다"
         }

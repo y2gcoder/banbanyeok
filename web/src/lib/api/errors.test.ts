@@ -3,9 +3,38 @@ import { ApiRequestError, failure } from "./client";
 import { resultErrorMessage } from "./errors";
 
 describe("failure", () => {
-  it("계약의 {code, message} 본문은 그대로 담는다", () => {
+  const problem = {
+    type: "https://banbanyeok.app/problems/invalid-mode",
+    title: "모드가 올바르지 않음",
+    status: 400,
+    detail: "모드가 올바르지 않아요",
+    code: "INVALID_MODE",
+    message: "호환용 문구",
+  };
+
+  it("application/problem+json 본문은 code로 분기하고 문구는 detail을 쓴다", () => {
+    const error = failure(400, problem);
+    expect(error).toMatchObject({ status: 400, code: "INVALID_MODE", message: "모드가 올바르지 않아요" });
+  });
+
+  it("옛 application/json {code, message} 본문(옛 서버)도 그대로 담는다", () => {
     const error = failure(400, { code: "INVALID_MODE", message: "모드가 올바르지 않아요" });
     expect(error).toMatchObject({ status: 400, code: "INVALID_MODE", message: "모드가 올바르지 않아요" });
+  });
+
+  it("detail이 없으면 message를 쓴다", () => {
+    const { detail: _detail, ...withoutDetail } = problem;
+    expect(failure(400, withoutDetail as never).message).toBe("호환용 문구");
+  });
+
+  it("detail도 message도 없으면 문구는 빈 문자열이고 code는 남는다", () => {
+    expect(failure(409, { code: "ROOM_FULL" } as never)).toMatchObject({ code: "ROOM_FULL", message: "" });
+  });
+
+  it("형식 없는 500(빈 본문·HTML·평문)은 code UNKNOWN과 HTTP 상태 문구다", () => {
+    for (const body of ["", "Internal Server Error", "<html>500</html>"]) {
+      expect(failure(500, body)).toMatchObject({ status: 500, code: "UNKNOWN", message: "HTTP 500" });
+    }
   });
 
   it("본문이 비었거나 JSON이 아니어도(HTML 403 등) code는 UNKNOWN이고 message는 문자열이다", () => {

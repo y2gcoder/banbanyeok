@@ -6,7 +6,7 @@ import createClient from "openapi-fetch";
 import { withTrustHeaders } from "@/lib/proxy/headers";
 import { apiBaseUrl, HEALTHZ_PATH } from "./config";
 import type { paths } from "./schema.gen";
-import type { ApiError, Mode, RecommendBody, RecommendResult, TimeSlotId } from "./types";
+import type { ApiError, LegacyApiError, Mode, RecommendBody, RecommendResult, TimeSlotId } from "./types";
 
 export class ApiRequestError extends Error {
   constructor(
@@ -83,11 +83,16 @@ export async function recommend(query: RecommendQuery, signal?: AbortSignal): Pr
   throw failure(result.response.status, result.error);
 }
 
-/** 응답이 오류이면 계약의 오류 모양(`{code, message}`)을 [ApiRequestError]로 던진다. 오류 본문이 없으면 HTTP 상태로 만든다. */
-export function failure(status: number, error: ApiError | string | undefined): ApiRequestError {
+/**
+ * 응답이 오류이면 계약의 오류 모양을 [ApiRequestError]로 던진다. 오류 본문이 없으면 HTTP 상태로 만든다.
+ * 새 서버는 `application/problem+json`(`{type, title, status, detail, code, message}`), 옛 서버는 `application/json` `{code, message}`를
+ * 준다(openapi-fetch는 Content-Type과 상관없이 JSON 본문을 파싱한다). 사람에게 보이는 문구는 `detail ?? message`, 분기는 `code`다.
+ */
+export function failure(status: number, error: ApiError | LegacyApiError | string | undefined): ApiRequestError {
   // 프록시·CDN이 준 빈 본문·HTML(JSON이 아닌 본문은 openapi-fetch가 문자열로 준다)은 계약의 오류 모양이 아니다.
   if (error !== undefined && typeof error === "object" && typeof error.code === "string") {
-    return new ApiRequestError(status, error.code, typeof error.message === "string" ? error.message : "");
+    const text = "detail" in error && typeof error.detail === "string" ? error.detail : error.message;
+    return new ApiRequestError(status, error.code, typeof text === "string" ? text : "");
   }
   return new ApiRequestError(status, "UNKNOWN", `HTTP ${status}`);
 }
