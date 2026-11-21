@@ -11,6 +11,7 @@ import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.codeNames
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainData
+import app.banbanyeok.server.recommendation.lasttrain.LastTrainSource
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainUnavailable
 import app.banbanyeok.server.recommendation.sampleLastTrainAsOf
 import app.banbanyeok.server.recommendation.sampleLastTrains
@@ -51,6 +52,7 @@ private class Room(
 private suspend fun room(
     hiddenOrigin: String = "225",
     date: LocalDate? = friday,
+    source: LastTrainSource = LastTrainSource { LastTrainData(sampleLastTrains, sampleLastTrainAsOf) },
 ): Room {
     val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
     val slots = TimeSlot.ALL.associateWith { sampleOd }
@@ -58,7 +60,7 @@ private suspend fun room(
         RecommendationService(
             OdTravelTimeProvider(sampleOd, "20261120.1", slots),
             codeNames,
-            lastTrains = { LastTrainData(sampleLastTrains, sampleLastTrainAsOf) },
+            lastTrains = source,
             clock = fixture.clock,
         )
     val created =
@@ -225,5 +227,50 @@ class LastTrainRoomTest :
                     json.toString() shouldNotContain room.hiddenId
                 }
             }
+
+            it(
+                "says the table is still loading (so the room picture is cached only briefly), only when waiting would add last trains",
+            ) {
+                runTest {
+                    val loading =
+                        object : LastTrainSource {
+                            override fun current(): LastTrainData? = null
+
+                            override fun pending(): Boolean = true
+                        }
+                    val dated = room(source = loading)
+                    val result = dated.results.preview(dated.roomId).shouldBeInstanceOf<RoomPreview.Result>()
+                    result.lastTrainPending shouldBe true
+                    result.lastTrainBasis.shouldBeNull()
+                    result.station.times.map { it.lastTrain } shouldBe listOf(null, null, null)
+                    previewJson(result)["lastTrainPending"]?.jsonPrimitive?.content shouldBe "true"
+
+                    val seen = dated.results.result(dated.roomId, null, null, null).shareVersion
+                    dated.fixture.service.decide(dated.roomId, dated.hostToken, "4xz", seen)
+                    val decided = dated.results.preview(dated.roomId).shouldBeInstanceOf<RoomPreview.Decided>()
+                    decided.lastTrainPending shouldBe true
+                    previewJson(decided)["lastTrainPending"]?.jsonPrimitive?.content shouldBe "true"
+
+                    // 약속 날짜가 없는 방은 표가 와도 요일을 몰라 시각이 붙지 않으므로 알리지 않는다.
+                    val undated = room(date = null, source = loading)
+                    val noDate = undated.results.preview(undated.roomId).shouldBeInstanceOf<RoomPreview.Result>()
+                    noDate.lastTrainPending shouldBe false
+                    ("lastTrainPending" in previewJson(noDate)) shouldBe false
+
+                    // 표를 다 읽었으면 키가 없다.
+                    val ready = room()
+                    val loaded = ready.results.preview(ready.roomId).shouldBeInstanceOf<RoomPreview.Result>()
+                    loaded.lastTrainPending shouldBe false
+                    ("lastTrainPending" in previewJson(loaded)) shouldBe false
+                }
+            }
         }
     })
+
+private fun previewJson(preview: RoomPreview): JsonObject =
+    apiJson
+        .encodeToJsonElement(
+            app.banbanyeok.server.app.http.RoomPreviewDto
+                .serializer(),
+            preview.toDto(directory),
+        ).jsonObject

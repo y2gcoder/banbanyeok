@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app.application
 
+import app.banbanyeok.server.recommendation.MapMiddle
 import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendParticipant
 import app.banbanyeok.server.recommendation.RecommendRequest
@@ -63,23 +64,13 @@ class RoomResultService(
 
     /**
      * 링크 미리보기 내용. 토큰 없이 방을 한 번 읽고(숨긴 출발역은 이미 가려져 있다) 방의 기본 기준으로 계산한다. 정한 역이 상위 후보에
-     * 없으면 그 역까지의 시간·막차를 같은 평가(한 번 잰 행렬, 한 번 읽은 막차 표)에서 꺼낸다. 출발역이 지금 데이터에 없으면
+     * 없으면 그 역까지의 시간·막차를 같은 평가(한 번 잰 행렬, 한 번 읽은 막차 표)에서 꺼낸다. 1위 단계의 "지도 한가운데" 비교도 같은 평가에서 꺼낸다. 출발역이 지금 데이터에 없으면
      * [app.banbanyeok.server.recommendation.RecommendationError.UNKNOWN_STATION]이다.
      */
     suspend fun preview(roomId: String): RoomPreview {
         val context = rooms.loadForResult(roomId, viewerToken = null)
         val view = context.view
-        val room =
-            PreviewRoom(
-                roomId = view.id,
-                shareVersion = view.shareVersion,
-                participantCount = view.participants.size,
-                canJoin = !view.locked && view.participants.size < MAX_PEOPLE,
-                meetingDate = view.meetingDate,
-                meetingTime = view.meetingTime,
-                meetingBand = view.meetingBand,
-                timeBasis = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand),
-            )
+        val room = previewRoom(context)
         if (context.computeParticipants.size < MIN_PEOPLE) return RoomPreview.Collecting(room)
         val request = requestOf(context, mode = null, favorId = null)
         val evaluation = recommendation.evaluate(request)
@@ -122,6 +113,7 @@ class RoomResultService(
                     labels.getValue(decision.decidedBy),
                     decision.decidedAt,
                     ranked.lastTrainBasis,
+                    ranked.lastTrainPending,
                 )
             }
 
@@ -136,10 +128,39 @@ class RoomResultService(
                     basis,
                     station(top.stationCode, top.times.map { it.seconds }, top.lastTrains),
                     ranked.lastTrainBasis,
+                    previewMiddle(evaluation.mapMiddle, labels),
+                    ranked.lastTrainPending,
                 )
             }
         }
     }
+
+    private fun previewRoom(context: RoomResultContext): PreviewRoom {
+        val view = context.view
+        return PreviewRoom(
+            roomId = view.id,
+            shareVersion = view.shareVersion,
+            participantCount = view.participants.size,
+            canJoin = !view.locked && view.participants.size < MAX_PEOPLE,
+            meetingDate = view.meetingDate,
+            meetingTime = view.meetingTime,
+            meetingBand = view.meetingBand,
+            timeBasis = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand),
+        )
+    }
+
+    /** 같은 평가의 "지도 한가운데" 비교(#68 2단계)를 이름표로. 숨긴 사람이 있거나 공평 기준이 아니면 평가가 null을 준다. */
+    private fun previewMiddle(
+        mapMiddle: MapMiddle?,
+        labels: Map<String, String>,
+    ): PreviewMapMiddle? =
+        mapMiddle?.let { middle ->
+            PreviewMapMiddle(
+                middle.stationCode,
+                middle.stationName,
+                middle.times.map { PreviewMiddleTime(labels.getValue(it.participantId), it.seconds) },
+            )
+        }
 
     private fun requestOf(
         context: RoomResultContext,

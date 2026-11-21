@@ -1,7 +1,7 @@
 import { ogImageResponse } from "@/components/og/og-response";
 import { SharedCard } from "@/components/og/shared-card";
 import { isRoomId, normalizeRoomId } from "@/lib/room/id";
-import { roomShareCopy } from "@/lib/room/share-copy";
+import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { parseDataVersion, parseShareVersion, SHARE_VERSION_PARAM } from "@/lib/room/share-link";
 import { loadRoomPreview } from "@/lib/seo/room-preview";
 
@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
  * `sv`(공유 번호)와 `dv`(데이터 버전)가 둘 다 지금 값과 같을 때만 방 카드를 그리고 하루 캐시한다. 주소의 번호와 다른 내용을 그 주소로
  * 캐시하지 않으려는 규칙이다: 오래된 번호·다른 데이터 버전·모으는 중·서버 실패는 사이트 기본 그림(짧은 캐시)이다.
  * 주소의 `iv`(그림 버전, `roomImagePath`)는 읽지 않는다: 그리는 코드가 바뀌었을 때 주소를 달리해 캐시를 비켜 가는 값일 뿐이다.
+ * 서버가 막 떠서 막차 표를 아직 읽는 중이면(`lastTrainPending`) 막차 줄 없는 카드를 짧게만 캐시한다(`/s/og`와 같은 규칙, #102).
  */
 export async function GET(request: Request, { params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;
@@ -24,6 +25,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
     if (!preview || preview.stage === "collecting") return null;
     if (preview.room.shareVersion !== sv || preview.dataVersion !== dv) return null;
     const card = roomShareCopy(preview).card;
-    return card ? { element: <SharedCard data={card} /> } : null;
+    if (!card) return null;
+    const provisional = ROOM_PREVIEW_LAST_TRAIN && preview.lastTrainPending === true;
+    return { element: <SharedCard data={card} />, provisional };
   });
 }

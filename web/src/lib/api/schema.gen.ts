@@ -668,7 +668,7 @@ export interface components {
              * @description "지도 한가운데였다면" 비교. **다음을 모두 만족할 때만 있고, 하나라도 어기면 키 자체가 없다**(클라이언트는 없으면 비교를 그냥
              *     뺀다): `mode=fair`일 때, 지도 한가운데 역이 1위 추천 역과 다를 때, 모두가 그 역에 갈 수 있을 때, 그 역의 가장 오래 걸리는
              *     시간이 1위 추천 역보다 5분(화면에 보이는 분 기준) 이상 길 때, **출발역을 숨긴 참가자가 없을 때**(숨긴 출발역을 거꾸로
-             *     짐작할 수 있다). 지금은 `/recommend`만 계산하고 방 결과(`/rooms/{roomId}/result`)에는 없다.
+             *     짐작할 수 있다). `/recommend`와 방 링크 미리보기(`RoomPreviewResult.mapMiddle`)만 계산하고 방 결과(`/rooms/{roomId}/result`)에는 없다.
              */
             mapMiddle?: components["schemas"]["MapMiddle"];
             /** @description 방 결과에만 있다(`/recommend`에는 없다). 이 결과를 계산한 방의 공유 번호이고, 결과 카드에서 정할 때 `seenVersion`으로 보낸다 */
@@ -710,6 +710,31 @@ export interface components {
             station: components["schemas"]["PreviewStation"];
             /** @description 막차의 기준. 있을 때만 `station.times[].lastTrain`이 있을 수 있다 */
             lastTrainBasis?: components["schemas"]["LastTrainBasis"];
+            /**
+             * @description "지도 한가운데였다면" 비교(#68 2단계). 미리보기를 만든 같은 계산(같은 데이터 버전·같은 `room.timeBasis`)에서 나오고, 조건은
+             *     `Result.mapMiddle`과 같다: 방의 기본 기준이 `fair`, 지도 한가운데 역이 `station`과 다름, 모두가 그 역에 갈 수 있음, 가장 오래
+             *     걸리는 시간이 화면에 보이는 분 기준 5분 이상 김, **출발역을 숨긴 참가자가 없음**. 하나라도 어기면 키 자체가 없다. 정한 역
+             *     단계(`RoomPreviewDecided`)에는 없다.
+             */
+            mapMiddle?: components["schemas"]["PreviewMapMiddle"];
+            /**
+             * @description 서버가 막 떠서 막차 표를 **아직 읽는 중**이라 이 미리보기에 막차(`lastTrainBasis`·`station.times[].lastTrain`)가 없을 때만 `true`다
+             *     (`Result.lastTrainPending`과 같은 규칙). 잠시 뒤에는 막차가 붙을 수 있으므로 이 값으로 만든 방 그림은 오래 캐시하지 않는다.
+             *     약속 날짜가 없거나 공휴일 목록 밖인 방처럼 기다려도 시각이 붙지 않으면 키가 없다.
+             * @enum {boolean}
+             */
+            lastTrainPending?: true;
+        };
+        PreviewMapMiddle: {
+            stationCode: components["schemas"]["StationCode"];
+            stationName: string;
+            /** @description 참여 순서(`station.times`와 같다). 출발역·참여자 ID는 싣지 않는다 */
+            times: {
+                /** @description 짧은 이름(`PreviewTime.label`과 같다) */
+                label: string;
+                /** @description 그 역까지 걸리는 시간(초) */
+                seconds: number;
+            }[];
         };
         RoomPreviewDecided: {
             /** @constant */
@@ -725,6 +750,11 @@ export interface components {
             decidedAt: string;
             /** @description 막차의 기준. 있을 때만 `station.times[].lastTrain`이 있을 수 있다 */
             lastTrainBasis?: components["schemas"]["LastTrainBasis"];
+            /**
+             * @description 막차 표를 아직 읽는 중일 때만 `true`(`RoomPreviewResult.lastTrainPending`과 같다)
+             * @enum {boolean}
+             */
+            lastTrainPending?: true;
         };
         PreviewRoom: {
             roomId: string;

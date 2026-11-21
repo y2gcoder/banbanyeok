@@ -192,9 +192,10 @@ describe("방 공유 문구", () => {
     expect(same.card?.people.map((p) => p.name)).toEqual(["참가자 1", "참가자 2"]);
   });
 
-  it("막차(#62) 스위치가 꺼진 지금: 서버가 미리보기에 막차를 주어도 그림 값·글 어디에도 넣지 않는다(막차를 모르던 때와 같다)", () => {
-    // 처리방침 6항이 방 링크 미리보기에 보이는 것을 목록으로 적고 있어, 그 목록에 막차를 적기 전에는 끈다.
-    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(false);
+  it("막차(#62) 스위치는 6항에 막차를 적은 판(#84)부터 켜져 있고, 끄면 서버가 막차를 주어도 막차를 모르던 때와 같다", () => {
+    // 처리방침 6항이 방 링크 미리보기 목록에 '공개한 참여자의 귀갓길 막차 시각'을 적은 판부터 켠다(policy.test.ts의 지킴이).
+    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(true);
+    const off = { lastTrain: false };
     const withLastTrain = (label: string, seconds: number, minute: number) => ({
       label,
       seconds,
@@ -215,11 +216,16 @@ describe("방 공유 문구", () => {
       ],
     ];
     for (const [withTrains, without] of pairs) {
-      // 막차가 실린 미리보기와 막차를 모르는 서버의 미리보기(지금 main이 받는 모양)가 같은 문구·같은 그림 값이 된다.
-      expect(roomShareCopy(withTrains)).toEqual(roomShareCopy(without));
-      expect(roomShareCopy(withTrains).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
-      expect(JSON.stringify(roomShareCopy(withTrains))).not.toMatch(/막차|늦어도|다음 날|광교/);
-      // 카카오톡 메시지도 같다.
+      // 기본은 켠 것과 같다.
+      expect(roomShareCopy(withTrains)).toEqual(roomShareCopy(withTrains, { lastTrain: true }));
+      // 끄면 막차가 실린 미리보기와 막차를 모르는 서버의 미리보기가 같은 문구·같은 그림 값이 된다.
+      expect(roomShareCopy(withTrains, off)).toEqual(roomShareCopy(without, off));
+      expect(roomShareCopy(withTrains, off).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
+      expect(JSON.stringify(roomShareCopy(withTrains, off))).not.toMatch(/막차|늦어도|다음 날|광교/);
+      // 켜도 글(미리보기 설명·공유 문구)에는 막차가 없다.
+      const { preview, message } = roomShareCopy(withTrains);
+      expect(JSON.stringify([preview, message])).not.toMatch(/막차|늦어도|다음 날|광교/);
+      // 카카오톡 메시지(글과 그림 주소)는 막차와 상관없이 같다.
       expect(roomKakaoMessage("qt7yvmsht3", withTrains)).toEqual(roomKakaoMessage("qt7yvmsht3", without));
     }
   });
@@ -276,6 +282,65 @@ describe("방 공유 문구", () => {
     expect(roomShareCopy(result(), on).card?.people.every((p) => !("lastTrain" in p))).toBe(true);
     // 켜도 막차를 모르는 미리보기의 그림 값은 끈 것과 같다.
     expect(roomShareCopy(result(), on)).toEqual(roomShareCopy(result()));
+  });
+
+  describe("지도 한가운데 비교(#68 2단계)", () => {
+    /** 홍대입구·잠실 방: 1위 신당(21분·22분), 지도 한가운데 한강진(23분·36분). */
+    const station = {
+      stationCode: "7gf",
+      stationName: "신당",
+      times: [
+        { label: "민수", seconds: 1271 },
+        { label: "잠실", seconds: 1301 },
+      ],
+    };
+    const minsu = { label: "민수", seconds: 1412 };
+    const mapMiddle = { stationCode: "j7v", stationName: "한강진", times: [minsu, { label: "잠실", seconds: 2159 }] };
+    const sentence = "지도 한가운데인 한강진역이면 잠실은 14분 더 걸려요";
+
+    it("서버가 준 1위 단계에서는 설명·공유 문구 끝과 그림 맨 아래에 같은 문장을 붙인다", () => {
+      const open = roomShareCopy(result({ station, mapMiddle, room: room({ participantCount: 2 }) }));
+      expect(open.preview.description).toBe(`아직이면 출발역 넣어 주세요 · 민수 21분 · 잠실 22분 · ${sentence}`);
+      expect(open.message.text).toBe(open.preview.description);
+      expect(open.card?.middleLine).toBe(sentence);
+      const full = roomShareCopy(result({ station, mapMiddle, room: room({ canJoin: false }) }));
+      expect(full.preview.description).toBe(`민수 21분 · 잠실 22분 · 공평하게 고름 · ${sentence}`);
+      expect(roomKakaoMessage("qt7yvmsht3", result({ station, mapMiddle })).description).toContain(sentence);
+    });
+
+    it("키가 없으면(숨긴 사람이 있는 방·조건 미달·옛 서버) 비교만 빠지고 나머지는 그대로다", () => {
+      const withMiddle = roomShareCopy(result({ station, mapMiddle }));
+      const without = roomShareCopy(result({ station }));
+      expect(without.preview.description).toBe(withMiddle.preview.description.replace(` · ${sentence}`, ""));
+      expect(without.card?.middleLine).toBeUndefined();
+      const { middleLine: _middleLine, ...rest } = withMiddle.card ?? { people: [] };
+      expect(without.card).toEqual(rest);
+    });
+
+    it("공평 기준이 아니거나, 1위와 같은 역이거나, 화면 분으로 5분 미만이거나, 사람 수가 맞지 않으면 값이 와도 쓰지 않는다", () => {
+      const cases: RoomPreview[] = [
+        result({ station, mapMiddle, basis: { mode: "fast", favorLabel: null } }),
+        result({ station, mapMiddle, basis: { mode: "favor", favorLabel: "민수" } }),
+        result({ station, mapMiddle: { ...mapMiddle, stationCode: station.stationCode } }),
+        // 가장 오래: 신당 22분, 한강진 26분(4분 더): 보이지 않는다.
+        result({ station, mapMiddle: { ...mapMiddle, times: [minsu, { label: "잠실", seconds: 1560 }] } }),
+        result({ station, mapMiddle: { ...mapMiddle, times: mapMiddle.times.slice(0, 1) } }),
+      ];
+      for (const preview of cases) {
+        const copy = roomShareCopy(preview);
+        expect(copy.preview.description).not.toContain("지도 한가운데");
+        expect(copy.card?.middleLine).toBeUndefined();
+      }
+      // 5분이면 보인다(화면 분 기준: 22분 → 27분).
+      const five = result({ station, mapMiddle: { ...mapMiddle, times: [minsu, { label: "잠실", seconds: 1620 }] } });
+      expect(roomShareCopy(five).card?.middleLine).toBe("지도 한가운데인 한강진역이면 잠실은 5분 더 걸려요");
+    });
+
+    it("정한 역 단계에는 비교가 없다", () => {
+      const copy = roomShareCopy(decided({ station }));
+      expect(copy.preview.description).not.toContain("지도 한가운데");
+      expect(copy.card?.middleLine).toBeUndefined();
+    });
   });
 
   it("출발역 이름은 서버가 주지 않으므로 어떤 문구에도 나올 수 없다(숨긴 사람은 '참가자 N')", () => {

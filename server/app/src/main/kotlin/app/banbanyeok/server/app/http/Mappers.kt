@@ -137,7 +137,21 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
         }
 
         is RoomPreview.Result -> {
-            RoomPreviewDto.Result(header, dataVersion, basis.dto(), station.dto(), lastTrainBasis?.toDto())
+            RoomPreviewDto.Result(
+                header,
+                dataVersion,
+                basis.dto(),
+                station.dto(),
+                lastTrainBasis?.toDto(),
+                mapMiddle?.let { middle ->
+                    PreviewMapMiddleDto(
+                        middle.stationCode,
+                        middle.stationName,
+                        middle.times.map { PreviewMiddleTimeDto(it.label, it.seconds) },
+                    )
+                },
+                true.takeIf { lastTrainPending },
+            )
         }
 
         is RoomPreview.Decided -> {
@@ -149,6 +163,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
                 decidedBy,
                 decidedAt.toString(),
                 lastTrainBasis?.toDto(),
+                true.takeIf { lastTrainPending },
             )
         }
     }
