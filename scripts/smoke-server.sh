@@ -72,28 +72,30 @@ for _ in $(seq 1 10); do
   sleep 2
 done
 [[ "$last_ok" == 1 ]] || fail "응답에 lastTrainBasis가 없음(막차 표를 읽지 못했거나 검증에 실패)"
-stale="$(python3 -I - "$tmp/l" <<'PY' || fail "막차 응답이 예상과 다름(직행 확정 또는 수집일)"
-import json, re, sys
+# 응답 형식(참가자·후보·막차 종류)을 엄격히 읽는다. 읽을 수 없거나 모순이면(낯선 종류, 참가자 중복·누락, 120일이 안 됐는데
+# stale, stale인데 시각이 있음) 실패. stale이 맞으면 경고만 내고 3d는 건너뛴다(scripts/smoke_last_train.py).
+basis_rc=0
+python3 -I "$root/scripts/smoke_last_train.py" basis "$tmp/l" "$version" || basis_rc=$?
+stale=""
+case "$basis_rc" in
+  0) ;;
+  3) stale=stale ;;
+  *) fail "막차 응답(lastTrainBasis·막차 칸)을 읽을 수 없거나 모순" ;;
+esac
+if [[ "$stale" != stale ]]; then
+  python3 -I - "$tmp/l" <<'PY' || fail "막차 응답이 예상과 다름(직행 확정)"
+import json, sys
 r = json.load(open(sys.argv[1]))
 basis = r["lastTrainBasis"]
-assert basis["dayType"] == "weekday", basis
-assert re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", basis["asOf"]), basis
-if basis.get("unavailable") == "stale":
-    # 수집 120일이 지나면 서버가 시각을 내지 않는다(설계된 동작). 배포는 막지 않고 알리기만 한다.
-    print("   경고: 시간표 수집일 %s에서 120일이 지나 막차 시각을 내지 않는 중(재수집 필요)" % basis["asOf"], file=sys.stderr)
-    print("stale")
-    sys.exit(0)
-assert "unavailable" not in basis, basis
 trains = [t for c in r["candidates"] for t in c["lastTrains"]]
-assert len(trains) == 2 * len(r["candidates"]), len(trains)
 # 강남(k3a)·잠실(dxy)은 서울교통공사 2호선이다: 운영사 공식 파일과 대조를 통과한 노선이라 직행은 분 단위 확정으로 나온다(20:00~26:59).
-confirmed = [t for t in trains if t["kind"] == "direct" and "boundFor" in t and 1200 <= t["minute"] <= 1619]
+confirmed = [t for t in trains if t["kind"] == "direct"]
 assert confirmed, trains
 print("   수집일 %s, 직행 확정 %d건(예: %s행 %02d:%02d)" % (
     basis["asOf"], len(confirmed), confirmed[0]["boundFor"]["stationName"],
     confirmed[0]["minute"] // 60 % 24, confirmed[0]["minute"] % 60), file=sys.stderr)
 PY
-)"
+fi
 
 if [[ "$stale" != stale ]]; then
   echo "3d) 귀갓길 막차 (강남·광교, 평일 밤): 운영사 표와 칸마다 대조한 신분당선 직행(광교행)"
@@ -103,7 +105,8 @@ if [[ "$stale" != stale ]]; then
   # 신분당선은 운영사 표와 대조한 칸만 시각을 낸다. 평일 신분당이 켜져 있으면(이 저장소의 보고서 exactSwitches) 응답의
   # 대조 후보는 모두 광교행 직행 확정이 표본의 분 그대로여야 하고, 꺼져 있으면 그 칸에 직행 확정이 하나도 없어야 한다
   # (scripts/smoke_last_train.py). 서버의 데이터 버전이 이 저장소의 것과 다르면 알리기만 한다.
-  python3 -I "$root/scripts/smoke_last_train.py" "$tmp/k" "$root" "$version" || fail "신분당선 막차 칸이 보고서와 다름"
+  python3 -I "$root/scripts/smoke_last_train.py" shinbundang "$tmp/k" "$root" "$version" ||
+    fail "신분당선 막차 칸이 보고서와 다르거나 응답을 읽을 수 없음"
 fi
 
 echo "4) DB 읽기: 없는 방은 404 ROOM_NOT_FOUND여야 한다(DB 연결 실패면 500)"

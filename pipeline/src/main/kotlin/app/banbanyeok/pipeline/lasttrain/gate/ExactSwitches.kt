@@ -30,7 +30,8 @@ internal const val LT_OPERATOR_MAX_AGE_DAYS = 14
  * - its samples were not read on the day its receipt says the pages were fetched, or there is no receipt (the
  *   sample command removes the receipt whenever it stops on pages it does not know);
  * - the newest notice the receipt's pages show is not the one a person reviewed (any newer notice, whatever its
- *   title), or nobody reviewed one.
+ *   title), or nobody reviewed one;
+ * - the receipt, the samples and the baseline are not one complete bundle of one run ([ltEvidenceReasons]).
  *
  * Nothing else is affected: the table is still published.
  */
@@ -68,7 +69,9 @@ private fun receiptReasons(
     if (receipt == null || receipt.id != id) return listOf("no receipt $id for the operator's timetable")
     if (tago == null) return listOf("the TAGO cache (S6) has no fetch date")
     val fetched = LocalDate.parse(receipt.fetchedOn)
-    val change = LocalDate.parse(receipt.latestChange)
+    val change =
+        runCatching { LocalDate.parse(receipt.latestChange) }.getOrNull()
+            ?: return listOf("receipt $id has no readable date of the latest timetable change")
     val apart = kotlin.math.abs(ChronoUnit.DAYS.between(fetched, tago))
     val stale = samples.count { it.checkedAt != receipt.fetchedOn }
     val reviewed = checks.reviewed[family]
@@ -111,8 +114,11 @@ internal fun ltExactSwitches(
                 day,
                 own.size,
                 failed,
-                listOfNotNull("$failed of ${own.size} samples failed".takeIf { failed > 0 }) +
-                    receiptReasons(family, all, config, checks),
+                (
+                    listOfNotNull("$failed of ${own.size} samples failed".takeIf { failed > 0 }) +
+                        receiptReasons(family, all, config, checks) +
+                        ltEvidenceReasons(config.exactReceipts[family].orEmpty(), checks.evidence[family])
+                ).distinct(),
             )
         }
     }

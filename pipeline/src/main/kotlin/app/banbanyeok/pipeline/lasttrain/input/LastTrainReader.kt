@@ -2,13 +2,17 @@ package app.banbanyeok.pipeline.lasttrain.input
 
 import app.banbanyeok.pipeline.PipelineInput
 import app.banbanyeok.pipeline.csv
+import app.banbanyeok.pipeline.lasttrain.model.LT_OPERATOR_LOCK
 import app.banbanyeok.pipeline.lasttrain.model.LastTrainInputs
+import app.banbanyeok.pipeline.lasttrain.model.LtBaselineFile
 import app.banbanyeok.pipeline.lasttrain.model.LtCeiling
 import app.banbanyeok.pipeline.lasttrain.model.LtConfig
 import app.banbanyeok.pipeline.lasttrain.model.LtNoticeSeen
 import app.banbanyeok.pipeline.lasttrain.model.LtOfficialSample
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorChecks
+import app.banbanyeok.pipeline.lasttrain.model.LtOperatorEvidence
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceipt
+import app.banbanyeok.pipeline.lasttrain.model.ltSampleDigest
 import app.banbanyeok.pipeline.parseObject
 import app.banbanyeok.pipeline.readSeoulTimetables
 import app.banbanyeok.pipeline.text
@@ -19,6 +23,9 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
 import kotlin.io.path.exists
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
+import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
 private val SEOUL_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
@@ -75,10 +82,16 @@ internal fun ltAsOf(root: Path): String =
         .minBy(Instant::parse)
         .let(::seoulDate)
 
+/** A text field of a receipt, null when it is missing or not a string. */
+private fun field(
+    receipt: kotlinx.serialization.json.JsonObject,
+    key: String,
+): String? = (receipt[key] as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content
+
 /**
  * The receipt of each exact family's operator timetable (`exact.<family>.receipt` in last-train.json), and the Seoul
- * date the TAGO cache (S6) was fetched. A missing operator receipt is not an error here: it switches the family off.
- * A receipt without its dates, or no S6 receipt at all, stops the build.
+ * date the TAGO cache (S6) was fetched. An operator receipt that is missing or lacks a date is not an error here: it
+ * switches the family off (its evidence is checked in full by the gate). No S6 date stops the build.
  */
 internal fun ltOperatorReceipts(
     root: Path,
@@ -88,23 +101,93 @@ internal fun ltOperatorReceipts(
     val families =
         config.exactReceipts
             .mapNotNull { (family, id) ->
-                all[id]?.let { receipt ->
-                    family to
-                        LtOperatorReceipt(
-                            id,
-                            seoulDate(required(receipt, "fetched_at")),
-                            required(receipt, "latest_timetable_change"),
-                            receipt["notices"]
-                                ?.jsonArray
-                                ?.map { it.jsonObject }
-                                ?.singleOrNull { it["newest"]?.toString() == "true" }
-                                ?.let { LtNoticeSeen(it.text("viewNo"), it.text("title"), it.text("sha256")) },
-                        )
-                }
+                val receipt = all[id] ?: return@mapNotNull null
+                val fetched = field(receipt, "fetched_at")?.let { runCatching { seoulDate(it) }.getOrNull() }
+                val change = field(receipt, "latest_timetable_change")
+                if (fetched == null || change == null) return@mapNotNull null
+                val newest =
+                    (receipt["notices"] as? kotlinx.serialization.json.JsonArray)
+                        ?.mapNotNull { it as? kotlinx.serialization.json.JsonObject }
+                        ?.singleOrNull { it["newest"]?.toString() == "true" }
+                        ?.let { notice ->
+                            val no = field(notice, "viewNo")
+                            val title = field(notice, "title")
+                            val sha = field(notice, "sha256")
+                            if (no == null || title == null || sha == null) null else LtNoticeSeen(no, title, sha)
+                        }
+                family to LtOperatorReceipt(id, fetched, change, newest)
             }.toMap()
     val tago = requireNotNull(all["S6"]) { "S6 (TAGO) receipt is required for last trains" }
     return families to seoulDate(required(tago, "fetched_at"))
 }
+
+/**
+ * The operator evidence of each exact family, read as it is for the gate to check: its receipt, its baseline (and
+ * the baseline file's SHA-256), its rows in the samples file, and the raw files when the raw folder is there.
+ */
+internal fun ltOperatorEvidence(
+    root: Path,
+    config: LtConfig,
+): Map<String, LtOperatorEvidence> {
+    val all = receipts(root).associateBy { it.text("id") }
+    val samples = root.resolve("data/config/last-train-official.csv").readText()
+    return config.exactReceipts.mapValues { (family, id) ->
+        val path = config.exactBaselines.getValue(family)
+        val file = root.resolve(path)
+        val bytes = file.takeIf { it.exists() }?.readBytes()
+        val shinbundang = id == SHINBUNDANG_ID
+        val rawDir = root.resolve(SHINBUNDANG_DIR).takeIf { shinbundang && it.exists() }
+        LtOperatorEvidence(
+            all[id],
+            LtBaselineFile(
+                path,
+                bytes?.let { runCatching { parseObject(String(it)) }.getOrNull() },
+                bytes?.let(app.banbanyeok.schema.Sha256::hex),
+            ),
+            ltSampleDigest(samples, family),
+            if (shinbundang) SHINBUNDANG_STATIONS.map { "$SHINBUNDANG_DIR/${it.first}.html" } else emptyList(),
+            rawDir?.let { dir ->
+                dir.listDirectoryEntries("*.html").associate { entry ->
+                    "$SHINBUNDANG_DIR/${entry.name}" to
+                        app.banbanyeok.schema.Sha256
+                            .hex(entry.readBytes())
+                }
+            },
+        )
+    }
+}
+
+/**
+ * A digest of every file the operator evidence is read from (the committed ones and the raw folder): a build
+ * compares it before and after it computes, so that a sample or baseline run in between cannot go unnoticed.
+ */
+internal fun ltOperatorInputsDigest(root: Path): String {
+    val committed =
+        listOf("data/config/source-manifest.json", "data/config/last-train-official.csv", SHINBUNDANG_BASELINE)
+            .map { root.resolve(it) }
+    val raw =
+        root
+            .resolve(
+                SHINBUNDANG_DIR,
+            ).takeIf { it.exists() }
+            ?.listDirectoryEntries()
+            ?.sortedBy { it.name }
+            .orEmpty()
+    return app.banbanyeok.schema.Sha256.hex(
+        (committed + raw)
+            .joinToString("") { file ->
+                "${file.name} ${if (file.exists()) {
+                    app.banbanyeok.schema.Sha256
+                        .hex(file.readBytes())
+                } else {
+                    "-"
+                }}\n"
+            }.toByteArray(),
+    )
+}
+
+/** Whether a sample or baseline run holds the operator files' lock. */
+internal fun ltOperatorRunInProgress(root: Path): Boolean = root.resolve(LT_OPERATOR_LOCK).exists()
 
 /**
  * The newest notice a person reviewed for each exact family, from its baseline file (`exact.<family>.baseline`). A
@@ -117,8 +200,12 @@ internal fun ltReviewedNotices(
     config.exactBaselines
         .mapNotNull { (family, path) ->
             root.resolve(path).takeIf { it.exists() }?.let { file ->
-                val notice = parseObject(file.readText()).getValue("latestNotice").jsonObject
-                family to LtNoticeSeen(notice.text("viewNo"), notice.text("title"), notice.text("sha256"))
+                val notice =
+                    runCatching { parseObject(file.readText())["latestNotice"]?.jsonObject }.getOrNull()
+                        ?: return@mapNotNull null
+                val (no, title, sha) = listOf("viewNo", "title", "sha256").map { field(notice, it) }
+                if (no == null || title == null || sha == null) return@mapNotNull null
+                family to LtNoticeSeen(no, title, sha)
             }
         }.toMap()
 
@@ -141,6 +228,7 @@ internal fun readLastTrainInputs(
             operators,
             tago,
             ltReviewedNotices(root, config),
+            ltOperatorEvidence(root, config),
         ),
         asOf,
     )

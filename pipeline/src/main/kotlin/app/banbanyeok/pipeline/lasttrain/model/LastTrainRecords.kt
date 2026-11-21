@@ -50,6 +50,8 @@ internal class LtOperatorChecks(
     val tagoFetchedOn: String? = null,
     /** The newest notice a person reviewed, per exact family (from its baseline). */
     val reviewed: Map<String, LtNoticeSeen> = emptyMap(),
+    /** The operator evidence of each exact family: a family without it is switched off. */
+    val evidence: Map<String, LtOperatorEvidence> = emptyMap(),
 )
 
 /**
@@ -170,6 +172,69 @@ internal class LtOperatorReceiptFiles(
     val pages: List<Pair<String, LtFetchedFile>>,
     val notices: List<Pair<LtOperatorNotice, LtFetchedFile>>,
     val latestChange: String,
-    /** Official samples made from the pages. */
-    val rows: Int,
+    /** The run that made the bundle, and what the receipt binds of the other files written with it. */
+    val bundle: LtOperatorBundle,
 )
+
+/**
+ * What one run of the sample command binds together (#100 fourth review): the receipt, the family's sample rows of
+ * last-train-official.csv and the reviewed baseline are written by the same run, and the build switches the family
+ * on only when the receipt's run, sample digest and baseline digest match the files it finds. A mix of runs, a stale
+ * receipt, a missing piece: all switch the family off, whatever was or was not removed before.
+ */
+internal data class LtOperatorBundle(
+    val run: String,
+    val samples: LtSampleDigest,
+    val baselineFile: String,
+    val baselineSha256: String,
+)
+
+/** The rows of one family in last-train-official.csv: how many, and the SHA-256 of those lines as they are written. */
+internal data class LtSampleDigest(
+    val rows: Int,
+    val sha256: String,
+)
+
+/** The [family] rows of last-train-official.csv ([csv] as written: header first, one sample per line). */
+internal fun ltSampleDigest(
+    csv: String,
+    family: String,
+): LtSampleDigest {
+    val rows = csv.lines().drop(1).filter { it.isNotBlank() && it.split(',').getOrNull(5) == family }
+    return LtSampleDigest(
+        rows.size,
+        app.banbanyeok.schema.Sha256
+            .hex(rows.joinToString("") { "$it\n" }.toByteArray()),
+    )
+}
+
+/** The digest a receipt keeps of its pages and notices: their SHA-256 and file, a line each, in order. */
+internal fun ltEvidenceDigest(files: List<Pair<String, String>>): String =
+    app.banbanyeok.schema.Sha256
+        .hex(files.joinToString("") { (sha, file) -> "$sha  $file\n" }.toByteArray())
+
+/**
+ * Everything the build checks an exact family's operator evidence with, read as it is: the receipt and the baseline
+ * as JSON (null when missing or not JSON), the baseline file's SHA-256, the family's rows in the samples file, the
+ * page files the receipt must list, and the raw files present (path to SHA-256; null when the raw folder is absent,
+ * as in CI: then only the committed files are checked).
+ */
+internal class LtOperatorEvidence(
+    val receipt: kotlinx.serialization.json.JsonObject?,
+    val baselineFile: LtBaselineFile,
+    val samples: LtSampleDigest,
+    val expectedPages: List<String>,
+    val raw: Map<String, String>?,
+) {
+    val baseline: kotlinx.serialization.json.JsonObject? get() = baselineFile.json
+}
+
+/** The reviewed baseline file as the build finds it: its path, its JSON (null when missing or not JSON), its SHA-256. */
+internal data class LtBaselineFile(
+    val path: String,
+    val json: kotlinx.serialization.json.JsonObject?,
+    val sha256: String?,
+)
+
+/** The lock of the operator files: held by a sample or baseline run; a build does not start or finish while it exists. */
+internal const val LT_OPERATOR_LOCK = "data/config/.operator.lock"

@@ -137,6 +137,7 @@ private fun checks(
     mapOf("S" to LtOperatorReceipt(receipt, fetchedOn, latestChange, newest)),
     tago,
     listOfNotNull(reviewed).associateBy { "S" },
+    mapOf("S" to operatorEvidence()),
 )
 
 class LastTrainExactSwitchTest :

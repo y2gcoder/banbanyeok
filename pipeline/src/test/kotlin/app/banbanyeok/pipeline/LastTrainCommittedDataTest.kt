@@ -82,7 +82,7 @@ class LastTrainCommittedDataTest :
                 assertEquals(mapOf("신분당" to "data/config/shinbundang-baseline.json"), config.exactBaselines)
                 val baseline = parseObject(repo.resolve("data/config/shinbundang-baseline.json").readText())
                 assertEquals(
-                    setOf("receipt", "reviewedOn", "basis", "structure", "pageSkeleton", "latestNotice"),
+                    setOf("receipt", "reviewedOn", "lastRun", "basis", "structure", "pageSkeleton", "latestNotice"),
                     baseline.keys,
                 )
                 val skeletons = baseline.getValue("pageSkeleton").jsonObject
@@ -99,6 +99,27 @@ class LastTrainCommittedDataTest :
                     reviewed.text("viewNo") to reviewed.text("title"),
                 )
                 assertEquals(newest.text("sha256"), reviewed.text("sha256"))
+                // #100 fourth review: the committed receipt, samples and baseline are one bundle of one run, with all
+                // their evidence (checked without the raw folder, as in CI).
+                val evidence =
+                    app.banbanyeok.pipeline.lasttrain.input
+                        .ltOperatorEvidence(repo, config)
+                        .getValue("신분당")
+                val committed =
+                    app.banbanyeok.pipeline.lasttrain.model.LtOperatorEvidence(
+                        evidence.receipt,
+                        evidence.baselineFile,
+                        evidence.samples,
+                        evidence.expectedPages,
+                        null,
+                    )
+                assertEquals(
+                    emptyList(),
+                    app.banbanyeok.pipeline.lasttrain.gate
+                        .ltEvidenceReasons("S8", committed),
+                )
+                assertEquals(240, evidence.samples.rows)
+                assertEquals(receipt.text("run"), baseline.text("lastRun"))
                 assertEquals("240", receipt.text("rows"))
             }
         }

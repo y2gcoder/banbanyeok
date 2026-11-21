@@ -209,7 +209,15 @@ class LastTrainCompilerTest :
                     )
                 val notice = LtNoticeSeen("1358", "변경", "bed5cb7e")
                 val receipts = mapOf("1" to LtOperatorReceipt("S8", "2026-11-21", "2026-11-06", notice))
-                val checks = LtOperatorChecks(wrong, emptyList(), receipts, "2026-11-16", mapOf("1" to notice))
+                val checks =
+                    LtOperatorChecks(
+                        wrong,
+                        emptyList(),
+                        receipts,
+                        "2026-11-16",
+                        mapOf("1" to notice),
+                        mapOf("1" to operatorEvidence()),
+                    )
                 val (soft, softNet) = inputs(config(exact = true), checks)
                 val off = compileLastTrains(soft, softNet, listOf("001"))
                 assertTrue(off.passed)

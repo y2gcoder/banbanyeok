@@ -6,6 +6,8 @@ import app.banbanyeok.pipeline.lasttrain.compute.ltOperatorSamples
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_BASELINE
 import app.banbanyeok.pipeline.lasttrain.input.SHINBUNDANG_STATIONS
 import app.banbanyeok.pipeline.lasttrain.input.ltOfficialSamples
+import app.banbanyeok.pipeline.lasttrain.input.ltOperatorInputsDigest
+import app.banbanyeok.pipeline.lasttrain.input.ltOperatorRunInProgress
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangNotice
 import app.banbanyeok.pipeline.lasttrain.input.parseShinbundangPage
 import app.banbanyeok.pipeline.lasttrain.input.readShinbundangBaseline
@@ -14,10 +16,11 @@ import app.banbanyeok.pipeline.lasttrain.input.readShinbundangRaw
 import app.banbanyeok.pipeline.lasttrain.input.shinbundangNoticeFingerprint
 import app.banbanyeok.pipeline.lasttrain.input.shinbundangPageFingerprint
 import app.banbanyeok.pipeline.lasttrain.input.shinbundangTimetableTitle
+import app.banbanyeok.pipeline.lasttrain.model.LT_OPERATOR_LOCK
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorBaseline
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorTimetable
 import app.banbanyeok.pipeline.lasttrain.model.LtReviewedNotice
-import app.banbanyeok.pipeline.lasttrain.output.writeOperatorBaseline
+import app.banbanyeok.pipeline.lasttrain.output.operatorBaselineText
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Sha256
 import io.kotest.core.spec.style.DescribeSpec
@@ -526,12 +529,12 @@ class LastTrainOperatorSamplesTest :
             it("stopsTheSampleCommandAndRemovesTheReceiptSoThatTheBuildSwitchesTheLineOff") {
                 val root = Files.createTempDirectory("sb-command")
                 Files.createDirectories(root.resolve("data/config"))
-                writeOperatorBaseline(root, SHINBUNDANG_BASELINE, baseline, emptyList())
+                Files.writeString(root.resolve(SHINBUNDANG_BASELINE), operatorBaselineText(baseline, emptyList(), null))
                 val manifest = root.resolve("data/config/source-manifest.json")
                 Files.writeString(manifest, """[{"id":"S6","fetched_at":"2026-11-15T16:06:45Z"},{"id":"S8"}]""")
                 fetched(root, pages = mapOf("SB005" to MIDDLE.replaceFirst("</table>", "</table><p>※ 통과</p>")))
                 val stop = assertFailsWith<IllegalStateException> { shinbundangSamples(root) }
-                assertTrue("SB005" in stop.message.orEmpty() && "removed" in stop.message.orEmpty(), stop.message)
+                assertTrue("SB005" in stop.message.orEmpty() && "No receipt" in stop.message.orEmpty(), stop.message)
                 assertEquals(
                     listOf(
                         "S6",
@@ -662,6 +665,42 @@ class LastTrainOperatorSamplesTest :
                 oldReceipt()
                 shinbundangBaseline(root)
                 assertEquals(listOf("S6"), ids())
+            }
+
+            it("runsOneAtATimeAndLetsABuildSeeAnyRunThatHappenedWhileItComputed") {
+                // #100 fourth review: a run that had started before another one finished restored the old receipt;
+                // a build that read the receipt before a run removed it published it. Now one run holds the lock (a
+                // second one fails at once, writing nothing), a build refuses to start or finish while it is held,
+                // and compares a digest of every operator file before and after it computes.
+                val root = Files.createTempDirectory("sb-lock")
+                Files.createDirectories(root.resolve("data/config"))
+                val manifest = root.resolve("data/config/source-manifest.json")
+                Files.writeString(manifest, """[{"id":"S6","fetched_at":"2026-11-15T16:06:45Z"},{"id":"S8"}]""")
+                Files.writeString(
+                    root.resolve("data/config/last-train-official.csv"),
+                    "meeting,home,day,time,bound,family,url,checkedAt\n",
+                )
+                fetched(root)
+                val before = ltOperatorInputsDigest(root)
+                Files.createFile(root.resolve(LT_OPERATOR_LOCK))
+                assertTrue(ltOperatorRunInProgress(root))
+                assertFailsWith<IllegalStateException> { shinbundangSamples(root) }
+                assertFailsWith<IllegalStateException> { shinbundangBaseline(root) }
+                assertEquals(
+                    """[{"id":"S6","fetched_at":"2026-11-15T16:06:45Z"},{"id":"S8"}]""",
+                    Files.readString(manifest),
+                )
+                Files.delete(root.resolve(LT_OPERATOR_LOCK))
+                assertEquals(before, ltOperatorInputsDigest(root))
+                // Any change to a committed operator file or a raw page shows in the digest.
+                Files.writeString(manifest, """[{"id":"S6","fetched_at":"2026-11-15T16:06:45Z"}]""")
+                val removed = ltOperatorInputsDigest(root)
+                assertTrue(removed != before)
+                root.resolve("data/raw/shinbundang/SB003.html").writeBytes("x".toByteArray())
+                assertTrue(ltOperatorInputsDigest(root) != removed)
+                // A run that fails leaves the lock free again.
+                assertFailsWith<Exception> { shinbundangSamples(root) }
+                assertTrue(!ltOperatorRunInProgress(root))
             }
 
             it("leavesOutTheViewCountOnlyWhenItIsANumber") {
