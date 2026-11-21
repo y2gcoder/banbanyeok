@@ -23,6 +23,7 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
 import kotlin.io.path.exists
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readBytes
@@ -147,7 +148,7 @@ internal fun ltOperatorEvidence(
             ltSampleDigest(samples, family),
             if (shinbundang) SHINBUNDANG_STATIONS.map { "$SHINBUNDANG_DIR/${it.first}.html" } else emptyList(),
             rawDir?.let { dir ->
-                dir.listDirectoryEntries("*.html").associate { entry ->
+                dir.listDirectoryEntries().filter { it.isRegularFile() }.associate { entry ->
                     "$SHINBUNDANG_DIR/${entry.name}" to
                         app.banbanyeok.schema.Sha256
                             .hex(entry.readBytes())

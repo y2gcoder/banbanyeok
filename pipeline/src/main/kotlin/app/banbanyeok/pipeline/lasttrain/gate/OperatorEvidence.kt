@@ -1,7 +1,10 @@
 package app.banbanyeok.pipeline.lasttrain.gate
 
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorEvidence
+import app.banbanyeok.pipeline.lasttrain.model.LtRawFile
+import app.banbanyeok.pipeline.lasttrain.model.ltCollectionProblem
 import app.banbanyeok.pipeline.lasttrain.model.ltEvidenceDigest
+import app.banbanyeok.pipeline.lasttrain.model.ltRawFile
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -109,6 +112,8 @@ private fun listProblems(
                     digest
             },
             "the receipt does not name one newest notice".takeIf { newest.size != 1 },
+            ltCollectionProblem(files.map { it.string("fetched_at").orEmpty() }),
+            latestProblem(receipt, notices),
             "the receipt's newest notice is not the reviewed one".takeIf {
                 newest.size == 1 && reviewed != null &&
                     listOf("viewNo", "title", "sha256").any { key ->
@@ -118,18 +123,39 @@ private fun listProblems(
         )
 }
 
+/**
+ * The receipt's latest timetable change must be the latest date any of its notices takes effect on (#100 final
+ * review: an older notice corrected to a later date was left out of it).
+ */
+private fun latestProblem(
+    receipt: JsonObject,
+    notices: List<JsonObject>,
+): String? {
+    val dates = notices.mapNotNull { it.string("effective") }
+    if (dates.isEmpty()) return "no notice of the receipt says when a timetable takes effect"
+    val latest = dates.max()
+    if (receipt.string("latest_timetable_change") == latest) return null
+    return "the receipt's latest timetable change ${receipt.string("latest_timetable_change")} is not its notices' " +
+        "latest $latest"
+}
+
 /** Raw files that are not what the receipt lists (only when the raw folder is there). */
 private fun rawProblems(
     evidence: LtOperatorEvidence,
     receipt: JsonObject,
 ): List<String> {
-    val raw = evidence.raw ?: return emptyList()
+    val all = evidence.raw ?: return emptyList()
+    val kinds = all.keys.groupBy { ltRawFile(it.substringAfterLast('/')) }
+    // Only the evidence files are compared; a log or an index page kept beside them is not evidence.
+    val raw = all.filterKeys { it in kinds[LtRawFile.EVIDENCE].orEmpty() }
+    val suspect = kinds[LtRawFile.SUSPECT].orEmpty().sorted()
     val listed =
         (receipt.objects("pages").orEmpty() + receipt.objects("notices").orEmpty())
             .associate { it.string("file").orEmpty() to it.string("sha256") }
     val changed = listed.filter { (file, sha) -> raw[file] != sha }.keys
     val extra = raw.keys - listed.keys
     return listOfNotNull(
+        "unfinished or unknown raw files (a collection not finished): $suspect".takeIf { suspect.isNotEmpty() },
         "raw files differ from the receipt or are missing: ${changed.sorted()}".takeIf { changed.isNotEmpty() },
         "raw files the receipt does not list (fetched but not made into samples): ${extra.sorted()}"
             .takeIf { extra.isNotEmpty() },

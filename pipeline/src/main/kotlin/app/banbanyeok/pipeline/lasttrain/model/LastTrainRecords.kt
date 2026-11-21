@@ -238,3 +238,47 @@ internal data class LtBaselineFile(
 
 /** The lock of the operator files: held by a sample or baseline run; a build does not start or finish while it exists. */
 internal const val LT_OPERATOR_LOCK = "data/config/.operator.lock"
+
+/**
+ * Most hours between the first and the last file of one collection (16 pages and the notices). A person fetches them
+ * in one sitting (2026-11-21: 14 minutes); notices kept from an earlier sitting next to new pages are not evidence
+ * that the newest notice was looked at with them (#100 final review).
+ */
+internal const val LT_COLLECTION_HOURS = 6L
+
+/** What a file of an operator's raw folder is to the evidence. */
+internal enum class LtRawFile {
+    /** A station page (`SB001.html`) or a notice (`notice-1358.html`): must be in the receipt, as it is. */
+    EVIDENCE,
+
+    /** A file half fetched or saved under a name the reader does not know as evidence (`notice-1359.html.part`). */
+    SUSPECT,
+
+    /** Anything else a person keeps beside them (a log, an index page, notes): not evidence, not read. */
+    OTHER,
+}
+
+private val EVIDENCE_NAME = Regex("""SB[0-9]{3}\.html|notice-[0-9]+\.html""")
+private val PARTIAL_NAME = Regex("""(?i)^[.~].*|.*(\.part|\.partial|\.tmp|\.temp|\.crdownload|\.download|\.swp|~)$""")
+private val EVIDENCE_LIKE = Regex("""(?i).*(notice|sb[0-9]{3}|viewno).*""")
+
+/** The kind of one file of the raw folder, by its name (the sample command and the build use the same rule). */
+internal fun ltRawFile(name: String): LtRawFile =
+    when {
+        EVIDENCE_NAME.matches(name) -> LtRawFile.EVIDENCE
+        PARTIAL_NAME.matches(name) || EVIDENCE_LIKE.matches(name) -> LtRawFile.SUSPECT
+        else -> LtRawFile.OTHER
+    }
+
+/** Why fetch times (ISO instants) are not of one collection, null when they are. */
+internal fun ltCollectionProblem(times: List<String>): String? {
+    val instants = times.map { runCatching { java.time.Instant.parse(it) }.getOrNull() ?: return "a fetch time $it" }
+    if (instants.isEmpty()) return "no fetch time"
+    val hours =
+        java.time.Duration
+            .between(instants.min(), instants.max())
+            .toMinutes() / 60.0
+    if (hours <= LT_COLLECTION_HOURS) return null
+    return "pages and notices were fetched ${"%.1f".format(java.util.Locale.ROOT, hours)} hours apart, more than " +
+        "$LT_COLLECTION_HOURS: not one collection"
+}

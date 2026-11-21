@@ -34,7 +34,8 @@ def root(on=True, switch=True, exact=True):
     (base / "data/config/last-train-report.json").write_text(json.dumps({"exactSwitches": [entry] if switch else []}))
     (base / "data/artifacts/dev/manifest.json").write_text(json.dumps({"dataVersion": VERSION}))
     stations = [{"code": c, "name": n} for c, n, _ in SAMPLES] + [{"code": OTHER[0], "name": OTHER[1]}]
-    (base / "data/artifacts/dev/stations.json").write_text(json.dumps({"stations": stations}))
+    (base / "data/artifacts/dev/stations.json").write_text(
+        json.dumps({"stations": stations + [{"code": "dzc", "name": "광교"}, {"code": "2rz", "name": "정자"}]}))
     (base / "data/artifacts/dev/candidates.json").write_text(json.dumps({"candidates": [s["code"] for s in stations]}))
     config = {"exact": {"신분당": {"days": ["weekday", "holiday"]}}} if exact else {"exact": {}}
     (base / "data/config/last-train.json").write_text(json.dumps(config))
@@ -76,7 +77,9 @@ class SmokeShinbundangTest(unittest.TestCase):
     def test_on_requires_the_sample_minute_to_gwanggyo_at_every_sampled_candidate(self):
         self.assertEqual(0, self.code(response(("3t2", direct(1458)), ("fkn", direct(1445)), ("8gb", CHECK))))
         self.assertEqual(1, self.code(response(("3t2", direct(1459)))), "a minute late")
-        self.assertEqual(1, self.code(response(("3t2", direct(1458, code="2rz")))), "another terminal")
+        wrong = response(("3t2", direct(1458, code="2rz")))
+        wrong["candidates"][0]["lastTrains"][1]["boundFor"]["stationName"] = "정자"
+        self.assertEqual(1, self.code(wrong), "another terminal")
         self.assertEqual(1, self.code(response(("3t2", CHECK))), "no direct")
         self.assertEqual(0, self.code(response(("8gb", CHECK))), "no sampled candidate: warning only")
 
@@ -117,8 +120,32 @@ class SmokeShinbundangTest(unittest.TestCase):
         self.assertEqual(0, self.code(response(("fkn", CHECK)), switch=False, exact=False))
         self.assertEqual(1, self.code(response(("fkn", direct(1445))), switch=False, exact=False))
 
+    def test_the_deploys_expected_version_binds_the_response(self):
+        # #100 final review: a stale 00:05 direct passed when the 3d body had the previous version or none.
+        late = response(("fkn", direct(1445)))
+        base = root(on=False)
+        self.assertEqual(1, smoke.check(late, base, VERSION, VERSION)[0], "off and a direct: fails anyway")
+        old = dict(late, dataVersion="20261120.4")
+        self.assertEqual(1, smoke.check(old, base, VERSION, VERSION)[0], "the previous version")
+        none = {k: v for k, v in late.items() if k != "dataVersion"}
+        self.assertEqual(1, smoke.check(none, base, VERSION, VERSION)[0], "no version in the body")
+        self.assertEqual(1, smoke.check(response(("fkn", CHECK)), base, VERSION, "20261121.1")[0], "repo of another version")
+        self.assertEqual(0, smoke.check(response(("fkn", CHECK)), base, VERSION, VERSION)[0])
+        # By hand (no expected version): a body that is not the server's version is a contradiction.
+        self.assertEqual(1, smoke.check(old, base, VERSION)[0])
+
+    def test_a_candidate_or_terminal_shown_under_another_name_fails(self):
+        # The review's case: 판교 (3t2) with its own 00:18 direct to 광교, shown as 양재 (whose sample is 00:05).
+        swapped = response(("3t2", direct(1458)))
+        swapped["candidates"][0]["stationName"] = "양재"
+        self.assertEqual(1, self.code(swapped))
+        terminal = response(("3t2", direct(1458)))
+        terminal["candidates"][0]["lastTrains"][1]["boundFor"]["stationName"] = "정자"
+        self.assertEqual(1, self.code(terminal))
+
     def test_another_data_version_is_not_checked(self):
-        code, lines = smoke.check(response(("fkn", direct(1445))), root(on=False), "20261120.4")
+        body = dict(response(("fkn", direct(1445))), dataVersion="20261120.4")
+        code, lines = smoke.check(body, root(on=False), "20261120.4")
         self.assertEqual(0, code)
         self.assertIn("20261120.4", lines[0])
 

@@ -131,12 +131,100 @@ class LastTrainOperatorEvidenceTest :
             }
         }
 
+        describe("one collection, and the latest date of all its notices (#100 final review)") {
+            fun withNotices(change: (List<JsonObject>) -> List<JsonObject>) =
+                operatorEvidence(receipt = {
+                    val notices = change(it.getValue("notices").jsonArray.map { n -> n.jsonObject })
+                    it["notices"] = JsonArray(notices)
+                    it["sha256"] =
+                        JsonPrimitive(
+                            app.banbanyeok.pipeline.lasttrain.model.ltEvidenceDigest(
+                                (it.getValue("pages").jsonArray + notices).map { f ->
+                                    f.jsonObject
+                                        .getValue("sha256")
+                                        .toString()
+                                        .trim('"') to
+                                        f.jsonObject
+                                            .getValue("file")
+                                            .toString()
+                                            .trim('"')
+                                },
+                            ),
+                        )
+                })
+
+            fun older(
+                effective: String?,
+                fetched: String = "2026-11-20T22:22:44Z",
+            ) = obj(
+                "file" to "data/raw/shinbundang/notice-1356.html",
+                "source_url" to "https://example.test/1356",
+                "fetched_at" to fetched,
+                "sha256" to "a".repeat(64),
+                "bytes" to 100,
+                "viewNo" to "1356",
+                "title" to CHANGE,
+                "effective" to effective,
+                "newest" to false,
+            )
+
+            it("takesTheLatestDateOfAnyNoticeNotTheNewestNotices") {
+                assertEquals(emptyList(), reasons(withNotices { it + older("2026-09-28") }))
+                // The review's case: notice 1356 (older than 1358) corrected to take effect on 11-20.
+                off("an older notice with a later date", withNotices { it + older("2026-11-20") })
+                off("no date at all", withNotices { listOf(JsonObject(it.single() - "effective")) })
+                off("no latest change", operatorEvidence(receipt = { it.remove("latest_timetable_change") }))
+            }
+
+            it("needsPagesAndNoticesOfOneSitting") {
+                // The review's case: new pages of 11-21 with notices kept from 11-03.
+                off(
+                    "a notice fetched two weeks before",
+                    withNotices { it + older("2026-09-28", "2026-11-03T09:00:00Z") },
+                )
+                off(
+                    "the newest notice fetched a day later",
+                    withNotices {
+                        listOf(
+                            JsonObject(it.single() + ("fetched_at" to JsonPrimitive("2026-11-21T23:00:00Z"))),
+                        )
+                    },
+                )
+                assertEquals(emptyList(), reasons(withNotices { it + older("2026-09-28", "2026-11-21T03:00:00Z") }))
+            }
+        }
+
         describe("the raw folder when it is there") {
             it("mustHoldExactlyTheFilesTheReceiptLists") {
                 // The review's case: the first write of a run failed, the old receipt stayed, the pages had changed.
                 val changed = EVIDENCE_RAW + (EVIDENCE_PAGES[0] to "0".repeat(64))
                 off("a page changed since the receipt", operatorEvidence(raw = changed))
                 off("a page gone", operatorEvidence(raw = EVIDENCE_RAW - EVIDENCE_PAGES[0]))
+                // The review's case: a new notice left half fetched (and other unfinished names).
+                listOf(
+                    "notice-1359.html.part",
+                    ".notice-1359.html",
+                    "notice-1359.htm",
+                    "SB017.html.tmp",
+                    "notice 1359.html",
+                ).forEach { name ->
+                    off(
+                        name,
+                        operatorEvidence(raw = EVIDENCE_RAW + ("data/raw/shinbundang/$name" to "1".repeat(64))),
+                    )
+                }
+                // Files a person keeps beside the evidence are not evidence: no false off (an index page, a log).
+                val beside =
+                    listOf("sb-index.html", "fetch.log", "robots.txt", "sb.json", "sb-official.csv", "sb-report.json")
+                assertEquals(
+                    emptyList(),
+                    reasons(
+                        operatorEvidence(
+                            raw =
+                                EVIDENCE_RAW + beside.associate { "data/raw/shinbundang/$it" to "2".repeat(64) },
+                        ),
+                    ),
+                )
                 off(
                     "a notice fetched but never made into samples",
                     operatorEvidence(raw = EVIDENCE_RAW + ("data/raw/shinbundang/notice-1359.html" to "1".repeat(64))),

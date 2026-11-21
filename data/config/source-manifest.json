@@ -85,7 +85,7 @@
   },
   {
     "baseline_file": "data/config/shinbundang-baseline.json",
-    "baseline_sha256": "6136a2a22712e448a231897243f6c1c7cd6ae062ab6a53264ddc91942ad70c69",
+    "baseline_sha256": "c2376512a4c51427333d8040f43d731478651f84c965669637d495a6332714b9",
     "bytes": 186694,
     "content_type": "text/html; charset=EUC-KR",
     "effective_date": "2026-11-06 (신분당선 운영사 DX라인 공지의 최신 시각표 변경 시행일)",
@@ -253,7 +253,7 @@
     ],
     "request_body": null,
     "rows": 240,
-    "run": "2026-11-21T01:29:52Z-e225bb38",
+    "run": "2026-11-21T02:11:51Z-ce8d45d8",
     "samples_rows": 240,
     "samples_sha256": "c1a6b690ed1fdf4f63106cdd40d8e63c3e26d001c87c20877a9906ffeafb5d4a",
     "sha256": "4a9d47bbad7d54ef4c47aa5419a68de3bed7e109f1b0e2adbfb143ef628c5110",

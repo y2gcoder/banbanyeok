@@ -67,7 +67,8 @@ internal fun ltOperatorSamples(
 }
 
 /**
- * The date the operator's latest timetable change takes effect, from its notice pages. The pages must include the
+ * The date the operator's latest timetable change takes effect, from its notice pages: the latest of all their
+ * dates, not the newest notice's. The pages must include the
  * newest notice of the list (one whose page says explicitly that there is no newer notice); from there the list is
  * walked to older notices through each page's link until a notice with a date it takes effect is found. A notice on
  * the way that is not among the pages is skipped only when its title is known (from a neighbour's link) to be about
@@ -83,7 +84,9 @@ internal fun ltLatestTimetableChange(
     val seen = mutableSetOf<String>()
     while (true) {
         require(seen.add(current.viewNo)) { "the notice list loops at ${current.viewNo}" }
-        current.effective?.let { return it }
+        // The walk only proves the list is complete down to a timetable change; the answer is the latest date any
+        // fetched notice takes effect on (#100 final review: an older notice corrected to a later date counts).
+        if (current.effective != null) return notices.mapNotNull { it.effective }.max()
         require(!aboutTimetable(current.title)) { "notice ${current.viewNo} is about the timetable but has no date" }
         val older = requireNotNull(current.older) { "no timetable change in the notice list" }
         val from = current.viewNo

@@ -105,7 +105,7 @@ if [[ "$stale" != stale ]]; then
   # 신분당선은 운영사 표와 대조한 칸만 시각을 낸다. 평일 신분당이 켜져 있으면(이 저장소의 보고서 exactSwitches) 응답의
   # 대조 후보는 모두 광교행 직행 확정이 표본의 분 그대로여야 하고, 꺼져 있으면 그 칸에 직행 확정이 하나도 없어야 한다
   # (scripts/smoke_last_train.py). 서버의 데이터 버전이 이 저장소의 것과 다르면 알리기만 한다.
-  python3 -I "$root/scripts/smoke_last_train.py" shinbundang "$tmp/k" "$root" "$version" ||
+  python3 -I "$root/scripts/smoke_last_train.py" shinbundang "$tmp/k" "$root" "$version" "$expected" ||
     fail "신분당선 막차 칸이 보고서와 다르거나 응답을 읽을 수 없음"
 fi
 

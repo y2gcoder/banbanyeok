@@ -312,6 +312,13 @@ class LastTrainOperatorSamplesTest :
                 val older = read("1356", operatorNotice(CHANGE, "2026.09.28", "1357" to DRILL, "1347" to "공개검증"))
                 assertEquals("2026-11-06", newest.effective)
                 assertEquals("2026-11-06", ltLatestTimetableChange(listOf(older, newest), ::shinbundangTimetableTitle))
+                // #100 final review: an older notice corrected to a later date is the latest change, not the newest.
+                val corrected = read("1356", operatorNotice(CHANGE, "2026.11.20", "1357" to DRILL, "1347" to "공개검증"))
+                val newestAgain = read("1358", operatorNotice(CHANGE, "2026.11.06", null, "1357" to DRILL))
+                assertEquals(
+                    "2026-11-20",
+                    ltLatestTimetableChange(listOf(corrected, newestAgain), ::shinbundangTimetableTitle),
+                )
             }
 
             it("walksPastNoticesWhoseTitleIsNoChangeToTheLatestChange") {
@@ -661,6 +668,21 @@ class LastTrainOperatorSamplesTest :
                             "notice-1358.html",
                         ).writeBytes(newest.replace("2026.11.06", "2026.11.20").toByteArray(EUC_KR))
                 }
+                // #100 final review: a notice left half fetched, and notices kept from an earlier sitting.
+                stopsAndRemoves { dir.resolve("notice-1359.html.part").writeBytes("x".toByteArray()) }
+                stopsAndRemoves {
+                    Files.setLastModifiedTime(
+                        dir.resolve("notice-1358.html"),
+                        java.nio.file.attribute.FileTime
+                            .from(java.time.Instant.parse("2026-11-03T09:00:00Z")),
+                    )
+                }
+                // A log and an index page kept beside the pages are not evidence: the run goes through.
+                fetched(root, pages = line)
+                dir.resolve("fetch.log").writeBytes("SB001 200\n".toByteArray())
+                dir.resolve("sb-index.html").writeBytes("<html></html>".toByteArray())
+                shinbundangSamples(root)
+                assertEquals(listOf("S6", "S8"), ids())
                 // A person runs only the baseline command on the corrected notice: the old receipt is removed with it.
                 oldReceipt()
                 shinbundangBaseline(root)

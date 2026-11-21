@@ -24,6 +24,7 @@ import app.banbanyeok.pipeline.lasttrain.model.LtOperatorBundle
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorReceiptFiles
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorSource
 import app.banbanyeok.pipeline.lasttrain.model.LtReviewedNotice
+import app.banbanyeok.pipeline.lasttrain.model.ltCollectionProblem
 import app.banbanyeok.pipeline.lasttrain.model.ltSampleDigest
 import app.banbanyeok.pipeline.lasttrain.output.commitFiles
 import app.banbanyeok.pipeline.lasttrain.output.manifestText
@@ -163,6 +164,9 @@ private fun makeShinbundangBundle(root: Path) {
         dataset.candidates.candidates
             .map(names::getValue)
             .toSet()
+    // The pages and the notices of one sitting: notices kept from an earlier one say nothing of the newest notice now.
+    val collection = ltCollectionProblem((fetch.pages + fetch.notices).map { it.fetchedAt })
+    require(collection == null) { collection.orEmpty() }
     val fetchedOn = fetchDay(fetch.pages)
     val samples = ltOperatorSamples(fetch.timetable, meetings, fetchedOn)
     val latest = ltLatestTimetableChange(fetch.noticeList, ::shinbundangTimetableTitle)

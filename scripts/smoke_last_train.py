@@ -2,8 +2,11 @@
 
   python3 -I scripts/smoke_last_train.py basis <response.json> <server dataVersion>
       0: last trains are given; 3: the table is stale (and rightly so); 1: anything else.
-  python3 -I scripts/smoke_last_train.py shinbundang <response.json> <repo root> <server dataVersion>
+  python3 -I scripts/smoke_last_train.py shinbundang <response.json> <repo root> <server dataVersion> [expected]
       0: the 신분당선 cells agree with this repository's report; 1: they do not, or the response cannot be read.
+      With the deploy's expected dataVersion, a response of any other version (or none) fails, and so does this
+      repository's data being of another version; without it (a run by hand) another version is only a warning.
+      Every candidate and terminal must carry the name the registry of that version gives its code.
 
 Anything the check cannot read or does not know fails (#100 fourth review): a response of another shape, a kind
 outside the contract, a rider twice or missing in a candidate, a switch that is not a boolean, a stale basis that is
@@ -140,7 +143,22 @@ def sample_codes(root):
             for row in rows if row["family"] == FAMILY and row["home"] == HOME and row["day"] == "weekday"}
 
 
-def check(response, root, version):
+def names_problem(found, root):
+    """A candidate or terminal whose name is not the one the registry gives its code (None when none is)."""
+    names = {s["code"]: s["name"] for s in load(root + "/data/artifacts/dev/stations.json")["stations"]}
+    for candidate in found:
+        if names.get(candidate["stationCode"]) != candidate.get("stationName"):
+            return "candidate %s shown as %r, the registry says %r" % (
+                candidate["stationCode"], candidate.get("stationName"), names.get(candidate["stationCode"]))
+        for item in candidate["lastTrains"]:
+            bound = item.get("boundFor")
+            if bound and names.get(bound["stationCode"]) != bound["stationName"]:
+                return "terminal %s shown as %r at %s" % (bound["stationCode"], bound["stationName"],
+                                                            candidate["stationCode"])
+    return None
+
+
+def check(response, root, version, expected=None):
     """(code, lines) of check 3d."""
     try:
         found = candidates(response)
@@ -148,8 +166,19 @@ def check(response, root, version):
         return 1, ["   응답을 읽을 수 없음: %s" % problem]
     report = load(root + "/data/config/last-train-report.json")
     ours = load(root + "/data/artifacts/dev/manifest.json")["dataVersion"]
-    if version != ours or response.get("dataVersion") != version:
+    body = response.get("dataVersion")
+    if expected:
+        # A deploy: the response, the server and this checkout must all be the version being deployed.
+        if body != expected or version != expected or ours != expected:
+            return 1, ["   dataVersion이 배포 기대값 %s와 다름(응답 %r, 서버 %s, 이 저장소 %s)"
+                       % (expected, body, version, ours)]
+    elif body != version:
+        return 1, ["   응답의 dataVersion %r가 서버 manifest의 %s와 다름" % (body, version)]
+    elif version != ours:
         return 0, ["   경고: 서버 dataVersion %s가 이 저장소의 %s와 달라 신분당 칸을 대조하지 않음" % (version, ours)]
+    problem = names_problem(found, root)
+    if problem:
+        return 1, ["   응답의 역 이름이 같은 버전의 역 목록과 다름: %s" % problem]
     exact = load(root + "/data/config/last-train.json").get("exact", {})
     configured = "weekday" in exact.get(FAMILY, {}).get("days", [])
     switches = [s for s in report.get("exactSwitches", []) if s.get("family") == FAMILY and s.get("day") == "weekday"]
@@ -190,7 +219,7 @@ def main():
     if mode == "basis":
         code, lines = basis(response, sys.argv[3], today())
     elif mode == "shinbundang":
-        code, lines = check(response, sys.argv[3], sys.argv[4])
+        code, lines = check(response, sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else None)
     else:
         raise SystemExit("usage: smoke_last_train.py basis|shinbundang ...")
     if lines:

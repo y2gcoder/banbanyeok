@@ -6,6 +6,8 @@ import app.banbanyeok.pipeline.lasttrain.model.LtOperatorDeparture
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorNotice
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorStation
 import app.banbanyeok.pipeline.lasttrain.model.LtOperatorTimetable
+import app.banbanyeok.pipeline.lasttrain.model.LtRawFile
+import app.banbanyeok.pipeline.lasttrain.model.ltRawFile
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Sha256
 import java.nio.charset.Charset
@@ -305,6 +307,13 @@ internal fun readShinbundangRaw(root: Path): ShinbundangRaw {
         return LtFetchedFile("$SHINBUNDANG_DIR/${path.name}", url, Sha256.hex(bytes), bytes.size, at) to
             String(bytes, EUC_KR)
     }
+    // A file half fetched or a notice under a name the reader does not know is a collection not finished: stop.
+    val names = dir.listDirectoryEntries().map { it.name }.sorted()
+    val suspect = names.filter { ltRawFile(it) == LtRawFile.SUSPECT }
+    require(suspect.isEmpty()) { "$SHINBUNDANG_ID: unfinished or unknown files in $SHINBUNDANG_DIR: $suspect" }
+    val stationFiles = SHINBUNDANG_STATIONS.map { "${it.first}.html" }
+    val unknown = names.filter { ltRawFile(it) == LtRawFile.EVIDENCE && it.startsWith("SB") && it !in stationFiles }
+    require(unknown.isEmpty()) { "$SHINBUNDANG_ID: station pages of no known station: $unknown" }
     val pages =
         SHINBUNDANG_STATIONS.map { (code, _) ->
             val path = dir.resolve("$code.html")
@@ -312,10 +321,11 @@ internal fun readShinbundangRaw(root: Path): ShinbundangRaw {
             fetched(path, shinbundangPageUrl(code))
         }
     val notices =
-        dir
-            .listDirectoryEntries("notice-*.html")
-            .sortedBy { it.name }
-            .map { fetched(it, shinbundangNoticeUrl(it.name.removePrefix("notice-").removeSuffix(".html"))) }
+        names
+            .filter { ltRawFile(it) == LtRawFile.EVIDENCE && it.startsWith("notice-") }
+            .map { name ->
+                fetched(dir.resolve(name), shinbundangNoticeUrl(name.removePrefix("notice-").removeSuffix(".html")))
+            }
     return ShinbundangRaw(pages, notices)
 }
 

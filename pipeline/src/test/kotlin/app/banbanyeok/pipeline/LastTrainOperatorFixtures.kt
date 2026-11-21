@@ -72,7 +72,8 @@ internal fun operatorEvidence(
     val pages = EVIDENCE_PAGES.map(::file)
     val notice =
         kotlinx.serialization.json.JsonObject(
-            file(EVIDENCE_NOTICE) + obj("viewNo" to "1358", "title" to CHANGE, "newest" to true),
+            file(EVIDENCE_NOTICE) +
+                obj("viewNo" to "1358", "title" to CHANGE, "effective" to "2026-11-06", "newest" to true),
         )
     val digest =
         app.banbanyeok.pipeline.lasttrain.model
@@ -87,6 +88,7 @@ internal fun operatorEvidence(
             "baseline_file" to EVIDENCE_BASELINE,
             "baseline_sha256" to BASELINE_SHA,
             "sha256" to digest,
+            "latest_timetable_change" to "2026-11-06",
             "pages" to pages,
             "notices" to listOf(notice),
         ).toMutableMap().also(receipt)
