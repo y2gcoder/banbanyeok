@@ -32,7 +32,7 @@ class RecommendationErrorTableTest :
             return Reply(
                 status,
                 json.getValue("code").jsonPrimitive.content,
-                json.getValue("message").jsonPrimitive.content,
+                json.getValue("detail").jsonPrimitive.content,
             )
         }
 

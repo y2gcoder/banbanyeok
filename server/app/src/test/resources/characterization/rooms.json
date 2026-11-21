@@ -837,8 +837,7 @@
             "title": "우대 대상이 필요함",
             "status": 400,
             "detail": "우대 대상이 필요합니다",
-            "code": "FAVOR_TARGET_REQUIRED",
-            "message": "우대 대상이 필요합니다"
+            "code": "FAVOR_TARGET_REQUIRED"
         }
     },
     "no-date result favor=host": {
@@ -2237,8 +2236,7 @@
             "title": "우대 대상이 필요함",
             "status": 400,
             "detail": "우대 대상이 필요합니다",
-            "code": "FAVOR_TARGET_REQUIRED",
-            "message": "우대 대상이 필요합니다"
+            "code": "FAVOR_TARGET_REQUIRED"
         }
     },
     "friday-evening-hidden result favor=host": {
@@ -4169,8 +4167,7 @@
             "title": "우대 대상이 필요함",
             "status": 400,
             "detail": "우대 대상이 필요합니다",
-            "code": "FAVOR_TARGET_REQUIRED",
-            "message": "우대 대상이 필요합니다"
+            "code": "FAVOR_TARGET_REQUIRED"
         }
     },
     "saturday-night-band result favor=host": {
@@ -7039,8 +7036,7 @@
             "title": "우대 대상이 필요함",
             "status": 400,
             "detail": "우대 대상이 필요합니다",
-            "code": "FAVOR_TARGET_REQUIRED",
-            "message": "우대 대상이 필요합니다"
+            "code": "FAVOR_TARGET_REQUIRED"
         }
     },
     "christmas-decided-outside-top result favor=host": {
@@ -8130,8 +8126,7 @@
             "title": "우대 대상이 필요함",
             "status": 400,
             "detail": "우대 대상이 필요합니다",
-            "code": "FAVOR_TARGET_REQUIRED",
-            "message": "우대 대상이 필요합니다"
+            "code": "FAVOR_TARGET_REQUIRED"
         }
     },
     "weekday-decided-top result favor=host": {
@@ -9126,8 +9121,7 @@
             "title": "우대 대상이 필요함",
             "status": 400,
             "detail": "우대 대상이 필요합니다",
-            "code": "FAVOR_TARGET_REQUIRED",
-            "message": "우대 대상이 필요합니다"
+            "code": "FAVOR_TARGET_REQUIRED"
         }
     },
     "out-of-range result favor=host": {

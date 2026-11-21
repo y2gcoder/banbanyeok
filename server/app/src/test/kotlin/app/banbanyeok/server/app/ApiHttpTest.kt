@@ -77,7 +77,7 @@ private fun errorCode(body: String) =
         .jsonObject["code"]!!
         .jsonPrimitive.content
 
-/** 오류 응답은 `application/problem+json`이고 본문이 정확히 이 모양이다(`message`는 `detail`과 같은 호환 필드). */
+/** 오류 응답은 `application/problem+json`이고 본문이 정확히 이 모양이다. */
 internal suspend fun io.ktor.client.statement.HttpResponse.shouldBeProblem(
     status: HttpStatusCode,
     code: String,
@@ -93,7 +93,6 @@ internal suspend fun io.ktor.client.statement.HttpResponse.shouldBeProblem(
             put("status", status.value)
             put("detail", detail)
             put("code", code)
-            put("message", detail)
         }
 }
 

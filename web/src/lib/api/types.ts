@@ -9,8 +9,6 @@ export type TimeBasis = Schemas["TimeBasis"];
 export type RecommendResult = Schemas["Result"];
 export type RecommendBody = paths["/recommend"]["post"]["requestBody"]["content"]["application/json"];
 export type ApiError = Schemas["Problem"];
-/** 서버가 `application/problem+json`으로 바꾸기 전의 오류 본문. 옛 서버와도 동작하도록 함께 받는다. */
-export type LegacyApiError = { code: string; message: string };
 
 export type Room = Schemas["Room"];
 export type RoomParticipant = Schemas["Participant"];

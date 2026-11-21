@@ -9,7 +9,6 @@ describe("failure", () => {
     status: 400,
     detail: "모드가 올바르지 않아요",
     code: "INVALID_MODE",
-    message: "호환용 문구",
   };
 
   it("application/problem+json 본문은 code로 분기하고 문구는 detail을 쓴다", () => {
@@ -17,17 +16,12 @@ describe("failure", () => {
     expect(error).toMatchObject({ status: 400, code: "INVALID_MODE", message: "모드가 올바르지 않아요" });
   });
 
-  it("옛 application/json {code, message} 본문(옛 서버)도 그대로 담는다", () => {
-    const error = failure(400, { code: "INVALID_MODE", message: "모드가 올바르지 않아요" });
-    expect(error).toMatchObject({ status: 400, code: "INVALID_MODE", message: "모드가 올바르지 않아요" });
+  it("옛 {code, message} 본문은 문구를 읽지 않는다(detail만 읽는다)", () => {
+    const error = failure(400, { code: "INVALID_MODE", message: "옛 문구" } as never);
+    expect(error).toMatchObject({ status: 400, code: "INVALID_MODE", message: "" });
   });
 
-  it("detail이 없으면 message를 쓴다", () => {
-    const { detail: _detail, ...withoutDetail } = problem;
-    expect(failure(400, withoutDetail as never).message).toBe("호환용 문구");
-  });
-
-  it("detail도 message도 없으면 문구는 빈 문자열이고 code는 남는다", () => {
+  it("detail이 없으면 문구는 빈 문자열이고 code는 남는다", () => {
     expect(failure(409, { code: "ROOM_FULL" } as never)).toMatchObject({ code: "ROOM_FULL", message: "" });
   });
 

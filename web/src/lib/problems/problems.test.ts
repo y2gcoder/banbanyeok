@@ -45,7 +45,6 @@ describe("오류 코드 문서", () => {
       status: 502,
       detail: "연결하지 못했어요",
       code: "UPSTREAM_UNAVAILABLE",
-      message: "연결하지 못했어요",
     });
     expect(problemBody(501, "NOT_IMPLEMENTED", "x")).toMatchObject({ type: "about:blank", title: "Not Implemented" });
   });

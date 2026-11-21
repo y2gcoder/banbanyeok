@@ -121,7 +121,7 @@ describe("방 API 호출", () => {
       expect(call.headers.get("authorization")).toBe(`Bearer ${SECRET}`);
       expect(call.body).not.toContain(SECRET);
     }
-    respond = json(409, { code: "ROOM_CHANGED", message: "바뀜" });
+    respond = json(409, { code: "ROOM_CHANGED", detail: "바뀜" });
     await expect(setDecision(ROOM, SECRET, { stationCode: "s1q", seenVersion: 7 })).rejects.toMatchObject({
       status: 409,
       code: "ROOM_CHANGED",
@@ -135,14 +135,14 @@ describe("방 API 호출", () => {
     expect(sent[0]?.headers.get("authorization")).toBeNull();
   });
 
-  it("오류는 계약의 {code, message}로 ApiRequestError가 된다(204 응답은 오류가 아니다)", async () => {
-    respond = json(409, { code: "ROOM_FULL", message: "방이 가득 찼습니다" });
+  it("오류는 계약의 {code, detail}로 ApiRequestError가 된다(204 응답은 오류가 아니다)", async () => {
+    respond = json(409, { code: "ROOM_FULL", detail: "방이 가득 찼습니다" });
     await expect(joinRoom(ROOM, { originCode: "03v", hidden: false }, "k")).rejects.toMatchObject({
       status: 409,
       code: "ROOM_FULL",
       name: "ApiRequestError",
     });
-    respond = json(404, { code: "ROOM_NOT_FOUND", message: "없음" });
+    respond = json(404, { code: "ROOM_NOT_FOUND", detail: "없음" });
     await expect(removeParticipant(ROOM, "pid", SECRET)).rejects.toBeInstanceOf(ApiRequestError);
     respond = () => new Response(null, { status: 204 });
     await expect(removeParticipant(ROOM, "pid", SECRET)).resolves.toBeUndefined();
@@ -155,7 +155,6 @@ describe("방 API 호출", () => {
       status: 409,
       detail: "방이 가득 찼습니다",
       code: "ROOM_FULL",
-      message: "방이 가득 찼습니다",
     });
     await expect(joinRoom(ROOM, { originCode: "03v", hidden: false }, "k")).rejects.toMatchObject({
       status: 409,

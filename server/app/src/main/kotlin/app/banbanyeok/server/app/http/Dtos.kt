@@ -12,8 +12,7 @@ import kotlinx.serialization.json.JsonElement
 // contracts/openapi.yaml의 스키마와 이름·모양을 맞춘다. 요청 DTO는 문자열을 그대로 받고 검증은 서비스가 한다.
 
 /**
- * 오류 응답(`application/problem+json`, RFC 9457). `code`는 확장 필드이고 분기는 이 값으로 한다. `message`는 옛 웹을 위한 호환 필드로
- * `detail`과 같은 값이다(다음 정리 때 뺀다).
+ * 오류 응답(`application/problem+json`, RFC 9457). `code`는 확장 필드이고 분기는 이 값으로 한다.
  */
 @Serializable
 data class ProblemDto(
@@ -22,7 +21,6 @@ data class ProblemDto(
     val status: Int,
     val detail: String,
     val code: String,
-    val message: String,
 )
 
 @Serializable
