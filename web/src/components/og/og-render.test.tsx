@@ -138,26 +138,42 @@ describe("OG 이미지 그리기(satori)", () => {
     }
   });
 
-  it("방 링크 이미지의 막차 줄은 지금 꺼져 있다: 서버가 막차를 주어도 막차를 모르던 때와 같은 그림이다", async () => {
-    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(false);
+  it("방 링크 이미지의 막차 줄은 켜져 있다(#84): 기본 그림은 켠 그림과 같고, 끄면 막차를 모르던 때와 같은 그림이다", async () => {
+    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(true);
     for (const { id, preview } of ROOM_CASES) {
       if (preview.stage === "collecting") continue;
-      // 같은 미리보기에서 막차 키만 뺀 것(막차를 모르는 서버·지금 main이 그리는 입력).
+      expect(roomShareCopy(preview).card, id).toEqual(roomShareCopy(preview, { lastTrain: true }).card);
+      // 같은 미리보기에서 막차 키만 뺀 것(막차를 모르는 서버가 주는 입력). 끈 그림은 이것과 바이트까지 같다.
       const plain: RoomPreview = {
         ...preview,
         station: { ...preview.station, times: preview.station.times.map(({ lastTrain: _lastTrain, ...time }) => time) },
       };
-      const card = roomShareCopy(preview).card;
-      const before = roomShareCopy(plain).card;
-      if (!card || !before) throw new Error(`${id}: 그림 데이터 없음`);
-      expect(card, id).toEqual(before);
-      expect(JSON.stringify(card), id).not.toMatch(/막차|늦어도|다음 날/);
-      // 그린 결과도 바이트까지 같다.
-      const [drawn, old] = await Promise.all([
-        render(<SharedCard data={card} />),
-        render(<SharedCard data={before} />),
-      ]);
+      const off = roomShareCopy(preview, { lastTrain: false }).card;
+      const before = roomShareCopy(plain, { lastTrain: false }).card;
+      if (!off || !before) throw new Error(`${id}: 그림 데이터 없음`);
+      expect(off, id).toEqual(before);
+      expect(JSON.stringify(off.people), id).not.toMatch(/막차|늦어도|다음 날/);
+      const [drawn, old] = await Promise.all([render(<SharedCard data={off} />), render(<SharedCard data={before} />)]);
       expect(Buffer.from(drawn.bytes).equals(Buffer.from(old.bytes)), id).toBe(true);
+    }
+  });
+
+  it("방 링크 이미지의 지도 한가운데 비교(#68 2단계): 서버가 준 1위 단계에만 맨 아래 줄이 있고, 키가 없으면 예전 그림과 같다", async () => {
+    for (const { id, preview, middle } of ROOM_CASES) {
+      const card = roomShareCopy(preview).card;
+      if (!card) throw new Error(`${id}: 그림 데이터 없음`);
+      expect(card.middleLine ?? null, id).toBe(middle ?? null);
+      if (!card.middleLine || preview.stage !== "result") continue;
+      expect(missingGlyphs(card.middleLine), id).toEqual([]);
+      // 키를 뺀 미리보기(옛 서버·숨긴 사람이 있는 방·조건 미달)는 비교 줄만 빠진 같은 그림이다.
+      const { mapMiddle: _mapMiddle, ...withoutMiddle } = preview;
+      const { middleLine: _middleLine, ...rest } = card;
+      expect(roomShareCopy(withoutMiddle).card, id).toEqual(rest);
+      // 빠른·배려 기준의 방에 값이 와도(옛 서버·버그) 그리지 않는다.
+      expect(
+        roomShareCopy({ ...preview, basis: { mode: "fast", favorLabel: null } }).card?.middleLine,
+        id,
+      ).toBeUndefined();
     }
   });
 

@@ -3,7 +3,7 @@
  * contracts/openapi.yaml). 웹은 계산하지 않고, 받은 값을 **한 번 더 걸러** 보여 줄 때만 화면 값(`MapMiddleView`)으로 바꾼다:
  * 서버가 조건을 어긴 값을 보내거나(옛 서버·버그) 화면 숫자와 어긋나는 값이 와도 거짓 비교를 그리지 않는다.
  *
- * 이 파일은 공유 그림(`/s/og`)과 결과 화면이 같은 문장·같은 칭호 규칙을 쓰게 하는 곳이다.
+ * 이 파일은 공유 그림(`/s/og`), 방 미리보기(`/r/<id>/og`·설명), 결과 화면이 같은 문장·같은 칭호 규칙을 쓰게 하는 곳이다.
  */
 import type { RecommendResult } from "@/lib/api/types";
 import { OG_TEXT } from "@/lib/copy/og-text";
@@ -31,8 +31,7 @@ export type MapMiddleView = {
 
 /**
  * 보여 줄 때만 값을 준다. 숨기는 경우: 공평 기준이 아니다 · 출발역을 숨긴 참가자가 있다(지도 한가운데 역과 평균점에서 숨긴 출발역을
- * 거꾸로 짐작할 수 있다) · 서버가 값을 안 줬다 · 추천 역과 같은 역이다 · 사람 수가 맞지 않는다 · 가장 오래 걸리는 시간이
- * `MIDDLE_MIN_EXTRA`분보다 적게 늘었다.
+ * 거꾸로 짐작할 수 있다) · 서버가 값을 안 줬다 · 그 밖에 `middleView`가 거르는 경우.
  * `topMinutes`는 1위 추천 역의 사람별 표시 분(입력 순서)이다.
  */
 export function toMapMiddleView(
@@ -41,6 +40,18 @@ export function toMapMiddleView(
 ): MapMiddleView | null {
   const middle = result.mapMiddle;
   if (result.mode !== "fair" || !middle || result.participants.some((p) => p.hidden)) return null;
+  return middleView(middle, top);
+}
+
+/**
+ * 서버가 준 지도 한가운데 값(무상태 `Result.mapMiddle`이든 방 미리보기 `RoomPreviewResult.mapMiddle`이든 같은 모양의 시간)을 화면 값으로.
+ * 숨기는 경우: 추천 역과 같은 역이다 · 사람 수가 맞지 않는다 · 가장 오래 걸리는 시간이 `MIDDLE_MIN_EXTRA`분보다 적게 늘었다.
+ * 공평 기준인지·숨긴 사람이 없는지는 부르는 쪽이 먼저 본다(방 미리보기에는 숨김 표시가 없어 서버의 조건을 따른다).
+ */
+export function middleView(
+  middle: { stationCode: string; stationName: string; times: readonly { seconds: number }[] },
+  top: { stationCode: string; minutes: readonly number[] },
+): MapMiddleView | null {
   if (middle.stationCode === top.stationCode || middle.times.length !== top.minutes.length) return null;
   const minutes = middle.times.map((t) => minutesFromSeconds(t.seconds));
   const max = Math.max(...minutes);

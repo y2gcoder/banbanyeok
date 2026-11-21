@@ -274,6 +274,20 @@ data class PreviewStationDto(
     val times: List<PreviewTimeDto>,
 )
 
+/** openapi `PreviewMapMiddle`: 방 미리보기의 "지도 한가운데" 비교. 이름표와 시간만(출발역·참여자 ID 없음). */
+@Serializable
+data class PreviewMapMiddleDto(
+    val stationCode: String,
+    val stationName: String,
+    val times: List<PreviewMiddleTimeDto>,
+)
+
+@Serializable
+data class PreviewMiddleTimeDto(
+    val label: String,
+    val seconds: Int,
+)
+
 /** contracts/openapi.yaml `RoomPreview`. 단계(`stage`)마다 있는 필드가 다르다. */
 @Serializable
 @JsonClassDiscriminator("stage")
@@ -295,6 +309,12 @@ sealed interface RoomPreviewDto {
         val station: PreviewStationDto,
         @EncodeDefault(EncodeDefault.Mode.NEVER)
         val lastTrainBasis: LastTrainBasisDto? = null,
+        /** "지도 한가운데" 비교. 보일 조건을 채우지 못하면 키가 없다. */
+        @EncodeDefault(EncodeDefault.Mode.NEVER)
+        val mapMiddle: PreviewMapMiddleDto? = null,
+        /** 막차 표를 아직 읽는 중이라 막차가 빠졌을 때만 `true`. 아니면 키가 없다. */
+        @EncodeDefault(EncodeDefault.Mode.NEVER)
+        val lastTrainPending: Boolean? = null,
     ) : RoomPreviewDto
 
     @Serializable
@@ -308,5 +328,7 @@ sealed interface RoomPreviewDto {
         val decidedAt: String,
         @EncodeDefault(EncodeDefault.Mode.NEVER)
         val lastTrainBasis: LastTrainBasisDto? = null,
+        @EncodeDefault(EncodeDefault.Mode.NEVER)
+        val lastTrainPending: Boolean? = null,
     ) : RoomPreviewDto
 }

@@ -82,6 +82,19 @@ class RoomPreviewTest :
                 }
             }
 
+            it(
+                "keeps the nickname of a hidden person who typed one (only a hidden person without a nickname is 참가자 N)",
+            ) {
+                // 처리방침 6항의 미리보기 이름 안내(#84): 이름을 입력하면 그 이름, 이름 없이 출발역을 숨기면 '참가자 N'.
+                previewTest { results ->
+                    val created = service.create(hostCommand(hidden = true, nickname = "비밀별"))
+                    service.join(created.roomId, ParticipantInput(null, "225", hidden = true), null)
+                    val preview = results.preview(created.roomId).shouldBeInstanceOf<RoomPreview.Result>()
+                    preview.station.times.map { it.label } shouldBe listOf("비밀별", "참가자 2")
+                    preview.toString() shouldNotContain "03v"
+                }
+            }
+
             it("cannot be joined when the room is full or locked") {
                 previewTest { results ->
                     val full = service.create(hostCommand())

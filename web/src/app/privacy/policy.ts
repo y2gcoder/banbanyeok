@@ -76,18 +76,15 @@ const ANALYTICS_ITEMS =
   "통계 항목(아래 표), 오류 정보(오류 종류·메시지·발생 위치. 주소의 출발역·이름·방 ID와 토큰은 가려서 보냄), 화면 로딩·반응 속도 수치, 통계 도구가 만든 무작위 식별자, 브라우저·운영체제·기기 종류(분류만 보내고 브라우저 정보 원문은 보내지 않음), 화면 크기, 방문한 페이지와 직전 페이지의 주소(출발역·이름이 담긴 주소 뒷부분을 지우고, 역 조합 페이지의 역 코드와 방 주소(/r/)의 방 ID는 가려서 보냄), 접속 IP 주소(통계 서버가 전송 과정에서 받지만 저장하지 않도록 설정하며, IP로 위치를 추정하지 않음)";
 
 /**
- * 이 판(6항 설명 보완, #84. 15항 1단계라 바로 시행)의 시행일이자, 같은 배포에서 공지를 시작하는 다음 판(방 링크 미리보기, 15항 2단계.
- * `UPCOMING_POLICY`)의 공지 시작일. **배포하는 날(KST)** 이어야 한다. 15항 시행일 줄, 변경 이력, 이전 판의 적용 기간, 이 판의
- * 보존본 파일 이름, 다음 판의 공지 시작일·시행일(이 날 + 7일)이 모두 이 값에서 나온다. 배포가 이 날보다 늦어지면 이 한 줄을 그날로
- * 고치고 `UPDATE_PRIVACY_MD=1 pnpm test src/app/privacy`로 md와 보존본을 다시 만든다(옛 보존본은 지운다). 1단계 규칙이 생긴
- * 2026-11-28보다 이를 수 없다(테스트가 확인).
+ * 설명 보완판(6항 설명 보완, #84. 15항 1단계)의 시행일이자 12월 5일 시행판(방 링크 미리보기, 15항 2단계)의 공지 시작일. 지난 날짜라
+ * 고치지 않는다. 15항의 변경 이력·이전 판 적용 기간과 설명 보완판 보존본의 파일 이름이 이 값에서 나온다.
  */
 export const REVISION_DATE = "2026-11-28";
 
 /** 15항 세 단계 규칙(1단계 설명 보완 포함)을 시행한 날. 이 날의 판은 이전 판 목록에 남는다. */
 export const THREE_STEP_RULE_DATE = "2026-11-28";
 
-/** 다음 판의 공지 기간(일). schedule.ts의 `MIN_NOTICE_DAYS`와 같다(테스트가 확인. schedule.ts가 이 파일을 읽으므로 숫자로 둔다). */
+/** 12월 5일 시행판의 공지 기간(일). schedule.ts의 `MIN_NOTICE_DAYS`와 같다(테스트가 확인. schedule.ts가 이 파일을 읽으므로 숫자로 둔다). */
 const PREVIEW_NOTICE_DAYS = 7;
 
 /** "2026년 11월 28일"(schedule.ts의 `koreanDate(iso, { year: true })`와 같다. 테스트가 확인). */
@@ -101,7 +98,7 @@ export function addDays(iso: string, days: number): string {
   return new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-/** 다음 판(방 링크 미리보기에 막차·지도 한가운데 비교, 15항 2단계)의 시행일. 공지 시작일(`REVISION_DATE`)부터 7일 뒤다. */
+/** 이 판(방 링크 미리보기에 막차·지도 한가운데 비교, 15항 2단계)의 시행일. 공지 시작일(`REVISION_DATE`)부터 7일 뒤다. */
 export const PREVIEW_EFFECTIVE_DATE = addDays(REVISION_DATE, PREVIEW_NOTICE_DAYS);
 
 const REPO = "https://github.com/y2gcoder/banbanyeok/blob";
@@ -114,7 +111,7 @@ const link = (label: string, url: string) => `[${label}](${url})`;
  * 이전 판의 보존본(전문 md, `docs/legal/history/`). 15항의 판 이름이 이 파일로 이어진다. 그 판의 md(`policyMarkdown`)에서 머리 주석만 바꾼 것이다.
  * - 2026-11-28 시행판(15항만 바꾼 판)은 예정 판으로만 있어 md로 만든 적이 없었다. 그 판을 넣은 커밋(#79) `6f29fba`의 policy.ts
  *   (`UPCOMING_POLICY.policy`)에서 만들어 고정했다(테스트가 해시로 확인).
- * - 이 판(설명 보완판)은 지금 판인 동안 테스트가 `POLICY`에서 다시 만든다. 다음 판을 `POLICY`로 옮길 때 고정한다.
+ * - 설명 보완판은 지금 판인 동안 테스트가 `POLICY`에서 다시 만들었고, 12월 5일 시행판을 `POLICY`로 옮기면서 고정했다(해시 확인).
  */
 export const HISTORY = {
   threeStepRule: { file: "2026-11-28-notice-rules.md", source: "6f29fba" },
@@ -183,15 +180,8 @@ function changesSection(effectiveDate: string, history: readonly string[], versi
   };
 }
 
-/** 지금 판(설명 보완판)의 15항. */
+/** 지금 판(12월 5일 시행판)의 15항. 이전 판 목록에 설명 보완판의 보존본이 붙는다. */
 const CHANGES = changesSection(
-  REVISION_DATE,
-  [HISTORY_TRIAL, HISTORY_THREE_STEP_RULE, HISTORY_REVISION],
-  VERSIONS_TO_THREE_STEP_RULE,
-);
-
-/** 다음 판(방 링크 미리보기)의 15항. 이전 판 목록에 지금 판(설명 보완판)의 보존본이 붙는다. */
-const CHANGES_FROM_PREVIEW = changesSection(
   PREVIEW_EFFECTIVE_DATE,
   [HISTORY_TRIAL, HISTORY_THREE_STEP_RULE, HISTORY_REVISION, HISTORY_PREVIEW],
   [
@@ -220,18 +210,15 @@ const THIRD_PARTY_ITEMS = {
   solo: "혼자 입력한 결과의 링크 주소에는 입력한 출발역과 이름이 그대로 담기며, 혼자 입력할 때는 출발역을 숨기는 기능이 없습니다(숨기기는 방에서만 쓸 수 있습니다). 이 링크를 연 결과 화면과 링크 미리보기 그림에는 1위 역과 사람별 이름·소요시간이 보이고, 만나는 시간대를 골랐으며 계산할 수 있을 때는 사람별 귀갓길 막차 시각도 보입니다. 만남 후보 중 출발역들의 가운데에 가장 가까운 역이 1위 역과 다르면, 그 역까지 걸리는 시간을 1위 역과 견준 문장이 결과 화면과 미리보기 그림·글, 공유 문구에 붙을 수 있습니다.",
 } as const;
 
-/** 방 링크 미리보기의 이름 규칙과 보관·회수 안내. 지금 판과 다음 판이 같이 쓴다. */
+/** 방 링크 미리보기의 이름 규칙과 보관·회수 안내. */
 const PREVIEW_NAMES =
   "이름을 입력한 사람은 그 이름이, 이름 없이 출발역을 공개한 사람은 출발역 이름이 보이고, 이름 없이 출발역을 숨긴 사람은 '참가자 N'으로 보입니다. 미리보기 그림에서는 그림 글꼴에 없는 글자(이모지 등)를 빼고 긴 이름은 줄이며, 남는 글자가 없으면 '참가자 N'으로 보입니다.";
 const PREVIEW_KEEP =
   "정한 역과 정한 사람·시각은 방에 함께 저장되고 방이 지워질 때 함께 지워집니다. 다만 메신저 회사가 한 번 만든 미리보기는 그 뒤 방을 고치거나 지워도 이미 보낸 메시지에서 바뀌거나 사라지지 않으며, 운영자가 회수할 수 없습니다.";
 const PREVIEW_LIST = "1위 역이나 방에서 정한 역, 참여자별 이름과 소요시간, 정한 사람과 약속 날짜·시각·시간대.";
 
-/** 지금 판의 방 링크 미리보기(막차·지도 한가운데 비교 없음). */
-const PREVIEW_NOW = `방 링크의 미리보기에는 보내는 때의 방 상태가 보입니다: ${PREVIEW_LIST} ${PREVIEW_NAMES} ${PREVIEW_KEEP}`;
-
-/** 다음 판의 방 링크 미리보기. 한 문장에 한 가지를 적는다(`policy.test.ts`가 문장마다 본다). */
-const PREVIEW_FROM_PREVIEW_DATE = [
+/** 방 링크 미리보기. 한 문장에 한 가지를 적는다(`policy.test.ts`가 문장마다 본다). */
+const PREVIEW = [
   `방 링크의 미리보기에는 메신저가 그 링크의 미리보기를 처음 가져갈 때의 방 상태가 보입니다: ${PREVIEW_LIST}`,
   "링크를 보낸 뒤 방이 바뀌었다면, 메신저가 처음 가져갈 때의 바뀐 상태로 만듭니다.",
   PREVIEW_NAMES,
@@ -241,13 +228,13 @@ const PREVIEW_FROM_PREVIEW_DATE = [
   PREVIEW_KEEP,
 ].join(" ");
 
-/** 6항. 방 링크 미리보기 항목만 판마다 다르다. */
-function thirdParty(preview: string): Section {
+/** 6항. */
+function thirdParty(): Section {
   const { room, hidden, map, messenger, kakao, solo } = THIRD_PARTY_ITEMS;
   return {
     id: "third-party",
     title: "6. 개인정보의 제3자 제공",
-    blocks: [THIRD_PARTY_LEAD, list(room, hidden, map, messenger, kakao, solo, preview)],
+    blocks: [THIRD_PARTY_LEAD, list(room, hidden, map, messenger, kakao, solo, PREVIEW)],
   };
 }
 
@@ -435,7 +422,7 @@ export const POLICY: Policy = {
         ),
       ],
     },
-    thirdParty(PREVIEW_NOW),
+    thirdParty(),
     {
       id: "outsourcing",
       title: "7. 개인정보 처리업무의 위탁과 국외 이전",
@@ -693,48 +680,5 @@ export const POLICY: Policy = {
   ],
 };
 
-/**
- * 예정된 다음 판(15항 2단계, #84). 방 링크 미리보기에 출발역을 공개한 참여자의 귀갓길 막차 시각과 지도 한가운데 비교를 더한다.
- * 지금 판(설명 보완판)과 같은 날(`REVISION_DATE`) 공지를 시작하고 7일 뒤(`PREVIEW_EFFECTIVE_DATE`) 0시(KST)에 시행한다. 시행 전에는
- * 서버의 방 미리보기 `mapMiddle`과 웹의 방 그림 막차 줄(`ROOM_PREVIEW_LAST_TRAIN`)을 켜지 않는다. 기능을 켜는 PR이 이 판을
- * `POLICY`로 옮기고 null로 되돌린다.
- */
-export const UPCOMING_POLICY: UpcomingPolicy | null = {
-  noticeFrom: REVISION_DATE,
-  effectiveDate: PREVIEW_EFFECTIVE_DATE,
-  summary:
-    "방 링크를 메신저로 보낼 때 보이는 미리보기에 출발역을 공개한 참여자의 귀갓길 막차 시각과 '지도 한가운데' 역과 견준 문장을 더합니다(6항). 출발역을 숨긴 사람의 막차 시각은 넣지 않고, 숨긴 사람이 있으면 비교도 넣지 않습니다. 새로 받는 정보는 없고, 처리 목적과 보유 기간은 바뀌지 않습니다.",
-  changes: [
-    {
-      item: "방 미리보기 응답: 방 ID만 있으면 누구나 받는 값 (6항)",
-      before:
-        "1위 역이나 정한 역, 참여자별 이름과 그 역까지 소요시간, 출발역을 공개한 참여자의 막차 정보, 약속 날짜·시각·시간대, 정한 사람",
-      after:
-        "같음 + 1위 역일 때 지도 한가운데 역(만남 후보 중 출발역들의 가운데에 가장 가까운 역)의 이름과 그 역까지 참여자별 소요시간. 출발역을 숨긴 사람이 있으면 넣지 않음",
-    },
-    {
-      item: "메신저 미리보기 그림 (6항)",
-      before: "1위 역이나 정한 역, 참여자별 이름과 소요시간, 정한 사람과 약속 날짜·시각·시간대",
-      after:
-        "같음 + 출발역을 공개한 참여자의 귀갓길 막차 시각(작은 줄), 1위 역일 때 지도 한가운데 역과 견준 문장. 출발역을 숨긴 사람의 막차 시각은 넣지 않고, 숨긴 사람이 있으면 견준 문장도 넣지 않음",
-    },
-    {
-      item: "메신저 미리보기 글·카카오톡 공유 메시지 (6항)",
-      before: "1위 역이나 정한 역, 참여자별 이름과 소요시간(정한 역이면 정한 사람과 약속 날짜·시각)",
-      after: "같음 + 1위 역일 때 지도 한가운데 역과 견준 문장(막차 시각은 글에 넣지 않음)",
-    },
-    {
-      item: "미리보기에 보이는 방 상태 (6항)",
-      before: "보내는 때의 방 상태",
-      after: "메신저가 그 링크의 미리보기를 처음 가져갈 때의 방 상태(링크를 보낸 뒤 방이 바뀌었으면 바뀐 상태)",
-    },
-  ],
-  policy: {
-    ...POLICY,
-    sections: POLICY.sections.map((section) => {
-      if (section.id === "third-party") return thirdParty(PREVIEW_FROM_PREVIEW_DATE);
-      if (section.id === "changes") return CHANGES_FROM_PREVIEW;
-      return section;
-    }),
-  },
-};
+/** 예정된 다음 판. 없으면(null) 화면 어디에도 공지가 나오지 않는다. 15항 2단계(그 밖의 변경)를 할 때 채우고, 시행일이 지나면 policy를 POLICY로 옮기고 null로 되돌린다. */
+export const UPCOMING_POLICY: UpcomingPolicy | null = null;

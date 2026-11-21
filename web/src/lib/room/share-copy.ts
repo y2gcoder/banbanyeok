@@ -10,6 +10,7 @@ import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
 import { lastTrainCardLine, lastTrainState } from "@/lib/result/last-train";
+import { middleSentence, middleView } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
 import type { KakaoFeedMessage } from "@/lib/share/kakao";
 import type { SharedCardData } from "@/lib/share-card/shared-preview";
@@ -32,13 +33,12 @@ export type RoomShareCopy = {
 type Computed = Exclude<RoomPreview, { stage: "collecting" }>;
 
 /**
- * 방 미리보기 그림(`/r/<id>/og`)에 귀갓길 막차 줄(#62)을 그릴지. **지금은 끈다.** 처리방침 6항이 방 링크 미리보기에 보이는 것을
- * 목록으로 적고 있고("1위 역이나 방에서 정한 역, 참여자별 이름과 소요시간, …") 그 목록에 막차 시각이 없다. 6항에 막차를 적는 판을
- * 시행할 때 `true`로 바꾼다(`policy.test.ts`가 6항에 "막차"가 없는데 켜져 있으면 실패한다). 켜면 그림이 달라지므로
- * `ROOM_OG_IMAGE_VERSION`도 그때 바뀐다. 꺼진 동안의 그림 값은 막차를 모르던 때와 같다(서버가 미리보기에 막차를 주어도 쓰지 않는다).
- * 결과·방 화면의 막차 칸과 공유 링크 숫자판(`/s/og`)은 이 스위치와 상관없다.
+ * 방 미리보기 그림(`/r/<id>/og`)에 귀갓길 막차 줄(#62)을 그릴지. 처리방침 6항의 방 링크 미리보기 목록에 "출발역을 공개한 참여자의
+ * 귀갓길 막차 시각(출발역을 숨긴 사람은 넣지 않음)"을 적은 판(#84)부터 켠다. `policy.test.ts`가 6항에 "막차"가 없는데 켜져 있으면
+ * 실패한다. 켜고 끄면 그림이 달라지므로 `ROOM_OG_IMAGE_VERSION`도 바뀐다(스위치 상태로 센다). 출발역을 숨긴 사람에게는 서버가
+ * 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다). 결과·방 화면의 막차 칸과 공유 링크 숫자판(`/s/og`)은 이 스위치와 상관없다.
  */
-export const ROOM_PREVIEW_LAST_TRAIN: boolean = false;
+export const ROOM_PREVIEW_LAST_TRAIN: boolean = true;
 
 /** `lastTrain`은 그림 값에 막차 줄을 넣을지. 기본은 `ROOM_PREVIEW_LAST_TRAIN`이고, 테스트가 켠 모습과 끈 모습을 둘 다 보려고 받는다. */
 type ShareCopyOptions = { lastTrain?: boolean };
@@ -91,6 +91,22 @@ function cardName(preview: Computed, label: string): string {
   );
 }
 
+/**
+ * 1위 단계의 "지도 한가운데였다면" 비교(#68 2단계). 서버는 방의 기본 기준이 공평이고 출발역을 숨긴 사람이 없을 때만 `mapMiddle`을 준다.
+ * 웹은 공평 기준인지와 화면 숫자(반올림한 분) 기준의 5분 규칙을 한 번 더 거른다(무상태 링크의 `toMapMiddleView`와 같은 규칙).
+ * `name`은 이름을 고르는 방법(글은 서버 짧은 이름, 그림은 글꼴에 있는 글자로 거른 이름).
+ */
+function middleLine(preview: Computed, name: (index: number) => string): string | null {
+  if (preview.stage !== "result" || preview.basis.mode !== "fair" || !preview.mapMiddle) return null;
+  const minutes = preview.station.times.map((t) => (t.seconds === null ? null : minutesFromSeconds(t.seconds)));
+  if (minutes.some((m) => m === null)) return null;
+  const view = middleView(preview.mapMiddle, {
+    stationCode: preview.station.stationCode,
+    minutes: minutes as number[],
+  });
+  return view ? middleSentence(view, name(view.personIndex)) : null;
+}
+
 function card(
   preview: Computed,
   suffix: string,
@@ -98,6 +114,7 @@ function card(
   showLastTrain: boolean,
   footer?: SharedCardData["footer"],
 ): SharedCardData {
+  const comparison = middleLine(preview, (index) => safeName(preview.station.times[index]?.label ?? "", index));
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
   const meeting = { date: preview.room.meetingDate, time: preview.room.meetingTime };
   return {
@@ -115,6 +132,7 @@ function card(
     }),
     modeLine,
     ...(footer ? { footer } : {}),
+    ...(comparison ? { middleLine: comparison } : {}),
   };
 }
 
@@ -122,12 +140,15 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLast
   const { stationName } = preview.station;
   const times = timesText(preview);
   const basisLine = modeSentence(preview.basis.mode, preview.basis.favorLabel) + basisSuffix(preview.room.timeBasis);
+  // 지도 한가운데 비교는 무상태 링크(`sharedPreview`)처럼 설명 끝에 붙인다(잘려도 앞의 시간은 남는다).
+  const middle = middleLine(preview, (index) => preview.station.times[index]?.label ?? "");
+  const tail = middle ? `${SEP}${middle}` : "";
   const [title, description] = preview.room.canJoin
     ? [
         leadingTitle(stationName, preview.basis.mode, preview.basis.favorLabel),
-        `아직이면 출발역 넣어 주세요${SEP}${times}`,
+        `아직이면 출발역 넣어 주세요${SEP}${times}${tail}`,
       ]
-    : [`${stationName}${OG_TEXT.sharedSuffix}`, `${times}${SEP}${basisLine}`];
+    : [`${stationName}${OG_TEXT.sharedSuffix}`, `${times}${SEP}${basisLine}${tail}`];
   const favorName = preview.basis.favorLabel === null ? null : cardName(preview, preview.basis.favorLabel);
   return {
     stage: "result",

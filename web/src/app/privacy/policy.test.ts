@@ -43,12 +43,9 @@ const previewSentences = (policy: Policy) =>
     .split(/(?<=\.)\s+/)
     .filter(Boolean);
 
-/** 이 판(설명 보완판)의 보존본 머리 주석. 이 판이 지금 판인 동안은 테스트가 POLICY에서 다시 만들고, 다음 판을 옮길 때 이 파일 그대로 고정한다. */
-const REVISION_NOTE = `${koreanDate(REVISION_DATE, { year: true })} 설명 보완판(6항 설명 보완)의 보존본. web/src/app/privacy/policy.ts의 그 판에서 만들었다. 그 판의 기록이라 고치지 않는다.`;
-/** 보존본: 그 판의 md 전문에서 머리의 안내 주석(policy.ts에서 만든다는 말)만 `note`로 바꾼다. */
-const archive = (policy: Policy, note: string) => policyMarkdown(policy).replace(/^<!-- .+ -->$/m, `<!-- ${note} -->`);
 /** 고정한 보존본의 SHA-256. 보존본은 그 판의 기록이라 고치지 않는다. */
 const FROZEN_HISTORY: Record<string, string> = {
+  [HISTORY.revision.file]: "457275926f55d6d0d3c96cbf783bc8eb951030806facf116709d1259c18e384f",
   [HISTORY.threeStepRule.file]: "9ebf1aa8b1095610d5b76e2a488b68bc73894634caa28cbb43421cb9f8d5db84",
 };
 
@@ -60,23 +57,26 @@ describe("개인정보 처리방침", () => {
     );
   });
 
-  it("이전 판 보존본(docs/legal/history/): 지금 판의 보존본은 POLICY에서 나오고, 고정한 보존본은 바뀌지 않는다", () => {
-    const revision = resolve(historyDir, HISTORY.revision.file);
-    const expected = archive(POLICY, REVISION_NOTE);
-    if (process.env.UPDATE_PRIVACY_MD) writeFileSync(revision, expected);
-    expect(readFileSync(revision, "utf8"), "UPDATE_PRIVACY_MD=1 pnpm test src/app/privacy").toBe(expected);
+  it("이전 판 보존본(docs/legal/history/)은 그 판의 기록이라 바뀌지 않는다", () => {
     for (const [file, hash] of Object.entries(FROZEN_HISTORY)) {
       const sha = createHash("sha256")
         .update(readFileSync(resolve(historyDir, file)))
         .digest("hex");
       expect(sha, `${file}은 이전 판의 기록이라 고치지 않는다`).toBe(hash);
     }
-    // REVISION_DATE를 옮기면 옛 이름의 보존본이 남지 않게 지운다.
     expect(readdirSync(historyDir).sort()).toEqual(
       Object.values(HISTORY)
         .map((h) => h.file)
         .sort(),
     );
+  });
+
+  it("설명 보완판 보존본은 그 판의 전문이다: 6항 설명 보완과, 막차·지도 한가운데 없는 미리보기", () => {
+    const text = readFileSync(resolve(historyDir, HISTORY.revision.file), "utf8");
+    expect(text).toContain(`이 개인정보 처리방침은 ${koreanDate(REVISION_DATE, { year: true })}부터 적용됩니다.`);
+    expect(text).toContain("- 혼자 입력한 결과의 링크 주소에는");
+    expect(text).toContain("방 링크의 미리보기에는 보내는 때의 방 상태가 보입니다");
+    expect(text).not.toContain("## 예정된 변경");
   });
 
   it("11월 28일 시행판 보존본은 그 판의 전문이다: 15항 세 단계 규칙과 11월 28일 시행일 줄", () => {
@@ -115,7 +115,9 @@ describe("개인정보 처리방침", () => {
 
   it("시행 중이라 {자리표시}가 하나도 남지 않고, 시행일이 적혀 있다", () => {
     expect(markdown.match(/\{[^{}\n]+\}/g) ?? []).toEqual([]);
-    expect(markdown).toContain(`이 개인정보 처리방침은 ${koreanDate(REVISION_DATE, { year: true })}부터 적용됩니다.`);
+    expect(markdown).toContain(
+      `이 개인정보 처리방침은 ${koreanDate(PREVIEW_EFFECTIVE_DATE, { year: true })}부터 적용됩니다.`,
+    );
   });
 
   it("초안·검토 안내 상자를 싣지 않는다", () => {
@@ -185,20 +187,11 @@ describe("개인정보 처리방침", () => {
     ).toBe(true);
   });
 
-  it("6항 지금 판(설명 보완판): 방 링크 미리보기는 기존 범위 그대로다(막차·지도 한가운데 비교 없음)", () => {
-    const sentences = previewSentences(POLICY);
-    expect(sentences[0]).toBe(
-      "방 링크의 미리보기에는 보내는 때의 방 상태가 보입니다: 1위 역이나 방에서 정한 역, 참여자별 이름과 소요시간, 정한 사람과 약속 날짜·시각·시간대.",
-    );
-    expect(sentences.join(" ")).not.toContain("막차");
-    expect(sentences.join(" ")).not.toContain("가운데");
-    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(false);
+  it("방 미리보기 그림의 막차 줄은 켜져 있다(12월 5일 시행판)", () => {
+    expect(ROOM_PREVIEW_LAST_TRAIN).toBe(true);
   });
 
-  it.each([
-    ["지금 판", POLICY],
-    ["다음 판", latest],
-  ])(
+  it.each([["지금 판", POLICY]])(
     "6항 %s: 미리보기 이름은 입력한 이름이고, 그림에서는 글자를 빼거나 줄이거나 '참가자 N'으로 보일 수 있다",
     (_, policy) => {
       const names = previewSentences(policy).filter((s) => s.includes("이름"));
@@ -210,8 +203,7 @@ describe("개인정보 처리방침", () => {
     },
   );
 
-  it("6항 다음 판(방 링크 미리보기): 문장마다 막차·지도 한가운데·미리보기 응답·가져가는 때를 적는다", () => {
-    expect(UPCOMING_POLICY).not.toBeNull();
+  it("6항(12월 5일 시행판): 방 링크 미리보기에 문장마다 막차·지도 한가운데·미리보기 응답·가져가는 때를 적는다", () => {
     const sentences = previewSentences(latest);
     const one = (word: string) => {
       const found = sentences.filter((s) => s.includes(word));
@@ -235,7 +227,7 @@ describe("개인정보 처리방침", () => {
   });
 
   it("6항 설명 보완(1단계, 이미 나간 기능): 방 화면의 막차, 숨긴 사람은 본인만, 막차 확인 버튼, 혼자 입력한 링크", () => {
-    for (const policy of [POLICY, latest]) {
+    for (const policy of [POLICY]) {
       const room = lineOf(policy, "third-party", "방 링크를 가진 사람은");
       expect(room).toContain("출발역을 공개한 사람의 귀갓길 막차 시각을 볼 수 있습니다");
       expect(room).toContain("출발역을 숨긴 사람의 막차 시각은 본인만 봅니다");
@@ -296,10 +288,7 @@ describe("개인정보 처리방침", () => {
     expect(line).toContain("공유 칸이 화면에 보이기 전에는 카카오 공유 프로그램을 받지 않으며");
   });
 
-  it.each([
-    ["지금 판", POLICY],
-    ["다음 판", latest],
-  ])("15항 %s: 이전 판 이름이 모두 그 판의 전문으로 이어지는 링크다", (_, policy) => {
+  it.each([["지금 판", POLICY]])("15항 %s: 이전 판 이름이 모두 그 판의 전문으로 이어지는 링크다", (_, policy) => {
     const line = textOf(policy, "changes");
     const links = [...line.matchAll(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g)].map(([, label = "", url = ""]) => ({
       label,
@@ -325,7 +314,7 @@ describe("개인정보 처리방침", () => {
     expect(textOf(policy, "changes")).toContain("같은 날 세 번 고쳤습니다");
   });
 
-  it("15항 다음 판: 이전 판에 설명 보완판(보존본)과 그 적용 기간이 붙는다", () => {
+  it("15항: 이전 판에 설명 보완판(보존본)과 그 적용 기간이 붙는다", () => {
     const line = textOf(latest, "changes");
     const revision = `${koreanDate(REVISION_DATE, { year: true })} 설명 보완판`;
     expect(line).toContain(
@@ -366,25 +355,17 @@ describe("개인정보 처리방침", () => {
     expect(rules.join("\n")).not.toContain("30일 전");
   });
 
-  it("이번 판의 날짜는 REVISION_DATE 한 곳에서 나온다: 시행일 줄·변경 이력·11월 28일 시행판의 적용 기간·다음 판 공지 기간", () => {
-    // 15항 1단계(설명 보완은 바로 시행)가 생긴 날보다 이를 수 없고, 실제 달력의 날짜다.
-    expect(REVISION_DATE).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(new Date(`${REVISION_DATE}T00:00:00Z`).toISOString().slice(0, 10)).toBe(REVISION_DATE);
+  it("날짜: 설명 보완판(REVISION_DATE)과 12월 5일 시행판(공지 7일 뒤)이 15항의 시행일 줄·변경 이력과 맞는다", () => {
     expect(REVISION_DATE >= THREE_STEP_RULE_DATE).toBe(true);
+    expect(PREVIEW_EFFECTIVE_DATE).toBe(addDays(REVISION_DATE, MIN_NOTICE_DAYS));
     const day = koreanDate(REVISION_DATE, { year: true });
     const text = textOf(POLICY, "changes");
-    expect(text.split("\n")[0]).toBe(`이 개인정보 처리방침은 ${day}부터 적용됩니다.`);
-    expect(text).toContain(`변경 이력: ${day} 설명 보완판은 이미 제공하던 기능에 맞춰 6항의 설명을 보완했습니다.`);
-    expect(HISTORY.revision.file).toBe(`${REVISION_DATE}-section6.md`);
-    // 다음 판: 같은 날 공지를 시작하고 공지 기간(15항 '시행 7일 전')을 꽉 채운 날에 시행한다.
-    expect(UPCOMING_POLICY?.noticeFrom).toBe(REVISION_DATE);
-    expect(PREVIEW_EFFECTIVE_DATE).toBe(addDays(REVISION_DATE, MIN_NOTICE_DAYS));
-    expect(UPCOMING_POLICY?.effectiveDate).toBe(PREVIEW_EFFECTIVE_DATE);
-    const next = textOf(latest, "changes");
-    expect(next.split("\n")[0]).toBe(
+    expect(text.split("\n")[0]).toBe(
       `이 개인정보 처리방침은 ${koreanDate(PREVIEW_EFFECTIVE_DATE, { year: true })}부터 적용됩니다.`,
     );
-    expect(next).toContain(`그 밖의 변경 규칙에 따라 ${day}부터 서비스 화면에 알렸습니다.`);
+    expect(text).toContain(`변경 이력: ${day} 설명 보완판은 이미 제공하던 기능에 맞춰 6항의 설명을 보완했습니다.`);
+    expect(text).toContain(`그 밖의 변경 규칙에 따라 ${day}부터 서비스 화면에 알렸습니다.`);
+    expect(HISTORY.revision.file).toBe(`${REVISION_DATE}-section6.md`);
   });
 
   it("병합·배포가 늦어지면 11월 28일 시행판의 적용 기간이 그 전날까지로 늘어난다", () => {
@@ -396,22 +377,11 @@ describe("개인정보 처리방침", () => {
     expect(addDays("2026-12-30", 7)).toBe("2027-01-06");
   });
 
-  it("다음 판(방 링크 미리보기)은 2단계로 알린다: 7일 공지, 전후 비교표(미리보기 응답·그림·글·가져가는 때)", () => {
+  it("예정 판을 지금 판으로 옮겼다(2단계 6번): 예정 판이 없고, 지금 판의 15항이 세 단계 규칙이다", () => {
+    expect(UPCOMING_POLICY).toBeNull();
     expect(upcomingProblems(UPCOMING_POLICY)).toEqual([]);
-    const items = (UPCOMING_POLICY?.changes ?? []).map((c) => c.item);
-    expect(items).toEqual([
-      "방 미리보기 응답: 방 ID만 있으면 누구나 받는 값 (6항)",
-      "메신저 미리보기 그림 (6항)",
-      "메신저 미리보기 글·카카오톡 공유 메시지 (6항)",
-      "미리보기에 보이는 방 상태 (6항)",
-    ]);
-    // 6항과 15항만 바뀐다. 나머지 절은 지금 판 그대로다.
-    for (const [index, section] of POLICY.sections.entries()) {
-      const next = latest.sections[index];
-      if (section.id === "third-party" || section.id === "changes") expect(next).not.toEqual(section);
-      else expect(next).toBe(section);
-    }
-    expect(textOf(latest, "changes")).toContain("설명 보완·표현 정리: ");
+    expect(latest).toBe(POLICY);
+    expect(textOf(POLICY, "changes")).toContain("설명 보완·표현 정리: ");
   });
 
   it("목차 앵커가 겹치지 않는다", () => {

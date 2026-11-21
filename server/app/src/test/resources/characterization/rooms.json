@@ -73,6 +73,20 @@
                 "asOf": "2026-11-16",
                 "unavailable": "day_unknown",
                 "partial": true
+            },
+            "mapMiddle": {
+                "stationCode": "j7v",
+                "stationName": "한강진",
+                "times": [
+                    {
+                        "label": "방장",
+                        "seconds": 1412
+                    },
+                    {
+                        "label": "잠실",
+                        "seconds": 2159
+                    }
+                ]
             }
         }
     },
@@ -8328,6 +8342,20 @@
                 "asOf": "2026-11-16",
                 "unavailable": "date_out_of_range",
                 "partial": true
+            },
+            "mapMiddle": {
+                "stationCode": "58a",
+                "stationName": "이태원",
+                "times": [
+                    {
+                        "label": "방장",
+                        "seconds": 1445
+                    },
+                    {
+                        "label": "잠실",
+                        "seconds": 2189
+                    }
+                ]
             }
         }
     },
