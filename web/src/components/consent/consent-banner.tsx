@@ -61,7 +61,9 @@ function ScopeCheckbox({
  * - 문서 끝에 `sticky bottom-0`으로 둔다: 문서 안(in-flow)에 자기 자리를 차지하므로 맨 아래까지 스크롤하면 어떤 입력·버튼도
  *   배너 뒤에 숨지 않고 닿는다(= 배너 높이만큼의 하단 여백). `fixed`로 바꾸면 이 여백이 사라지니 바꾸지 않는다.
  * - 키가 없는 빌드(통계 꺼짐)나 브라우저 추적 거부(DNT·GPC)에서는 묻지 않는다. /privacy에서도 띄우지 않는다(같은 동의를 고르는 '통계 설정' 카드가 있다).
- * - 반응형: 폰에서는 화면을 적게 가린다(390×844에서 약 4분의 1 이하). 안내는 두 문장과 링크 하나, 체크박스는 위아래 한 줄씩(좌우 2칸 금지).
+ * - 정보 위계(#114): 질문(무엇을 왜) → 안심할 사실 두 줄(통계에 출발역·이름 없음, 거부해도 모든 기능) → 항목별 체크박스와 세부 고지
+ *   (국외 이전받는 자·국가·시기·방법·목적·보유 기간은 접지 않고 늘 보인다) → 연령과 링크 하나. 화면 순서와 Tab 순서가 같다.
+ * - 반응형: 폰에서는 화면을 적게 가린다(390×844에서 35% 이하). 체크박스는 위아래 한 줄씩(좌우 2칸 금지).
  *   두 칸 폭(wide)부터는 안내와 체크박스를 나란히 둔다. 높이가 짧은 화면(가로로 눕힌 폰)에서도 화면의 60%를 넘게 가리지 않는다
  *   (안내·체크박스는 그 안에서 스크롤, 버튼은 늘 보임). 화면 키보드로 글자를 치는 동안(역 검색 포함)에는 잠시 보이지 않게 해(`invisible` + aria-hidden;
  *   `hidden`이 아니라 자리는 그대로라 높이가 변하지 않는다) 입력 칸과 자동완성 목록을 가리지 않는다(고른 체크 상태는 그대로 남는다).
@@ -92,12 +94,17 @@ export function ConsentBanner() {
             <h2 id={titleId} className="text-[14px] leading-snug font-bold text-ink wide:text-[15px]">
               {parenSafe(CONSENT_COPY.question)}
             </h2>
-            <p className="text-[12px] leading-snug text-ink-soft">
-              {parenSafe(CONSENT_COPY.intro)} {parenSafe(CONSENT_COPY.moreBefore)}
-              <Link href="/privacy#analytics-settings" className="font-semibold text-ink underline underline-offset-4">
-                {CONSENT_COPY.policyLink}
-              </Link>
-            </p>
+            {/* 안심할 사실 두 줄은 세부 고지보다 먼저, 조금 더 진하게 둔다(정보 위계: 왜·무엇 → 거절해도 다 쓸 수 있음 → 세부). */}
+            <ul className="flex flex-col gap-0.5 text-[12.5px] leading-snug text-ink">
+              {CONSENT_COPY.reassure.map((line) => (
+                <li key={line} className="flex gap-1.5">
+                  <span aria-hidden="true" className="shrink-0 font-bold">
+                    ✓
+                  </span>
+                  <span>{parenSafe(line)}</span>
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="flex flex-col wide:row-span-2">
             <ScopeCheckbox
@@ -112,6 +119,14 @@ export function ConsentBanner() {
               checked={transfer}
               onChange={setTransfer}
             />
+            {/* 연령·자세히 줄은 세부 고지 뒤(버튼 바로 위)에 둔다. 화면 순서와 Tab 순서가 같다(체크박스 → 링크 → 버튼). */}
+            {/* 스크롤 칸의 마지막 줄이라 밑줄이 잘리지 않게 아래로 2px 여유를 두고 밑줄을 조금 올린다. */}
+            <p className="pb-0.5 text-[12px] leading-snug text-ink-soft">
+              {parenSafe(CONSENT_COPY.age)}{" "}
+              <Link href="/privacy#analytics-settings" className="font-semibold text-ink underline underline-offset-2">
+                {CONSENT_COPY.policyLink}
+              </Link>
+            </p>
           </div>
         </div>
         <div className="flex shrink-0 flex-col wide:ml-auto wide:w-full wide:max-w-sm">

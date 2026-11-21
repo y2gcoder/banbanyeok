@@ -147,7 +147,8 @@ export function ConsentSettings() {
   return (
     <div className="flex flex-col gap-3">
       <p>
-        {parenSafe(CONSENT_COPY.question)} {parenSafe(CONSENT_COPY.intro)} {parenSafe(CONSENT_COPY.rule)}
+        {parenSafe(CONSENT_COPY.question)} {parenSafe(CONSENT_COPY.reassure.join(" "))} {parenSafe(CONSENT_COPY.age)}{" "}
+        {parenSafe(CONSENT_COPY.rule)}
       </p>
       <p id={statusId} aria-live="polite" className="font-semibold text-ink">
         {state === null
@@ -164,7 +165,7 @@ export function ConsentSettings() {
         onToggle={() => toggle("collect")}
       />
       <ScopeSwitch
-        label="통계 정보의 국외 이전 동의 (미국, PostHog, Inc.)"
+        label="통계의 국외 이전 동의"
         detail={CONSENT_COPY.transfer.detail}
         checked={scopes.transfer}
         disabled={!adjustable}

@@ -103,6 +103,15 @@ for (const vp of U2_CASES) {
         await expect(box).not.toBeChecked();
         await expect(box).toBeInViewport({ ratio: 1 });
       }
+      // #114: 순화해도 법이 정한 알릴 사항은 접히거나 잘리지 않고 화면 안에 보인다(목적·항목·보유 기간·이전받는 자·국가·시기·방법·거부해도 불이익 없음·연령).
+      for (const text of [
+        "서비스 개선용 · 기능 이용·오류·속도 기록, 무작위 식별자",
+        "통계 도구 PostHog, Inc. (미국)에 이용할 때마다 암호화해 보내 분석하고 1년 보관해요",
+        "동의하지 않아도 모든 기능을 그대로 쓸 수 있어요.",
+        "만 14세 이상만 동의할 수 있어요.",
+      ]) {
+        await expect(banner(page).getByText(text)).toBeInViewport({ ratio: 1 });
+      }
       // W1: 체크박스는 위아래 한 줄씩이다(같은 x, 아래 것이 더 아래).
       if (vp.width < 690) {
         const [first, second] = await Promise.all(

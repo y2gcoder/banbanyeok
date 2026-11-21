@@ -65,7 +65,7 @@ async function disableBotSignals(context: BrowserContext) {
 
 const banner = (page: Page) => page.getByRole("region", { name: /이용 통계를 모아도 될까요/ });
 const collectBox = (page: Page) => banner(page).getByRole("checkbox", { name: /이용 통계 수집·이용에 동의/ });
-const transferBox = (page: Page) => banner(page).getByRole("checkbox", { name: /PostHog, Inc.로 통계 전송에 동의/ });
+const transferBox = (page: Page) => banner(page).getByRole("checkbox", { name: /통계의 국외 이전에 동의/ });
 const saveButton = (page: Page) => banner(page).getByRole("button", { name: /^(동의하고 닫기|이대로 닫기)$/ });
 /** 둘 다 체크했을 때의 오른쪽 버튼(정확히 "동의하고 닫기"). */
 const agreeButton = (page: Page) => banner(page).getByRole("button", { name: "동의하고 닫기", exact: true });
@@ -387,7 +387,11 @@ test("배너 접근성: axe 위반 0, 기본 해제, 키보드로 고를 수 있
   await page.keyboard.press("Space");
   await page.keyboard.press("Tab");
   await expect(transferBox(page)).toBeFocused();
+  // 키보드 초점이 눈에 보인다(체크박스의 초점 테두리).
+  expect(await transferBox(page).evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe("none");
   await page.keyboard.press("Space");
+  await page.keyboard.press("Tab");
+  await expect(region.getByRole("link", { name: "자세히 보기·언제든 변경" })).toBeFocused(); // 화면 순서대로
   await page.keyboard.press("Tab");
   await expect(region.getByRole("button", { name: "모두 거부" })).toBeFocused();
   await page.keyboard.press("Tab");

@@ -16,8 +16,9 @@
 | 이용 통계(PostHog)의 항목·목적 변경 | 위 + 바뀐 내용을 알리고 동의를 다시 받음. 다시 동의하기 전에는 모으지 않음 | `CONSENT_VERSION` |
 
 문구 수정·설명 보완처럼 위 세 가지가 그대로인 변경은 중요한 변경이 아니다: 이력 한 줄만 남기고 화면 안내는 띄우지 않는다
-(`CHANGE_NOTICE = null`). 중요한 변경인지 애매하면 중요한 변경으로 본다. 이용 통계의 항목·목적 변경이 아닌데 동의 문구만 바뀌는 경우도
-`CONSENT_VERSION` 규칙(`consent-text.ts` 머리 주석: 사용자에게 보이는 동의 문구가 바뀌면 올린다)은 그대로 따른다.
+(`CHANGE_NOTICE = null`). 중요한 변경인지 애매하면 중요한 변경으로 본다. 동의 문구만 바뀌고 동의받는 내용(항목·목적·국외 이전받는 자와
+국가·보유 기간)이 그대로이면 `CONSENT_VERSION`을 올리지 않는다(`docs/adr/0001-consent-version-rule.md`, 2026-11-21 #114부터. 그 전에는
+보이는 문구가 바뀌면 올렸다). 애매하면 올린다.
 
 장치는 `web/src/app/privacy/`에 있다. `policy.ts`(데이터), `schedule.ts`(날짜 판정), `policy-view.tsx`(안내 상자), `policy-notice-strip.tsx`
 (첫 화면의 한 줄 안내). 동의 장치는 `web/src/lib/analytics/consent.ts`(`CONSENT_VERSION`)와 `web/src/components/consent/consent-text.ts`(문구)다.
