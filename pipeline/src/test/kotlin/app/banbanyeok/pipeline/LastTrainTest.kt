@@ -737,7 +737,8 @@ class LastTrainTest :
                         config(
                             exact =
                                 """{"X":{"days":["weekday"],""" +
-                                    """"source":"https://example.test/t","checkedAt":"2026-11-20"}}""",
+                                    """"source":"https://example.test/t","checkedAt":"2026-11-20","receipt":"S8",""" +
+                                    """"baseline":"data/config/b.json"}}""",
                         ),
                         setOf("X"),
                     )

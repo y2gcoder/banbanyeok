@@ -1,0 +1,47 @@
+{
+  "basis": "사람이 운영사 페이지를 보고 확인한 기준(#100 검토, 허용 목록). pageSkeleton은 역 페이지에서 분 칸만 비우고 공백을 정규화한 전체(표 구조·머리글·표 제목·범례·주석·tbody 수·표 밖 글자)의 SHA-256이다. latestNotice는 그때의 가장 새 공지다(fingerprint는 조회수(숫자만)를 비운 본문의 SHA-256, sha256은 그 지문으로 마지막에 받은 파일 그대로). lastRun은 이 파일을 함께 쓴 표본 실행이고, 영수증 S8은 같은 실행 id와 이 파일의 SHA-256을 적는다. 하나라도 다르면 build가 신분당을 끈다. 사람이 페이지를 보고 shinbundang-baseline으로 다시 쓰고 shinbundang-samples를 다시 돌린다(docs/setup/w21-notes.md 5절). 원문은 담지 않는다.",
+  "lastRun": "2026-11-21T02:11:51Z-ce8d45d8",
+  "latestNotice": {
+    "fingerprint": "b233de093731e67ba5a07d90395da077f89b8d451e12527950b7daa233006535",
+    "sha256": "bed5cb7edf0df3a5d63222c238095ea2207d4fe839ad12f268ed03243ed0f1fc",
+    "title": "신분당선 열차운행시각표 변경 시행",
+    "viewNo": "1358"
+  },
+  "pageSkeleton": {
+    "SB001": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB002": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB003": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB004": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB005": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB006": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB007": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB008": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB009": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB010": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB011": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB012": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB013": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB014": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB015": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc",
+    "SB016": "7eb00060a65bcec1f88826609dbbc681e4333fd6cb1e3d1bdf3e667107f843fc"
+  },
+  "receipt": "S8",
+  "reviewedOn": "2026-11-21",
+  "structure": [
+    {
+      "caption": 2,
+      "dd": 2,
+      "div": 0,
+      "dt": 2,
+      "p": 0,
+      "span": 2,
+      "table": 2,
+      "tbody": 2,
+      "td": 126,
+      "tfoot": 0,
+      "th": 10,
+      "thead": 2,
+      "tr": 46
+    }
+  ]
+}

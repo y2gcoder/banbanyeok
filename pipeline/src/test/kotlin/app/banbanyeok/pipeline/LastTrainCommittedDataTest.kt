@@ -44,11 +44,83 @@ class LastTrainCommittedDataTest :
             it("readsTheOperatorSamplesAndCeilings") {
                 val samples = ltOfficialSamples(repo.resolve("data/config/last-train-official.csv").readText())
                 val ceilings = ltCeilings(repo.resolve("data/config/last-train-ceilings.csv").readText())
-                assertEquals(95, samples.size)
+                assertEquals(311, samples.size)
                 assertEquals(3, ceilings.size)
                 assertTrue(
                     samples.all { it.url.startsWith("https://") } && ceilings.all { it.url.startsWith("https://") },
                 )
+            }
+
+            it("holdsTheWholeShinbundangLineFromTheReceiptsPagesButNoSaturday") {
+                // #82: 8 meeting stations × 15 other stations × weekday and holiday, made by `shinbundang-samples`
+                // from the 16 station pages of receipt S8 (comparison only: the pages themselves are not committed).
+                val samples =
+                    ltOfficialSamples(repo.resolve("data/config/last-train-official.csv").readText())
+                        .filter { it.family == "신분당" }
+                assertEquals(240, samples.size)
+                assertEquals(240, samples.map { Triple(it.meeting, it.home, it.day) }.toSet().size)
+                assertEquals(setOf(DayType.WEEKDAY, DayType.HOLIDAY), samples.map { it.day }.toSet())
+                assertEquals(setOf("2026-11-21"), samples.map { it.checkedAt }.toSet())
+                assertEquals(mapOf("신분당" to "S8"), config.exactReceipts)
+                val receipt =
+                    parseObject("""{"r":${repo.resolve("data/config/source-manifest.json").readText()}}""")
+                        .getValue("r")
+                        .jsonArray
+                        .map { it.jsonObject }
+                        .single { it.text("id") == "S8" }
+                val pages = receipt.getValue("pages").jsonArray.map { it.jsonObject }
+                assertEquals(
+                    (1..16).map { "data/raw/shinbundang/SB${it.toString().padStart(3, '0')}.html" },
+                    pages.map { it.text("file") },
+                )
+                assertTrue(pages.all { Regex("[0-9a-f]{64}").matches(it.text("sha256")) && "fetched_at" in it })
+                // Each sample names the page of its meeting station, one of the receipt's pages.
+                assertTrue(pages.map { it.text("source_url") }.containsAll(samples.map { it.url }.toSet()))
+                assertEquals("2026-11-06", receipt.text("latest_timetable_change"))
+                // The reviewed baseline (#100 re-review): one skeleton for all 16 pages, and the newest notice it names
+                // is the one the receipt's pages show as newest. Only fingerprints and counts, no text of the pages.
+                assertEquals(mapOf("신분당" to "data/config/shinbundang-baseline.json"), config.exactBaselines)
+                val baseline = parseObject(repo.resolve("data/config/shinbundang-baseline.json").readText())
+                assertEquals(
+                    setOf("receipt", "reviewedOn", "lastRun", "basis", "structure", "pageSkeleton", "latestNotice"),
+                    baseline.keys,
+                )
+                val skeletons = baseline.getValue("pageSkeleton").jsonObject
+                assertEquals((1..16).map { "SB${it.toString().padStart(3, '0')}" }, skeletons.keys.toList())
+                assertEquals(1, skeletons.values.toSet().size)
+                val reviewed = baseline.getValue("latestNotice").jsonObject
+                val newest =
+                    receipt.getValue("notices").jsonArray.map { it.jsonObject }.single {
+                        it.text("newest") ==
+                            "true"
+                    }
+                assertEquals(
+                    newest.text("viewNo") to newest.text("title"),
+                    reviewed.text("viewNo") to reviewed.text("title"),
+                )
+                assertEquals(newest.text("sha256"), reviewed.text("sha256"))
+                // #100 fourth review: the committed receipt, samples and baseline are one bundle of one run, with all
+                // their evidence (checked without the raw folder, as in CI).
+                val evidence =
+                    app.banbanyeok.pipeline.lasttrain.input
+                        .ltOperatorEvidence(repo, config)
+                        .getValue("신분당")
+                val committed =
+                    app.banbanyeok.pipeline.lasttrain.model.LtOperatorEvidence(
+                        evidence.receipt,
+                        evidence.baselineFile,
+                        evidence.samples,
+                        evidence.expectedPages,
+                        null,
+                    )
+                assertEquals(
+                    emptyList(),
+                    app.banbanyeok.pipeline.lasttrain.gate
+                        .ltEvidenceReasons("S8", committed),
+                )
+                assertEquals(240, evidence.samples.rows)
+                assertEquals(receipt.text("run"), baseline.text("lastRun"))
+                assertEquals("240", receipt.text("rows"))
             }
         }
 
@@ -74,6 +146,29 @@ class LastTrainCommittedDataTest :
                     report.getValue("partialDays").jsonArray.map { it.toString().trim('"') },
                 )
                 assertEquals(DayType.entries.map { it.id }.toSet(), report.getValue("days").jsonObject.keys)
+            }
+
+            it("confirmsEveryShinbundangCellWithItsFamilySwitchedOnBothDays") {
+                val switches = report.getValue("exactSwitches").jsonArray.map { it.jsonObject }
+                assertEquals(
+                    listOf("weekday" to true, "holiday" to true),
+                    switches.map {
+                        it.text("day") to
+                            it.text("on").toBoolean()
+                    },
+                )
+                val days = report.getValue("days").jsonObject
+                assertEquals(
+                    listOf(120, 0, 120),
+                    DayType.entries.map {
+                        days
+                            .getValue(it.id)
+                            .jsonObject
+                            .text("provenDirectCells")
+                            .toInt()
+                    },
+                )
+                assertTrue(report.getValue("official").jsonArray.all { it.jsonObject.text("passed") == "true" })
             }
         }
     })
