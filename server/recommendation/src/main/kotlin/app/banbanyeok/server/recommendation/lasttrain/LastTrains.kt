@@ -26,6 +26,12 @@ public class LastTrainData(
  */
 public fun interface LastTrainSource {
     public fun current(): LastTrainData?
+
+    /**
+     * 이 데이터에 막차 표가 있는데 **아직 읽는 중**이다(서버가 막 떴다). [current]가 null인 이유가 이것일 때만 true다: 데이터에 막차 표가
+     * 없거나 검증에 실패했으면 false다. 응답의 `lastTrainPending`으로 나가서, 막차 없는 응답을 오래 캐시하지 않게 한다(공유 그림).
+     */
+    public fun pending(): Boolean = false
 }
 
 /** 막차 시각을 내지 않는 이유(응답 전체에 해당). 이때 사람별 항목은 모두 확인 필요다. */
@@ -118,20 +124,32 @@ internal class LastTrainAttacher(
     )
 
     /**
-     * 이 요청에 막차를 붙일 수 있으면 그 기준과 조회 함수. 표가 없거나 요청한 구분([requested])으로 계산하지 못했으면([computed]가 다르면)
-     * null(막차 항목을 뺀다). 표는 여기서 **한 번** 읽고, 돌려준 값은 그 표만 쓴다.
+     * 이 요청에 막차를 붙일 수 있으면 그 기준과 조회 함수([Lookup.attached]). 표가 없거나 요청한 구분([requested])으로 계산하지
+     * 못했으면([computed]가 다르면) null(막차 항목을 뺀다). 표는 여기서 **한 번** 읽고, 돌려준 값은 그 표만 쓴다.
+     * [Lookup.pending]은 표를 아직 읽는 중이라서 빠졌고 **기다리면 시각이 붙을 요청**일 때만 true다. 구분이 달라 빠졌거나, 요일을
+     * 믿을 수 없어([certainty]가 [DayCertainty.KNOWN]이 아니다: 구분을 고르지 않은 무상태 요청(v=1 링크), 날짜 없는 방, 공휴일 목록 밖)
+     * 표가 와도 모두 확인 필요가 되는 요청은 false다.
      */
     fun forRequest(
         requested: TimeSlot,
         computed: TimeSlot,
         certainty: DayCertainty,
         riders: Riders,
-    ): Attached? {
-        val data = source.current() ?: return null
-        if (computed != requested) return null
+    ): Lookup {
+        // 읽는 중인지 먼저 본다: 그 사이 읽기가 끝나면 아래 current()가 표를 주므로, 준비 중이라고 잘못 알리는 일이 없다.
+        val pending = source.pending()
+        val data =
+            source.current()
+                ?: return Lookup(null, pending && computed == requested && certainty == DayCertainty.KNOWN)
+        if (computed != requested) return Lookup(null, false)
         val basis = LastTrainRule.basis(data, computed.day, certainty, clock)
-        return Attached(basis, data.table, riders, names)
+        return Lookup(Attached(basis, data.table, riders, names), false)
     }
+
+    class Lookup(
+        val attached: Attached?,
+        val pending: Boolean,
+    )
 
     class Attached(
         val basis: LastTrainBasis,

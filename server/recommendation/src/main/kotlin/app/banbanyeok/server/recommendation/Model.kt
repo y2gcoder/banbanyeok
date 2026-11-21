@@ -70,6 +70,11 @@ public data class Recommendation(
     public val requestedSlot: TimeSlot = TimeSlot.DEFAULT,
     /** 막차의 기준(요일 종류·시간표 수집일). null이면 이 응답에는 막차가 없다(후보의 `lastTrains`도 null). */
     public val lastTrainBasis: LastTrainBasis? = null,
+    /**
+     * 막차 표를 아직 읽는 중이라 이 응답에 막차가 없다(서버가 막 떴다, [lasttrain.LastTrainSource.pending]). 잠시 뒤 같은 요청에는 막차가
+     * 붙을 수 있다. 데이터에 막차 표가 없거나 다른 구분으로 대신 계산해 막차가 없는 것은 false다.
+     */
+    public val lastTrainPending: Boolean = false,
 )
 
 /**

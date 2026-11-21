@@ -657,6 +657,14 @@ export interface components {
             /** @description 귀갓길 막차의 기준(#62). 있을 때만 `candidates[].lastTrains`가 있다 */
             lastTrainBasis?: components["schemas"]["LastTrainBasis"];
             /**
+             * @description 서버가 막 떠서 막차 표를 **아직 읽는 중**이라 이 응답에 막차(`lastTrainBasis`·`candidates[].lastTrains`)가 없을 때만 `true`다.
+             *     잠시 뒤 같은 요청에는 막차가 붙을 수 있으므로, 이 응답으로 만든 공유 그림은 오래 캐시하지 않는다. 기다려도 시각이 붙지 않는
+             *     요청에는 키가 없다: 데이터에 막차 표가 없거나, 검증에 실패했거나, 요청한 구분 대신 기본 구분으로 계산했거나, 요일을 믿을 수
+             *     없다(`/recommend`에 `timeSlot`이 없는 요청(v=1 링크), 약속 날짜가 없거나 공휴일 목록 밖인 방: 표가 와도 `lastTrainBasis.unavailable`).
+             * @enum {boolean}
+             */
+            lastTrainPending?: true;
+            /**
              * @description "지도 한가운데였다면" 비교. **다음을 모두 만족할 때만 있고, 하나라도 어기면 키 자체가 없다**(클라이언트는 없으면 비교를 그냥
              *     뺀다): `mode=fair`일 때, 지도 한가운데 역이 1위 추천 역과 다를 때, 모두가 그 역에 갈 수 있을 때, 그 역의 가장 오래 걸리는
              *     시간이 1위 추천 역보다 5분(화면에 보이는 분 기준) 이상 길 때, **출발역을 숨긴 참가자가 없을 때**(숨긴 출발역을 거꾸로

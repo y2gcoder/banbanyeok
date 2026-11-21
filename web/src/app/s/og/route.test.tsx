@@ -40,6 +40,35 @@ describe("/s/og", () => {
     expect(response.headers.get("cache-control")).toBe("public, max-age=86400, s-maxage=86400");
   });
 
+  it("막 뜬 서버가 막차 표를 아직 읽는 중이면(lastTrainPending) 같은 그림을 1분만 캐시한다(곧 막차가 붙은 그림이 온다)", async () => {
+    const sample = SHARED_CASES.find((c) => c.id === "two-last-train");
+    if (!sample) throw new Error("표본 없음");
+    const { lastTrainBasis: _basis, ...withoutTrains } = sample.result;
+    const pending = {
+      ...withoutTrains,
+      candidates: withoutTrains.candidates.map(({ lastTrains: _trains, ...c }) => c),
+      lastTrainPending: true as const,
+    };
+    loadSharedView.mockResolvedValue(toResultView(pending));
+    const response = await GET(new Request(URL_OK));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/png");
+    expect(response.headers.get("cache-control")).toBe("public, max-age=60, s-maxage=60");
+
+    // 표를 다 읽은 뒤의 같은 주소는 하루 캐시다.
+    loadSharedView.mockResolvedValue(toResultView(sample.result));
+    expect((await GET(new Request(URL_OK))).headers.get("cache-control")).toBe("public, max-age=86400, s-maxage=86400");
+  });
+
+  it("옛 링크(v=1)는 원래 막차 줄을 그리지 않으므로 읽는 중이어도 하루 캐시다", async () => {
+    const sample = SHARED_CASES.find((c) => c.id === "four-fair");
+    if (!sample) throw new Error("표본 없음");
+    loadSharedView.mockResolvedValue(toResultView({ ...sample.result, lastTrainPending: true }));
+    const legacy = await GET(new Request("https://banbanyeok.app/s/og?v=1&o=ryf.4q3&m=f&dv=20261115.8"));
+    expect(legacy.headers.get("content-type")).toBe("image/png");
+    expect(legacy.headers.get("cache-control")).toBe("public, max-age=86400, s-maxage=86400");
+  });
+
   it("서버가 예산(1.5초) 안에 답하지 않으면 서버 호출을 중단하고 기본 그림을 짧은 캐시로 준다", async () => {
     let seen: AbortSignal | undefined;
     loadSharedView.mockImplementation((signal) => {

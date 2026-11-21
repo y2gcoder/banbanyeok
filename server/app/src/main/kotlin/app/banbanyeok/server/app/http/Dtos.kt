@@ -235,6 +235,9 @@ data class ResultDto(
     /** 귀갓길 막차의 기준(#62). 막차 표를 쓸 수 없으면 키가 없고, 그때는 후보의 `lastTrains`도 없다. */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val lastTrainBasis: LastTrainBasisDto? = null,
+    /** 막차 표를 아직 읽는 중이라 막차가 빠졌을 때만 `true`. 아니면 키가 없다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val lastTrainPending: Boolean? = null,
 )
 
 @Serializable
