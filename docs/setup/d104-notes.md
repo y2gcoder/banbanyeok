@@ -94,6 +94,7 @@ bash scripts/test-deploy-plan.sh          # 경로 목록 = main, 운영 커밋 
 - `deploy-server`·`deploy-web`을 직접 수동 실행하는 것은 `deploy-pipeline` 잠금을 잡지 않는다. 호출되는 워크플로의 최상위 `concurrency`가 호출 때도 적용되는지는 GitHub 문서에 명시가 없다. 오케스트레이터끼리는 `deploy-pipeline`으로 직렬이다.
 - Worker 롤백은 바인딩·Durable Object 클래스 변경이 있었던 버전 사이에서는 막힐 수 있다(공식 문서). 지금 Worker는 KV/R2/DO 바인딩을 wrangler.jsonc에 두지 않는다.
 - 롤백 대상은 최근 100개 버전 안이어야 한다(바로 직전 버전이므로 항상 해당).
+- 운영 서버 커밋은 리비전 라벨 `commit-sha`(deploy-server.yml이 `--update-labels`로 단다)에서 읽는다. Cloud Run은 리비전에 이미지 인덱스가 아니라 그 안의 플랫폼 매니페스트 다이제스트(태그 없음)를 저장하므로 레지스트리에서 다이제스트→태그로 거꾸로 찾을 수 없다. 그래서 라벨이 없는 기존 운영 리비전은 "알 수 없음"이 정상이고(서버·웹이 둘 다 대상이면 plan이 종료 6으로 멈춘다), 이 변경을 병합한 뒤 서버를 한 번 배포(수동 `deploy.yml` 등)하면 라벨이 생겨 이후 자동 판단이 된다.
 
 ### 병합 뒤 첫 실행에서 볼 것
 

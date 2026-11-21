@@ -3,9 +3,6 @@
 #   100% 트래픽을 받는 리비전 하나 → 아래 순서로 커밋 SHA를 찾는다.
 #   1) 리비전 라벨 commit-sha (deploy-server.yml이 `--update-labels commit-sha=$GITHUB_SHA`로 단다)
 #   2) 이미지가 `server:<40hex>` 태그이면 그 태그
-#   3) Cloud Run은 리비전에 해석된 다이제스트(`server@sha256:...`)를 저장한다 → Artifact Registry에서 그 다이제스트의 태그를 조회해 40자리 hex 태그 하나를 고른다
-#      라벨 경로가 주 경로이고 레지스트리 조회는 보조다: 정리 정책(최근 3개 버전만 유지)으로 오래된 다이제스트는 태그가 없을 수 있다(그러면 모름).
-#      (필요 권한: 배포 SA의 roles/artifactregistry.reader 이상. 이미지를 push하는 writer면 충분하다)
 # 알 수 없으면(조회 실패, 트래픽이 나뉘어 있음, 태그가 SHA가 아님) 아무것도 출력하지 않고 1로 끝난다 → plan은 서버를 배포한다.
 # 환경 변수: SERVICE(기본 server), REGION(필수), GCLOUD(기본 gcloud, scripts/test-deploy-plan.sh는 가짜로 바꿔 끼운다)
 # 비밀값은 다루지 않는다(리비전 이름·이미지 주소만 읽는다).
@@ -41,23 +38,6 @@ fi
 if [[ "$image" =~ /server:([0-9a-f]{40})$ ]]; then
   echo "${BASH_REMATCH[1]}"
   exit 0
-fi
-if [[ "$image" =~ ^(.+)@(sha256:[0-9a-f]{64})$ ]]; then
-  pkg="${BASH_REMATCH[1]}"; digest="${BASH_REMATCH[2]}"
-  # shellcheck disable=SC2086
-  if ! tags="$($GCLOUD artifacts docker tags list "$pkg" --format=json 2>/dev/null)"; then
-    echo "Artifact Registry 태그를 읽지 못했습니다" >&2; exit 1
-  fi
-  # 이 다이제스트를 가리키는 태그 중 40자리 hex만. 정확히 하나일 때만 쓴다.
-  # 항목 키는 image·tag·version: 태그는 .tag, 다이제스트는 .version 의 마지막 `/` 뒤.
-  if sha="$(jq -er --arg d "$digest" '[.[] | select(((.version // "") | split("/") | last) == $d)
-      | (.tag // "" | split("/") | last) | select(test("^[0-9a-f]{40}$"))] | unique
-      | if length == 1 then .[0] else error("not single") end' <<<"$tags" 2>/dev/null)"; then
-    echo "$sha"
-    exit 0
-  fi
-  echo "다이제스트에 커밋 SHA 태그가 하나가 아닙니다" >&2
-  exit 1
 fi
 echo "리비전 $rev 의 이미지 태그가 커밋 SHA가 아닙니다" >&2
 exit 1

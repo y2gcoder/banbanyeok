@@ -211,7 +211,6 @@ cat > "$tmp/gcloud-fake" <<'FAKE'
 case "$1 $2 $3" in
   "run services describe") [ -f "$GCS/FAIL_SVC" ] && exit 1; cat "$GCS/service.json" ;;
   "run revisions describe") [ -f "$GCS/FAIL_REV" ] && exit 1; [ "$4" = "$(cat "$GCS/rev")" ] || exit 1; cat "$GCS/revision.json" ;;
-  "artifacts docker tags") [ -f "$GCS/FAIL_AR" ] && exit 1; [ "$5" = "r-docker.pkg.dev/p/server/server" ] || exit 1; cat "$GCS/tags.json" ;;
   *) exit 9 ;;
 esac
 FAKE
@@ -239,26 +238,19 @@ expect "서버: 리비전 조회 실패는 모름" "$(srv)" "exit:1"
 gc_reset '[]' "$IMG"
 expect "서버: 트래픽 정보 없음은 모름" "$(srv)" "exit:1"
 
-# Cloud Run은 리비전에 다이제스트를 저장한다 → Artifact Registry 태그 조회
-DIG="sha256:$(printf 'a%.0s' $(seq 64))"
-DIMG="r-docker.pkg.dev/p/server/server@$DIG"
-PKGP="projects/p/locations/l/repositories/server/packages/server"
-tags_set() { # 인자: 이 다이제스트를 가리키는 태그들 (+ 다른 다이제스트의 40자리 태그 하나)
-  jq -n --arg d "$DIG" --arg pk "$PKGP" '($ARGS.positional | map({image: "r-docker.pkg.dev/p/server/server", tag: ($pk + "/tags/" + .), version: ($pk + "/versions/" + $d)}))
-    + [{image: "r-docker.pkg.dev/p/server/server", tag: ($pk + "/tags/ffffffffffffffffffffffffffffffffffffffff"), version: ($pk + "/versions/sha256:other")}]' --args "$@" > "$GCS/tags.json"
-}
+
+# Cloud Run은 리비전에 플랫폼 매니페스트 다이제스트(태그 없음)를 저장한다 → 라벨 commit-sha가 주 경로
+DIMG="r-docker.pkg.dev/p/server/server@sha256:$(printf 'a%.0s' $(seq 64))"
 RUNNING='[{"revisionName":"server-00042-abc","percent":100}]'
-gc_reset "$RUNNING" "$DIMG"; tags_set latest "$SHA40"
-expect "서버: 다이제스트 이미지는 레지스트리 태그에서 SHA" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
-gc_reset "$RUNNING" "$DIMG"; tags_set latest
-expect "서버: 다이제스트에 40자리 태그가 없으면 모름" "$(srv)" "exit:1"
-gc_reset "$RUNNING" "$DIMG"; tags_set "$SHA40" 1111111111111111111111111111111111111111
-expect "서버: 40자리 태그가 둘이면 모름" "$(srv)" "exit:1"
-gc_reset "$RUNNING" "$DIMG"; tags_set "$SHA40"; touch "$GCS/FAIL_AR"
-expect "서버: 레지스트리 조회 실패는 모름" "$(srv)" "exit:1"
-gc_reset "$RUNNING" "$DIMG" "$SHA40"; touch "$GCS/FAIL_AR"
-expect "서버: 라벨이 있으면 레지스트리 없이 SHA" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
-gc_reset "$RUNNING" "$DIMG" "not-a-sha"; tags_set "$SHA40"
-expect "서버: 라벨이 SHA 형식이 아니면 태그 조회로" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
+gc_reset "$RUNNING" "$DIMG" "$SHA40"
+expect "서버: 다이제스트 이미지라도 라벨이 있으면 SHA" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
+gc_reset "$RUNNING" "$IMG" "$SHA40"
+expect "서버: 태그 이미지에 라벨도 있으면 SHA" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
+gc_reset "$RUNNING" "$DIMG"
+expect "서버: 다이제스트 이미지에 라벨이 없으면 모름" "$(srv)" "exit:1"
+gc_reset "$RUNNING" "$DIMG" "not-a-sha"
+expect "서버: 라벨이 SHA 형식이 아니면 모름" "$(srv)" "exit:1"
+gc_reset "$RUNNING" "$IMG" "not-a-sha"
+expect "서버: 잘못된 라벨이어도 SHA 태그 이미지는 태그로" "$(srv | paste -sd' ' -)" "$SHA40 exit:0"
 
 exit $failed
