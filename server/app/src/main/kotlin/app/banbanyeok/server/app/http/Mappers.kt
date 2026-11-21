@@ -175,6 +175,7 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
         candidates = candidates.map { it.toDto() },
         timeBasis = timeBasis.toDto(requested = requestedSlot),
         lastTrainBasis = lastTrainBasis?.toDto(),
+        lastTrainPending = true.takeIf { lastTrainPending },
     )
 
 fun RoomResult.toDto(stations: StationNames): ResultDto =

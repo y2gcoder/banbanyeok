@@ -24,6 +24,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
     if (!preview || preview.stage === "collecting") return null;
     if (preview.room.shareVersion !== sv || preview.dataVersion !== dv) return null;
     const card = roomShareCopy(preview).card;
-    return card ? <SharedCard data={card} /> : null;
+    return card ? { element: <SharedCard data={card} /> } : null;
   });
 }

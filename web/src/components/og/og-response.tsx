@@ -10,6 +10,14 @@ const size = { width: OG_WIDTH, height: OG_HEIGHT };
 const CACHE_OK = "public, max-age=86400, s-maxage=86400";
 const CACHE_FALLBACK = "public, max-age=60";
 /**
+ * 서버가 아직 준비 중인 값(막 뜬 서버의 막차 표)이 빠진 링크 그림. 같은 주소가 곧 완전한 그림이 되므로 메신저·CDN이 하루 동안 붙잡지
+ * 않게 1분만 둔다.
+ */
+const CACHE_PROVISIONAL = "public, max-age=60, s-maxage=60";
+
+/** 링크 그림. `provisional`이면 서버가 아직 준비 중이라 빠진 것이 있는 그림이다(짧은 캐시). */
+export type LinkCard = { element: ReactElement; provisional?: boolean };
+/**
  * 시간 예산. 링크 그림(서버 응답 받기 + 그리기)은 1.5초, 그게 안 되면 기본 그림 그리기에 0.5초. 둘 다 안 되면 빌드 때 만든
  * 정적 기본 이미지(`SITE_OG_IMAGE_PATH`)로 302 보낸다. 어느 경우에도 500을 내지 않는다(크롤러가 오래 기다려 주지 않고, 깨진 그림보다 기본 그림이 낫다).
  * 링크 HTML을 먼저 스크랩하며 서버가 이미 깨어 있으므로 평소에는 첫 단계에서 끝난다.
@@ -51,16 +59,16 @@ function png(bytes: ArrayBuffer, cache: string): Response {
 
 /**
  * 링크별 미리보기 그림 응답. `card`는 링크의 그림(서버 응답을 받아 만든 요소)이고, 그릴 것이 없으면(잘못된 링크·서버 실패·오래된 번호) null이다.
- * 그 뒤는 사이트 기본 그림(짧은 캐시), 마지막은 정적 기본 이미지로 302.
+ * 링크 그림은 하루 캐시, 준비 중인 값이 빠진 그림(`provisional`)은 1분. 그 뒤는 사이트 기본 그림(짧은 캐시), 마지막은 정적 기본 이미지로 302.
  */
-export async function ogImageResponse(card: (signal: AbortSignal) => Promise<ReactElement | null>): Promise<Response> {
+export async function ogImageResponse(card: (signal: AbortSignal) => Promise<LinkCard | null>): Promise<Response> {
   try {
     const linked = await withinBudget(LINK_BUDGET_MS, async (signal) => {
-      const element = await card(signal);
+      const found = await card(signal);
       signal.throwIfAborted();
-      return element ? draw(element, signal) : null;
+      return found ? { bytes: await draw(found.element, signal), provisional: found.provisional === true } : null;
     });
-    if (linked) return png(linked, CACHE_OK);
+    if (linked) return png(linked.bytes, linked.provisional ? CACHE_PROVISIONAL : CACHE_OK);
     const site = await withinBudget(FALLBACK_BUDGET_MS, (signal) => draw(<SiteCard />, signal));
     if (site) return png(site, CACHE_FALLBACK);
   } catch {
