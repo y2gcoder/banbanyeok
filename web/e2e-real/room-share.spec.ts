@@ -53,7 +53,8 @@ async function sharedVersion(page: Page, roomId: string): Promise<number> {
   await page.getByRole("button", { name: /^링크(를)? 복사/ }).click();
   const link = new URL(await page.evaluate(() => navigator.clipboard.readText()));
   expect(link.pathname).toBe(`/r/${roomId}`);
-  expect([...link.searchParams.keys()]).toEqual(["sv"]);
+  // 방 공유 번호와 보이는 범위 정책 버전(#142)만 붙는다.
+  expect([...link.searchParams.keys()]).toEqual(["sv", "pv"]);
   return Number(link.searchParams.get("sv"));
 }
 
