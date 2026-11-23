@@ -46,7 +46,10 @@ const DECIDED: RoomPreview = {
 const get = (search: string, roomId = ROOM) =>
   GET(new Request(`https://banbanyeok.app/r/${roomId}/og${search}`), { params: Promise.resolve({ roomId }) });
 
-afterEach(() => loadRoomPreview.mockReset());
+afterEach(() => {
+  vi.useRealTimers();
+  loadRoomPreview.mockReset();
+});
 
 describe("/r/[roomId]/og", () => {
   it("번호와 데이터 버전이 지금 값과 같으면 방 카드(PNG)를 하루 캐시로 준다", async () => {
@@ -110,15 +113,20 @@ describe("/r/[roomId]/og", () => {
   });
 
   it("서버가 예산(1.5초) 안에 답하지 않으면 호출을 끊고 기본 그림을 준다(500 없음)", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     let seen: AbortSignal | undefined;
     loadRoomPreview.mockImplementation((_id, signal) => {
       seen = signal;
       return new Promise(() => {});
     });
-    const started = Date.now();
-    const response = await get("?sv=9&dv=20261115.8");
-    expect(Date.now() - started).toBeLessThan(3000);
+    const pending = get("?sv=9&dv=20261115.8");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(seen).toBeDefined();
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(seen?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
     expect(seen?.aborted).toBe(true);
+    const response = await pending;
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
   });

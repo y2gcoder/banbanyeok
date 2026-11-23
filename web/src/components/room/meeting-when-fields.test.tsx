@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { keepDayAcrossMidnight, type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
 
 /** 2026-11-16은 월요일이다. */
@@ -27,6 +27,12 @@ const status = () => screen.getByRole("status");
 const days = () => screen.getByRole("group", { name: "날짜" });
 
 describe("언제 만나요? (방 만들기)", () => {
+  beforeEach(() => {
+    // 칩을 누르는 순간의 서울 날짜도 Harness의 오늘과 맞춘다(토요일 전날이 공휴일인 날에도 동일).
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-11-16T03:00:00Z") });
+  });
+  afterEach(() => vi.useRealTimers());
+
   it("날짜 칩은 서울 기준 날짜와 요일을 보이고, 고른 칩을 다시 누르면 지운다", async () => {
     const user = userEvent.setup();
     render(<Harness />);
@@ -43,12 +49,6 @@ describe("언제 만나요? (방 만들기)", () => {
   });
 
   it("시간대만 고르면 시각 없이 시간대만 남긴다(가짜 시각을 만들지 않는다)", async () => {
-    // 칩을 누르는 순간의 서울 날짜로 "이번 토요일"을 정하므로 시계를 화면의 오늘(11월 16일 낮)에 맞춘다.
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-11-16T03:00:00Z"));
-    onTestFinished(() => {
-      vi.useRealTimers();
-    });
     const user = userEvent.setup();
     let last: MeetingWhen = NO_MEETING_WHEN;
     render(<Harness onValue={(v) => (last = v)} />);
@@ -141,11 +141,8 @@ describe("언제 만나요? (방 만들기)", () => {
   });
 
   describe("자정을 넘긴 뒤(가짜 시계)", () => {
-    afterEach(() => vi.useRealTimers());
-
     it("칩을 누르는 순간의 서울 날짜로 정한다(화면을 연 날이 아니라)", async () => {
       // 화면은 11월 16일에 열렸고(today 그대로), 지금은 서울 11월 17일 00:01이다.
-      vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(new Date("2026-11-16T15:01:00Z"));
       const user = userEvent.setup();
       let last: MeetingWhen = NO_MEETING_WHEN;

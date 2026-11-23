@@ -25,6 +25,7 @@ const { GET } = await import("./route");
 const URL_OK = "https://banbanyeok.app/s/og?v=2&o=ryf.4q3&m=f&t=weekday-day&dv=20261115.8";
 
 afterEach(() => {
+  vi.useRealTimers();
   loadSharedView.mockReset();
   siteCard.broken = false;
 });
@@ -70,15 +71,20 @@ describe("/s/og", () => {
   });
 
   it("서버가 예산(1.5초) 안에 답하지 않으면 서버 호출을 중단하고 기본 그림을 짧은 캐시로 준다", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     let seen: AbortSignal | undefined;
     loadSharedView.mockImplementation((signal) => {
       seen = signal;
       return new Promise(() => {});
     });
-    const started = Date.now();
-    const response = await GET(new Request(URL_OK));
-    expect(Date.now() - started).toBeLessThan(3000);
+    const pending = GET(new Request(URL_OK));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(seen).toBeDefined();
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(seen?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
     expect(seen?.aborted).toBe(true); // recommend 호출에 걸린 신호가 끊겼다
+    const response = await pending;
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/png");
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
