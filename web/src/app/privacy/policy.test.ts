@@ -609,12 +609,22 @@ describe("개인정보 처리방침", () => {
     const rows = CHANGE_NOTICE?.rows ?? [];
     // 이 판의 행(#142)이 맨 앞이다.
     expect(rows[0]?.item).toBe("출발역을 숨긴 사람의 소요시간과 환승 횟수 (6항)");
-    expect(rows[0]?.before).toContain("정확한 소요시간과 환승 횟수가 보임");
+    // 미리보기 응답(PreviewTime)에는 환승이 없으므로 소요시간과 환승의 노출 범위를 나눠 적는다.
+    expect(rows[0]?.before).toContain(
+      "정확한 소요시간이 다른 사람의 방 화면과 링크 미리보기(응답·그림·글), 공유 문구에 보이고",
+    );
+    expect(rows[0]?.before).toContain(
+      "환승 횟수가 다른 사람의 방 화면에 보임(미리보기와 공유 문구에는 환승 횟수가 원래 없음)",
+    );
     expect(rows[0]?.after).toContain("5분 단위로 올린 소요시간(0분도 5분)만 보이고 환승 횟수는 보이지 않음");
     expect(rows[0]?.after).toContain("출발역을 짐작할 수 있고");
     // 직전 판(11-21)의 안내 기간(11-27까지)이 남아 그 판의 행도 머리말을 붙여 함께 싣는다(15항의 7일 약속을 끊지 않는다).
     expect(addDays("2026-11-21", CHANGE_NOTICE_DAYS - 1) >= REVISION_DATE).toBe(true);
-    expect(CHANGE_NOTICE?.summary).toContain("2026년 11월 27일까지");
+    // 이 안내는 11-27 뒤에도(시행일부터 7일) 보이므로 직전 판의 기간을 요약에 적지 않는다.
+    expect(CHANGE_NOTICE?.summary).toContain(
+      "표 뒷부분에는 직전 판(2026년 11월 21일 시행판)에서 바뀐 내용도 함께 적었습니다.",
+    );
+    expect(CHANGE_NOTICE?.summary).not.toMatch(/\d+일까지/);
     expect(rows.slice(1).every((r) => r.item.startsWith("[11월 21일 시행판] "))).toBe(true);
     const row = (item: string) => rows.find((r) => r.item.startsWith(`[11월 21일 시행판] ${item}`));
     expect(row("방 미리보기 응답")?.after).toContain("역 코드·이름과 그 역까지 참여자별 소요시간");

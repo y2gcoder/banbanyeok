@@ -37,7 +37,7 @@ async function renderPageAt(now: Date) {
 const effectiveLine = (iso: string) => `이 개인정보 처리방침은 ${koreanDate(iso, { year: true })}부터 적용됩니다.`;
 
 /**
- * 이 판(REVISION_DATE, 2026-11-24)은 병합·배포하는 날 바로 시행한다. 다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 시행일부터 7일 동안
+ * 이 판(REVISION_DATE)은 병합·배포하는 날 바로 시행한다. 다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 시행일부터 7일 동안
  * /privacy 맨 위에 안내 상자(전후 비교표)를 보여 주고, 그 뒤에는 재배포 없이 사라진다.
  */
 describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {

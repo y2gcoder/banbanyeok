@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RoomPreview, TimeBasis } from "@/lib/api/types";
-import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
+import { ROOM_OG_IMAGE_VERSION, ROOM_SHARE_POLICY_VERSION, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { kakaoFeedSettings } from "@/lib/share/kakao";
 import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomKakaoMessage, roomShareCopy } from "./share-copy";
 
@@ -355,7 +355,7 @@ describe("방 공유 문구", () => {
 describe("카카오톡 공유 메시지", () => {
   const ORIGIN = "https://banbanyeok.app";
   const sent = (preview: RoomPreview | undefined) => kakaoFeedSettings(roomKakaoMessage("qt7yvmsht3", preview), ORIGIN);
-  const ROOM_LINK = "https://banbanyeok.app/r/qt7yvmsht3?sv=5";
+  const ROOM_LINK = `https://banbanyeok.app/r/qt7yvmsht3?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`;
   const roomLink = { webUrl: ROOM_LINK, mobileWebUrl: ROOM_LINK };
 
   it("결과가 있고 더 들어올 수 있으면 공유 시트와 같은 문구, 그 번호의 방 그림, '내 출발역 넣기' 버튼 하나", () => {
@@ -364,7 +364,7 @@ describe("카카오톡 공유 메시지", () => {
       content: {
         title: "지금은 동대문역사문화공원이 제일 공평해요",
         description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분",
-        imageUrl: `https://banbanyeok.app/r/qt7yvmsht3/og?sv=5&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`,
+        imageUrl: `https://banbanyeok.app/r/qt7yvmsht3/og?sv=5&dv=20261115.8&pv=${ROOM_SHARE_POLICY_VERSION}&iv=${ROOM_OG_IMAGE_VERSION}`,
         imageWidth: 1200,
         imageHeight: 630,
         link: roomLink,
@@ -377,9 +377,9 @@ describe("카카오톡 공유 메시지", () => {
     const full = sent(result({ room: room({ canJoin: false, shareVersion: 9 }) }));
     expect(full.content.title).toBe("동대문역사문화공원에서 볼까?");
     expect(full.buttons).toEqual([{ title: "결과 보기", link: full.content.link }]);
-    expect(full.content.link.webUrl).toBe("https://banbanyeok.app/r/qt7yvmsht3?sv=9");
+    expect(full.content.link.webUrl).toBe(`https://banbanyeok.app/r/qt7yvmsht3?sv=9&pv=${ROOM_SHARE_POLICY_VERSION}`);
     expect(full.content.imageUrl).toBe(
-      `https://banbanyeok.app/r/qt7yvmsht3/og?sv=9&dv=20261115.8&iv=${ROOM_OG_IMAGE_VERSION}`,
+      `https://banbanyeok.app/r/qt7yvmsht3/og?sv=9&dv=20261115.8&pv=${ROOM_SHARE_POLICY_VERSION}&iv=${ROOM_OG_IMAGE_VERSION}`,
     );
 
     const done = sent(decided());

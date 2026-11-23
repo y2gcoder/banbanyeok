@@ -40,7 +40,15 @@ export const SHARED_OG_IMAGE_VERSION = "1509a434";
  * 방 내용이 바뀔 때만 오르므로, 그림을 그리는 코드·문구만 바뀐 뒤 같은 방을 다시 공유하면 주소가 같아 옛 그림이 캐시에서 나온다.
  * 그래서 `/r/<id>/og` 주소에 `iv=`로 붙인다(`roomImagePath`). 입력이 바뀌면 `components/og/og-image-version.test.ts`가 새 값을 알려 준다.
  */
-export const ROOM_OG_IMAGE_VERSION = "c180fa9d";
+export const ROOM_OG_IMAGE_VERSION = "9d119bd2";
+
+/**
+ * 방 공유의 **보이는 범위 정책** 버전. 방 내용(공유 번호 `sv`)과 그리는 코드(`ROOM_OG_IMAGE_VERSION`)가 그대로여도, 서버가 같은 방을
+ * 남에게 다르게 보이게 바뀌면(무엇을 싣고 어떻게 가리는지) 메신저가 캐시한 옛 미리보기가 같은 주소로 계속 나간다. 그래서 공유 링크와
+ * 그림 주소에 `pv=`로 붙이고(`roomShareLink`·`roomImagePath`) 방 그림 버전의 해시 입력에도 넣는다. 공개 범위가 바뀌는 서버 변경과 같은
+ * 배포에서 올린다. 1 → 2: 출발역을 숨긴 사람의 시간을 남에게 5분 단위로, 환승은 숨김(#142).
+ */
+export const ROOM_SHARE_POLICY_VERSION = 2;
 
 /** 글꼴 파일은 `public/fonts/`에 둔다(Workers 정적 자산). 서브셋 스크립트가 같은 이름으로 만든다. */
 export const OG_FONT_FILE = "og-sans-bold.otf";
