@@ -1,6 +1,6 @@
 {
   "candidateCount": 127,
-  "dataVersion": "20261120.5",
+  "dataVersion": "20261123.1",
   "files": {
     "candidates": {
       "bytes": 1468,
@@ -82,10 +82,10 @@
     "seoPages": {
       "bytes": 947497,
       "path": "seo-pairs.json",
-      "sha256": "25d408ff4ee0d52329ad1ee8418f7ae14ee2ed90d43a04ef893a07a26e2b348e"
+      "sha256": "ff2b383d5fbff50fc8991d7c45724588dd81a35c3b2b21f15ed5022c168410c9"
     }
   },
-  "generatedAt": "2026-11-20T23:07:32Z",
+  "generatedAt": "2026-11-23T13:16:25Z",
   "lastTrainAsOf": "2026-11-16",
   "lastTrainModel": "numbered-v1+walk2x5m+source3m",
   "lastTrainPartialDays": [
@@ -94,7 +94,7 @@
   ],
   "minClientSchema": 3,
   "originCount": 653,
-  "previousDataVersion": "20261120.4",
+  "previousDataVersion": "20261120.5",
   "registryVersion": 5,
   "schemaVersion": 3,
   "timeModel": "slot-half-headway"

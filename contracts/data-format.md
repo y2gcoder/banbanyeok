@@ -1,6 +1,6 @@
-# 데이터 형식 계약 (data-format) — 3판
+# 데이터 형식 계약 (data-format) — 4판
 
-3판 · 2026-11-20(#62: 귀갓길 막차 표 lt.bin, manifest 3세대, §10) · 2판 2026-11-16(T2: 구분별 od 행렬, manifest 2세대, 공유 링크 v=2, §9 구분) · 1판 2026-11-12 · 소유: S0a(이후 형식 변경은 `schemaVersion`을 올리고 이 문서와 `shared/schema`, `prototype/gen_fixtures.py`를 같이 고친다)
+4판 · 2026-11-23(#120: 사람별 경로의 노선 그래프 rg.bin, manifest 4세대, §11) · 3판 2026-11-20(#62: 귀갓길 막차 표 lt.bin, manifest 3세대, §10) · 2판 2026-11-16(T2: 구분별 od 행렬, manifest 2세대, 공유 링크 v=2, §9 구분) · 1판 2026-11-12 · 소유: S0a(이후 형식 변경은 `schemaVersion`을 올리고 이 문서와 `shared/schema`, `prototype/gen_fixtures.py`를 같이 고친다)
 
 이 문서는 파이프라인(쓰는 쪽)과 서버·앱·웹 SEO 빌드(읽는 쪽)가 공유하는 산출물 형식이다. 웹 앱은 추천을 직접 계산하지 않고 서버 API를 호출하므로 `od.bin`을 읽지 않는다. 웹-서버 계약의 원본은 [`openapi.yaml`](openapi.yaml)이다(contract-first, 웹은 이 파일에서 TS 타입을 생성한다). 이 문서의 §7(링크 코덱)은 웹·공유 모듈·앱이 각자 구현하는 유일한 로직이라 테스트 벡터로 일치를 검증한다. 구현은 `shared/schema`(Kotlin)이고, `prototype/gen_fixtures.py`가 **독립 구현**으로 같은 형식의 샘플을 만든다. 둘이 어긋나면 `shared/schema`의 테스트가 깨진다.
 
@@ -15,13 +15,14 @@
 | 시간·환승 행렬 | `versions/<dataVersion>/od.<hash>.bin` | 바이너리 | 파이프라인 |
 | 구분별 시간·환승 행렬 | `versions/<dataVersion>/od-<구분>.<hash>.bin` | 바이너리(od.bin과 같은 형식) | 파이프라인 |
 | 귀갓길 막차 표 | `versions/<dataVersion>/lt.<hash>.bin` | 바이너리(§10) | 파이프라인 |
-| manifest | `manifest.json`(세대 1) + `manifest.v2.json`(세대 2) + `manifest.v3.json`(세대 3) (발행 포인터) | JSON | 파이프라인 (`manifest.json`을 마지막에 교체) |
+| 노선 그래프(사람별 경로) | `versions/<dataVersion>/rg.<hash>.bin` | 바이너리(§11) | 파이프라인 |
+| manifest | `manifest.json`(세대 1) + `manifest.v2.json`(세대 2) + `manifest.v3.json`(세대 3) + `manifest.v4.json`(세대 4) (발행 포인터) | JSON | 파이프라인 (`manifest.json`을 마지막에 교체) |
 
 형식 판은 두 가지다. **구성 형식**(레지스트리 JSON·후보 JSON의 `schemaVersion`, od.bin 헤더의 `formatVersion`)은 `1`이고,
-**manifest 세대**(`manifest.schemaVersion`)는 `1`, `2` 또는 `3`이다. 세대 2는 구분(§9)별 od 행렬(`files.odSlots`)을, 세대 3은 귀갓길
-막차 표(`files.lastTrain`, §10)를 더한 것이고 구성 형식은 그대로 1판이다(레지스트리·웹 역 인덱스를 다시 만들 이유가 없어서 구성 형식은
+**manifest 세대**(`manifest.schemaVersion`)는 `1`~`4`다. 세대 2는 구분(§9)별 od 행렬(`files.odSlots`)을, 세대 3은 귀갓길
+막차 표(`files.lastTrain`, §10)를, 세대 4는 사람별 경로의 노선 그래프(`files.routeGraph`, §11)를 더한 것이고 구성 형식은 그대로 1판이다(레지스트리·웹 역 인덱스를 다시 만들 이유가 없어서 구성 형식은
 올리지 않았다). reader는 자기가 아는 manifest 세대 안에서 각 세대의 구성 형식 판을 검사한다: 모든 세대에서 레지스트리·후보·od.bin이
-1판이어야 한다. lt.bin은 자기 `formatVersion`(지금 `1`)을 가진다.
+1판이어야 한다. lt.bin과 rg.bin은 각자 `formatVersion`(지금 둘 다 `1`)을 가진다.
 
 ## 2. 역 코드
 
@@ -150,8 +151,8 @@
 
 | 필드 | 규칙 |
 |---|---|
-| `schemaVersion` | manifest 세대(§1). `1`, `2` 또는 `3`. 구성 형식(레지스트리·후보 `schemaVersion`, od.bin `formatVersion`)은 모든 세대에서 `1` |
-| `minClientSchema` | 이 데이터를 읽을 수 있는 클라이언트의 **최소 지원 세대**. 클라이언트가 지원하는 최댓값 < `minClientSchema`이면 데이터를 쓰지 말고 업데이트를 안내한다. `≤ schemaVersion`. 파이프라인은 세대마다 그 세대의 수를 쓴다(세대 2에 `2`, 세대 3에 `3`) |
+| `schemaVersion` | manifest 세대(§1). `1`~`4`. 구성 형식(레지스트리·후보 `schemaVersion`, od.bin `formatVersion`)은 모든 세대에서 `1` |
+| `minClientSchema` | 이 데이터를 읽을 수 있는 클라이언트의 **최소 지원 세대**. 클라이언트가 지원하는 최댓값 < `minClientSchema`이면 데이터를 쓰지 말고 업데이트를 안내한다. `≤ schemaVersion`. 파이프라인은 세대마다 그 세대의 수를 쓴다(세대 2에 `2`, 세대 3에 `3`, 세대 4에 `4`) |
 | `dataVersion` | `YYYYMMDD.N`(N ≥ 1, 같은 날 N번째 발행). 정규식 `^[0-9]{8}\.[0-9]{1,3}$`. 방(room)이 이 값을 기록해 두 계산이 어긋나지 않게 한다 |
 | `previousDataVersion` | 선택. 직전 정상 버전(롤백 안내용). 첫 발행이면 키를 생략한다 |
 | `generatedAt` | UTC ISO-8601, `Z`로 끝남 |
@@ -160,27 +161,30 @@
 | `originCount`, `candidateCount` | od.bin의 N, M과 같아야 한다 |
 | `files.registry`, `files.candidates`, `files.od` | 필수. `path`는 manifest 기준 상대 경로(`..`·절대 경로 금지), `sha256`은 §4.3, `bytes`는 정확한 크기. `files.od`는 **기본 구분(평일 낮, `weekday-day`)** 의 행렬이다 |
 | `files.seoPages` | 선택. 같은 모양 |
-| `files.lastTrain` | 세대 3에서 필수, 세대 1·2에는 없어야 한다. 막차 표 lt.bin(§10). `files.od`와 같은 모양 |
+| `files.routeGraph` | 세대 4에서 필수, 세대 1~3에는 없어야 한다. 노선 그래프 rg.bin(§11). `files.od`와 같은 모양 |
+| `files.lastTrain` | 세대 3·4에서 필수, 세대 1·2에는 없어야 한다. 막차 표 lt.bin(§10). `files.od`와 같은 모양 |
 | `lastTrainAsOf` | 세대 3에서 필수, 세대 1·2에는 없어야 한다. 막차 계산에 쓴 시간표 가운데 **가장 오래된 수집일**(`YYYY-MM-DD`, 서울 날짜). 수집 영수증(`source-manifest.json`의 S5·S6 `fetched_at`)에서 오므로 같은 입력이면 같은 값이다. 서버는 이 날짜에서 120일이 지나면 막차 시각을 내지 않는다. **달력에 있는 날짜**여야 한다(`2026-02-30`은 거부: reader는 날짜 모양만이 아니라 실제 날짜인지 본다). 거부된 세대 3은 읽지 못한 세대로 보아 서버는 세대 2로 기동한다(막차만 꺼진다) |
 | `lastTrainModel` | 세대 3에서 필수, 세대 1·2에는 없어야 한다. 막차 계산 규칙의 식별자(지금 `numbered-v1+walk2x5m+source3m`: 열차 번호가 있는 원천과 칸마다 대조한 직행 칸만으로 낸 표. 열차 번호 없는 줄을 다시 이은 열차도 쓰는 표는 `chain-v3+…`). 규칙이 바뀌면 값이 바뀐다 |
 | `lastTrainPartialDays` | 세대 3에서 선택, 세대 1·2에는 없어야 한다. **시간표가 있는 노선만 계산한 요일 종류**의 id 목록(`weekday`·`saturday`·`holiday`, 겹치지 않게). 지금 `["saturday"]`(서울교통공사 1~8호선만). `last-train.json`의 요일별 허용 목록이 다른 요일 종류에 있는 노선을 빼면 그 요일 종류가 여기 들어간다. 서버는 이 값으로 응답의 `lastTrainBasis.partial`을 낸다. 없으면 모든 요일 종류가 전 노선이다 |
 | `files.odSlots` | 세대 2·3에서 필수, 세대 1에는 없어야 한다. 키는 구분 id(§9)이고 기본 구분을 **뺀** 11개가 빠짐없이 있어야 한다. 값은 `files.od`와 같은 모양. 모든 구분 행렬은 `files.od`와 **같은 출발역·후보 축**이고 같은 `registryVersion`이다. 내용이 같은 구분(예: 토요일과 일요일·공휴일)은 한 파일을 함께 가리킬 수 있다 — 같은 `path`를 가리키는 항목은 `sha256`·`bytes`도 같아야 한다 |
 
 **검증 순서** (서버가 새 버전을 받을 때, 실패하면 직전 정상 버전 유지):
-① manifest 파싱·필드 검사 → ② `schemaVersion`/`minClientSchema` 지원 확인 → ③ 각 파일의 `bytes`와 `sha256` 대조 → ④ od.bin 헤더·길이·코드 오름차순 → ⑤ N, M, `registryVersion` 상호 일치 → ⑥ 후보 목록 ≡ od.bin 후보 축, 모든 od.bin 코드가 레지스트리에 존재 → ⑦ 구분 행렬마다 ③④와 `files.od`와 같은 축·`registryVersion` → ⑧ (서버만) 골든 샘플 → ⑨ 막차 표의 `bytes`·`sha256`, 헤더·길이·칸 불변식(§10), `registryVersion`, **축 ≡ od.bin의 축**.
-서버는 ①~⑥을 마치면 기동하고 ⑦과 ⑨는 뒤에서 한다(콜드스타트). ⑦이 끝나기 전에 온 구분 요청은 잠깐 기다리고, ⑦이 실패하면 그 서버는
+① manifest 파싱·필드 검사 → ② `schemaVersion`/`minClientSchema` 지원 확인 → ③ 각 파일의 `bytes`와 `sha256` 대조 → ④ od.bin 헤더·길이·코드 오름차순 → ⑤ N, M, `registryVersion` 상호 일치 → ⑥ 후보 목록 ≡ od.bin 후보 축, 모든 od.bin 코드가 레지스트리에 존재 → ⑦ 구분 행렬마다 ③④와 `files.od`와 같은 축·`registryVersion` → ⑧ (서버만) 골든 샘플 → ⑨ 막차 표의 `bytes`·`sha256`, 헤더·길이·칸 불변식(§10), `registryVersion`, **축 ≡ od.bin의 축** → ⑩ 노선 그래프의 `bytes`·`sha256`,
+헤더·길이·불변식(§11), `registryVersion`, 모든 노드의 역이 레지스트리에 있고 **od.bin의 모든 출발역·후보역에 노드가 있다**.
+서버는 ①~⑥을 마치면 기동하고 ⑦, ⑨, ⑩은 뒤에서 한다(콜드스타트). ⑦이 끝나기 전에 온 구분 요청은 잠깐 기다리고, ⑦이 실패하면 그 서버는
 기본 구분으로만 계산한다(응답의 `timeBasis`가 평일 낮이 되어 사용자에게 드러난다). **⑨가 실패해도 서버는 뜨고 순위·시간은 그대로다.**
 응답에서 막차 항목(`lastTrainBasis`, `lastTrains`)만 빠진다. ⑨가 끝나기 전에 온 요청은 **기다리지 않고** 막차 없이 답한다(막차는 덧붙는
-정보라 추천 응답 시간에 영향을 주지 않는다).
+정보라 추천 응답 시간에 영향을 주지 않는다). **⑩도 같다**: 실패하거나 끝나기 전이면 응답에서 사람별 경로(`candidates[].routes`)만 빠지고
+화면은 중립색 막대로 그린다.
 manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.3).
 
-**세대별 객체 이름.** 발행은 manifest를 세 개 쓴다. `manifest.v3.json`은 세대 3(막차 표 포함), `manifest.v2.json`은 같은 dataVersion·같은
-파일의 세대 2(막차 항목 없음), `manifest.json`은 세대 1(`files.odSlots`도 없음, `timeModel` = `weekday-offpeak-half-headway`)이다. reader는 모르는
+**세대별 객체 이름.** 발행은 manifest를 네 개 쓴다. `manifest.v4.json`은 세대 4(노선 그래프 포함), `manifest.v3.json`은 같은 dataVersion·같은
+파일의 세대 3(노선 그래프 없음), `manifest.v2.json`은 세대 2(막차 항목도 없음), `manifest.json`은 세대 1(`files.odSlots`도 없음, `timeModel` = `weekday-offpeak-half-headway`)이다. reader는 모르는
 키를 거부하므로 아래 세대 파일에는 위 세대의 키가 하나도 없어야 한다. 그래서 새 세대를 모르는 옛 서버(배포 틈의 옛 리비전, 되돌리기)도 자기가
-아는 이름을 읽어 계속 기동한다. 순서는 해시 파일 → `manifest.v3.json` → `manifest.v2.json` → `manifest.json`(마지막). reader는 자기가 아는 가장
+아는 이름을 읽어 계속 기동한다. 순서는 해시 파일 → `manifest.v4.json` → `manifest.v3.json` → `manifest.v2.json` → `manifest.json`(마지막). reader는 자기가 아는 가장
 높은 세대부터 보아 **`manifest.json`과 dataVersion이 같은** 첫 세대를 쓰고, 없으면 세대 1을 쓴다(옛 스크립트로 되돌려 `manifest.json`만 바뀐
 경우 지난 높은 세대를 쓰지 않게). 어떤 세대가 없는 데이터를 발행할 때는 버킷에 남은 그 세대의 파일을 지운다. dev 산출물
-(`data/artifacts/dev/`)도 같은 세 파일을 둔다.
+(`data/artifacts/dev/`)도 같은 네 파일을 둔다.
 
 ## 6. 호환 규칙
 
@@ -345,3 +349,56 @@ manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.
   열차는 끊기고, 끊긴 열차는 이른 쪽으로만 틀린다(그 이음을 넘어가는 승차는 버려진다). **도착 시각이 없는 줄은 정차가 아니다**
   (급행이 지나가기만 하는 역에도 줄이 있다): 그 줄에서는 내릴 수 없고, 열차가 거기서 운행을 시작하는 경우에만 탈 수 있다.
 
+## 11. `rg.bin` — 사람별 경로의 노선 그래프 (#120)
+
+"이 사람은 어느 노선을 타고 어디서 갈아타는가"를 서버가 **요청할 때 다시 계산**하는 데 쓰는 그래프다. 경로 자체는 저장하지 않는다
+([ADR-0002](../docs/adr/0002-routes-on-request.md)). 순위·시간·환승 수에는 쓰지 않고 결과 화면의 막대에만 붙는다. 구현은 `shared/schema`의
+`RouteGraphCodec`(형식), `shared/core`의 `RouteSearch`(계산), `pipeline`의 `RouteGraphStage.kt`(만들기와 게이트)다.
+
+- **od.bin을 만든 그래프와 같은 노드·간선이다.** 노드 = (역, 계통), 간선은 타고 가는 간선(주행)과 갈아타는 간선(같은 역 안에서 걷기 +
+  다음 열차 대기, 환승 1회)이다. 구분(§9)마다 다른 것은 계통별 타기 대기(배차/2)뿐이라 대기를 뺀 간선과 구분별 대기표를 둔다.
+- **발행 게이트:** 파이프라인은 이 파일의 바이트를 다시 읽어 `RouteSearch`로 **모든 구분 × 모든 출발역 × 모든 후보역**의 최단
+  (시간, 환승)을 계산하고, od.bin·구분 행렬의 칸과 하나라도 다르면 발행하지 않는다. 같은 검사를 CI가 커밋된 dev 산출물로 한다
+  (`RouteGraphCommittedDataTest`). 그래서 서버가 이 그래프로 낸 경로는 od의 시간과 어긋나지 않는다.
+- 리틀 엔디언, 부호 없음. 해시·발행 이름·결정성 규칙은 od.bin과 같다(§4.3, `rg.<해시 앞 16자>.bin`).
+
+### 11.1 헤더 (고정 32바이트)
+
+| 오프셋 | 크기 | 필드 | 값 / 규칙 |
+|---|---|---|---|
+| 0 | 4 | `magic` | ASCII `BBRG` |
+| 4 | 2 | `formatVersion` | u16, 지금 `1` |
+| 6 | 2 | `headerSize` | u16, 지금 `32` |
+| 8 | 4 | `flags` | u32, 지금 `0`. 0이 아니면 거부 |
+| 12 | 4 | `registryVersion` | u32. manifest·od.bin과 같아야 한다 |
+| 16 | 4 | `nodeCount` V | u32, 1..65535 |
+| 20 | 4 | `edgeCount` E | u32 |
+| 24 | 2 | `lineCount` L | u16, 1..255 |
+| 26 | 2 | `serviceCount` S | u16, 1..254 |
+| 28 | 2 | `slotCount` | u16, `12`(§9의 구분 수). 다르면 거부 |
+| 30 | 2 | `reserved` | `0` |
+
+### 11.2 본문 (헤더 바로 뒤, 패딩 없음, 이 순서)
+
+| 구간 | 크기 | 내용 |
+|---|---|---|
+| 노선 이름 | L × (1 + n) | u8 바이트 길이 n(1..255) + UTF-8. 화면 표시 노선 이름(예: `2호선`, `수인분당선`, `공항철도`). 겹치지 않는다. 웹 노선 색표(`web/src/lib/stations/lines.ts`)의 키와 같은 말이다 |
+| 계통의 노선 | S | u8 노선 이름 색인 |
+| 노드 | 3·V | 노드마다 u16 역 `codeValue` + u8 계통 색인 |
+| 간선 시작 위치 | 4·(V+1) | u32. 노드 `v`의 간선은 `[start[v], start[v+1])`. 처음은 0, 끝은 E, 줄지 않는다 |
+| 간선 | 5·E | 간선마다 u16 도착 노드 + u16 초(대기를 뺀 시간) + u8 대기 계통(`0xFF` = 타고 가는 간선) |
+| 구분별 대기표 | 2·12·S | u16 초. 구분 순서는 요일 종류(평일·토요일·휴일) 안에서 시간대(아침·낮·저녁·밤)다(`TimeSlot.ALL`, §9의 id로 `weekday-morning`, `weekday-day`, …, `holiday-night`). 그 안은 계통 색인 순서 |
+
+총 길이는 정확히 읽은 만큼이어야 한다(남거나 모자라면 거부). 지금 데이터는 노드 966, 간선 2,896, 약 22.6KB다.
+reader가 거부하는 불변식: 색인이 범위 안, **타고 가는 간선은 1초 이상**, 갈아타는 간선의 걷기는 0초 이상(같은 승강장이면 0초,
+대기만 더한다), **갈아타는 간선은 같은 역의 두 노드만 잇는다**, 대기는 1..65534초.
+
+### 11.3 값의 뜻 (읽는 쪽의 규칙)
+
+- 간선 시간: 타고 가는 간선은 초 그대로, 갈아타는 간선은 초 + 그 구분의 대기 계통 대기. 출발역에서는 그 역의 모든 노드에서 그 노드
+  계통의 대기만큼 기다리고 시작한다. 도착역은 그 역의 노드 가운데 가장 빠른 것이다. 이것이 od.bin 한 칸의 (시간, 환승)이다.
+- **화면에 보이는 경로**는 최단 경로가 아닐 수 있다: 최단 시간보다 **120초**(`DISPLAY_ROUTE_SLACK_SECONDS`) 이내로 더 걸리는 경로
+  가운데 환승이 가장 적은 것, 같은 환승 수면 더 빠른 것이다. 동률은 (시간, 노드 색인) 순서로 먼저 찾은 쪽이다. 표시 전용이라
+  순위·시간·환승 수는 그대로 od.bin의 값이다.
+- 구간 시간(대기·주행)은 배차/2 평균 대기로 만든 모델 값이라 화면에 숫자로 쓰지 않는다(막대 길이 비율에만 쓴다).
+- 한 역에서 타지 않고 두 번 갈아타는 경로(지금 데이터는 김포공항 공항철도 → 5호선 승강장 → 서해선뿐)는 화면에서 환승 한 번으로 합친다.

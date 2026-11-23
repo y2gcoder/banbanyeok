@@ -1,0 +1,106 @@
+{
+  "candidateCount": 127,
+  "dataVersion": "20261123.1",
+  "files": {
+    "candidates": {
+      "bytes": 1468,
+      "path": "candidates.json",
+      "sha256": "5dc17c32ce18f0a7a89890ee70c0ed05eca7752cf2978f5b416823f2003ebbbe"
+    },
+    "lastTrain": {
+      "bytes": 1245557,
+      "path": "lt.bin",
+      "sha256": "2818dce5a7216b561568affe32361738bb2f5d221ca5f746def1be149ade37f7"
+    },
+    "od": {
+      "bytes": 250385,
+      "path": "od.bin",
+      "sha256": "88cc5ae6b9371597dcb45db95cd10e51fc614dd7e3dbf572ade0bed1587a0512"
+    },
+    "odSlots": {
+      "holiday-day": {
+        "bytes": 250385,
+        "path": "od-saturday-day.bin",
+        "sha256": "1d17197710e74d0fe7cdb4c4597978d3c483bfbb7dc93d412ebff77119e8d281"
+      },
+      "holiday-evening": {
+        "bytes": 250385,
+        "path": "od-saturday-evening.bin",
+        "sha256": "bce053dde466a0bd4df59986f6bbd1f7f640a39e22fd888481e75eea8aaddb8e"
+      },
+      "holiday-morning": {
+        "bytes": 250385,
+        "path": "od-saturday-morning.bin",
+        "sha256": "63d8de136ed13b6a4df1c18424523d878610fb06b7df19d8ee11a61fe1099499"
+      },
+      "holiday-night": {
+        "bytes": 250385,
+        "path": "od-saturday-night.bin",
+        "sha256": "e9969a7fab77614772465577d59734f6d76a8ea4626a456a936c8ef0b3e410fc"
+      },
+      "saturday-day": {
+        "bytes": 250385,
+        "path": "od-saturday-day.bin",
+        "sha256": "1d17197710e74d0fe7cdb4c4597978d3c483bfbb7dc93d412ebff77119e8d281"
+      },
+      "saturday-evening": {
+        "bytes": 250385,
+        "path": "od-saturday-evening.bin",
+        "sha256": "bce053dde466a0bd4df59986f6bbd1f7f640a39e22fd888481e75eea8aaddb8e"
+      },
+      "saturday-morning": {
+        "bytes": 250385,
+        "path": "od-saturday-morning.bin",
+        "sha256": "63d8de136ed13b6a4df1c18424523d878610fb06b7df19d8ee11a61fe1099499"
+      },
+      "saturday-night": {
+        "bytes": 250385,
+        "path": "od-saturday-night.bin",
+        "sha256": "e9969a7fab77614772465577d59734f6d76a8ea4626a456a936c8ef0b3e410fc"
+      },
+      "weekday-evening": {
+        "bytes": 250385,
+        "path": "od-weekday-evening.bin",
+        "sha256": "bf1889dcf7ed77dd2ef3ece24151d97e4f3db508b181d3d01e083e197521ed3f"
+      },
+      "weekday-morning": {
+        "bytes": 250385,
+        "path": "od-weekday-morning.bin",
+        "sha256": "7ac3b0c32371a8baee61960e39643f54cb18cc89764671ceeec510e1d8e89c21"
+      },
+      "weekday-night": {
+        "bytes": 250385,
+        "path": "od-weekday-night.bin",
+        "sha256": "85dbd032908d9cb967aab307b963cad834e458baa7123dbc95a287fbf9a1ddd1"
+      }
+    },
+    "registry": {
+      "bytes": 398209,
+      "path": "stations.json",
+      "sha256": "44e649369b6d7efbd04f92e647cc0990e99ecf9898bc7e00fb07ab25c4805cfa"
+    },
+    "routeGraph": {
+      "bytes": 22574,
+      "path": "rg.bin",
+      "sha256": "7d1a1afea67de7a32675bab11223d88d5b0204e985ba86bcb1a7a7bb4f4c8e72"
+    },
+    "seoPages": {
+      "bytes": 947497,
+      "path": "seo-pairs.json",
+      "sha256": "ff2b383d5fbff50fc8991d7c45724588dd81a35c3b2b21f15ed5022c168410c9"
+    }
+  },
+  "generatedAt": "2026-11-23T13:16:25Z",
+  "lastTrainAsOf": "2026-11-16",
+  "lastTrainModel": "numbered-v1+walk2x5m+source3m",
+  "lastTrainPartialDays": [
+    "weekday",
+    "saturday"
+  ],
+  "minClientSchema": 4,
+  "originCount": 653,
+  "previousDataVersion": "20261120.5",
+  "registryVersion": 5,
+  "schemaVersion": 4,
+  "timeModel": "slot-half-headway"
+}

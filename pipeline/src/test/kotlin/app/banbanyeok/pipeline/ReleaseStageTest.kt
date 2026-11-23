@@ -24,7 +24,14 @@ class ReleaseStageTest :
                 val manifest = stageRelease(devArtifacts, out)
                 val files = manifest.files
                 (
-                    listOfNotNull(files.registry, files.candidates, files.od, files.seoPages, files.lastTrain) +
+                    listOfNotNull(
+                        files.registry,
+                        files.candidates,
+                        files.od,
+                        files.seoPages,
+                        files.lastTrain,
+                        files.routeGraph,
+                    ) +
                         files.odSlots.orEmpty().values
                 ).forEach { file ->
                     assertTrue(file.path.startsWith("versions/${manifest.dataVersion}/"), file.path)
@@ -37,13 +44,42 @@ class ReleaseStageTest :
                     assertTrue(file.path.contains(".${file.sha256.take(16)}."), file.path)
                     assertTrue(file.matches(out.resolve(file.path).readBytes()), file.path)
                 }
-                assertEquals(manifest, ManifestCodec.parse(out.resolve("manifest.v3.json").readText()))
+                assertEquals(manifest, ManifestCodec.parse(out.resolve("manifest.v4.json").readText()))
+            }
+
+            it("alsoWritesAGenerationThreeManifestWithoutTheRouteGraph") {
+                val out = Files.createTempDirectory("release-stage").resolve("out")
+                val published = stageRelease(devArtifacts, out)
+                assertEquals(4, published.schemaVersion)
+                val routeGraph = requireNotNull(published.files.routeGraph)
+                assertTrue(
+                    Regex("^versions/[0-9.]+/rg\\.[0-9a-f]{16}\\.bin$").matches(routeGraph.path),
+                    routeGraph.path,
+                )
+                val three = ManifestCodec.parse(out.resolve("manifest.v3.json").readText())
+                assertEquals(3, three.schemaVersion)
+                assertEquals(3, three.minClientSchema)
+                assertEquals(published.files.lastTrain, three.files.lastTrain)
+                assertEquals(published.dataVersion, three.dataVersion)
+                // 세대 3까지만 아는 reader(운영 중인 서버)는 모르는 키를 거부하므로 v3 파일에 노선 그래프가 남으면 안 된다.
+                assertTrue("routeGraph" !in out.resolve("manifest.v3.json").readText())
+                val dataSet =
+                    DataSetLoader.load(
+                        app.banbanyeok.schema.DataSetBytes(
+                            out.resolve("manifest.v4.json").readText(),
+                            out.resolve(published.files.registry.path).readBytes(),
+                            out.resolve(published.files.candidates.path).readBytes(),
+                            out.resolve(published.files.od.path).readBytes(),
+                        ),
+                        deferSlots = true,
+                    )
+                DataSetLoader.routeGraph(dataSet, out.resolve(routeGraph.path).readBytes())
             }
 
             it("alsoWritesAGenerationTwoManifestWithoutTheLastTrainTable") {
                 val out = Files.createTempDirectory("release-stage").resolve("out")
                 val published = stageRelease(devArtifacts, out)
-                assertEquals(3, published.schemaVersion)
+                assertEquals(4, published.schemaVersion)
                 val lastTrain = requireNotNull(published.files.lastTrain)
                 assertTrue(Regex("^versions/[0-9.]+/lt\\.[0-9a-f]{16}\\.bin$").matches(lastTrain.path), lastTrain.path)
                 val two = ManifestCodec.parse(out.resolve("manifest.v2.json").readText())
@@ -55,6 +91,7 @@ class ReleaseStageTest :
                 assertEquals(published.dataVersion, two.dataVersion)
                 // 세대 2까지만 아는 reader(운영 중인 서버)는 모르는 키를 거부하므로 v2 파일에 막차 항목이 남으면 안 된다.
                 assertTrue("lastTrain" !in out.resolve("manifest.v2.json").readText())
+                assertTrue("routeGraph" !in out.resolve("manifest.v2.json").readText())
                 // 발행된 막차 표는 같은 데이터 세트의 축·버전으로 읽힌다.
                 val dataSet =
                     DataSetLoader.load(
@@ -94,7 +131,7 @@ class ReleaseStageTest :
             it("keepsContentAndReceiptsUnchanged") {
                 val out = Files.createTempDirectory("release-stage").resolve("out")
                 val published = stageRelease(devArtifacts, out)
-                val original = ManifestCodec.parse(devArtifacts.resolve("manifest.v3.json").readText())
+                val original = ManifestCodec.parse(devArtifacts.resolve("manifest.v4.json").readText())
                 assertEquals(original.files.od.sha256, published.files.od.sha256)
                 assertEquals(original.files.registry.bytes, published.files.registry.bytes)
                 assertEquals(original.dataVersion, published.dataVersion)
@@ -110,6 +147,35 @@ class ReleaseStageTest :
                 assertTrue(!out.resolve("manifest.json").exists(), "manifest는 검증 전에 쓰지 않는다")
                 assertTrue(!out.resolve("manifest.v2.json").exists(), "manifest는 검증 전에 쓰지 않는다")
                 assertTrue(!out.resolve("manifest.v3.json").exists(), "manifest는 검증 전에 쓰지 않는다")
+                assertTrue(!out.resolve("manifest.v4.json").exists(), "manifest는 검증 전에 쓰지 않는다")
+            }
+
+            it("refusesToStageWhenTheRouteGraphNoLongerReproducesTheMatrices") {
+                // #134 검토: od.bin 한 칸을 1초 바꾸고 manifest 해시를 맞추면 해시·형식 검사는 통과한다. 발행 게이트가 막아야 한다.
+                val source = Files.createTempDirectory("release-route-gate")
+                devArtifacts.toFile().listFiles()!!.forEach { it.copyTo(source.resolve(it.name).toFile()) }
+                val od = source.resolve("od.bin")
+                val bytes = od.readBytes()
+                val matrix =
+                    app.banbanyeok.schema.OdBinCodec
+                        .decode(bytes)
+                // 첫 칸(첫 출발역 → 첫 후보)의 시간: 헤더 32바이트 + 출발역·후보 코드 뒤.
+                val first = 32 + 2 * matrix.originCount + 2 * matrix.candidateCount
+                val seconds = matrix.timeSeconds(0, 0) + 1
+                bytes[first] = seconds.toByte()
+                bytes[first + 1] = (seconds ushr 8).toByte()
+                od.writeBytes(bytes)
+                val manifest = source.resolve("manifest.v4.json")
+                val original = ManifestCodec.parse(manifest.readText())
+                val tampered =
+                    original.copy(files = original.files.copy(od = original.files.od.copy(sha256 = Sha256.hex(bytes))))
+                manifest.toFile().writeText(ManifestCodec.encode(tampered))
+                val out = Files.createTempDirectory("release-stage").resolve("out")
+                val failure = assertFailsWith<IllegalArgumentException> { stageRelease(source, out) }
+                assertTrue(failure.message.orEmpty().startsWith("Route gate failed"), failure.message)
+                listOf("manifest.json", "manifest.v2.json", "manifest.v3.json", "manifest.v4.json").forEach {
+                    assertTrue(!out.resolve(it).exists(), "$it: 게이트를 통과하지 못하면 manifest를 쓰지 않는다")
+                }
             }
 
             it("isDeterministic") {
@@ -119,12 +185,12 @@ class ReleaseStageTest :
                 stageRelease(devArtifacts, b)
                 assertEquals(
                     Sha256.hex(
-                        listOf("manifest.json", "manifest.v2.json", "manifest.v3.json")
+                        listOf("manifest.json", "manifest.v2.json", "manifest.v3.json", "manifest.v4.json")
                             .map { a.resolve(it).readBytes() }
                             .reduce(ByteArray::plus),
                     ),
                     Sha256.hex(
-                        listOf("manifest.json", "manifest.v2.json", "manifest.v3.json")
+                        listOf("manifest.json", "manifest.v2.json", "manifest.v3.json", "manifest.v4.json")
                             .map { b.resolve(it).readBytes() }
                             .reduce(ByteArray::plus),
                     ),

@@ -8,7 +8,10 @@ class ArtifactStagesTest :
     DescribeSpec({
         describe("the artifact stage list") {
             it("runsTheProductsInTheOrderTheirChecksUsedToRun") {
-                assertEquals(listOf("seo-pairs", "travel-matrix", "last-train"), ARTIFACT_STAGES.map { it.name })
+                assertEquals(
+                    listOf("seo-pairs", "travel-matrix", "last-train", "route-graph"),
+                    ARTIFACT_STAGES.map { it.name },
+                )
             }
 
             it("nameEveryStageOnce") {

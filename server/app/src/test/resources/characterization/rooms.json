@@ -43,7 +43,7 @@
                     "holidayName": null
                 }
             },
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "basis": {
                 "mode": "fair",
                 "favorLabel": null
@@ -95,7 +95,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid002",
@@ -243,7 +243,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid002",
@@ -391,7 +391,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid002",
@@ -539,7 +539,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid002",
@@ -687,7 +687,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid002",
@@ -845,7 +845,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid002",
@@ -1012,7 +1012,7 @@
                     "holidayName": null
                 }
             },
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "basis": {
                 "mode": "fair",
                 "favorLabel": null
@@ -1060,7 +1060,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid004",
@@ -1252,7 +1252,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid004",
@@ -1444,7 +1444,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid004",
@@ -1657,7 +1657,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid004",
@@ -1849,7 +1849,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid004",
@@ -2041,7 +2041,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid004",
@@ -2244,7 +2244,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid004",
@@ -2453,7 +2453,7 @@
                     "holidayName": null
                 }
             },
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "basis": {
                 "mode": "fast",
                 "favorLabel": null
@@ -2506,7 +2506,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -2741,7 +2741,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -2976,7 +2976,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -3211,7 +3211,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -3446,7 +3446,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -3703,7 +3703,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -3930,7 +3930,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -4175,7 +4175,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid007",
@@ -4437,7 +4437,7 @@
                     "holidayName": null
                 }
             },
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "basis": {
                 "mode": "favor",
                 "favorLabel": "방장"
@@ -4490,7 +4490,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -4706,7 +4706,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -4922,7 +4922,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -5138,7 +5138,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -5354,7 +5354,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -5573,7 +5573,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -5791,7 +5791,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -6007,7 +6007,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid011",
@@ -6239,7 +6239,7 @@
                     "holidayName": "기독탄신일"
                 }
             },
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "basis": {
                 "mode": "fair",
                 "favorLabel": null
@@ -6276,7 +6276,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid014",
@@ -6425,7 +6425,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid014",
@@ -6574,7 +6574,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid014",
@@ -6741,7 +6741,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid014",
@@ -6890,7 +6890,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid014",
@@ -7044,7 +7044,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid014",
@@ -7212,7 +7212,7 @@
                     "holidayName": null
                 }
             },
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "basis": {
                 "mode": "fair",
                 "favorLabel": null
@@ -7261,7 +7261,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid016",
@@ -7435,7 +7435,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid016",
@@ -7609,7 +7609,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid016",
@@ -7783,7 +7783,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid016",
@@ -7957,7 +7957,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid016",
@@ -8134,7 +8134,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid016",
@@ -8327,7 +8327,7 @@
                     "holidayName": null
                 }
             },
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "basis": {
                 "mode": "fair",
                 "favorLabel": null
@@ -8379,7 +8379,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid018",
@@ -8527,7 +8527,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid018",
@@ -8675,7 +8675,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid018",
@@ -8823,7 +8823,7 @@
         "body": {
             "status": "ok",
             "mode": "fair",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid018",
@@ -8971,7 +8971,7 @@
         "body": {
             "status": "ok",
             "mode": "fast",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid018",
@@ -9129,7 +9129,7 @@
         "body": {
             "status": "ok",
             "mode": "favor",
-            "dataVersion": "20261120.5",
+            "dataVersion": "20261123.1",
             "participants": [
                 {
                     "participantId": "pid018",

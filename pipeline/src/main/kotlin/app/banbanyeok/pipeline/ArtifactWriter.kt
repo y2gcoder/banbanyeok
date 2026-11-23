@@ -19,6 +19,7 @@ import app.banbanyeok.schema.Sha256
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.schema.generationOne
+import app.banbanyeok.schema.generationThree
 import app.banbanyeok.schema.generationTwo
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
@@ -49,7 +50,7 @@ internal fun loadDevArtifacts(output: Path): app.banbanyeok.schema.DataSet {
     )
 }
 
-/** The newest manifest generation present in [dir] (generation 3, then 2, then the generation-1 `manifest.json`). */
+/** The newest manifest generation present in [dir] (generation 4, 3, 2, then the generation-1 `manifest.json`). */
 internal fun latestManifest(dir: Path): Path =
     ManifestNames.NEWEST_FIRST.map(dir::resolve).firstOrNull { it.exists() }
         ?: dir.resolve(ManifestNames.GENERATION_ONE)
@@ -68,35 +69,43 @@ internal const val LT_FILE = "lt.bin"
 /** Dev file name of a slot matrix: `od.bin` for the default slot, `od-<slot>.bin` for the others. */
 internal fun odFileName(slot: TimeSlot): String = if (slot == TimeSlot.DEFAULT) "od.bin" else "od-${slot.id}.bin"
 
+/** The built matrices of every slot as od.bin matrices (axes: the network origins × the candidate list). */
+internal fun odMatrices(
+    net: Network,
+    parts: ReleaseParts,
+): Map<TimeSlot, OdMatrix> {
+    require(parts.matrices.keys == TimeSlot.ALL.toSet()) { "Every time slot needs a matrix" }
+    return parts.matrices.mapValues { (_, matrix) ->
+        OdMatrix(
+            net.registry.registryVersion,
+            net.origins.map { StationCode.parse(it.code).value }.toIntArray(),
+            parts.candidates.candidates
+                .map { StationCode.parse(it).value }
+                .toIntArray(),
+            matrix.first,
+            matrix.second,
+        )
+    }
+}
+
 internal fun publish(
     root: Path,
     net: Network,
     parts: ReleaseParts,
 ) {
-    require(parts.matrices.keys == TimeSlot.ALL.toSet()) { "Every time slot needs a matrix" }
-    val ods =
-        parts.matrices.mapValues { (_, matrix) ->
-            OdMatrix(
-                net.registry.registryVersion,
-                net.origins.map { StationCode.parse(it.code).value }.toIntArray(),
-                parts.candidates.candidates
-                    .map { StationCode.parse(it).value }
-                    .toIntArray(),
-                matrix.first,
-                matrix.second,
-            )
-        }
-    ArtifactWriter(root, net, parts.candidates, ods, parts.lastTrains).write()
+    ArtifactWriter(root, net, odMatrices(net, parts), parts).write()
 }
 
 private class ArtifactWriter(
     private val root: Path,
     private val net: Network,
-    private val candidates: CandidateList,
     ods: Map<TimeSlot, OdMatrix>,
-    private val lastTrains: LtArtifact,
+    parts: ReleaseParts,
     private val clock: Clock = Clock.systemUTC(),
 ) {
+    private val candidates: CandidateList = parts.candidates
+    private val lastTrains: LtArtifact = parts.lastTrains
+
     /** SEO pages stay on the default slot (weekday daytime): static pages carry no time choice. */
     private val od = ods.getValue(TimeSlot.DEFAULT)
     private val slots = TimeSlot.ALL.filter { it != TimeSlot.DEFAULT }
@@ -115,6 +124,7 @@ private class ArtifactWriter(
             "od.bin" to OdBinCodec.encode(od),
             "seo-pairs.json" to jsonText(seo).toByteArray(),
             LT_FILE to LtBinCodec.encode(lastTrains.table),
+            RG_FILE to parts.routeGraph,
         )
 
     /**
@@ -161,12 +171,18 @@ private class ArtifactWriter(
                     files.getValue("od.bin"),
                     slots.associate { it.id to files.getValue(slotFiles.getValue(it)) },
                 ),
-            ).also { DataSetLoader.lastTrains(it, files.getValue(LT_FILE)) }
+            ).also {
+                DataSetLoader.lastTrains(it, files.getValue(LT_FILE))
+                DataSetLoader.routeGraph(it, files.getValue(RG_FILE))
+            }
         files.forEach { (name, bytes) -> output.resolve(name).writeBytes(bytes) }
         removeStaleSlotFiles()
         // Newest generation first, the generation-1 pointer last: older readers keep reading the name they know
         // (same data version, same files, without the parts they do not understand).
-        output.resolve(ManifestNames.GENERATION_THREE).writeText(manifestText)
+        output.resolve(ManifestNames.GENERATION_FOUR).writeText(manifestText)
+        output.resolve(ManifestNames.GENERATION_THREE).writeText(
+            jsonText(ManifestCodec.encode(manifest.generationThree())),
+        )
         output.resolve(ManifestNames.GENERATION_TWO).writeText(jsonText(ManifestCodec.encode(manifest.generationTwo())))
         output.resolve(ManifestNames.GENERATION_ONE).writeText(jsonText(ManifestCodec.encode(manifest.generationOne())))
         println(
@@ -197,6 +213,7 @@ private class ArtifactWriter(
                 receipt("seo-pairs.json"),
                 slots.associate { it.id to receipt(slotFiles.getValue(it)) },
                 receipt(LT_FILE),
+                receipt(RG_FILE),
             ),
         lastTrainAsOf = lastTrains.asOf,
         lastTrainModel = lastTrains.model,
@@ -221,7 +238,7 @@ private class ArtifactWriter(
             .forEach { it.delete() }
 
     private fun unchanged(): Boolean {
-        if (!output.resolve(ManifestNames.GENERATION_THREE).exists()) return false
+        if (!output.resolve(ManifestNames.GENERATION_FOUR).exists()) return false
         if (previous?.lastTrainAsOf != lastTrains.asOf || previous.lastTrainModel != lastTrains.model) return false
         if (previous.lastTrainPartialDays != lastTrains.partialDays) return false
         val old = previous.files
@@ -237,6 +254,7 @@ private class ArtifactWriter(
                 "od.bin" to old.od,
                 "seo-pairs.json" to old.seoPages,
                 LT_FILE to old.lastTrain,
+                RG_FILE to old.routeGraph,
             ) + slots.associate { slotFiles.getValue(it) to old.odSlots?.get(it.id) }
         return files.all { (name, bytes) ->
             val path = output.resolve(name)

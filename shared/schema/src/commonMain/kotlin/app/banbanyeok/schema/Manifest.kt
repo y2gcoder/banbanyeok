@@ -25,6 +25,8 @@ public data class ManifestFiles(
     val odSlots: Map<String, ManifestFile>? = null,
     /** 세대 3: 귀갓길 막차 표(lt.bin, data-format §10). 세대 1·2에는 없다. */
     val lastTrain: ManifestFile? = null,
+    /** 세대 4: 사람별 경로를 다시 계산하는 노선 그래프(rg.bin, data-format §11). 세대 1~3에는 없다. */
+    val routeGraph: ManifestFile? = null,
 )
 
 /** manifest.json — 발행 포인터. 필드 의미는 contracts/data-format.md §5. */
@@ -116,6 +118,20 @@ public object ManifestCodec {
         ).forEach { (key, file) -> if (file != null) validateFile(key, file) }
         validateSlots(manifest)
         validateLastTrain(manifest)
+        validateRouteGraph(manifest)
+    }
+
+    /** 세대 4는 노선 그래프를 가져야 하고, 세대 1~3에는 없어야 한다. */
+    private fun validateRouteGraph(manifest: Manifest) {
+        val file = manifest.files.routeGraph
+        if (manifest.schemaVersion < ROUTE_GRAPH_GENERATION) {
+            schemaCheck(file == null) {
+                "schemaVersion ${manifest.schemaVersion} manifest에는 files.routeGraph가 없어야 합니다"
+            }
+            return
+        }
+        schemaCheck(file != null) { "schemaVersion ${manifest.schemaVersion} manifest에는 files.routeGraph가 있어야 합니다" }
+        validateFile("routeGraph", requireNotNull(file))
     }
 
     /** 세대 3은 막차 표와 수집일·규칙 식별자를 모두 가져야 하고, 세대 1·2에는 셋 다 없어야 한다. */
@@ -221,18 +237,22 @@ public class DataSet(
 }
 
 /**
- * 세대별 manifest 객체 이름(data-format §5). 발행은 셋을 함께 쓴다: [GENERATION_ONE]은 세대 1(평일 낮 행렬만), [GENERATION_TWO]는
- * 구분 행렬까지, [GENERATION_THREE]는 막차 표까지 담는다. reader는 자기가 아는 가장 높은 세대부터 읽고 없으면 아래 세대를 읽는다(옛 서버·
+ * 세대별 manifest 객체 이름(data-format §5). 발행은 넷을 함께 쓴다: [GENERATION_ONE]은 세대 1(평일 낮 행렬만), [GENERATION_TWO]는
+ * 구분 행렬까지, [GENERATION_THREE]는 막차 표까지, [GENERATION_FOUR]는 노선 그래프까지 담는다. reader는 자기가 아는 가장 높은 세대부터 읽고 없으면 아래 세대를 읽는다(옛 서버·
  * 클라이언트는 아는 이름만 읽으므로 새 세대가 생겨도 계속 기동한다). 셋은 같은 dataVersion과 같은 해시 파일을 가리킨다.
  */
 public object ManifestNames {
     public const val GENERATION_ONE: String = "manifest.json"
     public const val GENERATION_TWO: String = "manifest.v2.json"
     public const val GENERATION_THREE: String = "manifest.v3.json"
+    public const val GENERATION_FOUR: String = "manifest.v4.json"
 
     /** 높은 세대부터. */
-    public val NEWEST_FIRST: List<String> = listOf(GENERATION_THREE, GENERATION_TWO, GENERATION_ONE)
+    public val NEWEST_FIRST: List<String> = listOf(GENERATION_FOUR, GENERATION_THREE, GENERATION_TWO, GENERATION_ONE)
 }
+
+/** 노선 그래프(사람별 경로)가 들어온 manifest 세대. */
+public const val ROUTE_GRAPH_GENERATION: Int = 4
 
 /** 막차 표가 들어온 manifest 세대. */
 public const val LAST_TRAIN_GENERATION: Int = 3
@@ -249,7 +269,7 @@ public fun Manifest.generationOne(): Manifest =
         schemaVersion = 1,
         minClientSchema = 1,
         timeModel = GENERATION_ONE_TIME_MODEL,
-        files = files.copy(odSlots = null, lastTrain = null),
+        files = files.copy(odSlots = null, lastTrain = null, routeGraph = null),
         lastTrainAsOf = null,
         lastTrainModel = null,
         lastTrainPartialDays = null,
@@ -261,10 +281,20 @@ public fun Manifest.generationTwo(): Manifest {
     return copy(
         schemaVersion = SLOT_GENERATION,
         minClientSchema = SLOT_GENERATION,
-        files = files.copy(lastTrain = null),
+        files = files.copy(lastTrain = null, routeGraph = null),
         lastTrainAsOf = null,
         lastTrainModel = null,
         lastTrainPartialDays = null,
+    )
+}
+
+/** 세대 4 manifest에서 노선 그래프를 뺀 세대 3 manifest(같은 dataVersion·같은 파일). 세대 4를 모르는 reader용으로 함께 발행한다. */
+public fun Manifest.generationThree(): Manifest {
+    schemaCheck(schemaVersion >= LAST_TRAIN_GENERATION) { "세대 1·2 manifest로는 세대 3을 만들 수 없습니다" }
+    return copy(
+        schemaVersion = LAST_TRAIN_GENERATION,
+        minClientSchema = LAST_TRAIN_GENERATION,
+        files = files.copy(routeGraph = null),
     )
 }
 
@@ -365,6 +395,31 @@ public object DataSetLoader {
         schemaCheck(table.registryVersion == core.od.registryVersion) { "lt.bin의 registryVersion이 다릅니다" }
         schemaCheck(table.sameAxesAs(core.od)) { "lt.bin의 집 역·만날 역 축이 od.bin의 출발역·후보 축과 다릅니다" }
         return table
+    }
+
+    /**
+     * 노선 그래프(data-format §5 ⑩): 해시·길이, 형식([RouteGraphCodec]), 레지스트리 버전, 모든 노드의 역이 레지스트리에 있고 od.bin의
+     * 모든 출발역·후보역에 노드가 있다. 세대 4 manifest에서만 부른다. 실패해도 나머지 데이터는 쓸 수 있으므로 호출자는 경로만 끈다.
+     */
+    public fun routeGraph(
+        core: DataSet,
+        bytes: ByteArray,
+    ): RouteGraph {
+        val file = core.manifest.files.routeGraph ?: schemaFail("manifest에 files.routeGraph가 없습니다")
+        schemaCheck(file.matches(bytes)) { "rg.bin의 길이/SHA-256이 manifest와 다릅니다" }
+        val graph = RouteGraphCodec.decode(bytes)
+        schemaCheck(graph.registryVersion == core.od.registryVersion) { "rg.bin의 registryVersion이 다릅니다" }
+        val platforms = graph.platforms
+        platforms.keys.forEach { value ->
+            schemaCheck(core.registry.station(StationCode.ofValue(value).toString()) != null) {
+                "rg.bin 노드의 역 '${StationCode.ofValue(value)}'가 레지스트리에 없습니다"
+            }
+        }
+        val axes = core.od.rawOrigins + core.od.rawCandidates
+        axes.forEach { value ->
+            schemaCheck(value in platforms) { "od.bin의 역 '${StationCode.ofValue(value)}'에 rg.bin 노드가 없습니다" }
+        }
+        return graph
     }
 
     /** 구분 행렬마다 ③ 해시·길이, ④ 헤더·길이, ⑤ 레지스트리 버전, 그리고 기본 행렬과 같은 축인지 검사한다. */

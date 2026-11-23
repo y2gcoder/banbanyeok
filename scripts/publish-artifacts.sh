@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 파이프라인 산출물을 GCS 버킷에 발행한다. 입력은 `./gradlew :pipeline:run --args="stage-release build/release"`의 출력 디렉터리.
-# 순서: ① 해시 이름 파일(versions/<dataVersion>/…, 불변) 업로드 → ② manifest.v3.json(세대 3, 막차 표 포함, 있으면)
-#       → manifest.v2.json(세대 2, 구분 행렬 포함, 있으면) → manifest.json(세대 1, 마지막, 객체 덮어쓰기는 원자적)
+# 순서: ① 해시 이름 파일(versions/<dataVersion>/…, 불변) 업로드 → ② manifest.v4.json(세대 4, 노선 그래프 포함, 있으면)
+#       → manifest.v3.json(세대 3, 막차 표 포함, 있으면) → manifest.v2.json(세대 2, 구분 행렬 포함, 있으면) → manifest.json(세대 1, 마지막, 객체 덮어쓰기는 원자적)
 #       → ③ 올라간 manifest 대조 → ④ 최근 N개 버전만 남기고 정리.
 # 서버는 시작할 때 자기가 아는 가장 높은 세대의 manifest부터 읽고 그 경로의 파일을 검증하므로, manifest.json이 마지막에
 # 바뀌는 한 중간 상태는 보이지 않는다(높은 세대는 manifest.json과 dataVersion이 같을 때만 쓰인다). 아래 세대를 늘 함께 올려
@@ -27,8 +27,8 @@ dest="gs://$bucket"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-# 높은 세대 manifest(v3, v2). 있으면 올리고, 없으면(옛 세대 데이터로 되돌리기) 버킷에 남은 것을 지운다.
-newer=(manifest.v3.json manifest.v2.json)
+# 높은 세대 manifest(v4, v3, v2). 있으면 올리고, 없으면(옛 세대 데이터로 되돌리기) 버킷에 남은 것을 지운다.
+newer=(manifest.v4.json manifest.v3.json manifest.v2.json)
 
 newer_same() {
   local name
