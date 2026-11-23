@@ -171,7 +171,7 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   await expect(banner).toBeVisible();
   await expect(banner.getByText("내가 정했어요")).toBeVisible();
   await expect(page.getByRole("button", { name: "이 역으로 바꾸기" }).first()).toBeDisabled();
-  await expect(page.getByText("새 결과를 불러오는 중이에요.").first()).toBeVisible();
+  await expect(page.getByText("새 결과 불러오는 중").first()).toBeVisible();
   await shots(page, "5-pending-host");
   releaseResult();
   await page.unroute("**/rooms/*/result**");

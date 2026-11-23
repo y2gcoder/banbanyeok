@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, ChevronDownIcon, MapIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, MapIcon, RouteIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,7 +9,15 @@ import type { Mode } from "@/lib/api/types";
 import type { CandidateView, PersonTimeView } from "@/lib/result/view-model";
 import { cn } from "@/lib/utils";
 
-const linkButton = cn(buttonVariants({ variant: "outline" }), "h-11 flex-1 rounded-lg text-[15px] font-semibold");
+const linkButton = cn(
+  buttonVariants({ variant: "outline" }),
+  "h-11 min-w-fit grow-2 rounded-lg text-[15px] font-semibold",
+);
+/** 카카오맵 길찾기(#120 대신): 정확한 노선·환승은 길찾기가 보여 주므로 지도보다 넓고 테두리를 굵게 둔다. */
+const routeButton = cn(
+  buttonVariants({ variant: "outline" }),
+  "h-11 min-w-fit grow-3 rounded-lg border-2 border-ink text-[15px] font-bold",
+);
 const chooseButton = cn(buttonVariants(), "h-12 w-full rounded-xl text-[16px] font-bold");
 
 /**
@@ -81,11 +89,11 @@ function RoomDecideButton({
         className={cn(chooseButton, decided && "bg-ink/80 disabled:opacity-100")}
       >
         <CheckIcon aria-hidden="true" />
-        {decided ? "정한 역이에요" : room.decidedCode ? "이 역으로 바꾸기" : "이 역으로 정했어요"}
+        {decided ? "정한 역" : room.decidedCode ? "이 역으로 바꾸기" : "이 역으로 정했어요"}
       </button>
       {decided ? null : (
         <p className="text-center text-[13px] text-muted-foreground">
-          {decide ? "정하면 방 사람 모두에게 보여요." : "새 결과를 불러오는 중이에요."}
+          {decide ? "정하면 방 사람 모두에게 표시" : "새 결과 불러오는 중"}
         </p>
       )}
     </>
@@ -162,7 +170,7 @@ export function Directions({
             <CheckIcon aria-hidden="true" />이 역으로 정했어요
           </PopoverTrigger>
           <PopoverContent align="center" className="w-72 p-1.5">
-            <p className="px-2 pt-1 pb-1.5 text-sm font-semibold text-ink">정했어요! 각자 길찾기로 이어가요</p>
+            <p className="px-2 pt-1 pb-1.5 text-sm font-semibold text-ink">정했어요! 각자 길찾기로</p>
             <RouteLinks routes={routes} candidate={candidate} onOpen={opened} />
           </PopoverContent>
         </Popover>
@@ -179,10 +187,34 @@ export function Directions({
       )}
       {!choice.room && routes.length > 0 ? (
         <p className="text-center text-[13px] text-muted-foreground">
-          {mine ? "누르면 카카오맵 길찾기가 열려요." : "누르면 카카오맵 길찾기를 고를 수 있어요."}
+          {mine ? "누르면 카카오맵 길찾기로 연결" : "누르면 사람별 카카오맵 길찾기 선택"}
         </p>
       ) : null}
-      <div className="flex gap-2">
+      {/* 좁은 칸(두 칸 배치·확대)에서는 두 버튼이 줄을 바꾼다. */}
+      <div className="flex flex-wrap gap-2">
+        {mine ? (
+          <a
+            href={mine.directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={opened}
+            className={routeButton}
+          >
+            <RouteIcon aria-hidden="true" />내 길찾기
+          </a>
+        ) : routes.length > 0 ? (
+          <Popover>
+            <PopoverTrigger className={routeButton}>
+              <RouteIcon aria-hidden="true" />
+              카카오맵 길찾기
+              <ChevronDownIcon aria-hidden="true" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-1.5">
+              <p className="px-2 pt-1 pb-1.5 text-xs text-muted-foreground">카카오맵 대중교통 길찾기</p>
+              <RouteLinks routes={routes} candidate={candidate} onOpen={opened} />
+            </PopoverContent>
+          </Popover>
+        ) : null}
         {candidate.placeUrl ? (
           <a
             href={candidate.placeUrl}
@@ -194,28 +226,6 @@ export function Directions({
             <MapIcon aria-hidden="true" />
             지도에서 보기
           </a>
-        ) : null}
-        {mine ? (
-          <a
-            href={mine.directionsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={opened}
-            className={linkButton}
-          >
-            내 길찾기
-          </a>
-        ) : routes.length > 0 ? (
-          <Popover>
-            <PopoverTrigger className={linkButton}>
-              길찾기
-              <ChevronDownIcon aria-hidden="true" />
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 p-1.5">
-              <p className="px-2 pt-1 pb-1.5 text-xs text-muted-foreground">카카오맵 대중교통 길찾기</p>
-              <RouteLinks routes={routes} candidate={candidate} onOpen={opened} />
-            </PopoverContent>
-          </Popover>
         ) : null}
       </div>
     </div>

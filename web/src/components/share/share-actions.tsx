@@ -161,10 +161,10 @@ export function ShareActions({
       </Button>
       <Button type="button" variant="ghost" onClick={() => void copyLink()} className="h-11 text-[15px] font-semibold">
         {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
-        {copied ? "링크를 복사했어요" : "링크 복사"}
+        {copied ? "링크 복사됨" : "링크 복사"}
       </Button>
       <p aria-live="polite" className="sr-only">
-        {copied ? "링크를 복사했어요" : opening ? "카카오톡 여는 중" : ""}
+        {copied ? "링크 복사됨" : opening ? "카카오톡 여는 중" : ""}
       </p>
       <Dialog open={fallbackUrl !== null} onOpenChange={(open) => !open && setFallbackUrl(null)}>
         <DialogContent className="gap-4 rounded-2xl p-5">
@@ -186,7 +186,7 @@ export function ShareActions({
             />
           </label>
           <Button type="button" onClick={() => void copyLink()} className="h-12 rounded-xl text-base font-bold">
-            {copied ? "복사했어요" : "링크 복사"}
+            {copied ? "복사됨" : "링크 복사"}
           </Button>
         </DialogContent>
       </Dialog>

@@ -1,9 +1,8 @@
-import { personColor } from "@/components/common/person-color";
 import { formatMinutes, transferLabel } from "@/lib/display/minutes";
 import type { PersonTimeView } from "@/lib/result/view-model";
 
 /** 이름 옆 보조 줄. 이름이 출발역 이름이면 같은 말을 되풀이하지 않는다. */
-function originNote(person: PersonTimeView): string | null {
+export function originNote(person: PersonTimeView): string | null {
   if (!person.originName) return "출발역 비공개";
   return person.labelKind === "origin" ? null : `${person.originName}에서`;
 }
@@ -33,21 +32,17 @@ function Ticks({ end, step }: { end: number; step: number }) {
   ));
 }
 
-/** 한 사람의 트랙: 0분에서 시작하는 같은 길이의 줄 위에, 그 사람의 분까지 색 막대와 점. */
+/** 모든 시간 막대와 끝점은 중립색을 써서 역의 호선 배지와 구분한다. */
 function Track({ person, end, step }: { person: PersonTimeView; end: number; step: number }) {
-  const color = personColor(person.index);
   const at = percent(person.minutes, end);
   return (
     <span aria-hidden="true" className="relative block h-3.5">
       <span className="absolute inset-x-0 top-[5.5px] h-[3px] rounded-full bg-rule" />
       <Ticks end={end} step={step} />
+      <span className="absolute top-[4.5px] left-0 h-[5px] rounded-full bg-ink-soft" style={{ width: at }} />
       <span
-        className="absolute top-[4.5px] left-0 h-[5px] rounded-full"
-        style={{ width: at, backgroundColor: color }}
-      />
-      <span
-        className="absolute top-px size-3 -translate-x-1/2 rounded-full border-[3px] bg-surface"
-        style={{ left: at, borderColor: color }}
+        className="absolute top-px size-3 -translate-x-1/2 rounded-full border-[3px] border-ink-soft bg-surface"
+        style={{ left: at }}
       />
     </span>
   );

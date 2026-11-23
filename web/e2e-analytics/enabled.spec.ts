@@ -96,7 +96,7 @@ async function useApp(page: Page) {
   await page.getByRole("tab", { name: "빨리 만나기" }).click();
   await expect(page).toHaveURL(/m=q/);
   await page.getByRole("button", { name: "이 역으로 정했어요" }).first().click();
-  await expect(page.getByText("정했어요! 각자 길찾기로 이어가요")).toBeVisible();
+  await expect(page.getByText("정했어요! 각자 길찾기로")).toBeVisible();
   await page.keyboard.press("Escape");
 }
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { RecommendResult } from "@/lib/api/types";
 import { toResultView } from "@/lib/result/view-model";
@@ -85,6 +85,8 @@ describe("지도 한가운데였다면? 표", () => {
   it("1위 카드 안에 추천 역·지도 한가운데 역 열과 사람별 시간, 마지막 줄 '가장 오래'를 그린다", () => {
     const { view, first } = top(result());
     render(<TopCandidateCard candidate={first} choice={choice} mapMiddle={view.mapMiddle} />);
+    // 1위 카드의 "자세히" 안에 있다(#122).
+    fireEvent.click(screen.getByRole("button", { name: /자세히/ }));
     const table = screen.getByRole("table");
     expect(within(table).getByRole("columnheader", { name: /추천\s*신당/ })).toBeTruthy();
     expect(within(table).getByRole("columnheader", { name: /지도 한가운데\s*한강진/ })).toBeTruthy();
@@ -103,15 +105,16 @@ describe("지도 한가운데였다면? 표", () => {
   it("비교 문장과 설명 한 줄이 표 아래에 있다", () => {
     const { view, first } = top(result());
     render(<TopCandidateCard candidate={first} choice={choice} mapMiddle={view.mapMiddle} />);
+    fireEvent.click(screen.getByRole("button", { name: /자세히/ }));
     expect(screen.getByText("지도 한가운데인 한강진역이면 잠실러는 14분 더 걸려요")).toBeTruthy();
-    expect(screen.getByText("지도 한가운데는 출발역 위치의 평균에 가장 가까운 역이에요.")).toBeTruthy();
+    expect(screen.getByText("지도 한가운데: 출발역 위치 평균에 가장 가까운 역")).toBeTruthy();
   });
 
   it("mapMiddle이 없으면(옛 서버·조건 미달) 표도 문장도 빠진다", () => {
     const { view, first } = top(result({}, false));
     expect(view.mapMiddle).toBeNull();
     render(<TopCandidateCard candidate={first} choice={choice} mapMiddle={view.mapMiddle} />);
-    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("table", { hidden: true })).toBeNull();
     expect(screen.queryByText(/지도 한가운데/)).toBeNull();
   });
 

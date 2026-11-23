@@ -485,7 +485,7 @@ describe("방 화면", () => {
       expect(api.setDecision).toHaveBeenCalledWith(ROOM, "tok-1", { stationCode: "s1q", seenVersion: 3 });
       expect(await screen.findByRole("heading", { name: "동대문역사문화공원에서 만나요" })).toBeInTheDocument();
       expect(screen.getByText("내가 정했어요")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "정한 역이에요" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "정한 역" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "이 역으로 바꾸기" })).toBeEnabled();
       expect(track).toHaveBeenCalledWith("station_chosen", {
         rank: 1,
@@ -510,7 +510,7 @@ describe("방 화면", () => {
       expect(await screen.findByRole("heading", { name: "동대문역사문화공원에서 만나요" })).toBeInTheDocument();
       const change = screen.getByRole("button", { name: "이 역으로 바꾸기" });
       expect(change).toBeDisabled();
-      expect(screen.getByText("새 결과를 불러오는 중이에요.")).toBeInTheDocument();
+      expect(screen.getByText("새 결과 불러오는 중")).toBeInTheDocument();
       await user.click(change);
       expect(api.setDecision).toHaveBeenCalledTimes(1);
 

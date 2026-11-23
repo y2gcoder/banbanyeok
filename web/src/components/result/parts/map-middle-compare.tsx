@@ -70,7 +70,7 @@ export function MapMiddleCompare({ candidate, middle }: { candidate: CandidateVi
       </table>
       <p className="text-[14px] leading-snug break-keep text-ink-soft">{parenSafe(middleSentence(middle, who))}</p>
       <p className="text-[13px] leading-snug break-keep text-muted-foreground">
-        지도 한가운데는 출발역 위치의 평균에 가장 가까운 역이에요.
+        지도 한가운데: 출발역 위치 평균에 가장 가까운 역
       </p>
     </section>
   );

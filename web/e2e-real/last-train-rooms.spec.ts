@@ -37,7 +37,10 @@ function nextSaturday(): string {
 
 async function openLastTrain(page: Page, roomId: string) {
   await page.goto(`/r/${roomId}`);
-  const section = page.getByRole("article").first().getByRole("region", { name: "집에 가는 막차" });
+  const top = page.getByRole("article").first();
+  // 1위 카드(#122)는 요약이 먼저다. 막차 칸 전체는 "자세히" 안에 있다.
+  await top.getByRole("button", { name: /자세히/ }).click();
+  const section = top.getByRole("region", { name: "집에 가는 막차" });
   await expect(section).toBeVisible();
   return section;
 }
@@ -58,7 +61,7 @@ test("새벽 약속: 02:59는 전날 운행일이라 약속보다 먼저 떠나�
     early.getByText(new RegExp(`^${month}월 ${day}일 0\\d:\\d\\d 막차는 약속 전에 떠나요\\.$`)),
   ).toBeVisible();
   await expect(early.getByText("약속 전에 막차가 떠나는 분이 있어요.")).toBeVisible();
-  await expect(early).not.toContainText(/다음 날|나서야 해요|출발하세요|가장 일러요/);
+  await expect(early).not.toContainText(/다음 날|전 출발|늦어도|가장 이름/);
   await expect(early).not.toContainText(/막차\d\d:\d\d|늦어도\d\d:\d\d/);
   // 지도 앱 버튼은 남는다.
   await expect(gone.first().getByRole("link", { name: /지도 앱에서 막차 확인하기$/ })).toBeVisible();
@@ -67,7 +70,7 @@ test("새벽 약속: 02:59는 전날 운행일이라 약속보다 먼저 떠나�
   const after = await openLastTrain(page, await createRoom(request, { meetingDate: saturday, meetingTime: "03:00" }));
   await expect(after).toContainText(/막차\d\d:\d\d|늦어도\d\d:\d\d/);
   await expect(after).not.toContainText(/약속 전|약속 시각보다/);
-  await expect(after.getByText(/전에 나서야 해요$|가장 일러요\./)).toBeVisible();
+  await expect(after.getByText(/ 전 출발$|가장 이름: /)).toBeVisible();
 });
 
 test("약속 날짜가 없는 방: 이유를 먼저 말하고 요일·일부 노선·'계산했어요'는 보이지 않는다", async ({
@@ -80,7 +83,7 @@ test("약속 날짜가 없는 방: 이유를 먼저 말하고 요일·일부 노
   ).toHaveCount(1);
   await expect(section.getByRole("listitem")).toHaveCount(2);
   await expect(section.getByText(/^시간표 수집 기준 \d{4}년 \d{1,2}월 \d{1,2}일\.$/)).toBeVisible();
-  await expect(section).not.toContainText(/평일|토요일|일부 노선|계산했어요|나서야|\d\d:\d\d/);
+  await expect(section).not.toContainText(/평일|토요일|일부 노선|계산했어요|전 출발|\d\d:\d\d/);
 });
 
 test("모두 출발역을 숨긴 방: 본인이 아닌 사람에게는 '본인 화면에서만 보여요'만 보인다", async ({ page, request }) => {
@@ -122,9 +125,10 @@ test("열어 둔 방의 약속을 바꾸면: 새 결과가 올 때까지 이전 
   await page.evaluate((old) => {
     const state = window as unknown as { mixedFrames: number };
     state.mixedFrames = 0;
+    // 영역 이름(aria-labelledby, "강남역 집에 가는 막차")으로 찾는다. 제목 버튼 안에는 요일·접힌 요약도 있다.
     const lastTrain = () =>
-      [...document.querySelectorAll<HTMLElement>("article section")].find((node) =>
-        node.querySelector("h3")?.textContent?.endsWith("집에 가는 막차"),
+      [...document.querySelectorAll<HTMLElement>("article section[aria-labelledby]")].find((node) =>
+        document.getElementById(node.getAttribute("aria-labelledby") ?? "")?.textContent?.endsWith("집에 가는 막차"),
       );
     const tick = () => {
       if (document.body.textContent.includes("23:30") && lastTrain()?.textContent === old) state.mixedFrames += 1;
@@ -152,13 +156,13 @@ test("열어 둔 방의 약속을 바꾸면: 새 결과가 올 때까지 이전 
 
   // 화면이 새 약속을 받았다. 결과는 아직 금요일 것이므로 막차 칸은 "다시 계산하는 중"뿐이다.
   await expect(page.getByText("23:30").first()).toBeVisible({ timeout: 40_000 });
-  await expect(section.getByText("방 내용이 바뀌어 막차를 다시 계산하는 중이에요.")).toBeVisible();
-  await expect(section).not.toContainText(/\d\d:\d\d|다음 날|가장 일러요|나서야 해요|시간표/);
+  await expect(section.getByText("방 내용이 바뀌어 막차 다시 계산 중")).toBeVisible();
+  await expect(section).not.toContainText(/\d\d:\d\d|다음 날|가장 이름|전 출발|시간표/);
   await expect(section.getByRole("listitem")).toHaveCount(0);
 
   // 새 결과가 오면 새 약속과 함께 그린다.
   release();
-  await expect(section.getByText("방 내용이 바뀌어 막차를 다시 계산하는 중이에요.")).toHaveCount(0, {
+  await expect(section.getByText("방 내용이 바뀌어 막차 다시 계산 중")).toHaveCount(0, {
     timeout: 20_000,
   });
   await expect(section.getByRole("listitem")).toHaveCount(1);

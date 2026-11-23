@@ -1,8 +1,16 @@
-import { ChevronRightIcon } from "lucide-react";
-import { useId } from "react";
+"use client";
+
+import { ChevronDownIcon } from "lucide-react";
+import { useId, useState } from "react";
 import { personColor } from "@/components/common/person-color";
 import { buttonVariants } from "@/components/ui/button";
-import { type LastTrainRow, type LastTrainTime, type LastTrainView, marginNote } from "@/lib/result/last-train";
+import {
+  type LastTrainRow,
+  type LastTrainTime,
+  type LastTrainView,
+  lastTrainSummary,
+  marginNote,
+} from "@/lib/result/last-train";
 import { parenSafe } from "@/lib/text/paren-safe";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +60,7 @@ function Detail({ row, view }: { row: LastTrainRow; view: LastTrainView }) {
   const { state } = row;
   const note = "text-[13px] leading-snug break-keep text-muted-foreground";
   const plain = "text-[14px] leading-snug break-keep text-ink-soft";
-  if (state.kind === "same") return <p className={note}>출발역이 바로 이 역이에요.</p>;
+  if (state.kind === "same") return <p className={note}>출발역과 같은 역</p>;
   if (state.kind === "check") {
     return (
       <>
@@ -78,7 +86,7 @@ function Detail({ row, view }: { row: LastTrainRow; view: LastTrainView }) {
           {state.nextDay ? <NextDay /> : null}
           {state.bound ? <span className="break-keep">· {parenSafe(state.bound)}</span> : null}
         </p>
-        <p className={note}>{parenSafe(`${view.stationName}에서 열차가 떠나는 시각이에요.`)}</p>
+        <p className={note}>{parenSafe(`${view.stationName} 출발 시각`)}</p>
       </>
     );
   }
@@ -87,10 +95,8 @@ function Detail({ row, view }: { row: LastTrainRow; view: LastTrainView }) {
       <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[15px] font-semibold text-ink">
         <span>늦어도</span>
         {state.nextDay ? <NextDay /> : null}
-        <span className="whitespace-nowrap">
-          <Clock time={state} />엔
-        </span>
-        <span>출발하세요</span>
+        <Clock time={state} />
+        <span>출발</span>
       </p>
       <p className={note}>{parenSafe(marginNote(state))}</p>
       <MapLink row={row} />
@@ -103,76 +109,100 @@ function Detail({ row, view }: { row: LastTrainRow; view: LastTrainView }) {
  * 맨 위 한 줄은 공개된 시각 가운데 가장 이른 것이고(계산하지 못한 응답이면 그 이유), 사람마다 직행 확정(분 그대로) / 여유 시각(10분 단위로
  * 내린 값) / 확인 필요(시각 없이 이유) / 약속 전에 떠남으로 보인다. 사람 색은 막대에만 쓰고 글자는 ink/muted만 쓴다(globals.css 규칙).
  *
- * 펼친 채로 시작하고 제목을 눌러 접을 수 있다(4명이면 칸이 한 화면을 넘는다: 접으면 바로 아래의 역 정하기에 닿는다).
- * 영역 이름에는 역 이름을 넣는다("금정역 집에 가는 막차"): 후보를 여러 개 펼쳐도 영역이 서로 구분된다.
+ * 제목 버튼으로 접고 편다(aria-expanded). 접혀 있어도 요약 한 줄(`lastTrainSummary`: 가장 이른 시각·경고·계산하지 못한 이유)은 보인다:
+ * 막차는 숨기지 않는다(#122). 영역 이름에는 역 이름을 넣는다("금정역 집에 가는 막차"): 후보를 여러 개 펼쳐도 영역이 서로 구분된다.
  */
-export function LastTrains({ view, meIndex = null }: { view: LastTrainView; meIndex?: number | null }) {
+export function LastTrains({
+  view,
+  meIndex = null,
+  defaultOpen = true,
+}: {
+  view: LastTrainView;
+  meIndex?: number | null;
+  defaultOpen?: boolean;
+}) {
   const headingId = useId();
+  const panelId = useId();
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section aria-labelledby={headingId} className="border-t border-rule pt-1.5">
-      <details open className="group/last">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
-          <h3 id={headingId} className="text-[15px] font-bold text-ink">
-            <span className="sr-only">{view.stationName}</span> 집에 가는 막차
-          </h3>
-          {view.dayLabel ? (
-            <span className="ml-auto shrink-0 text-xs text-muted-foreground">{view.dayLabel} 시간표</span>
-          ) : null}
-          <ChevronRightIcon
-            className={cn(
-              "size-5 shrink-0 text-muted-foreground motion-safe:transition-transform group-open/last:rotate-90",
-              view.dayLabel ? null : "ml-auto",
-            )}
-            aria-hidden="true"
-          />
-        </summary>
-        <div className="flex flex-col gap-3 pt-1.5">
-          {view.notice ? (
-            <p className="rounded-lg bg-platform/70 px-3 py-2 text-[14px] leading-snug font-semibold break-keep text-ink">
-              {parenSafe(view.notice)}
-            </p>
-          ) : null}
-          {view.lead ? (
-            <p className="rounded-lg bg-safety/25 px-3 py-2 text-[15px] leading-snug font-bold break-keep text-ink">
-              {parenSafe(view.lead)}
-            </p>
-          ) : null}
-          {view.rows.length > 0 ? (
-            <ul className="flex flex-col gap-3.5">
-              {view.rows.map((row) => (
-                <li key={row.index} className="flex flex-col gap-1.5">
-                  <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-                    <span
-                      aria-hidden="true"
-                      className="h-3.5 w-1.5 shrink-0 self-center rounded-full"
-                      style={{ backgroundColor: personColor(row.index) }}
-                    />
-                    <span className="text-[15px] font-bold break-all text-ink">
-                      {row.name}
-                      {row.index === meIndex ? (
-                        <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
-                      ) : null}
-                    </span>
-                    {row.onlyMe ? <span className="text-xs text-muted-foreground">나에게만 보여요</span> : null}
-                  </p>
-                  <Detail row={row} view={view} />
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {view.hiddenOthers ? (
-            <p className="text-[13px] leading-snug break-keep text-muted-foreground">
-              출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.
-            </p>
-          ) : null}
-          {view.partialNote ? (
-            <p className="text-[13px] leading-snug break-keep text-ink-soft">{parenSafe(view.partialNote)}</p>
-          ) : null}
-          {view.footnote ? (
-            <p className="text-[13px] leading-snug break-keep text-muted-foreground">{parenSafe(view.footnote)}</p>
-          ) : null}
-        </div>
-      </details>
+      <h3 className="text-[15px] font-bold text-ink">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-h-11 w-full cursor-pointer flex-col items-stretch gap-0.5 rounded-md py-1.5 text-left"
+        >
+          <span className="flex items-center gap-2">
+            <span id={headingId}>
+              <span className="sr-only">{view.stationName}</span> 집에 가는 막차
+            </span>
+            {view.dayLabel ? (
+              <span className="ml-auto shrink-0 text-xs font-normal text-muted-foreground">{view.dayLabel} 시간표</span>
+            ) : null}
+            <ChevronDownIcon
+              className={cn(
+                "size-5 shrink-0 text-muted-foreground motion-safe:transition-transform",
+                open && "rotate-180",
+                view.dayLabel ? null : "ml-auto",
+              )}
+              aria-hidden="true"
+            />
+          </span>
+          {open ? null : (
+            <span className="text-[14px] leading-snug font-semibold break-keep text-ink">
+              {parenSafe(lastTrainSummary(view))}
+            </span>
+          )}
+        </button>
+      </h3>
+      <div id={panelId} hidden={!open} className="flex flex-col gap-3 pt-1.5">
+        {view.notice ? (
+          <p className="rounded-lg bg-platform/70 px-3 py-2 text-[14px] leading-snug font-semibold break-keep text-ink">
+            {parenSafe(view.notice)}
+          </p>
+        ) : null}
+        {view.lead ? (
+          <p className="rounded-lg bg-safety/25 px-3 py-2 text-[15px] leading-snug font-bold break-keep text-ink">
+            {parenSafe(view.lead)}
+          </p>
+        ) : null}
+        {view.rows.length > 0 ? (
+          <ul className="flex flex-col gap-3.5">
+            {view.rows.map((row) => (
+              <li key={row.index} className="flex flex-col gap-1.5">
+                <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+                  <span
+                    aria-hidden="true"
+                    className="h-3.5 w-1.5 shrink-0 self-center rounded-full"
+                    style={{ backgroundColor: personColor(row.index) }}
+                  />
+                  <span className="text-[15px] font-bold break-all text-ink">
+                    {row.name}
+                    {row.index === meIndex ? (
+                      <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
+                    ) : null}
+                  </span>
+                  {row.onlyMe ? <span className="text-xs text-muted-foreground">나에게만 보여요</span> : null}
+                </p>
+                <Detail row={row} view={view} />
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {view.hiddenOthers ? (
+          <p className="text-[13px] leading-snug break-keep text-muted-foreground">
+            출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.
+          </p>
+        ) : null}
+        {view.partialNote ? (
+          <p className="text-[13px] leading-snug break-keep text-ink-soft">{parenSafe(view.partialNote)}</p>
+        ) : null}
+        {view.footnote ? (
+          <p className="text-[13px] leading-snug break-keep text-muted-foreground">{parenSafe(view.footnote)}</p>
+        ) : null}
+      </div>
     </section>
   );
 }

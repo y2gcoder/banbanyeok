@@ -104,7 +104,7 @@ describe("이 역으로 정했어요", () => {
       participant_count: 2,
       link_variant: "creator",
     });
-    expect(await screen.findByText("정했어요! 각자 길찾기로 이어가요")).toBeInTheDocument();
+    expect(await screen.findByText("정했어요! 각자 길찾기로")).toBeInTheDocument();
     const routes = screen.getAllByRole("link", { name: /→ 신촌/ });
     expect(routes).toHaveLength(2);
     expect(routes[0]).toHaveAttribute("href", expect.stringMatching(/^https:\/\/map\.kakao\.com\/link\/by\/traffic\//));
