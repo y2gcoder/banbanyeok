@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { keepDayAcrossMidnight, type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
 
 /** 2026-11-16은 월요일이다. */
@@ -43,6 +43,12 @@ describe("언제 만나요? (방 만들기)", () => {
   });
 
   it("시간대만 고르면 시각 없이 시간대만 남긴다(가짜 시각을 만들지 않는다)", async () => {
+    // 칩을 누르는 순간의 서울 날짜로 "이번 토요일"을 정하므로 시계를 화면의 오늘(11월 16일 낮)에 맞춘다.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-16T03:00:00Z"));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     const user = userEvent.setup();
     let last: MeetingWhen = NO_MEETING_WHEN;
     render(<Harness onValue={(v) => (last = v)} />);
