@@ -54,7 +54,7 @@ Cloud Scheduler db-backup-weekly (월 03:17 KST) ─▶ Cloud Run Job db-backup 
 
 ### 3.1 마이그레이션: 서버 이미지에 `migrate` 하위 명령을 넣지 않고 전용 이미지로 (근거 있는 변경)
 
-`server/db/Dockerfile`: 로컬 compose와 **같은 공식 `liquibase/liquibase:4.33.0`(다이제스트 고정)** 위에 `server/db/changelog`만 얹는다. Cloud Run Job `migrate`가 환경 변수(`LIQUIBASE_COMMAND_URL/USERNAME`, 비밀번호는 Secret Manager 참조)로 실행한다.
+`server/db/Dockerfile`: 로컬 compose와 **같은 공식 Community `liquibase/liquibase:5.0.4`(다이제스트 고정)** 위에 고정 PostgreSQL JDBC 42.7.14와 `server/db/changelog`를 얹는다(2026-11-24, [ADR-0003](../adr/0003-liquibase-community-5.md)). Cloud Run Job `migrate`가 환경 변수(`LIQUIBASE_COMMAND_URL/USERNAME`, 비밀번호는 Secret Manager 참조)로 실행한다.
 
 - 서버 이미지의 콜드스타트 예산이 빠듯하다(boost 켠 Ktor AppCDS 실측 p90 1.39초). liquibase-core를 넣으면 JAR이 늘고(snakeyaml·jaxb 등) 클래스패스와 AppCDS 아카이브가 바뀌며 이미지가 커진다. 마이그레이션은 배포 때 한 번만 쓰는 코드다.
 - 개발(`mise run dev:migrate`)과 운영이 같은 Liquibase 버전·같은 명령(`--changelog-file=master.sql update`)이라 "로컬에서만 되는" 차이가 없다.
@@ -295,7 +295,7 @@ gcloud run services update-traffic server --region asia-northeast3 --to-revision
 
 | 항목 | 값 | 근거 |
 |---|---|---|
-| `liquibase/liquibase` | `4.33.0` @ `sha256:e116c935…` | S1 노트의 Liquibase 4.33.0(2025-07-09, [release](https://github.com/liquibase/liquibase/releases/tag/v4.33.0)). compose와 동일. 5.x는 라이선스가 바뀌어 제외(카탈로그 주석). 다이제스트는 `docker buildx imagetools inspect`로 확인 |
+| `liquibase/liquibase` | `5.0.4` @ `sha256:060f96ef…` | 2026-08-20 게시([release](https://github.com/liquibase/liquibase/releases/tag/v5.0.4)), 2026-11-24 확인. compose와 동일. 기존 5.x 제외 결정은 [ADR-0003](../adr/0003-liquibase-community-5.md)으로 대체(FSL 수용). 다이제스트는 `docker buildx imagetools inspect`로 확인 |
 | `postgres:17.6-alpine`(backup Job 이미지, 다이제스트 고정), `postgres:17.6`(로컬 복원 검증) | `17.6` | S1 노트(2025-08-14, [릴리스 노트](https://www.postgresql.org/docs/17/release-17-6.html)). compose·통합 테스트와 같은 버전 |
 | Cloud Run 기능 | startup CPU boost, `--no-traffic --tag`, `--env-vars-file`, `--set-secrets` | [공식 문서](https://cloud.google.com/run/docs/configuring/services/cpu#startup-boost) / [트래픽 관리](https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration) |
 
