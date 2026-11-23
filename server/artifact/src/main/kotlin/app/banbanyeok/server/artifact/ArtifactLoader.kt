@@ -7,6 +7,7 @@ import app.banbanyeok.schema.LastTrainTable
 import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.RouteGraph
 import app.banbanyeok.schema.SchemaException
 import app.banbanyeok.schema.TimeSlot
 import kotlinx.coroutines.CompletableDeferred
@@ -38,6 +39,11 @@ public class LoadedArtifacts(
      * 예외로 끝난다(서버는 계속 돌고 응답에서 막차만 빠진다).
      */
     public val lastTrains: Deferred<LastTrainTable?> = CompletableDeferred(null),
+    /**
+     * 사람별 경로의 노선 그래프(manifest 세대 4, #120). 막차 표처럼 뒤에서 읽고 검사한다. 세대 1~3 데이터면 바로 null이고, 읽기나 검증에
+     * 실패하면 예외로 끝난다(서버는 계속 돌고 응답에서 경로만 빠진다).
+     */
+    public val routeGraph: Deferred<RouteGraph?> = CompletableDeferred(null),
 ) {
     public val dataVersion: String get() = dataSet.manifest.dataVersion
 
@@ -48,13 +54,14 @@ public class LoadedArtifacts(
     public fun startBackground() {
         slots.start()
         lastTrains.start()
+        routeGraph.start()
     }
 }
 
 /**
  * `manifest.json`이 가리키는 산출물 전부를 읽어 검증한다. 파일 경로는 manifest 기준 상대 경로이며 키로 그대로 쓴다.
- * 구분 행렬과 막차 표는 [background]에서 읽고 검사하며, 실패하면 [LoadedArtifacts.slots]·[LoadedArtifacts.lastTrains]가 예외로 끝난다
- * (구분은 기본 구분으로 계속 계산하고, 막차는 응답에서 빠진다). [backgroundStart]가 LAZY면 [LoadedArtifacts.startBackground]를 부를 때까지
+ * 구분 행렬·막차 표·노선 그래프는 [background]에서 읽고 검사하며, 실패하면 [LoadedArtifacts.slots]·[LoadedArtifacts.lastTrains]·
+ * [LoadedArtifacts.routeGraph]가 예외로 끝난다(구분은 기본 구분으로 계속 계산하고, 막차와 경로는 응답에서 빠진다). [backgroundStart]가 LAZY면 [LoadedArtifacts.startBackground]를 부를 때까지
  * (또는 누가 기다릴 때까지) 읽지 않는다: 서버는 이렇게 해서 이 일이 기동의 CPU를 다투지 않게 한다.
  */
 public class ArtifactLoader(
@@ -75,6 +82,7 @@ public class ArtifactLoader(
             manifest.version,
             background.async(start = backgroundStart) { slots(dataSet) },
             background.async(start = backgroundStart) { lastTrains(dataSet) },
+            background.async(start = backgroundStart) { routeGraph(dataSet) },
         )
     }
 
@@ -141,6 +149,14 @@ public class ArtifactLoader(
         val bytes = read(file.path)
         return validated("막차 표 검증 실패") { DataSetLoader.lastTrains(dataSet, bytes) }
             .also { onPhase("artifact-last-trains-validated") }
+    }
+
+    /** 노선 그래프. 세대 4 manifest가 가리킬 때만 읽는다. */
+    private suspend fun routeGraph(dataSet: DataSet): RouteGraph? {
+        val file = dataSet.manifest.files.routeGraph ?: return null
+        val bytes = read(file.path)
+        return validated("노선 그래프 검증 실패") { DataSetLoader.routeGraph(dataSet, bytes) }
+            .also { onPhase("artifact-route-graph-validated") }
     }
 
     private inline fun <T> validated(

@@ -117,3 +117,45 @@ fun lastTrainCell(
     homeCode: String,
     meetingCode: String,
 ): LastTrainCell = LastTrainRule.cell(table, day, homeCode, meetingCode)
+
+/**
+ * [sampleOd]의 역을 잇는 작은 노선 그래프(#120). 2호선(계통 0)이 03v-130-225-31a-4xz를 양방향 300초로 잇고, 225에서 갈아타는 4호선(계통 1)이
+ * 225→4xz를 200초에 간다. 대기는 기본 구분 2호선 60초·4호선 90초이고, 그 밖의 구분은 [otherSlotWait]초다. 시간은 [sampleOd]와 맞추지 않았다
+ * (경로는 표시 전용이고, 실제 데이터의 일치는 파이프라인 게이트가 본다).
+ */
+fun sampleRouteGraph(otherSlotWait: Int = 600): app.banbanyeok.schema.RouteGraph {
+    val chain = listOf("03v", "130", "225", "31a", "4xz")
+    val codes = chain + listOf("225", "4xz")
+    val services = List(chain.size) { 0 } + listOf(1, 1)
+    val edges = List(codes.size) { mutableListOf<Triple<Int, Int, Int>>() }
+    for (i in 0 until chain.size - 1) {
+        edges[i].add(Triple(i + 1, 300, app.banbanyeok.schema.RouteGraph.NO_WAIT))
+        edges[i + 1].add(Triple(i, 300, app.banbanyeok.schema.RouteGraph.NO_WAIT))
+    }
+    edges[2].add(Triple(5, 30, 1))
+    edges[5].add(Triple(2, 30, 0))
+    edges[5].add(Triple(6, 200, app.banbanyeok.schema.RouteGraph.NO_WAIT))
+    val starts = IntArray(codes.size + 1)
+    edges.forEachIndexed { v, list -> starts[v + 1] = starts[v] + list.size }
+    val flat = edges.flatten()
+    return app.banbanyeok.schema.RouteGraph(
+        1,
+        listOf("2호선", "4호선"),
+        intArrayOf(0, 1),
+        codes.map { StationCode.parse(it).value }.toIntArray(),
+        services.toIntArray(),
+        starts,
+        flat.map { it.first }.toIntArray(),
+        flat.map { it.second }.toIntArray(),
+        flat.map { it.third }.toIntArray(),
+        app.banbanyeok.schema.TimeSlot.ALL.map {
+            if (it ==
+                app.banbanyeok.schema.TimeSlot.DEFAULT
+            ) {
+                intArrayOf(60, 90)
+            } else {
+                intArrayOf(otherSlotWait, otherSlotWait)
+            }
+        },
+    )
+}

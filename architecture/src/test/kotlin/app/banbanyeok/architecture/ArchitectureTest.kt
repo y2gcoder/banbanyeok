@@ -240,7 +240,7 @@ private val FEATURES = listOf("room", "recommendation", "artifact")
 private const val RECOMMENDATION = "app.banbanyeok.server.recommendation"
 
 /** recommendation 모듈 안의 개념 하위 패키지. 루트(RecommendationService·Evaluation·요청/응답 모델·포트)만 이들을 조합한다. */
-private val RECOMMENDATION_SUBPACKAGES = listOf("time", "lasttrain", "mapmiddle")
+private val RECOMMENDATION_SUBPACKAGES = listOf("time", "lasttrain", "mapmiddle", "route")
 
 /**
  * app(server/app/src/main)이 import해도 되는 recommendation 선언(루트 기준 이름). 늘릴 때는 이 목록을 함께 고친다(아키텍처 지표
@@ -272,6 +272,10 @@ private val RECOMMENDATION_APP_SURFACE =
         // 막차 응답
         "lasttrain.LastTrainBasis",
         "lasttrain.ParticipantLastTrain",
+        // 사람별 경로(#120): app이 구현하는 그래프 포트와 응답
+        "route.RouteSource",
+        "route.ParticipantRoute",
+        "route.RouteStop",
         // 약속 시각 → 구분
         "time.TimeBasis",
         "time.DayCertainty",

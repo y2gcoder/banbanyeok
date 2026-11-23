@@ -2,6 +2,7 @@ package app.banbanyeok.server.app
 
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.server.app.application.BackgroundLastTrains
+import app.banbanyeok.server.app.application.BackgroundRoutes
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StatelessRecommendation
@@ -48,7 +49,7 @@ class Components(
     val directory: StationDirectory,
     val cleanup: RoomCleanup,
     /**
-     * 구분 행렬·막차 표를 뒤에서 읽기 시작한다(여러 번 불러도 한 번만 시작한다). 조립은 이 일을 시작하지 않는다: 서버는 Ktor가 첫 응답을
+     * 구분 행렬·막차 표·노선 그래프를 뒤에서 읽기 시작한다(여러 번 불러도 한 번만 시작한다). 조립은 이 일을 시작하지 않는다: 서버는 Ktor가 첫 응답을
      * 보낸 뒤에 부른다([startAfterFirstResponse]). 막차 표는 이때까지 `current()`가 null이라 막차 항목만 빠지고, 구분 행렬은 기다리는
      * 요청이 있으면 그 요청이 먼저 시작한다([BackgroundSlots.awaitReady]).
      */
@@ -105,15 +106,7 @@ object CompositionRoot {
             val roomRepository = ExposedRoomRepository(db, ioDispatcher)
             val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
             val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
-            val recommendation =
-                RecommendationService(
-                    directory.travel,
-                    directory,
-                    locations = directory,
-                    lastTrains = backgroundLastTrains(loaded),
-                    clock = clock,
-                    slotsReady = slots,
-                )
+            val recommendation = recommendationService(loaded, directory, slots, clock)
             // 약속 날짜·시각 → 구분 규칙은 한 번만 만들어 방 결과 계산과 방 응답이 함께 쓴다.
             val times = TimeSlotResolver(HolidayCalendar.bundled())
             val services =
@@ -141,6 +134,22 @@ object CompositionRoot {
                 owned?.close()
             }
         }
+
+    /** 추천 계산: 행렬·역 정보는 [directory], 구분 행렬·막차 표·노선 그래프는 뒤에서 읽는 [loaded]의 것을 쓴다. */
+    private fun recommendationService(
+        loaded: LoadedArtifacts,
+        directory: StationDirectory,
+        slots: BackgroundSlots,
+        clock: Clock,
+    ) = RecommendationService(
+        directory.travel,
+        directory,
+        locations = directory,
+        lastTrains = backgroundLastTrains(loaded),
+        clock = clock,
+        slotsReady = slots,
+        routes = BackgroundRoutes(loaded.routeGraph),
+    )
 
     /** 수집일은 manifest 검사에서 이미 실제 날짜로 확인했다. 그래도 읽지 못하면 서버는 뜨고 막차만 끈다. */
     private fun backgroundLastTrains(loaded: LoadedArtifacts): BackgroundLastTrains {

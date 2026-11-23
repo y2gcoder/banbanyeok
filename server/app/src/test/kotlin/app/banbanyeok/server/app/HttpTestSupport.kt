@@ -3,6 +3,7 @@
 package app.banbanyeok.server.app
 
 import app.banbanyeok.server.app.application.BackgroundLastTrains
+import app.banbanyeok.server.app.application.BackgroundRoutes
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StatelessRecommendation
@@ -60,6 +61,12 @@ object DevArtifacts {
             java.time.LocalDate.parse(lastTrainAsOf),
             CompositionRoot.lastTrainPartialDays(loaded.dataSet.manifest.lastTrainPartialDays),
         )
+    }
+
+    /** 검사를 마친 dev 노선 그래프(rg.bin, #120). */
+    val routes: BackgroundRoutes by lazy {
+        runBlocking { loaded.routeGraph.join() }
+        BackgroundRoutes(loaded.routeGraph)
     }
     val published: PublishedArtifacts by lazy { PublishedArtifacts(store, loaded) }
     val origins: List<String> get() = directory.originCodes
