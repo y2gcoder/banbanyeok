@@ -150,7 +150,10 @@ data class ParticipantTimeDto(
     val transfers: Int,
 )
 
-/** 순위 카드(openapi `Candidate`). `favoredSeconds`는 배려 모드에서만, `lastTrains`는 막차 표를 쓸 수 있을 때만 있다. */
+/**
+ * 순위 카드(openapi `Candidate`). `favoredSeconds`는 배려 모드에서만, `lastTrains`는 막차 표를, `routes`는 노선 그래프를 쓸 수 있을 때만
+ * 있다.
+ */
 @Serializable
 data class CandidateDto(
     val rank: Int,
@@ -166,6 +169,31 @@ data class CandidateDto(
     val reason: String,
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val lastTrains: List<LastTrainDto>? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val routes: List<ParticipantRouteDto>? = null,
+)
+
+/** 사람별 화면용 경로(openapi `ParticipantRoute`, #120). 노선 그래프를 쓸 수 있을 때만 후보에 붙는다. */
+@Serializable
+data class ParticipantRouteDto(
+    val participantId: String,
+    val legs: List<RouteLegDto>,
+)
+
+/** 경로의 한 구간(openapi `RouteLeg`). 시간은 막대 비율용 모델 값이다(화면에 숫자로 쓰지 않는다). */
+@Serializable
+data class RouteLegDto(
+    val line: String,
+    val from: RouteStopDto,
+    val to: RouteStopDto,
+    val waitSeconds: Int,
+    val rideSeconds: Int,
+)
+
+@Serializable
+data class RouteStopDto(
+    val stationCode: String,
+    val stationName: String,
 )
 
 /** "지도 한가운데" 비교(openapi `MapMiddle`). */

@@ -33,6 +33,7 @@ public class PublishedArtifacts(
                     files.od,
                     files.seoPages,
                     files.lastTrain,
+                    files.routeGraph,
                 ) + files.odSlots?.values.orEmpty()
             ).firstOrNull { entry ->
                 entry.path.substringAfterLast('/') == file &&

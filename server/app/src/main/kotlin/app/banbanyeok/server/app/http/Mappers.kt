@@ -19,6 +19,8 @@ import app.banbanyeok.server.recommendation.RecommendedStation
 import app.banbanyeok.server.recommendation.StationNames
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainBasis
 import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
+import app.banbanyeok.server.recommendation.route.ParticipantRoute
+import app.banbanyeok.server.recommendation.route.RouteStop
 import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
@@ -243,7 +245,16 @@ private fun RecommendedStation.toDto() =
         reasonCode = reasonCode,
         reason = reason,
         lastTrains = lastTrains?.map { it.toDto(withParticipant = true) },
+        routes = routes?.map { it.toDto() },
     )
+
+private fun ParticipantRoute.toDto() =
+    ParticipantRouteDto(
+        participantId,
+        legs.map { RouteLegDto(it.line, it.from.toDto(), it.to.toDto(), it.waitSeconds, it.rideSeconds) },
+    )
+
+private fun RouteStop.toDto() = RouteStopDto(stationCode, stationName)
 
 private fun MapMiddle.toDto() = MapMiddleDto(stationCode, stationName, times.map { it.toDto() })
 

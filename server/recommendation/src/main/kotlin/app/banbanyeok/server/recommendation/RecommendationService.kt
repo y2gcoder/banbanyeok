@@ -4,6 +4,8 @@ import app.banbanyeok.server.recommendation.lasttrain.LastTrainAttacher
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainSource
 import app.banbanyeok.server.recommendation.mapmiddle.MapMiddlePicker
 import app.banbanyeok.server.recommendation.mapmiddle.StationLocations
+import app.banbanyeok.server.recommendation.route.RouteAttacher
+import app.banbanyeok.server.recommendation.route.RouteSource
 import app.banbanyeok.server.recommendation.time.TimeBasis
 import java.time.Clock
 
@@ -12,7 +14,7 @@ import java.time.Clock
  * 순위·지도 한가운데·순위 밖 역의 시간·막차는 모두 그 [Evaluation]에서 꺼낸다(#88: 따로 재면 그 사이에 구분 행렬 검사나 막차 표 읽기가
  * 끝나 응답의 timeBasis와 다른 구분이 섞일 수 있다).
  *
- * 생성자 인자 일곱 개는 서로 다른 포트·정책이고 [travelTimes]·[stationNames] 말고는 기본값이 있다. 묶을 자연스러운 단위가 없어
+ * 생성자 인자 여덟 개는 서로 다른 포트·정책이고 [travelTimes]·[stationNames] 말고는 기본값이 있다. 묶을 자연스러운 단위가 없어
  * LongParameterList는 끈다.
  */
 @Suppress("LongParameterList")
@@ -25,10 +27,13 @@ public class RecommendationService(
     clock: Clock = Clock.systemUTC(),
     /** 비기본 구분의 행렬을 쓸 수 있을 때까지 측정 전에 잠깐 기다린다. 서버는 app의 BackgroundSlots, 테스트는 기다리지 않는다. */
     private val slotsReady: SlotReadiness = SlotReadiness {},
+    /** 사람별 경로의 노선 그래프(#120). 없으면 응답에 경로가 없다. 서버는 app의 BackgroundRoutes. */
+    routes: RouteSource = RouteSource { null },
 ) {
     private val ranking = Ranking(stationNames, toleranceSeconds)
     private val middlePicker = MapMiddlePicker(locations)
     private val lastTrains = LastTrainAttacher(lastTrains, clock, stationNames::nameOf)
+    private val routes = RouteAttacher(routes, stationNames::nameOf)
 
     /**
      * 요청을 검사하고 한 번 잰 행렬로 평가한다. 규칙에 맞지 않으면 [RecommendationException]. 참가자 목록은 처음에 한 번 복사해 검사부터
@@ -48,10 +53,23 @@ public class RecommendationService(
         // 막차 표는 여기서 한 번 읽는다. 순위·시간·이유에는 쓰이지 않고, 순위를 다 정한 뒤 카드에 붙는다.
         val lookup = lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
         val attached = lookup.attached
-        val recommendation =
+        val ranked =
             ranking
                 .rank(request, matrix, timeBasis, attached, travelTimes.dataVersion)
                 .copy(lastTrainPending = lookup.pending)
+        // 경로도 순위를 다 정한 뒤 붙인다. 행렬을 실제로 읽은 구분의 대기로 계산해야 시간이 od와 맞는다(발행 게이트).
+        val routed =
+            routes.forRequest(
+                matrix.slot,
+                request.participants.map { RouteAttacher.Rider(it.id, it.originCode, it.hidden) },
+                request.viewerId,
+            )
+        val recommendation =
+            if (routed == null) {
+                ranked
+            } else {
+                ranked.copy(candidates = ranked.candidates.map { it.copy(routes = routed.at(it.stationCode)) })
+            }
         return Evaluation(request, matrix, attached, recommendation, middlePicker, ranking::nameOf)
     }
 

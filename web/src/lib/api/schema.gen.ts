@@ -584,6 +584,46 @@ export interface components {
              *     응답, 미리보기에는 없다(막차 시각으로 숨긴 출발역을 거꾸로 짐작할 수 있다). `/recommend`에는 숨김이 없으므로 모두 들어 있다.
              */
             lastTrains?: components["schemas"]["LastTrain"][];
+            /**
+             * @description 이 역까지 사람별 화면용 경로(#120): 탄 노선 순서와 갈아탄 역. 서버가 노선 그래프(data-format §11)를 쓸 수 있을 때만 있고,
+             *     없으면 키 자체가 없다(데이터가 세대 4가 아니거나, 서버가 막 떠서 그래프를 아직 읽는 중이거나, 검증에 실패). 클라이언트는 그때
+             *     지금처럼 중립색 막대로 그린다. 순위를 다 정한 뒤 붙이는 **표시 전용** 값이라 순위·시간·환승 수(`times`)에는 쓰이지 않는다.
+             *
+             *     보이는 경로는 최단 경로가 아닐 수 있다: 최단 시간보다 **2분 이내로 더 걸리는 경로 가운데 환승이 가장 적은 것**(같으면 더 빠른
+             *     것)이다. 그래서 `legs`의 환승 수가 `times[].transfers`(최단 경로의 환승 수)보다 적을 수 있다. 시간(`times[].seconds`)은 언제나 최단이다.
+             *
+             *     항목 순서는 `participants`와 같고, 만날 역에서 출발하는 사람(시간 0)은 빠진다. **출발역을 숨긴 참가자의 경로는 그 참가자 본인의
+             *     요청(participantToken)에만 들어 있다**(경로의 첫 역이 곧 출발역이다). 다른 사람의 응답, 토큰 없는 응답, 미리보기에는 없다.
+             */
+            routes?: components["schemas"]["ParticipantRoute"][];
+        };
+        /** @description 한 사람의 경로. 이어지는 두 구간 사이가 환승이고 앞 구간의 `to`가 갈아탄 역이다(뒤 구간의 `from`과 같다). */
+        ParticipantRoute: {
+            /** @description `participants[].participantId` */
+            participantId: string;
+            legs: components["schemas"]["RouteLeg"][];
+        };
+        /**
+         * @description 한 구간: `line`을 `from`에서 타고 `to`에서 내린다. 첫 구간의 `from`은 출발역, 마지막 구간의 `to`는 만날 역이다.
+         *     **시간은 배차/2 평균 대기로 만든 모델 값이라 화면에 숫자로 쓰지 않는다.** 막대의 구간 길이 비율에만 쓴다(지도 앱의 실제
+         *     시간표와 거의 늘 다르다).
+         */
+        RouteLeg: {
+            /**
+             * @description 표시 노선 이름(역 배지와 같은 말, 예 `2호선`, `수인분당선`, `공항철도`). 색은 클라이언트의 노선 색표가 정한다
+             * @example 2호선
+             */
+            line: string;
+            from: components["schemas"]["RouteStop"];
+            to: components["schemas"]["RouteStop"];
+            /** @description 타기 전 시간. 첫 구간은 출발역 승강장 대기, 그 뒤 구간은 갈아타는 역에서 걷기 + 대기 */
+            waitSeconds: number;
+            /** @description 타고 가는 시간 */
+            rideSeconds: number;
+        };
+        RouteStop: {
+            stationCode: components["schemas"]["StationCode"];
+            stationName: string;
         };
         /**
          * @description 한 사람이 만날 역에서 집(출발역)으로 돌아가는 막차. 서버는 **값과 분류만** 준다. 문구와 반올림은 클라이언트가 한다.

@@ -4,6 +4,7 @@ import app.banbanyeok.applogic.ParticipantLabel
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainBasis
 import app.banbanyeok.server.recommendation.lasttrain.ParticipantLastTrain
+import app.banbanyeok.server.recommendation.route.ParticipantRoute
 import app.banbanyeok.server.recommendation.time.DayCertainty
 import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.recommendation.time.TimeSlotResolver
@@ -53,6 +54,11 @@ public data class RecommendedStation(
     public val reason: String,
     /** 이 역에서 돌아가는 사람별 막차(#62). 막차 표를 쓸 수 없으면 null. 숨긴 사람은 본인 요청일 때만 들어 있다. */
     public val lastTrains: List<ParticipantLastTrain>? = null,
+    /**
+     * 이 역까지 사람별 화면용 경로(#120). 노선 그래프를 쓸 수 없으면 null. 숨긴 사람은 본인 요청일 때만, 같은 역에서 출발하는 사람은 없다.
+     * 순위·시간과 상관없는 표시 값이다(시간·환승 수는 [times]가 od 값이다).
+     */
+    public val routes: List<ParticipantRoute>? = null,
 )
 
 public data class Recommendation(
