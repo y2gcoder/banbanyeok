@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { stationLineLabels } from "../../../scripts/station-lines.ts";
+import { type LineSourceStation, stationLineLabels } from "../../../scripts/station-lines.ts";
 import { stationByCode } from ".";
 
 const station = (lines: string[], sources: Record<string, string> = {}) => ({
@@ -44,10 +45,27 @@ describe("법정 노선명 → 표시 노선명", () => {
     expect(lines("2h7")).toEqual(["3호선", "경의중앙선"]); // 옥수
     expect(lines("60d")).toEqual(["경의중앙선"]); // 응봉
     expect(lines("ct5")).toEqual(["2호선", "5호선", "경의중앙선", "수인분당선"]); // 왕십리
-    expect(lines("mj0")).toEqual(["1호선", "경의중앙선", "수인분당선"]); // 청량리
-    // 회기와 청량리 이북은 그대로 1호선이다.
-    expect(lines("dyp")).toEqual(["1호선", "경의중앙선"]); // 회기
+    expect(lines("mj0")).toEqual(["1호선", "경춘선", "경의중앙선", "수인분당선"]); // 청량리
+    expect(lines("dyp")).toEqual(["1호선", "경춘선", "경의중앙선"]); // 회기
     expect(lines("cex")).toEqual(["1호선"]); // 외대앞
     expect(lines("68d")).toEqual(["1호선"]); // 소요산
+  });
+
+  it.each([
+    ["1y8", "광운대", ["1호선", "경춘선"]],
+    ["y72", "중랑", ["경춘선", "경의중앙선"]],
+    ["73b", "임진강", ["경의중앙선"]],
+    ["7sf", "운천", ["경의중앙선"]],
+    ["mj0", "청량리", ["1호선", "경춘선", "경의중앙선", "수인분당선"]],
+    ["dyp", "회기", ["1호선", "경춘선", "경의중앙선"]],
+  ] as const)("정기 운행 배지: %s %s", (code, name, expected) => {
+    const registry = JSON.parse(
+      readFileSync(new URL("../../../../data/artifacts/dev/stations.json", import.meta.url), "utf8"),
+    ) as { stations: LineSourceStation[] };
+    const source = registry.stations.find((s) => s.code === code);
+    expect(source?.name).toBe(name);
+    if (!source) throw new Error(`역 없음: ${code}`);
+    expect([...new Set(stationLineLabels(source))].sort()).toEqual([...expected].sort());
+    expect(stationByCode(code)?.lines).toEqual(expected);
   });
 });
