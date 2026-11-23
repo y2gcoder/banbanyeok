@@ -86,9 +86,9 @@ val checkNoLiquibaseRuntime by tasks.registering {
     description = "Reject Liquibase in the production server runtime dependency graph"
     inputs.property("runtimeComponents", runtimeComponents)
     doLast {
-        val forbidden = inputs.properties.getValue("runtimeComponents") as List<*>
-        check(forbidden.none { it.toString().startsWith("org.liquibase:") }) {
-            "Liquibase must run outside the server: ${forbidden.filter { it.toString().startsWith("org.liquibase:") }}"
+        val components = inputs.properties.getValue("runtimeComponents") as List<*>
+        check(components.none { it.toString().startsWith("org.liquibase:") }) {
+            "Liquibase must run outside the server: ${components.filter { it.toString().startsWith("org.liquibase:") }}"
         }
     }
 }

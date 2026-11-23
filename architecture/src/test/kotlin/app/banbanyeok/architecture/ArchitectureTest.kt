@@ -213,6 +213,7 @@ class ArchitectureTest :
                     }.shouldBeEmpty()
             }
             it("Ranking and core Rank know neither routes nor map middle") {
+                rank.isNotEmpty() shouldBe true
                 (rank + ranking)
                     .referencesMatching {
                         it.isOrUnder("$RECOMMENDATION.route") || it.isOrUnder("$RECOMMENDATION.mapmiddle")
@@ -227,9 +228,10 @@ class ArchitectureTest :
                             it != "$RECOMMENDATION.lasttrain.LastTrainAttacher"
                     }.shouldBeEmpty()
                 val code = ranking.code
-                val annotation = Regex("""lastTrains\s*=\s*lastTrains\?\.at\(card.stationCode\)""")
-                val basis = Regex("""lastTrainBasis\s*=\s*lastTrains\?\.basis""")
-                val parameter = Regex("""lastTrains\s*:\s*LastTrainAttacher.Attached\?""")
+                val annotation =
+                    Regex("""lastTrains\s*=\s*lastTrains\s*\?\.\s*at\s*\(\s*card\s*\.\s*stationCode\s*\)""")
+                val basis = Regex("""lastTrainBasis\s*=\s*lastTrains\s*\?\.\s*basis""")
+                val parameter = Regex("""lastTrains\s*:\s*LastTrainAttacher\s*\.\s*Attached\s*\?""")
                 val rest = code.replace(annotation, "").replace(basis, "").replace(parameter, "")
                 Regex("""\blastTrains\b""")
                     .findAll(rest)

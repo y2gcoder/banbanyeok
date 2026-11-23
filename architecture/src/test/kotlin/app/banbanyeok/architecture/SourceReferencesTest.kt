@@ -17,6 +17,11 @@ class SourceReferencesTest :
         ) = SourceUnit(path, "package $app.http\n\n$body")
 
         describe("references the import list alone would miss") {
+            it("sees fully qualified Liquibase references without an import") {
+                val source = unit("val migration: liquibase.Liquibase? = null")
+                source.references shouldContain "liquibase.Liquibase"
+            }
+
             it("sees a fully qualified type used in the body (StationDirectory.nameOf)") {
                 val source = unit("val n = $app.application.StationDirectory.nameOf(\"x\")")
                 source.references shouldContain "$app.application.StationDirectory"

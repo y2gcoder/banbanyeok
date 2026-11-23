@@ -34,7 +34,7 @@ class RankingFeatureInvariantHttpTest :
                 listOf("홍대입구", "잠실").map { name ->
                     directory.originCodes.first { directory.nameOf(it) == name }
                 }
-            val baseline = mutableMapOf<Pair<String, String>, List<JsonObject>>()
+            val baseline = mutableMapOf<Pair<String, String>, JsonObject>()
             val seen = mutableSetOf<String>()
             for (features in 0..7) {
                 val lastTrains = features and 1 != 0
@@ -80,15 +80,26 @@ class RankingFeatureInvariantHttpTest :
                             val ranked =
                                 cards.map { card ->
                                     JsonObject(
-                                        listOf("rank", "stationCode", "times", "reason").associateWith(card::getValue),
+                                        listOf(
+                                            "rank",
+                                            "stationCode",
+                                            "times",
+                                            "reasonCode",
+                                            "reason",
+                                        ).associateWith(card::getValue),
                                     )
                                 }
+                            val ranking =
+                                JsonObject(
+                                    listOf("baselineStationCode", "status").associateWith(json::getValue) +
+                                        ("candidates" to JsonArray(ranked)),
+                                )
                             val key = slot.id to mode
                             if (features == 0) {
-                                baseline[key] = ranked
+                                baseline[key] = ranking
                             } else {
                                 withClue("features=$features slot=${slot.id} mode=$mode") {
-                                    ranked shouldBe baseline.getValue(key)
+                                    ranking shouldBe baseline.getValue(key)
                                 }
                             }
                             ("lastTrainBasis" in json) shouldBe lastTrains
