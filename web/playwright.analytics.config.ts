@@ -13,7 +13,7 @@ export default defineConfig({
   testDir: "e2e-analytics",
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [["github"]] : "list",
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: { baseURL: `http://127.0.0.1:${webPort}`, locale: "ko-KR", trace: "retain-on-failure" },
   projects: [
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },

@@ -1,12 +1,17 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { type BrowserContext, devices, expect, type Locator, type Page, test } from "@playwright/test";
 import { FAKE_ROOM_ID, prepareRoom } from "../e2e/support/room-fixture";
 import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "../src/lib/copy/og-text";
+import { KAKAO_SDK } from "../src/lib/share/kakao";
+import { observePreparation, waitForPreparation } from "./kakao-preparation";
 
-// 카카오 앱 키(가짜, 형식만 맞음)를 박아 빌드한 앱에서 "카톡으로 보내기"가 카카오톡 공유 API로 가는지 본다. SDK는 카카오 CDN의 실제
-// 파일을 받고(SRI 해시가 맞아야 실행된다), 카카오로 가는 요청(템플릿 확인 API, PC 공유 창 폼, iPhone 카카오톡 열기 주소)은 브라우저에서
-// 가로채 내용을 검사하고 `kapi`대로 답한다. 카카오 서버에는 SDK 파일 요청 말고는 닿지 않는다.
+// 실제 SDK 2.8.4의 검증한 바이트를 로컬 fixture로 준다(브라우저도 앱의 SRI를 그대로 검사한다).
+// 템플릿 확인 API·PC 공유 창 폼·iPhone 카카오톡 열기 주소도 가로채므로 외부 네트워크에 의존하지 않는다.
 
-const SDK_URL = "https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js";
+const SDK_URL = KAKAO_SDK.src;
+const SDK_BYTES = readFileSync(resolve(import.meta.dirname, "fixtures/kakao-2.8.4.min.js.txt"));
 const KAKAO = /^https:\/\/([a-z0-9-]+\.)*(kakao\.com|kakaocdn\.net)\//;
 const LOGIN_URL = "https://accounts.kakao.com/login?continue=https%3A%2F%2Fsharer.kakao.com%2Fpicker%2Flink";
 const TEMPLATE_CHECK = "GET https://kapi.kakao.com/v2/api/kakaolink/talk/template/default";
@@ -18,7 +23,7 @@ type Template = {
 };
 
 type Probe = {
-  /** 카카오로 나간 요청("메서드 주소"). SDK 파일은 실제로 받고 나머지는 가로챈다. */
+  /** 카카오 주소로 가려던 요청("메서드 주소"). 모두 로컬에서 답한다. */
   kakao: string[];
   templates: Template[];
   /** 템플릿 확인 API에 답한 횟수. */
@@ -57,7 +62,14 @@ const shape = (value: unknown): unknown =>
       ? Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, shape(inner)]))
       : typeof value;
 
-async function attach(context: BrowserContext, page: Page, kapi: KapiAnswer = "accept"): Promise<Probe> {
+async function attach(
+  context: BrowserContext,
+  page: Page,
+  kapi: KapiAnswer = "accept",
+  holdPreparation = false,
+): Promise<Probe> {
+  expect(`sha384-${createHash("sha384").update(SDK_BYTES).digest("base64")}`).toBe(KAKAO_SDK.integrity);
+  await observePreparation(page, holdPreparation);
   const probe: Probe = { kakao: [], templates: [], answered: 0, shares: [], navigations: [], csp: [] };
   context.on("request", (request) => {
     if (KAKAO.test(request.url())) probe.kakao.push(`${request.method()} ${request.url().split("?")[0]}`);
@@ -68,7 +80,9 @@ async function attach(context: BrowserContext, page: Page, kapi: KapiAnswer = "a
   await context.route(KAKAO, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (request.url() === SDK_URL) return route.continue();
+    if (request.url() === SDK_URL) {
+      return route.fulfill({ contentType: "application/javascript", body: SDK_BYTES });
+    }
     // iPhone에서 카카오톡을 여는 유니버설 링크. 204면 브라우저가 이 페이지에 머문다.
     if (url.host === "talk-apps.kakao.com") return route.fulfill({ status: 204 });
     if (url.host === "kapi.kakao.com" && url.pathname === "/v2/api/kakaolink/talk/template/default") {
@@ -151,7 +165,7 @@ async function expectPrepared(page: Page, probe: Probe, baseURL: string | undefi
   expect(probe.kakao).toEqual([`GET ${SDK_URL}`, TEMPLATE_CHECK]);
   expect(probe.templates).toHaveLength(1);
   expectContentFree(probe.templates[0], baseURL);
-  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 50)));
+  await waitForPreparation(page, "ready");
 }
 
 /** 누른 뒤의 이동과 카카오 요청만 보려고 지금까지 잡힌 이동을 비우고, 누르기 전 카카오 요청 수를 돌려준다. */
@@ -260,7 +274,7 @@ test("SDK가 아직 오는 중에 누르면 기다리지 않고 공유 시트로
   });
   await context.route(SDK_URL, async (route) => {
     await held;
-    await route.continue();
+    await route.fallback();
   });
   await page.goto(await prepareRoom(page, "host-full", 5));
   const pageUrl = page.url();
@@ -278,7 +292,7 @@ test("SDK가 아직 오는 중에 누르면 기다리지 않고 공유 시트로
   release();
   await expect.poll(() => probe.answered, { timeout: 15_000 }).toBe(1);
   expectContentFree(probe.templates[0], baseURL);
-  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 50)));
+  await waitForPreparation(page, "ready");
   await expectTalkOpened(page, probe, pageUrl, await press(button, probe));
   expect(probe.shares).toHaveLength(1);
 });
@@ -316,12 +330,13 @@ for (const kapi of ["reject", "unreachable"] as const) {
     const button = page.getByRole("button", { name: "카톡으로 결과 보내기" });
     await button.scrollIntoViewIfNeeded();
     await expect.poll(() => probe.answered, { timeout: 15_000 }).toBe(1);
-    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 50)));
+    await waitForPreparation(page, "failed");
 
     await press(button, probe);
     await expect.poll(() => probe.shares.length).toBe(1);
     expect(probe.shares[0]?.url).toBe(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5`);
-    await page.waitForTimeout(500);
+    await expect.poll(() => probe.answered).toBe(2);
+    await waitForPreparation(page, "failed");
     expect(page.url()).toBe(pageUrl);
     expect(probe.navigations.filter(({ url }) => url !== pageUrl)).toEqual([]);
     for (const template of probe.templates) expectContentFree(template, baseURL);
@@ -343,6 +358,7 @@ test("카카오가 거절하고 공유 시트도 열리지 않으면 이 페이�
   const button = page.getByRole("button", { name: "카톡으로 결과 보내기" });
   await button.scrollIntoViewIfNeeded();
   await expect.poll(() => probe.answered, { timeout: 15_000 }).toBe(1);
+  await waitForPreparation(page, "failed");
   await press(button, probe);
 
   const dialog = page.getByRole("dialog", { name: "링크를 보내 주세요" });
@@ -376,32 +392,52 @@ test.describe("PC", () => {
   const { defaultBrowserType: _, ...desktop } = devices["Desktop Chrome"];
   test.use(desktop);
 
-  test("첫 누름에 그 클릭 안에서 카카오 공유 창을 열고 같은 메시지를 폼으로 보낸다(CSP form-action 허용)", async ({
-    context,
-    page,
-    baseURL,
-  }) => {
-    const probe = await attach(context, page);
-    await page.goto(await prepareRoom(page, "host-full", 5));
-    const button = page.getByRole("button", { name: "카톡으로 결과 보내기" });
-    await button.scrollIntoViewIfNeeded();
-    await expectPrepared(page, probe, baseURL);
+  for (const holdPreparation of [false, true]) {
+    test(
+      holdPreparation
+        ? "응답이 도착해도 SDK 검증이 끝나기 전에는 시스템 공유로 가고, 검증이 끝난 다음 누름에 공유 창을 연다"
+        : "첫 누름에 그 클릭 안에서 카카오 공유 창을 열고 같은 메시지를 폼으로 보낸다(CSP form-action 허용)",
+      async ({ context, page, baseURL }) => {
+        const probe = await attach(context, page, "accept", holdPreparation);
+        await page.goto(await prepareRoom(page, "host-full", 5));
+        const button = page.getByRole("button", { name: "카톡으로 결과 보내기" });
+        await button.scrollIntoViewIfNeeded();
+        if (holdPreparation) {
+          // 서버 응답과 SDK Promise 완료 사이를 명시적으로 벌린다. 예전 answered+50ms는 이 준비 중 상태도 통과했다.
+          await expect.poll(() => probe.answered).toBe(1);
+          await page.waitForFunction(() => window.__kakaoPreparation.responseReceived);
+          await button.click();
+          await expect.poll(() => probe.shares.length).toBe(1);
+          expect(await page.evaluate(() => window.__kakaoPreparation.atClick)).toEqual(["preparing"]);
+          await page.evaluate(() => window.__kakaoPreparation.release?.());
+        }
+        await expectPrepared(page, probe, baseURL);
 
-    const popup = page.waitForEvent("popup");
-    await button.click();
-    const shareWindow = await popup;
-    await expect
-      .poll(() => probe.kakao.includes("POST https://sharer.kakao.com/picker/link"), { timeout: 15_000 })
-      .toBe(true);
-    // 로그인하지 않은 이용자의 공유 창은 카카오 로그인 화면까지 가야 한다. 비어 있는 about:blank로 남으면 안 된다.
-    await expect.poll(() => shareWindow.url(), { timeout: 15_000 }).toMatch(/^https:\/\/accounts\.kakao\.com\/login/);
-    expect(probe.templates).toHaveLength(2);
-    const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5`;
-    expect(probe.templates[1]?.content.link).toEqual({ web_url: link, mobile_web_url: link });
-    expect(probe.templates[1]?.buttons).toEqual([
-      { title: "내 출발역 넣기", link: { web_url: link, mobile_web_url: link } },
-    ]);
-    expect(probe.shares).toEqual([]);
-    expect(probe.csp).toEqual([]);
-  });
+        const popup = page.waitForEvent("popup");
+        await button.click();
+        const shareWindow = await popup;
+        const atClick = await page.evaluate(() => window.__kakaoPreparation.atClick);
+        expect(atClick).toEqual(holdPreparation ? ["preparing", "ready"] : ["ready"]);
+        await test.info().attach("kakao-preparation-at-click", {
+          body: JSON.stringify({ atClick, systemShares: probe.shares.length }),
+          contentType: "application/json",
+        });
+        await expect
+          .poll(() => probe.kakao.includes("POST https://sharer.kakao.com/picker/link"), { timeout: 15_000 })
+          .toBe(true);
+        // 로그인하지 않은 이용자의 공유 창은 카카오 로그인 화면까지 가야 한다. 비어 있는 about:blank로 남으면 안 된다.
+        await expect
+          .poll(() => shareWindow.url(), { timeout: 15_000 })
+          .toMatch(/^https:\/\/accounts\.kakao\.com\/login/);
+        expect(probe.templates).toHaveLength(2);
+        const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5`;
+        expect(probe.templates[1]?.content.link).toEqual({ web_url: link, mobile_web_url: link });
+        expect(probe.templates[1]?.buttons).toEqual([
+          { title: "내 출발역 넣기", link: { web_url: link, mobile_web_url: link } },
+        ]);
+        expect(probe.shares.map(({ url }) => url)).toEqual(holdPreparation ? [link] : []);
+        expect(probe.csp).toEqual([]);
+      },
+    );
+  }
 });
