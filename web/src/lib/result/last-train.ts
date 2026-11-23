@@ -178,9 +178,7 @@ function unavailableNotice(basis: Basis): string | null {
  * 어느 노선 때문인지는 서버가 주지 않으므로 노선 이름을 적지 않는다.
  */
 function checkReason(basis: Basis): string {
-  return basis.partial && basis.dayType === "saturday"
-    ? "이 길의 토요일 막차는 아직 준비 중이에요."
-    : "이 길은 아직 막차를 계산하지 않아요.";
+  return basis.partial && basis.dayType === "saturday" ? "이 경로의 토요일 막차는 준비 중." : "이 경로는 막차 계산 전.";
 }
 
 /** "다음 날 00:03" · "23:40". */
@@ -197,10 +195,10 @@ function leaveByText(time: LastTrainTime): string {
 /**
  * 맨 위 한 줄. **출발역을 공개한 사람**의 줄만 본다(숨긴 본인의 값은 넣지 않는다: 사람마다 다른 말이 되지 않게).
  * - 약속 시각까지 떠나는 줄이 있으면 그 사실이 먼저다(가장 이른 시각을 귀가 시각처럼 말하지 않는다).
- * - 견주지 못한 사람이 있으면 "공개된 시각 중에는"으로 범위를 밝힌다: 출발역을 숨긴 사람이 있거나(`anyHidden`, 누가 보든 같은 공개
+ * - 견주지 못한 사람이 있으면 "공개된 시각 중"으로 범위를 밝힌다: 출발역을 숨긴 사람이 있거나(`anyHidden`, 누가 보든 같은 공개
  *   사실이다. 숨긴 본인 화면에서 본인의 더 이른 줄 위에 전체 비교처럼 읽히지 않게), 공개한 사람의 줄에 확인 필요가 있을 때.
- *   "막차를 더 확인해야 할 분도 있어요"는 공개한 줄에 확인 필요가 있을 때만 붙인다.
- * - 모두 공개했고 모두 시각이 있을 때만 "○○은 23시 전에 나서야 해요"다.
+ *   "더 확인할 분 있음"은 공개한 줄에 확인 필요가 있을 때만 붙인다.
+ * - 모두 공개했고 모두 시각이 있을 때만 "○○ 23시 전 출발"이다.
  */
 function leadText(rows: readonly LastTrainRow[], anyHidden: boolean): string | null {
   const open = rows.filter((row) => !row.onlyMe);
@@ -226,19 +224,18 @@ function leadText(rows: readonly LastTrainRow[], anyHidden: boolean): string | n
   if (!earliest) return null;
   const unchecked = open.some((row) => row.state.kind === "check");
   if (anyHidden || unchecked) {
-    const clock = withJosa(clockWithDay(earliest.time), "이/가");
-    const scoped = `공개된 시각 중에는 ${earliest.row.name}의 ${clock} 가장 일러요.`;
-    return unchecked ? `${scoped} 막차를 더 확인해야 할 분도 있어요.` : scoped;
+    const scoped = `공개된 시각 중 가장 이름: ${earliest.row.name} ${clockWithDay(earliest.time)}`;
+    return unchecked ? `${scoped} · 더 확인할 분 있음` : scoped;
   }
-  return `${withJosa(earliest.row.name, "은/는")} ${leaveByText(earliest.time)} 전에 나서야 해요`;
+  return `${earliest.row.name} ${leaveByText(earliest.time)} 전 출발`;
 }
 
 /** 여유 시각 아래의 설명. 갈아타는 길과 열차 한 대로 가는 길(공식 시간표와 맞춰 보기 전)의 말이 다르다. */
 export function marginNote(time: LastTrainTime): string {
   const tail = "실제 막차는 이보다 늦을 수 있어요.";
-  if (time.transfer) return `갈아타는 길이라 넉넉히 일찍 잡았어요. ${tail}`;
-  const train = time.bound ? `${time.bound} 열차 한 대로 가요.` : "열차 한 대로 가요.";
-  return `${train} 시간표를 한 번 더 맞춰 보기 전이라 넉넉히 일찍 잡았어요. ${tail}`;
+  if (time.transfer) return `환승 경로라 넉넉히 이르게 잡은 시각. ${tail}`;
+  const train = time.bound ? `${time.bound} 직행.` : "직행.";
+  return `${train} 시간표 대조 전이라 넉넉히 이르게 잡은 시각. ${tail}`;
 }
 
 export type LastTrainPerson = {
@@ -319,9 +316,9 @@ export function toLastTrainView(
     ),
     rows,
     checkReason: checkReason(basis),
-    partialNote: basis.partial ? `${withJosa(day, "은/는")} 일부 노선만 막차를 보여 드려요.` : null,
+    partialNote: basis.partial ? `${withJosa(day, "은/는")} 일부 노선만 막차 표시.` : null,
     hiddenOthers,
-    footnote: `${collected} 공사나 행사가 있으면 달라질 수 있으니 타기 전에 한 번 더 확인해 주세요. 승강장까지 걷는 시간은 따로 잡아 주세요.`,
+    footnote: `${collected} 공사·행사로 달라질 수 있으니 타기 전에 한 번 더 확인하세요. 승강장까지 걷는 시간은 빠져 있어요.`,
   };
 }
 
@@ -333,7 +330,7 @@ export function recalculatingLastTrainView(station: { name: string }): LastTrain
   return {
     stationName: stationLabel(station.name),
     dayLabel: null,
-    notice: "방 내용이 바뀌어 막차를 다시 계산하는 중이에요.",
+    notice: "방 내용이 바뀌어 막차 다시 계산 중",
     lead: null,
     rows: [],
     checkReason: null,
@@ -341,6 +338,18 @@ export function recalculatingLastTrainView(station: { name: string }): LastTrain
     hiddenOthers: false,
     footnote: null,
   };
+}
+
+/**
+ * 접힌 막차 칸의 한 줄(#122). 펼치지 않아도 꼭 알아야 할 것을 남긴다: 계산하지 못한 이유(`notice`), 약속 전에 떠나는 사람(경고 문장),
+ * 공개된 시각 가운데 가장 이른 것(`lead`). 숨긴 사람 규칙은 `lead`와 같다(공개한 줄만 본다).
+ * 줄이 없고 숨긴 사람만 있으면 그 사실을, 시각이 하나도 없으면 확인이 필요하다고 말한다.
+ */
+export function lastTrainSummary(view: LastTrainView): string {
+  if (view.notice) return view.notice;
+  if (view.lead) return view.lead;
+  if (view.rows.length === 0) return "출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.";
+  return view.rows.every((row) => row.state.kind === "same") ? "모두 이 역에서 출발" : "막차 확인 필요";
 }
 
 /**

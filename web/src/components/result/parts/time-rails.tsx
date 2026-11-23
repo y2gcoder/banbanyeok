@@ -3,7 +3,7 @@ import { formatMinutes, transferLabel } from "@/lib/display/minutes";
 import type { PersonTimeView } from "@/lib/result/view-model";
 
 /** 이름 옆 보조 줄. 이름이 출발역 이름이면 같은 말을 되풀이하지 않는다. */
-function originNote(person: PersonTimeView): string | null {
+export function originNote(person: PersonTimeView): string | null {
   if (!person.originName) return "출발역 비공개";
   return person.labelKind === "origin" ? null : `${person.originName}에서`;
 }

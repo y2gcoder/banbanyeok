@@ -72,7 +72,8 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
 
   await page.getByRole("tab", { name: "빨리 만나기" }).click();
   await expect(page).toHaveURL(/m=q/);
-  await expect(top.getByText(/합쳐/)).toBeVisible();
+  // 빨리 만나기는 순위 기준인 합계를 1위 요약에 보인다(공평하게에는 없다, #122).
+  await expect(top.getByRole("term").filter({ hasText: "합계" })).toBeVisible();
 
   await page.getByRole("tab", { name: "누구 쪽으로" }).click();
   await expect(page).toHaveURL(/m=p[01]/);
@@ -85,7 +86,7 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
 
   // 화면 3: 공유(링크 복사)
   await page.getByRole("button", { name: "링크 복사" }).click();
-  await expect(page.getByRole("button", { name: "링크를 복사했어요" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "링크 복사됨" })).toBeVisible();
   const shared = await page.evaluate(() => navigator.clipboard.readText());
   expect(shared).toMatch(
     /\/s\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=p0&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=66-87IiY\.$/,
@@ -100,8 +101,8 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   await expect(card.getByText("(나)")).toHaveCount(0);
   await friend.getByRole("group", { name: "나는 누구?" }).getByRole("button", { name: "참가자 2" }).click();
   await expect(friend).toHaveURL(/me=1/);
-  // 시간 줄과 "집에 가는 막차" 칸 두 곳에 붙는다.
-  await expect(card.getByText("참가자 2(나)")).toHaveCount(2);
+  // 1위 요약의 시간 줄, "자세히" 안의 시간 막대와 "집에 가는 막차" 칸 세 곳에 붙는다(처음 것이 요약이라 보인다).
+  await expect(card.getByText("참가자 2(나)")).toHaveCount(3);
   await expect(card.getByText("참가자 2(나)").first()).toBeVisible();
   await expect(card.getByText("민수(나)")).toHaveCount(0);
   await expect(card.getByRole("link", { name: "내 길찾기" })).toHaveAttribute(

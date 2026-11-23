@@ -205,8 +205,9 @@ describe("방의 약속을 바꾸는 동안의 막차 칸(#83 재검토)", () =>
     return { show: (target: Room) => view.rerender(tree(target)) };
   }
 
-  const section = () => screen.getByRole("region", { name: "신도림역 집에 가는 막차" });
-  const RECALCULATING = "방 내용이 바뀌어 막차를 다시 계산하는 중이에요.";
+  // 1위 카드의 막차 칸은 "자세히" 안에 있다(#122). 내용 규칙을 보므로 접힌 채로 찾는다(접힌 요약 줄은 candidate-card 테스트가 본다).
+  const section = () => screen.getByRole("region", { name: "신도림역 집에 가는 막차", hidden: true });
+  const RECALCULATING = "방 내용이 바뀌어 막차 다시 계산 중";
 
   it("방이 먼저 바뀌면: 새 결과가 올 때까지 새 약속 아래에 이전 운행일의 막차를 보이지 않는다", async () => {
     let deliver: (result: Result) => void = () => {};
@@ -216,13 +217,13 @@ describe("방의 약속을 바꾸는 동안의 막차 칸(#83 재검토)", () =>
       .mockImplementationOnce(() => new Promise<Result>((resolve) => (deliver = resolve)));
     const { show } = mount(friday);
     // 금요일 19:30 약속: 금요일 운행일의 24:27은 다음 날 00:27이다.
-    await waitFor(() => expect(section()).toHaveTextContent("공개된 시각 중에는 지연의 다음 날 00:27이 가장 일러요."));
+    await waitFor(() => expect(section()).toHaveTextContent("공개된 시각 중 가장 이름: 지연 다음 날 00:27"));
     expect(section()).toHaveTextContent("평일 시간표");
 
     // 방장이 약속을 토요일 23:30으로 바꿨다. 방이 먼저 도착하고 결과는 아직 금요일 것이다.
     show(saturday);
     expect(section()).toHaveTextContent(`집에 가는 막차${RECALCULATING}`);
-    expect(section()).not.toHaveTextContent(/00:27|다음 날|가장 일러요|나서야|평일 시간표|삼성행/);
+    expect(section()).not.toHaveTextContent(/00:27|다음 날|가장 이름|전 출발|평일 시간표|삼성행/);
     // 번호가 달라 결과를 다시 받는다.
     await waitFor(() => expect(api.getRoomResult).toHaveBeenCalledTimes(2));
     expect(section()).not.toHaveTextContent(/00:27|다음 날/);
@@ -242,7 +243,7 @@ describe("방의 약속을 바꾸는 동안의 막차 칸(#83 재검토)", () =>
     const { show } = mount(friday);
     // 화면의 방은 아직 금요일 19:30(번호 4)인데 결과는 토요일 것(번호 5)이다. 금요일 약속 기준이면 "막차 23:27"로 보였을 값이다.
     await waitFor(() => expect(section()).toHaveTextContent(RECALCULATING));
-    expect(section()).not.toHaveTextContent(/23:27|가장 일러요|나서야|토요일 시간표/);
+    expect(section()).not.toHaveTextContent(/23:27|가장 이름|전 출발|토요일 시간표/);
     show(saturday);
     await waitFor(() => expect(section()).toHaveTextContent("11월 28일 23:27 막차는 약속 전에 떠나요."));
     expect(section()).not.toHaveTextContent(RECALCULATING);

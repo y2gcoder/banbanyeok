@@ -30,6 +30,8 @@ test("결과 화면: 1위 카드 안에 비교 표가 있고 마지막 줄은 '�
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto(`/result?${WITH_MIDDLE}`);
   const top = page.getByRole("article").first();
+  // 1위 카드의 "자세히" 안에 있다(#122).
+  await top.getByRole("button", { name: /자세히/ }).click();
   const table = top.getByRole("table");
   await expect(table).toBeVisible();
   await expect(top.getByRole("heading", { name: "지도 한가운데였다면?" })).toBeVisible();
@@ -47,9 +49,19 @@ test("결과 화면: 1위 카드 안에 비교 표가 있고 마지막 줄은 '�
 test("결과 화면: 조건을 채우지 못하면(가까운 조합·빠른 기준) 표가 없다", async ({ page }) => {
   await page.goto(`/result?${WITHOUT_MIDDLE}`);
   await expect(page.getByRole("article").first()).toBeVisible();
+  await page
+    .getByRole("article")
+    .first()
+    .getByRole("button", { name: /자세히/ })
+    .click();
   await expect(page.getByRole("table")).toHaveCount(0);
   await page.goto(`/result?${WITH_MIDDLE.replace("m=f", "m=q")}`);
   await expect(page.getByRole("article").first()).toBeVisible();
+  await page
+    .getByRole("article")
+    .first()
+    .getByRole("button", { name: /자세히/ })
+    .click();
   await expect(page.getByRole("table")).toHaveCount(0);
 });
 
@@ -64,10 +76,20 @@ test("받은 링크(/s): 옛 링크(v=1)도 열리고, 미리보기 설명에 �
   const png = await page.request.get(ogImage);
   expect(png.status()).toBe(200);
   expect(png.headers()["content-type"]).toBe("image/png");
+  await page
+    .getByRole("article")
+    .first()
+    .getByRole("button", { name: /자세히/ })
+    .click();
   await expect(page.getByRole("table")).toBeVisible();
 
   // 옛 링크(v=1: 구분을 고른 적 없음 = 평일 낮으로 계산). 그림 주소도 v=1 그대로다(`t`를 붙여 구분을 고른 요청으로 바꾸지 않는다).
   await page.goto(`/s?v=1&o=${code("수유")}.${code("홍대입구")}&m=f`);
+  await page
+    .getByRole("article")
+    .first()
+    .getByRole("button", { name: /자세히/ })
+    .click();
   await expect(page.getByRole("table")).toBeVisible();
   const legacyImage = (await meta(page, 'meta[property="og:image"]')) ?? "";
   expect(legacyImage).toMatch(new RegExp(`^${baseURL}/s/og\\?v=1&o=[^&]+&m=f&dv=[^&]+&iv=[0-9a-f]{8}$`));
@@ -76,5 +98,10 @@ test("받은 링크(/s): 옛 링크(v=1)도 열리고, 미리보기 설명에 �
   // 비교가 없는 링크: 설명은 그대로이고 표가 없다.
   await page.goto(`/s?${WITHOUT_MIDDLE}`);
   expect(await meta(page, 'meta[name="description"]')).not.toContain("지도 한가운데");
+  await page
+    .getByRole("article")
+    .first()
+    .getByRole("button", { name: /자세히/ })
+    .click();
   await expect(page.getByRole("table")).toHaveCount(0);
 });

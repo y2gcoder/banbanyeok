@@ -7,8 +7,10 @@ import {
   type LastTrainPerson,
   lastTrainCardLine,
   lastTrainState,
+  lastTrainSummary,
   type MeetingWhen,
   marginNote,
+  recalculatingLastTrainView,
   toLastTrainView,
 } from "./last-train";
 import { toResultView } from "./view-model";
@@ -104,41 +106,39 @@ describe("막차 칸", () => {
   it("맨 위 한 줄은 공개 참가자 중 가장 이른 사람이다(화면에 보이는 시각 기준)", () => {
     // 민수 직행 00:03, 지연 갈아타는 23:09 → 23:00
     const found = view(weekday, [direct(1443), transfer(1389)]);
-    expect(found.lead).toBe("지연은 23시 전에 나서야 해요");
+    expect(found.lead).toBe("지연 23시 전 출발");
     expect(found.rows.map((r) => r.state.kind)).toEqual(["direct", "margin"]);
     expect(found.stationName).toBe("강남역");
     expect(found.dayLabel).toBe("평일");
   });
 
   it("정각이 아니면 시계 숫자로, 자정을 넘기면 '다음 날'을 붙인다", () => {
-    expect(view(weekday, [direct(1443), transfer(1349)]).lead).toBe("지연은 22:20 전에 나서야 해요");
-    expect(view(weekday, [direct(1443), direct(1458)]).lead).toBe("민수는 다음 날 00:03 전에 나서야 해요");
-    expect(view(weekday, [transfer(1445), direct(1458)]).lead).toBe("민수는 다음 날 00:00 전에 나서야 해요");
+    expect(view(weekday, [direct(1443), transfer(1349)]).lead).toBe("지연 22:20 전 출발");
+    expect(view(weekday, [direct(1443), direct(1458)]).lead).toBe("민수 다음 날 00:03 전 출발");
+    expect(view(weekday, [transfer(1445), direct(1458)]).lead).toBe("민수 다음 날 00:00 전 출발");
   });
 
   it("확인 필요만 있으면 맨 위 줄이 없다", () => {
     const found = view(weekday, [check, check]);
     expect(found.lead).toBeNull();
     expect(found.rows.map((r) => r.state.kind)).toEqual(["check", "check"]);
-    expect(found.checkReason).toBe("이 길은 아직 막차를 계산하지 않아요.");
+    expect(found.checkReason).toBe("이 경로는 막차 계산 전.");
   });
 
   it("확인 필요가 섞이면 맨 위 줄이 범위를 밝힌다: 공개된 시각 중에 가장 이른 것", () => {
     // 민수 직행 00:03, 지연 열차 한 대 여유 23:45 → 23:40, 하늘 확인 필요.
     const single: LastTrainEntry = { kind: "margin", minute: 1425, transfer: false };
     expect(view(weekday, [direct(1443), single, check]).lead).toBe(
-      "공개된 시각 중에는 지연의 23:40이 가장 일러요. 막차를 더 확인해야 할 분도 있어요.",
+      "공개된 시각 중 가장 이름: 지연 23:40 · 더 확인할 분 있음",
     );
     // 조사는 시각의 끝 숫자를 읽는 소리로 고른다(2 → "가"), 자정을 넘기면 "다음 날"을 붙인다.
-    expect(view(weekday, [direct(1432), check]).lead).toBe(
-      "공개된 시각 중에는 민수의 23:52가 가장 일러요. 막차를 더 확인해야 할 분도 있어요.",
-    );
+    expect(view(weekday, [direct(1432), check]).lead).toBe("공개된 시각 중 가장 이름: 민수 23:52 · 더 확인할 분 있음");
     expect(view(weekday, [direct(1443), check]).lead).toBe(
-      "공개된 시각 중에는 민수의 다음 날 00:03이 가장 일러요. 막차를 더 확인해야 할 분도 있어요.",
+      "공개된 시각 중 가장 이름: 민수 다음 날 00:03 · 더 확인할 분 있음",
     );
     // 출발역이 바로 그 역인 사람은 확인할 것이 없다: 범위를 좁혀 말하지 않는다.
     const people = [person(0, "민수", { originCode: "k3a" }), person(1, "지연")];
-    expect(view(weekday, [check, transfer(1389)], people).lead).toBe("지연은 23시 전에 나서야 해요");
+    expect(view(weekday, [check, transfer(1389)], people).lead).toBe("지연 23시 전 출발");
   });
 
   it("출발역을 숨긴 사람이 있는 방은 누가 보든 같은 범위 문구다(익명·공개한 사람·숨긴 본인)", () => {
@@ -146,7 +146,7 @@ describe("막차 칸", () => {
       { ...direct(1467, "삼성"), participantId: "0" },
       { kind: "margin" as const, minute: 1428, transfer: false, participantId: "1" },
     ];
-    const lead = "공개된 시각 중에는 지연의 다음 날 00:27이 가장 일러요.";
+    const lead = "공개된 시각 중 가장 이름: 지연 다음 날 00:27";
     // 다른 사람 화면: 서버가 숨긴 사람의 항목을 주지 않는다.
     const others = [person(0, "지연"), person(1, "참가자 2", { hidden: true, originCode: null, mapUrl: null })];
     expect(toLastTrainView(weekday, entries.slice(0, 1), station, others)?.lead).toBe(lead);
@@ -157,7 +157,7 @@ describe("막차 칸", () => {
     expect(mine?.rows[1]?.state).toMatchObject({ kind: "margin", clock: "23:40" });
     // 숨긴 사람이 없으면 모두 견준 것이다: 예전 문구 그대로.
     const open = [person(0, "지연"), person(1, "민수")];
-    expect(toLastTrainView(weekday, entries, station, open)?.lead).toBe("민수는 23:40 전에 나서야 해요");
+    expect(toLastTrainView(weekday, entries, station, open)?.lead).toBe("민수 23:40 전 출발");
     // 숨긴 사람이 있고 공개한 줄에 확인 필요도 있으면 뒤의 말까지 붙는다.
     const three = [...others, person(2, "하늘")];
     expect(
@@ -167,20 +167,20 @@ describe("막차 칸", () => {
         station,
         three,
       )?.lead,
-    ).toBe("공개된 시각 중에는 지연의 다음 날 00:27이 가장 일러요. 막차를 더 확인해야 할 분도 있어요.");
+    ).toBe("공개된 시각 중 가장 이름: 지연 다음 날 00:27 · 더 확인할 분 있음");
   });
 
   it("숨긴 본인의 줄이 확인 필요여도 공용 문구(맨 위 줄)는 바뀌지 않는다", () => {
     const people = [person(0, "민수"), person(1, "참가자 2", { hidden: true, isSelf: true })];
     // 숨긴 사람이 있는 방이라 범위는 밝히지만, "더 확인해야 할 분"은 공개한 줄에 확인 필요가 있을 때만 붙는다.
-    expect(view(weekday, [direct(1432), check], people).lead).toBe("공개된 시각 중에는 민수의 23:52가 가장 일러요.");
+    expect(view(weekday, [direct(1432), check], people).lead).toBe("공개된 시각 중 가장 이름: 민수 23:52");
   });
 
   it("계산한 응답의 확인 필요 이유: 일부만 계산한 토요일이면 그 사실, 아니면 이 길을 아직 계산하지 않는다", () => {
     const saturday: Basis = { dayType: "saturday", asOf: "2026-11-16", partial: true };
-    expect(view(saturday, [check]).checkReason).toBe("이 길의 토요일 막차는 아직 준비 중이에요.");
+    expect(view(saturday, [check]).checkReason).toBe("이 경로의 토요일 막차는 준비 중.");
     // 평일도 일부 노선만 계산한 요일 종류일 수 있다(9호선을 끈 동안): 이유는 길 쪽으로 말한다.
-    expect(view({ ...weekday, partial: true }, [check]).checkReason).toBe("이 길은 아직 막차를 계산하지 않아요.");
+    expect(view({ ...weekday, partial: true }, [check]).checkReason).toBe("이 경로는 막차 계산 전.");
     expect(view(weekday, [check]).notice).toBeNull();
   });
 
@@ -212,20 +212,20 @@ describe("막차 칸", () => {
     expect(view(weekday, [check]).partialNote).toBeNull();
     // 모두 시각이 있어도 알린다(#83 검토): 안내 기준은 그 요일 종류 전체의 partial이다.
     expect(view({ ...weekday, partial: true }, [direct(1443), transfer(1389)]).partialNote).toBe(
-      "평일은 일부 노선만 막차를 보여 드려요.",
+      "평일은 일부 노선만 막차 표시.",
     );
-    expect(view({ ...weekday, partial: true }, [check]).partialNote).toBe("평일은 일부 노선만 막차를 보여 드려요.");
+    expect(view({ ...weekday, partial: true }, [check]).partialNote).toBe("평일은 일부 노선만 막차 표시.");
     expect(view({ dayType: "saturday", asOf: "2026-11-16", partial: true }, [direct(1407)]).partialNote).toBe(
-      "토요일은 일부 노선만 막차를 보여 드려요.",
+      "토요일은 일부 노선만 막차 표시.",
     );
     expect(view({ dayType: "holiday", asOf: "2026-11-16", partial: true }, [check]).partialNote).toBe(
-      "일요일·공휴일은 일부 노선만 막차를 보여 드려요.",
+      "일요일·공휴일은 일부 노선만 막차 표시.",
     );
   });
 
   it("공통 안내는 시간표를 모은 날, 달라질 수 있다는 것, 걷는 시간을 말한다", () => {
     expect(view(weekday, [check]).footnote).toBe(
-      "시간표 수집 기준 2026년 11월 16일. 공사나 행사가 있으면 달라질 수 있으니 타기 전에 한 번 더 확인해 주세요. 승강장까지 걷는 시간은 따로 잡아 주세요.",
+      "시간표 수집 기준 2026년 11월 16일. 공사·행사로 달라질 수 있으니 타기 전에 한 번 더 확인하세요. 승강장까지 걷는 시간은 빠져 있어요.",
     );
   });
 
@@ -236,7 +236,7 @@ describe("막차 칸", () => {
     expect(found?.rows.map((r) => r.name)).toEqual(["민수"]);
     expect(found?.hiddenOthers).toBe(true);
     // 숨긴 사람이 있어 전체를 견준 말이 아니다: 범위를 밝힌다.
-    expect(found?.lead).toBe("공개된 시각 중에는 민수의 다음 날 00:03이 가장 일러요.");
+    expect(found?.lead).toBe("공개된 시각 중 가장 이름: 민수 다음 날 00:03");
   });
 
   it("숨긴 본인의 줄은 본인 화면에만 있고, 맨 위 줄은 공개 참가자로만 정한다", () => {
@@ -248,7 +248,7 @@ describe("막차 칸", () => {
     ]);
     // 숨긴 본인이 더 이르지만(21:40) 맨 위 줄은 민수다: 사람마다 다른 말이 되지 않는다. 다만 "공개된 시각 중에는"으로 범위를
     // 밝혀, 본인의 더 이른 줄 위에서 전체 비교처럼 읽히지 않게 한다.
-    expect(found.lead).toBe("공개된 시각 중에는 민수의 다음 날 00:03이 가장 일러요.");
+    expect(found.lead).toBe("공개된 시각 중 가장 이름: 민수 다음 날 00:03");
     expect(found.hiddenOthers).toBe(false);
     expect(found.rows[1]?.mapUrl).toBe("https://map.kakao.com/link/by/traffic/x/1");
   });
@@ -277,7 +277,7 @@ describe("막차 칸", () => {
     const people = [person(0, "민수", { originCode: "k3a" }), person(1, "지연")];
     const found = view(weekday, [check, transfer(1389)], people);
     expect(found.rows[0]).toMatchObject({ state: { kind: "same" }, mapUrl: null });
-    expect(found.lead).toBe("지연은 23시 전에 나서야 해요");
+    expect(found.lead).toBe("지연 23시 전 출발");
   });
 
   it("기준이나 항목이 없으면 칸을 만들지 않는다", () => {
@@ -294,9 +294,9 @@ describe("막차 칸", () => {
       boundFor: { stationCode: "7sw", stationName: "김포공항" },
     });
     if (changing?.kind !== "margin" || single?.kind !== "margin") throw new Error("여유 시각 없음");
-    expect(marginNote(changing)).toBe("갈아타는 길이라 넉넉히 일찍 잡았어요. 실제 막차는 이보다 늦을 수 있어요.");
+    expect(marginNote(changing)).toBe("환승 경로라 넉넉히 이르게 잡은 시각. 실제 막차는 이보다 늦을 수 있어요.");
     expect(marginNote(single)).toBe(
-      "김포공항행 열차 한 대로 가요. 시간표를 한 번 더 맞춰 보기 전이라 넉넉히 일찍 잡았어요. 실제 막차는 이보다 늦을 수 있어요.",
+      "김포공항행 직행. 시간표 대조 전이라 넉넉히 이르게 잡은 시각. 실제 막차는 이보다 늦을 수 있어요.",
     );
   });
 
@@ -343,10 +343,10 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
       source: "margin",
       text: "넉넉히 잡으면 11월 28일 00:00엔 떠나야 해서 약속 시각보다 일러요. 실제 막차는 이보다 늦을 수 있어요.",
     });
-    // 맨 위 줄도 같은 기준: "다음 날 00:27 전에 나서야 해요"라고 하지 않는다.
+    // 맨 위 줄도 같은 기준: "민수 다음 날 00:27 전 출발"라고 하지 않는다.
     expect(found.lead).toBe("약속 전에 막차가 떠나는 분이 있어요.");
     expect(JSON.stringify(found)).not.toContain("다음 날");
-    expect(JSON.stringify(found)).not.toContain("나서야");
+    expect(JSON.stringify(found)).not.toContain("전 출발");
     // 지도 앱 버튼은 남는다(돌아갈 다른 길을 찾아볼 수 있게).
     expect(found.rows[0]?.mapUrl).not.toBeNull();
     // 공유 그림에도 줄이 없다.
@@ -363,7 +363,7 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
       undefined,
       meeting,
     );
-    expect(found.lead).toBe("민수는 23:27 전에 나서야 해요");
+    expect(found.lead).toBe("민수 23:27 전 출발");
     expect(lastTrainCardLine(lastTrainState(samseong(1407), meeting), OG_TEXT)).toBe("막차 23:27");
     // 토요일 운행일의 24:27은 일요일 00:27이다: 약속일의 다음 날.
     expect(lastTrainState(samseong(1467), meeting)).toMatchObject({ kind: "direct", clock: "00:27", nextDay: true });
@@ -441,7 +441,7 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
     expect(view(weekday, [transfer(1379), direct(1443)], undefined, meeting).lead).toBe(
       "막차가 약속 시각보다 이를 수 있는 분이 있어요.",
     );
-    // 같은 분의 열차는 "나서야 해요"의 시각으로 쓰지 않는다.
+    // 같은 분의 열차는 "전 출발"의 시각으로 쓰지 않는다.
     expect(JSON.stringify(view(weekday, [direct(1380), direct(1443)], undefined, meeting))).not.toContain("23시 전에");
   });
 
@@ -453,7 +453,7 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
       const found = view(weekday, [direct(1443), transfer(1389)], undefined, meeting);
       expect(found.rows.map((r) => r.state.kind)).toEqual(["direct", "margin"]);
       expect(found.rows[0]?.state).toMatchObject({ clock: "00:03", nextDay: true });
-      expect(found.lead).toBe("지연은 23시 전에 나서야 해요");
+      expect(found.lead).toBe("지연 23시 전 출발");
     }
   });
 
@@ -461,7 +461,42 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
     const people = [person(0, "민수"), person(1, "참가자 2", { hidden: true, isSelf: true })];
     const found = view(weekday, [samseong(1467), transfer(1389)], people, { date: "2026-11-28", time: "00:10" });
     expect(found.rows.map((r) => r.state.kind)).toEqual(["direct", "gone"]);
-    expect(found.lead).toBe("공개된 시각 중에는 민수의 00:27이 가장 일러요.");
+    expect(found.lead).toBe("공개된 시각 중 가장 이름: 민수 00:27");
+  });
+});
+
+describe("접힌 막차 칸의 한 줄(#122): 막차는 숨기지 않는다", () => {
+  it("가장 이른 공개 시각(맨 위 줄과 같은 말)", () => {
+    expect(lastTrainSummary(view(weekday, [direct(1443), transfer(1349)]))).toBe("지연 22:20 전 출발");
+    expect(lastTrainSummary(view(weekday, [direct(1432), check]))).toBe(
+      "공개된 시각 중 가장 이름: 민수 23:52 · 더 확인할 분 있음",
+    );
+  });
+
+  it("경고·계산하지 못한 이유·다시 계산 중이 시각보다 먼저다", () => {
+    const meeting = { date: "2026-11-28", time: "02:59" };
+    expect(lastTrainSummary(view(weekday, [direct(1467), direct(1500)], undefined, meeting))).toBe(
+      "약속 전에 막차가 떠나는 분이 있어요.",
+    );
+    expect(lastTrainSummary(view({ ...weekday, unavailable: "stale" }, [direct(1443)]))).toBe(
+      "시간표가 오래돼 막차를 보여 드리지 못해요.",
+    );
+    expect(lastTrainSummary(recalculatingLastTrainView({ name: "강남" }))).toBe("방 내용이 바뀌어 막차 다시 계산 중");
+  });
+
+  it("숨긴 본인의 더 이른 값은 쓰지 않는다(누가 보든 같은 말)", () => {
+    const people = [person(0, "민수"), person(1, "참가자 2", { hidden: true, isSelf: true })];
+    expect(lastTrainSummary(view(weekday, [direct(1432), transfer(1349)], people))).toBe(
+      "공개된 시각 중 가장 이름: 민수 23:52",
+    );
+  });
+
+  it("줄이 없으면 숨김 안내, 시각이 하나도 없으면 확인 필요", () => {
+    const hidden = [person(0, "참가자 1", { hidden: true }), person(1, "참가자 2", { hidden: true })];
+    const none = toLastTrainView(weekday, [], station, hidden);
+    if (!none) throw new Error("막차 칸 없음");
+    expect(lastTrainSummary(none)).toBe("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.");
+    expect(lastTrainSummary(view(weekday, [check, check]))).toBe("막차 확인 필요");
   });
 });
 
@@ -543,7 +578,7 @@ describe("결과를 화면 값으로 바꿀 때의 막차", () => {
 
   it("후보마다 막차 칸을 만들고, 지도 링크는 만날 역에서 각자의 출발역 방향이다", () => {
     const lastTrain = toResultView(result).candidates[0]?.lastTrain;
-    expect(lastTrain?.lead).toBe("부천은 23시 전에 나서야 해요");
+    expect(lastTrain?.lead).toBe("부천 23시 전 출발");
     expect(lastTrain?.rows.map((r) => r.name)).toEqual(["민수", "부천"]);
     const toHome = lastTrain?.rows[1]?.mapUrl ?? "";
     const toMeeting = toResultView(result).candidates[0]?.people[1]?.directionsUrl ?? "";
@@ -559,7 +594,7 @@ describe("결과를 화면 값으로 바꿀 때의 막차", () => {
     expect(dawn?.rows[0]?.state).toMatchObject({ text: "11월 28일 00:03 막차는 약속 전에 떠나요." });
     const after = toResultView(result, { meeting: { date: "2026-11-28", time: "03:00" } }).candidates[0]?.lastTrain;
     expect(after?.rows.map((r) => r.state.kind)).toEqual(["direct", "margin"]);
-    expect(after?.lead).toBe("부천은 23시 전에 나서야 해요");
+    expect(after?.lead).toBe("부천 23시 전 출발");
   });
 
   it("방이 바뀌어 이 결과가 지금 방의 것이 아니면 줄과 맨 위 줄 없이 '다시 계산하는 중'만 보인다", () => {
@@ -570,7 +605,7 @@ describe("결과를 화면 값으로 바꿀 때의 막차", () => {
     expect(stale).toEqual({
       stationName: "강남역",
       dayLabel: null,
-      notice: "방 내용이 바뀌어 막차를 다시 계산하는 중이에요.",
+      notice: "방 내용이 바뀌어 막차 다시 계산 중",
       lead: null,
       rows: [],
       checkReason: null,
@@ -579,7 +614,7 @@ describe("결과를 화면 값으로 바꿀 때의 막차", () => {
       footnote: null,
     });
     // 이전 결과의 시각·요일·행선지가 하나도 남지 않는다.
-    expect(JSON.stringify(stale)).not.toMatch(/\d\d:\d\d|나서야|다음 날|평일|광교|부천/);
+    expect(JSON.stringify(stale)).not.toMatch(/\d\d:\d\d|전 출발|다음 날|평일|광교|부천/);
     // 막차를 모르는 응답은 그때도 칸이 없다.
     const { lastTrainBasis: _basis, ...rest } = result;
     expect(toResultView(rest, { lastTrains: "recalculating" }).candidates[0]?.lastTrain).toBeNull();

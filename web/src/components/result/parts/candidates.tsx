@@ -31,7 +31,7 @@ export function LoadingCard() {
       <div className="h-3 w-full motion-safe:animate-pulse rounded-full bg-muted" />
       <div className="h-3 w-4/5 motion-safe:animate-pulse rounded-full bg-muted" />
       <p className="text-[15px] text-ink-soft">
-        {slow ? "서버를 깨우는 중이에요. 몇 초만 기다려 주세요." : "만날 역을 고르는 중이에요."}
+        {slow ? "서버를 깨우는 중이에요. 몇 초만 기다려 주세요." : "만날 역 고르는 중"}
       </p>
     </div>
   );

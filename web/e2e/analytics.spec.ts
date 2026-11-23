@@ -36,10 +36,10 @@ test("키가 없으면 어떤 화면에서도 외부 네트워크 요청이 0건
   await page.getByRole("tab", { name: "빨리 만나기" }).click();
   await expect(page).toHaveURL(/m=q/);
   await page.getByRole("button", { name: "이 역으로 정했어요" }).first().click();
-  await expect(page.getByText("정했어요! 각자 길찾기로 이어가요")).toBeVisible();
+  await expect(page.getByText("정했어요! 각자 길찾기로")).toBeVisible();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "링크 복사" }).click();
-  await expect(page.getByRole("button", { name: "링크를 복사했어요" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "링크 복사됨" })).toBeVisible();
   const shared = await page.evaluate(() => navigator.clipboard.readText());
 
   const friend = await context.newPage();

@@ -30,14 +30,14 @@ async function topCard(page: Page) {
 test("같은 출발역이라도 평일 낮과 토요일 밤의 순위·시간이 다르다", async ({ page }) => {
   await page.goto(`/result?v=2&o=${ORIGINS}&m=f&t=weekday-day`);
   const day = await topCard(page);
-  await expect(page.getByText("역에서 역까지, 평일 낮 기준 시간이에요.")).toBeVisible();
+  await expect(page.getByText("역에서 역까지, 평일 낮 기준 시간.")).toBeVisible();
   await expect(day.getByRole("heading", { level: 2 })).toContainText("압구정");
   const dayText = await day.textContent();
   await shot(page, "1-weekday-day");
 
   await page.goto(`/result?v=2&o=${ORIGINS}&m=f&t=saturday-night`);
   const night = await topCard(page);
-  await expect(page.getByText("역에서 역까지, 토요일 밤 기준 시간이에요.")).toBeVisible();
+  await expect(page.getByText("역에서 역까지, 토요일 밤 기준 시간.")).toBeVisible();
   await expect(night.getByRole("heading", { level: 2 })).toContainText("약수");
   expect(await night.textContent()).not.toBe(dayText);
   await shot(page, "2-saturday-night");
@@ -58,7 +58,7 @@ async function textWithoutLastTrain(page: Page): Promise<string> {
 test("옛 공유 링크(v=1)는 평일 낮으로 계산해 v=2 평일 낮과 같은 결과다(막차 칸만 없다)", async ({ page }) => {
   await page.goto(`/s?v=1&o=${ORIGINS}&m=f`);
   const legacy = await topCard(page);
-  await expect(page.getByText("역에서 역까지, 평일 낮 기준 시간이에요.")).toBeVisible();
+  await expect(page.getByText("역에서 역까지, 평일 낮 기준 시간.")).toBeVisible();
   await expect(legacy.getByRole("region", { name: "집에 가는 막차" })).toHaveCount(0);
   const legacyText = await legacy.textContent();
   await page.goto(`/s?v=2&o=${ORIGINS}&m=f&t=weekday-day`);
@@ -83,7 +83,7 @@ test("입력 화면에서 고른 요일·시간대가 결과·공유 링크에 �
   await page.getByRole("button", { name: "만날 역 찾기" }).click();
   await expect(page).toHaveURL(/&t=holiday-morning$/);
   await topCard(page);
-  await expect(page.getByText("역에서 역까지, 일요일·공휴일 아침 기준 시간이에요.")).toBeVisible();
+  await expect(page.getByText("역에서 역까지, 일요일·공휴일 아침 기준 시간.")).toBeVisible();
   await page.getByRole("button", { name: "링크 복사" }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
     /\/s\?v=2&o=2je\.k3a&m=f&t=holiday-morning$/,
@@ -136,7 +136,7 @@ test("방은 약속 날짜·시각으로 구분을 정한다(토요일 22:00 →
   }
 
   await page.reload();
-  await expect(page.getByText("역에서 역까지, 토요일 밤 기준 시간이에요.")).toBeVisible();
+  await expect(page.getByText("역에서 역까지, 토요일 밤 기준 시간.")).toBeVisible();
   await expect(page.getByText(/약속 \d+월 \d+일 \(토\) 22:00/)).toBeVisible();
   await shot(page, "4-room-result-when");
 });

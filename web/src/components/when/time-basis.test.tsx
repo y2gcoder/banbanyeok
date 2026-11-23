@@ -21,7 +21,7 @@ describe("계산 기준 한 줄", () => {
         requested="saturday-evening"
       />,
     );
-    expect(screen.getByText("역에서 역까지, 토요일 저녁 기준 시간이에요.")).toBeInTheDocument();
+    expect(screen.getByText("역에서 역까지, 토요일 저녁 기준 시간.")).toBeInTheDocument();
   });
 
   it("공휴일 이름을 함께 보인다", () => {
@@ -48,11 +48,11 @@ describe("계산 기준 한 줄", () => {
 
   it("결과에 기준이 없으면(옛 서버) 평일 낮으로 계산된 것으로 알린다", () => {
     render(<TimeBasisNote basis={null} requested="saturday-night" />);
-    expect(screen.getByText(/평일 낮 기준 시간이에요\. 토요일 밤 시간은 지금 계산하지 못해/)).toBeInTheDocument();
+    expect(screen.getByText(/평일 낮 기준 시간\. 토요일 밤 시간은 지금 계산하지 못해/)).toBeInTheDocument();
   });
 
   it("결과가 오기 전에는 요청한 구분으로 보인다", () => {
     render(<TimeBasisNote basis={undefined} requested="weekday-morning" />);
-    expect(screen.getByText("역에서 역까지, 평일 아침 기준 시간이에요.")).toBeInTheDocument();
+    expect(screen.getByText("역에서 역까지, 평일 아침 기준 시간.")).toBeInTheDocument();
   });
 });

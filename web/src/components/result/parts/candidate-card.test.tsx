@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { RecommendResult } from "@/lib/api/types";
 import { toResultView } from "@/lib/result/view-model";
@@ -81,35 +82,61 @@ describe("결과 카드", () => {
   const view = toResultView(result);
   const choice: ChoiceContext = { mode: "fair", participantCount: 2, variant: "creator" };
 
-  it("1위 카드는 사람별 표시 분·환승과 반올림한 분에서 계산한 최장·차이·합계를 보인다", () => {
+  it("1위 카드는 요약이 먼저다: 사람별 표시 분·환승, 순위 기준 값(최장·차이), 정하기·길찾기. 합계는 공평 모드에서 빠진다", () => {
     const [top] = view.candidates;
     if (!top) throw new Error("후보 없음");
     render(<TopCandidateCard candidate={top} choice={choice} />);
     const card = screen.getByRole("article", { name: "신촌" });
-    expect(within(card).getByText("37분")).toBeInTheDocument();
-    expect(within(card).getAllByText("38분").length).toBeGreaterThanOrEqual(2); // 홍대입구에서 오는 분 + 최장
+    const [people] = within(card).getAllByRole("list");
+    if (!people) throw new Error("사람 목록 없음");
+    const rows = within(people).getAllByRole("listitem");
     // 시간 행 이름은 서버 짧은 이름(shortLabel) 그대로이고, 출발역 이름이면 옆에 출발역을 되풀이하지 않는다.
-    expect(within(card).getByText("민지")).toBeInTheDocument();
-    expect(within(card).getByText("강남에서 · 환승 1번")).toBeInTheDocument();
-    expect(within(card).getByText("홍대입구")).toBeInTheDocument();
-    expect(within(card).queryByText(/홍대입구에서 ·/)).toBeNull();
-    expect(within(card).getByText("환승 없음")).toBeInTheDocument();
-    // 모든 트랙이 같은 눈금: 최장 38분 → 0~40분 자
-    expect(within(card).getByText("40분")).toBeInTheDocument();
-    expect(within(card).getByText("1분")).toBeInTheDocument(); // 차이
-    expect(within(card).getByText("1시간 15분")).toBeInTheDocument(); // 합계 37 + 38
-    expect(within(card).getByText("가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요.")).toBeInTheDocument();
+    expect(rows.map((row) => row.textContent)).toEqual(["민지강남에서 · 환승 1번37분", "홍대입구환승 없음38분"]);
+    // 반올림한 분에서 계산한 최장·차이(2249초 → 37분, 2250초 → 38분: 차이 1분).
+    const stats = within(card)
+      .getAllByRole("term")
+      .map((term) => `${term.textContent}${term.nextSibling?.textContent}`);
+    expect(stats).toEqual(["최장38분", "차이1분"]);
+    // 합계는 공평 순위와 상관없어 공평 모드에서 보이지 않는다(#122).
+    expect(within(card).queryByText("1시간 15분")).toBeNull();
+    expect(within(card).getByRole("button", { name: /이 역으로 정했어요/ })).toBeVisible();
+    expect(within(card).getByRole("button", { name: /카카오맵 길찾기/ })).toBeVisible();
     expect(within(card).getByRole("link", { name: /지도에서 보기/ })).toHaveAttribute(
       "href",
       expect.stringMatching(/^https:\/\/map\.kakao\.com\/link\/map\//),
     );
   });
 
-  it("2위 줄은 접힌 상태에서 최장·차이를 보인다", () => {
-    const [, second] = view.candidates;
-    if (!second) throw new Error("후보 없음");
-    render(<OtherCandidateRow candidate={second} choice={choice} />);
-    expect(screen.getByText("최장 42분, 차이 27분")).toBeInTheDocument();
+  it("빨리 만나기에서는 순위 기준인 합계를 앞에 둔다(1위 카드·2위 줄 모두)", () => {
+    const fast: ChoiceContext = { ...choice, mode: "fast" };
+    const [top, second] = view.candidates;
+    if (!top || !second) throw new Error("후보 없음");
+    render(<TopCandidateCard candidate={top} choice={fast} />);
+    const stats = screen.getAllByRole("term").map((term) => `${term.textContent}${term.nextSibling?.textContent}`);
+    expect(stats).toEqual(["합계1시간 15분", "최장38분"]);
+    render(<OtherCandidateRow candidate={second} choice={fast} />);
+    expect(screen.getByText("합계 57분, 최장 42분")).toBeInTheDocument();
+  });
+
+  it("'자세히'(aria-expanded)를 펴면 시간 막대·추천 이유가 보이고, 다시 접을 수 있다", async () => {
+    const user = userEvent.setup();
+    const [top] = view.candidates;
+    if (!top) throw new Error("후보 없음");
+    render(<TopCandidateCard candidate={top} choice={choice} />);
+    const more = screen.getByRole("button", { name: /자세히/ });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    const panel = document.getElementById(more.getAttribute("aria-controls") ?? "");
+    expect(panel).not.toBeVisible();
+    await user.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+    expect(more).toHaveFocus();
+    expect(panel).toBeVisible();
+    // 모든 트랙이 같은 눈금: 최장 38분 → 0~40분 자
+    expect(within(panel as HTMLElement).getByText("40분")).toBeVisible();
+    expect(within(panel as HTMLElement).getByText("가장 오래 걸리는 홍대입구에서 오는 분도 38분이에요.")).toBeVisible();
+    await user.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    expect(panel).not.toBeVisible();
   });
 
   it("고른 사람이 없으면 (나)를 붙이지 않는다", () => {

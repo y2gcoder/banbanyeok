@@ -77,19 +77,17 @@ test("집에 가는 막차: 직행 확정은 분 그대로, 갈아타는 길은 
   await expect(lastTrain.getByText("평일 시간표")).toBeVisible();
   // 부천: 갈아타는 여유 시각 23:06 → 23:00. 광교: 고속터미널에서는 대조한 직행이 없어 시각이 없다.
   // 공개한 사람 가운데 시각이 없는 사람(광교)이 있어, 맨 위 줄이 범위를 밝힌다.
-  await expect(
-    lastTrain.getByText("공개된 시각 중에는 부천의 23:00이 가장 일러요. 막차를 더 확인해야 할 분도 있어요."),
-  ).toBeVisible();
+  await expect(lastTrain.getByText("공개된 시각 중 가장 이름: 부천 23:00 · 더 확인할 분 있음")).toBeVisible();
   const rows = lastTrain.getByRole("listitem");
-  await expect(rows.nth(0)).toContainText("광교이 길은 아직 막차를 계산하지 않아요.");
+  await expect(rows.nth(0)).toContainText("광교이 경로는 막차 계산 전.");
   await expect(rows.nth(0)).not.toContainText(/\d\d:\d\d/);
-  await expect(rows.nth(1)).toContainText("부천늦어도23:00엔출발하세요");
+  await expect(rows.nth(1)).toContainText("부천늦어도23:00출발");
   await expect(rows.nth(1).getByRole("link", { name: "부천, 지도 앱에서 막차 확인하기" })).toHaveAttribute(
     "href",
     /^https:\/\/map\.kakao\.com\/link\/by\/traffic\//,
   );
   // 평일은 일부 노선만 계산한 요일 종류다(9호선을 끈 동안): 줄의 종류와 상관없이 알린다. 기준일은 시간표를 모은 날이다.
-  await expect(lastTrain.getByText("평일은 일부 노선만 막차를 보여 드려요.")).toBeVisible();
+  await expect(lastTrain.getByText("평일은 일부 노선만 막차 표시.")).toBeVisible();
   await expect(lastTrain.getByText(/^시간표 수집 기준 \d{4}년 \d{1,2}월 \d{1,2}일\. 공사나 행사가/)).toBeVisible();
   await expect(lastTrain).not.toContainText("계산했어요");
 
@@ -100,9 +98,7 @@ test("집에 가는 막차: 직행 확정은 분 그대로, 갈아타는 길은 
     .filter({ has: page.locator(":scope > summary", { hasText: "강남" }) });
   await gangnamRow.locator(":scope > summary").click();
   const gangnam = gangnamRow.getByRole("region", { name: "강남역 집에 가는 막차" });
-  await expect(gangnam.getByRole("listitem").nth(0)).toContainText(
-    "광교막차00:03다음 날· 광교행강남역에서 열차가 떠나는 시각이에요.",
-  );
+  await expect(gangnam.getByRole("listitem").nth(0)).toContainText("광교막차00:03다음 날· 광교행강남역 출발 시각");
   await shot(page, "3-last-trains");
 
   // 옛 링크(v=1)에는 칸이 없다.
