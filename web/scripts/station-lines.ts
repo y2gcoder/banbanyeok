@@ -66,14 +66,29 @@ const GYEONGWON_SERVICES: Record<string, string> = {
 
 export type LineSourceStation = { code: string; name: string; lines: string[]; sources: Record<string, string> };
 
+/** KRIC/TAGO 모델과 실제 정기 운행이 다른 역의 표시 보정. 그래프 범위와 배지 범위는 다르다(#132). */
+const STATION_LINE_ADJUSTMENTS: Record<string, { remove?: string[]; add?: string[] }> = {
+  // 광운대: 경의중앙선 정차 없음, 평일 경춘선 2왕복은 유지. 코레일 시각표 확인 2026-11-23.
+  // https://www.korail.com/file/cubedata/COMMON/jfile/202608/28/202608281a045c7905b490.xlsx
+  "1y8": { remove: ["경의중앙선"] },
+  // 청량리: 경춘선 정기 운행(경춘선 상·하행 시트). 코레일 시각표 확인 2026-11-23.
+  // https://www.korail.com/file/cubedata/COMMON/jfile/202608/28/202608281a045c7905b490.xlsx
+  mj0: { add: ["경춘선"] },
+  // 회기: 경춘선 정기 정차(경춘선 상·하행 시트). 코레일 시각표 확인 2026-11-23.
+  // https://www.korail.com/file/cubedata/COMMON/jfile/202608/28/202608281a045c7905b490.xlsx
+  dyp: { add: ["경춘선"] },
+};
+
 /** 역의 표시 노선명(원천 순서, 중복 가능). 모르는 노선명은 그대로 쓰고 `unknown`에 모은다. */
 export function stationLineLabels(station: LineSourceStation, unknown: Set<string> = new Set()): string[] {
-  return station.lines.flatMap((raw) => {
+  const labels = station.lines.flatMap((raw) => {
     if (raw === "경원선") return gyeongwonLabels(station);
     const label = LINE_LABELS[raw];
     if (label === undefined) unknown.add(raw);
     return [label ?? raw];
   });
+  const adjustment = STATION_LINE_ADJUSTMENTS[station.code];
+  return labels.filter((label) => !adjustment?.remove?.includes(label)).concat(adjustment?.add ?? []);
 }
 
 /** 경원선 역의 운행 노선. 아는 TAGO 운행 노선이 하나도 없으면 1호선으로 짐작하지 않고 생성을 멈춘다. */
