@@ -53,6 +53,7 @@ tasks.named<Test>("integrationTest") {
     )
 }
 tasks.named<Test>("test") {
+    inputs.file(rootProject.file("contracts/openapi.yaml")).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty(
         "contracts.dir",
         rootProject.layout.projectDirectory
@@ -69,3 +70,26 @@ tasks.named<Test>("test") {
 
 // 로컬 실행은 저장소 루트를 작업 디렉토리로 써서 data/artifacts/dev 상대 경로가 맞는다.
 tasks.named<JavaExec>("run") { workingDir = rootProject.projectDir }
+
+// 테스트 픽스처의 Liquibase가 운영 서버로 새어 들어오지 않게 전이 의존성까지 검사한다.
+val runtimeComponents =
+    configurations.named("runtimeClasspath").map {
+        it.incoming.resolutionResult.allComponents
+            .mapNotNull { component ->
+                (component.id as? org.gradle.api.artifacts.component.ModuleComponentIdentifier)?.let { id ->
+                    "${id.group}:${id.module}:${id.version}"
+                }
+            }.sorted()
+    }
+val checkNoLiquibaseRuntime by tasks.registering {
+    group = "verification"
+    description = "Reject Liquibase in the production server runtime dependency graph"
+    inputs.property("runtimeComponents", runtimeComponents)
+    doLast {
+        val forbidden = inputs.properties.getValue("runtimeComponents") as List<*>
+        check(forbidden.none { it.toString().startsWith("org.liquibase:") }) {
+            "Liquibase must run outside the server: ${forbidden.filter { it.toString().startsWith("org.liquibase:") }}"
+        }
+    }
+}
+tasks.named("check") { dependsOn(checkNoLiquibaseRuntime) }

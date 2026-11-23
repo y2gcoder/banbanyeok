@@ -5,6 +5,7 @@ import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainSource
 import app.banbanyeok.server.recommendation.mapmiddle.StationLocations
 import app.banbanyeok.server.recommendation.route.RouteSource
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.statement.bodyAsText
@@ -18,6 +19,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import java.time.Clock
 import java.time.Instant
@@ -67,6 +69,12 @@ class RankingFeatureInvariantHttpTest :
                             val response = client.json(HttpMethod.Post, "/v1/recommend", request.toString())
                             response.status shouldBe HttpStatusCode.OK
                             val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                            json
+                                .getValue("timeBasis")
+                                .jsonObject
+                                .getValue("timeSlot")
+                                .jsonPrimitive.content shouldBe
+                                slot.id
                             val cards = json.getValue("candidates").jsonArray.map { it.jsonObject }
                             cards.isNotEmpty() shouldBe true
                             val ranked =
@@ -76,7 +84,13 @@ class RankingFeatureInvariantHttpTest :
                                     )
                                 }
                             val key = slot.id to mode
-                            if (features == 0) baseline[key] = ranked else ranked shouldBe baseline.getValue(key)
+                            if (features == 0) {
+                                baseline[key] = ranked
+                            } else {
+                                withClue("features=$features slot=${slot.id} mode=$mode") {
+                                    ranked shouldBe baseline.getValue(key)
+                                }
+                            }
                             ("lastTrainBasis" in json) shouldBe lastTrains
                             cards.forEach { ("lastTrains" in it) shouldBe lastTrains }
                             cards.forEach { ("routes" in it) shouldBe routes }
