@@ -118,7 +118,7 @@ private fun validate(root: Path) {
     ARTIFACT_STAGES.forEach { it.validate(context, dataset) }
     println(
         "Validated artifact hashes, contract, append-only registry, " +
-            "recomputed OD cells of ${context.slots.size} slots and the last-train table",
+            "recomputed OD cells of ${context.slots.size} slots, the last-train table and the route graph",
     )
 }
 

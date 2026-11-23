@@ -26,6 +26,9 @@ internal class ReleaseParts {
     lateinit var candidates: CandidateList
     lateinit var matrices: Map<TimeSlot, Pair<IntArray, IntArray>>
     lateinit var lastTrains: app.banbanyeok.pipeline.lasttrain.model.LtArtifact
+
+    /** The encoded route graph (rg.bin), checked against [matrices] by its gate. */
+    lateinit var routeGraph: ByteArray
 }
 
 /**
@@ -66,4 +69,5 @@ internal object SeoPairsStage : ArtifactStage {
 }
 
 /** In running order: the order products are built and the order their checks fail. */
-internal val ARTIFACT_STAGES: List<ArtifactStage> = listOf(SeoPairsStage, TravelMatrixStage, LastTrainStage)
+internal val ARTIFACT_STAGES: List<ArtifactStage> =
+    listOf(SeoPairsStage, TravelMatrixStage, LastTrainStage, RouteGraphStage)

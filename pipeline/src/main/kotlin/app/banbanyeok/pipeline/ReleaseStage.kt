@@ -8,6 +8,7 @@ import app.banbanyeok.schema.ManifestFile
 import app.banbanyeok.schema.ManifestFiles
 import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.generationOne
+import app.banbanyeok.schema.generationThree
 import app.banbanyeok.schema.generationTwo
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -63,9 +64,21 @@ internal fun stageRelease(
     val seoPages = entries.seoPages?.let(::stage)
     val odSlots = entries.odSlots?.mapValues { stage(it.value) }
     val lastTrain = entries.lastTrain?.let(::stage)
+    val routeGraph = entries.routeGraph?.let(::stage)
     // 내용이 같은 구분 행렬은 한 파일을 함께 가리킨다(같은 해시 = 같은 발행 이름). 한 번만 쓴다.
     val staged =
-        (listOfNotNull(registry, candidates, od, seoPages, lastTrain) + odSlots?.values.orEmpty()).distinctBy { it.key }
+        (
+            listOfNotNull(
+                registry,
+                candidates,
+                od,
+                seoPages,
+                lastTrain,
+                routeGraph,
+            ) + odSlots?.values.orEmpty()
+        ).distinctBy {
+            it.key
+        }
     require(staged.map { it.sourceName }.toSet().size == staged.size) { "발행 파일 이름이 겹칩니다" }
     val published =
         manifest.copy(
@@ -77,6 +90,7 @@ internal fun stageRelease(
                     seoPages?.published(),
                     odSlots?.mapValues { it.value.published() },
                     lastTrain?.published(),
+                    routeGraph?.published(),
                 ),
         )
     val publishedText = jsonText(ManifestCodec.encode(published))
@@ -87,7 +101,18 @@ internal fun stageRelease(
         target.parent.createDirectories()
         target.writeBytes(file.content)
     }
-    // 발행 형식 그대로 다시 읽어 검증한다(서버가 시작할 때 하는 일과 같다).
+    verifyStaged(out, published, publishedText)
+    val names = writeManifests(out, published, publishedText)
+    println("Staged release $version: ${staged.size} files + ${names.joinToString(" + ")}")
+    return published
+}
+
+/** 발행 형식 그대로 다시 읽어 검증한다(서버가 시작할 때 하는 일과 같다). */
+private fun verifyStaged(
+    out: Path,
+    published: Manifest,
+    publishedText: String,
+) {
     val dataSet =
         DataSetLoader.load(
             DataSetBytes(
@@ -101,14 +126,13 @@ internal fun stageRelease(
             ),
         )
     published.files.lastTrain?.let { DataSetLoader.lastTrains(dataSet, out.resolve(it.path).readBytes()) }
-    val names = writeManifests(out, published, publishedText)
-    println("Staged release $version: ${staged.size} files + ${names.joinToString(" + ")}")
-    return published
+    published.files.routeGraph?.let { DataSetLoader.routeGraph(dataSet, out.resolve(it.path).readBytes()) }
 }
 
 /**
  * 가장 높은 세대의 manifest와, 그 세대를 모르는 옛 서버가 발행 뒤에도 계속 기동할 수 있게(되돌리기 포함) 아래 세대를 모두 쓴다:
- * 세대 3이면 `manifest.v3.json` → `manifest.v2.json`(막차 표 없음) → `manifest.json`(구분 행렬도 없음, 마지막). 세대 1뿐이면
+ * 세대 4면 `manifest.v4.json` → `manifest.v3.json`(노선 그래프 없음) → `manifest.v2.json`(막차 표도 없음) → `manifest.json`(구분 행렬도
+ * 없음, 마지막). 세대 1뿐이면
  * `manifest.json`만. 세대 1은 세대 1만 아는 reader의 규칙으로 다시 읽어 검증한다.
  */
 private fun writeManifests(
@@ -130,8 +154,20 @@ private fun writeManifests(
         supportedSchema = 1,
     )
     val written = mutableListOf<String>()
+    if (published.files.routeGraph != null) {
+        out.resolve(ManifestNames.GENERATION_FOUR).writeText(publishedText)
+        written.add(ManifestNames.GENERATION_FOUR)
+    }
     if (published.files.lastTrain != null) {
-        out.resolve(ManifestNames.GENERATION_THREE).writeText(publishedText)
+        val text =
+            if (published.files.routeGraph !=
+                null
+            ) {
+                jsonText(ManifestCodec.encode(published.generationThree()))
+            } else {
+                publishedText
+            }
+        out.resolve(ManifestNames.GENERATION_THREE).writeText(text)
         written.add(ManifestNames.GENERATION_THREE)
     }
     out.resolve(ManifestNames.GENERATION_TWO).writeText(jsonText(ManifestCodec.encode(published.generationTwo())))

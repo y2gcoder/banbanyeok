@@ -60,7 +60,8 @@ class ArtifactLoaderTest :
                 val store = LocalFileArtifactStore(Files.createTempDirectory("gen1-only"), UnconfinedTestDispatcher())
                 copyDev(store) {
                     it != ArtifactLoader.MANIFEST_V2_KEY.value &&
-                        it != ArtifactLoader.MANIFEST_V3_KEY.value
+                        it != ArtifactLoader.MANIFEST_V3_KEY.value &&
+                        it != ArtifactLoader.MANIFEST_V4_KEY.value
                 }
                 val loaded = ArtifactLoader(store).load()
                 loaded.dataSet.manifest.schemaVersion shouldBe 1
@@ -73,7 +74,7 @@ class ArtifactLoaderTest :
                 val loaded =
                     ArtifactLoader(LocalFileArtifactStore(devArtifacts, UnconfinedTestDispatcher())) { phases += it }
                         .load()
-                loaded.dataSet.manifest.schemaVersion shouldBe 3
+                loaded.dataSet.manifest.schemaVersion shouldBe 4
                 val table = loaded.lastTrains.await()!!
                 table.homeCount shouldBe loaded.dataSet.od.originCount
                 table.meetingCount shouldBe loaded.dataSet.od.candidateCount
@@ -84,7 +85,10 @@ class ArtifactLoaderTest :
 
             it("reads generation 2 when generation 3 is absent (data published before last trains)") {
                 val store = LocalFileArtifactStore(Files.createTempDirectory("gen2-only"), UnconfinedTestDispatcher())
-                copyDev(store) { it != ArtifactLoader.MANIFEST_V3_KEY.value }
+                copyDev(store) {
+                    it != ArtifactLoader.MANIFEST_V3_KEY.value &&
+                        it != ArtifactLoader.MANIFEST_V4_KEY.value
+                }
                 val loaded = ArtifactLoader(store).load()
                 loaded.dataSet.manifest.schemaVersion shouldBe 2
                 loaded.slots.await().size shouldBe 11
@@ -93,7 +97,7 @@ class ArtifactLoaderTest :
 
             it("ignores a generation 3 manifest whose dataVersion differs and falls back to generation 2") {
                 val store = LocalFileArtifactStore(Files.createTempDirectory("stale-v3"), UnconfinedTestDispatcher())
-                copyDev(store)
+                copyDev(store) { it != ArtifactLoader.MANIFEST_V4_KEY.value }
                 val v3 = store.get(ArtifactLoader.MANIFEST_V3_KEY)!!.content.decodeToString()
                 val stale = Regex("\"dataVersion\": \"[0-9.]+\"").replace(v3, "\"dataVersion\": \"29991231.1\"")
                 store.put(ArtifactLoader.MANIFEST_V3_KEY, stale.encodeToByteArray())
@@ -106,7 +110,7 @@ class ArtifactLoaderTest :
             it("falls back to generation 2 when the generation 3 manifest carries a date that is not on the calendar") {
                 // PR #81 검토: lastTrainAsOf만 2026-02-30으로 바꾸면 모양 검사는 통과하고 서버가 날짜를 읽다 기동에 실패했다.
                 val store = LocalFileArtifactStore(Files.createTempDirectory("bad-date"), UnconfinedTestDispatcher())
-                copyDev(store)
+                copyDev(store) { it != ArtifactLoader.MANIFEST_V4_KEY.value }
                 val v3 = store.get(ArtifactLoader.MANIFEST_V3_KEY)!!.content.decodeToString()
                 val broken =
                     Regex("\"lastTrainAsOf\": \"[0-9-]+\"").replace(v3, "\"lastTrainAsOf\": \"2026-02-30\"")
@@ -141,7 +145,10 @@ class ArtifactLoaderTest :
                 "ignores a generation 2 manifest whose dataVersion differs from manifest.json (stale after a rollback)",
             ) {
                 val store = LocalFileArtifactStore(Files.createTempDirectory("stale-v2"), UnconfinedTestDispatcher())
-                copyDev(store) { it != ArtifactLoader.MANIFEST_V3_KEY.value }
+                copyDev(store) {
+                    it != ArtifactLoader.MANIFEST_V3_KEY.value &&
+                        it != ArtifactLoader.MANIFEST_V4_KEY.value
+                }
                 val v2 = store.get(ArtifactLoader.MANIFEST_V2_KEY)!!.content.decodeToString()
                 val stale = Regex("\"dataVersion\": \"[0-9.]+\"").replace(v2, "\"dataVersion\": \"29991231.1\"")
                 store.put(ArtifactLoader.MANIFEST_V2_KEY, stale.encodeToByteArray())

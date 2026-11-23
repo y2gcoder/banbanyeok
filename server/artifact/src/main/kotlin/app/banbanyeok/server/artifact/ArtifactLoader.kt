@@ -161,5 +161,6 @@ public class ArtifactLoader(
         public val MANIFEST_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_ONE)
         public val MANIFEST_V2_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_TWO)
         public val MANIFEST_V3_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_THREE)
+        public val MANIFEST_V4_KEY: ArtifactKey = ArtifactKey(ManifestNames.GENERATION_FOUR)
     }
 }
