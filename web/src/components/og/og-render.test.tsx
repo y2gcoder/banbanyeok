@@ -123,6 +123,8 @@ describe("OG 이미지 그리기(satori)", () => {
     const c = SHARED_CASES.find((x) => x.id === "hidden-self-view");
     if (!c) throw new Error("표본 없음");
     expect(JSON.stringify(c.result)).toContain(HIDDEN_ORIGIN); // 입력에는 있다(본인에게만 오는 originName)
+    const hiddenCode = c.result.participants.find((p) => p.hidden)?.originCode;
+    expect(hiddenCode).toBeTruthy(); // 본인에게만 오는 실제 숨긴 출발역 코드
     const view = toResultView(c.result);
     const data = sharedCardData(view, c.state);
     const preview = sharedPreview(view, c.state);
@@ -130,6 +132,7 @@ describe("OG 이미지 그리기(satori)", () => {
     expect(data?.modeLine).toBe("참가자 2 쪽으로 고름");
     expect(preview?.description).toBe("강남 5분 · 참가자 2 4분 · 홍대입구 35분 · 참가자 2 쪽으로 고름");
     expect(JSON.stringify([data, preview])).not.toContain(HIDDEN_ORIGIN);
+    expect(JSON.stringify([data, scoreboardCardData(view, c.state)])).not.toContain(JSON.stringify(hiddenCode));
   });
 
   it('막차 줄: 직행 확정은 분 그대로, 여유 시각은 10분 단위로 내리고, 자정을 넘기면 "다음 날"을 붙이고, 확인 필요와 숨긴 사람은 줄이 없다', () => {

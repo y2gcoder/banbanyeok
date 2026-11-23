@@ -1,7 +1,7 @@
 /**
  * 미리보기(OG) 이미지용 한국어 글꼴 서브셋을 만든다.
  *
- * 입력: 의존성 `pretendard`의 Bold(OTF, OFL 1.1), 파이프라인의 `og-glyphs.txt`(역 이름 글자), 웹 역 인덱스의 이름,
+ * 입력: 의존성 `pretendard`의 Bold(OTF, OFL 1.1), 파이프라인의 `og-glyphs.txt`(역 이름 글자), 웹 역 인덱스의 역 이름·노선 짧은 이름,
  *       `src/lib/copy/og-text.ts`의 고정 문구, ASCII 출력 가능 문자, KS X 1001 한글 2,350자(별칭에 쓰일 흔한 글자).
  * 출력: public/fonts/og-sans-bold.otf, public/fonts/OFL.txt, src/lib/copy/og-glyphs.gen.json(글꼴에 실제로 들어간 글자)
  *
@@ -18,6 +18,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import subsetFont from "subset-font";
 import { OG_FONT_FAMILY, OG_FONT_FILE, ogFixedChars } from "../src/lib/copy/og-text.ts";
+import { lineShortLabel } from "../src/lib/stations/lines.ts";
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const glyphsFile = resolve(web, process.env.OG_GLYPHS_FILE ?? "../data/artifacts/dev/og-glyphs.txt");
@@ -45,11 +46,13 @@ function ksx1001Hangul(): string {
   return text;
 }
 
-function stationNameChars(): string {
+function stationChars(): string {
   const index = JSON.parse(readFileSync(resolve(web, "src/lib/stations/index.gen.json"), "utf8")) as {
     stations: [string, string, ...unknown[]][];
+    lines: string[];
   };
-  return index.stations.map((s) => s[1]).join("");
+  // 수기 목록을 두지 않아 인천자기부상 등 새 노선도 서브셋에서 빠지지 않는다.
+  return index.stations.map((s) => s[1]).join("") + index.lines.map(lineShortLabel).join("");
 }
 
 // ---------- sfnt 읽기·쓰기(이름 바꾸기용) ----------
@@ -216,7 +219,7 @@ function cmapChars(font: Buffer): Set<string> {
 const requested = [
   asciiPrintable(),
   ksx1001Hangul(),
-  stationNameChars(),
+  stationChars(),
   readFileSync(glyphsFile, "utf8"),
   ogFixedChars().join(""),
 ].join("");
