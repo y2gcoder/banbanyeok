@@ -2,6 +2,7 @@ import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { ScoreboardCardData } from "@/lib/share-card/scoreboard-card-data";
 import { Dot, OgFrame, personHex } from "./frame";
+import { OgLineBadges } from "./line-badges";
 
 /**
  * 공유 링크(`/s?...`)의 미리보기 그림 "A 숫자판"(#68): 각자의 시간이 주인공이다.
@@ -33,8 +34,8 @@ function emWidth(text: string): number {
 const LAST_TRAIN_ROW = 40;
 /** 가장 긴 줄 "늦어도 다음 날 00:00"이 칸 폭(4명 246px)에 한 줄로 들어가는 크기. */
 const LAST_TRAIN_SIZE: Record<number, number> = { 2: 30, 3: 26, 4: 23 };
-const WITH_LAST_TRAIN = { numberScale: 0.88, headGap: 18, chipGap: 12 } as const;
-const WITHOUT_LAST_TRAIN = { numberScale: 1, headGap: 26, chipGap: 22 } as const;
+const WITH_LAST_TRAIN = { numberScale: 0.88, headGap: 12, chipGap: 10 } as const;
+const WITHOUT_LAST_TRAIN = { numberScale: 1, headGap: 16, chipGap: 16 } as const;
 
 /** 모든 사람이 같은 크기를 쓴다(한 사람만 작아지면 숫자판이 고르지 않다). 가장 긴 시간 글자가 칸에 들어가는 크기. */
 function numberSize(texts: string[], count: number, scale: number): number {
@@ -78,6 +79,9 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
     <OgFrame>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingTop: 10 }}>
         <span style={{ fontSize: headSize(head), letterSpacing: -4, lineHeight: 1.05 }}>{head}</span>
+        <div style={{ display: "flex", marginTop: 10 }}>
+          <OgLineBadges stationCode={data.stationCode} />
+        </div>
         <div style={{ display: "flex", marginTop: layout.headGap }}>
           {data.people.map((person, i) => (
             <div

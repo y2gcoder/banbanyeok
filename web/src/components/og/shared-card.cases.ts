@@ -4,6 +4,7 @@
  */
 import type { Mode, RecommendResult } from "@/lib/api/types";
 import type { ShareState } from "@/lib/link/codec";
+import { searchStations } from "@/lib/stations";
 import type { TimeSlot } from "@/lib/when/time-slot";
 
 type Person = {
@@ -33,6 +34,13 @@ const noTime: LastTrain = { kind: "check" };
 
 function person(origin: string, seconds: number): Person {
   return { label: `${origin}에서 오는 분`, shortLabel: origin, kind: "origin", origin, seconds };
+}
+
+/** 이름에 대응하는 실제 수도권 코드로 배지도 실제 경로처럼 그린다. */
+function sampleStationCode(name: string): string {
+  const station = searchStations(name).find((s) => s.name === name && s.supported);
+  if (!station) throw new Error(`표본 역 없음: ${name}`);
+  return station.code;
 }
 
 function build(
@@ -77,7 +85,7 @@ function build(
       hidden: p.hidden ?? p.origin === null,
       // 숨겼는데 출발역이 오는 사람은 이 화면을 보는 본인이다(서버는 본인에게만 본인 출발역을 준다).
       ...(p.hidden && p.origin !== null ? { isSelf: true } : {}),
-      originCode: p.origin === null ? null : "000",
+      originCode: p.origin === null ? null : p.hidden ? sampleStationCode(p.origin) : "000",
       originName: p.origin,
       label: p.label,
       labelKind: p.kind,
@@ -86,8 +94,8 @@ function build(
     candidates: [
       {
         rank: 1,
-        // 출발역 코드("000")와 다른 코드다: 같으면 "출발역이 바로 이 역"으로 읽혀 막차 줄이 빠진다.
-        stationCode: "00s",
+        // 출발역 코드("000")와 다르고, 호선 배지를 그릴 수 있는 실제 코드다.
+        stationCode: sampleStationCode(station),
         stationName: station,
         times: people.map((p, i) => ({ participantId: String(i), seconds: p.seconds, transfers: 1 })),
         maxSeconds: Math.max(...seconds),
@@ -106,7 +114,7 @@ function build(
     ...(middle
       ? {
           mapMiddle: {
-            stationCode: "001",
+            stationCode: sampleStationCode(middle.station),
             stationName: middle.station,
             times: middle.seconds.map((sec, i) => ({ participantId: String(i), seconds: sec, transfers: 1 })),
           },

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   OG_COLORS,
   OG_FONT_FILE,
@@ -21,6 +21,9 @@ import { toResultView } from "@/lib/result/view-model";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { roomImagePath } from "@/lib/room/share-link";
 import { scoreboardCardData } from "@/lib/share-card/scoreboard-card-data";
+import * as stations from "@/lib/stations";
+import stationIndex from "@/lib/stations/index.gen.json";
+import { OgLineBadges } from "./line-badges";
 import { ROOM_CASES } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
@@ -37,7 +40,21 @@ type Drawn = {
   constants?: Record<string, unknown>;
   /** 대표 표본을 실제로 그린 결과(마크업). 상수·규칙·코드 어디를 바꿨든 그림이 달라지면 해시가 달라진다. */
   rendered?: () => string[];
+  /** 공유·방은 코드로 조회한 모든 역의 실제 배지만 입력으로 삼는다. */
+  stationBadges?: () => [string, string][];
 };
+
+/**
+ * 모든 현행·폐기 코드의 배지 마크업을 코드순으로 센다. 역 이름·별칭·좌표·데이터 버전·인덱스 순서는 그림 입력이 아니다.
+ * stationByCode의 실제 조회 결과를 쓰므로 대표 표본 밖 역의 노선·폐기 코드 연결·조회 구현이 달라져도 놓치지 않는다.
+ * pair는 페이지가 준 노선을 그리며 그 값이 pairOgImagePath에 들어가므로 이 입력을 쓰지 않는다.
+ */
+function stationBadgeInputs(index = stationIndex): [string, string][] {
+  const codes = new Set([...index.stations.map((station) => String(station[0])), ...Object.keys(index.replaced)]);
+  return [...codes]
+    .sort()
+    .map((code) => [code, renderToStaticMarkup(createElement(OgLineBadges, { stationCode: code }))]);
+}
 
 const SITE: Drawn = {
   texts: ["brand", "taglineTop", "taglineBottom", "taglineSub"],
@@ -46,10 +63,12 @@ const SITE: Drawn = {
 
 /** "N분"·"N시간" 글자는 `formatMinutes`가 정하므로 그 파일도 입력이다. */
 const PAIR: Drawn = {
-  texts: ["brand", "pairQuestion", "pairBasis", "middleDot"],
+  texts: ["brand", "pairQuestion", "pairBasis", "middleDot", "moreLines"],
   sources: [
     "src/app/(seo)/meet/[pair]/opengraph-image/route.tsx",
     "src/components/og/pair-card.tsx",
+    "src/components/og/line-badges.tsx",
+    "src/lib/stations/lines.ts",
     "src/components/og/frame.tsx",
     "src/lib/display/minutes.ts",
   ],
@@ -107,12 +126,16 @@ const SHARED: Drawn = {
     "lastTrain",
     "lastTrainBy",
     "nextDay",
+    "moreLines",
   ],
   constants: { OG_NAME_MAX },
   rendered: renderedSharedSamples,
+  stationBadges: stationBadgeInputs,
   sources: [
     "src/app/s/og/route.tsx",
     "src/components/og/scoreboard-card.tsx",
+    "src/components/og/line-badges.tsx",
+    "src/lib/stations/lines.ts",
     "src/components/og/frame.tsx",
     "src/lib/share-card/scoreboard-card-data.ts",
     "src/lib/share-card/shared-preview.ts",
@@ -160,6 +183,7 @@ const ROOM: Drawn = {
     "lastTrain",
     "lastTrainBy",
     "nextDay",
+    "moreLines",
     "middleLead",
     "middleIf",
     "middleMore",
@@ -167,9 +191,12 @@ const ROOM: Drawn = {
   ],
   constants: { OG_NAME_MAX, ROOM_PREVIEW_LAST_TRAIN },
   rendered: renderedRoomSamples,
+  stationBadges: stationBadgeInputs,
   sources: [
     "src/app/r/[roomId]/og/route.tsx",
     "src/components/og/shared-card.tsx",
+    "src/components/og/line-badges.tsx",
+    "src/lib/stations/lines.ts",
     "src/components/og/frame.tsx",
     "src/lib/room/share-copy.ts",
     "src/lib/result/map-middle.ts",
@@ -183,10 +210,11 @@ const ROOM: Drawn = {
 };
 
 /** 그림을 정하는 입력(문구·크기·색·글꼴 파일·그리는 코드)의 해시 앞 8자리. */
-function inputsHash({ texts, sources, constants, rendered }: Drawn): string {
+function inputsHash({ texts, sources, constants, rendered, stationBadges }: Drawn): string {
   const digest = createHash("sha256");
   const fixedTexts = Object.fromEntries(texts.map((key) => [key, OG_TEXT[key]]));
   digest.update(JSON.stringify({ OG_WIDTH, OG_HEIGHT, OG_COLORS, fixedTexts, constants }));
+  if (stationBadges) digest.update(JSON.stringify(stationBadges()));
   for (const markup of rendered?.() ?? []) digest.update(markup);
   digest.update(readFileSync(join(ROOT, "public/fonts", OG_FONT_FILE)));
   for (const source of sources) digest.update(readFileSync(join(ROOT, source)));
@@ -194,6 +222,47 @@ function inputsHash({ texts, sources, constants, rendered }: Drawn): string {
 }
 
 describe("미리보기 그림의 버전(입력이 바뀌었는데 버전이 그대로면 카카오가 옛 그림을 캐시한다)", () => {
+  it("역 별칭·좌표·이름·데이터 버전·인덱스 순서는 호선 배지 입력에 영향을 주지 않는다", () => {
+    const edited = structuredClone(stationIndex);
+    edited.dataVersion = "metadata-only";
+    for (const station of edited.stations) {
+      station[1] = "다른 이름";
+      station[3] = ["새 별칭"];
+      station[5] = 0;
+      station[6] = 0;
+    }
+    edited.stations.reverse();
+    expect(stationBadgeInputs(edited)).toEqual(stationBadgeInputs());
+    for (const drawing of [SHARED, ROOM]) {
+      expect(inputsHash({ ...drawing, stationBadges: () => stationBadgeInputs(edited) })).toBe(inputsHash(drawing));
+    }
+  });
+
+  it.each(["9k5", Object.keys(stationIndex.replaced)[0] ?? ""])(
+    "코드 %s의 배지가 바뀌면 공유·방 버전은 바뀌고 pair 고정 버전은 그대로다",
+    (changedCode) => {
+      const before = [inputsHash(SHARED), inputsHash(ROOM), inputsHash(PAIR)];
+      const lookup = stations.stationByCode;
+      const spy = vi.spyOn(stations, "stationByCode").mockImplementation((code) => {
+        const station = lookup(code);
+        return code === changedCode && station ? { ...station, lines: ["9호선"] } : station;
+      });
+      try {
+        expect(inputsHash(SHARED)).not.toBe(before[0]);
+        expect(inputsHash(ROOM)).not.toBe(before[1]);
+        expect(inputsHash(PAIR)).toBe(before[2]);
+      } finally {
+        spy.mockRestore();
+      }
+    },
+  );
+
+  it("숫자판 버전 대표 표본에 실제 4노선 역의 배지와 넘침 표기가 포함된다", () => {
+    const badge = renderToStaticMarkup(createElement(OgLineBadges, { stationCode: "ct5" }));
+    expect(badge).toContain("외 1");
+    expect(renderedSharedSamples().join("")).toContain(badge);
+  });
+
   it("사이트 기본 그림: SITE_OG_IMAGE_VERSION", () => {
     expect(
       SITE_OG_IMAGE_VERSION,

@@ -2,6 +2,7 @@ import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { SharedCardData } from "@/lib/share-card/shared-preview";
 import { OgFrame, personHex } from "./frame";
+import { OgLineBadges } from "./line-badges";
 
 /** 오른쪽 그림 영역(노선이 만날 역의 환승 고리로 모인다). */
 const AREA = { width: 520, height: 456 } as const;
@@ -14,7 +15,7 @@ const LINE_WIDTH = 14;
 /** 역 이름 글자 수에 맞춘 제목 크기(왼쪽 칸 폭 안에 한 줄). Bold 한글은 대략 글자당 0.95em. */
 function headlineSize(stationName: string): number {
   const length = Array.from(stationName).length;
-  return Math.min(168, Math.floor(540 / (length * 0.95)));
+  return Math.min(132, Math.floor(540 / (length * 0.95)));
 }
 
 /**
@@ -157,6 +158,9 @@ export function SharedCard({ data }: { data: SharedCardData }) {
               lineHeight: 1.02,
             }}
           >
+            <div style={{ display: "flex", marginBottom: 14 }}>
+              <OgLineBadges stationCode={data.stationCode} />
+            </div>
             <span style={{ fontSize: headlineSize(data.stationName), letterSpacing: -6 }}>{data.stationName}</span>
             <span style={{ fontSize: 80, letterSpacing: -3 }}>{data.suffix ?? OG_TEXT.sharedSuffix}</span>
           </div>

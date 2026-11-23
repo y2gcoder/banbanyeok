@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import stationIndex from "../stations/index.gen.json";
+import { lineShortLabel } from "../stations/lines";
 import { missingGlyphs, ogSafeName } from "./og-coverage";
 import { OG_NAME_MAX, ogFixedChars } from "./og-text";
 
@@ -15,6 +16,10 @@ describe("OG 글꼴 글자 범위", () => {
   it("역 인덱스의 모든 역 이름이 글꼴에 있다(빈 네모 방지)", () => {
     const names = stationIndex.stations.map((s) => s[1]).join("");
     expect(missingGlyphs(names)).toEqual([]);
+  });
+
+  it("호선 짧은 이름과 넘침 표기를 모두 그릴 수 있다", () => {
+    expect(missingGlyphs(`${stationIndex.lines.map(lineShortLabel).join("")}외 123456789`)).toEqual([]);
   });
 
   it("파이프라인의 og-glyphs.txt 글자가 글꼴에 있다", () => {

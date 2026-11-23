@@ -58,7 +58,7 @@ const STATION: Result["station"] = {
 /** 신도림: 강남 방면 직행 막차가 금요일 운행일 24:27(= 토요일 00:27), 토요일 운행일에는 23:27이다. */
 function sindorim(directMinute: number): Result["station"] {
   return {
-    stationCode: "kxk",
+    stationCode: "eza",
     stationName: "신도림",
     times: [
       {
@@ -110,7 +110,7 @@ export const ROOM_CASES: {
       dataVersion: "1",
       basis: { mode: "fair", favorLabel: null },
       station: {
-        stationCode: "g0m",
+        stationCode: "1k0",
         stationName: "금정",
         times: [
           { label: "강남", seconds: 2340, lastTrain: { kind: "margin", minute: 1449, transfer: true } },
@@ -187,7 +187,7 @@ export const ROOM_CASES: {
       dataVersion: "1",
       basis: { mode: "fair", favorLabel: null },
       station: {
-        stationCode: "g0m",
+        stationCode: "1k0",
         stationName: "금정",
         times: [
           { label: "강남", seconds: 2340, lastTrain: { kind: "margin", minute: 1449, transfer: true } },
