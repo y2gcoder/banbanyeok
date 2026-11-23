@@ -89,6 +89,9 @@ export function posthogOptions(
     // 철회가 저장을 끈다(revoke). 같은 페이지에서 다시 동의하면 set_config로 이 값이 들어가 다시 켜진다.
     disable_persistence: false,
     save_referrer: false,
+    // 주소의 유입 태그(utm_*·광고 클릭 ID)를 저장소에 모아 두지 않는다. 진입 주소에서 다시 뽑는 판(`$session_entry_utm_*`)은
+    // 이 설정과 무관하게 생기므로 before_send([redactCapture])가 속성째 지운다.
+    save_campaign_params: false,
     respect_dnt: true,
     // SDK가 자동으로 붙이는 속성 중 가장 식별력이 큰 원문 사용자 에이전트는 보내지 않는다($browser·$os 같은 분류는 남는다).
     property_denylist: ["$raw_user_agent"],

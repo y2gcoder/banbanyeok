@@ -80,7 +80,7 @@ test("/privacy에서는 동의 배너를 띄우지 않고, 같은 동의를 고�
 test("다른 화면의 배너 링크는 /privacy의 통계 설정으로 가고, 거기서 고른다", async ({ page }) => {
   await page.goto("/");
   await expect(banner(page)).toBeVisible();
-  await banner(page).getByRole("link", { name: "개인정보 처리방침의 통계 설정" }).click();
+  await banner(page).getByRole("link", { name: "언제든 변경" }).click();
   await expect(page).toHaveURL(/\/privacy#analytics-settings$/);
   await expect(page.getByRole("heading", { level: 2, name: "통계 설정" })).toBeInViewport();
   await expect(banner(page)).toHaveCount(0);

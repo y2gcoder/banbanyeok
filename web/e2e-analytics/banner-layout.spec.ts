@@ -103,6 +103,16 @@ for (const vp of U2_CASES) {
         await expect(box).not.toBeChecked();
         await expect(box).toBeInViewport({ ratio: 1 });
       }
+      // #114: 순화해도 법이 정한 알릴 사항은 접히거나 잘리지 않고 화면 안에 보인다(목적·항목·보유 기간·이전받는 자·국가·시기·방법·거부해도 불이익 없음·연령).
+      for (const text of [
+        "서비스 개선용 · 기능 이용·오류·속도 기록, 무작위 식별자",
+        "통계 도구 PostHog, Inc. (미국)에 이용할 때마다 암호화해 보내 분석하고 1년 보관해요",
+        "동의하지 않아도 모든 기능을 그대로 쓸 수 있어요.",
+        "만 14세 이상만 동의할 수 있어요.",
+      ]) {
+        // 접힌 세부 고지에도 같은 말이 있을 수 있어(숨긴 요소도 getByText에 잡힌다) 보이는 것만 본다.
+        await expect(banner(page).getByText(text).locator("visible=true")).toBeInViewport({ ratio: 1 });
+      }
       // W1: 체크박스는 위아래 한 줄씩이다(같은 x, 아래 것이 더 아래).
       if (vp.width < 690) {
         const [first, second] = await Promise.all(
@@ -113,6 +123,26 @@ for (const vp of U2_CASES) {
       }
       expect.soft(await horizontalOverflow(page), "가로 넘침").toEqual([]);
       if (vp.touch) expect.soft(await smallTouchTargets(page), "44px보다 작은 터치 목표").toEqual([]);
+    });
+
+    test("'자세히 보기'를 누르면 같은 자리에서 세부 고지(연락처 포함)가 펼쳐지고, 배너 안에서 스크롤되며 버튼은 화면 안에 있다", async ({
+      page,
+    }) => {
+      await page.goto("/");
+      await expect(banner(page)).toBeVisible();
+      const details = banner(page).getByRole("button", { name: /자세히 보기/ });
+      await expect(details).toBeInViewport({ ratio: 1 }); // 요약에서 '자세히'가 보인다
+      await details.click();
+      await expect(details).toHaveAttribute("aria-expanded", "true");
+      const contact = banner(page).getByText(/privacy@posthog\.com/);
+      await contact.scrollIntoViewIfNeeded();
+      await expect(contact).toBeInViewport({ ratio: 1 });
+      const box = await banner(page).boundingBox();
+      expect(box?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(vp.height * 0.6 + 24); // 카드 60dvh + 바깥 여백
+      for (const name of ["모두 거부", "이대로 닫기"]) {
+        await expect(banner(page).getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+      }
+      expect.soft(await horizontalOverflow(page), "가로 넘침").toEqual([]);
     });
 
     test("하나만 체크하면 안내가 보여도 배너 높이와 체크박스 위치가 변하지 않고, 버튼은 같은 크기·같은 줄이다", async ({

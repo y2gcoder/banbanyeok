@@ -51,8 +51,8 @@ test("동의 전 PostHog 요청 0건, 동의 뒤 이벤트가 PostHog US로 나�
   ).toEqual([]);
 
   await banner.getByRole("checkbox", { name: /이용 통계 수집·이용에 동의/ }).check();
-  await banner.getByRole("checkbox", { name: /PostHog, Inc.로 보내는 데 동의/ }).check();
-  await banner.getByRole("button", { name: "선택한 대로 저장" }).click();
+  await banner.getByRole("checkbox", { name: /통계의 국외 이전에 동의/ }).check();
+  await banner.getByRole("button", { name: "동의하고 닫기" }).click();
 
   await expect.poll(() => toPostHog.length, { timeout: 20_000 }).toBeGreaterThan(0);
   await expect.poll(() => responses.length, { timeout: 20_000 }).toBeGreaterThan(0);
