@@ -364,7 +364,11 @@ test.describe("iPhone", () => {
     const probe = await attach(context, page);
     await page.goto(await prepareRoom(page, "host-full", 5));
     await expectRoomMessage(probe, page, baseURL, true);
-    expect(probe.kakao.some((line) => line.startsWith("GET https://talk-apps.kakao.com/scheme/kakaolink"))).toBe(true);
+    // Navigation API의 navigate는 이동 의도이고, context의 request 이벤트보다 먼저 도착할 수 있다.
+    // expectRoomMessage가 이동을 확인했어도 실제 유니버설 링크 요청은 별도로 기다린다.
+    await expect
+      .poll(() => probe.kakao.some((line) => line.startsWith("GET https://talk-apps.kakao.com/scheme/kakaolink")))
+      .toBe(true);
   });
 });
 
