@@ -85,7 +85,7 @@ jobs:
             echo "::warning::운영 서버 커밋을 읽지 못했습니다. 서버를 배포 대상으로 봅니다."
           fi
       # ── 운영 웹 커밋: Worker 버전 tag(wrangler, web/의 고정 버전). 읽지 못하면 웹을 배포한다 ──
-      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
         id: mise
         if: ${{ env.COMPARE == 'true' }}
         continue-on-error: true
