@@ -27,13 +27,15 @@ public class Evaluation internal constructor(
 
     /**
      * [stationCode]까지 사람별 시간(요청 참가자 순서). 순위와 상관없는 역(다른 기준 탭이나 방에서 정한 역)에도 쓴다.
-     * 후보 축에 없는 역이면 null이고, 갈 수 없는 사람은 그 칸이 null이다.
+     * 후보 축에 없는 역이면 null이고, 갈 수 없는 사람은 그 칸이 null이다. 순위 카드와 같이 보이는 값이다: 출발역을 숨긴 다른 사람의
+     * 칸은 뭉뚱그린 값이다([HiddenTimes], #142).
      */
     public fun timesTo(stationCode: String): List<ParticipantTime?>? {
         val column = matrix.candidates.indexOf(stationCode).takeIf { it >= 0 } ?: return null
+        val hidden = HiddenTimes.of(request)
         return request.participants.mapIndexed { row, person ->
             matrix.times[row][column]?.let { seconds ->
-                ParticipantTime(person.id, seconds, requireNotNull(matrix.transfers[row][column]))
+                hidden.time(row, person.id, seconds, requireNotNull(matrix.transfers[row][column]))
             }
         }
     }
