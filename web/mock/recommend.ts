@@ -202,6 +202,41 @@ function lastTrains(r: Row, people: MockStation[], slot: TimeSlot | undefined): 
   });
 }
 
+/**
+ * 가짜 사람별 경로(#120). **실제 경로가 아니다.** 같은 노선이면 한 구간, 아니면 두 노선이 모두 서는 역 하나에서 갈아탄다(출발역과 만날 역에서
+ * 거리 합이 가장 짧은 역). 그런 역이 없으면 그 사람은 빠진다(화면이 중립색 막대로 떨어지는지 볼 수 있게). 구간 시간의 합은 그 사람의 시간이다.
+ */
+function routes(r: Row, people: MockStation[], data: MockData, wait: number): NonNullable<Candidate["routes"]> {
+  const stop = (s: MockStation) => ({ stationCode: s.code, stationName: s.name });
+  return people.flatMap((home, p) => {
+    const time = r.times[p];
+    if (!time || home.code === r.station.code) return [];
+    const participantId = String(p);
+    const shared = home.lines.find((line) => r.station.lines.includes(line));
+    if (shared) {
+      const leg = { line: shared, from: stop(home), to: stop(r.station), waitSeconds: wait };
+      return [{ participantId, legs: [{ ...leg, rideSeconds: Math.max(1, time.seconds - wait) }] }];
+    }
+    const [first, second] = [home.lines[0], r.station.lines[0]];
+    const via = [...data.origins.values()]
+      .filter((s) => first && second && s.lines.includes(first) && s.lines.includes(second))
+      .sort((a, b) => km(home, a) + km(a, r.station) - (km(home, b) + km(b, r.station)))[0];
+    if (!first || !second || !via) return [];
+    const ride = Math.max(2, time.seconds - wait - TRANSFER);
+    const share = km(home, via) / Math.max(0.1, km(home, via) + km(via, r.station));
+    const ride1 = Math.min(ride - 1, Math.max(1, Math.round(ride * share)));
+    return [
+      {
+        participantId,
+        legs: [
+          { line: first, from: stop(home), to: stop(via), waitSeconds: wait, rideSeconds: ride1 },
+          { line: second, from: stop(via), to: stop(r.station), waitSeconds: TRANSFER, rideSeconds: ride - ride1 },
+        ],
+      },
+    ];
+  });
+}
+
 function lastTrainBasis(slot: TimeSlot | undefined): NonNullable<Result["lastTrainBasis"]> {
   if (!slot) return { dayType: "weekday", asOf: LAST_TRAIN_AS_OF, unavailable: "day_unknown" };
   const dayType = splitSlot(slot).day;
@@ -257,6 +292,7 @@ export function mockRecommend(data: MockData, body: RecommendBody): Result {
       reasonCode: i === 0 ? firstCode : restCode,
       reason: reason(body.mode, r, i, top, names, favorIndex),
       lastTrains: lastTrains(r, people, body.timeSlot),
+      routes: routes(r, people, data, waitFor(slot)),
     })),
   };
 }

@@ -7,6 +7,7 @@ export type Mode = Schemas["Mode"];
 export type TimeSlotId = Schemas["TimeSlot"];
 export type TimeBasis = Schemas["TimeBasis"];
 export type RecommendResult = Schemas["Result"];
+export type ParticipantRoute = Schemas["ParticipantRoute"];
 export type RecommendBody = paths["/recommend"]["post"]["requestBody"]["content"]["application/json"];
 export type ApiError = Schemas["Problem"];
 

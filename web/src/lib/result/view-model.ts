@@ -10,6 +10,7 @@ import { kakaoPlaceUrl, kakaoTransitUrl } from "@/lib/map/kakao";
 import { stationByCode } from "@/lib/stations";
 import { type LastTrainView, type MeetingWhen, recalculatingLastTrainView, toLastTrainView } from "./last-train";
 import { type MapMiddleView, toMapMiddleView } from "./map-middle";
+import { type RouteView, toRouteView } from "./route";
 
 type PersonView = {
   index: number;
@@ -25,7 +26,15 @@ type PersonView = {
 export type PersonTimeView = PersonView & {
   seconds: number;
   minutes: number;
+  /** 최단 경로의 환승 수(od 값). */
   transfers: number;
+  /**
+   * 화면에 쓰는 환승 수. 보이는 경로(`route`)가 있으면 그 경로의 환승 수다: 최단보다 2분 안에서 느리지만 환승이 적은 길을 보일 때
+   * 막대와 글자가 어긋나지 않게 한다. 분(`minutes`)과 순위는 언제나 od 값이다.
+   */
+  shownTransfers: number;
+  /** 이 사람이 만날 역까지 가는 경로(#120). 서버가 주지 않았으면(그래프 없음·숨긴 출발역·같은 역) null이고 중립색 막대로 그린다. */
+  route: RouteView | null;
   /** 카카오맵 대중교통 길찾기(출발역 → 만날 역). 좌표를 모르면 null. */
   directionsUrl: string | null;
 };
@@ -95,11 +104,16 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
     const timed = people.map((person, i): PersonTimeView => {
       const time = c.times[i];
       const from = place(person.originCode, person.originName);
+      const id = result.participants[i]?.participantId;
+      const route = toRouteView(c.routes?.find((r) => r.participantId === id));
+      const transfers = time?.transfers ?? 0;
       return {
         ...person,
         seconds: time?.seconds ?? 0,
         minutes: minutesFromSeconds(time?.seconds ?? 0),
-        transfers: time?.transfers ?? 0,
+        transfers,
+        shownTransfers: route ? route.lines.length - 1 : transfers,
+        route,
         directionsUrl: from && destination ? kakaoTransitUrl(from, destination) : null,
       };
     });

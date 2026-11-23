@@ -1,5 +1,10 @@
+import { RouteIcon } from "lucide-react";
+import { Fragment } from "react";
+import { track } from "@/lib/analytics";
 import { formatMinutes, transferLabel } from "@/lib/display/minutes";
+import type { RouteView } from "@/lib/result/route";
 import type { PersonTimeView } from "@/lib/result/view-model";
+import { lineColor } from "@/lib/stations/lines";
 
 /** 이름 옆 보조 줄. 이름이 출발역 이름이면 같은 말을 되풀이하지 않는다. */
 export function originNote(person: PersonTimeView): string | null {
@@ -32,19 +37,92 @@ function Ticks({ end, step }: { end: number; step: number }) {
   ));
 }
 
-/** 모든 시간 막대와 끝점은 중립색을 써서 역의 호선 배지와 구분한다. */
+/**
+ * 경로가 있으면 막대를 구간으로 나눠 칠한다(#120): 탄 노선은 노선 색, 승강장 대기·갈아타기(걷기 + 대기)는 회색. 구간 길이는 모델 시간의
+ * 비율이고 막대 전체 길이는 그 사람의 분(od 값)이다. 구간 시간은 숫자로 쓰지 않는다(배차/2 평균이라 실제 시간표와 다르다).
+ */
+function RouteFill({ route, width }: { route: RouteView; width: string }) {
+  const total = route.segments.reduce((sum, segment) => sum + segment.seconds, 0);
+  return (
+    <span className="absolute top-[4.5px] left-0 flex h-[5px] gap-px overflow-hidden rounded-full" style={{ width }}>
+      {route.segments.map((segment, i) => (
+        <span
+          // 구간 순서가 곧 정체다(같은 노선을 두 번 탈 수 있다).
+          // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 바뀌지 않는 고정 목록
+          key={i}
+          data-segment={segment.kind}
+          className={segment.kind === "wait" ? "h-full shrink-0 bg-rule-strong" : "h-full shrink-0"}
+          style={{
+            width: `${(segment.seconds / total) * 100}%`,
+            backgroundColor: segment.kind === "ride" ? lineColor(segment.line) : undefined,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** 경로를 모르면(서버가 주지 않음·숨긴 출발역) 막대와 끝점은 중립색이다. 역의 호선 배지와 헷갈리지 않게 한다. */
 function Track({ person, end, step }: { person: PersonTimeView; end: number; step: number }) {
   const at = percent(person.minutes, end);
+  const last = person.route?.lines.at(-1);
   return (
-    <span aria-hidden="true" className="relative block h-3.5">
+    <span aria-hidden="true" className="relative block h-3.5" data-route={person.route ? "lines" : "neutral"}>
       <span className="absolute inset-x-0 top-[5.5px] h-[3px] rounded-full bg-rule" />
       <Ticks end={end} step={step} />
-      <span className="absolute top-[4.5px] left-0 h-[5px] rounded-full bg-ink-soft" style={{ width: at }} />
+      {person.route ? (
+        <RouteFill route={person.route} width={at} />
+      ) : (
+        <span className="absolute top-[4.5px] left-0 h-[5px] rounded-full bg-ink-soft" style={{ width: at }} />
+      )}
       <span
         className="absolute top-px size-3 -translate-x-1/2 rounded-full border-[3px] border-ink-soft bg-surface"
-        style={{ left: at }}
+        style={{ left: at, borderColor: last ? lineColor(last) : undefined }}
       />
     </span>
+  );
+}
+
+/**
+ * 막대 아래 경로 글: 노선 점 + "2호선 → 동대문역사문화공원 환승 → 4호선". 화면 읽기는 막대(aria-hidden) 대신 이 글을 읽는다.
+ * 정확한 열차 시각·출구는 카카오맵 길찾기가 보여 주므로 같은 줄에 연결을 둔다.
+ */
+function RouteLine({ person, rank }: { person: PersonTimeView; rank: number | undefined }) {
+  const route = person.route;
+  if (!route) return null;
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <p className="text-[13px] leading-snug break-keep text-ink-soft">
+        <span className="sr-only">
+          {person.shortName} 경로: {route.description}
+        </span>
+        <span aria-hidden="true" className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
+          {route.lines.map((line, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 바뀌지 않는 고정 목록(같은 노선을 두 번 탈 수 있다)
+            <Fragment key={i}>
+              {i > 0 ? <span className="text-muted-foreground">→ {route.transfers[i - 1]} 환승 →</span> : null}
+              <span className="inline-flex items-center gap-1 font-semibold text-ink">
+                <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: lineColor(line) }} />
+                {line}
+              </span>
+            </Fragment>
+          ))}
+        </span>
+      </p>
+      {person.directionsUrl ? (
+        <a
+          href={person.directionsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track("map_app_opened", { app: "kakao", rank: rank ?? 0 })}
+          aria-label={`${person.shortName} 카카오맵 길찾기`}
+          className="inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-semibold text-ink underline underline-offset-2"
+        >
+          <RouteIcon className="size-3.5" aria-hidden="true" />
+          카카오맵 길찾기
+        </a>
+      ) : null}
+    </div>
   );
 }
 
@@ -68,7 +146,7 @@ function Axis({ end, step }: { end: number; step: number }) {
 }
 
 /**
- * 사람별 시간. 한 사람이 두 줄이다: 위 줄은 이름·환승·분, 아래 줄은 트랙. 트랙은 모든 사람이 카드 폭 전체로 시작·끝·길이가 같고,
+ * 사람별 시간. 한 사람이 두 줄이다(경로가 있으면 세 줄): 위 줄은 이름·환승·분, 아래 줄은 트랙, 그 아래는 경로 글과 길찾기. 트랙은 모든 사람이 카드 폭 전체로 시작·끝·길이가 같고,
  * 맨 아래 눈금(0·10·20…분)이 기준이다(이름 길이와 무관, V1). 이름은 서버 짧은 이름(shortLabel). 숫자는 표시 분 규칙(30초 올림)을 따른다.
  */
 export function TimeRails({
@@ -76,11 +154,14 @@ export function TimeRails({
   maxMinutes,
   meIndex = null,
   size = "large",
+  rank,
 }: {
   people: readonly PersonTimeView[];
   maxMinutes: number;
   meIndex?: number | null;
   size?: "large" | "compact";
+  /** 몇 위 카드의 막대인가(길찾기 이벤트의 `rank`). */
+  rank?: number;
 }) {
   const ordered =
     meIndex === null ? people : [...people].sort((a, b) => Number(b.index === meIndex) - Number(a.index === meIndex));
@@ -102,7 +183,7 @@ export function TimeRails({
                   </span>
                   <span className="text-[13px] text-muted-foreground">
                     {note ? `${note} · ` : ""}
-                    {transferLabel(person.transfers)}
+                    {transferLabel(person.shownTransfers)}
                   </span>
                 </p>
                 <span
@@ -116,11 +197,17 @@ export function TimeRails({
                 </span>
               </div>
               <Track person={person} end={end} step={step} />
+              <RouteLine person={person} rank={rank} />
             </li>
           );
         })}
       </ul>
       <Axis end={end} step={step} />
+      {ordered.some((person) => person.route) ? (
+        <p className="text-[12px] leading-snug break-keep text-muted-foreground">
+          막대 색은 타는 노선, 회색은 기다리거나 갈아타는 시간이에요. 열차 시각은 카카오맵 길찾기에서 확인해요.
+        </p>
+      ) : null}
     </div>
   );
 }
