@@ -175,7 +175,7 @@ export interface paths {
         };
         /**
          * 서버 계산 결과 (숨긴 방은 필수)
-         * @description 후보 최대 3개 카드를 순위순으로 돌려준다. 숨긴 참가자는 `originCode`가 `null`이고 시간·환승은 보인다.
+         * @description 후보 최대 3개 카드를 순위순으로 돌려준다. 숨긴 참가자는 `originCode`가 `null`이고, 본인 요청이 아니면 시간은 5분 단위로 뭉뚱그린 값, 환승은 null이다(`PersonalTime`, #142).
          *     participantToken이 있으면 본인 출발역과 경로 상세를 포함한다. 상세 경로 필드는 P3에서 확정한다.
          */
         get: operations["getRoomResult"];
@@ -415,7 +415,7 @@ export interface components {
             nickname?: string;
             originCode: components["schemas"]["StationCode"];
             /**
-             * @description 출발역 이름을 다른 사람에게 가린다(시간은 보인다)
+             * @description 출발역 이름을 다른 사람에게 가린다. 시간은 보이지만 다른 사람에게는 5분 단위로 뭉뚱그린 값이고 환승 횟수는 보이지 않는다(`PersonalTime`)
              * @default false
              */
             hidden: boolean;
@@ -545,28 +545,37 @@ export interface components {
              */
             timeBasis?: components["schemas"]["TimeBasis"];
         };
+        /**
+         * @description 한 사람이 그 역까지 걸리는 시간과 환승 횟수. **출발역을 숨긴 참가자의 칸은 그 참가자 본인의 요청(participantToken)이 아니면
+         *     뭉뚱그린 값이다**(#142): `seconds`는 표시 분(`(초 + 30) / 60`)을 5분 단위로 올린 값의 초(0분도 5분, 즉 300의 배수이고 최소 300)이고
+         *     `transfers`는 null이다. 정확한 값은 본인 응답에만 있다. 순위(`rank`)는 언제나 정확한 값으로 정한 것이다.
+         */
         PersonalTime: {
             /** @description /recommend에서는 입력 순서의 인덱스 문자열("0","1",...) */
             participantId: string;
             seconds: number;
-            transfers: number;
+            /** @description 출발역을 숨긴 다른 참가자의 칸은 null이다(위 설명). 클라이언트는 null이면 환승 횟수를 표시하지 않는다 */
+            transfers: number | null;
         };
         Candidate: {
             rank: number;
             stationCode: components["schemas"]["StationCode"];
             /** @description 만날 역의 표시 이름 */
             stationName: string;
-            /** @description 참가자 순서는 응답의 `participants`와 같다. 숨긴 참가자의 시간도 보인다. */
+            /** @description 참가자 순서는 응답의 `participants`와 같다. 숨긴 참가자의 시간도 보이지만, 본인 요청이 아니면 5분 단위로 뭉뚱그린 값이다(`PersonalTime`). */
             times: components["schemas"]["PersonalTime"][];
+            /** @description `times`(이 응답에 보이는 값)의 최장 */
             maxSeconds: number;
+            /** @description `times`의 최장 − 최단 */
             spreadSeconds: number;
+            /** @description `times`의 합계 */
             totalSeconds: number;
-            /** @description `mode=favor`일 때 우대 대상의 시간 */
+            /** @description `mode=favor`일 때 우대 대상의 시간(`times`의 그 칸과 같다) */
             favoredSeconds?: number;
             /** @enum {string} */
             reasonCode: "FAIR_MINIMAX" | "FAIR_ALTERNATIVE" | "FAST_TOTAL" | "FAST_ALTERNATIVE" | "FAVOR_CAPPED" | "FAVOR_ALTERNATIVE";
             /**
-             * @description 추천 이유 문장(한국어). **서버가 만들어 넣는다**(웹·앱이 같은 문장을 쓰게 하려는 결정). 클라이언트는 문장을 다시
+             * @description 추천 이유 문장(한국어). 숫자는 이 응답에 보이는 `times`(숨긴 참가자는 뭉뚱그린 값)로 만든다. **서버가 만들어 넣는다**(웹·앱이 같은 문장을 쓰게 하려는 결정). 클라이언트는 문장을 다시
              *     만들지 않고 그대로 보여 준다. 생성 규칙은 `shared/app-logic`(docs/setup/p6-notes.md). `reasonCode`는 문구와 별개로
              *     표현(아이콘·강조 등)에 쓰므로 유지한다.
              *
@@ -864,7 +873,7 @@ export interface components {
         PreviewTime: {
             /** @description 짧은 이름(`Participant.shortLabel`). 숨긴 사람은 "참가자 N" */
             label: string;
-            /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null */
+            /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null. 출발역을 숨긴 사람은 5분 단위로 뭉뚱그린 값이다(`PersonalTime`, 미리보기는 누가 묻든 같은 값) */
             seconds: number | null;
             /**
              * @description 그 역에서 돌아가는 막차. `LastTrain`에서 `participantId`를 뺀 모양이다(미리보기는 이름표만 쓴다). **출발역을 숨긴 사람에게는
