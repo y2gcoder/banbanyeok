@@ -2,13 +2,13 @@
 # 규칙: 게시 후 7일 이상 지난 안정판만 쓴다(mise의 minimum_release_age 정책과 같음). 확인일 2026-11-12.
 [versions]
 kotlin = "2.4.21"                  # 2026-10-08 게시. 2.5.0-RC는 안정판이 아니라 제외
-kotlinx-serialization = "1.12.0"   # 1.13.0은 2026-11-11 게시라 제외
+kotlinx-serialization = "1.13.0"   # 1.13.0은 2026-11-11 게시라 제외
 kotlinx-coroutines = "1.11.0"
 # 서버는 Ktor로 확정. 실제 프레임워크 연결은 P3에서 구현한다.
 ktor = "3.6.1"                     # 2026-10-29 게시
-logback = "1.6.6"
+logback = "1.6.7"
 
-kotest = "6.2.6"
+kotest = "6.2.7"
 mockk = "1.14.12"
 testcontainers = "1.21.4"
 konsist = "0.18.1"
