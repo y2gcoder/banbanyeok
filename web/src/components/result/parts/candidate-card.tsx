@@ -119,7 +119,7 @@ function TimeList({ candidate, meIndex }: { candidate: CandidateView; meIndex: n
             ) : null}
           </span>
           <span className="min-w-0 shrink-[2] truncate text-[13px] text-muted-foreground">
-            {[originNote(person), transferLabel(person.transfers)].filter(Boolean).join(" · ")}
+            {[originNote(person), transferLabel(person.shownTransfers)].filter(Boolean).join(" · ")}
           </span>
           <span className="tabular ml-auto shrink-0 text-[19px] leading-none font-extrabold text-ink">
             {formatMinutes(person.minutes)}
@@ -166,7 +166,13 @@ export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle 
         />
       </button>
       <div id={detailId} hidden={!open} className="flex flex-col gap-4">
-        <TimeRails people={candidate.people} maxMinutes={candidate.aggregate.max} meIndex={meIndex} size="compact" />
+        <TimeRails
+          people={candidate.people}
+          maxMinutes={candidate.aggregate.max}
+          meIndex={meIndex}
+          size="compact"
+          rank={candidate.rank}
+        />
         <Reason text={candidate.reason} />
         {candidate.lastTrain ? <LastTrains view={candidate.lastTrain} meIndex={meIndex} /> : null}
         {mapMiddle ? <MapMiddleCompare candidate={candidate} middle={mapMiddle} /> : null}
@@ -209,7 +215,7 @@ export function OtherCandidateRow({
         />
       </summary>
       <div className="flex flex-col gap-4 px-4 pt-1 pb-4">
-        <TimeRails people={candidate.people} maxMinutes={max} meIndex={meIndex} size="compact" />
+        <TimeRails people={candidate.people} maxMinutes={max} meIndex={meIndex} size="compact" rank={candidate.rank} />
         <Reason text={candidate.reason} />
         {candidate.lastTrain ? <LastTrains view={candidate.lastTrain} meIndex={meIndex} /> : null}
         <Directions candidate={candidate} choice={choice} meIndex={meIndex} />
