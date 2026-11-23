@@ -16,64 +16,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { stationLineLabels } from "./station-lines.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const artifacts = resolve(root, "data/artifacts/dev");
 const out = resolve(root, "web/src/lib/stations/index.gen.json");
 
 const ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
-
-/** 기관 노선명 → 화면 표시 노선명. 모르는 노선은 원래 이름을 쓰고 경고한다. */
-const LINE_LABELS: Record<string, string> = {
-  "1호선": "1호선",
-  경부선: "1호선",
-  경원선: "1호선",
-  경인선: "1호선",
-  장항선: "1호선",
-  "2호선": "2호선",
-  "3호선": "3호선",
-  일산선: "3호선",
-  "4호선": "4호선",
-  안산과천선: "4호선",
-  진접선: "4호선",
-  "5호선": "5호선",
-  "6호선": "6호선",
-  "7호선": "7호선",
-  "도시철도 7호선": "7호선",
-  "8호선": "8호선",
-  "수도권 광역철도 8호선": "8호선",
-  "서울 도시철도 9호선": "9호선",
-  "수도권  도시철도 9호선": "9호선",
-  경의중앙선: "경의중앙선",
-  경춘선: "경춘선",
-  분당선: "수인분당선",
-  수인선: "수인분당선",
-  신분당선: "신분당선",
-  경강선: "경강선",
-  서해선: "서해선",
-  인천국제공항선: "공항철도",
-  "인천지하철 1호선": "인천1호선",
-  "인천지하철 2호선": "인천2호선",
-  에버라인: "에버라인",
-  의정부: "의정부경전철",
-  우이신설선: "우이신설선",
-  "수도권 경량도시철도 신림선": "신림선",
-  김포도시철도: "김포골드라인",
-  "GTX-A": "GTX-A",
-  자기부상철도: "인천자기부상",
-  "부산 도시철도 1호선": "부산1호선",
-  "부산 도시철도 2호선": "부산2호선",
-  "부산 도시철도 3호선": "부산3호선",
-  "부산 경량도시철도 4호선": "부산4호선",
-  부산김해경전철: "부산김해경전철",
-  동해선: "동해선",
-  "대구 도시철도 1호선": "대구1호선",
-  "대구 도시철도 2호선": "대구2호선",
-  "대구 도시철도 3호선": "대구3호선",
-  대경선: "대경선",
-  "대전 도시철도 1호선": "대전1호선",
-  "광주도시철도 1호선": "광주1호선",
-};
 
 type RegistryStation = {
   code: string;
@@ -83,6 +32,7 @@ type RegistryStation = {
   lng: number;
   lines: string[];
   aliases: string[];
+  sources: Record<string, string>;
   replacedBy?: string;
 };
 
@@ -120,9 +70,7 @@ const { origins, candidates } = readOdAxes(readFileSync(resolve(artifacts, "od.b
 
 const lineTable: string[] = [];
 const unknownLines = new Set<string>();
-function lineIndex(raw: string): number {
-  const label = LINE_LABELS[raw] ?? raw;
-  if (!(raw in LINE_LABELS)) unknownLines.add(raw);
+function lineIndex(label: string): number {
   let i = lineTable.indexOf(label);
   if (i < 0) i = lineTable.push(label) - 1;
   return i;
@@ -145,7 +93,9 @@ function searchable(s: RegistryStation): boolean {
 const stations = registry.stations
   .filter((s) => s.status === "active" && searchable(s))
   .map((s) => {
-    const lines = [...new Set(s.lines.map(lineIndex))].sort((a, b) => lineOrder(a) - lineOrder(b) || a - b);
+    const lines = [...new Set(stationLineLabels(s, unknownLines).map(lineIndex))].sort(
+      (a, b) => lineOrder(a) - lineOrder(b) || a - b,
+    );
     // "신내역"처럼 이름에 "역"만 붙인 별칭은 검색이 접미사를 직접 처리하므로 뺀다.
     const aliases = s.aliases.filter((a) => a !== `${s.name}역`);
     const supported = origins.has(s.code);

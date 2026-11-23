@@ -1,5 +1,5 @@
 /**
- * 노선 배지 색. 표시 노선명(scripts/build-station-index.ts의 LINE_LABELS 결과)별 공식 노선색에 가깝게 맞췄다.
+ * 노선 배지 색. 표시 노선명(scripts/station-lines.ts의 stationLineLabels 결과)별 공식 노선색에 가깝게 맞췄다.
  * 수도권 밖 노선은 계산 대상이 아니라 중립색을 쓴다.
  */
 const LINE_COLORS: Record<string, string> = {
