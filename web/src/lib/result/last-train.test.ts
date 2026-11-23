@@ -442,7 +442,10 @@ describe("약속 날짜·시각을 아는 방: 실제 달력 날짜로 본다(#8
       "막차가 약속 시각보다 이를 수 있는 분이 있어요.",
     );
     // 같은 분의 열차는 "전 출발"의 시각으로 쓰지 않는다.
-    expect(JSON.stringify(view(weekday, [direct(1380), direct(1443)], undefined, meeting))).not.toContain("23시 전에");
+    const atMeeting = view(weekday, [direct(1380), direct(1443)], undefined, meeting);
+    expect(atMeeting.rows[0]?.state.kind).toBe("gone");
+    expect(JSON.stringify(atMeeting)).not.toContain("23시 전 출발");
+    expect(atMeeting.lead).not.toMatch(/전 출발/);
   });
 
   it("낮·저녁 약속과 시각 없이 시간대만 고른 방은 예전과 같다(자정을 넘기면 '다음 날')", () => {
@@ -489,6 +492,34 @@ describe("접힌 막차 칸의 한 줄(#122): 막차는 숨기지 않는다", ()
     expect(lastTrainSummary(view(weekday, [direct(1432), transfer(1349)], people))).toBe(
       "공개된 시각 중 가장 이름: 민수 23:52",
     );
+  });
+
+  it("공개한 사람이 모두 이 역에서 출발하면 그 사실. 숨긴 사람이 있으면 '모두'를 공개한 사람으로 한정한다(Codex 검토)", () => {
+    // 민수의 출발역이 후보역(강남)이다.
+    const same = person(0, "민수", { originCode: "k3a" });
+    expect(lastTrainSummary(view(weekday, [direct(1443)], [same]))).toBe("모두 이 역에서 출발");
+    // 다른 역에서 오는 친구가 출발역을 숨겼다: 다른 사람 화면에는 민수의 줄만 있다. 숨긴 친구까지 "모두"에 넣지 않는다.
+    const hiddenFriend = person(1, "참가자 2", { hidden: true, originCode: null, mapUrl: null });
+    const others = toLastTrainView(weekday, [{ ...direct(1443), participantId: "0" }], station, [same, hiddenFriend]);
+    if (!others) throw new Error("막차 칸 없음");
+    expect(others.rows.map((row) => row.state.kind)).toEqual(["same"]);
+    expect(others.hiddenOthers).toBe(true);
+    expect(others.lead).toBeNull();
+    expect(lastTrainSummary(others)).toBe("공개된 분은 모두 이 역에서 출발");
+    // 숨긴 친구 본인 화면: 본인 줄(시각 있음)이 있어도 공용 문구는 같다(본인 값으로 바꾸지 않는다).
+    const self = person(1, "참가자 2", { hidden: true, isSelf: true });
+    const mine = toLastTrainView(
+      weekday,
+      [
+        { ...direct(1443), participantId: "0" },
+        { ...transfer(1349), participantId: "1" },
+      ],
+      station,
+      [same, self],
+    );
+    if (!mine) throw new Error("막차 칸 없음");
+    expect(mine.lead).toBeNull();
+    expect(lastTrainSummary(mine)).toBe("공개된 분은 모두 이 역에서 출발");
   });
 
   it("줄이 없으면 숨김 안내, 시각이 하나도 없으면 확인 필요", () => {

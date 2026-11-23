@@ -342,14 +342,20 @@ export function recalculatingLastTrainView(station: { name: string }): LastTrain
 
 /**
  * 접힌 막차 칸의 한 줄(#122). 펼치지 않아도 꼭 알아야 할 것을 남긴다: 계산하지 못한 이유(`notice`), 약속 전에 떠나는 사람(경고 문장),
- * 공개된 시각 가운데 가장 이른 것(`lead`). 숨긴 사람 규칙은 `lead`와 같다(공개한 줄만 본다).
- * 줄이 없고 숨긴 사람만 있으면 그 사실을, 시각이 하나도 없으면 확인이 필요하다고 말한다.
+ * 공개된 시각 가운데 가장 이른 것(`lead`). 숨긴 사람 규칙은 `lead`와 같다: 공개한 줄만 보고, 숨긴 사람이 있으면 누가 보든 같은 말로
+ * 범위를 밝힌다(숨긴 사람의 출발역을 짐작하게 하지 않는다). 공개한 줄이 없으면 숨김 안내, 공개한 사람이 모두 이 역에서 출발하면 그 사실,
+ * 시각이 하나도 없으면 확인이 필요하다고 말한다.
  */
 export function lastTrainSummary(view: LastTrainView): string {
   if (view.notice) return view.notice;
   if (view.lead) return view.lead;
-  if (view.rows.length === 0) return "출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.";
-  return view.rows.every((row) => row.state.kind === "same") ? "모두 이 역에서 출발" : "막차 확인 필요";
+  const open = view.rows.filter((row) => !row.onlyMe);
+  if (open.length === 0) return "출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.";
+  if (open.every((row) => row.state.kind === "same")) {
+    const anyHidden = view.hiddenOthers || view.rows.some((row) => row.onlyMe);
+    return anyHidden ? "공개된 분은 모두 이 역에서 출발" : "모두 이 역에서 출발";
+  }
+  return "막차 확인 필요";
 }
 
 /**

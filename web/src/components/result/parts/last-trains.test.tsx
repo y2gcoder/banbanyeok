@@ -254,4 +254,21 @@ describe("집에 가는 막차 칸", () => {
     expect(rows[0]).toHaveTextContent("민수출발역과 같은 역");
     expect(within(rows[0] as HTMLElement).queryByRole("link")).toBeNull();
   });
+
+  it("공개한 사람은 이 역에서 출발하고 다른 친구는 숨겼으면: 접힌 줄은 공개한 사람으로 한정하고, 펼친 칸과 어긋나지 않는다", async () => {
+    const user = userEvent.setup();
+    // 민수의 출발역이 후보역(강남)이고, 다른 역에서 오는 참가자 2는 출발역을 숨겼다(다른 사람 화면: 민수 줄만 있다).
+    const people = [
+      person(0, "민수", { originCode: "k3a" }),
+      person(1, "참가자 2", { hidden: true, originCode: null, mapUrl: null }),
+    ];
+    render(<LastTrains view={view(weekday, [direct], people)} defaultOpen={false} />);
+    const toggle = screen.getByRole("button", { name: /집에 가는 막차/ });
+    expect(within(toggle).getByText("공개된 분은 모두 이 역에서 출발")).toBeVisible();
+    await user.click(toggle);
+    const rows = screen.getAllByRole("listitem");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveTextContent("민수출발역과 같은 역");
+    expect(screen.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeVisible();
+  });
 });
