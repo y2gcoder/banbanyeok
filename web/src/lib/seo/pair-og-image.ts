@@ -10,6 +10,7 @@ function drawnData(page: PairPage) {
     page.candidates.map((candidate) => [
       candidate.rank,
       candidate.station.name,
+      candidate.station.lines,
       candidate.people.map((person) => [person.stationName, person.minutes]),
     ]),
   ];

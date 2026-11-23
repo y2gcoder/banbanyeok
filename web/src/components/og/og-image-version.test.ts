@@ -46,10 +46,14 @@ const SITE: Drawn = {
 
 /** "N분"·"N시간" 글자는 `formatMinutes`가 정하므로 그 파일도 입력이다. */
 const PAIR: Drawn = {
-  texts: ["brand", "pairQuestion", "pairBasis", "middleDot"],
+  texts: ["brand", "pairQuestion", "pairBasis", "middleDot", "moreLines"],
   sources: [
     "src/app/(seo)/meet/[pair]/opengraph-image/route.tsx",
     "src/components/og/pair-card.tsx",
+    "src/components/og/line-badges.tsx",
+    "src/lib/stations/index.ts",
+    "src/lib/stations/index.gen.json",
+    "src/lib/stations/lines.ts",
     "src/components/og/frame.tsx",
     "src/lib/display/minutes.ts",
   ],
@@ -107,12 +111,17 @@ const SHARED: Drawn = {
     "lastTrain",
     "lastTrainBy",
     "nextDay",
+    "moreLines",
   ],
   constants: { OG_NAME_MAX },
   rendered: renderedSharedSamples,
   sources: [
     "src/app/s/og/route.tsx",
     "src/components/og/scoreboard-card.tsx",
+    "src/components/og/line-badges.tsx",
+    "src/lib/stations/index.ts",
+    "src/lib/stations/index.gen.json",
+    "src/lib/stations/lines.ts",
     "src/components/og/frame.tsx",
     "src/lib/share-card/scoreboard-card-data.ts",
     "src/lib/share-card/shared-preview.ts",
@@ -160,6 +169,7 @@ const ROOM: Drawn = {
     "lastTrain",
     "lastTrainBy",
     "nextDay",
+    "moreLines",
     "middleLead",
     "middleIf",
     "middleMore",
@@ -170,6 +180,10 @@ const ROOM: Drawn = {
   sources: [
     "src/app/r/[roomId]/og/route.tsx",
     "src/components/og/shared-card.tsx",
+    "src/components/og/line-badges.tsx",
+    "src/lib/stations/index.ts",
+    "src/lib/stations/index.gen.json",
+    "src/lib/stations/lines.ts",
     "src/components/og/frame.tsx",
     "src/lib/room/share-copy.ts",
     "src/lib/result/map-middle.ts",

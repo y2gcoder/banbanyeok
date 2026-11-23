@@ -118,6 +118,7 @@ function card(
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
   const meeting = { date: preview.room.meetingDate, time: preview.room.meetingTime };
   return {
+    stationCode: preview.station.stationCode,
     stationName: preview.station.stationName,
     suffix,
     people: preview.station.times.map((t, index) => {

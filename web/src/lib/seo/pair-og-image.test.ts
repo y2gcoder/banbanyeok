@@ -35,7 +35,8 @@ describe("역 조합 그림 주소", () => {
       ...c,
       people: [{ ...c.people[0], minutes: c.people[0].minutes + 1 }, c.people[1]],
     }));
-    for (const changed of [renamed, stationRenamed, slower]) expect(pairOgImagePath(changed)).not.toBe(base);
+    const relined = withCandidate(page, (c) => ({ ...c, station: { ...c.station, lines: ["9호선"] } }));
+    for (const changed of [renamed, stationRenamed, slower, relined]) expect(pairOgImagePath(changed)).not.toBe(base);
   });
 
   it("그림에 안 그려지는 값(이유 문장 등)이 바뀌어도 주소는 그대로다(바뀌지 않은 그림의 캐시를 버리지 않는다)", () => {

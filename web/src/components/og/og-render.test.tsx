@@ -12,6 +12,7 @@ import { buildPairPages } from "@/lib/seo/pair-pages";
 import { parseSeoPairs } from "@/lib/seo/pairs";
 import { scoreboardCardData } from "@/lib/share-card/scoreboard-card-data";
 import { sharedCardData, sharedPreview } from "@/lib/share-card/shared-preview";
+import { stationByCode } from "@/lib/stations";
 import fixture from "../../../fixtures/seo-pairs.json";
 import { PairCard } from "./pair-card";
 import { ROOM_CASES } from "./room-card.cases";
@@ -43,11 +44,17 @@ describe("OG 이미지 그리기(satori)", () => {
   const { pages } = buildPairPages(parseSeoPairs(fixture));
 
   it("조합 페이지 이미지는 1200×630 PNG", async () => {
-    for (const page of pages) expectPng(await render(<PairCard page={page} />));
+    for (const page of pages) {
+      const drawn = await render(<PairCard page={page} />);
+      expectPng(drawn);
+      if (screensDir) writeFileSync(join(screensDir, `og-pair-${page.slug}.png`), drawn.bytes);
+    }
   });
 
   it("사이트 기본 이미지", async () => {
-    expectPng(await render(<SiteCard />));
+    const drawn = await render(<SiteCard />);
+    expectPng(drawn);
+    if (screensDir) writeFileSync(join(screensDir, "og-site.png"), drawn.bytes);
   });
 
   it("공유 링크 이미지: 정해 둔 경우 전부(2·3·4명, 긴 별칭, 숨김, 같은 역, 0분, 빠른·누구 쪽으로, 기준 문구, 긴 역 이름, 1시간 넘음)", async () => {
@@ -84,6 +91,31 @@ describe("OG 이미지 그리기(satori)", () => {
       const drawn = await render(<ScoreboardCard data={data} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-scoreboard-${c.id}.png`), drawn.bytes);
+    }
+  });
+
+  it("호선 배지 표본: 1노선·4노선·긴 이름·4명과 긴 비교 문장", async () => {
+    const sample = SHARED_CASES.find((c) => c.id === "four-last-train-middle");
+    if (!sample) throw new Error("표본 없음");
+    const base = scoreboardCardData(toResultView(sample.result), sample.state);
+    if (!base) throw new Error("그림 데이터 없음");
+    for (const code of ["9k5", "ct5", "s1q"]) {
+      const station = stationByCode(code);
+      if (!station) throw new Error(`역 없음: ${code}`);
+      const data = {
+        ...base,
+        stationCode: code,
+        stationName: station.name,
+        compareLine: "지도 한가운데인 동대문역사문화공원역이면 가장 오래 걸리는 사람은 14분 더 걸려요",
+      };
+      for (const [kind, element] of [
+        ["scoreboard", <ScoreboardCard key="scoreboard" data={data} />],
+        ["room", <SharedCard key="room" data={data} />],
+      ] as const) {
+        const drawn = await render(element);
+        expectPng(drawn);
+        if (screensDir) writeFileSync(join(screensDir, `og-badges-${kind}-${code}.png`), drawn.bytes);
+      }
     }
   });
 
@@ -130,6 +162,7 @@ describe("OG 이미지 그리기(satori)", () => {
     for (const { id, preview } of ROOM_CASES) {
       const card = roomShareCopy(preview).card;
       if (!card) throw new Error(`${id}: 그림 데이터 없음`);
+      if (preview.stage !== "collecting") expect(card.stationCode, id).toBe(preview.station.stationCode);
       const text = [card.stationName, card.suffix, card.modeLine, ...card.people.map((p) => p.name)].join("");
       expect(missingGlyphs(text), id).toEqual([]);
       const drawn = await render(<SharedCard data={card} />);
@@ -162,6 +195,7 @@ describe("OG 이미지 그리기(satori)", () => {
     for (const { id, preview, middle } of ROOM_CASES) {
       const card = roomShareCopy(preview).card;
       if (!card) throw new Error(`${id}: 그림 데이터 없음`);
+      if (preview.stage !== "collecting") expect(card.stationCode, id).toBe(preview.station.stationCode);
       expect(card.middleLine ?? null, id).toBe(middle ?? null);
       if (!card.middleLine || preview.stage !== "result") continue;
       expect(missingGlyphs(card.middleLine), id).toEqual([]);

@@ -45,6 +45,7 @@ describe("이미지에 그릴 값", () => {
     expect(data?.people.map((p) => p.name)).toEqual(["지훈", "참가자 2"]);
     expect(data?.people.map((p) => p.minutes)).toEqual([34, 30]);
     expect(data?.stationName).toBe("왕십리");
+    expect(data?.stationCode).toBe(base.candidates[0]?.stationCode);
     expect(data?.modeLine).toBe("공평하게 고름");
   });
 

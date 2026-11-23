@@ -2,6 +2,7 @@ import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { PairPage } from "@/lib/seo/pair-pages";
 import { Dot, OgFrame, personHex } from "./frame";
+import { OgLineBadges } from "./line-badges";
 
 /** 두 역 이름의 글자 수에 따라 제목 크기를 줄인다(한 줄에 들어가야 한다). */
 function titleSize(page: PairPage): number {
@@ -31,7 +32,7 @@ export function PairCard({ page }: { page: PairPage }) {
         style={{
           display: "flex",
           flexDirection: "column",
-          marginTop: 24,
+          marginTop: 18,
           borderRadius: 28,
           border: `3px solid ${OG_COLORS.rule}`,
           backgroundColor: OG_COLORS.surface,
@@ -43,7 +44,7 @@ export function PairCard({ page }: { page: PairPage }) {
             style={{
               display: "flex",
               alignItems: "center",
-              height: 82,
+              height: 90,
               padding: "0 28px",
               gap: 20,
               borderTop: i === 0 ? "none" : `2px solid ${OG_COLORS.rule}`,
@@ -64,7 +65,17 @@ export function PairCard({ page }: { page: PairPage }) {
             >
               {candidate.rank}
             </div>
-            <div style={{ display: "flex", flex: 1, fontSize: 44 }}>{candidate.station.name}</div>
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 5 }}>
+              <span
+                style={{
+                  fontSize: Math.min(40, Math.floor(440 / Array.from(candidate.station.name).length)),
+                  lineHeight: 1.05,
+                }}
+              >
+                {candidate.station.name}
+              </span>
+              <OgLineBadges lines={candidate.station.lines} size={28} />
+            </div>
             {candidate.people.map((person, index) => (
               <div key={person.stationName} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 36 }}>
                 <Dot color={personHex(index)} size={20} />

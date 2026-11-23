@@ -31,6 +31,8 @@ function favorName(view: ResultView, state: ShareState): string | null {
 
 /** 공유 링크 그림(`SharedCard`)에 넘기는 값. */
 export type SharedCardData = {
+  /** 만날 역 코드. 참가자 출발역 코드는 그림에 전달하지 않는다. */
+  stationCode?: string;
   stationName: string;
   /** 역 이름 아래 큰 줄. 없으면 "에서 볼까?"(방에서 정한 역은 "에서 만나요"). */
   suffix?: string;
@@ -89,6 +91,7 @@ export function sharedCardData(view: ResultView, state: ShareState): SharedCardD
   const safe = (name: string, index: number) => ogSafeName(name, `참가자 ${index + 1}`);
   const favored = view.mode === "favor" ? state.favorIndex : null;
   return {
+    stationCode: top.stationCode,
     stationName: top.stationName,
     people: top.people.map((p, index) => {
       const lastTrain = cardLastTrain(top.lastTrain, index);
