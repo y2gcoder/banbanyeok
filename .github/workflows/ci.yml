@@ -83,7 +83,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # JDK는 mise.toml이 단일 출처다(로컬과 CI가 같은 버전).
+      # JDK는 mise.toml이 단일 출처다(로컬과 CI가 같은 버전). mise-java 카탈로그에서 이름이 바뀌면
+      # 이 단계가 'no metadata found'로 실패한다. 이름을 고르는 근거는 mise.toml의 JDK 주석에 있다.
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
         with:
           install_args: java
