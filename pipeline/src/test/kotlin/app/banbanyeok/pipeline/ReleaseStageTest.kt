@@ -150,6 +150,34 @@ class ReleaseStageTest :
                 assertTrue(!out.resolve("manifest.v4.json").exists(), "manifest는 검증 전에 쓰지 않는다")
             }
 
+            it("refusesToStageWhenTheRouteGraphNoLongerReproducesTheMatrices") {
+                // #134 검토: od.bin 한 칸을 1초 바꾸고 manifest 해시를 맞추면 해시·형식 검사는 통과한다. 발행 게이트가 막아야 한다.
+                val source = Files.createTempDirectory("release-route-gate")
+                devArtifacts.toFile().listFiles()!!.forEach { it.copyTo(source.resolve(it.name).toFile()) }
+                val od = source.resolve("od.bin")
+                val bytes = od.readBytes()
+                val matrix =
+                    app.banbanyeok.schema.OdBinCodec
+                        .decode(bytes)
+                // 첫 칸(첫 출발역 → 첫 후보)의 시간: 헤더 32바이트 + 출발역·후보 코드 뒤.
+                val first = 32 + 2 * matrix.originCount + 2 * matrix.candidateCount
+                val seconds = matrix.timeSeconds(0, 0) + 1
+                bytes[first] = seconds.toByte()
+                bytes[first + 1] = (seconds ushr 8).toByte()
+                od.writeBytes(bytes)
+                val manifest = source.resolve("manifest.v4.json")
+                val original = ManifestCodec.parse(manifest.readText())
+                val tampered =
+                    original.copy(files = original.files.copy(od = original.files.od.copy(sha256 = Sha256.hex(bytes))))
+                manifest.toFile().writeText(ManifestCodec.encode(tampered))
+                val out = Files.createTempDirectory("release-stage").resolve("out")
+                val failure = assertFailsWith<IllegalArgumentException> { stageRelease(source, out) }
+                assertTrue(failure.message.orEmpty().startsWith("Route gate failed"), failure.message)
+                listOf("manifest.json", "manifest.v2.json", "manifest.v3.json", "manifest.v4.json").forEach {
+                    assertTrue(!out.resolve(it).exists(), "$it: 게이트를 통과하지 못하면 manifest를 쓰지 않는다")
+                }
+            }
+
             it("isDeterministic") {
                 val a = Files.createTempDirectory("release-a").resolve("out")
                 val b = Files.createTempDirectory("release-b").resolve("out")

@@ -7,6 +7,7 @@ import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.ManifestFile
 import app.banbanyeok.schema.ManifestFiles
 import app.banbanyeok.schema.ManifestNames
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.schema.generationOne
 import app.banbanyeok.schema.generationThree
 import app.banbanyeok.schema.generationTwo
@@ -107,7 +108,11 @@ internal fun stageRelease(
     return published
 }
 
-/** 발행 형식 그대로 다시 읽어 검증한다(서버가 시작할 때 하는 일과 같다). */
+/**
+ * 발행 형식 그대로 다시 읽어 검증한다(서버가 시작할 때 하는 일과 같다). 노선 그래프가 있으면 발행 게이트([routeGate])도 다시 돈다:
+ * 그래프로 다시 계산한 (시간, 환승)이 발행할 모든 구분 행렬의 모든 칸과 같아야 한다. 실패하면 manifest를 쓰지 않는다
+ * (deploy-server는 stage-release 결과를 바로 올린다).
+ */
 private fun verifyStaged(
     out: Path,
     published: Manifest,
@@ -126,7 +131,11 @@ private fun verifyStaged(
             ),
         )
     published.files.lastTrain?.let { DataSetLoader.lastTrains(dataSet, out.resolve(it.path).readBytes()) }
-    published.files.routeGraph?.let { DataSetLoader.routeGraph(dataSet, out.resolve(it.path).readBytes()) }
+    published.files.routeGraph?.let { file ->
+        val graph = DataSetLoader.routeGraph(dataSet, out.resolve(file.path).readBytes())
+        val gate = routeGate(graph, TimeSlot.ALL.associateWith { requireNotNull(dataSet.odFor(it)) })
+        require(gate.passed) { "Route gate failed; no manifest written:\n" + gate.problems.joinToString("\n") }
+    }
 }
 
 /**
