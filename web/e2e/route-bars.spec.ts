@@ -24,7 +24,9 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: resolve(dir, `${name}.png`), fullPage: true, scale: "css" });
 }
 
-test("폰: 1위 '자세히'의 막대가 노선 색으로 나뉘고, 경로 글·길찾기가 있고, 넘치거나 겹치지 않는다", async ({ page }) => {
+test("폰: 1위 '자세히'의 막대가 노선 색으로 나뉘고, 경로 글·길찾기가 있고, 넘치거나 겹치지 않는다", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/result?v=2&o=${code("혜화")}.${code("강남")}.${code("홍대입구")}&m=f&t=weekday-day`);
   const top = page.getByRole("article").first();
