@@ -3,6 +3,7 @@ package app.banbanyeok.architecture
 import com.lemonappdev.konsist.api.Konsist
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
 import java.io.File
 
 /** 디렉터리 아래 소스 파일을 [SourceUnit]으로. 규칙은 import뿐 아니라 완전 수식 이름·별칭까지 같은 방식으로 읽는다. */
@@ -23,7 +24,39 @@ private fun packageOf(reference: String): String =
 
 class ArchitectureTest :
     DescribeSpec({
+        describe("discovered architecture scope (#145)") {
+            it("every feature module has a matching source package and every concept directory has sources") {
+                FEATURES.isNotEmpty() shouldBe true
+                File("server")
+                    .listFiles()
+                    .orEmpty()
+                    .filter { it.isDirectory && it.name != "app" && File(it, "src/main").isDirectory }
+                    .map { it.name }
+                    .toSet() shouldBe FEATURES.toSet()
+                FEATURES.forEach { feature ->
+                    File("server/$feature/src/main/kotlin/app/banbanyeok/server/$feature").isDirectory shouldBe true
+                }
+                val actual =
+                    sources("server/recommendation/src/main")
+                        .mapNotNull {
+                            it.relativePath
+                                .substringAfter("/server/recommendation/", "")
+                                .substringBeforeLast('/', "")
+                                .substringBefore('/')
+                                .takeIf(String::isNotEmpty)
+                        }.toSet()
+                actual shouldBe RECOMMENDATION_SUBPACKAGES.toSet()
+            }
+        }
+
         describe("module boundaries") {
+            it("main sources never reference Liquibase (migration runs separately)") {
+                listOf("server", "shared", "pipeline", "build-logic")
+                    .flatMap(::sources)
+                    .filter { it.relativePath.contains("/src/main/") }
+                    .referencesMatching { it.isOrUnder("liquibase") || it.isOrUnder("org.liquibase") }
+                    .shouldBeEmpty()
+            }
             it("shared sources do not import platform, persistence or server APIs") {
                 sources("shared")
                     .filter { it.relativePath.contains("Main/") }
@@ -59,11 +92,7 @@ class ArchitectureTest :
                     }.shouldBeEmpty()
             }
             it("server feature modules do not depend on each other") {
-                val features =
-                    File("server")
-                        .listFiles()
-                        .orEmpty()
-                        .filter { it.isDirectory && it.name !in setOf("app", "src", "build", "db") }
+                val features = FEATURES.map { File("server/$it") }
                 features
                     .filter { File(it, "src").exists() }
                     .flatMap { module ->
@@ -83,7 +112,7 @@ class ArchitectureTest :
                     }.shouldBeEmpty()
             }
             it("server feature modules do not depend on the app module or know the HTTP framework") {
-                listOf("room", "recommendation", "artifact")
+                FEATURES
                     .flatMap { module -> sources("server/$module/src/main") }
                     .referencesMatching { it.startsWith("app.banbanyeok.server.app.") || it.startsWith("io.ktor.") }
                     .shouldBeEmpty()
@@ -165,6 +194,57 @@ class ArchitectureTest :
             }
         }
 
+        describe("ranking input isolation (#144)") {
+            val serverMain = sources("server").filter { it.relativePath.contains("/src/main/") }
+            val rankingPath = "server/recommendation/src/main/kotlin/app/banbanyeok/server/recommendation/Ranking.kt"
+            val rank = sources("shared/core/src/commonMain").filter { it.relativePath.endsWith("/Rank.kt") }
+            val ranking = serverMain.single { it.relativePath == rankingPath }
+
+            it("only Ranking calls core.rank or constructs RankInput in server main code") {
+                serverMain
+                    .filterNot { it.relativePath == rankingPath }
+                    .flatMap { unit ->
+                        (unit.allReferences + unit.calls)
+                            .filter {
+                                it == "app.banbanyeok.core.*" ||
+                                    it.isOrUnder("app.banbanyeok.core.rank") ||
+                                    it.isOrUnder("app.banbanyeok.core.RankInput")
+                            }.map { "${unit.relativePath} -> $it" }
+                    }.shouldBeEmpty()
+            }
+            it("Ranking and core Rank know neither routes nor map middle") {
+                rank.isNotEmpty() shouldBe true
+                (rank + ranking)
+                    .referencesMatching {
+                        it.isOrUnder("$RECOMMENDATION.route") || it.isOrUnder("$RECOMMENDATION.mapmiddle")
+                    }.shouldBeEmpty()
+                rank.referencesMatching { it.isOrUnder("$RECOMMENDATION.lasttrain") }.shouldBeEmpty()
+            }
+            it("Ranking only reads last trains to append basis and per-card annotations after core ranking") {
+                // 이름을 바꿔 우회하지 못하게 lasttrain 참조 표면도 고정한다. 허용하는 세 사용 외에는 순위 입력으로 읽지 못한다.
+                listOf(ranking)
+                    .referencesMatching {
+                        it.startsWith("$RECOMMENDATION.lasttrain.") &&
+                            it != "$RECOMMENDATION.lasttrain.LastTrainAttacher"
+                    }.shouldBeEmpty()
+                val code = ranking.code
+                val annotation =
+                    Regex("""lastTrains\s*=\s*lastTrains\s*\?\.\s*at\s*\(\s*card\s*\.\s*stationCode\s*\)""")
+                val basis = Regex("""lastTrainBasis\s*=\s*lastTrains\s*\?\.\s*basis""")
+                val parameter = Regex("""lastTrains\s*:\s*LastTrainAttacher\s*\.\s*Attached\s*\?""")
+                val rest = code.replace(annotation, "").replace(basis, "").replace(parameter, "")
+                Regex("""\blastTrains\b""")
+                    .findAll(rest)
+                    .map { it.value }
+                    .toList()
+                    .shouldBeEmpty()
+                val rankedAt = code.indexOf("val top =")
+                (rankedAt >= 0) shouldBe true
+                (annotation.find(code)!!.range.first > rankedAt) shouldBe true
+                (basis.find(code)!!.range.first > rankedAt) shouldBe true
+            }
+        }
+
         describe("server app structure (#89)") {
             val appMain = sources("server/app/src/main")
             val http = sources("$APP_MAIN/http")
@@ -235,12 +315,24 @@ private val HTTP_FORBIDDEN_RECOMMENDATION =
         "$RECOMMENDATION.time.HolidayCalendar",
     )
 
-private val FEATURES = listOf("room", "recommendation", "artifact")
+private val FEATURES =
+    File("server")
+        .listFiles()
+        .orEmpty()
+        .filter { it.isDirectory && it.name != "app" && File(it, "build.gradle.kts").isFile }
+        .map { it.name }
+        .sorted()
 
 private const val RECOMMENDATION = "app.banbanyeok.server.recommendation"
 
 /** recommendation 모듈 안의 개념 하위 패키지. 루트(RecommendationService·Evaluation·요청/응답 모델·포트)만 이들을 조합한다. */
-private val RECOMMENDATION_SUBPACKAGES = listOf("time", "lasttrain", "mapmiddle", "route")
+private val RECOMMENDATION_SUBPACKAGES =
+    File("server/recommendation/src/main/kotlin/app/banbanyeok/server/recommendation")
+        .listFiles()
+        .orEmpty()
+        .filter { it.isDirectory }
+        .map { it.name }
+        .sorted()
 
 /**
  * app(server/app/src/main)이 import해도 되는 recommendation 선언(루트 기준 이름). 늘릴 때는 이 목록을 함께 고친다(아키텍처 지표

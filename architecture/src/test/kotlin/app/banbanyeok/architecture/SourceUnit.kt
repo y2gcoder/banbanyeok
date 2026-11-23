@@ -123,7 +123,7 @@ class SourceUnit(
         private val IMPORT = Regex("""(?m)^\s*import\s+([\w.]+?)(\.\*)?(?:\s+as\s+(\w+))?\s*$""")
         private val DECLARATION_LINE = Regex("""^\s*(package|import)\s""")
         private val QUALIFIED =
-            Regex("""(?<![\w.])(?:app|com|io|org|java|javax|kotlin|kotlinx)(?:\s*\.\s*[A-Za-z_]\w*)+""")
+            Regex("""(?<![\w.])(?:app|com|io|org|java|javax|kotlin|kotlinx|liquibase)(?:\s*\.\s*[A-Za-z_]\w*)+""")
         private val LOCAL_TYPE = Regex("""\b(?:class|interface|object|typealias)\s+([A-Z]\w*)""")
         private val DECLARATION_KEYWORD = Regex("""\b(?:fun|class|interface|object|typealias)\s*(?:<[^>]*>\s*)?\z""")
         private val CAPITALIZED = Regex("""(?<![\w.])[A-Z]\w*""")
