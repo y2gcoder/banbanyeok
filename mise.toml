@@ -76,7 +76,7 @@ description = "로컬 Postgres 시작; 정리: mise run dev:db -- down"
 run = 'bash scripts/dev.sh db "$@"'
 
 [tasks."dev:migrate"]
-description = "공식 Liquibase 컨테이너로 별도 마이그레이션"
+description = "Liquibase 5.0.4 + 고정 PostgreSQL JDBC 이미지 빌드 후 별도 마이그레이션"
 run = "bash scripts/dev.sh migrate"
 
 [tasks."dev:seed"]

@@ -84,7 +84,8 @@ bash scripts/build-server-image.sh   # 서버 배포 이미지(linux/amd64, AppC
 
 Postgres 기본값은 17 메이저의 고정 안정판 17.6이며 `POSTGRES_VERSION`으로 운영 후보와 맞춥니다.
 로컬 DB 계정은 compose.yaml의 개발 전용 공개 값입니다. Liquibase는 서버 시작과 분리해
-공식 컨테이너에서 SQL changelog를 적용합니다. 운영에서는 같은 이미지와 changelog를 별도 배포
+공식 Community 5.0.4 이미지에 PostgreSQL JDBC 42.7.14를 고정한 컨테이너에서 SQL changelog를 적용합니다.
+로컬 compose와 운영은 `server/db/Dockerfile`을 함께 빌드합니다(FSL 수용: [ADR-0003](docs/adr/0003-liquibase-community-5.md)). 운영에서는 같은 이미지와 changelog를 별도 배포
 작업으로 실행하고 URL/자격 증명을 Secret Manager에서 주입합니다.
 외부 데이터 API나 운영 서비스 연결처럼 비밀값이 필요한 경우에만 개인 1Password를 설정하고
 `op run --env-file=.env.tpl -- <명령>`을 사용합니다.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 백업 덤프가 실제로 복원되는지 임시 로컬 Postgres 17에 복원해 확인한다(운영 DB는 건드리지 않는다).
 # 사용: bash scripts/db-restore-check.sh <덤프 파일>
-# 확인: 테이블 존재, 행 수(값은 출력하지 않는다), Liquibase 이력(changeset 수). 끝나면 임시 컨테이너를 지운다.
+# 확인: 테이블 존재, 행 수(값은 출력하지 않는다), Liquibase 이력(changeset 수)과 현재 운영 버전의 status/validate. 끝나면 임시 컨테이너를 지운다.
 set -euo pipefail
 
 dump="${1:?usage: db-restore-check.sh <덤프 파일>}"
@@ -10,7 +10,9 @@ image="${PG_IMAGE:-postgres:17.6}"
 dumpdir="$(cd "$(dirname "$dump")" && pwd)"
 name="$(basename "$dump")"
 container="bby-restore-check-$$"
-trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+migration_image="bby-restore-migrate:check-$$"
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+trap 'docker rm -f "$container" >/dev/null 2>&1 || true; docker image rm "$migration_image" >/dev/null 2>&1 || true' EXIT
 
 docker run -d --name "$container" -e POSTGRES_PASSWORD=restore-check-only -e POSTGRES_DB=restore \
   -v "$dumpdir:/backup:ro" "$image" >/dev/null
@@ -32,4 +34,11 @@ docker exec "$container" psql -U postgres -d restore -At -F ' ' -c \
    UNION ALL SELECT 'liquibase_changesets', count(*) FROM databasechangelog" | sed 's/^/  /'
 docker exec "$container" psql -U postgres -d restore -At -c \
   "SELECT 'trigger participants_limit: ' || count(*) FROM pg_trigger WHERE tgname = 'participants_limit'" | sed 's/^/  /'
+# 운영·compose와 같은 Liquibase 5.0.4 + PostgreSQL JDBC 이미지로 복원 이력을 검증한다.
+docker build -q -f "$repo_root/server/db/Dockerfile" -t "$migration_image" "$repo_root" >/dev/null
+for command in status validate; do
+  docker run --rm --network "container:$container" "$migration_image" \
+    --search-path=/liquibase/changelog --changelog-file=master.sql \
+    --url=jdbc:postgresql://localhost:5432/restore --username=postgres --password=restore-check-only "$command"
+done
 echo "검증 통과"

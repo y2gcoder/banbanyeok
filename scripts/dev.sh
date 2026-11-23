@@ -16,7 +16,7 @@ export RATE_LIMIT_GENERAL_PER_MINUTE="${RATE_LIMIT_GENERAL_PER_MINUTE:-600}"
 case "${1:-}" in
   config) printf 'project=%s DB_PORT=%s SERVER_PORT=%s WEB_PORT=%s\n' "$COMPOSE_PROJECT_NAME" "$DB_PORT" "$SERVER_PORT" "$WEB_PORT" ;;
   db) shift; if (( $# )); then docker compose "$@"; else docker compose up -d --wait db; fi ;;
-  migrate) docker compose run --rm migrate ;;
+  migrate) docker compose run --build --rm migrate ;;
   seed) ./gradlew :server:app:run --args=seed --console=plain -q ;;
   server) ./gradlew :server:app:run --console=plain ;;
   web|web:mock)
