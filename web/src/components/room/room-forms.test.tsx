@@ -27,8 +27,10 @@ describe("참여 폼", () => {
     );
     const button = screen.getByRole("button", { name: "참여하기" });
     expect(button).toBeDisabled();
-    // 숨기기는 역 이름만 가리고 시간은 보인다는 고지가 그 자리에 있다.
-    expect(screen.getByText(/소요시간과 환승 횟수는 모두에게 보이니/)).toBeInTheDocument();
+    // 숨기기는 역 이름만 가리고 시간은 5분 단위로 보여 출발역을 짐작할 수 있다는 고지가 그 자리에 있다(#142).
+    expect(
+      screen.getByText(/각 후보까지 걸리는 시간이 5분 단위로 보여서, 출발역을 짐작할 수 있어요/),
+    ).toBeInTheDocument();
 
     await user.type(screen.getByRole("textbox", { name: "내 이름 (선택)" }), "  지연 ");
     await user.type(screen.getByRole("combobox", { name: "내 출발역" }), "강남");
