@@ -157,10 +157,12 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await expect(hostPeople.getByText("홍대입구")).toHaveCount(0);
   const hostResult = page.getByRole("region", { name: "만날 역 후보" });
   const top = hostResult.getByRole("article").first();
-  await expect(top.getByText("참가자 2", { exact: true })).toBeVisible();
-  await expect(top.getByText("출발역 비공개")).toBeVisible(); // 시간·환승은 보이고 역 이름만 가려진다
+  // 1위 요약의 시간 줄(처음 것). 같은 이름이 "자세히" 안의 막대·막차 칸에도 있다.
+  await expect(top.getByText("참가자 2", { exact: true }).first()).toBeVisible();
+  await expect(top.getByText("출발역 비공개").first()).toBeVisible(); // 시간·환승은 보이고 역 이름만 가려진다
   await expect(top.getByText("민수(나)").first()).toBeVisible();
   // 집에 가는 막차: 출발역을 숨긴 참가자 2의 줄은 방장 화면에 없다.
+  await top.getByRole("button", { name: /자세히/ }).click();
   const hostLastTrain = top.getByRole("region", { name: "집에 가는 막차" });
   await expect(hostLastTrain).toBeVisible();
   await expect(hostLastTrain).not.toContainText("참가자 2");

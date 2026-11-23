@@ -37,7 +37,10 @@ function nextSaturday(): string {
 
 async function openLastTrain(page: Page, roomId: string) {
   await page.goto(`/r/${roomId}`);
-  const section = page.getByRole("article").first().getByRole("region", { name: "집에 가는 막차" });
+  const top = page.getByRole("article").first();
+  // 1위 카드(#122)는 요약이 먼저다. 막차 칸 전체는 "자세히" 안에 있다.
+  await top.getByRole("button", { name: /자세히/ }).click();
+  const section = top.getByRole("region", { name: "집에 가는 막차" });
   await expect(section).toBeVisible();
   return section;
 }
@@ -122,9 +125,10 @@ test("열어 둔 방의 약속을 바꾸면: 새 결과가 올 때까지 이전 
   await page.evaluate((old) => {
     const state = window as unknown as { mixedFrames: number };
     state.mixedFrames = 0;
+    // 영역 이름(aria-labelledby, "강남역 집에 가는 막차")으로 찾는다. 제목 버튼 안에는 요일·접힌 요약도 있다.
     const lastTrain = () =>
-      [...document.querySelectorAll<HTMLElement>("article section")].find((node) =>
-        node.querySelector("h3")?.textContent?.endsWith("집에 가는 막차"),
+      [...document.querySelectorAll<HTMLElement>("article section[aria-labelledby]")].find((node) =>
+        document.getElementById(node.getAttribute("aria-labelledby") ?? "")?.textContent?.endsWith("집에 가는 막차"),
       );
     const tick = () => {
       if (document.body.textContent.includes("23:30") && lastTrain()?.textContent === old) state.mixedFrames += 1;

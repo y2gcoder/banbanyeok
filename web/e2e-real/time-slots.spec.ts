@@ -47,10 +47,13 @@ test("같은 출발역이라도 평일 낮과 토요일 밤의 순위·시간이
 async function textWithoutLastTrain(page: Page): Promise<string> {
   return (await topCard(page)).evaluate((card) => {
     const copy = card.cloneNode(true) as HTMLElement;
-    for (const section of copy.querySelectorAll("section")) {
-      // 제목 앞에 화면에는 안 보이는 역 이름이 붙는다("양재역 집에 가는 막차").
-      if (section.querySelector("h3")?.textContent?.endsWith("집에 가는 막차")) section.remove();
+    for (const section of copy.querySelectorAll("section[aria-labelledby]")) {
+      // 영역 이름 앞에 화면에는 안 보이는 역 이름이 붙는다("양재역 집에 가는 막차").
+      const id = section.getAttribute("aria-labelledby") ?? "";
+      if (section.querySelector(`[id="${id}"]`)?.textContent?.endsWith("집에 가는 막차")) section.remove();
     }
+    // 1위 요약의 막차 한 줄(#122)도 막차 칸과 같이 뺀다.
+    for (const line of copy.querySelectorAll("p")) if (line.textContent?.startsWith("막차")) line.remove();
     return copy.textContent ?? "";
   });
 }
@@ -59,10 +62,13 @@ test("옛 공유 링크(v=1)는 평일 낮으로 계산해 v=2 평일 낮과 같
   await page.goto(`/s?v=1&o=${ORIGINS}&m=f`);
   const legacy = await topCard(page);
   await expect(page.getByText("역에서 역까지, 평일 낮 기준 시간.")).toBeVisible();
-  await expect(legacy.getByRole("region", { name: "집에 가는 막차" })).toHaveCount(0);
+  await expect(legacy.getByRole("region", { name: "집에 가는 막차", includeHidden: true })).toHaveCount(0);
   const legacyText = await legacy.textContent();
   await page.goto(`/s?v=2&o=${ORIGINS}&m=f&t=weekday-day`);
-  await expect((await topCard(page)).getByRole("region", { name: "집에 가는 막차" })).toBeVisible();
+  const current = await topCard(page);
+  // 1위 카드(#122)의 막차 칸은 "자세히" 안이다. 옛 링크에는 펴도 없다.
+  await current.getByRole("button", { name: /자세히/ }).click();
+  await expect(current.getByRole("region", { name: "집에 가는 막차" })).toBeVisible();
   expect(await textWithoutLastTrain(page)).toBe(legacyText);
 });
 
