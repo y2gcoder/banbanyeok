@@ -63,33 +63,45 @@ private fun request(origins: List<String>): String =
     }.toString()
 
 /** 방장 03v, 출발역을 숨긴 [hiddenOrigin], 31a. 장난감 행렬과 장난감 노선 그래프. */
-private class RouteRoom(
+internal class RouteRoom(
     hiddenOrigin: String,
+    recommendation: RecommendationService? = null,
+    private val date: java.time.LocalDate? = null,
 ) {
     val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
+    val recommendation =
+        recommendation ?: RecommendationService(
+            OdTravelTimeProvider(sampleOd, "20261120.1", TimeSlot.ALL.associateWith { sampleOd }),
+            codeNames,
+            routes = { sampleRouteGraph() },
+        )
     val results =
         RoomResultService(
             fixture.service,
-            RecommendationService(
-                OdTravelTimeProvider(sampleOd, "20261120.1", TimeSlot.ALL.associateWith { sampleOd }),
-                codeNames,
-                routes = { sampleRouteGraph() },
-            ),
+            this.recommendation,
             testTimes,
         )
     private val origin = hiddenOrigin
     lateinit var roomId: String
     lateinit var hiddenId: String
     lateinit var hiddenToken: String
+    lateinit var managementToken: String
+    lateinit var thirdToken: String
+    lateinit var hostId: String
+    lateinit var thirdId: String
     lateinit var hostToken: String
 
     suspend fun open(): RouteRoom {
         val created =
             fixture.service.create(
-                CreateRoomCommand(RoomMode.FAIR, null, null, ParticipantInput("민수", "03v", false), null, null),
+                CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v", false), null, null),
             )
         val hidden = fixture.service.join(created.roomId, ParticipantInput(null, origin, true), null)
-        fixture.service.join(created.roomId, ParticipantInput("지연", "31a", false), null)
+        val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a", false), null)
+        thirdToken = third.participantToken
+        thirdId = third.participantId
+        hostId = created.participantId
+        managementToken = created.hostToken
         roomId = created.roomId
         hostToken = created.participantToken
         hiddenId = hidden.participantId
