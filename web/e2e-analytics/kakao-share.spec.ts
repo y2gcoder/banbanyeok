@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { type BrowserContext, devices, expect, type Locator, type Page, test } from "@playwright/test";
+import { type BrowserContext, devices, expect, type Locator, type Page } from "@playwright/test";
 import { FAKE_ROOM_ID, prepareRoom } from "../e2e/support/room-fixture";
 import { ROOM_OG_IMAGE_VERSION, ROOM_SHARE_POLICY_VERSION, SITE_OG_IMAGE_PATH } from "../src/lib/copy/og-text";
 import { KAKAO_SDK } from "../src/lib/share/kakao";
+import { LOGIN_URL, test } from "./kakao-login-proxy";
 import { observePreparation, waitForPreparation } from "./kakao-preparation";
 
 // 실제 SDK 2.8.4의 검증한 바이트를 로컬 fixture로 준다(브라우저도 앱의 SRI를 그대로 검사한다).
@@ -13,7 +14,6 @@ import { observePreparation, waitForPreparation } from "./kakao-preparation";
 const SDK_URL = KAKAO_SDK.src;
 const SDK_BYTES = readFileSync(resolve(import.meta.dirname, "fixtures/kakao-2.8.4.min.js.txt"));
 const KAKAO = /^https:\/\/([a-z0-9-]+\.)*(kakao\.com|kakaocdn\.net)\//;
-const LOGIN_URL = "https://accounts.kakao.com/login?continue=https%3A%2F%2Fsharer.kakao.com%2Fpicker%2Flink";
 const TEMPLATE_CHECK = "GET https://kapi.kakao.com/v2/api/kakaolink/talk/template/default";
 
 type Template = {
@@ -32,7 +32,19 @@ type Probe = {
   /** 페이지가 시작한 이동(Navigation API)과 마지막 클릭에서 그때까지 걸린 ms. 카카오톡 열기와 카카오 오류 페이지 이동이 여기 잡힌다. */
   navigations: { url: string; sinceClickMs: number | null }[];
   csp: string[];
+  events: { at: number; kind: string; detail: string }[];
 };
+
+const probes = new WeakMap<Page, Probe>();
+
+test.afterEach(async ({ page }, info) => {
+  if (info.status === info.expectedStatus) return;
+  const preparation = await page.evaluate(() => window.__kakaoPreparation).catch(() => null);
+  await info.attach("kakao-failure-state", {
+    body: JSON.stringify({ preparation, probe: probes.get(page) }),
+    contentType: "application/json",
+  });
+});
 
 /** 카카오 템플릿 확인 API의 답. accept: 받음, reject: 앱 키·도메인 설정 오류(-401), unreachable: 카카오에 못 닿음. */
 type KapiAnswer = "accept" | "reject" | "unreachable";
@@ -70,11 +82,27 @@ async function attach(
 ): Promise<Probe> {
   expect(`sha384-${createHash("sha384").update(SDK_BYTES).digest("base64")}`).toBe(KAKAO_SDK.integrity);
   await observePreparation(page, holdPreparation);
-  const probe: Probe = { kakao: [], templates: [], answered: 0, shares: [], navigations: [], csp: [] };
-  context.on("request", (request) => {
-    if (KAKAO.test(request.url())) probe.kakao.push(`${request.method()} ${request.url().split("?")[0]}`);
+  const probe: Probe = { kakao: [], templates: [], answered: 0, shares: [], navigations: [], csp: [], events: [] };
+  probes.set(page, probe);
+  const started = performance.now();
+  const record = (kind: string, detail: string) => probe.events.push({ at: performance.now() - started, kind, detail });
+  context.on("page", (popup) => record("popup", popup.url()));
+  context.on("response", (response) => {
+    if (KAKAO.test(response.url())) record("response", `${response.status()} ${response.url().split("?")[0]}`);
   });
-  page.on("console", (message) => {
+  context.on("requestfailed", (request) => {
+    if (KAKAO.test(request.url()))
+      record("requestfailed", `${request.url().split("?")[0]} ${request.failure()?.errorText}`);
+  });
+  context.on("request", (request) => {
+    if (KAKAO.test(request.url())) {
+      const detail = `${request.method()} ${request.url().split("?")[0]}`;
+      probe.kakao.push(detail);
+      record("request", detail);
+    }
+  });
+  context.on("console", (message) => {
+    record("console", message.text());
     if (/content security policy/i.test(message.text())) probe.csp.push(message.text());
   });
   await context.route(KAKAO, async (route) => {
@@ -106,11 +134,11 @@ async function attach(
       const params = new URLSearchParams(request.postData() ?? "");
       const linkObj = JSON.parse(params.get("validation_params") ?? "{}") as { template_object?: Template };
       if (linkObj.template_object) probe.templates.push(linkObj.template_object);
-      // 카카오 계정에 로그인하지 않은 PC는 공유 창 폼이 로그인 화면으로 넘어간다(302). 브라우저는 폼 전송의 이동 경로 전체에 form-action을 적용한다.
-      return route.fulfill({ status: 302, headers: { location: LOGIN_URL } });
+      // 로컬 HTTPS 프록시가 실제 302를 보낸다. redirect GET은 route를 다시 거치지 않으므로 fulfill(302)로 모킹하지 않는다.
+      return route.continue();
     }
-    if (url.host === "accounts.kakao.com") {
-      return route.fulfill({ status: 200, contentType: "text/html", body: "<title>카카오계정</title>" });
+    if (url.host === "accounts.kakao.com" || url.host === "sharer.kakao.com") {
+      return route.continue();
     }
     await route.fulfill({
       status: 401,
@@ -431,6 +459,8 @@ test.describe("PC", () => {
         await expect
           .poll(() => shareWindow.url(), { timeout: 15_000 })
           .toMatch(/^https:\/\/accounts\.kakao\.com\/login/);
+        await expect(shareWindow).toHaveTitle("카카오계정 fixture");
+        expect(shareWindow.url()).toBe(LOGIN_URL);
         expect(probe.templates).toHaveLength(2);
         const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`;
         expect(probe.templates[1]?.content.link).toEqual({ web_url: link, mobile_web_url: link });
