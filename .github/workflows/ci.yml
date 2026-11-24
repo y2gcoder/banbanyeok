@@ -67,6 +67,8 @@ jobs:
               - 'scripts/deploy-plan.sh'
               - 'scripts/deployed-server-sha.sh'
               - 'scripts/test-deploy-plan.sh'
+              - 'web/scripts/smoke-deploy.sh'
+              - 'web/scripts/test-smoke-deploy.py'
               - 'web/scripts/worker-version.sh'
               - 'web/scripts/test-worker-version.sh'
               - 'web/scripts/test-worker-version-api.py'
@@ -161,7 +163,9 @@ jobs:
         if: failure()
         with:
           name: playwright-report
-          path: web/playwright-report/
+          path: |
+            web/playwright-report/
+            web/playwright-report-analytics/
           retention-days: 7
       - run: pnpm cf:build
 
@@ -218,7 +222,7 @@ jobs:
           retention-days: 7
 
   # 배포 스크립트 단위 테스트(실제 배포·Cloudflare·GCP 호출 없음): 서버·웹 배포 계획(임시 git 저장소·가짜 gh·가짜 gcloud),
-  # 웹 직전 버전 기록·되돌리기(가짜 wrangler + 핀된 실제 wrangler를 루프백 가짜 API에 붙여 JSON·오류 형식 확인).
+  # 웹 스모크(가짜 curl로 카카오 접속 실패 재시도), 웹 직전 버전 기록·되돌리기(가짜 wrangler + 핀된 실제 wrangler를 루프백 가짜 API에 붙여 JSON·오류 형식 확인).
   deploy-scripts:
     needs: changes
     if: needs.changes.outputs.deploy == 'true'
@@ -231,6 +235,9 @@ jobs:
           install_args: node pnpm
       - run: pnpm install --frozen-lockfile
         working-directory: web
+      - run: bash -n web/scripts/smoke-deploy.sh
+      - run: shellcheck -S warning web/scripts/smoke-deploy.sh
+      - run: python3 -B web/scripts/test-smoke-deploy.py
       - run: bash scripts/test-deploy-plan.sh
       - run: bash web/scripts/test-worker-version.sh
         env:
