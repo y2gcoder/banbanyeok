@@ -90,7 +90,8 @@ const SCREENS: readonly Screen[] = [
       p.getByRole("tab", { name: "빨리 만나기" }),
       p.getByRole("button", { name: "이 역으로 정했어요" }).first(),
     ],
-    columns: (p) => [p.getByRole("form", { name: "나도 출발역 넣기" }), p.getByRole("article").first()],
+    // 결과가 있는 방은 폰에서 결과가 참여 폼보다 먼저다(#168). 제목(왼쪽 칸 맨 위)과 결과로 칸을 본다.
+    columns: (p) => [p.getByRole("heading", { level: 1 }), p.getByRole("article").first()],
   },
   {
     id: "room-host-full",
@@ -102,7 +103,7 @@ const SCREENS: readonly Screen[] = [
       p.getByRole("button", { name: "참여 잠그기" }),
       p.getByRole("button", { name: "방 삭제 방 전체" }),
     ],
-    columns: (p) => [p.getByRole("region", { name: "들어온 사람" }), p.getByRole("article").first()],
+    columns: (p) => [p.getByRole("heading", { level: 1 }), p.getByRole("article").first()],
   },
   {
     id: "meet",
@@ -262,7 +263,10 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
       await expect(form.getByRole("combobox", { name: "내 출발역" })).toHaveValue("신촌");
       await expect(form.getByRole("checkbox", { name: /출발역 이름 숨기기/ })).toBeChecked();
       expect(await horizontalOverflow(page)).toEqual([]);
-      await expectColumns(page, form, page.getByRole("article").first());
+      // 두 칸이면 폼이 왼쪽, 한 칸(폰)이면 결과 아래(#168: 결과가 있으면 1위를 첫 화면에).
+      const result = page.getByRole("article").first();
+      if (await isWide(page)) await expectColumns(page, form, result);
+      else await expectColumns(page, result, form);
     }
   });
 });

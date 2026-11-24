@@ -38,13 +38,20 @@ export function RoomShell({ children, split }: { children: ReactNode; split?: ke
   );
 }
 
-export function RoomIntro({ title }: { title: string }) {
+/**
+ * `brief`: 폰에서 설명 문장을 뺀다(결과가 있는 방은 1위를 첫 화면에 올린다, #168). 두 칸 폭에서는 그대로 보인다.
+ * `aside`: 제목 줄 오른쪽에 둘 것(결과 아래로 내린 참여자 목록으로 가는 버튼).
+ */
+export function RoomIntro({ title, brief = false, aside }: { title: string; brief?: boolean; aside?: ReactNode }) {
   return (
     <section aria-labelledby="room-title" className="flex flex-col gap-2">
-      <h1 id="room-title" className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-ink">
-        {title}
-      </h1>
-      <p className="text-[15px] text-ink-soft">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+        <h1 id="room-title" className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-ink">
+          {title}
+        </h1>
+        {aside}
+      </div>
+      <p className={cn("text-[15px] text-ink-soft", brief && "hidden wide:block")}>
         각자 출발역을 넣으면 모두에게 공평한 만날 역을 지하철 시간으로 계산해요.
       </p>
     </section>

@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import type { RoomPerson } from "@/lib/room/view";
 import { ConfirmAction } from "./confirm-action";
 
+/** 목록 제목의 id. 방 화면 위의 "들어온 사람 ↓"가 이 제목으로 옮겨 가 포커스를 둔다. */
+export const PEOPLE_TITLE_ID = "people-title";
+
 type Props = {
   people: readonly RoomPerson[];
   maxPeople: number;
@@ -24,11 +27,11 @@ type Props = {
 export function PeopleList({ people, maxPeople, canKick, editing, busy, onEditSelf, onRemoveSelf, onKick }: Props) {
   return (
     <section
-      aria-labelledby="people-title"
+      aria-labelledby={PEOPLE_TITLE_ID}
       className="flex flex-col gap-3 rounded-2xl border border-rule bg-surface p-5"
     >
       <div className="flex items-baseline justify-between">
-        <h2 id="people-title" className="text-[18px] font-extrabold text-ink">
+        <h2 id={PEOPLE_TITLE_ID} tabIndex={-1} className="scroll-mt-4 text-[18px] font-extrabold text-ink">
           들어온 사람
         </h2>
         <p className="tabular text-[15px] font-semibold text-ink-soft">

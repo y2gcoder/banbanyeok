@@ -227,12 +227,12 @@ async function expectTalkOpened(page: Page, probe: Probe, pageUrl: string, kakao
   return probe.templates[1];
 }
 
-/** `offscreen`: 이 기기에서 방의 공유 칸이 첫 화면 밖에 있다. */
-async function expectRoomMessage(probe: Probe, page: Page, baseURL: string | undefined, offscreen: boolean) {
+/** 방의 공유 칸은 결과 아래라 폰 첫 화면 밖이다(#168): 보이기 전에는 아무것도 보내지 않는지 본 뒤 칸으로 스크롤한다. */
+async function expectRoomMessage(probe: Probe, page: Page, baseURL: string | undefined) {
   const button = page.getByRole("button", { name: "카톡으로 결과 보내기" });
   await expect(button).toBeAttached();
   const pageUrl = page.url();
-  if (offscreen) await expectNothingUntilShown(page, button, probe);
+  await expectNothingUntilShown(page, button, probe);
   await expectPrepared(page, probe, baseURL);
 
   const template = await expectTalkOpened(page, probe, pageUrl, await press(button, probe));
@@ -253,14 +253,15 @@ async function expectRoomMessage(probe: Probe, page: Page, baseURL: string | und
   expect(probe.csp).toEqual([]);
 }
 
-test("방: 공유 칸이 화면에 있으면 SDK와 내용 없는 확인만 보내고, 첫 누름에 곧바로 카카오톡을 열어 그 방의 지금 결과를 보낸다", async ({
+// 결과가 있는 방은 폰에서 1위가 첫 화면에 오고 공유 칸("링크 다시 보내기")은 결과 아래다(#168).
+test("방: 공유 칸이 보이기 전에는 아무것도 보내지 않고, 보이면 SDK와 내용 없는 확인만 보내고, 첫 누름에 곧바로 카카오톡을 열어 그 방의 지금 결과를 보낸다", async ({
   context,
   page,
   baseURL,
 }) => {
   const probe = await attach(context, page);
   await page.goto(await prepareRoom(page, "host-full", 5));
-  await expectRoomMessage(probe, page, baseURL, false);
+  await expectRoomMessage(probe, page, baseURL);
 });
 
 test("혼자 입력한 결과도 첫 누름에 곧바로 카카오톡 공유 API로 보내고, 링크는 받는 사람의 /s 주소다", async ({
@@ -409,7 +410,7 @@ test.describe("iPhone", () => {
   }) => {
     const probe = await attach(context, page);
     await page.goto(await prepareRoom(page, "host-full", 5));
-    await expectRoomMessage(probe, page, baseURL, true);
+    await expectRoomMessage(probe, page, baseURL);
     // Navigation API의 navigate는 이동 의도이고, context의 request 이벤트보다 먼저 도착할 수 있다.
     // expectRoomMessage가 이동을 확인했어도 실제 유니버설 링크 요청은 별도로 기다린다.
     await expect

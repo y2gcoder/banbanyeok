@@ -177,7 +177,8 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
       p.getByRole("tab", { name: "빨리 만나기" }),
       p.getByRole("button", { name: "참여 잠그기" }),
     ],
-    (p) => [p.getByRole("region", { name: "들어온 사람" }), p.getByRole("region", { name: "만날 역 후보" })],
+    // 결과가 있는 방은 폰에서 결과가 참여자 목록보다 먼저다(#168). 제목(왼쪽 칸 맨 위)과 결과로 칸을 본다.
+    (p) => [p.getByRole("heading", { level: 1 }), p.getByRole("region", { name: "만날 역 후보" })],
   );
 
   // 서버 응답에도 숨긴 출발역 코드가 없다(방장·토큰 없는 사람 모두).

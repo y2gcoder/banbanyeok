@@ -17,6 +17,8 @@ type Props = {
   onSubmit: (input: ParticipantInput, value: ParticipantFormValue) => void;
   onCancel?: () => void;
   onEdited?: () => void;
+  /** 입력이 바뀔 때마다. 방 화면이 배치를 바꿔 폼이 다시 그려져도(#168: 두 번째 사람이 들어와 결과 아래로 옮겨 감) 넣던 값을 이어 받게 한다. */
+  onValueChange?: (value: ParticipantFormValue) => void;
   /** 방의 계산 기준(서버가 준 `timeBasis`). 없으면(옛 서버) 문구를 그리지 않는다. 화면은 라벨을 다시 만들지 않는다. */
   timeBasis?: Room["timeBasis"];
 };
@@ -31,6 +33,7 @@ export function JoinForm({
   onSubmit,
   onCancel,
   onEdited,
+  onValueChange,
   timeBasis,
 }: Props) {
   const id = useId();
@@ -67,6 +70,7 @@ export function JoinForm({
           setProblem(null);
           onEdited?.();
           setValue(next);
+          onValueChange?.(next);
         }}
         personIndex={personIndex}
       />
