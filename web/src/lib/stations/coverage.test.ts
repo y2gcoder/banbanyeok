@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { LINE_LABELS } from "../../../scripts/station-lines.ts";
 import { EXCLUDED_PLACES, SUPPORTED_LINES, UNSUPPORTED_REASONS, unsupportedReason } from "./coverage";
 import { type Station, searchStations } from "./index";
 import raw from "./index.gen.json";
@@ -49,9 +50,28 @@ describe("계산 범위", () => {
     for (const s of unsupported) expect(texts.has(unsupportedReason(asStation(s)) ?? ""), s[1]).toBe(true);
   });
 
-  it("이유 표의 각 줄은 tago-scope.json의 제외 항목에 대응한다", () => {
-    const keys = new Set([...Object.keys(tagoScope.excludedStations), ...Object.keys(tagoScope.excludedRoutes)]);
-    for (const r of UNSUPPORTED_REASONS) expect(keys.has(r.tago), r.tago).toBe(true);
+  it("이유 표의 각 줄은 tago-scope.json의 같은 역·노선 제외 항목에 대응한다", () => {
+    // 원본 설명은 "운천: …", "인천공항 자기부상철도: …"처럼 대상 이름으로 시작한다. 키만 있는지가 아니라 그 이름이 표의 역·노선과 같은지 본다.
+    const subject = (description: string | undefined) => description?.split(":")[0]?.trim();
+    for (const r of UNSUPPORTED_REASONS) {
+      if (r.station !== undefined) {
+        const name = rawStations.find((s) => s[0] === r.station)?.[1];
+        expect(name, `${r.station}가 역 인덱스에 없다`).toBeDefined();
+        expect(subject(tagoScope.excludedStations[r.tago]), `${r.tago} ↔ ${r.station}`).toBe(name);
+      } else {
+        // 노선은 원천 노선명(LINE_LABELS 키) → 표시 노선명으로 맞춘다: "자기부상철도" → "인천자기부상".
+        const route = subject(tagoScope.excludedRoutes[r.tago]);
+        expect(route, `${r.tago}가 excludedRoutes에 없다`).toBeDefined();
+        const sourceNames = Object.entries(LINE_LABELS)
+          .filter(([, label]) => label === r.line)
+          .map(([source]) => source);
+        expect(sourceNames.length, `${r.line}의 원천 노선명이 없다`).toBeGreaterThan(0);
+        expect(
+          sourceNames.some((source) => route?.includes(source)),
+          `${r.tago}(${route}) ↔ ${r.line}`,
+        ).toBe(true);
+      }
+    }
   });
 
   it("계산할 수 있는 역에는 이유가 없다", () => {
