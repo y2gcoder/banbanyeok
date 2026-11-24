@@ -7075,65 +7075,60 @@
             "candidates": [
                 {
                     "rank": 1,
-                    "stationCode": "gf9",
-                    "stationName": "시청",
+                    "stationCode": "ryf",
+                    "stationName": "홍대입구",
                     "times": [
                         {
                             "participantId": "pid014",
-                            "seconds": 727,
+                            "seconds": 0,
                             "transfers": 0
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 2100,
+                            "seconds": 2400,
                             "transfers": null
                         }
                     ],
-                    "maxSeconds": 2100,
-                    "spreadSeconds": 1373,
-                    "totalSeconds": 2827,
-                    "favoredSeconds": 727,
+                    "maxSeconds": 2400,
+                    "spreadSeconds": 2400,
+                    "totalSeconds": 2400,
+                    "favoredSeconds": 0,
                     "reasonCode": "FAVOR_CAPPED",
-                    "reason": "방장은 12분, 환승 없이 와요. 참가자 2는 공평하게보다 10분 더 걸려요 (35분). 방장 쪽에 더 가까운 역은 다른 사람 상한을 넘어서 뺐어요.",
+                    "reason": "방장은 0분, 환승 없이 와요. 참가자 2는 공평하게보다 15분 더 걸려요 (40분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
-                            "kind": "direct",
-                            "minute": 1431,
-                            "boundFor": {
-                                "stationCode": "ryf",
-                                "stationName": "홍대입구"
-                            }
+                            "kind": "check"
                         }
                     ]
                 },
                 {
                     "rank": 2,
-                    "stationCode": "j3y",
-                    "stationName": "을지로입구",
+                    "stationCode": "ep4",
+                    "stationName": "합정",
                     "times": [
                         {
                             "participantId": "pid014",
-                            "seconds": 847,
+                            "seconds": 277,
                             "transfers": 0
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1800,
+                            "seconds": 2700,
                             "transfers": null
                         }
                     ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 953,
-                    "totalSeconds": 2647,
-                    "favoredSeconds": 847,
+                    "maxSeconds": 2700,
+                    "spreadSeconds": 2423,
+                    "totalSeconds": 2977,
+                    "favoredSeconds": 277,
                     "reasonCode": "FAVOR_ALTERNATIVE",
-                    "reason": "방장 쪽 대안이에요. 1위 시청보다 방장은 2분 더 걸려요 (14분).",
+                    "reason": "방장 쪽 대안이에요. 1위 홍대입구보다 방장은 5분 더 걸려요 (5분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
                             "kind": "direct",
-                            "minute": 1428,
+                            "minute": 1438,
                             "boundFor": {
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
@@ -7143,31 +7138,31 @@
                 },
                 {
                     "rank": 3,
-                    "stationCode": "wym",
-                    "stationName": "을지로3가",
+                    "stationCode": "1qs",
+                    "stationName": "신촌",
                     "times": [
                         {
                             "participantId": "pid014",
-                            "seconds": 937,
+                            "seconds": 307,
                             "transfers": 0
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1800,
+                            "seconds": 2400,
                             "transfers": null
                         }
                     ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 863,
-                    "totalSeconds": 2737,
-                    "favoredSeconds": 937,
+                    "maxSeconds": 2400,
+                    "spreadSeconds": 2093,
+                    "totalSeconds": 2707,
+                    "favoredSeconds": 307,
                     "reasonCode": "FAVOR_ALTERNATIVE",
-                    "reason": "방장 쪽 대안이에요. 1위 시청보다 방장은 4분 더 걸려요 (16분).",
+                    "reason": "방장 쪽 대안이에요. 1위 홍대입구보다 방장은 5분 더 걸려요 (5분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
                             "kind": "direct",
-                            "minute": 1427,
+                            "minute": 1438,
                             "boundFor": {
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"

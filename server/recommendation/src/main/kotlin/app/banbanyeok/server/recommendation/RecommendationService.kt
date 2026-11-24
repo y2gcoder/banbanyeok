@@ -93,7 +93,13 @@ public class RecommendationService(
         }
         if (request.mode == RecommendMode.FAVOR) {
             val target = request.favorId ?: reject(RecommendationError.FAVOR_TARGET_REQUIRED, "우대 대상이 필요합니다")
-            if (people.none { it.id == target }) reject(RecommendationError.FAVOR_TARGET_UNKNOWN, "우대 대상이 참가자에 없습니다")
+            val favored =
+                people.firstOrNull { it.id == target }
+                    ?: reject(RecommendationError.FAVOR_TARGET_UNKNOWN, "우대 대상이 참가자에 없습니다")
+            // 숨긴 사람 쪽으로 맞춘 순위는 그 사람의 정확한 시간으로 정해져 1위가 출발역 근처로 모인다(#162). 본인만 본다.
+            if (favored.hidden && favored.id != request.viewerId) {
+                reject(RecommendationError.FAVOR_TARGET_HIDDEN, "출발역을 숨긴 사람 쪽으로 맞춘 결과는 본인만 볼 수 있습니다")
+            }
         }
     }
 

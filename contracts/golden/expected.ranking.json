@@ -692,6 +692,57 @@
         }
       ],
       "excluded": []
+    },
+    {
+      "id": "favor_uncapped_hidden",
+      "status": "ok",
+      "mode": "favor:A",
+      "toleranceMinutes": 0,
+      "baselineStationId": "baseline",
+      "favorCaps": {
+        "B": 45
+      },
+      "ranking": [
+        {
+          "rank": 1,
+          "stationId": "near_A",
+          "times": [
+            10,
+            40,
+            60
+          ],
+          "transfers": [
+            0,
+            0,
+            0
+          ],
+          "maxMinutes": 60,
+          "spreadMinutes": 50,
+          "totalMinutes": 110,
+          "favoredMinutes": 10,
+          "reasonCode": "FAVOR_CAPPED"
+        },
+        {
+          "rank": 2,
+          "stationId": "baseline",
+          "times": [
+            30,
+            30,
+            0
+          ],
+          "transfers": [
+            0,
+            0,
+            0
+          ],
+          "maxMinutes": 30,
+          "spreadMinutes": 30,
+          "totalMinutes": 60,
+          "favoredMinutes": 30,
+          "reasonCode": "FAVOR_ALTERNATIVE"
+        }
+      ],
+      "excluded": []
     }
   ]
 }

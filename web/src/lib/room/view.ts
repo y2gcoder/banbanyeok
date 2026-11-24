@@ -44,6 +44,14 @@ export function hasStaleParticipantToken(room: Room, record: RoomRecord | null):
   return Boolean(record?.participantToken) && !room.participants.some((p) => p.isSelf === true);
 }
 
+/**
+ * 이 사람 쪽으로 맞춘 결과('누구 쪽으로' 탭)를 내가 볼 수 있는지. 출발역을 숨긴 사람 쪽 결과는 그 사람 본인만 본다(#162): 그 순위는
+ * 그 사람의 정확한 시간으로 정해져 1위가 출발역 근처로 모인다. 서버도 본인이 아닌 요청은 `FAVOR_TARGET_HIDDEN`으로 거절한다.
+ */
+export function canFavor(person: { hidden: boolean; isSelf?: boolean }): boolean {
+  return !person.hidden || person.isSelf === true;
+}
+
 /** 방의 기본 배려 대상이 방 참가자 중 몇 번째인지(없으면 null). 서버는 `favorTarget`에 참여자 ID를 준다. */
 export function favorIndexOf(room: Room): number | null {
   if (room.mode !== "favor" || !room.favorTarget) return null;

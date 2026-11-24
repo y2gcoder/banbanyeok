@@ -2,6 +2,7 @@ package app.banbanyeok.server.app
 
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
+import app.banbanyeok.server.recommendation.RecommendMode
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.StationNames
 import app.banbanyeok.server.recommendation.codeNames
@@ -49,9 +50,9 @@ import java.time.ZoneOffset
  * location-derived value that leaked would differ between the rooms (see the map-middle positive control).
  *
  * Ranking uses exact times (ADR-0004), so the matrix is chosen so the exact order is also the same in both rooms. The fair
- * baseline is 31a, 지연's origin: 지연's favor cap there is 0, so favoring 민수 or the hidden person leaves only 31a. That
- * keeps the favor-the-hidden-person tab comparable; when the hidden origin can be ranked by that person's own exact time,
- * the order itself differs (accepted by ADR-0004, not covered by this byte comparison).
+ * baseline is 31a, 지연's origin: 지연's favor cap there is 0, so favoring 민수 leaves only 31a. The tab toward the hidden
+ * person is refused for everyone else and a room defaulting to it is fair for them (#162); hidden people get no favor cap,
+ * so their exact baseline time cannot change another tab's candidates (covered with a binding cap by the #162 case below).
  *
  * The shared wire fixture `contracts/fixtures/hidden-origin-noninterference.json` (also read by the web test) is written
  * from this test: `mise run fixtures:hidden-origin` (review the diff).
@@ -114,6 +115,111 @@ class HiddenOriginNoninterferenceHttpTest :
                 }
             // Each origin's own coordinates pull the middle to it: a leaked location-derived value would differ by room.
             middles shouldBe HIDDEN_ORIGINS
+        }
+
+        it("changing only a hidden origin cannot change anyone else's favor tabs, even where it set a cap (#162)") {
+            // 숨긴 사람의 두 행(130, 225)은 모든 후보에서 같은 5분 구간(0~250초 → 5분)이다. 공평 기준역은 4xz(민수·지연 1200초)다.
+            // 고치기 전에는 둘이 갈렸다:
+            // - 민수·지연 쪽 탭: 숨긴 사람의 상한이 기준 0초(130)면 0초라 후보가 4xz 하나, 200초(225)면 300초라 넷 다 남았다.
+            // - 숨긴 사람 쪽 탭: 정확한 시간으로 정렬해 1위가 4xz(130, 0초)와 6de(225, 100초)로 갈렸다.
+            val capOd =
+                smallOd(
+                    listOf("03v", "130", "225", "31a"),
+                    listOf("4xz", "5bc", "6de", "7fg"),
+                    listOf(
+                        listOf(1200, 1500, 1700, 1300),
+                        listOf(0, 100, 200, 100),
+                        listOf(200, 200, 100, 250),
+                        listOf(1200, 1500, 1700, 1300),
+                    ),
+                )
+            val capRecommendation = RecommendationService(OdTravelTimeProvider(capOd, "20261120.1"), hiddenOriginNames)
+            val rooms = listOf("130", "225").map { RouteRoom(it, capRecommendation).open() }
+            // 쌍이 헛돌지 않는지: 숨긴 본인의 자기 쪽 탭은 출발역에 따라 여전히 다르다(본인은 지금처럼 본다).
+            rooms.map { room ->
+                room.results
+                    .result(room.roomId, room.hiddenToken, RecommendMode.FAVOR, room.hiddenId)
+                    .recommendation.candidates
+                    .first()
+                    .stationCode
+            } shouldBe listOf("4xz", "6de")
+            val snapshots =
+                rooms.map { room ->
+                    val responses = linkedMapOf<String, String>()
+                    testApplication {
+                        application {
+                            apiModule(
+                                testConfig(mapOf("RATE_LIMIT_ENABLED" to "false")),
+                                apiServices(
+                                    room.fixture.anonService,
+                                    room.fixture.service,
+                                    room.results,
+                                    capRecommendation,
+                                    DevArtifacts.directory,
+                                ),
+                            )
+                        }
+                        val path = "/v1/rooms/${room.roomId}"
+                        val people = listOf(room.hostId, room.hiddenId, room.thirdId)
+                        val defaults =
+                            listOf(RoomPatch(mode = RoomMode.FAIR)) + people.map { RoomPatch(RoomMode.FAVOR, it) }
+                        val endpoints = listOf("/preview", "/result") + people.map { "/result?mode=favor&favor=$it" }
+                        for ((index, patch) in defaults.withIndex()) {
+                            room.fixture.service.updateRoom(room.roomId, room.managementToken, patch)
+                            val viewers = listOf(null, room.managementToken, room.hostToken, room.thirdToken)
+                            for ((viewer, token) in viewers.withIndex()) {
+                                for (endpoint in endpoints) {
+                                    val response = client.json(HttpMethod.Get, path + endpoint, token = token)
+                                    val raw = response.bodyAsText()
+                                    val json = Json.parseToJsonElement(raw).jsonObject
+                                    withClue("default=$index viewer=$viewer $endpoint") {
+                                        assertNoHiddenOrigin(json)
+                                        if (endpoint.endsWith("favor=${room.hiddenId}")) {
+                                            response.status.value shouldBe 400
+                                            json.getValue("code").jsonPrimitive.content shouldBe "FAVOR_TARGET_HIDDEN"
+                                        } else {
+                                            response.status.value shouldBe 200
+                                        }
+                                        // 방의 기본 기준이 숨긴 사람 쪽이면 다른 사람에게는 공평하게다(미리보기도).
+                                        if (patch.favorTarget == room.hiddenId && endpoint == "/result") {
+                                            json.getValue("mode").jsonPrimitive.content shouldBe "fair"
+                                        }
+                                        if (patch.favorTarget == room.hiddenId && endpoint == "/preview") {
+                                            json
+                                                .getValue("basis")
+                                                .jsonObject
+                                                .getValue("mode")
+                                                .jsonPrimitive.content shouldBe "fair"
+                                        }
+                                        // 숨긴 사람에게 상한이 없어 민수·지연 쪽 탭의 후보는 넷 다 남는다(상위 3곳).
+                                        if (endpoint.endsWith("favor=${room.hostId}")) {
+                                            json.stationCodes() shouldBe listOf("4xz", "7fg", "5bc")
+                                        }
+                                    }
+                                    responses["$index/$viewer/$endpoint"] = raw
+                                }
+                            }
+                        }
+                        // 숨긴 본인: 방의 기본 기준이 자기 쪽이면 자기 쪽 결과를 본다. 다른 사람 쪽 탭은 다른 사람과 같은 후보다.
+                        val own = client.json(HttpMethod.Get, "$path/result", token = room.hiddenToken)
+                        Json
+                            .parseToJsonElement(own.bodyAsText())
+                            .jsonObject
+                            .getValue("mode")
+                            .jsonPrimitive.content shouldBe "favor"
+                        val ownHostTab =
+                            client.json(
+                                HttpMethod.Get,
+                                "$path/result?mode=favor&favor=${room.hostId}",
+                                token = room.hiddenToken,
+                            )
+                        Json.parseToJsonElement(ownHostTab.bodyAsText()).jsonObject.stationCodes() shouldBe
+                            listOf("4xz", "7fg", "5bc")
+                    }
+                    responses
+                }
+            snapshots[0].keys shouldBe snapshots[1].keys
+            snapshots[0].forEach { (path, body) -> withClue(path) { body shouldBe snapshots[1].getValue(path) } }
         }
 
         describe(
@@ -301,13 +407,28 @@ private suspend fun RouteRoom.otherViewerResponses(): Map<String, String> {
                 for ((viewer, token) in viewers.withIndex()) {
                     for (endpoint in listOf("", "/preview") + tabs.map { "/result$it" }) {
                         val response = json(HttpMethod.Get, path + endpoint, token = token)
-                        response.status.value shouldBe 200
+                        // None of these viewers is the hidden person: the tab toward them is refused (#162).
+                        val hiddenTab = endpoint.endsWith("favor=${room.hiddenId}")
+                        response.status.value shouldBe if (hiddenTab) 400 else 200
                         val raw = response.bodyAsText()
                         val json = Json.parseToJsonElement(raw).jsonObject
                         withClue("$stage viewer=$viewer endpoint=$endpoint") {
                             assertNoHiddenOrigin(meetingStationsMasked(json))
                             json["station"]?.jsonObject?.let { assertCoarse(it) }
-                            if (endpoint.startsWith("/result")) {
+                            // A room whose default favors the hidden person is fair for everyone else (#162).
+                            if (mode.favorTarget == room.hiddenId && endpoint == "/result") {
+                                json.getValue("mode").jsonPrimitive.content shouldBe "fair"
+                            }
+                            if (mode.favorTarget == room.hiddenId && endpoint == "/preview" && "basis" in json) {
+                                json
+                                    .getValue("basis")
+                                    .jsonObject
+                                    .getValue("mode")
+                                    .jsonPrimitive.content shouldBe "fair"
+                            }
+                            if (hiddenTab) {
+                                json.getValue("code").jsonPrimitive.content shouldBe "FAVOR_TARGET_HIDDEN"
+                            } else if (endpoint.startsWith("/result")) {
                                 val cards = json.getValue("candidates").jsonArray.map { it.jsonObject }
                                 cards.isNotEmpty() shouldBe true
                                 cards.forEach { card ->
@@ -497,3 +618,10 @@ private fun assertNoHiddenOrigin(value: JsonElement) {
         }
     }
 }
+
+private fun JsonObject.stationCodes(): List<String> =
+    getValue("candidates").jsonArray.map {
+        it.jsonObject
+            .getValue("stationCode")
+            .jsonPrimitive.content
+    }

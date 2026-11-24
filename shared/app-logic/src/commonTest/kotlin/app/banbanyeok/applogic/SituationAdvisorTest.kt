@@ -64,6 +64,16 @@ class SituationAdvisorTest {
     }
 
     @Test
+    fun longTravelHasNoSuggestionButtonForAPersonWhoseOriginIsHidden() {
+        // 숨긴 다른 사람(출발역이 보이지 않는다) 쪽 결과는 본인만 본다(#162).
+        val people = listOf(PersonRef("a", "민지", "03v"), PersonRef("b", "지훈", null))
+        val notice = evaluate(listOf(candidate("신촌", 40, 95)), people = people).single()
+        assertEquals(NoticeKind.LONG_TRAVEL, notice.kind)
+        assertEquals(null, notice.favorIndex)
+        assertEquals(null, notice.ctaLabel)
+    }
+
+    @Test
     fun exactlyNinetyMinutesIsNotLong() {
         assertEquals(emptyList(), evaluate(listOf(CandidateTimes("신촌", listOf(2400, 5400)))))
         assertEquals(NoticeKind.LONG_TRAVEL, evaluate(listOf(CandidateTimes("신촌", listOf(2400, 5401)))).single().kind)

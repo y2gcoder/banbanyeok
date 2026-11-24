@@ -168,19 +168,26 @@ class RoomResultService(
         favorId: String?,
     ): RecommendRequest {
         val view = context.view
-        val resolvedMode = mode ?: view.mode.toRecommendMode()
         val time = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand)
+        // 토큰으로 확인한 본인. 숨긴 사람의 막차는 본인 요청에만 붙는다(미리보기는 토큰 없이 읽으므로 늘 null이다).
+        val viewerId = view.participants.firstOrNull { it.isSelf }?.id
+        val participants =
+            context.computeParticipants.map {
+                RecommendParticipant(it.id, it.nickname, it.originCode, it.hidden)
+            }
+        val requestedMode = mode ?: view.mode.toRecommendMode()
+        val target = favorTarget(requestedMode, favorId, view, roomDefault = mode == null)
+        // 방의 기본 기준이 숨긴 사람 쪽인데 본인이 아니면(미리보기 포함) 공평하게로 계산한다(#162). 웹 결과 화면도 같은 규칙이다.
+        // 요청에 모드가 있으면 바꾸지 않는다: 추천이 FAVOR_TARGET_HIDDEN으로 거절한다.
+        val hiddenDefault =
+            mode == null && target != null && participants.any { it.id == target && it.hidden && it.id != viewerId }
         return RecommendRequest(
-            participants =
-                context.computeParticipants.map {
-                    RecommendParticipant(it.id, it.nickname, it.originCode, it.hidden)
-                },
-            mode = resolvedMode,
-            favorId = favorTarget(resolvedMode, favorId, view, roomDefault = mode == null),
+            participants = participants,
+            mode = if (hiddenDefault) RecommendMode.FAIR else requestedMode,
+            favorId = if (hiddenDefault) null else target,
             time = time,
             dayCertainty = times.certainty(view.meetingDate, view.meetingTime),
-            // 토큰으로 확인한 본인. 숨긴 사람의 막차는 본인 요청에만 붙는다(미리보기는 토큰 없이 읽으므로 늘 null이다).
-            viewerId = view.participants.firstOrNull { it.isSelf }?.id,
+            viewerId = viewerId,
         )
     }
 

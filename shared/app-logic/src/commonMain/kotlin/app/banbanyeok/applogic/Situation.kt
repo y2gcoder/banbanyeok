@@ -92,17 +92,24 @@ public object SituationAdvisor {
         }
 
         val notices = ArrayList<Notice>()
-        if (topMax > LONG_TRAVEL_SECONDS) {
-            val text = "누군가는 90분 넘게 걸려요. 한쪽 동네에서 만나는 게 나을 수도 있어요."
-            if (input.mode == ReasonMode.FAVOR) {
-                notices += Notice(NoticeKind.LONG_TRAVEL, text)
-            } else {
-                val longest = top.timesSeconds.indexOf(topMax)
-                notices += Notice(NoticeKind.LONG_TRAVEL, text, longest, "${names[longest]} 쪽으로 보기")
-            }
-        }
+        if (topMax > LONG_TRAVEL_SECONDS) notices += longTravelNotice(input, names, top.timesSeconds.indexOf(topMax))
         similarNotice(input.mode, input.candidates)?.let { notices += it }
         return notices
+    }
+
+    /** 배려 모드가 아니면 가장 오래 걸리는 사람 쪽으로 보기 버튼을 붙인다. */
+    private fun longTravelNotice(
+        input: SituationInput,
+        names: List<String>,
+        longest: Int,
+    ): Notice {
+        val text = "누군가는 90분 넘게 걸려요. 한쪽 동네에서 만나는 게 나을 수도 있어요."
+        // 출발역을 볼 수 없는 사람(숨긴 다른 사람) 쪽 결과는 그 사람 본인만 본다(#162): 버튼을 내지 않는다.
+        return if (input.mode == ReasonMode.FAVOR || input.people[longest].originCode == null) {
+            Notice(NoticeKind.LONG_TRAVEL, text)
+        } else {
+            Notice(NoticeKind.LONG_TRAVEL, text, longest, "${names[longest]} 쪽으로 보기")
+        }
     }
 
     private fun failInput(code: InputErrorCode): Nothing = throw ReasonInputException(code)

@@ -3,6 +3,8 @@ package app.banbanyeok.core
 /** Pure ranking input. Matrix rows follow participants, columns follow candidates; paired null means unreachable.
  * Codes are opaque nonempty identifiers; production adapters validate the registry ASCII code format.
  * All durations are integer seconds. Invalid input throws IllegalArgumentException from rank().
+ * uncapped lists participants who get no favor cap (rooms pass people who hid their origin, #162). It changes only
+ * favor mode's cap filter: fair/fast and the baseline ignore it, and an empty set reproduces the plain ranking.
  */
 public data class RankInput(
     val participants: List<String>,
@@ -11,6 +13,7 @@ public data class RankInput(
     val transfers: List<List<Int?>>,
     val mode: String = "fair",
     val toleranceSeconds: Int = 0,
+    val uncapped: Set<String> = emptySet(),
 )
 
 /** Corresponds to OpenAPI PersonalTime; order follows the input participants. */
@@ -39,7 +42,7 @@ public data class ExcludedCandidate(
 
 /** Full ranking, without the HTTP layer's top-three truncation, names or dataVersion.
  * mode is fair/fast/favor:<participantId>. baselineStationCode is always strict fair first place.
- * favorCaps contains only nonfavored participants, in integer seconds (half-seconds round down).
+ * favorCaps contains only nonfavored, capped participants (not RankInput.uncapped), in integer seconds (half-seconds round down).
  * totalSeconds uses Long to avoid overflow when adding up to four Int durations.
  */
 public data class RankResult(

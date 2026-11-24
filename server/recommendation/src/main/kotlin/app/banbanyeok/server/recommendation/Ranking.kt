@@ -44,6 +44,9 @@ internal class Ranking(
                     transfers = matrix.transfers,
                     mode = if (favorIndex >= 0) "favor:${request.favorId}" else request.mode.name.lowercase(),
                     toleranceSeconds = toleranceSeconds,
+                    // 숨긴 사람에게는 배려 상한을 두지 않는다(#162): 상한은 그 사람의 공평 기준 시간에서 나오므로 후보 집합이 그 사람의
+                    // 출발역에 따라 갈린다. 보는 사람과 상관없이 같은 규칙이라 숨긴 본인도 다른 사람과 같은 후보를 본다.
+                    uncapped = people.filter { it.hidden }.map { it.id }.toSet(),
                 ),
             )
         val hidden = HiddenTimes.of(request)
@@ -164,8 +167,8 @@ internal class Ranking(
     }
 
     /**
-     * 배려 문장의 맥락. 기준역 시간은 보이는 값(숨긴 다른 사람은 뭉뚱그림)이고, 숨긴 다른 사람의 상한은 null이다: 상한은 기준 시간 +
-     * min(15분, 50%)이라 "상한 +N분"에서 숨긴 사람의 정확한 기준 시간이 거꾸로 나온다(#142).
+     * 배려 문장의 맥락. 기준역 시간은 보이는 값(숨긴 다른 사람은 뭉뚱그림)이다. 숨긴 사람은 상한이 없으므로(#162) 그 칸은 null이다.
+     * 뭉뚱그린 칸도 null로 둔다: 상한은 기준 시간 + min(15분, 50%)이라 "상한 +N분"에서 정확한 기준 시간이 거꾸로 나온다(#142).
      */
     private fun favorContext(
         result: RankResult,

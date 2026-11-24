@@ -18,7 +18,7 @@ import {
   withoutParticipant,
   writeRoomRecord,
 } from "@/lib/room/tokens";
-import { hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
+import { canFavor, hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
 import { HostControls } from "./host-controls";
@@ -50,11 +50,15 @@ function rememberedValue(): ParticipantFormValue {
   return me && station?.supported ? { nickname: me.nickname, station, hidden: false } : emptyValue();
 }
 
-/** 방 설정 요약의 기준: "공평하게" / "빨리 만나기" / "{짧은 이름} 쪽으로"(배려 대상을 아직 모르면 "누구 쪽으로"). */
+/**
+ * 방 설정 요약의 기준: "공평하게" / "빨리 만나기" / "{짧은 이름} 쪽으로"(배려 대상을 아직 모르면 "누구 쪽으로").
+ * 배려 대상이 출발역을 숨긴 다른 사람이면 결과 화면·미리보기처럼 "공평하게"다(#162).
+ */
 function modeText(room: Room): string {
   if (room.mode === "fair") return "공평하게";
   if (room.mode === "fast") return "빨리 만나기";
   const target = room.participants.find((p) => p.participantId === room.favorTarget);
+  if (target && !canFavor(target)) return "공평하게";
   // shortLabel을 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로 쓴다.
   const name = target ? ((target.shortLabel as string | undefined) ?? target.label) : "누구";
   return `${name} 쪽으로`;

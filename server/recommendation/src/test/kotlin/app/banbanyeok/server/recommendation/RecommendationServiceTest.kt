@@ -184,7 +184,98 @@ class RecommendationServiceTest :
                     others.candidates.first().stationCode shouldBe self.candidates.first().stationCode
                     others.candidates.first().reason shouldNotContain "상한"
                     others.candidates.first().reason shouldContain "(25분)"
-                    self.candidates.first().reason shouldContain "상한 +"
+                    // 숨긴 사람에게는 상한이 없다(#162). 본인 화면에도 자기 상한 문장이 없다.
+                    self.candidates.first().reason shouldNotContain "상한"
+                }
+
+                it("gives the favored person's tab only to the hidden person themselves (#162)") {
+                    shouldThrow<RecommendationException> {
+                        service(od).evaluate(request(RecommendMode.FAVOR, viewer = null, favor = "b"))
+                    }.error shouldBe RecommendationError.FAVOR_TARGET_HIDDEN
+                    shouldThrow<RecommendationException> {
+                        service(od).evaluate(request(RecommendMode.FAVOR, viewer = "a", favor = "b"))
+                    }.error shouldBe RecommendationError.FAVOR_TARGET_HIDDEN
+                    // 본인은 지금처럼 자기 쪽 결과를 정확한 값으로 본다(민수 상한 600 + 300초가 130을 거른다).
+                    val own =
+                        service(
+                            od,
+                        ).evaluate(request(RecommendMode.FAVOR, viewer = "b", favor = "b")).recommendation
+                    own.candidates.first().stationCode shouldBe "225"
+                    own.candidates.first().times[1] shouldBe ParticipantTime("b", 1100, 1)
+                }
+            }
+
+            describe("favor caps leave out hidden people (#162)") {
+                // 숨긴 b의 두 출발역(130, 225)은 모든 후보에서 같은 5분 구간이다. 공평 기준역은 x(민수·수진 최장 1200)다.
+                // 상한에 b를 넣으면 130에서는 b의 기준 0초 → 상한 0초라 y·z가 빠지고, 225에서는 상한 300초라 남는다.
+                val od =
+                    smallOd(
+                        origins = listOf("03v", "130", "225", "31a"),
+                        candidates = listOf("4xz", "5bc", "6de"),
+                        times =
+                            listOf(
+                                listOf(1200, 1300, 1500),
+                                listOf(0, 100, 200),
+                                listOf(200, 250, 100),
+                                listOf(1200, 1300, 1500),
+                            ),
+                    )
+
+                suspend fun favorA(
+                    hiddenOrigin: String,
+                    viewer: String?,
+                ) = service(od)
+                    .evaluate(
+                        RecommendRequest(
+                            listOf(
+                                RecommendParticipant("a", "민수", "03v"),
+                                RecommendParticipant("b", null, hiddenOrigin, hidden = true),
+                                RecommendParticipant("c", "수진", "31a"),
+                            ),
+                            RecommendMode.FAVOR,
+                            "a",
+                            viewerId = viewer,
+                        ),
+                    ).recommendation
+
+                it("gives everyone the same candidates whichever origin the hidden person has") {
+                    for (viewer in listOf(null, "a", "c")) {
+                        val east = favorA("130", viewer)
+                        val west = favorA("225", viewer)
+                        east.candidates.map { it.stationCode } shouldContainExactly listOf("4xz", "5bc", "6de")
+                        east shouldBe west
+                    }
+                }
+
+                it("uses the same caps on the hidden person's own screen") {
+                    favorA("130", "b").candidates.map { it.stationCode } shouldContainExactly
+                        listOf("4xz", "5bc", "6de")
+                    favorA("225", "b").candidates.map { it.stationCode } shouldContainExactly
+                        listOf("4xz", "5bc", "6de")
+                }
+
+                it("still caps people who show their origin") {
+                    val od2 =
+                        smallOd(
+                            origins = listOf("03v", "130", "31a"),
+                            candidates = listOf("4xz", "5bc"),
+                            times = listOf(listOf(1200, 600), listOf(0, 100), listOf(1200, 1900)),
+                        )
+                    val result =
+                        service(od2)
+                            .evaluate(
+                                RecommendRequest(
+                                    listOf(
+                                        RecommendParticipant("a", "민수", "03v"),
+                                        RecommendParticipant("b", null, "130", hidden = true),
+                                        RecommendParticipant("c", "수진", "31a"),
+                                    ),
+                                    RecommendMode.FAVOR,
+                                    "a",
+                                ),
+                            ).recommendation
+                    // 수진의 상한은 1200 + 600 = 1800초라 5bc(1900초)는 빠진다.
+                    result.candidates.map { it.stationCode } shouldContainExactly listOf("4xz")
                 }
             }
 

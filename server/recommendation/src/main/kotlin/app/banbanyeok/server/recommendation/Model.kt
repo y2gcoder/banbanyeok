@@ -31,7 +31,10 @@ public class RecommendRequest(
     public val time: TimeBasis = TimeBasis.of(TimeSlot.DEFAULT),
     /** [time]의 요일 종류를 믿을 수 있는가. 막차 시각은 [DayCertainty.KNOWN]일 때만 낸다. */
     public val dayCertainty: DayCertainty = DayCertainty.KNOWN,
-    /** 이 결과를 보는 참가자의 [RecommendParticipant.id](방에서 토큰으로 확인한 본인). 숨긴 사람의 막차는 본인 요청에만 붙는다. */
+    /**
+     * 이 결과를 보는 참가자의 [RecommendParticipant.id](방에서 토큰으로 확인한 본인). 숨긴 사람의 막차는 본인 요청에만 붙고, 숨긴 사람
+     * 쪽으로 맞춘 결과(favor)도 본인만 받는다(#162).
+     */
     public val viewerId: String? = null,
 )
 
@@ -106,6 +109,9 @@ public enum class RecommendationError {
     UNKNOWN_STATION,
     FAVOR_TARGET_REQUIRED,
     FAVOR_TARGET_UNKNOWN,
+
+    /** 우대 대상이 출발역을 숨긴 사람인데 그 사람 본인의 요청이 아니다(#162). */
+    FAVOR_TARGET_HIDDEN,
 }
 
 /** 요청이 규칙에 맞지 않는다. 호출하는 쪽(HTTP 계층)이 400/409 등으로 옮긴다. */

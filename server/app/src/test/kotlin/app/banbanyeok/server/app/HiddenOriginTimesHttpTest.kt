@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import io.ktor.client.HttpClient
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
@@ -31,6 +32,7 @@ import kotlinx.serialization.json.jsonPrimitive
  *   보이는 칸에서 다시 계산한 값(합계에서 정확한 초가 거꾸로 나오지 않는다), 이유 문장에 "0~"·"0분"이 없다.
  * - 링크 미리보기(결과·정한 역 단계)도 같은 뭉뚱그린 값이다(그림의 "바로 여기"는 0초일 때만 나온다).
  * - 숨긴 본인은 정확한 값이다. 순위(역 순서)는 누가 보든 같다(공평 순위 불변).
+ * - 숨긴 사람 쪽으로 맞춘 배려 탭은 본인만 받는다(다른 사람은 400 `FAVOR_TARGET_HIDDEN`, #162).
  */
 class HiddenOriginTimesHttpTest :
     DescribeSpec({
@@ -175,21 +177,41 @@ class HiddenOriginTimesHttpTest :
                     val ranked = client.result("$room/result?mode=$mode", null)
                     ranked["candidates"]!!.jsonArray[rank - 1].jsonObject.string("stationCode") shouldBe hiddenCode
 
-                    // 배려 탭(누구를 우대하든)도 같다.
+                    // 배려 탭(다른 사람 쪽)도 같다. 숨긴 사람 쪽 탭은 본인만 받는다(#162).
                     val ids = people.indices.map { ranked.participantIdOf(it) }
                     for ((favorIndex, id) in ids.withIndex()) {
                         val query = "?mode=favor&favor=$id"
+                        if (favorIndex == hiddenIndex) {
+                            for (token in listOf(null) + tokens.filterIndexed { i, _ -> i != hiddenIndex }) {
+                                val response = client.json(HttpMethod.Get, "$room/result$query", token = token)
+                                response.status.value shouldBe 400
+                                response.bodyAsText() shouldContain "FAVOR_TARGET_HIDDEN"
+                            }
+                            client.result("$room/result$query", tokens[hiddenIndex])
+                            continue
+                        }
                         val other = client.result("$room/result$query", null)
+                        val self = client.result("$room/result$query", tokens[hiddenIndex])
+                        // 숨긴 본인도 다른 사람 쪽 탭에서는 같은 상한 규칙이라 같은 후보를 본다.
+                        self.stationCodes() shouldBe other.stationCodes()
                         for (card in other["candidates"]!!.jsonArray.map { it.jsonObject }) {
-                            val hidden = card["times"]!!.jsonArray[hiddenIndex].jsonObject
+                            val times = card["times"]!!.jsonArray.map { it.jsonObject }
+                            val hidden = times[hiddenIndex]
                             withClue("${scenario.name} $query ${card.string("stationName")}") {
                                 hidden["transfers"] shouldBe JsonNull
                                 hidden.int("seconds") % 300 shouldBe 0
                                 hidden.int("seconds") shouldBeGreaterThanOrEqual 300
                                 card["favoredSeconds"]?.jsonPrimitive?.int?.let { favored ->
-                                    favored shouldBe card["times"]!!.jsonArray[favorIndex].jsonObject.int("seconds")
+                                    favored shouldBe times[favorIndex].int("seconds")
                                 }
-                                ZERO_MINUTES.containsMatchIn(card.string("reason")) shouldBe false
+                                // 숨긴 사람에게 상한이 없어 공개한 사람의 출발역이 후보일 수 있다. 그 사람의 "0분"은 공개된 값이다.
+                                val publicZero =
+                                    times.indices.any {
+                                        it != hiddenIndex && times[it].int(
+                                            "seconds",
+                                        ) < 30
+                                    }
+                                if (!publicZero) ZERO_MINUTES.containsMatchIn(card.string("reason")) shouldBe false
                             }
                         }
                     }
@@ -233,6 +255,9 @@ private suspend fun HttpClient.result(
 }
 
 private suspend fun HttpClient.preview(path: String): JsonObject = result(path, null)
+
+private fun JsonObject.stationCodes(): List<String> =
+    getValue("candidates").jsonArray.map { it.jsonObject.string("stationCode") }
 
 private fun JsonObject.string(key: String): String = getValue(key).jsonPrimitive.content
 

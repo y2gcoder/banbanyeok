@@ -11,12 +11,12 @@
 | 영역 | 결정 | 출처 |
 |---|---|---|
 | 제품 | 비회원, 익명 사용자 ID, 후보 3개 카드(사람별 시간·환승·이유), 모드 3종, 막차는 2차 | B, 사용자 |
-| 공평 규칙 | fair = (최장, 차이, 합계, ID), favor 상한 = fair 1위 대비 +min(15분, 50%), 기본 동점 0분 | D |
+| 공평 규칙 | fair = (최장, 차이, 합계, ID), favor 상한 = fair 1위 대비 +min(15분, 50%)(숨긴 사람에게는 상한 없음, [ADR-0005](adr/0005-favor-without-hidden-origin.md)), 기본 동점 0분 | D |
 | 데이터 | 자체 그래프 사전계산. 외부 경로 API 결과는 저장하지 않음. KTDB는 허용 범위 확인 전 사용 안 함 | A |
 | 공유 코어 | KMP `shared/{core,schema,links,api-client,app-logic,analytics}` | C3, 사용자 |
 | 서버 | Ktor + Cloud Run(서울, min 0) + Postgres | C3 |
 | 웹 | Next.js(App Router) on **Cloudflare Workers + OpenNext** (수익화 계획이 있어 Vercel Hobby의 비상업 제한을 피함). 인기 역 조합 SEO 페이지 + 링크별 동적 OG | C3, 사용자 |
-| 숨기기 | 숨긴 출발역은 이름만 가리고 시간은 보임. 다른 사람에게는 5분 단위로 올린 시간만, 환승은 숨김(순위는 정확한 값, [ADR-0004](adr/0004-hidden-origin-times-coarsened.md)) | 사용자 |
+| 숨기기 | 숨긴 출발역은 이름만 가리고 시간은 보임. 다른 사람에게는 5분 단위로 올린 시간만, 환승은 숨김(순위는 정확한 값, [ADR-0004](adr/0004-hidden-origin-times-coarsened.md)). 숨긴 사람 쪽 '누구 쪽으로' 결과는 본인만([ADR-0005](adr/0005-favor-without-hidden-origin.md)) | 사용자 |
 | 앱 | Android Compose → iOS SwiftUI. RN/Expo/Compose Multiplatform 아님 | 사용자 |
 | 공유 방식 | 혼자 입력 → URL 상태(3자 base32 역 코드), 각자 입력/숨기기 → 서버 방 ID | C3 |
 | 계산 위치 | 클라이언트(혼자 입력, 즉시) + 서버(방, 숨기기). 코어는 한 벌 | C3 |

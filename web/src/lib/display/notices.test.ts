@@ -40,6 +40,12 @@ describe("극단 상황 안내", () => {
     expect(evaluate([c("신촌", 40, 95)], { mode: "favor" })[0]?.cta).toBeNull();
   });
 
+  it("출발역을 숨긴 다른 사람 쪽으로는 버튼이 없다(그 사람 쪽 결과는 본인만 본다, #162)", () => {
+    const [notice] = evaluate([c("신촌", 40, 95)], { originCodes: ["03v", null] });
+    expect(notice?.kind).toBe("LONG_TRAVEL");
+    expect(notice?.cta).toBeNull();
+  });
+
   it("후보끼리 2분 이내면 비슷하다(공평은 최장, 빨리는 합계, 배려는 판단 안 함)", () => {
     expect(evaluate([c("신촌", 38, 30), c("합정", 39, 30), c("을지로3가", 40, 30)])[0]?.text).toBe(
       "세 곳 다 비슷해요. 가고 싶은 동네로 고르세요.",
