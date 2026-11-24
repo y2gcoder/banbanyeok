@@ -13,6 +13,7 @@ import app.banbanyeok.server.recommendation.sampleRouteGraph
 import app.banbanyeok.server.recommendation.smallOd
 import app.banbanyeok.server.room.RoomMode
 import app.banbanyeok.server.room.RoomPatch
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainAll
@@ -114,7 +115,58 @@ class HiddenOriginNoninterferenceHttpTest :
             // Each origin's own coordinates pull the middle to it: a leaked location-derived value would differ by room.
             middles shouldBe HIDDEN_ORIGINS
         }
+
+        describe(
+            "meeting-station slots: the scan allows a hidden-origin candidate only where the station itself goes",
+        ) {
+            fun scan(body: String) =
+                assertNoHiddenOrigin(meetingStationsMasked(Json.parseToJsonElement(body).jsonObject))
+
+            it("allows the card, its route's last stop, the comparison label, and the previewed/decided station") {
+                scan(SLOTS_BODY)
+            }
+            val leaks =
+                listOf(
+                    "the candidate's name elsewhere in a reason" to
+                        SLOTS_BODY.replace("5분 덜 걸려요.", "5분 덜 걸려요. 참가자 2 출발역: 동쪽비공개역"),
+                    "the other hidden name as the comparison label" to
+                        SLOTS_BODY.replace("2위 동쪽비공개역보다", "2위 서쪽비공개역보다"),
+                    "a comparison label with the wrong rank" to SLOTS_BODY.replace("2위 동쪽비공개역보다", "3위 동쪽비공개역보다"),
+                    "the card's own name in its own reason" to SLOTS_BODY.replace("1위 31a역보다", "1위 31a역보다 동쪽비공개역이"),
+                    "a person's label" to SLOTS_BODY.replace("\"label\":\"참가자 2\"", "\"label\":\"동쪽비공개역\""),
+                    "an object key" to SLOTS_BODY.replace("\"rank\":2,", "\"rank\":2,\"130\":true,"),
+                    "a route's first stop (somebody's origin)" to
+                        SLOTS_BODY.replace(
+                            "\"from\":{\"stationCode\":\"03v\",\"stationName\":\"03v역\"}",
+                            "\"from\":{\"stationCode\":\"225\",\"stationName\":\"서쪽비공개역\"}",
+                        ),
+                    "the other hidden name in the previewed station's neighbours" to
+                        SLOTS_BODY.replace("\"stage\":\"result\"", "\"stage\":\"result\",\"near\":\"서쪽비공개역\""),
+                )
+            for ((name, body) in leaks) {
+                it("rejects $name") {
+                    body shouldNotBe SLOTS_BODY
+                    shouldThrow<AssertionError> { scan(body) }
+                }
+            }
+        }
     })
+
+/** A minimal response with hidden-origin candidate 130 in every allowed slot (its shape follows the wire DTOs). */
+private val SLOTS_BODY =
+    """
+    {"stage":"result","participants":[{"label":"민수"},{"label":"참가자 2"}],
+     "station":{"stationCode":"130","stationName":"동쪽비공개역"},
+     "decision":{"stationCode":"130","stationName":"동쪽비공개역"},
+     "candidates":[
+      {"rank":1,"stationCode":"31a","stationName":"31a역","reason":"2위 동쪽비공개역보다 가장 오래 걸리는 사람이 5분 덜 걸려요.",
+       "routes":[{"participantId":"p1","legs":[{"line":"2호선","from":{"stationCode":"03v","stationName":"03v역"},
+        "to":{"stationCode":"31a","stationName":"31a역"}}]}]},
+      {"rank":2,"stationCode":"130","stationName":"동쪽비공개역","reason":"1위 31a역보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
+       "routes":[{"participantId":"p1","legs":[{"line":"2호선","from":{"stationCode":"03v","stationName":"03v역"},
+        "to":{"stationCode":"130","stationName":"동쪽비공개역"}}]}]}
+     ]}
+    """.trimIndent()
 
 private val HIDDEN_ORIGINS = listOf("130", "225")
 
@@ -288,10 +340,12 @@ private fun previewFixture(snapshot: Map<String, String>): String =
 private const val MASK = "<meeting station>"
 
 /**
- * A copy with only the meeting-station slots blanked: each candidate card's own code and name, the last stop of a route on
- * that card (which is the card's station), the name of another card in a card's reason ("2위 OO역보다"), and the room's
- * decided or previewed station. 130 and 225 are candidates, so they may appear there; anywhere else (rest of the reasons,
- * last trains, labels, other route stops, keys, future fields) is still scanned.
+ * A copy with only the meeting-station slots blanked, by position: `candidates[i].stationCode/stationName`, the `to` of the
+ * last leg of each route on that card (which must be the card's station), `station` and `decision` at the top level, and in
+ * `candidates[i].reason` only the comparison label of the reason templates ("${'$'}rank위 ${'$'}name", `ReasonGenerator.rankLabel`),
+ * for exactly the card that sentence compares with (2nd for the 1st card, 1st for the others). 130 and 225 are candidates,
+ * so they may appear there; anywhere else (rest of the reasons, last trains, labels, other route stops, keys, future fields)
+ * is still scanned. The spec's "meeting-station slots" case pins what this allows and rejects.
  */
 private fun meetingStationsMasked(body: JsonObject): JsonObject {
     fun JsonObject.with(changes: Map<String, JsonElement>) = JsonObject(this + changes)
@@ -299,21 +353,27 @@ private fun meetingStationsMasked(body: JsonObject): JsonObject {
     fun JsonObject.stationMasked() =
         with(listOf("stationCode", "stationName").filter { it in this }.associateWith { JsonPrimitive(MASK) })
 
-    val cardNames =
-        body["candidates"]
-            ?.jsonArray
-            ?.map {
-                it.jsonObject
-                    .getValue("stationName")
-                    .jsonPrimitive.content
-            }.orEmpty()
+    val cards = body["candidates"]?.jsonArray?.map { it.jsonObject }.orEmpty()
 
-    fun reasonMasked(card: JsonObject): Map<String, JsonElement> {
-        val reason = card["reason"]?.jsonPrimitive?.content ?: return emptyMap()
-        return mapOf("reason" to JsonPrimitive(cardNames.fold(reason) { text, name -> text.replace(name, MASK) }))
+    /** "2위 OO역" of the card [index]'s sentence compares with. Only that exact label is a meeting-station slot. */
+    fun comparisonLabel(index: Int): String? {
+        val other = (if (index == 0) cards.getOrNull(1) else cards[0]) ?: return null
+        return "${other.getValue("rank").jsonPrimitive.content}위 ${other.getValue("stationName").jsonPrimitive.content}"
     }
 
-    fun card(card: JsonObject): JsonObject {
+    fun reasonMasked(
+        index: Int,
+        card: JsonObject,
+    ): Map<String, JsonElement> {
+        val reason = card["reason"]?.jsonPrimitive?.content ?: return emptyMap()
+        val label = comparisonLabel(index) ?: return emptyMap()
+        return mapOf("reason" to JsonPrimitive(reason.replace(label, MASK)))
+    }
+
+    fun card(
+        index: Int,
+        card: JsonObject,
+    ): JsonObject {
         val code = card.getValue("stationCode").jsonPrimitive.content
         val routes =
             card["routes"]?.jsonArray?.map { route ->
@@ -329,12 +389,12 @@ private fun meetingStationsMasked(body: JsonObject): JsonObject {
             }
         return card
             .stationMasked()
-            .with(reasonMasked(card))
+            .with(reasonMasked(index, card))
             .with(routes?.let { mapOf("routes" to JsonArray(it)) }.orEmpty())
     }
 
     val changes = mutableMapOf<String, JsonElement>()
-    body["candidates"]?.let { cards -> changes["candidates"] = JsonArray(cards.jsonArray.map { card(it.jsonObject) }) }
+    if ("candidates" in body) changes["candidates"] = JsonArray(cards.mapIndexed(::card))
     for (key in listOf("station", "decision")) {
         (body[key] as? JsonObject)?.let { changes[key] = it.stationMasked() }
     }
