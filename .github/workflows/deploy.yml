@@ -50,6 +50,9 @@ jobs:
       server: ${{ steps.plan.outputs.server }}
       web: ${{ steps.plan.outputs.web }}
       order: ${{ steps.plan.outputs.order }}
+      server_before: ${{ steps.server.outputs.sha }}
+      web_before: ${{ steps.web.outputs.sha }}
+      data_before: ${{ steps.data.outputs.version }}
     env:
       # 운영 커밋 비교가 필요한가(push, 또는 수동 auto). 수동으로 대상을 고르면 비교·라벨 조회를 하지 않는다.
       COMPARE: ${{ github.event_name == 'push' || inputs.targets == 'auto' }}
@@ -115,6 +118,13 @@ jobs:
           else
             echo "::warning::운영 웹 커밋을 읽지 못했습니다. 웹을 배포 대상으로 봅니다."
           fi
+      - name: 배포 전 서버 데이터 버전 읽기
+        id: data
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+        run: echo "version=$(bash scripts/release-data-version.sh)" >> "$GITHUB_OUTPUT"
       - name: 배포 계획
         id: plan
         timeout-minutes: 3
@@ -177,3 +187,42 @@ jobs:
       id-token: write
     uses: ./.github/workflows/deploy-server.yml
     secrets: inherit
+
+  # 배포와 독립된 후처리. 실패해도 배포 잡을 실패시키거나 롤백을 실행하지 않는다.
+  release:
+    needs: [plan, server-first, web-after-server, web-first, server-after-web]
+    if: >-
+      ${{ !cancelled() && needs.plan.result == 'success' &&
+          (needs.plan.outputs.server == 'true' || needs.plan.outputs.web == 'true') &&
+          !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') &&
+          (needs.plan.outputs.server != 'true' || needs.server-first.result == 'success' || needs.server-after-web.result == 'success') &&
+          (needs.plan.outputs.web != 'true' || needs.web-first.result == 'success' || needs.web-after-server.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: 날짜 태그 계획(KST, 동일 커밋 재실행 생략)
+        id: tag
+        run: bash scripts/release-tag.sh >> "$GITHUB_OUTPUT"
+      - name: GitHub 릴리즈 생성
+        if: steps.tag.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          PREVIOUS: ${{ steps.tag.outputs.previous }}
+          HEAD_SHA: ${{ github.sha }}
+          SERVER_NEW: ${{ needs.plan.outputs.server }}
+          WEB_NEW: ${{ needs.plan.outputs.web }}
+          SERVER_BEFORE: ${{ needs.plan.outputs.server_before }}
+          WEB_BEFORE: ${{ needs.plan.outputs.web_before }}
+          DATA_BEFORE: ${{ needs.plan.outputs.data_before }}
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+        run: |
+          DATA_AFTER="$(bash scripts/release-data-version.sh)"
+          export DATA_AFTER
+          bash scripts/create-deploy-release.sh
