@@ -142,12 +142,12 @@ data class OutcomeRequestDto(
 // 응답 모양을 타입으로 둔다. 값이 없을 때 키를 생략하는 필드는 `@EncodeDefault(NEVER)`와 기본값이다(전역 `explicitNulls`는 켜 두어, 그 밖의
 // null 필드는 `null`로 나간다). 필드 선언 순서가 곧 응답의 키 순서다.
 
-/** 사람 한 명이 어떤 역까지 걸리는 시간. */
+/** 사람 한 명이 어떤 역까지 걸리는 시간. 출발역을 숨긴 다른 사람의 칸은 뭉뚱그린 시간이고 `transfers`가 null로 나간다(#142). */
 @Serializable
 data class ParticipantTimeDto(
     val participantId: String,
     val seconds: Int,
-    val transfers: Int,
+    val transfers: Int?,
 )
 
 /**

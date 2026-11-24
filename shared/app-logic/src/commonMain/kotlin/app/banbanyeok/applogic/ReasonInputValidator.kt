@@ -52,7 +52,7 @@ public object ReasonInputValidator {
                 InputErrorCode.EMPTY_STATION_NAME
             }
 
-            input.people.any { it.seconds < 0 || it.transfers < 0 } || input.toleranceSeconds < 0 -> {
+            input.people.any(::hasNegative) || input.toleranceSeconds < 0 -> {
                 InputErrorCode.NEGATIVE_VALUE
             }
 
@@ -123,4 +123,7 @@ public object ReasonInputValidator {
         }
         return null
     }
+
+    /** 시간이나 환승이 음수다. 환승이 없는 칸(숨긴 다른 사람, null)은 음수가 아니다. */
+    private fun hasNegative(time: PersonTime): Boolean = time.seconds < 0 || (time.transfers ?: 0) < 0
 }

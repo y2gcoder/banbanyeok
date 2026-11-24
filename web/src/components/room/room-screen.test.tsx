@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,6 +8,7 @@ import { track } from "@/lib/analytics";
 import { ApiRequestError } from "@/lib/api/client";
 import * as api from "@/lib/api/rooms";
 import type { RecommendResult, Room, RoomPreview } from "@/lib/api/types";
+import { ROOM_SHARE_POLICY_VERSION } from "@/lib/copy/og-text";
 import { RoomScreen } from "./room-screen";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -412,7 +414,7 @@ describe("방 화면", () => {
       const { client } = renderScreen();
       expect(await screen.findByRole("button", { name: "카톡으로 결과 보내기" })).toBeInTheDocument();
       expect(screen.getAllByRole("heading", { name: /링크/ })).toHaveLength(1);
-      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3`);
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3&pv=${ROOM_SHARE_POLICY_VERSION}`);
       expect(track).toHaveBeenCalledWith("share_clicked", { channel: "copy", link_type: "room", room_stage: "result" });
 
       // 다른 사람이 정해서 번호가 올랐다: 방 폴링이 새 번호를 보면 미리보기를 새로 받아 링크와 버튼이 같이 바뀐다.
@@ -425,7 +427,7 @@ describe("방 화면", () => {
       version = 4;
       await client.invalidateQueries({ queryKey: ["room", ROOM] });
       expect(await screen.findByRole("button", { name: "카톡으로 정한 역 알리기" })).toBeInTheDocument();
-      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=4`);
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=4&pv=${ROOM_SHARE_POLICY_VERSION}`);
       expect(api.getRoomPreview).toHaveBeenCalledTimes(2);
     });
 
@@ -450,7 +452,7 @@ describe("방 화면", () => {
       expect(await screen.findByRole("heading", { name: "친구에게 링크를 보내 주세요" })).toBeInTheDocument();
       await waitFor(() => expect(api.getRoomPreview).toHaveBeenCalled());
       expect(screen.getByRole("button", { name: "카톡으로 보내기" })).toBeInTheDocument();
-      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3`);
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3&pv=${ROOM_SHARE_POLICY_VERSION}`);
     });
 
     it("번호를 모르는 옛 서버면 미리보기를 부르지 않고 번호 없는 링크와 초대 문구, 정하기는 이 화면에서만", async () => {
@@ -560,7 +562,7 @@ describe("방 화면", () => {
       const user = userEvent.setup();
       const { client } = renderScreen();
       expect(await screen.findByRole("button", { name: "카톡으로 결과 보내기" })).toBeInTheDocument();
-      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3`);
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=3&pv=${ROOM_SHARE_POLICY_VERSION}`);
 
       holdPreviews = true;
       decided = {
@@ -577,7 +579,7 @@ describe("방 화면", () => {
 
       release();
       expect(await screen.findByRole("button", { name: "카톡으로 정한 역 알리기" })).toBeInTheDocument();
-      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=4`);
+      expect(await copiedLink(user)).toBe(`${window.location.origin}/r/${ROOM}?sv=4&pv=${ROOM_SHARE_POLICY_VERSION}`);
     });
 
     it("그사이 방이 바뀌어 거절되면(409 ROOM_CHANGED) 방·결과·미리보기를 다시 불러오고 다시 고르게 안내한다", async () => {

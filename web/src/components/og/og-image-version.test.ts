@@ -13,6 +13,7 @@ import {
   OG_WIDTH,
   PAIR_OG_IMAGE_VERSION,
   ROOM_OG_IMAGE_VERSION,
+  ROOM_SHARE_POLICY_VERSION,
   SHARED_OG_IMAGE_VERSION,
   SITE_OG_IMAGE_PATH,
   SITE_OG_IMAGE_VERSION,
@@ -189,7 +190,8 @@ const ROOM: Drawn = {
     "middleMore",
     "middleLongest",
   ],
-  constants: { OG_NAME_MAX, ROOM_PREVIEW_LAST_TRAIN },
+  // 보이는 범위 정책(#142)이 바뀌면 같은 방도 다른 그림이 된다(숨긴 사람의 시간). 정책 버전을 입력에 넣어 그림 버전도 바뀌게 한다.
+  constants: { OG_NAME_MAX, ROOM_PREVIEW_LAST_TRAIN, ROOM_SHARE_POLICY_VERSION },
   rendered: renderedRoomSamples,
   stationBadges: stationBadgeInputs,
   sources: [
@@ -315,8 +317,17 @@ describe("미리보기 그림의 버전(입력이 바뀌었는데 버전이 그�
   it("방 미리보기 그림 주소에 그 버전이 실린다(같은 방을 다시 공유해도 그림이 바뀌었으면 새 주소)", () => {
     expect(ROOM_OG_IMAGE_VERSION).toMatch(/^[0-9a-f]{8}$/);
     expect(roomImagePath("qt7yvmsht3", 4, "20261120.4")).toBe(
-      `/r/qt7yvmsht3/og?sv=4&dv=20261120.4&iv=${ROOM_OG_IMAGE_VERSION}`,
+      `/r/qt7yvmsht3/og?sv=4&dv=20261120.4&pv=${ROOM_SHARE_POLICY_VERSION}&iv=${ROOM_OG_IMAGE_VERSION}`,
     );
+  });
+
+  it("보이는 범위 정책 버전이 바뀌면 같은 방 내용이어도 방 그림 버전이 바뀐다(#142)", () => {
+    const before = inputsHash(ROOM);
+    const otherPolicy = {
+      ...ROOM,
+      constants: { ...ROOM.constants, ROOM_SHARE_POLICY_VERSION: ROOM_SHARE_POLICY_VERSION - 1 },
+    };
+    expect(inputsHash(otherPolicy)).not.toBe(before);
   });
 
   it("방 미리보기 그림이 그리는 문구 목록에 빠진 키가 없다(그림 코드와 그림 값을 만드는 코드가 OG_TEXT를 쓰는 만큼 적는다)", () => {

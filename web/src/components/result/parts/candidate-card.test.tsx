@@ -169,3 +169,63 @@ describe("시간 행 눈금", () => {
     expect(railScale(130)).toEqual({ end: 150, step: 30 });
   });
 });
+
+describe("출발역을 숨긴 다른 사람의 칸(#142)", () => {
+  // 서버는 숨긴 다른 사람의 시간을 5분 단위로 뭉뚱그려(0분도 5분) 주고 환승은 null로 준다. 화면은 받은 값을 그대로 쓰고 환승은 쓰지 않는다.
+  const hiddenResult: RecommendResult = {
+    ...result,
+    participants: [
+      result.participants[0] as RecommendResult["participants"][number],
+      {
+        participantId: "1",
+        hidden: true,
+        originCode: null,
+        originName: null,
+        nickname: "지연",
+        label: "지연",
+        labelKind: "name",
+        shortLabel: "지연",
+      },
+    ],
+    candidates: [
+      {
+        rank: 1,
+        stationCode: code("신당"),
+        stationName: "신당",
+        times: [
+          { participantId: "0", seconds: 1271, transfers: 0 },
+          { participantId: "1", seconds: 300, transfers: null },
+        ],
+        maxSeconds: 1271,
+        spreadSeconds: 971,
+        totalSeconds: 1571,
+        reasonCode: "FAIR_MINIMAX",
+        reason: "가장 오래 걸리는 민지도 21분이에요.",
+      },
+    ],
+  };
+
+  it("시간은 받은 값(5분)이고, 환승 글 없이 '출발역 비공개'만 쓰며, 요약도 그 값으로 계산한다", async () => {
+    const user = userEvent.setup();
+    const [top] = toResultView(hiddenResult).candidates;
+    if (!top) throw new Error("후보 없음");
+    expect(top.people[1]).toMatchObject({ minutes: 5, transfers: null, shownTransfers: null });
+    render(<TopCandidateCard candidate={top} choice={{ mode: "fair", participantCount: 2, variant: "creator" }} />);
+    const card = screen.getByRole("article", { name: "신당" });
+    const [people] = within(card).getAllByRole("list");
+    if (!people) throw new Error("사람 목록 없음");
+    expect(
+      within(people)
+        .getAllByRole("listitem")
+        .map((row) => row.textContent),
+    ).toEqual(["민지강남에서 · 환승 없음21분", "지연출발역 비공개5분"]);
+    const stats = within(card)
+      .getAllByRole("term")
+      .map((term) => `${term.textContent}${term.nextSibling?.textContent}`);
+    expect(stats).toEqual(["최장21분", "차이16분"]);
+    // '자세히'의 시간 막대 줄도 환승 글 없이 출발역 비공개만 쓴다.
+    await user.click(screen.getByRole("button", { name: /자세히/ }));
+    expect(within(card).getAllByText("출발역 비공개")).toHaveLength(2);
+    expect(within(card).queryByText(/출발역 비공개 ·/)).toBeNull();
+  });
+});

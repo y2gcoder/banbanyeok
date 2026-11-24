@@ -77,9 +77,9 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex }: Pr
         <label htmlFor={hiddenId} className="flex flex-col gap-0.5 text-[15px] text-ink">
           <span className="font-semibold">출발역 이름 숨기기</span>
           <span className="text-[13px] leading-snug text-muted-foreground">
-            다른 사람에게는 출발역이 보이지 않아요. 이름을 넣었으면 그 이름으로, 안 넣었으면 &lsquo;참가자 N&rsquo;으로
-            보여요. 나에게만 내 출발역이 보여요. 소요시간과 환승 횟수는 모두에게 보이니, 대략적인 지역은 짐작될 수
-            있어요.
+            다른 사람에게는 출발역 이름이 보이지 않아요. 이름을 넣었으면 그 이름으로, 안 넣었으면 &lsquo;참가자
+            N&rsquo;으로 보여요. 다만 각 후보까지 걸리는 시간이 5분 단위로 보여서, 출발역을 짐작할 수 있어요. 정확한
+            시간과 환승 횟수, 내 출발역은 나에게만 보여요.
           </span>
         </label>
       </div>

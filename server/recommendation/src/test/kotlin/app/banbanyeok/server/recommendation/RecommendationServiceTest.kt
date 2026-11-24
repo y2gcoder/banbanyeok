@@ -119,6 +119,75 @@ class RecommendationServiceTest :
                 result.candidates.map { it.reason }.forEach { it shouldNotContain "130역에서" }
             }
 
+            describe("hidden participant's times for other viewers (#142)") {
+                // 지연(130, 숨김)의 출발역이 공평 2위 후보다. 순위: 225(최장 1100) → 130(1200, 지연 0초) → 03v(1500).
+                val od =
+                    smallOd(
+                        origins = listOf("03v", "130"),
+                        candidates = listOf("03v", "130", "225"),
+                        times = listOf(listOf(0, 1200, 600), listOf(1500, 0, 1100)),
+                        transfers = listOf(listOf(0, 1, 0), listOf(2, 0, 1)),
+                    )
+
+                fun request(
+                    mode: RecommendMode,
+                    viewer: String?,
+                    favor: String? = null,
+                ) = RecommendRequest(
+                    listOf(
+                        RecommendParticipant("a", "민수", "03v"),
+                        RecommendParticipant("b", "지연", "130", hidden = true),
+                    ),
+                    mode,
+                    favor,
+                    viewerId = viewer,
+                )
+
+                it(
+                    "shows others a 5-minute-rounded time without transfers, recomputes aggregates, and keeps the order",
+                ) {
+                    val others = service(od).evaluate(request(RecommendMode.FAIR, viewer = null)).recommendation
+                    val self = service(od).evaluate(request(RecommendMode.FAIR, viewer = "b")).recommendation
+                    others.candidates.map { it.stationCode } shouldContainExactly listOf("225", "130", "03v")
+                    self.candidates.map { it.stationCode } shouldContainExactly others.candidates.map { it.stationCode }
+                    val own = others.candidates.single { it.stationCode == "130" }
+                    own.times[1] shouldBe ParticipantTime("b", 300, null)
+                    own.maxSeconds shouldBe 1200
+                    own.spreadSeconds shouldBe 900
+                    own.totalSeconds shouldBe 1500
+                    own.reason shouldNotContain "0~"
+                    others.candidates.single { it.stationCode == "225" }.times[1] shouldBe
+                        ParticipantTime("b", 1200, null)
+                    // 공개한 사람의 칸과 본인 화면은 정확한 값 그대로다.
+                    others.candidates.zip(self.candidates).forEach { (o, m) -> o.times[0] shouldBe m.times[0] }
+                    self.candidates.single { it.stationCode == "130" }.times[1] shouldBe ParticipantTime("b", 0, 0)
+                }
+
+                it("uses the same rounded time for stations outside the ranking") {
+                    service(od).evaluate(request(RecommendMode.FAIR, viewer = null)).timesTo("130")!![1] shouldBe
+                        ParticipantTime("b", 300, null)
+                    service(od).evaluate(request(RecommendMode.FAIR, viewer = "b")).timesTo("130")!![1] shouldBe
+                        ParticipantTime("b", 0, 0)
+                }
+
+                it(
+                    "does not show the hidden person's cap in a favor sentence (it gives away the exact baseline time)",
+                ) {
+                    val others =
+                        service(
+                            od,
+                        ).evaluate(request(RecommendMode.FAVOR, viewer = null, favor = "a")).recommendation
+                    val self =
+                        service(
+                            od,
+                        ).evaluate(request(RecommendMode.FAVOR, viewer = "b", favor = "a")).recommendation
+                    others.candidates.first().stationCode shouldBe self.candidates.first().stationCode
+                    others.candidates.first().reason shouldNotContain "상한"
+                    others.candidates.first().reason shouldContain "(25분)"
+                    self.candidates.first().reason shouldContain "상한 +"
+                }
+            }
+
             it("treats a blank nickname as none and rejects an invalid one") {
                 val blank =
                     service()

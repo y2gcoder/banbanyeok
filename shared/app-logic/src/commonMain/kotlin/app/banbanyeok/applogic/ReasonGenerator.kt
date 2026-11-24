@@ -54,6 +54,11 @@ public object ReasonGenerator {
                     "${label}보다 가장 오래 걸리는 사람이 ${v.dur(dMax)} 덜 걸려요."
                 }
 
+                // 동점 허용오차 없이 보이는 최장이 더 길다면 뭉뚱그린 칸 때문이다(정확한 값으로는 1위가 2위보다 길 수 없다).
+                dMax < 0 && v.input.toleranceSeconds == 0 -> {
+                    "${v.withWa(vs)} 거의 같아요."
+                }
+
                 dMax < 0 -> {
                     "최장 시간은 ${label}보다 ${v.dur(-dMax)} 길지만, " +
                         if (dSpread >
@@ -95,6 +100,10 @@ public object ReasonGenerator {
                         if (dSpread > 0) " 대신 시간 차이는 ${v.dur(dSpread)} 더 작아요." else ""
                 }
 
+                dMax < 0 && v.input.approximate -> {
+                    "${v.withWa(vs)} 최장 시간은 거의 같아요."
+                }
+
                 dMax < 0 -> {
                     "${label}보다 가장 오래 걸리는 사람이 ${v.dur(-dMax)} 덜 걸려요."
                 }
@@ -111,7 +120,8 @@ public object ReasonGenerator {
 
     private fun fastWinner(v: View): String {
         val together = if (v.n == 2) "둘이 합쳐" else "${v.n}명 모두 합쳐"
-        val claim = if (v.input.toleranceSeconds > 0) "후보 중 가장 짧은 편이에요." else "후보 중 가장 짧아요."
+        val claim =
+            if (v.input.toleranceSeconds > 0 || v.input.approximate) "후보 중 가장 짧은 편이에요." else "후보 중 가장 짧아요."
         val first = "$together ${v.dur(v.totalMin)}, $claim"
         val second =
             when {
@@ -150,6 +160,10 @@ public object ReasonGenerator {
                         if (dMax > 0) " 대신 가장 오래 걸리는 사람은 ${v.dur(dMax)} 덜 걸려요." else ""
                 }
 
+                dTotal < 0 && v.input.approximate -> {
+                    "합계는 ${v.withWa(vs)} 거의 같아요."
+                }
+
                 dTotal < 0 -> {
                     "${label}보다 합쳐서 ${v.dur(-dTotal)} 덜 걸려요."
                 }
@@ -168,8 +182,13 @@ public object ReasonGenerator {
         val favor = checkNotNull(v.input.favor)
         val fav = v.names[favor.index]
         val transfers = v.input.people[favor.index].transfers
-        val travel = if (transfers == 0) "환승 없이" else "환승 ${transfers}번으로"
-        val first = "${Korean.attach(fav, Josa.EUN_NEUN)} ${v.dur(v.minutes[favor.index])}, $travel 와요."
+        val subject = "${Korean.attach(fav, Josa.EUN_NEUN)} ${v.dur(v.minutes[favor.index])}"
+        val first =
+            when (transfers) {
+                null -> "$subject 걸려요."
+                0 -> "$subject, 환승 없이 와요."
+                else -> "$subject, 환승 ${transfers}번으로 와요."
+            }
 
         val others = v.names.indices.filter { it != favor.index }
         // 기준(공평 1위)보다 얼마나 더 걸리는가. 가장 많이 맞춰 주는 사람을 문장의 주인공으로 한다.
@@ -228,6 +247,11 @@ public object ReasonGenerator {
                     fav,
                     Josa.EUN_NEUN,
                 )} ${v.dur(mine - theirs)} 더 걸려요 (${v.dur(mine)})."
+
+                mine < theirs && v.input.approximate -> "${Korean.attach(
+                    fav,
+                    Josa.EUN_NEUN,
+                )} ${v.withWa(vs)} 거의 같은 ${v.dur(mine)}이에요."
 
                 mine < theirs -> "${label}보다 ${Korean.attach(
                     fav,

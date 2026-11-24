@@ -35,12 +35,19 @@ public class RecommendRequest(
     public val viewerId: String? = null,
 )
 
+/**
+ * 한 사람의 시간. 출발역을 숨긴 사람을 본인이 아닌 요청이 볼 때는 뭉뚱그린 시간이고 [transfers]가 null이다([HiddenTimes], #142).
+ */
 public data class ParticipantTime(
     public val participantId: String,
     public val seconds: Int,
-    public val transfers: Int,
+    public val transfers: Int?,
 )
 
+/**
+ * 상위 후보 한 장. [times]와 최장·차이·합계·우대 시간·[reason]은 **보는 사람에게 보이는 값**이다: 출발역을 숨긴 다른 사람의 칸은
+ * 뭉뚱그린 값이고 집계도 그 값으로 다시 계산한다([HiddenTimes]). 순위는 정확한 값으로 정했다.
+ */
 public data class RecommendedStation(
     public val rank: Int,
     public val stationCode: String,

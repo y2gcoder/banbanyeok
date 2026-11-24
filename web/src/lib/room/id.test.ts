@@ -14,13 +14,13 @@ describe("방 ID와 링크", () => {
     expect(isRoomId("../../etc")).toBe(false);
   });
 
-  it("방 경로는 소문자 ID 하나뿐이고, 공유 링크도 공유 번호(sv) 말고는 붙이지 않는다(토큰·해시 없음)", () => {
+  it("방 경로는 소문자 ID 하나뿐이고, 공유 링크도 공유 번호(sv)와 보이는 범위 정책 버전(pv) 말고는 붙이지 않는다(토큰·해시 없음)", () => {
     expect(roomPath("QT7YVMSHT3")).toBe("/r/qt7yvmsht3");
     expect(normalizeRoomId("QT7YVMSHT3")).toBe("qt7yvmsht3");
     expect(roomPath("qt7yvmsht3")).not.toMatch(/[?#=]/);
     const shared = new URL(roomShareLink("qt7yvmsht3", 4), "https://banbanyeok.app");
     expect(shared.pathname).toBe(roomPath("qt7yvmsht3"));
-    expect([...shared.searchParams.keys()]).toEqual(["sv"]);
+    expect([...shared.searchParams.keys()]).toEqual(["sv", "pv"]);
     expect(shared.hash).toBe("");
   });
 

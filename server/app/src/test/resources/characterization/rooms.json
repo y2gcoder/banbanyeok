@@ -1035,7 +1035,7 @@
                     },
                     {
                         "label": "참가자 2",
-                        "seconds": 1708
+                        "seconds": 1800
                     },
                     {
                         "label": "친구1",
@@ -1113,8 +1113,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1708,
-                            "transfers": 0
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1122,11 +1122,11 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 1741,
-                    "spreadSeconds": 1083,
-                    "totalSeconds": 4107,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 1142,
+                    "totalSeconds": 4199,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1157,8 +1157,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1798,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1166,11 +1166,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1798,
-                    "spreadSeconds": 642,
-                    "totalSeconds": 4446,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 644,
+                    "totalSeconds": 4448,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1198,8 +1198,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1778,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1209,9 +1209,9 @@
                     ],
                     "maxSeconds": 1811,
                     "spreadSeconds": 1034,
-                    "totalSeconds": 4366,
+                    "totalSeconds": 4388,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1305,8 +1305,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1708,
-                            "transfers": 0
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1314,11 +1314,11 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 1741,
-                    "spreadSeconds": 1083,
-                    "totalSeconds": 4107,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 1142,
+                    "totalSeconds": 4199,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1349,8 +1349,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1798,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1358,11 +1358,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1798,
-                    "spreadSeconds": 642,
-                    "totalSeconds": 4446,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 644,
+                    "totalSeconds": 4448,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1390,8 +1390,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1778,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1401,9 +1401,9 @@
                     ],
                     "maxSeconds": 1811,
                     "spreadSeconds": 1034,
-                    "totalSeconds": 4366,
+                    "totalSeconds": 4388,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1710,8 +1710,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1708,
-                            "transfers": 0
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1719,11 +1719,11 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 1741,
-                    "spreadSeconds": 1083,
-                    "totalSeconds": 4107,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 1142,
+                    "totalSeconds": 4199,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1754,8 +1754,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1798,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1763,11 +1763,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1798,
-                    "spreadSeconds": 642,
-                    "totalSeconds": 4446,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 644,
+                    "totalSeconds": 4448,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1795,8 +1795,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1778,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1806,9 +1806,9 @@
                     ],
                     "maxSeconds": 1811,
                     "spreadSeconds": 1034,
-                    "totalSeconds": 4366,
+                    "totalSeconds": 4388,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1902,8 +1902,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1708,
-                            "transfers": 0
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1911,11 +1911,11 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 1741,
-                    "spreadSeconds": 1083,
-                    "totalSeconds": 4107,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 1142,
+                    "totalSeconds": 4199,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1946,8 +1946,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1798,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1955,11 +1955,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1798,
-                    "spreadSeconds": 642,
-                    "totalSeconds": 4446,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 644,
+                    "totalSeconds": 4448,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1987,8 +1987,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1778,
-                            "transfers": 1
+                            "seconds": 1800,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -1998,9 +1998,9 @@
                     ],
                     "maxSeconds": 1811,
                     "spreadSeconds": 1034,
-                    "totalSeconds": 4366,
+                    "totalSeconds": 4388,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -2094,8 +2094,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2368,
-                            "transfers": 0
+                            "seconds": 2400,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -2103,11 +2103,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2368,
-                    "spreadSeconds": 2130,
-                    "totalSeconds": 3618,
+                    "maxSeconds": 2400,
+                    "spreadSeconds": 2162,
+                    "totalSeconds": 3650,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "3명 모두 합쳐 1시간, 후보 중 가장 짧아요. 가장 오래 걸리는 참가자 2는 39분이에요.",
+                    "reason": "3명 모두 합쳐 1시간 1분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 참가자 2는 40분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -2138,8 +2138,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2248,
-                            "transfers": 0
+                            "seconds": 2400,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -2147,11 +2147,11 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 2248,
-                    "spreadSeconds": 2248,
-                    "totalSeconds": 3784,
+                    "maxSeconds": 2400,
+                    "spreadSeconds": 2400,
+                    "totalSeconds": 3936,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 2분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 5분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -2177,8 +2177,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1948,
-                            "transfers": 0
+                            "seconds": 2100,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -2186,11 +2186,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1948,
-                    "spreadSeconds": 1530,
-                    "totalSeconds": 3845,
+                    "maxSeconds": 2100,
+                    "spreadSeconds": 1682,
+                    "totalSeconds": 3997,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 4분 더 걸려요. 대신 가장 오래 걸리는 사람은 7분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 6분 더 걸려요. 대신 가장 오래 걸리는 사람은 5분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -2297,8 +2297,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2248,
-                            "transfers": 0
+                            "seconds": 2400,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -2306,12 +2306,12 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 2248,
-                    "spreadSeconds": 2248,
-                    "totalSeconds": 3784,
+                    "maxSeconds": 2400,
+                    "spreadSeconds": 2400,
+                    "totalSeconds": 3936,
                     "favoredSeconds": 0,
                     "reasonCode": "FAVOR_CAPPED",
-                    "reason": "방장은 0분, 환승 없이 와요. 가장 많이 맞춰 주는 참가자 2는 공평하게보다 9분 더 걸려요 (37분, 상한 +15분). 나머지도 상한 안이에요.",
+                    "reason": "방장은 0분, 환승 없이 와요. 가장 많이 맞춰 주는 참가자 2는 공평하게보다 10분 더 걸려요 (40분). 나머지도 상한 안이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -2337,8 +2337,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2368,
-                            "transfers": 0
+                            "seconds": 2400,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -2346,9 +2346,9 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2368,
-                    "spreadSeconds": 2130,
-                    "totalSeconds": 3618,
+                    "maxSeconds": 2400,
+                    "spreadSeconds": 2162,
+                    "totalSeconds": 3650,
                     "favoredSeconds": 238,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 합정보다 방장은 4분 더 걸려요 (4분).",
@@ -2382,8 +2382,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2436,
-                            "transfers": 2
+                            "seconds": 2700,
+                            "transfers": null
                         },
                         {
                             "participantId": "pid006",
@@ -2391,9 +2391,9 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 2436,
-                    "spreadSeconds": 2147,
-                    "totalSeconds": 4361,
+                    "maxSeconds": 2700,
+                    "spreadSeconds": 2411,
+                    "totalSeconds": 4625,
                     "favoredSeconds": 289,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 합정보다 방장은 5분 더 걸려요 (5분).",
@@ -2490,7 +2490,7 @@
                     },
                     {
                         "label": "친구2",
-                        "seconds": 517
+                        "seconds": 600
                     }
                 ]
             },
@@ -2581,15 +2581,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 517,
-                            "transfers": 0
+                            "seconds": 600,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7867,
+                    "totalSeconds": 7950,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2632,15 +2632,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 997,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 3019,
-                    "totalSeconds": 7997,
+                    "spreadSeconds": 2816,
+                    "totalSeconds": 8200,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2685,15 +2685,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 0,
-                            "transfers": 0
+                            "seconds": 300,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 5137,
-                    "totalSeconds": 8121,
+                    "spreadSeconds": 4837,
+                    "totalSeconds": 8421,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2816,15 +2816,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 517,
-                            "transfers": 0
+                            "seconds": 600,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7867,
+                    "totalSeconds": 7950,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2867,15 +2867,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 997,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 3019,
-                    "totalSeconds": 7997,
+                    "spreadSeconds": 2816,
+                    "totalSeconds": 8200,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2920,15 +2920,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 0,
-                            "transfers": 0
+                            "seconds": 300,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 5137,
-                    "totalSeconds": 8121,
+                    "spreadSeconds": 4837,
+                    "totalSeconds": 8421,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3051,15 +3051,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 517,
-                            "transfers": 0
+                            "seconds": 600,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7867,
+                    "totalSeconds": 7950,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3102,15 +3102,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 997,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 3019,
-                    "totalSeconds": 7997,
+                    "spreadSeconds": 2816,
+                    "totalSeconds": 8200,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3155,15 +3155,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 0,
-                            "transfers": 0
+                            "seconds": 300,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 5137,
-                    "totalSeconds": 8121,
+                    "spreadSeconds": 4837,
+                    "totalSeconds": 8421,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3286,15 +3286,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 517,
-                            "transfers": 0
+                            "seconds": 600,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7867,
+                    "totalSeconds": 7950,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3337,15 +3337,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 997,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 3019,
-                    "totalSeconds": 7997,
+                    "spreadSeconds": 2816,
+                    "totalSeconds": 8200,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3390,15 +3390,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 0,
-                            "transfers": 0
+                            "seconds": 300,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 5137,
-                    "totalSeconds": 8121,
+                    "spreadSeconds": 4837,
+                    "totalSeconds": 8421,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3778,15 +3778,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2467,
-                            "transfers": 0
+                            "seconds": 2700,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 2621,
-                    "spreadSeconds": 1714,
-                    "totalSeconds": 8162,
+                    "maxSeconds": 2700,
+                    "spreadSeconds": 1793,
+                    "totalSeconds": 8395,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 방장도 44분, 4명 모두 15~44분 사이예요. 2위 신논현보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 친구2도 45분, 4명 모두 15~45분 사이예요. 2위 신논현과 거의 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3834,15 +3834,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2379,
-                            "transfers": 1
+                            "seconds": 2400,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 2725,
                     "spreadSeconds": 1346,
-                    "totalSeconds": 8257,
+                    "totalSeconds": 8278,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 강남보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 강남과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3880,15 +3880,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2804,
-                            "transfers": 1
+                            "seconds": 3000,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 2804,
-                    "spreadSeconds": 1316,
-                    "totalSeconds": 9065,
+                    "maxSeconds": 3000,
+                    "spreadSeconds": 1512,
+                    "totalSeconds": 9261,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 강남보다 가장 오래 걸리는 사람이 3분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 강남보다 가장 오래 걸리는 사람이 5분 더 걸려요. 대신 시간 차이는 5분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -4005,15 +4005,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 517,
-                            "transfers": 0
+                            "seconds": 600,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7867,
+                    "totalSeconds": 7950,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -4056,15 +4056,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 997,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 3019,
-                    "totalSeconds": 7997,
+                    "spreadSeconds": 2816,
+                    "totalSeconds": 8200,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -4109,15 +4109,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 0,
-                            "transfers": 0
+                            "seconds": 300,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 5137,
-                    "totalSeconds": 8121,
+                    "spreadSeconds": 4837,
+                    "totalSeconds": 8421,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -4250,13 +4250,13 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2467,
-                            "transfers": 0
+                            "seconds": 2700,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 2621,
-                    "spreadSeconds": 1714,
-                    "totalSeconds": 8162,
+                    "maxSeconds": 2700,
+                    "spreadSeconds": 1793,
+                    "totalSeconds": 8395,
                     "favoredSeconds": 2621,
                     "reasonCode": "FAVOR_CAPPED",
                     "reason": "방장은 44분, 환승 없이 와요. 다른 3명은 공평하게보다 더 걸리지 않아요. 방장 쪽에 더 가까운 역은 다른 사람 상한을 넘어서 뺐어요.",
@@ -4307,13 +4307,13 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2347,
-                            "transfers": 0
+                            "seconds": 2400,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 3058,
                     "spreadSeconds": 2031,
-                    "totalSeconds": 8468,
+                    "totalSeconds": 8521,
                     "favoredSeconds": 3058,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 강남보다 방장은 7분 더 걸려요 (51분).",
@@ -4364,13 +4364,13 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2557,
-                            "transfers": 0
+                            "seconds": 2700,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 3106,
                     "spreadSeconds": 2289,
-                    "totalSeconds": 8737,
+                    "totalSeconds": 8880,
                     "favoredSeconds": 3106,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 강남보다 방장은 8분 더 걸려요 (52분).",
@@ -6259,7 +6259,7 @@
                     },
                     {
                         "label": "참가자 2",
-                        "seconds": 3745
+                        "seconds": 3900
                     }
                 ]
             },
@@ -6317,15 +6317,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1297,
-                            "transfers": 0
+                            "seconds": 1500,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1297,
-                    "spreadSeconds": 30,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1500,
+                    "spreadSeconds": 233,
+                    "totalSeconds": 2767,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 참가자 2도 25분이에요. 2위 동대문역사문화공원과 최장 시간은 같지만, 시간 차이가 더 작아요 (4분 vs 6분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6350,15 +6350,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1417,
-                            "transfers": 0
+                            "seconds": 1500,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1417,
-                    "spreadSeconds": 270,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1500,
+                    "spreadSeconds": 353,
+                    "totalSeconds": 2647,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6383,15 +6383,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1117,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 1447,
-                    "spreadSeconds": 330,
-                    "totalSeconds": 2564,
+                    "spreadSeconds": 247,
+                    "totalSeconds": 2647,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 거의 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6466,15 +6466,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1297,
-                            "transfers": 0
+                            "seconds": 1500,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1297,
-                    "spreadSeconds": 30,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1500,
+                    "spreadSeconds": 233,
+                    "totalSeconds": 2767,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 참가자 2도 25분이에요. 2위 동대문역사문화공원과 최장 시간은 같지만, 시간 차이가 더 작아요 (4분 vs 6분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6499,15 +6499,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1417,
-                            "transfers": 0
+                            "seconds": 1500,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1417,
-                    "spreadSeconds": 270,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1500,
+                    "spreadSeconds": 353,
+                    "totalSeconds": 2647,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6532,15 +6532,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1117,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 1447,
-                    "spreadSeconds": 330,
-                    "totalSeconds": 2564,
+                    "spreadSeconds": 247,
+                    "totalSeconds": 2647,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 거의 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6782,15 +6782,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1297,
-                            "transfers": 0
+                            "seconds": 1500,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1297,
-                    "spreadSeconds": 30,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1500,
+                    "spreadSeconds": 233,
+                    "totalSeconds": 2767,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 참가자 2도 25분이에요. 2위 동대문역사문화공원과 최장 시간은 같지만, 시간 차이가 더 작아요 (4분 vs 6분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6815,15 +6815,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1417,
-                            "transfers": 0
+                            "seconds": 1500,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1417,
-                    "spreadSeconds": 270,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1500,
+                    "spreadSeconds": 353,
+                    "totalSeconds": 2647,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6848,15 +6848,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1117,
-                            "transfers": 0
+                            "seconds": 1200,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 1447,
-                    "spreadSeconds": 330,
-                    "totalSeconds": 2564,
+                    "spreadSeconds": 247,
+                    "totalSeconds": 2647,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 거의 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6931,15 +6931,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 0,
-                            "transfers": 0
+                            "seconds": 300,
+                            "transfers": null
                         }
                     ],
                     "maxSeconds": 2407,
-                    "spreadSeconds": 2407,
-                    "totalSeconds": 2407,
+                    "spreadSeconds": 2107,
+                    "totalSeconds": 2707,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "둘이 합쳐 40분, 후보 중 가장 짧아요. 대신 방장이 참가자 2보다 40분 더 걸려요.",
+                    "reason": "둘이 합쳐 45분, 후보 중 가장 짧은 편이에요. 대신 방장이 참가자 2보다 35분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6964,15 +6964,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 2407,
-                            "transfers": 0
+                            "seconds": 2400,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 2407,
-                    "spreadSeconds": 2407,
-                    "totalSeconds": 2407,
+                    "maxSeconds": 2400,
+                    "spreadSeconds": 2400,
+                    "totalSeconds": 2400,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 합계는 1위 잠실과 같아요.",
+                    "reason": "빠른 만남 대안이에요. 합계는 1위 잠실과 거의 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6992,15 +6992,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1297,
-                            "transfers": 0
+                            "seconds": 1500,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1297,
-                    "spreadSeconds": 30,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1500,
+                    "spreadSeconds": 233,
+                    "totalSeconds": 2767,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 잠실보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 18분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 잠실보다 합쳐서 1분 더 걸려요. 대신 가장 오래 걸리는 사람은 15분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -7085,16 +7085,16 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1837,
-                            "transfers": 0
+                            "seconds": 2100,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1837,
-                    "spreadSeconds": 1110,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 2100,
+                    "spreadSeconds": 1373,
+                    "totalSeconds": 2827,
                     "favoredSeconds": 727,
                     "reasonCode": "FAVOR_CAPPED",
-                    "reason": "방장은 12분, 환승 없이 와요. 참가자 2는 공평하게보다 9분 더 걸려요 (31분, 상한 +10분). 방장 쪽에 더 가까운 역은 다른 사람 상한을 넘어서 뺐어요.",
+                    "reason": "방장은 12분, 환승 없이 와요. 참가자 2는 공평하게보다 10분 더 걸려요 (35분). 방장 쪽에 더 가까운 역은 다른 사람 상한을 넘어서 뺐어요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -7119,13 +7119,13 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1717,
-                            "transfers": 0
+                            "seconds": 1800,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1717,
-                    "spreadSeconds": 870,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 953,
+                    "totalSeconds": 2647,
                     "favoredSeconds": 847,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 시청보다 방장은 2분 더 걸려요 (14분).",
@@ -7153,13 +7153,13 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1627,
-                            "transfers": 0
+                            "seconds": 1800,
+                            "transfers": null
                         }
                     ],
-                    "maxSeconds": 1627,
-                    "spreadSeconds": 690,
-                    "totalSeconds": 2564,
+                    "maxSeconds": 1800,
+                    "spreadSeconds": 863,
+                    "totalSeconds": 2737,
                     "favoredSeconds": 937,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 시청보다 방장은 4분 더 걸려요 (16분).",

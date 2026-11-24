@@ -6,6 +6,11 @@ import type { RouteView } from "@/lib/result/route";
 import type { PersonTimeView } from "@/lib/result/view-model";
 import { lineColor } from "@/lib/stations/lines";
 
+/** 환승 글. 출발역을 숨긴 다른 사람은 서버가 환승을 주지 않으므로(#142) 쓰지 않는다. */
+export function shownTransferLabel(person: Pick<PersonTimeView, "shownTransfers">): string | null {
+  return person.shownTransfers === null ? null : transferLabel(person.shownTransfers);
+}
+
 /** 이름 옆 보조 줄. 이름이 출발역 이름이면 같은 말을 되풀이하지 않는다. */
 export function originNote(person: PersonTimeView): string | null {
   if (!person.originName) return "출발역 비공개";
@@ -182,8 +187,7 @@ export function TimeRails({
                     ) : null}
                   </span>
                   <span className="text-[13px] text-muted-foreground">
-                    {note ? `${note} · ` : ""}
-                    {transferLabel(person.shownTransfers)}
+                    {[note, shownTransferLabel(person)].filter(Boolean).join(" · ")}
                   </span>
                 </p>
                 <span

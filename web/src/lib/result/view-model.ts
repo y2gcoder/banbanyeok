@@ -26,13 +26,13 @@ type PersonView = {
 export type PersonTimeView = PersonView & {
   seconds: number;
   minutes: number;
-  /** 최단 경로의 환승 수(od 값). */
-  transfers: number;
+  /** 최단 경로의 환승 수(od 값). 출발역을 숨긴 다른 사람이면 서버가 주지 않아(null, #142) 보이지 않는다. */
+  transfers: number | null;
   /**
    * 화면에 쓰는 환승 수. 보이는 경로(`route`)가 있으면 그 경로의 환승 수다: 최단보다 2분 안에서 느리지만 환승이 적은 길을 보일 때
-   * 막대와 글자가 어긋나지 않게 한다. 분(`minutes`)과 순위는 언제나 od 값이다.
+   * 막대와 글자가 어긋나지 않게 한다. 분(`minutes`)과 순위는 언제나 od 값이다. null이면 환승을 쓰지 않는다.
    */
-  shownTransfers: number;
+  shownTransfers: number | null;
   /** 이 사람이 만날 역까지 가는 경로(#120). 서버가 주지 않았으면(그래프 없음·숨긴 출발역·같은 역) null이고 중립색 막대로 그린다. */
   route: RouteView | null;
   /** 카카오맵 대중교통 길찾기(출발역 → 만날 역). 좌표를 모르면 null. */
@@ -106,7 +106,8 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
       const from = place(person.originCode, person.originName);
       const id = result.participants[i]?.participantId;
       const route = toRouteView(c.routes?.find((r) => r.participantId === id));
-      const transfers = time?.transfers ?? 0;
+      // 숨긴 다른 사람의 칸은 서버가 시간을 5분 단위로 뭉뚱그리고 환승은 주지 않는다(#142). 시간은 받은 값 그대로 쓴다.
+      const transfers = time ? (time.transfers ?? null) : 0;
       return {
         ...person,
         seconds: time?.seconds ?? 0,

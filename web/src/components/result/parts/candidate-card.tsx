@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import { LineBadges } from "@/components/common/line-badge";
 import { personColor } from "@/components/common/person-color";
 import type { Mode } from "@/lib/api/types";
-import { formatMinutes, transferLabel } from "@/lib/display/minutes";
+import { formatMinutes } from "@/lib/display/minutes";
 import { lastTrainSummary } from "@/lib/result/last-train";
 import type { MapMiddleView } from "@/lib/result/map-middle";
 import type { CandidateView } from "@/lib/result/view-model";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { type ChoiceContext, Directions } from "./directions";
 import { LastTrains } from "./last-trains";
 import { MapMiddleCompare } from "./map-middle-compare";
-import { originNote, TimeRails } from "./time-rails";
+import { originNote, shownTransferLabel, TimeRails } from "./time-rails";
 
 /** 환승역 기호(굵은 고리). 1위 표시. */
 function TransferRing() {
@@ -119,7 +119,7 @@ function TimeList({ candidate, meIndex }: { candidate: CandidateView; meIndex: n
             ) : null}
           </span>
           <span className="min-w-0 shrink-[2] truncate text-[13px] text-muted-foreground">
-            {[originNote(person), transferLabel(person.shownTransfers)].filter(Boolean).join(" · ")}
+            {[originNote(person), shownTransferLabel(person)].filter(Boolean).join(" · ")}
           </span>
           <span className="tabular ml-auto shrink-0 text-[19px] leading-none font-extrabold text-ink">
             {formatMinutes(person.minutes)}

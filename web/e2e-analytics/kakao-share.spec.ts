@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { type BrowserContext, devices, expect, type Locator, type Page, test } from "@playwright/test";
 import { FAKE_ROOM_ID, prepareRoom } from "../e2e/support/room-fixture";
-import { ROOM_OG_IMAGE_VERSION, SITE_OG_IMAGE_PATH } from "../src/lib/copy/og-text";
+import { ROOM_OG_IMAGE_VERSION, ROOM_SHARE_POLICY_VERSION, SITE_OG_IMAGE_PATH } from "../src/lib/copy/og-text";
 import { KAKAO_SDK } from "../src/lib/share/kakao";
 import { observePreparation, waitForPreparation } from "./kakao-preparation";
 
@@ -208,14 +208,14 @@ async function expectRoomMessage(probe: Probe, page: Page, baseURL: string | und
   await expectPrepared(page, probe, baseURL);
 
   const template = await expectTalkOpened(page, probe, pageUrl, await press(button, probe));
-  const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5`;
+  const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`;
   expect(template).toMatchObject({
     object_type: "feed",
     content: {
       title: "지금은 동대문역사문화공원이 제일 공평해요",
       description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 지연이와 함께 오는 아주 긴 이름 19분",
       // 그림 버전(iv)이 붙는다: 방 내용이 그대로여도 그리는 코드가 바뀌면 다시 공유한 메시지가 새 그림을 받는다.
-      image_url: `${baseURL}/r/${FAKE_ROOM_ID}/og?sv=5&dv=20261114.5&iv=${ROOM_OG_IMAGE_VERSION}`,
+      image_url: `${baseURL}/r/${FAKE_ROOM_ID}/og?sv=5&dv=20261114.5&pv=${ROOM_SHARE_POLICY_VERSION}&iv=${ROOM_OG_IMAGE_VERSION}`,
       link: { web_url: link, mobile_web_url: link },
     },
     buttons: [{ title: "내 출발역 넣기", link: { web_url: link, mobile_web_url: link } }],
@@ -284,7 +284,7 @@ test("SDK가 아직 오는 중에 누르면 기다리지 않고 공유 시트로
 
   await press(button, probe);
   await expect.poll(() => probe.shares.length).toBe(1);
-  expect(probe.shares[0]?.url).toBe(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5`);
+  expect(probe.shares[0]?.url).toBe(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`);
   expect(probe.templates).toEqual([]);
   expect(page.url()).toBe(pageUrl);
   expect(probe.navigations.filter(({ url }) => url !== pageUrl)).toEqual([]);
@@ -313,7 +313,7 @@ test("SDK를 못 받으면 누름은 지금처럼 공유 시트로 번호 붙은
 
   await press(button, probe);
   await expect.poll(() => probe.shares.length).toBe(1);
-  expect(probe.shares[0]?.url).toBe(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5`);
+  expect(probe.shares[0]?.url).toBe(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`);
   expect(probe.templates).toEqual([]);
   expect(page.url()).toBe(pageUrl);
 });
@@ -334,7 +334,7 @@ for (const kapi of ["reject", "unreachable"] as const) {
 
     await press(button, probe);
     await expect.poll(() => probe.shares.length).toBe(1);
-    expect(probe.shares[0]?.url).toBe(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5`);
+    expect(probe.shares[0]?.url).toBe(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`);
     await expect.poll(() => probe.answered).toBe(2);
     await waitForPreparation(page, "failed");
     expect(page.url()).toBe(pageUrl);
@@ -363,7 +363,9 @@ test("카카오가 거절하고 공유 시트도 열리지 않으면 이 페이�
 
   const dialog = page.getByRole("dialog", { name: "링크를 보내 주세요" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("textbox", { name: "링크" })).toHaveValue(`${baseURL}/r/${FAKE_ROOM_ID}?sv=5`);
+  await expect(dialog.getByRole("textbox", { name: "링크" })).toHaveValue(
+    `${baseURL}/r/${FAKE_ROOM_ID}?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`,
+  );
   expect(page.url()).toBe(pageUrl);
   expect(probe.navigations.filter(({ url }) => url !== pageUrl)).toEqual([]);
 });
@@ -430,7 +432,7 @@ test.describe("PC", () => {
           .poll(() => shareWindow.url(), { timeout: 15_000 })
           .toMatch(/^https:\/\/accounts\.kakao\.com\/login/);
         expect(probe.templates).toHaveLength(2);
-        const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5`;
+        const link = `${baseURL}/r/${FAKE_ROOM_ID}?sv=5&pv=${ROOM_SHARE_POLICY_VERSION}`;
         expect(probe.templates[1]?.content.link).toEqual({ web_url: link, mobile_web_url: link });
         expect(probe.templates[1]?.buttons).toEqual([
           { title: "내 출발역 넣기", link: { web_url: link, mobile_web_url: link } },

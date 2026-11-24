@@ -46,9 +46,11 @@ internal class Ranking(
                     toleranceSeconds = toleranceSeconds,
                 ),
             )
-        val top = result.recommendations.take(MAX_CARDS)
+        val hidden = HiddenTimes.of(request)
+        // 순위는 정확한 값으로 정했다. 여기부터는 보이는 값(숨긴 다른 사람의 칸은 뭉뚱그림, #142)으로 카드·집계·문장을 만든다.
+        val top = result.recommendations.take(MAX_CARDS).map { shown(it, hidden, favorIndex) }
         val refs = personRefs(people)
-        val favor = if (favorIndex >= 0) favorContext(result, matrix, favorIndex) else null
+        val favor = if (favorIndex >= 0) favorContext(result, matrix, favorIndex, hidden) else null
         return Recommendation(
             status = result.status,
             mode = request.mode,
@@ -60,15 +62,15 @@ internal class Ranking(
             lastTrainBasis = lastTrains?.basis,
             candidates =
                 top.mapIndexed { index, card ->
-                    val input = reasonInput(CardContext(request.mode, result, top, refs, favor), index)
+                    val input = reasonInput(CardContext(request.mode, result, top, refs, favor, hidden.any), index)
                     RecommendedStation(
                         rank = card.rank,
                         stationCode = card.stationCode,
                         stationName = nameOf(card.stationCode),
-                        times = card.times.map { ParticipantTime(it.participantId, it.seconds, it.transfers) },
+                        times = card.times,
                         maxSeconds = card.maxSeconds,
                         spreadSeconds = card.spreadSeconds,
-                        totalSeconds = card.totalSeconds.toInt(),
+                        totalSeconds = card.totalSeconds,
                         favoredSeconds = card.favoredSeconds,
                         reasonCode = card.reasonCode,
                         reason = ReasonGenerator.generate(input),
@@ -91,13 +93,45 @@ internal class Ranking(
             )
         }
 
-    /** 카드 한 장의 문장을 만드는 데 쓰는 요청 전체의 맥락. */
+    /** 보는 사람에게 보이는 카드 한 장: 시간과 그 시간에서 다시 계산한 최장·차이·합계·우대 시간. 순위·이유 코드는 코어 그대로다. */
+    private data class ShownCard(
+        val rank: Int,
+        val stationCode: String,
+        val times: List<ParticipantTime>,
+        val maxSeconds: Int,
+        val spreadSeconds: Int,
+        val totalSeconds: Int,
+        val favoredSeconds: Int?,
+        val reasonCode: String,
+    )
+
+    private fun shown(
+        card: CoreCandidate,
+        hidden: HiddenTimes,
+        favorIndex: Int,
+    ): ShownCard {
+        val times = card.times.mapIndexed { i, t -> hidden.time(i, t.participantId, t.seconds, t.transfers) }
+        val seconds = times.map { it.seconds }
+        return ShownCard(
+            rank = card.rank,
+            stationCode = card.stationCode,
+            times = times,
+            maxSeconds = seconds.max(),
+            spreadSeconds = seconds.max() - seconds.min(),
+            totalSeconds = seconds.sum(),
+            favoredSeconds = card.favoredSeconds?.let { seconds[favorIndex] },
+            reasonCode = card.reasonCode,
+        )
+    }
+
+    /** 카드 한 장의 문장을 만드는 데 쓰는 요청 전체의 맥락. [approximate]: 뭉뚱그린 칸이 있다. */
     private data class CardContext(
         val mode: RecommendMode,
         val result: RankResult,
-        val top: List<CoreCandidate>,
+        val top: List<ShownCard>,
         val refs: List<PersonRef>,
         val favor: FavorContext?,
+        val approximate: Boolean,
     )
 
     private fun reasonInput(
@@ -116,7 +150,7 @@ internal class Ranking(
             people = card.times.mapIndexed { i, t -> PersonTime(context.refs[i], t.seconds, t.transfers) },
             maxSeconds = card.maxSeconds,
             spreadSeconds = card.spreadSeconds,
-            totalSeconds = card.totalSeconds.toInt(),
+            totalSeconds = card.totalSeconds,
             reasonCode = ReasonCode.valueOf(card.reasonCode),
             toleranceSeconds = result.toleranceSeconds,
             comparison =
@@ -125,13 +159,19 @@ internal class Ranking(
                 },
             favor = context.favor,
             isFairBaseline = card.stationCode == result.baselineStationCode,
+            approximate = context.approximate,
         )
     }
 
+    /**
+     * 배려 문장의 맥락. 기준역 시간은 보이는 값(숨긴 다른 사람은 뭉뚱그림)이고, 숨긴 다른 사람의 상한은 null이다: 상한은 기준 시간 +
+     * min(15분, 50%)이라 "상한 +N분"에서 숨긴 사람의 정확한 기준 시간이 거꾸로 나온다(#142).
+     */
     private fun favorContext(
         result: RankResult,
         matrix: TravelMatrix,
         favorIndex: Int,
+        hidden: HiddenTimes,
     ): FavorContext? {
         val baselineColumn = matrix.candidates.indexOf(result.baselineStationCode)
         if (baselineColumn < 0) return null
@@ -146,8 +186,17 @@ internal class Ranking(
                 }
         return FavorContext(
             index = favorIndex,
-            baselineTimesSeconds = matrix.times.map { requireNotNull(it[baselineColumn]) },
-            capSeconds = result.participants.mapIndexed { i, id -> if (i == favorIndex) null else caps[id]?.toInt() },
+            baselineTimesSeconds =
+                matrix.times.mapIndexed {
+                    i,
+                    row,
+                    ->
+                    hidden.seconds(i, requireNotNull(row[baselineColumn]))
+                },
+            capSeconds =
+                result.participants.mapIndexed { i, id ->
+                    if (i == favorIndex || hidden.isMasked(i)) null else caps[id]?.toInt()
+                },
             closerStationsExcluded = closerExcluded,
         )
     }
