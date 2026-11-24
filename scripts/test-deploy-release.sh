@@ -74,8 +74,8 @@ bash "$here/create-deploy-release.sh"
 expect '서버 그대로·웹 배포·데이터 그대로' "$(sed -n '/^--notes$/{n;p;}' "$CALLS")" "서버 1234567 (그대로) · 웹 ${HEAD_SHA:0:7} (새로 배포) · 데이터 $DATA_AFTER (그대로)"
 export PREVIOUS='' DATA_BEFORE='' DATA_AFTER=''
 bash "$here/create-deploy-release.sh"
-if rg -q -- '--generate-notes|--notes-start-tag' "$CALLS"; then echo 'FAIL 첫 릴리즈 전체 이력 생성'; exit 1; fi
-rg -q '첫 릴리즈' "$CALLS"
+if grep -Eq -- '--generate-notes|--notes-start-tag' "$CALLS"; then echo 'FAIL 첫 릴리즈 전체 이력 생성'; exit 1; fi
+grep -q '첫 릴리즈' "$CALLS"
 echo 'ok 첫 릴리즈는 짧은 노트, 모르는 데이터는 확인 불가'
 if GH_EXIT=1 bash "$here/create-deploy-release.sh"; then echo 'FAIL gh 오류 은폐'; exit 1; fi
 echo 'ok 릴리즈 실패를 잡에서 확인 가능'
