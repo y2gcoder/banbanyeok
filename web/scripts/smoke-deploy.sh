@@ -297,14 +297,30 @@ if [ -n "${KAKAO_JS_KEY:-}" ]; then
   template="$(jq -nc --arg u "$BASE_URL/" --arg i "$BASE_URL$site_og_path" \
     '{object_type:"feed",content:{title:"반반역 스모크",image_url:$i,link:{web_url:$u,mobile_web_url:$u}},buttons:[{title:"열기",link:{web_url:$u,mobile_web_url:$u}}]}')"
   ka="sdk/2.8.4 os/javascript sdk_type/javascript origin/$(jq -rn --arg o "$site_origin" '$o|@uri')"
-  status="$(curl -sS --max-time 20 -o "$api_body" -w '%{http_code}' -G "https://kapi.kakao.com/v2/api/kakaolink/talk/template/default" \
-    -H "Authorization: KakaoAK $KAKAO_JS_KEY" -H "$origin_header" -H "KA: $ka" \
-    --data-urlencode "link_ver=4.0" --data-urlencode "template_object=$template" 2>/dev/null || echo 000)"
+  # 응답을 받지 못한 접속 실패(http_code 000: DNS·연결·TLS·시간 초과)만 2초, 5초 뒤 다시 시도한다(#153). HTTP 응답이 온 실패
+  # (400·401, code -401·-402 등)는 설정 문제이므로 바로 실패시킨다. curl 종료 코드(6 DNS, 7 연결, 28 시간 초과, 35 TLS 등)를 함께 보인다.
+  kakao_tries=0
+  for kakao_wait in 0 2 5; do
+    if [ "$kakao_wait" != 0 ]; then
+      echo "   카카오 템플릿 확인 응답 없음(curl 종료 코드 $kakao_rc), ${kakao_wait}초 뒤 재시도"
+      sleep "$kakao_wait"
+    fi
+    kakao_tries=$((kakao_tries + 1))
+    : >"$api_body"   # 앞 시도의 본문이 남아 code로 읽히지 않게 비운다
+    kakao_rc=0
+    status="$(curl -sS --max-time 20 -o "$api_body" -w '%{http_code}' -G "https://kapi.kakao.com/v2/api/kakaolink/talk/template/default" \
+      -H "Authorization: KakaoAK $KAKAO_JS_KEY" -H "$origin_header" -H "KA: $ka" \
+      --data-urlencode "link_ver=4.0" --data-urlencode "template_object=$template" 2>/dev/null)" || kakao_rc=$?
+    status="${status:-000}"
+    [ "$status" != "000" ] && break
+  done
   kakao_code="$(jq -r '.code // "-"' "$api_body" 2>/dev/null || echo -)"
-  if [ "$status" = "200" ]; then
+  if [ "$status" = "200" ] && [ "$kakao_rc" = 0 ]; then
     pass "카카오가 이 앱 키·출처($site_origin)의 공유 메시지를 받는다"
+  elif [ "$status" = "000" ]; then
+    bad "카카오 템플릿 확인 응답 없음 status=000 curl=$kakao_rc (${kakao_tries}번 시도, 접속 실패)"
   else
-    bad "카카오 템플릿 확인 status=$status code=${kakao_code:--} (앱 키와 카카오 앱의 웹 도메인에 $site_origin 이 있는지 확인)"
+    bad "카카오 템플릿 확인 status=$status curl=$kakao_rc code=${kakao_code:--} (앱 키와 카카오 앱의 웹 도메인에 $site_origin 이 있는지 확인)"
   fi
 else
   echo "warn 카카오톡 공유 확인 건너뜀(KAKAO_JS_KEY 없음)"
