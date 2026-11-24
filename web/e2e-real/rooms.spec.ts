@@ -178,6 +178,8 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
       p.getByRole("button", { name: "참여 잠그기" }),
     ],
     (p) => [p.getByRole("region", { name: "들어온 사람" }), p.getByRole("region", { name: "만날 역 후보" })],
+    // 결과가 있는 방은 폰에서 결과가 참여자 목록보다 먼저다(#168).
+    { resultFirstOnPhone: true },
   );
 
   // 서버 응답에도 숨긴 출발역 코드가 없다(방장·토큰 없는 사람 모두).
@@ -199,11 +201,12 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
     viewer.page.getByRole("region", { name: "들어온 사람" }).getByRole("listitem").filter({ hasText: "참가자 2" }),
   ).toBeVisible();
   await expect(viewer.page.getByRole("region", { name: "들어온 사람" }).getByText("홍대입구")).toHaveCount(0);
-  // 반응형(U1): 참여 전 화면(참여 폼 + 결과). 넓으면 참여 폼과 결과가 나란히.
+  // 반응형(U1): 참여 전 화면(참여 폼 + 결과). 넓으면 참여 폼과 결과가 나란히, 폰에서는 결과가 참여 폼보다 먼저다(#168).
   await sweepViewports(
     viewer.page,
     (p) => [p.getByRole("combobox", { name: "내 출발역" }), p.getByRole("tab", { name: "빨리 만나기" })],
     (p) => [p.getByRole("form", { name: "나도 출발역 넣기" }), p.getByRole("region", { name: "만날 역 후보" })],
+    { resultFirstOnPhone: true },
   );
   await viewer.context.close();
 

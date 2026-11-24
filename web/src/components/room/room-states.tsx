@@ -12,19 +12,19 @@ const SHELL = "mx-auto grid min-h-dvh w-full max-w-md content-start gap-5 px-gut
 
 /**
  * 두 칸 배치(wide, 640px~). 문서 순서는 폰 순서 그대로 두고 칸만 정한다: 머리(워드마크)와 SIDE 묶음은 왼쪽 칸,
- * MAIN 묶음은 오른쪽 칸 1~3행을 차지한다. 마지막 행이 남는 높이를 받아 왼쪽 항목이 위로 모인다.
- * - room: 왼쪽 = 소개·참여자·참여 폼·방장 설정, 오른쪽 = 결과
+ * MAIN 묶음은 오른쪽 칸의 모든 행을 차지한다. 마지막 행이 남는 높이를 받아 왼쪽 항목이 위로 모인다.
+ * - room: 왼쪽 = 소개 / 참여자·참여 폼·공유 / 방장 설정(SIDE 셋), 오른쪽 = 결과
  * - form: 왼쪽 = 소개, 오른쪽 = 방 만들기 폼
  */
 const SPLIT = {
-  room: "hinge-split wide:max-w-6xl wide:grid-cols-2 wide:grid-rows-[auto_auto_1fr] wide:gap-x-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-x-12",
+  room: "hinge-split wide:max-w-6xl wide:grid-cols-2 wide:grid-rows-[auto_auto_auto_1fr] wide:gap-x-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-x-12",
   form: "hinge-split wide:max-w-6xl wide:grid-cols-2 wide:grid-rows-[auto_auto_1fr] wide:gap-x-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-x-16",
 } as const;
 
 /** 왼쪽 칸 묶음(머리 아래). */
 export const ROOM_SIDE = "flex min-w-0 flex-col gap-5 wide:col-start-1";
 /** 오른쪽 칸 묶음. */
-export const ROOM_MAIN = "flex min-w-0 flex-col gap-5 wide:col-start-2 wide:row-span-3 wide:row-start-1";
+export const ROOM_MAIN = "flex min-w-0 flex-col gap-5 wide:col-start-2 wide:row-span-full";
 
 /** 방 화면 공통 틀. 폭·여백은 다른 화면과 같다. `split`이면 두 칸 폭에서 칸을 나눈다. */
 export function RoomShell({ children, split }: { children: ReactNode; split?: keyof typeof SPLIT }) {
@@ -38,13 +38,20 @@ export function RoomShell({ children, split }: { children: ReactNode; split?: ke
   );
 }
 
-export function RoomIntro({ title }: { title: string }) {
+/**
+ * `brief`: 폰에서 설명 문장을 뺀다(결과가 있는 방은 1위를 첫 화면에 올린다, #168). 두 칸 폭에서는 그대로 보인다.
+ * `aside`: 제목 줄 오른쪽에 둘 것(결과 아래로 내린 참여자 목록으로 가는 버튼).
+ */
+export function RoomIntro({ title, brief = false, aside }: { title: string; brief?: boolean; aside?: ReactNode }) {
   return (
     <section aria-labelledby="room-title" className="flex flex-col gap-2">
-      <h1 id="room-title" className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-ink">
-        {title}
-      </h1>
-      <p className="text-[15px] text-ink-soft">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+        <h1 id="room-title" className="text-[26px] leading-[1.2] font-extrabold tracking-[-0.02em] text-ink">
+          {title}
+        </h1>
+        {aside}
+      </div>
+      <p className={cn("text-[15px] text-ink-soft", brief && "hidden wide:block")}>
         각자 출발역을 넣으면 모두에게 공평한 만날 역을 지하철 시간으로 계산해요.
       </p>
     </section>

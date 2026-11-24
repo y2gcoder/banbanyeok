@@ -102,6 +102,76 @@ beforeEach(() => {
   });
 });
 
+describe("방 화면 배치(#168): 결과가 있으면 폰 첫 화면에 1위가 들어오게", () => {
+  const follows = (first: Element, second: Element) =>
+    Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+  it("두 명 이상이면 결과가 참여자 목록·참여 폼보다 먼저 오고, 위의 버튼이 아래 칸으로 옮겨 가 포커스를 둔다", async () => {
+    members = [{ id: "m1", token: "tok-x" }];
+    const user = userEvent.setup();
+    renderScreen();
+    const result = await screen.findByRole("heading", { name: "만날 역 후보" });
+    const people = screen.getByRole("heading", { name: "들어온 사람" });
+    const join = screen.getByRole("heading", { name: "나도 출발역 넣기", level: 2 });
+    expect(follows(result, people)).toBe(true);
+    expect(follows(people, join)).toBe(true);
+    // 설명 문장은 폰에서만 뺀다(두 칸 폭에서는 보인다).
+    expect(screen.getByText(/각자 출발역을 넣으면/)).toHaveClass("hidden", "wide:block");
+
+    await user.click(screen.getByRole("button", { name: "나도 출발역 넣기" }));
+    expect(screen.getByRole("textbox", { name: /이름 \(선택\)/ })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "들어온 사람 2/4명" }));
+    expect(people).toHaveFocus();
+  });
+
+  it("참여한 사람에게는 참여 버튼이 없고, 링크 다시 보내기는 결과 아래에 있다", async () => {
+    members = [{ id: "m1", token: "tok-x" }];
+    window.localStorage.setItem(
+      `bby.room.${ROOM}`,
+      JSON.stringify({ v: 1, participantToken: "tok-x", participantId: "m1", keepUntil: "2999-01-01T00:00:00.000Z" }),
+    );
+    vi.mocked(api.getRoomPreview).mockImplementation(() => new Promise(() => {}));
+    renderScreen();
+    const result = await screen.findByRole("heading", { name: "만날 역 후보" });
+    expect(screen.queryByRole("button", { name: "나도 출발역 넣기" })).toBeNull();
+    expect(follows(result, screen.getByRole("heading", { name: "링크 다시 보내기" }))).toBe(true);
+  });
+
+  it("넣는 중에 두 번째 사람이 들어와 결과가 생겨도 참여 폼은 다시 그려지지 않는다(이름·역 검색어·포커스가 그대로)", async () => {
+    const user = userEvent.setup();
+    const { client } = renderScreen();
+    await screen.findByRole("heading", { name: "나도 출발역 넣기" });
+    await user.type(screen.getByRole("textbox", { name: /이름 \(선택\)/ }), "서연");
+    const station = screen.getByRole("combobox", { name: "내 출발역" });
+    await user.type(station, "신");
+    expect(station).toHaveFocus();
+
+    members = [{ id: "m9", token: "tok-other" }];
+    await client.invalidateQueries({ queryKey: ["room", ROOM] });
+    // 역 검색 목록이 열려 있으면 나머지 화면은 접근성 트리에서 가려지므로 역할 대신 제목 글자로 찾는다.
+    const result = await screen.findByText("만날 역 후보", { selector: "h2" });
+    const form = screen.getByText("나도 출발역 넣기", { selector: "h2" });
+    expect(Boolean(result.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    // 같은 요소가 그대로 문서에 남는다(다시 그려졌다면 이 요소는 떨어져 나가고 새 요소가 생긴다).
+    expect(station.isConnected).toBe(true);
+    expect(station).toHaveFocus();
+    expect(station).toHaveValue("신");
+    expect(screen.getByRole("textbox", { name: /이름 \(선택\)/, hidden: true })).toHaveValue("서연");
+    expect(follows(result, station)).toBe(true);
+  });
+
+  it("혼자인 방(결과 전)은 지금처럼 링크 보내기 → 참여자 → 결과 안내 순서이고 옮겨 가는 버튼이 없다", async () => {
+    renderScreen();
+    const status = await screen.findByText("두 명 이상 들어오면 결과를 볼 수 있어요.");
+    const people = screen.getByRole("heading", { name: "들어온 사람" });
+    expect(follows(people, status)).toBe(true);
+    expect(screen.getByText(/각자 출발역을 넣으면/)).not.toHaveClass("hidden");
+    expect(screen.queryByRole("button", { name: /들어온 사람 \d/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "나도 출발역 넣기" })).toBeNull();
+  });
+});
+
 describe("방 화면", () => {
   it("참여 화면에도 서버가 준 계산 기준 문구를 그대로 보여 준다(웹이 날짜로 다시 계산하지 않는다)", async () => {
     // 약속일이 평범한 토요일이어도 서버가 공휴일로 정했으면 서버 문구가 이긴다.

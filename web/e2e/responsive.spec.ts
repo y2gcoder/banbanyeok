@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { checkLayout, expectColumns, isWide } from "./support/checks";
+import { checkLayout, expectColumns, expectSideBesideOrBelowMain, isWide } from "./support/checks";
 import { horizontalOverflow } from "./support/layout";
 import { prepareRoom, type RoomScenario } from "./support/room-fixture";
 import { SHOT_IDS, SHOT_SCREENS, VIEWPORTS, type ViewportCase } from "./support/viewports";
@@ -23,7 +23,16 @@ type Screen = {
   actions: (page: Page) => Locator[];
   /** 두 칸 폭에서 나란히(좁으면 위아래) 놓여야 하는 왼쪽·오른쪽 칸의 대표 요소. */
   columns?: (page: Page) => [Locator, Locator];
+  /** 좁으면 오른쪽 칸(결과)이 왼쪽 칸 대표 요소보다 먼저 온다(결과가 있는 방, #168). */
+  resultFirstOnPhone?: true;
 };
+
+async function checkColumns(page: Page, s: Screen) {
+  if (!s.columns) return;
+  const [side, main] = s.columns(page);
+  if (s.resultFirstOnPhone) await expectSideBesideOrBelowMain(page, side, main);
+  else await expectColumns(page, side, main);
+}
 
 // 사람 3명(강남·홍대입구·신촌), 이름은 "민수", 없음, 긴 이름(20자 한도 안).
 const RESULT_QUERY = "v=1&o=k3a.ryf.1qs&m=f&n=66-87IiY..7KeA7Jew7J207JmA7ZWo6ruY7Jik64qU6ri07J2066aE";
@@ -90,7 +99,9 @@ const SCREENS: readonly Screen[] = [
       p.getByRole("tab", { name: "빨리 만나기" }),
       p.getByRole("button", { name: "이 역으로 정했어요" }).first(),
     ],
+    // 결과가 있는 방은 폰에서 결과가 참여 폼보다 먼저다(#168).
     columns: (p) => [p.getByRole("form", { name: "나도 출발역 넣기" }), p.getByRole("article").first()],
+    resultFirstOnPhone: true,
   },
   {
     id: "room-host-full",
@@ -103,6 +114,7 @@ const SCREENS: readonly Screen[] = [
       p.getByRole("button", { name: "방 삭제 방 전체" }),
     ],
     columns: (p) => [p.getByRole("region", { name: "들어온 사람" }), p.getByRole("article").first()],
+    resultFirstOnPhone: true,
   },
   {
     id: "meet",
@@ -179,7 +191,7 @@ for (const vp of VIEWPORTS) {
         await open(page, s);
         await shot(page, vp, s.id);
         await checkLayout(page, s.actions(page), vp.touch);
-        if (s.columns) await expectColumns(page, ...s.columns(page));
+        await checkColumns(page, s);
       });
     }
   });
@@ -262,7 +274,8 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
       await expect(form.getByRole("combobox", { name: "내 출발역" })).toHaveValue("신촌");
       await expect(form.getByRole("checkbox", { name: /출발역 이름 숨기기/ })).toBeChecked();
       expect(await horizontalOverflow(page)).toEqual([]);
-      await expectColumns(page, form, page.getByRole("article").first());
+      // 두 칸이면 폼이 왼쪽, 한 칸(폰)이면 결과 아래(#168: 결과가 있으면 1위를 첫 화면에).
+      await expectSideBesideOrBelowMain(page, form, page.getByRole("article").first());
     }
   });
 });
@@ -340,7 +353,7 @@ test.describe("큰 기본 글자(브라우저 글꼴 크기 24px = 150%)", () =>
           await open(page, s);
           expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe("24px");
           await checkLayout(page, s.actions(page), vp.touch);
-          if (s.columns) await expectColumns(page, ...s.columns(page));
+          await checkColumns(page, s);
         });
       }
     });

@@ -23,8 +23,9 @@ import { stationByCode } from "@/lib/stations";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
 import { HostControls } from "./host-controls";
 import { JoinForm } from "./join-form";
+import { JumpButton } from "./jump-button";
 import { OutcomeCard } from "./outcome-card";
-import { PeopleList } from "./people-list";
+import { PEOPLE_TITLE_ID, PeopleList } from "./people-list";
 import { type RoomDecisionMode, RoomResult } from "./room-result";
 import {
   CannotJoin,
@@ -40,6 +41,9 @@ import { RoomShareSection } from "./share-section";
 import { useIdempotencyKey } from "./use-idempotency-key";
 import { useRoomActions } from "./use-room-actions";
 import { useRoomDecision } from "./use-room-decision";
+
+/** 결과 위 "나도 출발역 넣기"가 옮겨 갈 참여 폼 자리. */
+const JOIN_FORM_ID = "join-form";
 
 const emptyValue = (): ParticipantFormValue => ({ nickname: "", station: null, hidden: false });
 
@@ -181,53 +185,49 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       : joined && token
         ? { kind: "member", control: decisionControl }
         : { kind: "viewer" };
-  // 공유 칸은 하나다. 혼자일 때는 링크 보내기가 가장 먼저 할 일이라 맨 위, 둘 이상이면 참여자 목록 아래.
+  // 공유 칸은 하나다. 혼자일 때는 링크 보내기가 가장 먼저 할 일이라 맨 위, 둘 이상이면 결과 아래(참여자 목록 다음).
   const share = joined ? <RoomShareSection roomId={roomId} room={room} /> : null;
+  const canJoinHere = !joined && state === "can-join";
 
-  return (
-    <RoomShell split="room">
-      {/* 왼쪽 칸(폰에서는 위): 소개·링크 보내기·참여자·참여/수정 폼 */}
-      <div className={ROOM_SIDE}>
-        <RoomIntro title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"} />
-        <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
+  // 참여자 목록·내 항목 고치기·참여 폼·못 들어오는 안내. 결과가 있으면 폰에서 1위가 첫 화면에 들어오도록 결과 아래에 둔다(#168).
+  const roomPeopleBlock = (
+    <>
+      <PeopleList
+        people={people}
+        maxPeople={MAX_PEOPLE}
+        canKick={isHost}
+        editing={actions.editing}
+        busy={actions.busy}
+        onEditSelf={actions.startEdit}
+        onRemoveSelf={actions.leave}
+        onKick={actions.kick}
+      />
+      {actions.actionError && !isHost ? (
+        <p role="alert" className="-mt-2 text-sm font-semibold text-destructive">
+          {actions.actionError}
+        </p>
+      ) : null}
 
-        {enough ? null : share}
-
-        <PeopleList
-          people={people}
-          maxPeople={MAX_PEOPLE}
-          canKick={isHost}
-          editing={actions.editing}
-          busy={actions.busy}
-          onEditSelf={actions.startEdit}
-          onRemoveSelf={actions.leave}
-          onKick={actions.kick}
+      {joined && actions.editing ? (
+        <JoinForm
+          key="edit"
+          mode="edit"
+          initial={myValue()}
+          personIndex={Math.max(0, selfIndex)}
+          pending={actions.editPending}
+          timeBasis={room.timeBasis}
+          error={actions.editError}
+          onSubmit={(input, value) => {
+            if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
+            actions.edit(input);
+          }}
+          onCancel={actions.cancelEdit}
         />
-        {actions.actionError && !isHost ? (
-          <p role="alert" className="-mt-2 text-sm font-semibold text-destructive">
-            {actions.actionError}
-          </p>
-        ) : null}
+      ) : null}
 
-        {joined && actions.editing ? (
-          <JoinForm
-            key="edit"
-            mode="edit"
-            initial={myValue()}
-            personIndex={Math.max(0, selfIndex)}
-            pending={actions.editPending}
-            timeBasis={room.timeBasis}
-            error={actions.editError}
-            onSubmit={(input, value) => {
-              if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
-              actions.edit(input);
-            }}
-            onCancel={actions.cancelEdit}
-          />
-        ) : null}
-
-        {!joined && state === "can-join" ? (
-          <>
+      {canJoinHere ? (
+        <>
+          <div id={JOIN_FORM_ID} className="scroll-mt-4">
             <JoinForm
               key="join"
               mode="join"
@@ -241,55 +241,94 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
                 actions.join(input);
               }}
             />
-            {storable ? null : (
-              <p role="status" className="-mt-2 text-[13px] text-destructive">
-                이 브라우저는 저장 공간을 막아 두어서, 참여한 뒤 이 기기에서 내 항목을 고칠 수 없어요.
-              </p>
-            )}
-          </>
-        ) : null}
-        {!joined && (state === "full" || state === "locked") ? <CannotJoin reason={state} /> : null}
+          </div>
+          {storable ? null : (
+            <p role="status" className="-mt-2 text-[13px] text-destructive">
+              이 브라우저는 저장 공간을 막아 두어서, 참여한 뒤 이 기기에서 내 항목을 고칠 수 없어요.
+            </p>
+          )}
+        </>
+      ) : null}
+      {!joined && (state === "full" || state === "locked") ? <CannotJoin reason={state} /> : null}
+    </>
+  );
 
-        {enough ? share : null}
-      </div>
-
-      {/* 오른쪽 칸(폰에서는 가운데): 결과 */}
-      <div className={ROOM_MAIN}>
-        {enough ? (
-          <RoomResult
+  const result = (
+    <RoomResult
+      roomId={roomId}
+      room={room}
+      participantToken={token}
+      participantId={participantId}
+      isHost={isHost}
+      decision={decision}
+      onRoomGone={() => setResultGone(true)}
+      onResultSeen={() => {
+        if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
+      }}
+      renderAfter={(view) =>
+        joined && token && meetingDay ? (
+          <OutcomeCard
             roomId={roomId}
-            room={room}
             participantToken={token}
-            participantId={participantId}
-            isHost={isHost}
-            decision={decision}
-            onRoomGone={() => setResultGone(true)}
-            onResultSeen={() => {
-              if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
-            }}
-            renderAfter={(view) =>
-              joined && token && meetingDay ? (
-                <OutcomeCard
-                  roomId={roomId}
-                  participantToken={token}
-                  topStationCode={view.candidates[0]?.stationCode ?? ""}
-                  roomHash={room.roomHash}
-                  resultSeenAt={record?.resultSeenAt}
-                  answered={Boolean(record?.outcomeAnswered)}
-                  collapsed={!room.meetingDate}
-                  onAnswered={() => record && commit({ ...record, outcomeAnswered: true })}
-                />
-              ) : null
-            }
+            topStationCode={view.candidates[0]?.stationCode ?? ""}
+            roomHash={room.roomHash}
+            resultSeenAt={record?.resultSeenAt}
+            answered={Boolean(record?.outcomeAnswered)}
+            collapsed={!room.meetingDate}
+            onAnswered={() => record && commit({ ...record, outcomeAnswered: true })}
           />
+        ) : null
+      }
+    />
+  );
+
+  // 배치(#168). 폰(한 칸)은 문서 순서대로 보인다:
+  // - 결과 전(1명): 소개 → 링크 보내기 → 참여자·참여 폼 → "두 명 이상…" → 방장 설정
+  // - 결과 있음:    소개 → (참여 전) 나도 출발역 넣기 → 결과 → 참여자·참여 폼 → 링크 다시 보내기 → 방장 설정
+  // 참여자·참여 폼 묶음은 두 경우 모두 RoomShell 자식 중 같은 자리(소개 묶음·결과 자리 다음)에 둔다. 두 번째 사람이 들어와 결과가 생겨도 이 묶음은
+  // 다시 그려지지 않고(넣던 이름·역 검색어·포커스가 그대로) 결과와 안내 칸이 그 앞뒤 자리에 들고 난다. 빈 자리는 null로 둔다.
+  // 두 칸(wide)에서는 MAIN이 오른쪽 칸 전체, SIDE 셋이 왼쪽 칸에 차례로 쌓인다.
+  return (
+    <RoomShell split="room">
+      <div className={ROOM_SIDE}>
+        <RoomIntro
+          title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"}
+          brief={enough}
+          aside={
+            enough ? (
+              <JumpButton targetId={PEOPLE_TITLE_ID} focus="self" className="-my-2 -mr-2 wide:hidden">
+                들어온 사람 {people.length}/{MAX_PEOPLE}명
+              </JumpButton>
+            ) : null
+          }
+        />
+        <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
+        {enough ? (
+          canJoinHere ? (
+            <JumpButton targetId={JOIN_FORM_ID} focus="input" primary className="wide:hidden">
+              나도 출발역 넣기
+            </JumpButton>
+          ) : null
         ) : (
-          <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
-            두 명 이상 들어오면 결과를 볼 수 있어요.
-          </section>
+          share
         )}
       </div>
 
-      {/* 왼쪽 칸 아래(폰에서는 맨 아래): 방장 설정·만료 안내 */}
+      {enough ? <div className={ROOM_MAIN}>{result}</div> : null}
+
+      <div className={ROOM_SIDE}>
+        {roomPeopleBlock}
+        {enough ? share : null}
+      </div>
+
+      {enough ? null : (
+        <div className={ROOM_MAIN}>
+          <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
+            두 명 이상 들어오면 결과를 볼 수 있어요.
+          </section>
+        </div>
+      )}
+
       <div className={ROOM_SIDE}>
         {isHost ? (
           <HostControls
