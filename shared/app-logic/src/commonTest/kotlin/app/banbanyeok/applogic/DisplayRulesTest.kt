@@ -5,36 +5,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class DisplayRulesTest {
+    // 값 표(초 → 분, 분 → 문구, 환승 표기)는 웹과 같이 쓰는 contracts/golden/display-minutes.json에 있다(DisplayMinutesVectorsTest).
     @Test
-    fun secondsRoundHalfUpToMinutes() {
-        assertEquals(0, DisplayMinutes.fromSeconds(0))
-        assertEquals(0, DisplayMinutes.fromSeconds(29))
-        assertEquals(1, DisplayMinutes.fromSeconds(30))
-        assertEquals(1, DisplayMinutes.fromSeconds(89))
-        assertEquals(2, DisplayMinutes.fromSeconds(90))
-        assertEquals(37, DisplayMinutes.fromSeconds(2249))
-        assertEquals(38, DisplayMinutes.fromSeconds(2250))
-        assertEquals(60, DisplayMinutes.fromSeconds(3599))
-        assertEquals(1092, DisplayMinutes.fromSeconds(65534)) // od.bin 시간의 최댓값
-        assertEquals(35791394, DisplayMinutes.fromSeconds(Int.MAX_VALUE)) // 넘치지 않는다
+    fun negativeInputsAreRejected() {
         assertFailsWith<IllegalArgumentException> { DisplayMinutes.fromSeconds(-1) }
-    }
-
-    @Test
-    fun minutesAreFormattedWithHoursFromSixty() {
-        assertEquals("0분", DisplayMinutes.format(0))
-        assertEquals("59분", DisplayMinutes.format(59))
-        assertEquals("1시간", DisplayMinutes.format(60))
-        assertEquals("1시간 4분", DisplayMinutes.format(64))
-        assertEquals("2시간 40분", DisplayMinutes.format(160))
-        assertEquals("38분", DisplayMinutes.formatSeconds(2250))
         assertFailsWith<IllegalArgumentException> { DisplayMinutes.format(-1) }
-    }
-
-    @Test
-    fun transferLabels() {
-        assertEquals("환승 없음", DisplayMinutes.transferLabel(0))
-        assertEquals("환승 1번", DisplayMinutes.transferLabel(1))
         assertFailsWith<IllegalArgumentException> { DisplayMinutes.transferLabel(-1) }
     }
 
