@@ -9,6 +9,31 @@
  *
  * lib/ 안의 방향(아래가 잎): seo → room → share-card → result → {share, link} → when → api → proxy, 모두가 copy(잎)를 본다.
  */
+// 기존 copy·api·when 규칙 외에도 모든 lib 패키지는 명시한 내부 의존만 허용한다.
+// 새 패키지는 아래 목록에 추가하며 허용할 방향을 함께 검토한다. 테스트는 실제 구현을 조합할 수 있다.
+const libDependencies = {
+  analytics: ["room"],
+  display: ["api"],
+  form: ["api", "link", "stations", "when"],
+  link: ["api", "when"],
+  map: [],
+  problems: [],
+  proxy: ["problems"],
+  result: ["api", "copy", "display", "link", "map", "share", "stations", "when"],
+  room: ["api", "copy", "display", "link", "result", "share", "share-card", "stations", "when"],
+  security: ["share"],
+  seo: ["api", "copy", "display", "link", "result", "room", "stations", "when"],
+  share: ["copy"],
+  "share-card": ["api", "copy", "display", "link", "result", "when"],
+  stations: [],
+  text: [],
+  utils: [],
+  zod: [],
+};
+// 아래 허용 목록의 공용 잎. zod 자신은 허용 목록 규칙으로 다른 lib를 모른다.
+const commonLibLeaves = ["^src/lib/zod\\.ts$"];
+const libPath = (packages) => `^src/lib/(${packages.join("|")})(?:/|\\.ts$)`;
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -36,6 +61,14 @@ module.exports = {
         path: "^src/components/(home|room|result)/",
         pathNot: ["^src/components/$1/", "^src/components/result/parts/"],
       },
+    },
+    {
+      name: "shared-components-below-screens",
+      comment:
+        "공유 조각(og·common·ui·share·when·seo·consent)은 home·room·result 화면과 result/parts를 import하지 않는다.",
+      severity: "error",
+      from: { path: "^src/components/(og|common|ui|share|when|seo|consent)/" },
+      to: { path: "^src/components/(home|room|result)/" },
     },
     {
       name: "result-parts-below-result",
@@ -104,6 +137,23 @@ module.exports = {
       severity: "error",
       from: { path: "^src/lib/", pathNot: ["^src/lib/seo/", "\\.test\\."] },
       to: { path: "^src/lib/seo/" },
+    },
+    ...Object.entries(libDependencies).map(([name, dependencies]) => ({
+      name: `lib-${name}-allowed-dependencies`,
+      comment: `lib/${name}는 자기 패키지·공용 잎과 허용 목록(${dependencies.join(", ") || "없음"})만 import한다.`,
+      severity: "error",
+      from: { path: libPath([name]), pathNot: "\\.test\\." },
+      to: { path: "^src/lib/", pathNot: [libPath([name, ...dependencies]), ...commonLibLeaves] },
+    })),
+    {
+      name: "lib-package-needs-direction-rule",
+      comment: "새 lib 패키지가 다른 lib를 쓰려면 허용 목록에 방향을 먼저 기록한다.",
+      severity: "error",
+      from: {
+        path: "^src/lib/",
+        pathNot: [libPath(["copy", "api", "when", ...Object.keys(libDependencies)]), "\\.test\\."],
+      },
+      to: { path: "^src/lib/" },
     },
     {
       name: "no-circular",

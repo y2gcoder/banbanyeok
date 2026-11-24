@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 아키텍처 지표 5개를 모아 GitHub 이슈 본문(마크다운)을 만든다. LLM 없이 숫자만 센다.
 # 2주마다 .github/workflows/architecture-metrics.yml이 부르고, 로컬에서도 같은 명령으로 돈다.
-# 지표 이름과 계산법은 아키텍처 점검(docs/research/architecture-review-2026-11.md 5절)이 정했다.
+# 지표 이름과 계산법: https://github.com/y2gcoder/banbanyeok/issues/93 (지표 1~5의 측정 정의).
 #
 #   bash scripts/architecture-metrics.sh [--out DIR] [--previous FILE]
 #
