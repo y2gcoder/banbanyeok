@@ -58,6 +58,11 @@ run = [
   "python3 -B prototype/gen_link_vectors.py --check",
 ]
 
+[tasks."fixtures:hidden-origin"]
+description = "숨긴 출발역 비간섭 wire fixture(contracts/fixtures/hidden-origin-noninterference.json)를 서버 테스트 응답으로 재생성(diff를 반드시 검토)"
+env = { UPDATE_CONTRACT_FIXTURES = "1" }
+run = "./gradlew :server:app:test --tests app.banbanyeok.server.app.HiddenOriginNoninterferenceHttpTest --rerun"
+
 # 비밀값이 필요한 실행은 op run으로 감싼다. 값은 .env.tpl의 op:// 참조에서 해석되고 디스크에 남지 않는다.
 [tasks."dev:pipeline"]
 description = "파이프라인 CLI 실행 (인자: mise run dev:pipeline -- build)"

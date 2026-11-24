@@ -62,11 +62,12 @@ private fun request(origins: List<String>): String =
         put("timeSlot", "weekday-day")
     }.toString()
 
-/** 방장 03v, 출발역을 숨긴 [hiddenOrigin], 31a. 장난감 행렬과 장난감 노선 그래프. */
+/** 방장 03v, 출발역을 숨긴 [hiddenOrigin], 31a. 장난감 행렬과 장난감 노선 그래프. [hidden]이 false면 대조군: 같은 사람이 출발역을 공개한다. */
 internal class RouteRoom(
     hiddenOrigin: String,
     recommendation: RecommendationService? = null,
     private val date: java.time.LocalDate? = null,
+    private val hidden: Boolean = true,
 ) {
     val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
     val recommendation =
@@ -81,7 +82,7 @@ internal class RouteRoom(
             this.recommendation,
             testTimes,
         )
-    private val origin = hiddenOrigin
+    val origin = hiddenOrigin
     lateinit var roomId: String
     lateinit var hiddenId: String
     lateinit var hiddenToken: String
@@ -96,7 +97,7 @@ internal class RouteRoom(
             fixture.service.create(
                 CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v", false), null, null),
             )
-        val hidden = fixture.service.join(created.roomId, ParticipantInput(null, origin, true), null)
+        val hidden = fixture.service.join(created.roomId, ParticipantInput(null, origin, hidden), null)
         val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a", false), null)
         thirdToken = third.participantToken
         thirdId = third.participantId
