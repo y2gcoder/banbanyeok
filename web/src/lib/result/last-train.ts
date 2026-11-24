@@ -11,7 +11,7 @@
 import type { RecommendResult } from "@/lib/api/types";
 import { stationLabel, withJosa } from "@/lib/display/korean";
 import { dayAfter, formatMeetingDate } from "@/lib/when/dates";
-import { DAY_TYPES } from "@/lib/when/time-slot";
+import { DAY_TYPES, SERVICE_DAY_START } from "@/lib/when/time-slot";
 
 type Basis = NonNullable<RecommendResult["lastTrainBasis"]>;
 /** 방 미리보기의 항목(`PreviewTime.lastTrain`)도 같은 모양이다(참가자 ID만 없다). */
@@ -25,8 +25,6 @@ export type MeetingWhen = { date?: string | null | undefined; time?: string | nu
 
 const DAY_MINUTES = 24 * 60;
 const MARGIN_STEP = 10;
-/** 운행일이 바뀌는 시각(contracts/time-slots.json rules). 이 전의 약속은 전날 운행일의 밤이다. */
-const SERVICE_DAY_START = "03:00";
 
 /** 화면에 보이는 분. 여유 시각만 10분 단위로 내린다(올림·반올림은 하지 않는다). */
 function shownMinute(kind: "direct" | "margin", minute: number): number {

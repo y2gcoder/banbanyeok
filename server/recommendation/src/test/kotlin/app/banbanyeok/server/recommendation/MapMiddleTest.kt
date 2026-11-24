@@ -9,11 +9,21 @@ import app.banbanyeok.server.recommendation.mapmiddle.MapMiddleRule
 import app.banbanyeok.server.recommendation.mapmiddle.StationLocations
 import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.recommendation.time.TimeSlotLabels
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import java.nio.file.Path
+import kotlin.io.path.readText
 
 /**
  * 출발역 03v·130, 후보 03v·130·225·31a·4xz. 03v와 130은 같은 위도에서 경도가 0.2도 떨어져 있어 평균점은 경도 127.10이다.
@@ -29,6 +39,9 @@ private val coordinates =
     )
 
 private val locations = StationLocations { coordinates[it] }
+
+private fun contract(name: String): JsonObject =
+    Json.parseToJsonElement(Path.of(System.getProperty("contracts.dir"), name).readText()).jsonObject
 
 /** [middleFrom03v]는 03v에서 225까지의 초(지도 한가운데 역의 최장 시간을 정한다). 130에서 225까지는 600초, 130까지는 03v 600초다. */
 private fun od(middleFrom03v: Int = 1200): OdMatrix =
@@ -140,6 +153,18 @@ class MapMiddleTest :
 
             it("hides it when the middle station is as good as the recommendation") {
                 service(od(600)).middleOf(request).shouldBeNull()
+            }
+
+            it("matches contracts/golden/display-minutes.json, which the web checks too") {
+                val rule = contract("golden/display-minutes.json").getValue("mapMiddle").jsonObject
+                MapMiddleRule.MIN_EXTRA_MINUTES shouldBe rule.getValue("minExtraMinutes").jsonPrimitive.int
+                rule.getValue("vectors").jsonArray.map { it.jsonObject }.forEach { vector ->
+                    fun seconds(key: String) = vector.getValue(key).jsonArray.map { it.jsonPrimitive.int }
+                    withClue(vector.getValue("id").jsonPrimitive.content) {
+                        MapMiddleRule.isFarEnough(seconds("middleSeconds"), seconds("topSeconds").max()) shouldBe
+                            vector.getValue("shown").jsonPrimitive.boolean
+                    }
+                }
             }
         }
 
