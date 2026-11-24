@@ -149,6 +149,10 @@ class HiddenOriginNoninterferenceHttpTest :
                         ),
                     "the right label in a frame that does not end the reason" to
                         SLOTS_BODY.replace("5분 덜 걸려요.", "5분 덜 걸려요. 참가자 2는 그 근처예요."),
+                    "the right label once, after an origin prefix that ends the first sentence" to
+                        SLOTS_BODY.replace("2위 동쪽비공개역보다", "참가자 2 출발역: 2위 동쪽비공개역보다"),
+                    "a first sentence that is not a reason template" to
+                        SLOTS_BODY.replace("가장 오래 걸리는 민수도 25분이에요.", "참가자 2는 그 근처에서 와요."),
                     "the other hidden name in the previewed station's neighbours" to
                         SLOTS_BODY.replace("\"stage\":\"result\"", "\"stage\":\"result\",\"near\":\"서쪽비공개역\""),
                 )
@@ -363,16 +367,32 @@ private fun reasonMasked(
 /** `DisplayMinutes.format`: "5분", "1시간", "1시간 5분". */
 private const val DURATION = "(\\d+시간 \\d+분|\\d+시간|\\d+분)"
 
+/** The fixture rooms' short labels (민수, the hidden "참가자 2", 지연): the only free names a reason template may hold. */
+private const val PERSON = "(민수|지연|참가자 \\d)"
+
 /**
  * The reason templates that carry the comparison label [label] (`ReasonGenerator`: `rankLabel` "N위 OO역" and `withWa`
- * "N위 OO역과"), as whole reasons: "<first sentence> <comparison>" plus the optional tolerance note. The label appears only at
- * the start of the comparison or after its fixed lead-in ("최장 시간은", "합계는", "<name>은").
+ * "N위 OO역과"), as whole reasons: "<first sentence> <comparison>" plus the optional tolerance note. Both sentences are
+ * `ReasonGenerator`'s own templates with only numbers and the fixture's names free, and the label appears only at the start of
+ * the comparison or after its fixed lead-in ("최장 시간은", "합계는", "<name>은").
  */
 private fun comparisonFrames(label: String): List<Regex> {
     val l = Regex.escape(label)
     val wa = "$l(과|와)"
     val d = DURATION
-    val person = "\\S+( \\d+)?(은|는)"
+    val person = "$PERSON(은|는)"
+    val names = "$PERSON(·$PERSON)*"
+    val firsts =
+        listOf(
+            // fairWinner
+            "(둘 다|\\d명 모두) ${d}이에요\\.",
+            "가장 오래 걸리는 ${names}도 ${d}이에요\\.",
+            "가장 오래 걸리는 ${names}도 $d, \\d명 모두 (\\d+~\\d+분|$d~$d) 사이예요\\.",
+            // fairAlternative, fastAlternative, favorAlternative
+            "공평 모드 대안이에요\\.",
+            "빠른 만남 대안이에요\\.",
+            "$PERSON 쪽 대안이에요\\.",
+        ).joinToString("|")
     val comparisons =
         listOf(
             "${l}보다 가장 오래 걸리는 사람이 $d (덜|더) 걸려요\\.( 대신 시간 차이는 $d 더 작아요\\.)?",
@@ -386,7 +406,7 @@ private fun comparisonFrames(label: String): List<Regex> {
             "${l}보다 $person $d (더|덜) 걸려요 \\($d\\)\\.",
             "$person $wa (거의 )?같은 ${d}이에요\\.",
         )
-    return comparisons.map { Regex("^[^\\n]+? $it( \\($d 동점 옵션\\))?$") }
+    return comparisons.map { Regex("^($firsts) $it( \\($d 동점 옵션\\))?$") }
 }
 
 /**
