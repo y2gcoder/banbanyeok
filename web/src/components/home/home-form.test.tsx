@@ -74,7 +74,9 @@ describe("입력 화면", () => {
     const user = userEvent.setup();
     render(<HomeForm />);
     await user.type(screen.getByRole("combobox", { name: "나의 출발역" }), "임진강");
-    const option = await screen.findByRole("option", { name: /임진강.*이 노선의 역은 아직 계산하지 못해요/ });
+    const option = await screen.findByRole("option", {
+      name: /임진강.*열차가 하루 몇 번뿐인 구간이라 계산하지 않아요/,
+    });
     expect(option).toHaveAttribute("aria-disabled", "true");
   });
 

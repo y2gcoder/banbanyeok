@@ -137,7 +137,7 @@ export function HomeForm() {
   };
 
   return (
-    <form onSubmit={submit} noValidate aria-describedby={`${formId}-scope`} className="flex flex-col gap-5">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-5">
       <ol className="relative flex flex-col gap-4">
         {rows.map((row, index) => {
           const placeholder = INPUT_PLACEHOLDERS[index] ?? `친구${index}`;
@@ -241,9 +241,7 @@ export function HomeForm() {
       <Button type="submit" disabled={filled < MIN_PEOPLE || pending} className="h-14 rounded-xl text-[17px] font-bold">
         {pending ? "찾는 중…" : "만날 역 찾기"}
       </Button>
-      <p id={`${formId}-scope`} className="text-center text-sm text-muted-foreground">
-        수도권 지하철역만 돼요. 가입은 필요 없어요.
-      </p>
+      <p className="text-center text-sm text-muted-foreground">가입은 필요 없어요.</p>
       <Link
         href={NEW_ROOM_PATH}
         className="flex flex-col gap-0.5 rounded-xl border border-rule-strong bg-surface px-4 py-3.5 hover:border-ink"
