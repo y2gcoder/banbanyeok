@@ -36,3 +36,12 @@ export async function expectColumns(page: Page, first: Locator, second: Locator)
     expect.soft(b.y, "한 칸: 아래 것이 위 것 밑에서 시작").toBeGreaterThanOrEqual(a.y + a.height - 1);
   }
 }
+
+/**
+ * 왼쪽 칸(side)과 결과(main): 두 칸 폭이면 side가 왼쪽, 한 칸(폰)이면 결과가 먼저이고 side가 그 아래(#168: 결과가 있는 방은
+ * 폰 첫 화면에 1위를 둔다).
+ */
+export async function expectSideBesideOrBelowMain(page: Page, side: Locator, main: Locator) {
+  if (await isWide(page)) await expectColumns(page, side, main);
+  else await expectColumns(page, main, side);
+}

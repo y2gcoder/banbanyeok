@@ -135,18 +135,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     }
   }, [record, room, gone, query.isPlaceholderData, roomId, commit, keys]);
 
-  // 넣던 값. 결과가 생기면(두 번째 사람이 들어오면) 폼이 결과 아래로 옮겨 가며 다시 그려지므로 여기 두고 이어 받는다(#168).
-  const [joinDraft, setJoinDraft] = useState<ParticipantFormValue | null>(null);
-  const [editDraft, setEditDraft] = useState<ParticipantFormValue | null>(null);
   const actions = useRoomActions({ roomId, room, record, commit, keys });
-  const editing = actions.editing;
-  const joinedNow = room !== undefined && joinState(room) === "joined";
-  useEffect(() => {
-    if (!editing) setEditDraft(null);
-  }, [editing]);
-  useEffect(() => {
-    if (joinedNow) setJoinDraft(null);
-  }, [joinedNow]);
 
   const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh: actions.refresh });
 
@@ -223,8 +212,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         <JoinForm
           key="edit"
           mode="edit"
-          initial={editDraft ?? myValue()}
-          onValueChange={setEditDraft}
+          initial={myValue()}
           personIndex={Math.max(0, selfIndex)}
           pending={actions.editPending}
           timeBasis={room.timeBasis}
@@ -243,8 +231,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             <JoinForm
               key="join"
               mode="join"
-              initial={joinDraft ?? joinValue}
-              onValueChange={setJoinDraft}
+              initial={joinValue}
               personIndex={room.participants.length}
               pending={actions.joinPending}
               timeBasis={room.timeBasis}
@@ -266,9 +253,43 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     </>
   );
 
+  const result = (
+    <RoomResult
+      roomId={roomId}
+      room={room}
+      participantToken={token}
+      participantId={participantId}
+      isHost={isHost}
+      decision={decision}
+      onRoomGone={() => setResultGone(true)}
+      onResultSeen={() => {
+        if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
+      }}
+      renderAfter={(view) =>
+        joined && token && meetingDay ? (
+          <OutcomeCard
+            roomId={roomId}
+            participantToken={token}
+            topStationCode={view.candidates[0]?.stationCode ?? ""}
+            roomHash={room.roomHash}
+            resultSeenAt={record?.resultSeenAt}
+            answered={Boolean(record?.outcomeAnswered)}
+            collapsed={!room.meetingDate}
+            onAnswered={() => record && commit({ ...record, outcomeAnswered: true })}
+          />
+        ) : null
+      }
+    />
+  );
+
+  // 배치(#168). 폰(한 칸)은 문서 순서대로 보인다:
+  // - 결과 전(1명): 소개 → 링크 보내기 → 참여자·참여 폼 → "두 명 이상…" → 방장 설정
+  // - 결과 있음:    소개 → (참여 전) 나도 출발역 넣기 → 결과 → 참여자·참여 폼 → 링크 다시 보내기 → 방장 설정
+  // 참여자·참여 폼 묶음은 두 경우 모두 RoomShell 자식 중 같은 자리(소개 묶음·결과 자리 다음)에 둔다. 두 번째 사람이 들어와 결과가 생겨도 이 묶음은
+  // 다시 그려지지 않고(넣던 이름·역 검색어·포커스가 그대로) 결과와 안내 칸이 그 앞뒤 자리에 들고 난다. 빈 자리는 null로 둔다.
+  // 두 칸(wide)에서는 MAIN이 오른쪽 칸 전체, SIDE 셋이 왼쪽 칸에 차례로 쌓인다.
   return (
     <RoomShell split="room">
-      {/* 왼쪽 칸(폰에서는 위): 소개. 결과 전에는 링크 보내기·참여자·참여 폼까지 */}
       <div className={ROOM_SIDE}>
         <RoomIntro
           title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"}
@@ -282,7 +303,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           }
         />
         <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
-
         {enough ? (
           canJoinHere ? (
             <JumpButton targetId={JOIN_FORM_ID} focus="input" primary className="wide:hidden">
@@ -290,58 +310,26 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             </JumpButton>
           ) : null
         ) : (
-          <>
-            {share}
-            {roomPeopleBlock}
-          </>
+          share
         )}
       </div>
 
-      {/* 오른쪽 칸(폰에서는 가운데): 결과 */}
-      <div className={ROOM_MAIN}>
-        {enough ? (
-          <RoomResult
-            roomId={roomId}
-            room={room}
-            participantToken={token}
-            participantId={participantId}
-            isHost={isHost}
-            decision={decision}
-            onRoomGone={() => setResultGone(true)}
-            onResultSeen={() => {
-              if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
-            }}
-            renderAfter={(view) =>
-              joined && token && meetingDay ? (
-                <OutcomeCard
-                  roomId={roomId}
-                  participantToken={token}
-                  topStationCode={view.candidates[0]?.stationCode ?? ""}
-                  roomHash={room.roomHash}
-                  resultSeenAt={record?.resultSeenAt}
-                  answered={Boolean(record?.outcomeAnswered)}
-                  collapsed={!room.meetingDate}
-                  onAnswered={() => record && commit({ ...record, outcomeAnswered: true })}
-                />
-              ) : null
-            }
-          />
-        ) : (
+      {enough ? <div className={ROOM_MAIN}>{result}</div> : null}
+
+      <div className={ROOM_SIDE}>
+        {roomPeopleBlock}
+        {enough ? share : null}
+      </div>
+
+      {enough ? null : (
+        <div className={ROOM_MAIN}>
           <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
             두 명 이상 들어오면 결과를 볼 수 있어요.
           </section>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* 왼쪽 칸 아래(폰에서는 결과 아래): 결과가 있으면 참여자·참여 폼·링크 다시 보내기, 그리고 방장 설정·만료 안내 */}
       <div className={ROOM_SIDE}>
-        {enough ? (
-          <>
-            {roomPeopleBlock}
-            {share}
-          </>
-        ) : null}
-
         {isHost ? (
           <HostControls
             locked={room.locked}

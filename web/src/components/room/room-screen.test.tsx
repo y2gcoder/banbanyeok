@@ -138,18 +138,27 @@ describe("방 화면 배치(#168): 결과가 있으면 폰 첫 화면에 1위가
     expect(follows(result, screen.getByRole("heading", { name: "링크 다시 보내기" }))).toBe(true);
   });
 
-  it("넣는 중에 두 번째 사람이 들어와 폼이 결과 아래로 옮겨 가도 넣던 이름이 남는다", async () => {
+  it("넣는 중에 두 번째 사람이 들어와 결과가 생겨도 참여 폼은 다시 그려지지 않는다(이름·역 검색어·포커스가 그대로)", async () => {
     const user = userEvent.setup();
     const { client } = renderScreen();
     await screen.findByRole("heading", { name: "나도 출발역 넣기" });
     await user.type(screen.getByRole("textbox", { name: /이름 \(선택\)/ }), "서연");
+    const station = screen.getByRole("combobox", { name: "내 출발역" });
+    await user.type(station, "신");
+    expect(station).toHaveFocus();
 
     members = [{ id: "m9", token: "tok-other" }];
     await client.invalidateQueries({ queryKey: ["room", ROOM] });
-    const result = await screen.findByRole("heading", { name: "만날 역 후보" });
-    const form = screen.getByRole("heading", { name: "나도 출발역 넣기", level: 2 });
+    // 역 검색 목록이 열려 있으면 나머지 화면은 접근성 트리에서 가려지므로 역할 대신 제목 글자로 찾는다.
+    const result = await screen.findByText("만날 역 후보", { selector: "h2" });
+    const form = screen.getByText("나도 출발역 넣기", { selector: "h2" });
     expect(Boolean(result.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
-    expect(screen.getByRole("textbox", { name: /이름 \(선택\)/ })).toHaveValue("서연");
+    // 같은 요소가 그대로 문서에 남는다(다시 그려졌다면 이 요소는 떨어져 나가고 새 요소가 생긴다).
+    expect(station.isConnected).toBe(true);
+    expect(station).toHaveFocus();
+    expect(station).toHaveValue("신");
+    expect(screen.getByRole("textbox", { name: /이름 \(선택\)/, hidden: true })).toHaveValue("서연");
+    expect(follows(result, station)).toBe(true);
   });
 
   it("혼자인 방(결과 전)은 지금처럼 링크 보내기 → 참여자 → 결과 안내 순서이고 옮겨 가는 버튼이 없다", async () => {

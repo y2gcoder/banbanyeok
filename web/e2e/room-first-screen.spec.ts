@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { horizontalOverflow } from "./support/layout";
-import { prepareRoom, type RoomScenario } from "./support/room-fixture";
+import { prepareRoom, type RoomCrowd, type RoomScenario } from "./support/room-fixture";
 
 /**
  * 방 화면 첫 화면(#168). 결과가 있는 방은 폰(390×844)에서 스크롤 없이 1위 역 이름·사람별 줄·"이 역으로 정했어요"가 보여야 한다.
@@ -75,5 +75,51 @@ test.describe("방 첫 화면에 1위", () => {
       page.getByText("각자 출발역을 넣으면 모두에게 공평한 만날 역을 지하철 시간으로 계산해요."),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /들어온 사람 \d/ })).toHaveCount(0);
+  });
+
+  test("혼자인 방에서 넣는 중에 두 번째 사람이 들어와 결과가 생겨도 참여 폼은 그대로다(이름·역 검색어·포커스)", async ({
+    page,
+  }) => {
+    const crowd: RoomCrowd = { alone: true };
+    await page.clock.install({ time: new Date("2026-11-16T03:00:00Z") });
+    await page.goto(await prepareRoom(page, "friend-alone", undefined, "default", crowd));
+    await expect(page.getByText("두 명 이상 들어오면 결과를 볼 수 있어요.")).toBeVisible();
+    const form = page.getByRole("form", { name: "나도 출발역 넣기" });
+    const name = form.getByRole("textbox", { name: "내 이름 (선택)" });
+    await name.fill("서연");
+    const station = form.getByRole("combobox", { name: "내 출발역" });
+    // 역 검색 목록이 열리면 나머지 화면은 접근성 트리에서 가려지므로, 열기 전에 요소를 쥐고 그 요소로 확인한다.
+    const [formNode, nameNode, stationNode] = await Promise.all([
+      form.elementHandle(),
+      name.elementHandle(),
+      station.elementHandle(),
+    ]);
+    await station.pressSequentially("신");
+
+    // 두 번째 사람이 들어왔다: 다음 폴링(15초)에 방이 세 명으로 온다.
+    crowd.alone = false;
+    const polled = page.waitForRequest((req) => new URL(req.url()).pathname.endsWith("/rooms/qt7yvmsht3"));
+    await page.clock.fastForward(15_500);
+    await polled;
+    await expect(topCard(page)).toBeAttached();
+
+    // 같은 요소가 문서에 그대로 남아 있다(다시 그려졌다면 떨어져 나간다). 넣던 값과 포커스도 그대로.
+    const after = await page.evaluate(
+      ([formEl, nameEl, stationEl]) => {
+        const card = document.querySelector("article[aria-labelledby='cand-1']");
+        return {
+          connected: [formEl, nameEl, stationEl].every((el) => (el as Element).isConnected),
+          focused: document.activeElement === stationEl,
+          name: (nameEl as HTMLInputElement).value,
+          station: (stationEl as HTMLInputElement).value,
+          // 읽는 순서도 화면 순서와 같다: 결과 다음에 참여 폼.
+          formAfterResult: Boolean(
+            card && card.compareDocumentPosition(formEl as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+        };
+      },
+      [formNode, nameNode, stationNode] as const,
+    );
+    expect(after).toEqual({ connected: true, focused: true, name: "서연", station: "신", formAfterResult: true });
   });
 });

@@ -10,8 +10,14 @@ const HOST_TOKEN = "htok-layout-host";
 const HOST_PARTICIPANT_TOKEN = "ptok-layout-host";
 const HIDDEN_PARTICIPANT_TOKEN = "ptok-layout-hidden";
 
-/** `hidden-self`: 출발역을 숨긴 친구(참가자 2) 본인이 보는 화면. 본인에게만 본인의 출발역과 막차가 온다. */
-export type RoomScenario = "host-alone" | "friend-join" | "host-full" | "hidden-self";
+/**
+ * `hidden-self`: 출발역을 숨긴 친구(참가자 2) 본인이 보는 화면. 본인에게만 본인의 출발역과 막차가 온다.
+ * `friend-alone`: 방장 혼자인 방에 링크로 들어와 아직 참여 전인 화면(결과 전).
+ */
+export type RoomScenario = "host-alone" | "friend-join" | "host-full" | "hidden-self" | "friend-alone";
+
+/** 열어 둔 방의 인원을 테스트 중에 바꾼다: `alone`이면 방장 한 명, 아니면 세 명. 다음 방 요청부터 적용된다. */
+export type RoomCrowd = { alone: boolean };
 
 /**
  * 막차 칸(#62)의 갈래를 보려고 약속과 숨김만 바꾼 방.
@@ -190,16 +196,18 @@ export const FAKE_ROOM_HASH = "0123456789abcdef";
 /**
  * 시나리오의 방을 가로채 준비한다. 방장 시나리오는 이 기기에 방장 기록(토큰)을 넣어 둔다. 열 주소를 돌려준다.
  * `shareVersion`을 주면 방이 공유 번호·방 해시를 싣고 링크 미리보기(`/preview`, 결과 단계)도 답한다(공유 칸이 번호 붙은 링크를 쓴다).
+ * `crowd`를 넘기면 테스트 중에 `crowd.alone`을 바꿔 다음 방 요청부터 인원이 바뀐다(두 번째 사람이 들어오는 순간).
  */
 export async function prepareRoom(
   page: Page,
   scenario: RoomScenario,
   shareVersion?: number,
   variant: RoomVariant = "default",
+  crowd: RoomCrowd = { alone: scenario === "host-alone" || scenario === "friend-alone" },
 ): Promise<string> {
-  const listed = scenario === "host-alone" ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
-  const people =
-    variant === "all-hidden"
+  const peopleNow = () => {
+    const listed = crowd.alone ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
+    return variant === "all-hidden"
       ? listed.map((p, i) => ({
           ...p,
           hidden: true,
@@ -209,6 +217,7 @@ export async function prepareRoom(
           shortLabel: p.nickname ?? `참가자 ${i + 1}`,
         }))
       : listed;
+  };
   const meeting = meetingOf(variant);
   const asHost = scenario === "host-alone" || scenario === "host-full";
   if (asHost || scenario === "hidden-self") {
@@ -232,6 +241,7 @@ export async function prepareRoom(
     ] as const);
   }
   await page.route("**/api/v1/rooms/**", async (route) => {
+    const people = peopleNow();
     const request = route.request();
     const path = new URL(request.url()).pathname.replace("/api/v1", "");
     const authorization = request.headers().authorization;

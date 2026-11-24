@@ -1,5 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
-import { checkLayout, expectColumns } from "../e2e/support/checks";
+import { checkLayout, expectColumns, expectSideBesideOrBelowMain } from "../e2e/support/checks";
 import { VIEWPORTS } from "../e2e/support/viewports";
 
 /**
@@ -23,12 +23,16 @@ export async function sweepViewports(
   page: Page,
   actions: (page: Page) => Locator[],
   columns: (page: Page) => [Locator, Locator],
+  /** 좁으면 결과(오른쪽 칸)가 왼쪽 칸 대표 요소보다 먼저 온다(결과가 있는 방, #168). */
+  { resultFirstOnPhone = false }: { resultFirstOnPhone?: boolean } = {},
 ) {
   const original = page.viewportSize();
   for (const size of SIZES) {
     await page.setViewportSize({ width: size.width, height: size.height });
     await checkLayout(page, actions(page), true);
-    await expectColumns(page, ...columns(page));
+    const [side, main] = columns(page);
+    if (resultFirstOnPhone) await expectSideBesideOrBelowMain(page, side, main);
+    else await expectColumns(page, side, main);
   }
   if (original) await page.setViewportSize(original);
 }
