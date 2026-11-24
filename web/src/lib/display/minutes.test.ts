@@ -1,22 +1,31 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { displayAggregate, formatMinutes, formatSeconds, minutesFromSeconds, transferLabel } from "./minutes";
 
-// 기대값은 shared/app-logic DisplayRulesTest와 같다(p6-notes 4.1). 규칙을 바꾸면 양쪽을 같이 고친다.
-describe("DisplayMinutes 규칙", () => {
-  it.each([
-    [0, 0],
-    [29, 0],
-    [30, 1],
-    [89, 1],
-    [90, 2],
-    [2249, 37],
-    [2250, 38],
-    [3599, 60],
-    [65534, 1092],
-    [2147483647, 35791394],
-  ])("%i초 → %i분 (30초는 올림)", (seconds, minutes) => {
-    expect(minutesFromSeconds(seconds)).toBe(minutes);
+/** 계약 원본을 복사하지 않고 직접 읽는다. shared/app-logic DisplayMinutesVectorsTest도 같은 파일을 통과해야 한다. */
+type Vectors = {
+  formatVersion: number;
+  fromSeconds: { seconds: number; minutes: number }[];
+  format: { minutes: number; text: string }[];
+  formatSeconds: { seconds: number; text: string }[];
+  transferLabel: { transfers: number; text: string }[];
+};
+const vectors = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, "../../../../contracts/golden/display-minutes.json"), "utf8"),
+) as Vectors;
+
+describe("DisplayMinutes 규칙 — contracts/golden/display-minutes.json", () => {
+  it("벡터 형식이 1판이다", () => {
+    expect(vectors.formatVersion).toBe(1);
   });
+
+  it.each(vectors.fromSeconds.map((v) => [v.seconds, v.minutes] as const))(
+    "%i초 → %i분 (30초는 올림)",
+    (seconds, minutes) => {
+      expect(minutesFromSeconds(seconds)).toBe(minutes);
+    },
+  );
 
   it("음수·소수는 거부한다", () => {
     expect(() => minutesFromSeconds(-1)).toThrow(RangeError);
@@ -25,24 +34,19 @@ describe("DisplayMinutes 규칙", () => {
     expect(() => transferLabel(-1)).toThrow(RangeError);
   });
 
-  it.each([
-    [0, "0분"],
-    [59, "59분"],
-    [60, "1시간"],
-    [64, "1시간 4분"],
-    [120, "2시간"],
-    [160, "2시간 40분"],
-  ])("%i분 → %s", (minutes, text) => {
+  it.each(vectors.format.map((v) => [v.minutes, v.text] as const))("%i분 → %s", (minutes, text) => {
     expect(formatMinutes(minutes)).toBe(text);
   });
 
-  it("초를 바로 문구로", () => {
-    expect(formatSeconds(2250)).toBe("38분");
-  });
+  it.each(vectors.formatSeconds.map((v) => [v.seconds, v.text] as const))(
+    "초를 바로 문구로: %i초 → %s",
+    (seconds, text) => {
+      expect(formatSeconds(seconds)).toBe(text);
+    },
+  );
 
-  it("환승 표기", () => {
-    expect(transferLabel(0)).toBe("환승 없음");
-    expect(transferLabel(1)).toBe("환승 1번");
+  it.each(vectors.transferLabel.map((v) => [v.transfers, v.text] as const))("환승 표기: %i → %s", (transfers, text) => {
+    expect(transferLabel(transfers)).toBe(text);
   });
 
   it("파생 값은 반올림한 사람별 분에서 다시 계산한다", () => {

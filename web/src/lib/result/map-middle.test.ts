@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { RecommendResult } from "@/lib/api/types";
-import { evenTitle, MIDDLE_MIN_EXTRA, middleSentence, toMapMiddleView } from "./map-middle";
+import { minutesFromSeconds } from "@/lib/display/minutes";
+import { evenTitle, MIDDLE_MIN_EXTRA, middleSentence, middleView, toMapMiddleView } from "./map-middle";
 
 type Input = Parameters<typeof toMapMiddleView>[0];
 
@@ -65,6 +68,30 @@ describe("toMapMiddleView", () => {
     expect(view?.extra).toBe(12);
     const tied = toMapMiddleView(input([1800, 1800]), { stationCode: "top", minutes: [20, 20] });
     expect(tied?.personIndex).toBe(0);
+  });
+});
+
+/** 서버 MapMiddleRule과 같이 쓰는 벡터(계약 원본을 직접 읽는다). */
+const shared = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, "../../../../contracts/golden/display-minutes.json"), "utf8"),
+) as {
+  mapMiddle: {
+    minExtraMinutes: number;
+    vectors: { id: string; middleSeconds: number[]; topSeconds: number[]; shown: boolean }[];
+  };
+};
+
+describe("지도 한가운데 최소 차이 — contracts/golden/display-minutes.json", () => {
+  it("값이 서버와 같은 원본에서 온다", () => {
+    expect(MIDDLE_MIN_EXTRA).toBe(shared.mapMiddle.minExtraMinutes);
+  });
+
+  it.each(shared.mapMiddle.vectors.map((v) => [v.id, v] as const))("%s", (_id, vector) => {
+    const view = middleView(
+      { stationCode: "mid", stationName: "가운데", times: vector.middleSeconds.map((seconds) => ({ seconds })) },
+      { stationCode: "top", minutes: vector.topSeconds.map(minutesFromSeconds) },
+    );
+    expect(view !== null).toBe(vector.shown);
   });
 });
 

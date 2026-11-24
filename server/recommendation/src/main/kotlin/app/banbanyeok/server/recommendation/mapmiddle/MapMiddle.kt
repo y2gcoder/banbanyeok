@@ -19,6 +19,8 @@ internal object MapMiddleRule {
     /**
      * 지도 한가운데 역의 가장 오래 걸리는 시간이 추천 역보다 이만큼(표시 분) 이상 길 때만 보인다. 그보다 작으면 "지도 한가운데도
      * 괜찮다"는 뜻이라 비교가 의미 없다. 화면에 보이는 최장(사람별 반올림 분의 최댓값)끼리 뺀 값이라 표의 숫자와 맞는다.
+     * 웹(web/src/lib/result/map-middle.ts `MIDDLE_MIN_EXTRA`)과 같은 값이어야 하고 contracts/golden/display-minutes.json의
+     * `mapMiddle`로 둘 다 검사한다.
      */
     const val MIN_EXTRA_MINUTES = 5
 
@@ -77,6 +79,12 @@ internal object MapMiddleRule {
         middleSeconds: List<Int>,
         topMaxSeconds: Int,
     ): Int = DisplayMinutes.fromSeconds(middleSeconds.max()) - DisplayMinutes.fromSeconds(topMaxSeconds)
+
+    /** 지도 한가운데 역의 최장이 1위 추천 역보다 [MIN_EXTRA_MINUTES]분(표시 분) 이상 긴가. */
+    fun isFarEnough(
+        middleSeconds: List<Int>,
+        topMaxSeconds: Int,
+    ): Boolean = extraMinutes(middleSeconds, topMaxSeconds) >= MIN_EXTRA_MINUTES
 }
 
 /** [locations]로 "지도 한가운데" 역(#68)을 고른다. */
@@ -101,7 +109,7 @@ internal class MapMiddlePicker(
         if (points.size != origins.size) return null
         val column =
             MapMiddleRule.nearest(points, candidates, locations) { c -> times.all { it[c] != null } } ?: return null
-        val extra = MapMiddleRule.extraMinutes(times.map { requireNotNull(it[column]) }, topMaxSeconds)
-        return column.takeIf { candidates[it] != topCode && extra >= MapMiddleRule.MIN_EXTRA_MINUTES }
+        val farEnough = MapMiddleRule.isFarEnough(times.map { requireNotNull(it[column]) }, topMaxSeconds)
+        return column.takeIf { candidates[it] != topCode && farEnough }
     }
 }

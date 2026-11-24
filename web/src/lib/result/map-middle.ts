@@ -10,7 +10,10 @@ import { OG_TEXT } from "@/lib/copy/og-text";
 import { stationLabel, withJosa } from "@/lib/display/korean";
 import { formatMinutes, minutesFromSeconds } from "@/lib/display/minutes";
 
-/** 지도 한가운데 역의 가장 오래 걸리는 시간이 추천 역보다 이만큼(분) 이상 길 때만 보인다. 서버 규칙(`MapMiddleRule`)과 같다. */
+/**
+ * 지도 한가운데 역의 가장 오래 걸리는 시간이 추천 역보다 이만큼(분) 이상 길 때만 보인다. 서버 규칙(`MapMiddleRule`)과 같은 값이어야
+ * 하고 contracts/golden/display-minutes.json의 `mapMiddle`로 둘 다 검사한다.
+ */
 export const MIDDLE_MIN_EXTRA = 5;
 
 /** 이름이 이보다 길면 문장에서 "가장 오래 걸리는 사람"으로 부른다(말풍선에서 긴 별칭이 잘리면 어색하다). */

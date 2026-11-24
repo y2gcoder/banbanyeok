@@ -1,6 +1,7 @@
 // 생성 파일: contracts/time-slots.json·contracts/holidays.json에서 만든다(pnpm gen:time-slots). 직접 고치지 않는다.
 export const TIME_SLOTS = {
   default: "weekday-day",
+  serviceDayStart: "03:00",
   dayTypes: [
     {
       id: "weekday",

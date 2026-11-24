@@ -1,0 +1,43 @@
+{
+  "formatVersion": 1,
+  "description": "화면에 보이는 분 값 규칙의 테스트 벡터(#146). 서버·앱은 shared/app-logic DisplayMinutes, 웹은 web/src/lib/display/minutes.ts가 각자 구현하고 둘 다 이 파일을 모두 통과해야 한다. mapMiddle은 '지도 한가운데였다면' 비교(#68)를 보이는 최소 차이(표시 분)이고 서버 MapMiddleRule과 웹 map-middle.ts가 같은 값을 쓴다. 사람이 고친 규칙 파일이며 생성기가 없다. 규칙: docs/setup/p6-notes.md 4.1.",
+  "fromSeconds": [
+    {"seconds": 0, "minutes": 0},
+    {"seconds": 29, "minutes": 0},
+    {"seconds": 30, "minutes": 1, "note": "30초는 올림"},
+    {"seconds": 89, "minutes": 1},
+    {"seconds": 90, "minutes": 2},
+    {"seconds": 2249, "minutes": 37},
+    {"seconds": 2250, "minutes": 38},
+    {"seconds": 3599, "minutes": 60},
+    {"seconds": 65534, "minutes": 1092, "note": "od.bin 시간의 최댓값"},
+    {"seconds": 2147483647, "minutes": 35791394, "note": "32비트 최댓값에서도 넘치지 않는다"}
+  ],
+  "format": [
+    {"minutes": 0, "text": "0분"},
+    {"minutes": 59, "text": "59분"},
+    {"minutes": 60, "text": "1시간"},
+    {"minutes": 64, "text": "1시간 4분"},
+    {"minutes": 120, "text": "2시간"},
+    {"minutes": 160, "text": "2시간 40분"}
+  ],
+  "formatSeconds": [
+    {"seconds": 2250, "text": "38분"}
+  ],
+  "transferLabel": [
+    {"transfers": 0, "text": "환승 없음"},
+    {"transfers": 1, "text": "환승 1번"},
+    {"transfers": 2, "text": "환승 2번"}
+  ],
+  "mapMiddle": {
+    "minExtraMinutes": 5,
+    "rule": "지도 한가운데 역의 최장(사람별 표시 분의 최댓값)이 1위 추천 역의 최장보다 minExtraMinutes 이상 길 때만 보인다. 초가 아니라 화면에 보이는 분끼리 뺀다.",
+    "vectors": [
+      {"id": "extra_exactly_min_is_shown", "middleSeconds": [870, 600], "topSeconds": [600, 300], "shown": true, "note": "15분 - 10분 = 5분"},
+      {"id": "extra_below_min_is_hidden", "middleSeconds": [869, 600], "topSeconds": [600, 300], "shown": false, "note": "14분 - 10분 = 4분"},
+      {"id": "shown_minutes_decide_not_seconds", "middleSeconds": [899], "topSeconds": [629], "shown": true, "note": "초 차이는 270초(4.5분)지만 보이는 분은 15분 - 10분 = 5분"},
+      {"id": "longest_person_may_differ", "middleSeconds": [300, 900], "topSeconds": [600, 600], "shown": true, "note": "각 역의 최장끼리 비교한다: 15분 - 10분"},
+      {"id": "no_extra_is_hidden", "middleSeconds": [600, 600], "topSeconds": [600, 300], "shown": false}
+    ]
+  }
+}

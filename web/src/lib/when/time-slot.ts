@@ -18,8 +18,11 @@ export const DAY_TYPES = data.dayTypes as readonly { id: DayType; label: string 
 export const BANDS = data.bands as readonly { id: Band; label: string; hint: string; from: string; to: string }[];
 const HOLIDAYS: Readonly<Record<string, string>> = data.holidays;
 
-/** 03:00 전은 전날 운행일의 밤이다(심야 열차는 전날 시간표로 달린다). */
-const SERVICE_DAY_START = "03:00";
+/**
+ * 운행일이 바뀌는 시각 `HH:MM`("03:00"). 이 전은 전날 운행일의 밤이다(심야 열차는 전날 시간표로 달린다).
+ * contracts/time-slots.json의 밤 시간대가 끝나는 시각에서 생성된다(build-time-slots.ts).
+ */
+export const SERVICE_DAY_START: string = data.serviceDayStart;
 
 export function slotOf(day: DayType, band: Band): TimeSlot {
   return `${day}-${band}` as TimeSlot;
