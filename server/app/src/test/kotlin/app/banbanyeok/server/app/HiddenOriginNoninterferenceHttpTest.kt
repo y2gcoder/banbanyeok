@@ -415,17 +415,7 @@ private suspend fun RouteRoom.otherViewerResponses(): Map<String, String> {
                         withClue("$stage viewer=$viewer endpoint=$endpoint") {
                             assertNoHiddenOrigin(meetingStationsMasked(json))
                             json["station"]?.jsonObject?.let { assertCoarse(it) }
-                            // A room whose default favors the hidden person is fair for everyone else (#162).
-                            if (mode.favorTarget == room.hiddenId && endpoint == "/result") {
-                                json.getValue("mode").jsonPrimitive.content shouldBe "fair"
-                            }
-                            if (mode.favorTarget == room.hiddenId && endpoint == "/preview" && "basis" in json) {
-                                json
-                                    .getValue("basis")
-                                    .jsonObject
-                                    .getValue("mode")
-                                    .jsonPrimitive.content shouldBe "fair"
-                            }
+                            if (mode.favorTarget == room.hiddenId) assertFairDefault(json, endpoint)
                             if (hiddenTab) {
                                 json.getValue("code").jsonPrimitive.content shouldBe "FAVOR_TARGET_HIDDEN"
                             } else if (endpoint.startsWith("/result")) {
@@ -451,6 +441,17 @@ private suspend fun RouteRoom.otherViewerResponses(): Map<String, String> {
     // Guard against a vacuous scan: both hidden-origin candidates really reached other viewers' cards.
     cardStations shouldContainAll HIDDEN_ORIGINS
     return responses
+}
+
+/** A room whose default favors the hidden person is fair for everyone else (#162): its default result and the preview basis. */
+private fun assertFairDefault(
+    json: JsonObject,
+    endpoint: String,
+) {
+    when (endpoint) {
+        "/result" -> json.getValue("mode").jsonPrimitive.content shouldBe "fair"
+        "/preview" -> json["basis"]?.jsonObject?.let { it.getValue("mode").jsonPrimitive.content shouldBe "fair" }
+    }
 }
 
 /** The hidden person's cell (index 1) as others see it: whole five-minute steps, never 0 (#142), no transfers. */
