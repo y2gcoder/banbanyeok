@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { LineBadges } from "@/components/common/line-badge";
+import { NoStationMatch } from "@/components/common/supported-lines";
 import {
   Combobox,
   ComboboxContent,
@@ -11,14 +12,7 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import { type Station, searchStations } from "@/lib/stations";
-import { isCapitalAreaLine } from "@/lib/stations/lines";
-
-/** 계산할 수 없는 역의 안내. 수도권 노선인데 빠진 역(데이터 범위 밖)과 수도권 밖 역을 구분한다. */
-function unsupportedReason(station: Station): string {
-  return station.lines.some(isCapitalAreaLine)
-    ? "이 노선의 역은 아직 계산하지 못해요"
-    : "아직 수도권 지하철역만 계산할 수 있어요";
-}
+import { unsupportedReason } from "@/lib/stations/coverage";
 
 type Props = {
   id: string;
@@ -27,7 +21,10 @@ type Props = {
   describedBy?: string;
 };
 
-/** 역 자동완성. 초성("ㅎㄷ")·생략형("홍대")·"역" 접미사를 받는다. 수도권 밖 역은 보이되 고를 수 없다. */
+/**
+ * 역 자동완성. 초성("ㅎㄷ")·생략형("홍대")·"역" 접미사를 받는다. 계산하지 않는 역은 보이되 고를 수 없고 이유가 붙는다
+ * (lib/stations/coverage.ts). 결과가 없으면 계산 범위(수도권 전철 노선)를 함께 알린다.
+ */
 export function StationField({ id, value, onChange, describedBy }: Props) {
   const [query, setQuery] = useState(value?.name ?? "");
   // 부모가 역을 채워 넣은 경우(기억해 둔 "나", SEO 페이지의 미리 채우기)에도 입력 칸에 이름이 보이게 한다.
@@ -61,7 +58,7 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
         {...(describedBy ? { "aria-describedby": describedBy } : {})}
       />
       <ComboboxContent>
-        <ComboboxEmpty>{query.trim() ? "찾는 역이 없어요. 역 이름을 다시 확인해 주세요." : null}</ComboboxEmpty>
+        <ComboboxEmpty>{query.trim() ? <NoStationMatch /> : null}</ComboboxEmpty>
         <ComboboxList>
           {(station: Station) => (
             <ComboboxItem key={station.code} value={station} disabled={!station.supported}>

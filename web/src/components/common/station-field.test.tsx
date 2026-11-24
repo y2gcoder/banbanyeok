@@ -65,3 +65,22 @@ describe("역 자동완성: 키보드 선택", () => {
     expect(screen.getByTestId("picked")).toHaveTextContent(`강남/${station("강남").code}`);
   });
 });
+
+describe("역 자동완성: 계산 범위 안내(#170)", () => {
+  it("결과가 없으면 오타 안내와 함께 수도권 전철 노선만 계산한다고 알린다", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.type(screen.getByRole("combobox"), "서면");
+    const status = await screen.findByRole("status");
+    expect(status).toHaveTextContent("찾는 역이 없어요");
+    expect(status).toHaveTextContent(/아직 수도권 전철 \d+개 노선만 계산해요\. 이름이 맞는지도 확인해 주세요\./);
+  });
+
+  it("계산하지 않는 역은 표의 이유를 붙이고 고를 수 없다", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.type(screen.getByRole("combobox"), "용유");
+    const option = await screen.findByRole("option", { name: /용유.*관광용 열차가 띄엄띄엄 다녀서 계산하지 않아요/ });
+    expect(option).toHaveAttribute("aria-disabled", "true");
+  });
+});

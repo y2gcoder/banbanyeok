@@ -1,10 +1,11 @@
+import { SupportedLinesDisclosure } from "@/components/common/supported-lines";
 import { Wordmark } from "@/components/common/wordmark";
 import { HomeForm } from "@/components/home/home-form";
 import { CHANGE_NOTICE, UPCOMING_POLICY } from "./privacy/policy";
 import { PolicyChangeStrip, PolicyNoticeStrip } from "./privacy/policy-notice-strip";
 
 /**
- * 입력 화면. 폰에서는 한 칸(제목 → 입력), 두 칸 폭(wide, 640px~)부터는 왼쪽에 제목, 오른쪽에 입력 카드를 나란히 둔다.
+ * 입력 화면. 폰에서는 한 칸(제목 → 계산 범위 한 줄 → 입력), 두 칸 폭(wide, 640px~)부터는 왼쪽에 제목, 오른쪽에 입력 카드를 나란히 둔다.
  * 높이가 충분하면(tall) 왼쪽 제목이 입력 카드 옆에 붙어 있는다.
  * 처리방침 예정 판이 공지 기간이거나 중요한 변경의 안내 기간이면 맨 위에 한 줄 공지가 붙는다. 날짜는 브라우저가 판단해서 이 페이지는
  * 정적 그대로다.
@@ -29,6 +30,7 @@ export default function HomePage() {
             <br />딱 반반일까?
           </h1>
           <p className="text-[17px] text-ink-soft wide:text-[19px]">각자 지하철 시간으로 계산해요</p>
+          <SupportedLinesDisclosure />
         </section>
       </div>
       <div className="wide:rounded-2xl wide:border wide:border-rule wide:bg-surface wide:p-4 wide:shadow-[0_1px_0_var(--rule)] lg:p-8">

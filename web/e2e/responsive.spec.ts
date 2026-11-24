@@ -285,9 +285,9 @@ test.describe("데스크톱 키보드", () => {
 
   test("Tab으로 차례대로 이동하며 포커스가 보이고, 키보드만으로 입력·제출한다", async ({ page }) => {
     await open(page, screen("home"));
-    // Tab 순서: 워드마크 → 1번째 이름 → 1번째 역 → 2번째 이름 → 2번째 역 → 한 명 더 → 언제(요일) → 언제(시간대)
+    // Tab 순서: 워드마크 → 계산 범위 펼침 단추 → 1번째 이름 → 1번째 역 → 2번째 이름 → 2번째 역 → 한 명 더 → 언제(요일) → 언제(시간대)
     // → (만날 역 찾기는 비활성) → 방 만들기 링크. 라디오 묶음은 묶음마다 한 번 멈추고 방향키로 고른다.
-    const order = ["A", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT", "A"];
+    const order = ["A", "BUTTON", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT", "A"];
     // 처리방침 변경 공지 기간(공지 시작일 ≤ 오늘 < 시행일, 브라우저 날짜로 판단)에는 맨 위 한 줄 공지의 "자세히" 링크가 먼저 온다.
     // 공지는 하이드레이션 뒤에 그려지므로 입력 칸이 준비된 뒤에 센다.
     await expect(page.getByRole("textbox", { name: "1번째 사람 이름(선택)" })).toBeVisible();

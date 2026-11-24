@@ -1,4 +1,5 @@
-import { lineColor, lineShortLabel, lineTextColor } from "@/lib/stations/lines";
+import { smallBadgeTextColor } from "@/lib/stations/badge-contrast";
+import { lineColor, lineShortLabel } from "@/lib/stations/lines";
 
 /** 노선 배지. 숫자 노선은 원 안 숫자, 그 밖은 둥근 사각형 안 이름(노선도 관례). */
 function LineBadge({ line }: { line: string }) {
@@ -11,7 +12,7 @@ function LineBadge({ line }: { line: string }) {
           ? "inline-flex size-5 items-center justify-center rounded-full text-[11px] font-bold "
           : "inline-flex h-5 items-center rounded-full px-1.5 text-[11px] font-bold "
       }
-      style={{ backgroundColor: lineColor(line), color: lineTextColor(line) }}
+      style={{ backgroundColor: lineColor(line), color: smallBadgeTextColor(line) }}
     >
       <span className="sr-only">{line}</span>
       <span aria-hidden="true">{short}</span>
