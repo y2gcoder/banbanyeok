@@ -18,6 +18,7 @@ const MESSAGES: Readonly<Record<string, string>> = {
   STATION_UNAVAILABLE: "방을 만든 뒤 데이터가 바뀌어 계산할 수 없는 출발역이 있어요. 출발역을 다시 골라 주세요.",
   NOT_ENOUGH_PARTICIPANTS: "두 명 이상 들어와야 결과를 볼 수 있어요.",
   ROOM_CHANGED: "그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.",
+  FAVOR_TARGET_HIDDEN: "출발역을 숨긴 사람 쪽으로 맞춘 결과는 그 사람만 볼 수 있어요. 다른 기준을 골라 주세요.",
 };
 
 /** 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 계약의 오류 모양을 가진 그 밖의 4xx는 서버 message, 나머지는 결과 화면과 같은 안내. */

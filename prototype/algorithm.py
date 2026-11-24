@@ -27,8 +27,12 @@ def _rank(rows, keys, tolerance):
     return ordered
 
 
-def recommend(participants, candidates, times, transfers, mode='fair', tolerance=0):
-    """행=참가자, 열=후보역. null은 도달 불가. JSON 직렬화 가능한 결과를 반환한다."""
+def recommend(participants, candidates, times, transfers, mode='fair', tolerance=0, uncapped=()):
+    """행=참가자, 열=후보역. null은 도달 불가. JSON 직렬화 가능한 결과를 반환한다.
+
+    uncapped: 배려 상한을 두지 않는 참가자(방에서 출발역을 숨긴 사람, #162). favor의 상한 거르기에만 쓰고
+    공평 기준역·fair·fast 순위는 바꾸지 않는다. 비어 있으면 예전 결과와 같다.
+    """
     if (not 2 <= len(participants) <= 4 or
             any(not isinstance(p, str) or not p for p in participants) or
             len(set(participants)) != len(participants)):
@@ -38,6 +42,8 @@ def recommend(participants, candidates, times, transfers, mode='fair', tolerance
         raise ValueError('후보역 ID는 중복 없는 문자열이어야 합니다')
     if mode not in ['fair', 'fast'] + [f'favor:{p}' for p in participants]:
         raise ValueError('지원하지 않는 모드 또는 참가자입니다')
+    if any(p not in participants for p in uncapped):
+        raise ValueError('상한을 두지 않는 사람은 참가자여야 합니다')
     if not _number(tolerance):
         raise ValueError('허용오차는 0 이상의 유한한 분 값이어야 합니다')
     n, size = len(participants), len(candidates)
@@ -65,10 +71,10 @@ def recommend(participants, candidates, times, transfers, mode='fair', tolerance
     if mode.startswith('favor:') and rows:
         target = participants.index(mode.split(':', 1)[1])
         caps = {p: baseline['times'][i] + min(15, 0.5 * baseline['times'][i])
-                for i, p in enumerate(participants) if i != target}
+                for i, p in enumerate(participants) if i != target and p not in uncapped}
         eligible = []
         for row in rows:
-            if any(row['times'][i] > caps[p] for i, p in enumerate(participants) if i != target):
+            if any(row['times'][i] > caps[p] for i, p in enumerate(participants) if p in caps):
                 excluded.append({'stationId': row['stationId'], 'reasonCode': 'FAVOR_CAP_EXCEEDED'})
             else:
                 row['favoredMinutes'] = row['times'][target]

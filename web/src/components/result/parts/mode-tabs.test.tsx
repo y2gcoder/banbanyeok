@@ -48,6 +48,21 @@ describe("모드 탭", () => {
     expect(onChange).toHaveBeenCalledWith("favor", 0);
   });
 
+  it("고를 수 있는 사람이 없으면 배려 탭을 두지 않는다(모두 출발역을 숨긴 방, #162)", () => {
+    render(
+      <ModeTabs
+        mode="fair"
+        favorIndex={null}
+        people={[]}
+        onChange={vi.fn()}
+        defaultFavorIndex={0}
+        label="추천 기준"
+        panelId="p"
+      />,
+    );
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["공평하게", "빨리 만나기"]);
+  });
+
   it("키보드 화살표로 탭을 옮긴다", async () => {
     const onChange = vi.fn();
     render(

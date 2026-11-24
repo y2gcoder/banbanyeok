@@ -15,7 +15,7 @@ import type { ResultView } from "@/lib/result/view-model";
 import { toResultView } from "@/lib/result/view-model";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
-import { favorIndexOf } from "@/lib/room/view";
+import { canFavor, favorIndexOf } from "@/lib/room/view";
 import { DecisionBanner } from "./decision-banner";
 import type { DecisionControl } from "./use-room-decision";
 
@@ -86,21 +86,23 @@ export function RoomResult({
   const panelId = useId();
   const queryClient = useQueryClient();
   // 배려 대상 알약은 좁은 칸이라 짧은 이름(shortLabel). 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로.
-  const people = room.participants.map((p, index) => ({
-    index,
-    name: (p.shortLabel as string | undefined) ?? p.label,
-  }));
+  // 출발역을 숨긴 다른 사람은 고를 수 없다(그 사람 쪽 결과는 본인만 본다, #162).
+  const people = room.participants.flatMap((p, index) =>
+    canFavor(p) ? [{ index, name: (p.shortLabel as string | undefined) ?? p.label }] : [],
+  );
   const [pick, setPick] = useState<Pick>(() => ({ mode: room.mode, favorId: room.favorTarget ?? null }));
 
   // 배려 대상이 방에서 빠졌으면 첫 사람으로(없는 ID를 서버에 보내지 않는다).
   const favorIndexRaw =
     pick.favorId === null ? -1 : room.participants.findIndex((p) => p.participantId === pick.favorId);
-  const favorIndex = pick.mode === "favor" ? (favorIndexRaw >= 0 ? favorIndexRaw : (favorIndexOf(room) ?? 0)) : null;
+  const favorTargetIndex = favorIndexRaw >= 0 ? favorIndexRaw : (favorIndexOf(room) ?? 0);
+  const favorTarget = room.participants[favorTargetIndex];
+  // 그 사람이 출발역을 숨긴 다른 사람이면(방의 기본 기준이거나, 고른 뒤 숨겼다) 공평하게로 본다. 서버의 방 기본 기준·미리보기와 같은 규칙이다.
+  const mode: Mode = pick.mode === "favor" && favorTarget !== undefined && !canFavor(favorTarget) ? "fair" : pick.mode;
+  const favorIndex = mode === "favor" ? favorTargetIndex : null;
   const favorId = favorIndex === null ? null : (room.participants[favorIndex]?.participantId ?? null);
 
-  const query = useQuery(
-    roomResultQueryOptions(roomId, { mode: pick.mode, favor: favorId }, participantToken, participantId),
-  );
+  const query = useQuery(roomResultQueryOptions(roomId, { mode, favor: favorId }, participantToken, participantId));
   const data = query.data;
   // 약속 날짜·시각을 넘긴다: 새벽 약속이면 그 밤 막차가 약속보다 먼저 떠날 수 있다(막차 칸이 가려낸다).
   // 방과 결과는 따로 받는다. 둘의 공유 번호가 같을 때만 그 결과의 막차를 이 방의 약속과 함께 그린다: 약속을 바꾼 직후에는 새 약속
@@ -162,7 +164,7 @@ export function RoomResult({
     room.decision?.stationCode ?? null,
   );
   const choice: ChoiceContext = {
-    mode: pick.mode,
+    mode,
     participantCount: room.participants.length,
     variant: isHost ? "creator" : "received",
     ...(roomChoice ? { room: roomChoice } : {}),
@@ -174,12 +176,14 @@ export function RoomResult({
       : null;
   const notice = decision.kind === "member" ? decision.control.notice : null;
   const top = view?.candidates[0];
-  const longest = top ? top.people.reduce((a, b) => (b.seconds > a.seconds ? b : a)).index : 0;
+  // 배려 탭을 처음 누를 때 고를 사람: 고를 수 있는 사람 중 가장 오래 걸리는 사람.
+  const choosable = top ? top.people.filter((p) => people.some((q) => q.index === p.index)) : [];
+  const longest =
+    choosable.length > 0 ? choosable.reduce((a, b) => (b.seconds > a.seconds ? b : a)).index : (people[0]?.index ?? 0);
 
-  const change = (mode: Mode, index: number | null) => {
-    if (mode !== pick.mode)
-      track("mode_switched", { from_mode: pick.mode, to_mode: mode, favor_used: mode === "favor" });
-    setPick({ mode, favorId: index === null ? null : (room.participants[index]?.participantId ?? null) });
+  const change = (next: Mode, index: number | null) => {
+    if (next !== mode) track("mode_switched", { from_mode: mode, to_mode: next, favor_used: next === "favor" });
+    setPick({ mode: next, favorId: index === null ? null : (room.participants[index]?.participantId ?? null) });
   };
 
   return (
@@ -189,7 +193,7 @@ export function RoomResult({
         만날 역 후보
       </h2>
       <ModeTabs
-        mode={pick.mode}
+        mode={mode}
         favorIndex={favorIndex}
         people={people}
         onChange={change}

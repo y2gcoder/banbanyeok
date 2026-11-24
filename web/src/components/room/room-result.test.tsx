@@ -68,13 +68,42 @@ function renderResult(target: Room, onRoomGone: () => void = () => {}, reject?: 
 }
 
 describe("방 결과의 배려 대상 알약", () => {
-  it("짧은 이름(shortLabel)을 쓴다: 출발역이면 역 이름, 숨긴 사람은 참가자 N", () => {
+  it("짧은 이름(shortLabel)을 쓴다: 출발역이면 역 이름", () => {
     renderResult(room);
     const picker = screen.getByRole("group", { name: "누구 쪽으로 기울일까요?" });
     expect(picker).toHaveTextContent("홍대입구");
     expect(screen.getByRole("button", { name: "강남" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "참가자 3" })).toBeInTheDocument();
     expect(picker).not.toHaveTextContent("에서 오는 분");
+  });
+
+  it("출발역을 숨긴 다른 사람은 고를 수 없다(그 사람 쪽 결과는 본인만 본다, #162)", () => {
+    renderResult(room);
+    expect(screen.queryByRole("button", { name: "참가자 3" })).not.toBeInTheDocument();
+  });
+
+  it("숨긴 본인은 자기 쪽을 고를 수 있다", () => {
+    const self = {
+      ...room,
+      participants: room.participants.map((p) =>
+        p.participantId === "p3"
+          ? { ...p, isSelf: true, originCode: "s1q", originName: "동대문역사문화공원", shortLabel: "참가자 3" }
+          : p,
+      ),
+    };
+    renderResult(self);
+    expect(screen.getByRole("button", { name: "참가자 3" })).toBeInTheDocument();
+  });
+
+  it("방의 기본 배려 대상이 숨긴 다른 사람이면 공평하게로 받는다(미리보기와 같은 규칙)", () => {
+    renderResult({ ...room, favorTarget: "p3" });
+    expect(screen.getByRole("tab", { name: "공평하게" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("group", { name: "누구 쪽으로 기울일까요?" })).not.toBeInTheDocument();
+    expect(vi.mocked(api.getRoomResult)).toHaveBeenLastCalledWith(
+      room.roomId,
+      { mode: "fair", favor: null },
+      null,
+      expect.anything(),
+    );
   });
 
   it("shortLabel을 모르는 옛 서버면 label로 그린다", () => {

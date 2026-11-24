@@ -46,6 +46,14 @@ export const PROBLEMS = {
       meaning: "우대할 사람이 참가자 목록에 없습니다.",
     },
     {
+      code: "FAVOR_TARGET_HIDDEN",
+      slug: "favor-target-hidden",
+      status: 400,
+      title: "숨긴 사람 쪽 결과는 본인만 봄",
+      meaning:
+        "출발역을 숨긴 사람 쪽으로 맞춘 결과는 그 사람 본인만 볼 수 있습니다. 다른 사람에게는 '누구 쪽으로'에 그 사람이 없습니다.",
+    },
+    {
       code: "INVALID_NICKNAME",
       slug: "invalid-nickname",
       status: 400,

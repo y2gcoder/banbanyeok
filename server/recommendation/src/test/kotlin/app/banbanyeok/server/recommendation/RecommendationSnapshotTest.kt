@@ -116,7 +116,13 @@ private suspend fun snapshot(
     service: RecommendationService,
     request: RecommendRequest,
 ): List<String> {
-    val evaluation = service.evaluate(request)
+    // 숨긴 사람 쪽 결과는 본인만 받는다(#162). 다른 사람의 요청은 거절을 적는다.
+    val evaluation =
+        try {
+            service.evaluate(request)
+        } catch (e: RecommendationException) {
+            return listOf("error=${e.error}")
+        }
     val recommendation = evaluation.recommendation
     return listOf(
         "recommendation=$recommendation",

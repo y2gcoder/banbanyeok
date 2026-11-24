@@ -17,7 +17,7 @@ class GoldenContractTest {
 
     @Test
     fun scenariosAndSnapshotCoverSameIds() {
-        assertEquals(16, scenarios.size)
+        assertEquals(17, scenarios.size)
         assertEquals(scenarios.map { it.id }, expected.scenarios.map { it.id })
         assertEquals("minutes", expected.unit)
     }

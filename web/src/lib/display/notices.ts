@@ -65,8 +65,11 @@ export function evaluateNotices(input: SituationInput): Notice[] {
   if (topMax > LONG_TRAVEL_SECONDS) {
     const text = "누군가는 90분 넘게 걸려요. 한쪽 동네에서 만나는 게 나을 수도 있어요.";
     const longest = top.seconds.indexOf(topMax);
+    // 출발역을 볼 수 없는 사람(숨긴 다른 사람) 쪽 결과는 그 사람 본인만 본다(#162): 버튼을 내지 않는다.
     const cta =
-      input.mode === "favor" ? null : { favorIndex: longest, label: `${input.names[longest] ?? ""} 쪽으로 보기` };
+      input.mode === "favor" || codes[longest] === null
+        ? null
+        : { favorIndex: longest, label: `${input.names[longest] ?? ""} 쪽으로 보기` };
     notices.push({ kind: "LONG_TRAVEL", text, cta });
   }
   const similar = similarNotice(input);
