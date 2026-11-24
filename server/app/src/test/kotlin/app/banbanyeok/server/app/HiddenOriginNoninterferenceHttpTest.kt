@@ -140,6 +140,15 @@ class HiddenOriginNoninterferenceHttpTest :
                             "\"from\":{\"stationCode\":\"03v\",\"stationName\":\"03v역\"}",
                             "\"from\":{\"stationCode\":\"225\",\"stationName\":\"서쪽비공개역\"}",
                         ),
+                    "the right label repeated after the comparison" to
+                        SLOTS_BODY.replace("5분 덜 걸려요.", "5분 덜 걸려요. 참가자 2 출발역: 2위 동쪽비공개역"),
+                    "the right label once, but as an origin instead of the comparison" to
+                        SLOTS_BODY.replace(
+                            "2위 동쪽비공개역보다 가장 오래 걸리는 사람이 5분 덜 걸려요.",
+                            "참가자 2 출발역: 2위 동쪽비공개역.",
+                        ),
+                    "the right label in a frame that does not end the reason" to
+                        SLOTS_BODY.replace("5분 덜 걸려요.", "5분 덜 걸려요. 참가자 2는 그 근처예요."),
                     "the other hidden name in the previewed station's neighbours" to
                         SLOTS_BODY.replace("\"stage\":\"result\"", "\"stage\":\"result\",\"near\":\"서쪽비공개역\""),
                 )
@@ -159,10 +168,10 @@ private val SLOTS_BODY =
      "station":{"stationCode":"130","stationName":"동쪽비공개역"},
      "decision":{"stationCode":"130","stationName":"동쪽비공개역"},
      "candidates":[
-      {"rank":1,"stationCode":"31a","stationName":"31a역","reason":"2위 동쪽비공개역보다 가장 오래 걸리는 사람이 5분 덜 걸려요.",
+      {"rank":1,"stationCode":"31a","stationName":"31a역","reason":"가장 오래 걸리는 민수도 25분이에요. 2위 동쪽비공개역보다 가장 오래 걸리는 사람이 5분 덜 걸려요.",
        "routes":[{"participantId":"p1","legs":[{"line":"2호선","from":{"stationCode":"03v","stationName":"03v역"},
         "to":{"stationCode":"31a","stationName":"31a역"}}]}]},
-      {"rank":2,"stationCode":"130","stationName":"동쪽비공개역","reason":"1위 31a역보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
+      {"rank":2,"stationCode":"130","stationName":"동쪽비공개역","reason":"공평 모드 대안이에요. 1위 31a역보다 가장 오래 걸리는 사람이 5분 더 걸려요.",
        "routes":[{"participantId":"p1","legs":[{"line":"2호선","from":{"stationCode":"03v","stationName":"03v역"},
         "to":{"stationCode":"130","stationName":"동쪽비공개역"}}]}]}
      ]}
@@ -340,12 +349,54 @@ private fun previewFixture(snapshot: Map<String, String>): String =
 private const val MASK = "<meeting station>"
 
 /**
- * A copy with only the meeting-station slots blanked, by position: `candidates[i].stationCode/stationName`, the `to` of the
- * last leg of each route on that card (which must be the card's station), `station` and `decision` at the top level, and in
- * `candidates[i].reason` only the comparison label of the reason templates ("${'$'}rank위 ${'$'}name", `ReasonGenerator.rankLabel`),
- * for exactly the card that sentence compares with (2nd for the 1st card, 1st for the others). 130 and 225 are candidates,
- * so they may appear there; anywhere else (rest of the reasons, last trains, labels, other route stops, keys, future fields)
- * is still scanned. The spec's "meeting-station slots" case pins what this allows and rejects.
+ * [reason] with its comparison [label] blanked, only when the label appears exactly once and the whole reason is one of the
+ * [comparisonFrames] templates. Otherwise it is returned unchanged, so any hidden-origin text in it fails the scan.
+ */
+private fun reasonMasked(
+    reason: String,
+    label: String,
+): String {
+    val once = reason.split(label).size == 2
+    return if (once && comparisonFrames(label).any { it.matches(reason) }) reason.replace(label, MASK) else reason
+}
+
+/** `DisplayMinutes.format`: "5분", "1시간", "1시간 5분". */
+private const val DURATION = "(\\d+시간 \\d+분|\\d+시간|\\d+분)"
+
+/**
+ * The reason templates that carry the comparison label [label] (`ReasonGenerator`: `rankLabel` "N위 OO역" and `withWa`
+ * "N위 OO역과"), as whole reasons: "<first sentence> <comparison>" plus the optional tolerance note. The label appears only at
+ * the start of the comparison or after its fixed lead-in ("최장 시간은", "합계는", "<name>은").
+ */
+private fun comparisonFrames(label: String): List<Regex> {
+    val l = Regex.escape(label)
+    val wa = "$l(과|와)"
+    val d = DURATION
+    val person = "\\S+( \\d+)?(은|는)"
+    val comparisons =
+        listOf(
+            "${l}보다 가장 오래 걸리는 사람이 $d (덜|더) 걸려요\\.( 대신 시간 차이는 $d 더 작아요\\.)?",
+            "$wa 거의 같아요\\.",
+            "최장 시간은 ${l}보다 $d 길지만, (시간 차이가 더 작아요 \\($d vs $d\\)|동점 옵션 범위 안이에요)\\.",
+            "$wa 최장 시간은 같지만, 시간 차이가 더 작아요 \\($d vs $d\\)\\.",
+            "$wa 최장 시간과 차이가 같고, 합계가 $d 더 짧아요\\.",
+            "$wa 최장 시간은 (거의 )?같아요\\.( 시간 차이는 $d 더 작아요\\.)?",
+            "${l}보다 합쳐서 $d (더|덜) 걸려요\\.( 대신 가장 오래 걸리는 사람은 $d 덜 걸려요\\.)?",
+            "합계는 $wa (거의 )?같아요\\.( 가장 오래 걸리는 사람은 $d 덜 걸려요\\.)?",
+            "${l}보다 $person $d (더|덜) 걸려요 \\($d\\)\\.",
+            "$person $wa (거의 )?같은 ${d}이에요\\.",
+        )
+    return comparisons.map { Regex("^[^\\n]+? $it( \\($d 동점 옵션\\))?$") }
+}
+
+/**
+ * A copy with only the meeting-station slots blanked. Allowed only by structure, everything else is scanned:
+ * - JSON paths: `candidates[i].stationCode/stationName`, `candidates[i].routes[j].legs[last].to.stationCode/stationName`
+ *   (must be the card's station), top-level `station.stationCode/stationName` and `decision.stationCode/stationName`.
+ * - `candidates[i].reason`: the comparison label "${'$'}rank위 ${'$'}name" of exactly the card that sentence compares with (2nd
+ *   for the 1st card, 1st for the others), only when it appears once and the whole reason matches a [comparisonFrames]
+ *   template with the label at its fixed place.
+ * Keys are never allowed. The spec's "meeting-station slots" case pins what this allows and rejects.
  */
 private fun meetingStationsMasked(body: JsonObject): JsonObject {
     fun JsonObject.with(changes: Map<String, JsonElement>) = JsonObject(this + changes)
@@ -367,7 +418,7 @@ private fun meetingStationsMasked(body: JsonObject): JsonObject {
     ): Map<String, JsonElement> {
         val reason = card["reason"]?.jsonPrimitive?.content ?: return emptyMap()
         val label = comparisonLabel(index) ?: return emptyMap()
-        return mapOf("reason" to JsonPrimitive(reason.replace(label, MASK)))
+        return mapOf("reason" to JsonPrimitive(reasonMasked(reason, label)))
     }
 
     fun card(

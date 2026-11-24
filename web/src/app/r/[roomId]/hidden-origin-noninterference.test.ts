@@ -26,10 +26,12 @@ type Computed = Exclude<RoomPreview, { stage: "collecting" }>;
 // What this test checks is what the web layer adds on top of the DTO: no hidden-origin code or name except where the meeting
 // station itself goes, and the hidden person's coarse time (#142: whole 5 minutes, never 0) reaching the image input unchanged.
 //
-// "Where the meeting station goes" is found structurally, not by deleting the station's name from every string: the same
-// preview is rendered again with the station swapped for a sentinel. That render must contain no hidden-origin text at all, the
-// real render must be exactly that render with the station put back in the sentinel's places, and every string holding the
-// sentinel must be a station field or one of the pinned sentence frames below.
+// "Where the meeting station goes" is found structurally, not by deleting the station's name from strings: the same preview is
+// rendered again with the station swapped for a sentinel. Then
+//   1. that render contains no hidden-origin text at all, in any key or string;
+//   2. the sentinel appears only at a path in STATION_SLOTS and the whole string there matches that slot's frame (never in a key);
+//   3. for a hidden-origin station, the real render equals that render with the station put back at those slots only.
+// Everything else is rejected. The rejection cases at the bottom pin this.
 
 type Output = Awaited<ReturnType<typeof render>>;
 type Renderer = (preview: Computed) => Promise<Output>;
@@ -37,14 +39,27 @@ type Renderer = (preview: Computed) => Promise<Output>;
 const SENTINEL = { stationCode: "qqq", stationName: "만날역" };
 const S = SENTINEL.stationName;
 const PEOPLE = "(민수|참가자 \\d|지연)";
-/** The only places a meeting station's name may appear (share-copy.ts titles), with or without the site suffix. */
-const STATION_FRAMES = [
-  `^${S}$`,
-  `^${SENTINEL.stationCode}$`,
-  `^지금은 ${S}이 제일 (공평해요|빨라요)`,
-  `^지금은 ${PEOPLE} 쪽으로 ${S}이 좋아요`,
-  `^${S}에서 만나요`,
-].map((frame) => new RegExp(`${frame}( \\| 반반역)?$`));
+/** share-copy.ts titles that name the meeting station: `leadingTitle`'s four, the closed-room and the decided title. */
+const TITLE = `(${[
+  `지금은 ${S}이 제일 (공평해요|빨라요|나아요)`,
+  `지금은 ${PEOPLE} 쪽으로 ${S}이 좋아요`,
+  `${S}${OG_TEXT.sharedSuffix.replace("?", "\\?")}`,
+  `${S}${OG_TEXT.decidedSuffix}`,
+].join("|")})`;
+const SITE_SUFFIX = " \\| 반반역";
+/** The only places (output path → whole-string frame) the meeting station may appear. */
+const STATION_SLOTS: Record<string, RegExp> = {
+  "copy.card.stationCode": new RegExp(`^${SENTINEL.stationCode}$`),
+  "copy.card.stationName": new RegExp(`^${S}$`),
+  "copy.preview.title": new RegExp(`^${TITLE}$`),
+  "copy.message.title": new RegExp(`^${TITLE}$`),
+  "kakao.title": new RegExp(`^${TITLE}$`),
+  "metadata.title": new RegExp(`^${TITLE}$`),
+  "metadata.openGraph.title": new RegExp(`^${TITLE}${SITE_SUFFIX}$`),
+  "metadata.openGraph.images.0.alt": new RegExp(`^${TITLE}$`),
+  "metadata.twitter.title": new RegExp(`^${TITLE}${SITE_SUFFIX}$`),
+  "metadata.twitter.images.0.alt": new RegExp(`^${TITLE}$`),
+};
 
 async function render(preview: Computed) {
   getRoomPreview.mockResolvedValue(preview);
@@ -56,6 +71,8 @@ async function render(preview: Computed) {
   return { metadata, copy, kakao: roomKakaoMessage(ROOM_ID, preview) };
 }
 
+const mentionsSentinel = (text: string) => text.includes(S) || text.includes(SENTINEL.stationCode);
+
 /** Throws unless hidden-origin text in [renderer]'s output for [preview] is only where the meeting station goes. */
 async function assertOnlyStationSlots(preview: Computed, renderer: Renderer = render): Promise<void> {
   const real = await renderer(preview);
@@ -63,20 +80,21 @@ async function assertOnlyStationSlots(preview: Computed, renderer: Renderer = re
   blind.station = { ...blind.station, ...SENTINEL };
   const template = await renderer(blind);
   assertNoOrigin(template);
-  for (const text of strings(template)) {
-    if (text.includes(S) || text.includes(SENTINEL.stationCode)) {
-      expect(
-        STATION_FRAMES.some((frame) => frame.test(text)),
-        text,
-      ).toBe(true);
-    }
-  }
+  const slots: string[] = [];
+  walk(template, (path, text, isKey) => {
+    if (!mentionsSentinel(text)) return;
+    const frame = isKey ? undefined : STATION_SLOTS[path];
+    expect(frame?.test(text) === true, `meeting station at ${isKey ? "key " : ""}${path}: ${text}`).toBe(true);
+    slots.push(path);
+  });
   const { stationCode, stationName } = preview.station;
   if (HIDDEN_ORIGINS.includes(stationCode)) {
-    // 130 takes the same particles as the sentinel ("이", "에서"), so putting it back must give the real output exactly.
-    const filled = mapStrings(template, (text) =>
-      text.replaceAll(S, stationName).replaceAll(SENTINEL.stationCode, stationCode),
-    );
+    // 130 takes the same particles as the sentinel ("이", "에서"), so putting it back at the slots gives the real output.
+    const filled = structuredClone(template);
+    for (const path of slots) {
+      const text = get(filled, path) as string;
+      set(filled, path, text.replaceAll(S, stationName).replaceAll(SENTINEL.stationCode, stationCode));
+    }
     expect(real).toEqual(filled);
   } else {
     // Not a hidden origin: no allowance at all.
@@ -143,7 +161,7 @@ describe("hidden origin noninterference through sharing (#143, #157)", () => {
         leaky((o, input) => {
           o.copy.preview.description += ` 참가자 2 출발역: ${input.station.stationName}`;
         }),
-        /출발역: 만날역/,
+        /meeting station at copy\.preview\.description/,
       ],
       [
         "a person's name",
@@ -159,6 +177,43 @@ describe("hidden origin noninterference through sharing (#143, #157)", () => {
           Object.assign(o.metadata, { "130": true });
         }),
         /130/,
+      ],
+      [
+        "the meeting station as a public person's name",
+        leaky((o, input) => {
+          const person = o.copy.card?.people[0];
+          if (person) person.name = input.station.stationName;
+        }),
+        /meeting station at copy\.card\.people\.0\.name/,
+      ],
+      [
+        "the meeting station as a public person's last-train line",
+        leaky((o, input) => {
+          const person = o.copy.card?.people[0];
+          if (person) person.lastTrain = input.station.stationName;
+        }),
+        /meeting station at copy\.card\.people\.0\.lastTrain/,
+      ],
+      [
+        "the meeting station as the OG description",
+        leaky((o, input) => {
+          o.copy.preview.description = input.station.stationName;
+        }),
+        /meeting station at copy\.preview\.description/,
+      ],
+      [
+        "the meeting station's code as a key",
+        leaky((o, input) => {
+          if (o.copy.card) Object.assign(o.copy.card, { [input.station.stationCode]: true });
+        }),
+        /meeting station at key copy\.card\.qqq/,
+      ],
+      [
+        "the meeting station's title frame at an unlisted path",
+        leaky((o) => {
+          o.copy.message.text = o.copy.message.title;
+        }),
+        /meeting station at copy\.message\.text/,
       ],
     ];
 
@@ -179,22 +234,35 @@ function fixturePreview(wire: unknown): Computed {
   return preview;
 }
 
-function strings(value: unknown): string[] {
-  if (typeof value === "string") return [value];
-  if (Array.isArray(value)) return value.flatMap(strings);
-  if (value !== null && typeof value === "object") {
-    return Object.entries(value).flatMap(([key, child]) => [key, ...strings(child)]);
+/** Visits every key and string with its dotted path ("copy.card.people.0.name"); a key is visited with its own path. */
+function walk(value: unknown, visit: (path: string, text: string, isKey: boolean) => void, path = ""): void {
+  const at = (key: string | number) => (path === "" ? String(key) : `${path}.${key}`);
+  if (typeof value === "string") visit(path, value, false);
+  else if (Array.isArray(value)) {
+    for (const [i, child] of value.entries()) walk(child, visit, at(i));
+  } else if (value !== null && typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      visit(at(key), key, true);
+      walk(child, visit, at(key));
+    }
   }
-  return [];
 }
 
-function mapStrings<T>(value: T, f: (text: string) => string): T {
-  if (typeof value === "string") return f(value) as T;
-  if (Array.isArray(value)) return value.map((child) => mapStrings(child, f)) as T;
-  if (value !== null && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, child]) => [f(key), mapStrings(child, f)])) as T;
-  }
-  return value;
+function strings(value: unknown): string[] {
+  const out: string[] = [];
+  walk(value, (_, text) => out.push(text));
+  return out;
+}
+
+function get(value: unknown, path: string): unknown {
+  if (path === "") return value;
+  return path.split(".").reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], value);
+}
+
+function set(value: unknown, path: string, text: string): void {
+  const keys = path.split(".");
+  const last = keys.pop() as string;
+  (get(value, keys.join(".")) as Record<string, unknown>)[last] = text;
 }
 
 /** No allowlist: every key and string at every depth. */
