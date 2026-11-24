@@ -1,0 +1,24 @@
+# 첫 일치 분류가 우선한다. Dependabot PR에는 dependencies 라벨이 붙는다.
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+changelog:
+  categories:
+    - title: 기능
+      labels: [enhancement]
+      exclude:
+        authors: ['dependabot[bot]']
+    - title: 버그
+      labels: [bug]
+      exclude:
+        authors: ['dependabot[bot]']
+    - title: 개인정보·처리방침
+      labels: [privacy]
+      exclude:
+        authors: ['dependabot[bot]']
+    - title: 데이터
+      labels: [data]
+      exclude:
+        authors: ['dependabot[bot]']
+    - title: 내부
+      labels: [refactor, architecture, dependencies, github_actions, documentation]
+    - title: 그 밖
+      labels: ['*']

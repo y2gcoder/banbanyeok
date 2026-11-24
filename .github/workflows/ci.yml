@@ -67,6 +67,11 @@ jobs:
               - 'scripts/deploy-plan.sh'
               - 'scripts/deployed-server-sha.sh'
               - 'scripts/test-deploy-plan.sh'
+              - 'scripts/release-tag.sh'
+              - 'scripts/release-data-version.sh'
+              - 'scripts/create-deploy-release.sh'
+              - 'scripts/test-deploy-release.sh'
+              - '.github/release.yml'
               - 'web/scripts/smoke-deploy.sh'
               - 'web/scripts/test-smoke-deploy.py'
               - 'web/scripts/worker-version.sh'
@@ -238,6 +243,9 @@ jobs:
       - run: bash -n web/scripts/smoke-deploy.sh
       - run: shellcheck -S warning web/scripts/smoke-deploy.sh
       - run: python3 -B web/scripts/test-smoke-deploy.py
+      - run: bash -n scripts/release-tag.sh scripts/release-data-version.sh scripts/create-deploy-release.sh scripts/test-deploy-release.sh
+      - run: shellcheck scripts/release-tag.sh scripts/release-data-version.sh scripts/create-deploy-release.sh scripts/test-deploy-release.sh
+      - run: bash scripts/test-deploy-release.sh
       - run: bash scripts/test-deploy-plan.sh
       - run: bash web/scripts/test-worker-version.sh
         env:
