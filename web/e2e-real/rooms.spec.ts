@@ -200,11 +200,11 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
     viewer.page.getByRole("region", { name: "들어온 사람" }).getByRole("listitem").filter({ hasText: "참가자 2" }),
   ).toBeVisible();
   await expect(viewer.page.getByRole("region", { name: "들어온 사람" }).getByText("홍대입구")).toHaveCount(0);
-  // 반응형(U1): 참여 전 화면(참여 폼 + 결과). 넓으면 참여 폼과 결과가 나란히.
+  // 반응형(U1): 참여 전 화면(참여 폼 + 결과). 넓으면 왼쪽 칸(제목·참여 폼)과 결과가 나란히, 폰에서는 결과가 참여 폼보다 먼저다(#168).
   await sweepViewports(
     viewer.page,
     (p) => [p.getByRole("combobox", { name: "내 출발역" }), p.getByRole("tab", { name: "빨리 만나기" })],
-    (p) => [p.getByRole("form", { name: "나도 출발역 넣기" }), p.getByRole("region", { name: "만날 역 후보" })],
+    (p) => [p.getByRole("heading", { level: 1 }), p.getByRole("region", { name: "만날 역 후보" })],
   );
   await viewer.context.close();
 
