@@ -83,6 +83,21 @@ describe("역 자동완성: 한글 조합(#177)", () => {
   });
 });
 
+describe("역 자동완성: 조합 중 결과 없음(#177)", () => {
+  it("조합 중에는 '없음' 안내를 미루고, 확정한 뒤에도 없으면 알린다", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const input = screen.getByRole("combobox");
+    await user.type(input, "서울");
+    fireEvent.compositionStart(input, { data: "" });
+    fireEvent.input(input, { target: { value: "서울퓨" } });
+    expect(screen.queryByRole("option")).toBeNull();
+    expect(screen.queryByText("찾는 역이 없어요", { exact: false })).toBeNull();
+    fireEvent.compositionEnd(input, { data: "퓨" });
+    expect(await screen.findByRole("status")).toHaveTextContent("찾는 역이 없어요");
+  });
+});
+
 describe("역 자동완성: 계산 범위 안내(#170)", () => {
   it("결과가 없으면 오타 안내와 함께 수도권 전철 노선만 계산한다고 알린다", async () => {
     const user = userEvent.setup();
@@ -124,8 +139,18 @@ function stubListArea() {
   });
 }
 
-/** 아래 칸을 (x, y)에서 누른다: 누르기 시작(mousedown)부터 click까지. */
-function pressAt(element: Element, x: number, y: number) {
+/** 마우스로 (x, y)를 누른다. `detail`은 운영체제가 센 연속 클릭 수(더블클릭의 두 번째는 2). */
+function clickAt(element: Element, x: number, y: number, detail: number) {
+  fireEvent.mouseDown(element, { clientX: x, clientY: y, detail });
+  fireEvent.mouseUp(element, { clientX: x, clientY: y, detail });
+  fireEvent.click(element, { clientX: x, clientY: y, detail });
+}
+
+/** 손가락으로 (x, y)를 탭한다(iOS WebKit처럼 click detail은 늘 1). */
+function tapAt(element: Element, x: number, y: number, pointerId: number) {
+  const at = { clientX: x, clientY: y, pointerId, pointerType: "touch", isPrimary: true };
+  fireEvent.pointerDown(element, at);
+  fireEvent.pointerUp(element, at);
   fireEvent.mouseDown(element, { clientX: x, clientY: y, detail: 1 });
   fireEvent.mouseUp(element, { clientX: x, clientY: y, detail: 1 });
   fireEvent.click(element, { clientX: x, clientY: y, detail: 1 });
@@ -136,41 +161,65 @@ describe("역 자동완성: 고른 뒤 같은 자리의 두 번째 누름(#177)"
     vi.restoreAllMocks();
   });
 
-  /** 목록 자리 (150, 250)의 첫 항목을 마우스로 눌러 고른다. */
-  async function pickByMouse() {
+  /** 목록 자리 (150, 250)의 첫 항목을 마우스나 손가락으로 눌러 고른다. */
+  async function pick(by: "mouse" | "touch") {
     stubListArea();
     const user = userEvent.setup();
     render(<WithCheckbox />);
     await user.type(screen.getByRole("combobox"), "강남");
-    fireEvent.click(screen.getAllByRole("option")[0] as HTMLElement, { clientX: 150, clientY: 250, detail: 1 });
+    const option = screen.getAllByRole("option")[0] as HTMLElement;
+    if (by === "touch")
+      fireEvent.pointerDown(option, { pointerType: "touch", pointerId: 7, clientX: 150, clientY: 250 });
+    fireEvent.click(option, { clientX: 150, clientY: 250, detail: 1 });
     expect(screen.getByTestId("picked")).toHaveTextContent(`강남/${station("강남").code}`);
     return screen.getByRole("checkbox", { name: "아래 칸" });
   }
 
-  it("고른 자리를 바로 다시 누르면(누름 횟수와 무관) 아래 칸에 닿지 않는다", async () => {
-    const below = await pickByMouse();
-    pressAt(below, 155, 255);
+  it("마우스: 더블클릭의 두 번째 누름(detail 2)은 아래 칸에 닿지 않는다", async () => {
+    const below = await pick("mouse");
+    clickAt(below, 152, 252, 2);
     expect(below).not.toBeChecked();
   });
 
-  it("목록 자리라도 고른 자리에서 먼 곳을 누르면 그대로 닿는다", async () => {
-    const below = await pickByMouse();
-    pressAt(below, 280, 290);
+  it("마우스: 따로 누른 클릭(detail 1)은 고른 자리 바로 옆이어도 닿는다", async () => {
+    const below = await pick("mouse");
+    clickAt(below, 168, 250, 1);
     expect(below).toBeChecked();
   });
 
-  it("다른 곳을 누르면 바로 풀려서, 그 뒤로는 고른 자리도 막지 않는다", async () => {
-    const below = await pickByMouse();
-    pressAt(below, 150, 500);
+  it("마우스: 두 번째 누름 도중 키보드 Space(detail 0 click)는 막지 않고, 그 마우스 click만 막는다", async () => {
+    const below = await pick("mouse");
+    fireEvent.mouseDown(below, { clientX: 152, clientY: 252, detail: 2 });
+    fireEvent.click(below, { detail: 0 }); // 포커스된 체크박스에서 Space
     expect(below).toBeChecked();
-    pressAt(below, 150, 250);
+    fireEvent.mouseUp(below, { clientX: 152, clientY: 252, detail: 2 });
+    fireEvent.click(below, { clientX: 152, clientY: 252, detail: 2 });
+    expect(below).toBeChecked();
+  });
+
+  it("손가락: 고른 자리를 바로 다시 탭하면(detail 1이어도) 닿지 않고, 먼 곳·잠깐 뒤의 탭은 닿는다", async () => {
+    const below = await pick("touch");
+    tapAt(below, 155, 255, 8);
     expect(below).not.toBeChecked();
+    tapAt(below, 280, 290, 9);
+    expect(below).toBeChecked();
   });
 
-  it("고른 뒤 잠깐이 지나면 고른 자리도 다시 누를 수 있다", async () => {
-    const below = await pickByMouse();
+  it("손가락: 고른 뒤 잠깐이 지나면 고른 자리도 다시 탭할 수 있다", async () => {
+    const below = await pick("touch");
     await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
-    pressAt(below, 150, 250);
+    tapAt(below, 150, 250, 8);
+    expect(below).toBeChecked();
+  });
+
+  it("손가락: 두 번째 탭 도중 보조기기의 직접 활성화(detail 0 click)는 막지 않는다", async () => {
+    const below = await pick("touch");
+    fireEvent.pointerDown(below, { pointerType: "touch", pointerId: 8, clientX: 150, clientY: 250 });
+    fireEvent.click(below, { detail: 0 });
+    expect(below).toBeChecked();
+    // 그 탭이 끝난다(손을 뗀 뒤의 click은 삼킨다).
+    fireEvent.pointerUp(below, { pointerType: "touch", pointerId: 8, clientX: 150, clientY: 250 });
+    fireEvent.click(below, { clientX: 150, clientY: 250, detail: 1 });
     expect(below).toBeChecked();
   });
 
@@ -181,7 +230,7 @@ describe("역 자동완성: 고른 뒤 같은 자리의 두 번째 누름(#177)"
     await user.type(screen.getByRole("combobox"), "강남");
     await user.keyboard("{Enter}");
     const below = screen.getByRole("checkbox", { name: "아래 칸" });
-    pressAt(below, 150, 250);
+    clickAt(below, 150, 250, 2);
     expect(below).toBeChecked();
   });
 });
