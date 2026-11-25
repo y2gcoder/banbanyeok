@@ -51,7 +51,7 @@
         "stations": ["hsd", "1bp"],
         "seconds": 221,
         "operatorInterchange": true,
-        "basis": "부산교통공사 노선도와 철도산업정보센터의 개찰구 밖 연결 안내. 평시 보행은 별도 추정."
+        "basis": "부산교통공사 노선도와 철도산업정보센터 2017-01-10 이용자 여행 글의 개찰구 밖 연결. seconds의 221초는 보정 전 비교용이며 평시는 operatorInterchanges.seconds를 적용."
       }
     ]
   }
