@@ -11,6 +11,8 @@ push(main) ─▶ plan ─┬─ 기본(서버 먼저):  deploy-server ─▶ de
                     └─ 라벨 deploy:web-first:  deploy-web ─▶ deploy-server
 ```
 
+- 배포 후 릴리즈 생성 API가 `403 Resource not accessible by integration`을 반환하면 `release` 잡은 성공으로 끝나고 경고와 잡 요약에 생략 사실과 수동 발행 명령을 남긴다. 다음 릴리즈는 직전 태그부터 노트를 생성해 생략된 변경도 포함한다.
+
 ### 무엇을 배포하나: "직전 push"가 아니라 "운영에 나가 있는 커밋"과 비교
 
 `plan`은 서비스마다 **지금 운영에 나가 있는 커밋**을 읽어 `git diff <그 커밋> HEAD`에 그 서비스 경로가 있으면 배포한다(`scripts/deploy-plan.sh`).
