@@ -1,10 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
+import type { BanbanIndex } from "@/lib/result/banban-index";
 
 const loadRoomPreview = vi.fn<(roomId: string, signal: AbortSignal | undefined) => Promise<RoomPreview | null>>();
 vi.mock("@/lib/seo/room-preview", () => ({
   loadRoomPreview: (roomId: string, signal?: AbortSignal) => loadRoomPreview(roomId, signal),
 }));
+
+const drawn: (BanbanIndex | null | undefined)[] = [];
+vi.mock("@/components/og/shared-card", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/components/og/shared-card")>();
+  return {
+    ...original,
+    SharedCard: (props: Parameters<typeof original.SharedCard>[0]) => {
+      drawn.push(props.banban);
+      return original.SharedCard(props);
+    },
+  };
+});
 
 const { GET } = await import("./route");
 
@@ -49,6 +62,7 @@ const get = (search: string, roomId = ROOM) =>
 afterEach(() => {
   vi.useRealTimers();
   loadRoomPreview.mockReset();
+  drawn.length = 0;
 });
 
 describe("/r/[roomId]/og", () => {
@@ -129,5 +143,24 @@ describe("/r/[roomId]/og", () => {
     const response = await pending;
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
+  });
+
+  it("반반지수 시안(#202): 숨긴 사람이 있을 수 있는 방(5분 배수 시간)이면 등급을 빼고, 없으면(21·22분) 그린다", async () => {
+    const { room, dataVersion, basis, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
+    const resultOf = (seconds: number[]): RoomPreview => ({
+      stage: "result",
+      room,
+      dataVersion,
+      basis,
+      station: { ...station, times: seconds.map((s, index) => ({ label: `참가자 ${index + 1}`, seconds: s })) },
+    });
+    // 숨긴 참가자는 남에게 5분 단위로 올려 보인다(25·22분). 본인 화면은 21·22분이라 같은 방에서 등급이 갈린다.
+    loadRoomPreview.mockResolvedValue(resultOf([25 * 60, 22 * 60]));
+    expect((await get("?sv=9&dv=20261115.8&bbi=toptwo")).status).toBe(200);
+    expect(drawn).toEqual([null]);
+    drawn.length = 0;
+    loadRoomPreview.mockResolvedValue(resultOf([21 * 60, 22 * 60]));
+    expect((await get("?sv=9&dv=20261115.8&bbi=toptwo")).status).toBe(200);
+    expect(drawn.map((banban) => banban?.label)).toEqual(["딱 반반"]);
   });
 });
