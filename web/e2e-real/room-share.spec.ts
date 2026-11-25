@@ -127,7 +127,8 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   await pickStation(friend.page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
   await expect(friend.page.getByRole("checkbox")).toHaveCount(0);
   await friend.page.getByRole("button", { name: "참여하기" }).click();
-  await expect(friend.page.getByText("(나)")).toBeVisible();
+  const people = friend.page.getByRole("region", { name: "들어온 사람" });
+  await expect(people.getByText("(나)", { exact: true })).toBeVisible();
   const friendId = await friend.page.evaluate(
     (id) =>
       (JSON.parse(window.localStorage.getItem(`bby.room.${id}`) ?? "{}") as { participantId?: string }).participantId,

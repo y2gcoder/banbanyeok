@@ -24,6 +24,7 @@ public class RouteGraph(
     edgeTimes: IntArray,
     edgeWaits: IntArray,
     slotWaits: List<IntArray>,
+    public val formatVersion: Int = RouteGraphCodec.FORMAT_VERSION,
 ) {
     /** 화면 표시 노선 이름(웹 노선 색표의 키와 같은 말, 예: "2호선", "수인분당선"). */
     public val lines: List<String> = lines.toList()
@@ -41,6 +42,9 @@ public class RouteGraph(
     public val serviceCount: Int get() = serviceLine.size
 
     init {
+        schemaCheck(formatVersion in RouteGraphCodec.FORMAT_VERSION..RouteGraphCodec.REGIONAL_FORMAT_VERSION) {
+            "지원하지 않는 rg.bin formatVersion=$formatVersion"
+        }
         schemaCheck(registryVersion >= 1) { "registryVersion은 1 이상이어야 합니다" }
         schemaCheck(this.lines.isNotEmpty() && this.lines.size <= MAX_LINES) { "노선 수 범위 오류: ${this.lines.size}" }
         schemaCheck(this.lines.distinct().size == this.lines.size) { "노선 이름이 겹칩니다" }
@@ -65,8 +69,11 @@ public class RouteGraph(
             schemaCheck(table.size == serviceLine.size) { "구분 ${TimeSlot.ALL[i]} 대기표 길이가 계통 수와 다릅니다" }
             table.forEach {
                 schemaCheck(
-                    it in 1..MAX_SECONDS,
-                ) { "구분 ${TimeSlot.ALL[i]} 대기 $it 초는 1..$MAX_SECONDS 이어야 합니다" }
+                    it in 1..MAX_SECONDS ||
+                        (formatVersion == RouteGraphCodec.REGIONAL_FORMAT_VERSION && it == UNAVAILABLE_WAIT),
+                ) {
+                    "구분 ${TimeSlot.ALL[i]} 대기 $it 초는 형식 $formatVersion 에서 허용되지 않습니다"
+                }
             }
         }
     }
@@ -78,11 +85,14 @@ public class RouteGraph(
         schemaCheck(targets[e] in codes.indices) { "간선 $e 도착 노드 범위 오류: ${targets[e]}" }
         val wait = waitServices[e]
         schemaCheck(wait == NO_WAIT || wait in serviceLine.indices) { "간선 $e 대기 계통 범위 오류: $wait" }
-        if (wait != NO_WAIT) {
-            schemaCheck(codes[from] == codes[targets[e]]) { "간선 $e: 갈아타는 간선은 같은 역 안의 노드를 이어야 합니다" }
+        val outdoor = wait != NO_WAIT && codes[from] != codes[targets[e]]
+        if (outdoor) {
+            schemaCheck(formatVersion == RouteGraphCodec.REGIONAL_FORMAT_VERSION && wait == services[targets[e]]) {
+                "간선 $e: 외부 도보 환승은 rg v2와 도착 계통 대기가 필요합니다"
+            }
         }
         // 타고 가는 간선은 0초일 수 없다. 갈아타는 간선의 걷기는 0초일 수 있다(같은 승강장, 대기만 더한다).
-        val range = if (wait == NO_WAIT) 1..MAX_SECONDS else 0..MAX_SECONDS
+        val range = if (wait == NO_WAIT || outdoor) 1..MAX_SECONDS else 0..MAX_SECONDS
         schemaCheck(times[e] in range) { "간선 $e 시간 ${times[e]} 초가 범위 밖입니다" }
     }
 
@@ -115,6 +125,24 @@ public class RouteGraph(
         codes.indices.groupBy { codes[it] }.mapValues { it.value.toIntArray() }
     }
 
+    /** 역 코드를 보존하는 외부 도보 연결. 승차 대기를 뺀 방향별 보행 시간이다. */
+    public val outdoorWalks: Map<Int, Map<Int, Int>> by lazy {
+        if (formatVersion == RouteGraphCodec.FORMAT_VERSION) {
+            emptyMap()
+        } else {
+            val walks = mutableMapOf<Int, MutableMap<Int, Int>>()
+            for (v in codes.indices) {
+                for (e in starts[v] until starts[v + 1]) {
+                    val target = codes[targets[e]]
+                    if (waitServices[e] == NO_WAIT || target == codes[v]) continue
+                    val from = walks.getOrPut(codes[v], ::mutableMapOf)
+                    from[target] = minOf(from[target] ?: MAX_SECONDS, times[e])
+                }
+            }
+            walks.mapValues { it.value.toMap() }
+        }
+    }
+
     internal val rawServiceLines: IntArray get() = serviceLine
     internal val rawCodes: IntArray get() = codes
     internal val rawServices: IntArray get() = services
@@ -131,6 +159,9 @@ public class RouteGraph(
         /** 타고 가는 간선(대기 없음, 환승 아님). */
         public const val NO_WAIT: Int = -1
         public const val MAX_SECONDS: Int = 65534
+
+        /** rg v2에서만 쓰는 대기 예약값. 이 구분에 이 계통을 탈 수 없다. */
+        public const val UNAVAILABLE_WAIT: Int = 0xFFFF
         internal const val MAX_LINES = 255
         internal const val MAX_LINE_BYTES = 255
         internal const val MAX_SERVICES = 254
@@ -141,6 +172,7 @@ public class RouteGraph(
 /** rg.bin 인코더/디코더(리틀 엔디언). 형식은 contracts/data-format.md §11. */
 public object RouteGraphCodec {
     public const val FORMAT_VERSION: Int = 1
+    public const val REGIONAL_FORMAT_VERSION: Int = 2
     public const val HEADER_SIZE: Int = 32
     private const val U8_NONE = 0xFF
     private val MAGIC = byteArrayOf('B'.code.toByte(), 'B'.code.toByte(), 'R'.code.toByte(), 'G'.code.toByte())
@@ -148,7 +180,7 @@ public object RouteGraphCodec {
     public fun encode(graph: RouteGraph): ByteArray {
         val out = Writer()
         MAGIC.forEach { out.u8(it.toInt() and 0xff) }
-        out.u16(FORMAT_VERSION)
+        out.u16(graph.formatVersion)
         out.u16(HEADER_SIZE)
         out.u32(0)
         out.u32(graph.registryVersion)
@@ -212,10 +244,12 @@ public object RouteGraphCodec {
             times,
             waits,
             slotWaits,
+            header.version,
         )
     }
 
     private class Header(
+        val version: Int,
         val registryVersion: Int,
         val nodes: Int,
         val edges: Int,
@@ -232,7 +266,7 @@ public object RouteGraphCodec {
         for (i in MAGIC.indices) schemaCheck(bytes[i] == MAGIC[i]) { "rg.bin magic이 'BBRG'가 아닙니다" }
         r.skip(MAGIC.size)
         val version = r.u16()
-        schemaCheck(version == FORMAT_VERSION) { "지원하지 않는 rg.bin formatVersion=$version (지원: $FORMAT_VERSION)" }
+        schemaCheck(version in FORMAT_VERSION..REGIONAL_FORMAT_VERSION) { "지원하지 않는 rg.bin formatVersion=$version" }
         val headerSize = r.u16()
         schemaCheck(headerSize >= HEADER_SIZE && headerSize <= bytes.size) { "headerSize=$headerSize 가 올바르지 않습니다" }
         val flags = r.u32()
@@ -249,7 +283,7 @@ public object RouteGraphCodec {
         schemaCheck(slotCount == TimeSlot.ALL.size) { "구분 수 $slotCount 는 ${TimeSlot.ALL.size}이어야 합니다" }
         schemaCheck(r.u16() == 0) { "reserved 영역이 0이 아닙니다" }
         r.seek(headerSize)
-        return Header(registryVersion.toInt(), nodeCount.toInt(), edgeCount.toInt(), lineCount, serviceCount)
+        return Header(version, registryVersion.toInt(), nodeCount.toInt(), edgeCount.toInt(), lineCount, serviceCount)
     }
 
     private const val MAX_EDGES = 1_000_000L

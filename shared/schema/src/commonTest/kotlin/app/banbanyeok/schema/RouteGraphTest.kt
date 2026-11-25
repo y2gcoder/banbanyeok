@@ -94,10 +94,46 @@ class RouteGraphTest {
         assertFailsWith<SchemaException> { RouteGraphCodec.decode(rg.copyOf(rg.size - 1)) }
         assertFailsWith<SchemaException> { RouteGraphCodec.decode(rg + byteArrayOf(0)) }
         assertFailsWith<SchemaException> { RouteGraphCodec.decode(rg.copyOf().also { it[0] = 'X'.code.toByte() }) }
-        assertFailsWith<SchemaException> { RouteGraphCodec.decode(rg.copyOf().also { it[4] = 2 }) }
+        assertFailsWith<SchemaException> { RouteGraphCodec.decode(rg.copyOf().also { it[4] = 3 }) }
         assertFailsWith<SchemaException> { RouteGraphCodec.decode(rg.copyOf().also { it[8] = 1 }) }
         // 구분 수(오프셋 28)는 12여야 한다.
         assertFailsWith<SchemaException> { RouteGraphCodec.decode(rg.copyOf().also { it[28] = 11 }) }
+    }
+
+    @Test
+    fun versionOneRejectsUnavailableBoardingWithoutOutdoorTransfers() {
+        val unavailable = rg.copyOf()
+        unavailable[unavailable.lastIndex - 1] = 0xff.toByte()
+        unavailable[unavailable.lastIndex] = 0xff.toByte()
+        assertFailsWith<SchemaException> { RouteGraphCodec.decode(unavailable) }
+    }
+
+    @Test
+    fun versionTwoRoundTripsOutdoorTransfersAndUnavailableBoarding() {
+        fun graph(
+            version: Int,
+            seconds: Int,
+        ) = RouteGraph(
+            1,
+            listOf("부산1호선", "동해선"),
+            intArrayOf(0, 1),
+            intArrayOf(1, 2),
+            intArrayOf(0, 1),
+            intArrayOf(0, 1, 2),
+            intArrayOf(1, 0),
+            intArrayOf(seconds, seconds),
+            intArrayOf(1, 0),
+            TimeSlot.ALL.map { intArrayOf(90, RouteGraph.UNAVAILABLE_WAIT) },
+            formatVersion = version,
+        )
+        val encoded = RouteGraphCodec.encode(graph(2, 221))
+        val decoded = RouteGraphCodec.decode(encoded)
+        assertEquals(2, decoded.formatVersion)
+        assertContentEquals(encoded, RouteGraphCodec.encode(decoded))
+        assertEquals(mapOf(1 to mapOf(2 to 221), 2 to mapOf(1 to 221)), decoded.outdoorWalks)
+        assertContentEquals(intArrayOf(90, RouteGraph.UNAVAILABLE_WAIT), decoded.waitsFor(TimeSlot.DEFAULT))
+        assertFailsWith<SchemaException> { graph(1, 221) }
+        assertFailsWith<SchemaException> { graph(2, 0) }
     }
 
     @Test
@@ -159,6 +195,19 @@ class RouteGraphTest {
     fun loadsTheGraphAgainstTheCoreDataSet() {
         val loaded = DataSetLoader.routeGraph(core(), rg)
         assertContentEquals(rg, RouteGraphCodec.encode(loaded))
+    }
+
+    @Test
+    fun regionalFormatRequiresAnExplicitLoaderSelection() {
+        val regional = rg.copyOf().also { it[4] = RouteGraphCodec.REGIONAL_FORMAT_VERSION.toByte() }
+        val pointers =
+            v4.files.copy(
+                routeGraph = ManifestFile("regional/rg.bin", Sha256.hex(regional), regional.size.toLong()),
+            )
+        val dataSet = core(v4.copy(files = pointers))
+        assertFailsWith<SchemaException> { DataSetLoader.routeGraph(dataSet, regional) }
+        val loaded = DataSetLoader.routeGraph(dataSet, regional, RouteGraphCodec.REGIONAL_FORMAT_VERSION)
+        assertContentEquals(regional, RouteGraphCodec.encode(loaded))
     }
 
     @Test

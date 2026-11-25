@@ -1,6 +1,7 @@
 package app.banbanyeok.core
 
 import app.banbanyeok.schema.RouteGraph
+import app.banbanyeok.schema.RouteGraphCodec
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeSlot
 import kotlin.random.Random
@@ -24,6 +25,7 @@ private fun graph(
     edges: List<Edge>,
     waits: IntArray,
     lines: List<String> = List(waits.size) { "L$it" },
+    formatVersion: Int = RouteGraphCodec.FORMAT_VERSION,
 ): RouteGraph {
     val sorted = edges.withIndex().sortedWith(compareBy({ it.value.from }, { it.index })).map { it.value }
     val starts = IntArray(nodes.size + 1)
@@ -40,10 +42,55 @@ private fun graph(
         sorted.map { it.seconds }.toIntArray(),
         sorted.map { it.wait }.toIntArray(),
         TimeSlot.ALL.map { waits.copyOf() },
+        formatVersion,
     )
 }
 
 class RoutesTest {
+    @Test
+    fun outdoorWalksChargeOnlyBoardedServicesAndUnavailableServicesCannotBeBoarded() {
+        val regional =
+            graph(
+                listOf(0 to 0, 1 to 0, 2 to 1, 3 to 1, 2 to 2, 4 to 2),
+                listOf(
+                    Edge(0, 1, 80),
+                    Edge(1, 0, 80),
+                    Edge(1, 2, 221, 1),
+                    Edge(2, 1, 221, 0),
+                    Edge(2, 3, 100),
+                    Edge(3, 2, 100),
+                    Edge(2, 4, 30, 2),
+                    Edge(4, 5, 30),
+                ),
+                intArrayOf(60, 90, RouteGraph.UNAVAILABLE_WAIT),
+                formatVersion = RouteGraphCodec.REGIONAL_FORMAT_VERSION,
+            )
+        val search = RouteSearch(regional, TimeSlot.DEFAULT)
+        val beforeWalk = requireNotNull(search.from(code(1)))
+        assertEquals(RouteCost(221, 0), beforeWalk.fastest(code(2)))
+        assertEquals(RouteCost(411, 0), beforeWalk.fastest(code(3)))
+        assertNull(beforeWalk.display(code(3)))
+        val firstService = requireNotNull(search.from(code(0)))
+        assertEquals(RouteCost(361, 0), firstService.fastest(code(2)))
+        assertEquals(RouteCost(551, 1), firstService.fastest(code(3)))
+        assertNull(firstService.display(code(2)))
+        assertNull(firstService.display(code(3)))
+        assertEquals(
+            RouteTrace(
+                RouteCost(551, 1),
+                listOf(
+                    RouteTraceSegment(code(0), code(1), "L0"),
+                    RouteTraceSegment(code(1), code(2), null),
+                    RouteTraceSegment(code(2), code(3), "L1"),
+                ),
+            ),
+            firstService.trace(code(3)),
+        )
+        assertEquals(RouteCost(140, 0), firstService.fastest(code(1)))
+        assertNull(firstService.fastest(code(4)))
+        assertNull(search.from(code(4)))
+    }
+
     // 역: 0 A, 1 B, 2 C, 3 D, 4 E. 계통: 0 2호선, 1 4호선, 2 7호선, 3 5호선. 대기는 모두 60초.
     // 빠른 길: A 2호선 → B 4호선 → C 7호선 → D (환승 2, 940초). 환승 1: A 2호선 → E 5호선 → D (1040초, 100초 더).
     private val nodes = listOf(0 to 0, 1 to 0, 1 to 1, 2 to 1, 2 to 2, 3 to 2, 4 to 0, 4 to 3, 3 to 3)

@@ -122,6 +122,7 @@ internal fun graphGate(
     net: Network,
     costs: List<List<Cost>>,
 ): Gate {
+    net.requireKnownWaits()
     val states = net.nodes.indices.map { shortest(net.graph, mapOf(it to 0)) }
     val stateViolations = stateTriangles(states)
     val excess = PhysicalExcess(net, physicalTriangleBounds(net))

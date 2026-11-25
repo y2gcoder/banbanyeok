@@ -74,6 +74,8 @@ internal data class Network(
     val tagoReport: JsonObject? = null,
     /** Blocking data problems (unmatched TAGO pairs etc.); the validation gate fails when non-empty. */
     val issues: List<String> = emptyList(),
+    /** Directional station-to-station walks without rail waits. */
+    val outdoor: Map<String, Map<String, Int>> = emptyMap(),
 )
 
 /** The same network with another slot's boarding waits: each edge's included wait and the origin seeds change. */

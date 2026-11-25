@@ -404,10 +404,12 @@ public object DataSetLoader {
     public fun routeGraph(
         core: DataSet,
         bytes: ByteArray,
+        expectedFormat: Int = RouteGraphCodec.FORMAT_VERSION,
     ): RouteGraph {
         val file = core.manifest.files.routeGraph ?: schemaFail("manifest에 files.routeGraph가 없습니다")
         schemaCheck(file.matches(bytes)) { "rg.bin의 길이/SHA-256이 manifest와 다릅니다" }
         val graph = RouteGraphCodec.decode(bytes)
+        schemaCheck(graph.formatVersion == expectedFormat) { "rg.bin 형식 ${graph.formatVersion}, 기대값 $expectedFormat" }
         schemaCheck(graph.registryVersion == core.od.registryVersion) { "rg.bin의 registryVersion이 다릅니다" }
         val platforms = graph.platforms
         platforms.keys.forEach { value ->

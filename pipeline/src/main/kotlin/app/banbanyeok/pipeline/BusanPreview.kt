@@ -28,21 +28,23 @@ internal fun busanPreview(
                 "comparison" to service.comparison,
             )
         }
-    val capitalSlots by lazy { StageContext(root).slots }
+    val capital = StageContext(root)
+    val busanSlots = TimeSlot.ALL.associateWith { busanNetwork(registry, services, transfers, it) }
+    val regionalRouteGraph = busanRouteAudit(capital, busanSlots, services)
     val slots =
         TimeSlot.ALL.associateWith { slot ->
             val missing = services.filter { slot !in it.headways }.map { it.label }
             if (missing.isNotEmpty()) {
                 obj("missingServices" to missing)
             } else {
-                val network = busanNetwork(registry, services, transfers, slot)
+                val network = busanSlots.getValue(slot)
                 val costs = matrixCosts(network)
                 val gate = graphGate(network, costs)
                 require(gate.passed) { "Busan $slot graph gate failed: ${gate.json}" }
                 obj(
                     "origins" to network.origins.size,
                     "graphGate" to gate.json,
-                    "crossRegionUnreachableCells" to verifyRegionalOd(capitalSlots.getValue(slot), network, costs),
+                    "crossRegionUnreachableCells" to verifyRegionalOd(capital.slots.getValue(slot), network, costs),
                 )
             }
         }
@@ -51,6 +53,7 @@ internal fun busanPreview(
             obj(
                 "region" to config.text("region"),
                 "services" to serviceReport,
+                "regionalRouteGraph" to regionalRouteGraph,
                 "slots" to JsonObject(slots.mapKeys { it.key.id }),
             ),
         ),

@@ -39,6 +39,12 @@ private val GROUP_LINES =
         "신림" to "신림선",
         "김포골드" to "김포골드라인",
         "GTX-A" to "GTX-A",
+        "부산1호선" to "부산1호선",
+        "부산2호선" to "부산2호선",
+        "부산3호선" to "부산3호선",
+        "부산4호선" to "부산4호선",
+        "부산김해경전철" to "부산김해경전철",
+        "동해선" to "동해선",
     )
 
 internal fun displayLine(group: String): String =
@@ -54,6 +60,7 @@ internal fun displayLine(group: String): String =
  */
 internal fun routeGraph(
     slots: Map<TimeSlot, Network>,
+    formatVersion: Int = RouteGraphCodec.FORMAT_VERSION,
     groupOf: (String) -> String,
 ): RouteGraph {
     val net = slots.getValue(TimeSlot.DEFAULT)
@@ -99,6 +106,7 @@ internal fun routeGraph(
             val slotWaits = slots.getValue(slot).waits
             IntArray(services.size) { slotWaits.getValue(services[it]) }
         },
+        formatVersion,
     )
 }
 
