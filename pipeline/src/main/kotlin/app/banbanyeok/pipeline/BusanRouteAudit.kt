@@ -140,7 +140,7 @@ private fun reachablePairs(
     tree: RouteTree,
 ): Int = destinations.count { tree.fastest(it) != null }
 
-private fun candidateCodes(
+internal fun candidateCodes(
     root: Path,
     stations: Map<String, Station>,
 ): List<String> {

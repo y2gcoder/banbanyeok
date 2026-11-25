@@ -15,7 +15,8 @@ internal fun busanPreview(
     val services = readBusanServices(root, input)
     val registry = RegistryCodec.parse(root.resolve("data/registry/stations.json").readText())
     val config = parseObject(root.resolve("data/config/busan-services.json").readText())
-    val transfers = BusanTransfers(config.getValue("transfers").jsonObject)
+    val transferRules = config.getValue("transfers").jsonObject
+    val transfers = BusanTransfers(transferRules)
     val serviceReport =
         services.map { service ->
             obj(
@@ -31,6 +32,9 @@ internal fun busanPreview(
     val capital = StageContext(root)
     val busanSlots = TimeSlot.ALL.associateWith { busanNetwork(registry, services, transfers, it) }
     val regionalRouteGraph = busanRouteAudit(capital, busanSlots, services)
+    val priorTransfers = BusanTransfers(transferRules, previousOperatorWalks = true)
+    val prior = TimeSlot.ALL.associateWith { busanNetwork(registry, services, priorTransfers, it) }
+    val walkAdjustment = busanWalkComparison(root, prior, busanSlots)
     val slots =
         TimeSlot.ALL.associateWith { slot ->
             val missing = services.filter { slot !in it.headways }.map { it.label }
@@ -54,6 +58,7 @@ internal fun busanPreview(
                 "region" to config.text("region"),
                 "services" to serviceReport,
                 "regionalRouteGraph" to regionalRouteGraph,
+                "walkAdjustment" to walkAdjustment,
                 "slots" to JsonObject(slots.mapKeys { it.key.id }),
             ),
         ),
