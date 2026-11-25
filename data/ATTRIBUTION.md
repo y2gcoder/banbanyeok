@@ -48,3 +48,14 @@
 | `data/config/last-train-official.csv`의 신분당선 표본 240건, `source-manifest.json`의 S8 영수증, `data/config/shinbundang-baseline.json`(사람이 확인한 페이지 골격·공지의 지문과 구조 개수만) | 신분당선 운영사 DX라인 역별 시간표 16개 역(https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB001 ~ SB016)과 시각표 변경 공지(https://www.shinbundang.co.kr/notice/notice1_view.jsp?viewNo=1358, 1356), 2026-11-21 받음(사람이 역마다 한 번). 표본은 받은 페이지에서 `shinbundang-samples` 명령이 칸마다 막차 출발 분·행선지를 읽어 만든다 | 이용 조건 표기 없음(사이트 하단 `COPYRIGHT ⓒ DXLINE. ALL RIGHTS RESERVED.`만). **대조용으로만 쓴다**(2026-11-21 운영자 결정, #64 법률 검토 목록): 페이지 원문은 커밋하지 않고(`data/raw/shinbundang/`, git 제외) 칸마다 분·행선지와 영수증(페이지별 SHA-256·받은 시각, 공지 시행일)만 기록한다. 표의 원천으로 쓰지 않는다 |
 | `data/config/last-train-official.csv`의 공항철도 표본 | 공항철도 역별 시간표(https://www.airportrailroad.com/train/normal/info/010/0), 2026-11-20 손으로 옮겨 적음 | 대조용 사실값(시각·행선지)만 기록. 표의 원천으로 쓰지 않는다 |
 | `pipeline/src/test/resources/last-train/real-core*.json`(막차 오라클 대조용 실제 시간표 일부, #92) | 4호선·2호선·7호선의 사당·이수 둘레 역만, 서비스일 22:00 이후 줄만 잘라 담음(`prototype/gen_real_fixture.py`, 파일 안 `sources`에도 같은 내용). **시간표 줄**: 서울교통공사 열차운행시각표 S7(https://www.data.go.kr/data/15098251/fileData.do), 서울 열린데이터광장 OA-101 S5(https://data.seoul.go.kr/dataList/OA-101/A/1/datasetView.do), 국토교통부 TAGO 지하철정보 S6(https://www.data.go.kr/data/15098554/openapi.do). **네트워크 입력**: 환승 걷는 시간(`walks`·`stationWalks`)은 서울교통공사 환승역거리 소요시간 S4(OA-13290, https://data.seoul.go.kr/dataList/OA-13290/S/1/datasetView.do), 노선 그래프(`families`)의 서울교통공사 구간은 서울교통공사 역간거리 S3(OA-12034, https://data.seoul.go.kr/dataList/OA-12034/S/1/datasetView.do)에서 파생한 여행 그래프(코레일 구간과 역간 시간 `hops`는 위 S6), 역 코드·이름 연결은 국가철도공단 전국도시철도역사정보 S1(https://www.data.go.kr/data/15013205/standard.do). 코레일 XLSX(공공누리 4유형)는 쓰지 않음 | 서울 열린데이터광장 자료(S3·S4·S5)는 **서울특별시 공공데이터**(제공기관 서울교통공사)로 출처를 표시한다. 위 원문 페이지를 2026-11-21에 직접 확인한 현재 표기는 모두 이용허락범위 제한 없음이다. 수집 당시 영수증(`source-manifest.json`)에는 S3·S4·S5가 공공누리 제1유형으로 적혀 있고 그대로 보존한다(영수증 문구는 `SeoulApi.kt` 등이 고정으로 기록하며 이번 범위 밖). 원 응답의 일부이며 공식 시간표가 아니다 |
+
+## 부산권 원천 수집 (#180)
+
+원본 파일은 `data/raw/busan/`에 두고, 이용허락과 파일 해시는 `source-manifest.json`에 기록합니다.
+
+| 원천 | 제공 기관과 자료 | 이용 조건 |
+|---|---|---|
+| B1 | [부산교통공사 부산도시철도 운행 정보](https://www.data.go.kr/data/15082980/fileData.do) | 공공데이터포털 표기 이용허락범위 제한 없음 |
+| B2 | [부산교통공사 역간 거리 및 소요시간 정보](https://www.data.go.kr/data/3033564/fileData.do) | 공공데이터포털 표기 이용허락범위 제한 없음 |
+| K1 | [국가철도공단 도시광역철도 운행정보](https://www.data.go.kr/data/15093878/fileData.do), [KRIC 제공 원본](https://data.kric.go.kr/rips/M_01_01/detail.do?id=900) | 공공데이터포털 표기 이용허락범위 제한 없음 |
+| M1 | [국토교통부 도시철도 전체노선](https://www.data.go.kr/data/15122916/fileData.do) | 공공데이터포털 표기 이용허락범위 제한 없음 |

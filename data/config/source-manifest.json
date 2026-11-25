@@ -258,5 +258,96 @@
     "samples_sha256": "c1a6b690ed1fdf4f63106cdd40d8e63c3e26d001c87c20877a9906ffeafb5d4a",
     "sha256": "4a9d47bbad7d54ef4c47aa5419a68de3bed7e109f1b0e2adbfb143ef628c5110",
     "source_url": "https://www.shinbundang.co.kr/dxline/dxline_time_gy.jsp?sb_cd=SB001 … SB016"
+  },
+  {
+    "bytes": 3595188,
+    "content_type": "application/octet-stream",
+    "effective_date": "2026-07-22",
+    "effective_dates_by_line": {
+      "L2604": [
+        "2026-07-22"
+      ],
+      "S2601": [
+        "2026-07-22"
+      ],
+      "S2602": [
+        "2026-07-22"
+      ],
+      "S2603": [
+        "2026-07-22"
+      ]
+    },
+    "estimated": false,
+    "fetched_at": "2026-11-25T10:16:28.320794Z",
+    "file": "data/raw/busan/B1.csv",
+    "id": "B1",
+    "license": "이용허락범위 제한 없음 (data.go.kr/15082980)",
+    "request_body": null,
+    "rows": 3833,
+    "sha256": "30397f2aa38835dfc37c2093a02a6e02547eb8a9b635b187f0db4c9e19ec69b7",
+    "source_url": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003680384&fileDetailSn=1"
+  },
+  {
+    "bytes": 3515,
+    "content_type": "application/octet-stream",
+    "effective_date": "2025-03-25",
+    "estimated": false,
+    "fetched_at": "2026-11-25T10:16:28.413885Z",
+    "file": "data/raw/busan/B2.csv",
+    "id": "B2",
+    "license": "이용허락범위 제한 없음 (data.go.kr/3033564)",
+    "request_body": null,
+    "rows": 114,
+    "sha256": "7f913662cb61c16e7648dcb5024e6d9ff60a66bdae6860ec5cb6731f0b970916",
+    "source_url": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003113886&fileDetailSn=1"
+  },
+  {
+    "busan_rows": 8568,
+    "bytes": 17949564,
+    "content_type": "application/octet-stream",
+    "effective_date": "mixed; see effective_dates_by_line",
+    "effective_dates_by_line": {
+      "I26K6": [
+        "2026-05-31"
+      ],
+      "L2604": [
+        "2022-08-31"
+      ],
+      "L48B1": [
+        "2022-04-27"
+      ],
+      "S2601": [
+        "2022-08-31"
+      ],
+      "S2602": [
+        "2022-08-31"
+      ],
+      "S2603": [
+        "2022-08-31"
+      ]
+    },
+    "estimated": false,
+    "fetched_at": "2026-11-25T10:17:07.816235Z",
+    "file": "data/raw/busan/K1.xlsx",
+    "id": "K1",
+    "license": "이용허락범위 제한 없음 (data.go.kr/15093878)",
+    "request_body": null,
+    "rows": 223425,
+    "sha256": "218f76dd53c4b9e1f248a8e07ab6879763495958714ee377761944e40cd94bc4",
+    "source_url": "https://data.kric.go.kr/rips/dataset/download.file?type=filedata&id=900&operation=1"
+  },
+  {
+    "bytes": 45344,
+    "content_type": "application/octet-stream",
+    "effective_date": "2025-12-11",
+    "estimated": false,
+    "fetched_at": "2026-11-25T10:17:07.921101Z",
+    "file": "data/raw/busan/M1.csv",
+    "id": "M1",
+    "license": "이용허락범위 제한 없음 (data.go.kr/15122916)",
+    "request_body": null,
+    "rows": 1103,
+    "sha256": "8a60490ea582a62ce859877380e4b96b34416c536d96b1dcb1a869426bedc363",
+    "source_url": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003561913&fileDetailSn=1"
   }
 ]
