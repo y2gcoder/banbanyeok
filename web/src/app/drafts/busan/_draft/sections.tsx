@@ -286,36 +286,45 @@ export function CopySection() {
 
 const ERROR_COPY: {
   code: "REGION_MISMATCH" | "SCHEDULE_UNAVAILABLE";
-  where: string;
+  raises: string;
+  shown: string;
   current: string;
-  variants: { id: string; text: string; note: string }[];
+  variants: { id: string; text: string; note: string; scope?: string }[];
 }[] = [
   {
     code: "REGION_MISMATCH",
-    where:
-      "방 참여·출발역 고치기·만날 역 정하기·결과·미리보기(지금은 서버 문구가 그대로), 직접 추천·옛 공유 링크(지금은 일반 안내). 방 만들기에서는 나지 않아요(방장 한 명이라 견줄 역이 없어요).",
+    raises:
+      "방 참여·출발역 고치기·만날 역 정하기(요청에서 새로 고른 역이 방 권역과 다를 때), 방 결과·미리보기(이미 두 권역이 섞인 방이면 아무도 역을 새로 고르지 않아도 열기만 하면), 직접 추천·옛 공유 링크. 방 만들기에서는 나지 않아요(방장 한 명이라 견줄 역이 없어요).",
+    shown:
+      "참여·출발역 고치기는 폼 안에, 만날 역 정하기는 알림 칸에, 방 결과 탭은 오류 카드에 서버 문구가 그대로 보여요. 미리보기는 화면에 문구가 없어요(공유 칸과 링크 메타데이터가 기본 초대로 돌아가요). 직접 추천·옛 공유 링크는 일반 안내예요.",
     current: "방과 추천은 한 권역 안에서 계산합니다",
     variants: [
       {
         id: "A",
         text: "한 번에 한 권역 안에서만 계산해요. 같은 권역의 역으로 골라 주세요.",
         note: "권역 이름을 말하지 않아 숨긴 출발역의 권역이 드러나지 않아요.",
+        scope: "오류가 나는 모든 곳에 써요. 이미 섞인 방의 결과 조회에도 맞아요.",
       },
       {
         id: "B",
         text: "수도권 역과 부산권 역은 함께 계산하지 않아요. 같은 권역의 역으로 골라 주세요.",
         note: "두 권역을 모두 말해 이유가 분명해요. 권역이 셋이 되면 문장을 바꿔야 해요.",
+        scope: "오류가 나는 모든 곳에 써요. 이미 섞인 방의 결과 조회에도 맞아요.",
       },
       {
         id: "C",
         text: "이 방은 다른 권역의 역으로 계산하고 있어요. 이 역으로 만나려면 새 방을 만들어 주세요.",
-        note: "다음 행동(새 방)을 줘요. '이 방'이라 방 화면에서만 쓸 수 있고, 방이 없는 직접 추천·옛 공유 링크의 400에는 A나 B를 따로 써야 해요. 방의 권역이 내 역과 다르다는 사실을 알려 줘서, 숨긴 사람만 남은 옛 방이면 그 권역을 짐작할 수 있어요(ADR-0008).",
+        note: "다음 행동(새 방)을 줘요. 방 권역이 내 역과 다르다는 사실을 알려 줘서, 숨긴 사람만 남은 옛 방이면 그 권역을 짐작할 수 있어요(ADR-0008).",
+        scope:
+          "방 참여·출발역 고치기·만날 역 정하기에서 새로 고른 역이 방 권역과 다를 때만 써요. 이미 두 권역이 섞인 방의 결과 조회와 직접 추천·옛 공유 링크에는 맞지 않아, A나 B 같은 공통 문구를 써요.",
       },
     ],
   },
   {
     code: "SCHEDULE_UNAVAILABLE",
-    where: "방 결과·미리보기, 직접 추천(지금은 '이 기준으로는 결과를 받지 못했어요…')",
+    raises: "방 결과·미리보기, 직접 추천",
+    shown:
+      "방 결과 탭은 오류 카드에 서버 문구가 그대로 보여요. 미리보기는 화면에 문구가 없어요(공유 칸과 링크 메타데이터가 기본 초대로 돌아가요). 직접 추천은 일반 안내('이 기준으로는 결과를 받지 못했어요…')예요.",
     current: "요청한 시간표를 확인하지 못했습니다",
     variants: [
       {
@@ -369,7 +378,9 @@ export function ErrorCopySection() {
                     <p className="text-[14px] font-semibold text-destructive">{v?.text}</p>
                   </div>
                   <span className="text-[11px] text-muted-foreground">지금: {e.current}</span>
-                  <span className="text-[11px] text-muted-foreground">나는 곳: {e.where}</span>
+                  {v?.scope ? <span className="text-[11px] font-semibold text-ink">쓰는 곳: {v.scope}</span> : null}
+                  <span className="text-[11px] text-muted-foreground">오류가 나는 곳: {e.raises}</span>
+                  <span className="text-[11px] text-muted-foreground">지금 화면에 보이는 것: {e.shown}</span>
                 </div>
               );
             })}
@@ -394,7 +405,7 @@ function dayReason(s: DraftStation, day: DayType): string | null {
 function JoinMock({ gate, style }: { gate: Gate; style: BadgeStyle }) {
   const [query, setQuery] = useState("센텀");
   const [picked, setPicked] = useState<DraftStation | null>(null);
-  const rows = searchBoth(query).filter((s) => s.region === "busan");
+  const rows = searchBoth(query, 8, "busan");
   const others = [stationNamed("서면", "busan"), stationNamed("남포", "busan")];
   const pickedBad = picked?.unsupportedDays.includes(ROOM_DAY) ?? false;
   return (
