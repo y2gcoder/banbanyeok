@@ -64,7 +64,8 @@ def top_two_gap(minutes: list[int]) -> int:
 
 
 def ratio(minutes: list[int]) -> float:
-    return 1.0 if max(minutes) == 0 else min(minutes) / max(minutes)
+    """화면의 백분율(반올림, JS Math.round와 같은 half-up)로 등급을 정한다."""
+    return 1.0 if max(minutes) == 0 else math.floor(min(minutes) / max(minutes) * 100 + 0.5) / 100
 
 
 # 안마다 (값, 딱 반반 문턱, 거의 반반 문턱, 작을수록 좋은지).
@@ -151,16 +152,17 @@ def table() -> str:
         f"dev 산출물 {len(data.origins)}개 출발역 × {len(data.candidates)}개 후보(평일 낮), 조합마다 {SAMPLES}개, seed {SEED}.",
         "칸은 1위 카드에 붙는 등급의 비율(%): 딱 반반 / 거의 반반 / 이 조합에선 가장 반반 / 조금 기울었어요.",
         "'전체'는 모든 후보로 그룹 최선을 본 값(서버가 계산할 때), '3곳'은 응답에 오는 1~3위만 본 값(이 시안의 웹 계산)이다.",
+        "딱 반반·거의 반반 비율은 둘이 같고, 낮은 두 등급의 나뉨만 다르다.",
         "",
-        "| 인원 | 조합 | 지금 '완벽한 반반' | " + " | ".join(f"{p} (전체)" for p in PLANS) + " | B (3곳) |",
-        "|---|---|---|" + "---|" * (len(PLANS) + 1),
+        "| 인원 | 조합 | 지금 '완벽한 반반' | " + " | ".join(f"{p} (전체 / 3곳)" for p in PLANS) + " |",
+        "|---|---|---|" + "---|" * len(PLANS),
     ]
     examples: list[str] = []
     for n in (2, 3, 4):
         for kind in KINDS:
             pick = sampler(data, kind, rng)
             counts = {p: Counter() for p in PLANS}
-            visible = Counter()
+            visible = {p: Counter() for p in PLANS}
             title = 0
             total = 0
             while total < SAMPLES:
@@ -174,9 +176,10 @@ def table() -> str:
                 top, others = rows[0][4], [r[4] for r in rows[1:]]
                 for p in PLANS:
                     counts[p][grade(p, top, others)] += 1
-                visible[grade("B 가장 오래 걸리는 두 사람", top, others[:2])] += 1
+                for p in PLANS:
+                    visible[p][grade(p, top, others[:2])] += 1
                 title += even_title(top)
-                if kind == "한 명만 멀리(30km 밖)" and len(examples) < 6 and top_two_gap(top) >= 10:
+                if n >= 3 and kind == "한 명만 멀리(30km 밖)" and len(examples) < 6 and top_two_gap(top) >= 10:
                     names = [data.station[data.origins[i]]["name"] for i in people]
                     meet = data.station[rows[0][3]]["name"]
                     examples.append(f"- {n}명 {' · '.join(names)} → {meet} {top}분")
@@ -186,10 +189,10 @@ def table() -> str:
 
             out.append(
                 f"| {n} | {kind} | {round(100 * title / total)} | "
-                + " | ".join(cell(counts[p]) for p in PLANS)
-                + f" | {cell(visible)} |"
+                + " | ".join(f"{cell(counts[p])}<br>{cell(visible[p])}" for p in PLANS)
+                + " |"
             )
-    out += ["", "B가 낮은 등급을 받은 '한 명만 멀리' 조합 예:", *examples]
+    out += ["", "B가 낮은 등급을 받은 3~4명 '한 명만 멀리' 조합 예:", *examples]
     return "\n".join(out)
 
 

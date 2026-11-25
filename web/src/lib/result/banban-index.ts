@@ -27,7 +27,9 @@ const topTwoGap = (m: readonly number[]) => {
   const [first = 0, second = 0] = [...m].sort((a, b) => b - a);
   return first - second;
 };
-const ratioOf = (m: readonly number[]) => (Math.max(...m) === 0 ? 1 : Math.min(...m) / Math.max(...m));
+/** 화면에 쓰는 백분율(반올림)로 등급을 정해 보이는 숫자와 문턱이 어긋나지 않게 한다. */
+const ratioOf = (m: readonly number[]) =>
+  Math.max(...m) === 0 ? 1 : Math.floor((Math.min(...m) / Math.max(...m)) * 100 + 0.5) / 100;
 
 const RULES: Record<BanbanPlan, Rule> = {
   spread: {
@@ -72,25 +74,30 @@ export function banbanPlan(value: string | null | undefined): BanbanPlan | null 
   return value === "spread" || value === "toptwo" || value === "ratio" ? value : null;
 }
 
-/** 공평 기준에서만 값이 있다(빨리·누구 쪽으로는 '반반'을 말하지 않는다). 갈 수 없는 사람이 있으면 없다. */
+/**
+ * 공평 기준에서만 값이 있다(빨리·누구 쪽으로는 '반반'을 말하지 않는다). 갈 수 없는 사람이 있으면 없다.
+ * `others`가 null이면(방 미리보기: 1위만 온다) 그룹 최선과 비교할 수 없으므로 낮은 등급은 그리지 않는다.
+ */
 export function banbanIndex(
   plan: BanbanPlan | null,
   mode: Mode,
   top: readonly (number | null)[],
-  others: readonly (readonly number[])[],
+  others: readonly (readonly number[])[] | null,
 ): BanbanIndex | null {
   if (plan === null || mode !== "fair" || top.length < 2 || top.some((m) => m === null)) return null;
   const minutes = top as readonly number[];
   const rule = RULES[plan];
   const value = rule.measure(minutes);
   const better = (a: number, b: number) => (rule.lowerIsBetter ? a <= b : a >= b);
-  const grade = ((): BanbanGrade => {
+  const grade = ((): BanbanGrade | null => {
     if (better(value, rule.even)) return "even";
     if (better(value, rule.near)) return "near";
+    if (others === null) return null;
     const window = others.filter((o) => Math.max(...o) <= Math.max(...minutes) + FLOOR_WINDOW).map(rule.measure);
     const best = rule.lowerIsBetter ? Math.min(value, ...window) : Math.max(value, ...window);
     const slack = rule.lowerIsBetter ? FLOOR_SLACK : FLOOR_SLACK / Math.max(1, ...minutes);
     return better(value, rule.lowerIsBetter ? best + slack : best - slack) ? "bestHere" : "tilted";
   })();
+  if (grade === null) return null;
   return { plan, grade, label: LABEL[grade], detail: rule.detail(minutes, value) };
 }
