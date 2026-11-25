@@ -241,7 +241,6 @@ export function HomeForm() {
       <Button type="submit" disabled={filled < MIN_PEOPLE || pending} className="h-14 rounded-xl text-[17px] font-bold">
         {pending ? "찾는 중…" : "만날 역 찾기"}
       </Button>
-      <p className="text-center text-sm text-muted-foreground">가입은 필요 없어요.</p>
       <Link
         href={NEW_ROOM_PATH}
         className="flex flex-col gap-0.5 rounded-xl border border-rule-strong bg-surface px-4 py-3.5 hover:border-ink"

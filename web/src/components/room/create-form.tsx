@@ -300,7 +300,6 @@ export function CreateRoomForm() {
             {slowMessage(stage, "방 만들기")}
           </p>
         ) : null}
-        <p className="text-center text-sm text-muted-foreground">수도권 지하철역만 돼요. 가입은 필요 없어요.</p>
         <p className="text-center text-[13px] leading-snug text-muted-foreground">
           약속일을 정하면 약속 다음 날, 안 정하면 마지막 변경 후 7일 뒤에 방이 사라져요(만든 뒤 최대 30일).
         </p>
