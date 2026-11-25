@@ -36,10 +36,11 @@ run = [
 ]
 
 [tasks.test]
-description = "Gradle 빌드(jvm·js 테스트 포함) + Python 오라클 테스트"
+description = "Gradle 빌드(jvm·js 테스트 포함) + Python 오라클·부산 원천 테스트"
 run = [
   "./gradlew build",
   "python3 -B -m unittest discover -s prototype -v",
+  "python3 -B -m unittest discover -s pipeline/busan -v",
 ]
 
 [tasks."golden:regen"]

@@ -305,6 +305,7 @@
     "busan_rows": 8568,
     "bytes": 17949564,
     "content_type": "application/octet-stream",
+    "edition_note": "수집한 KRIC 판(_20260630)과 포털 판(_20260625)이 다름. 이용조건은 공공데이터포털 표기를 따름.",
     "effective_date": "mixed; see effective_dates_by_line",
     "effective_dates_by_line": {
       "I26K6": [

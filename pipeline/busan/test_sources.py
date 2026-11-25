@@ -4,10 +4,11 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 from xml.sax.saxutils import escape
 
 from comparison import compare_departures, compare_runtime, join_regions
-from sources import K1_HEADER, MANIFEST, SOURCES, read_cached, read_source
+from sources import K1_HEADER, MANIFEST, SOURCES, fetch, read_cached, read_source, validate_timetable
 from timetable import parse_b1, parse_k1
 
 
@@ -26,6 +27,50 @@ class BusanSourcesTest(unittest.TestCase):
         self.assertEqual(result.trains[0].day, "sunday")
         self.assertEqual(result.trains[0].stops[1].arrival, 120)
         self.assertEqual({defect["train"] for defect in result.defects}, {"2001", "1001"})
+
+    def test_train_identity_schema_errors_fail_instead_of_being_quarantined(self):
+        for parse, line in ((parse_b1, "S2601"), (parse_k1, "I26K6")):
+            for number, day, error in (
+                ("1001", ("휴일" if line == "S2601" else "일요일"), "unsupported day"),
+                ("", "평일", "missing train number"),
+            ):
+                with self.subTest(parse=parse.__name__, number=number, day=day):
+                    row = [number, line, "", "", "", "", day, "", "", "", "", "", "20260722"]
+                    with self.assertRaisesRegex(ValueError, error):
+                        parse([row])
+
+    def test_timetable_gate_rejects_excess_defects_and_missing_days(self):
+        rows = [
+            [str(i + 1), "S2601", "", "", "", "", day, "001-노포+002-범어사",
+             "001-:+002-05:02", "001-05:00+002-:", "", "", "20260722"]
+            for i, day in enumerate(("평일", "토요일", "공휴일"))
+        ]
+        invalids = [
+            [str(100 + i), *rows[0][1:8], "001-:", *rows[0][9:]]
+            for i in range(7)
+        ]
+        validate_timetable("B1", parse_b1(rows + invalids[:6]), {"S2601"}, max_defects=6)
+        with self.assertRaisesRegex(ValueError, "7 defective trains"):
+            validate_timetable("B1", parse_b1(rows + invalids), {"S2601"}, max_defects=6)
+        with self.assertRaisesRegex(ValueError, "S2601/holiday"):
+            validate_timetable("B1", parse_b1(rows[:2]), {"S2601"}, max_defects=6)
+
+    def test_bad_fetch_keeps_receipt_and_raw_file(self):
+        row = ["1001", "S2601", "", "", "", "", "휴일", "", "", "", "", "", "20260722"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / MANIFEST
+            manifest.parent.mkdir(parents=True)
+            manifest.write_bytes(b"existing receipt")
+            raw = root / SOURCES[0].file
+            raw.parent.mkdir(parents=True)
+            raw.write_bytes(b"existing raw file")
+            with patch("sources.download", return_value=(b"new raw file", "text/csv")), \
+                 patch("sources.read_source", return_value=([row], 1)):
+                with self.assertRaisesRegex(ValueError, "unsupported day"):
+                    fetch(root)
+            self.assertEqual(manifest.read_bytes(), b"existing receipt")
+            self.assertEqual(raw.read_bytes(), b"existing raw file")
 
     def test_k1_sparse_ordinals_and_donghae_aliases(self):
         rows = [

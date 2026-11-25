@@ -32,18 +32,14 @@ def station_name(line, value):
     return name
 
 
-def day_type(line, value):
+def day_types(line):
     if line == DONGHAE:
-        days = {"평일": "weekday", "휴일": "holiday-unspecified"}
-    elif line == BGL:
-        days = {"평일+토요일+공휴일": "all-days"}
-    else:
-        days = {"평일": "weekday", "토요일": "saturday"}
-        days.update({"일요일": "sunday"} if line == "L2604" else {"공휴일": "holiday"})
-    if value not in days:
-        raise ValueError(f"unsupported day {value!r}")
-    return days[value]
-
+        return {"평일": "weekday", "휴일": "holiday-unspecified"}
+    if line == BGL:
+        return {"평일+토요일+공휴일": "all-days"}
+    days = {"평일": "weekday", "토요일": "saturday"}
+    days.update({"일요일": "sunday"} if line == "L2604" else {"공휴일": "holiday"})
+    return days
 
 def seconds(value):
     if value in ("", ":"):
@@ -92,10 +88,13 @@ class Timetable:
 
     def add(self, row, parse):
         number, line, _, _, _, _, raw_day = row[:7]
+        days = day_types(line)
+        if raw_day not in days:
+            raise ValueError(f"{line} train {number!r}: unsupported day {raw_day!r}")
+        if not number:
+            raise ValueError(f"{line} {raw_day}: missing train number")
+        day = days[raw_day]
         try:
-            day = day_type(line, raw_day)
-            if not number:
-                raise ValueError("missing train number")
             stops = parse(line)
             validate_stops(stops)
             self.trains.append(Train(line, day, number, tuple(stops)))

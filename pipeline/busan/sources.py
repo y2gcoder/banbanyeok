@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from comparison import compare_departures, compare_runtime, join_regions
-from timetable import BUSAN_LINES, METRO_LINES, parse_b1, parse_k1
+from timetable import BUSAN_LINES, METRO_LINES, day_types, parse_b1, parse_k1
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = "data/config/source-manifest.json"
@@ -28,6 +28,7 @@ TIMETABLE_HEADER = (
     "열차번호 노선번호 노선명 운행구간기점명 운행구간종점명 운행유형 요일구분 "
     "운행구간정거장 정거장도착시각 정거장출발시각 운행속도 운영기관전화번호 데이터기준일자"
 ).split()
+K1_JUNE_30_SHA256 = "218f76dd53c4b9e1f248a8e07ab6879763495958714ee377761944e40cd94bc4"
 K1_HEADER = TIMETABLE_HEADER[:9] + ["정가장출발시각"] + TIMETABLE_HEADER[10:]
 
 
@@ -223,6 +224,11 @@ def fetch(root):
             receipt["effective_dates_by_line"] = dates_by_line
         if source.id == "K1":
             receipt["busan_rows"] = len(rows)
+            if receipt["sha256"] == K1_JUNE_30_SHA256:
+                receipt["edition_note"] = (
+                    "수집한 KRIC 판(_20260630)과 포털 판(_20260625)이 다름. "
+                    "이용조건은 공공데이터포털 표기를 따름."
+                )
         cached[source.file] = raw
         rows_by_id[source.id] = rows
         receipts[source.id] = receipt
@@ -234,7 +240,7 @@ def fetch(root):
     previous = {receipt["id"]: receipt for receipt in existing}
     for key, receipt in receipts.items():
         old = previous.get(key)
-        if old and all(old.get(field) == value for field, value in receipt.items() if field != "fetched_at"):
+        if old and all(old.get(field) == value for field, value in receipt.items() if field not in {"fetched_at", "edition_note"}):
             receipt["fetched_at"] = old["fetched_at"]
     for file, raw in cached.items():
         atomic_write(root / file, raw)
@@ -261,12 +267,24 @@ def timetable_report(timetable):
     return {"trains": dict(counts), "defect_count": len(timetable.defects), "defects": timetable.defects}
 
 
+def validate_timetable(source, timetable, lines, *, max_defects):
+    defects = len(timetable.defects)
+    if defects > max_defects:
+        raise ValueError(f"{source}: {defects} defective trains exceed limit of {max_defects}")
+    expected = {(line, day) for line in lines for day in day_types(line).values()}
+    observed = {(train.line, train.day) for train in timetable.trains}
+    missing = sorted(expected - observed)
+    if missing:
+        pairs = ", ".join(f"{line}/{day}" for line, day in missing)
+        raise ValueError(f"{source}: no valid trains for {pairs}")
+
+
 def diagnose(root, rows):
-    regions = join_regions(rows["M1"], read_json(root / REGISTRY))
     b1 = parse_b1(rows["B1"])
+    validate_timetable("B1", b1, METRO_LINES, max_defects=6)
     k1 = parse_k1(rows["K1"])
-    if {train.line for train in b1.trains} != set(METRO_LINES) or {train.line for train in k1.trains} != BUSAN_LINES:
-        raise ValueError("timetable has an uncovered Busan line")
+    validate_timetable("K1", k1, BUSAN_LINES, max_defects=0)
+    regions = join_regions(rows["M1"], read_json(root / REGISTRY))
     return {
         "b1": timetable_report(b1),
         "k1": timetable_report(k1),
