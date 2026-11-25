@@ -148,6 +148,8 @@ describe("/r/[roomId]/og", () => {
   it.each([
     ["toptwo", { label: "딱 반반" }],
     ["fact", { sentence: "걸리는 시간이 두 사람 1분 차이예요" }],
+    ["layer", { base: "가장 오래 걸리는 사람도 22분이에요" }],
+    ["bars", { kind: "bars", emphasis: "걸리는 시간이 두 사람 1분 차이예요" }],
   ])(
     "반반지수 시안(#202, bbi=%s): 숨긴 사람이 있을 수 있는 방(5분 배수 시간)이면 빼고, 없으면(21·22분) 그린다",
     async (plan, shown) => {

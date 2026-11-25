@@ -155,19 +155,77 @@ function Lines({ people, teaser = false }: { people: SharedCardData["people"]; t
 }
 
 /**
+ * 막대 안(`bbi=bars`, #202 시안): 노선 그림 대신 사람마다 이름·분 한 줄과 같은 축(가장 오래 걸리는 사람 = 끝)의 막대.
+ * 차이가 작으면 막대 끝이 가지런하다. 막차 줄은 분 옆에 작게 둔다.
+ */
+function Bars({ people }: { people: SharedCardData["people"] }) {
+  const max = Math.max(1, ...people.map((p) => p.minutes ?? 0));
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: people.length >= 4 ? 18 : 28,
+        width: AREA.width,
+        height: AREA.height,
+      }}
+    >
+      {people.map((person, i) => (
+        <div key={`bar-${String(i)}`} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+            <span
+              style={{
+                fontSize: 30,
+                color: OG_COLORS.inkSoft,
+                maxWidth: 260,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {person.name}
+            </span>
+            <span style={{ fontSize: 36 }}>{minutesText(person.minutes)}</span>
+            {person.lastTrain ? (
+              <span style={{ fontSize: 22, color: OG_COLORS.muted, marginLeft: "auto" }}>{person.lastTrain}</span>
+            ) : null}
+          </div>
+          <div style={{ display: "flex", height: 22, borderRadius: 11, backgroundColor: OG_COLORS.rule }}>
+            <div
+              style={{
+                display: "flex",
+                width: `${((person.minutes ?? 0) / max) * 100}%`,
+                height: 22,
+                borderRadius: 11,
+                backgroundColor: personHex(i),
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * 공유 링크(`/s?...`)와 방 링크(`/r/<id>?sv=`) 미리보기: 왼쪽에 "{1위역}에서 볼까?"(정한 역은 "에서 만나요")와 최장·차이, 오른쪽에 각자의 노선이 그 역으로 모이는 그림. 요청 때 만든다.
  * 카카오 말풍선(약 270px 폭)에서도 역 이름과 색 노선이 읽히게 크게 그린다. 노선 길이는 사람마다 같다(길이로 시간을 읽게 하지 않는다).
  */
 export function SharedCard({ data, banban = null }: { data: SharedCardData; banban?: BanbanIndex | null }) {
   const computed = summary(data.people);
-  const sub = banban
-    ? banban.kind === "fact"
+  const now = computed ? `${computed.spread} ${OG_TEXT.middleDot} ${data.modeLine}` : data.modeLine;
+  const sub = !banban
+    ? now
+    : banban.kind === "fact"
       ? banban.sentence
-      : `${banban.label} ${OG_TEXT.middleDot} ${banban.detail}`
-    : computed
-      ? `${computed.spread} ${OG_TEXT.middleDot} ${data.modeLine}`
-      : data.modeLine;
-  const lines = data.footer ?? { main: computed?.longest ?? null, sub };
+      : banban.kind === "grade"
+        ? `${banban.label} ${OG_TEXT.middleDot} ${banban.detail}`
+        : banban.kind === "layer"
+          ? (banban.emphasis ?? data.modeLine)
+          : (banban.emphasis ?? now);
+  const main = banban?.kind === "layer" ? banban.base : (computed?.longest ?? null);
+  const lines = data.footer ?? { main, sub };
   return (
     <OgFrame>
       <div style={{ display: "flex", flex: 1 }}>
@@ -188,7 +246,17 @@ export function SharedCard({ data, banban = null }: { data: SharedCardData; banb
             <span style={{ fontSize: 80, letterSpacing: -3 }}>{data.suffix ?? OG_TEXT.sharedSuffix}</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {lines.main ? <span style={{ fontSize: 40, color: OG_COLORS.inkSoft }}>{lines.main}</span> : null}
+            {lines.main ? (
+              <span
+                style={
+                  banban?.kind === "layer"
+                    ? { fontSize: 34, color: OG_COLORS.ink, wordBreak: "keep-all" }
+                    : { fontSize: 40, color: OG_COLORS.inkSoft }
+                }
+              >
+                {lines.main}
+              </span>
+            ) : null}
             {/* 한국어도 낱말 단위로 줄을 바꾼다("저녁"이 "저/녁"으로 갈리지 않게). */}
             <span style={{ fontSize: 30, color: OG_COLORS.muted, wordBreak: "keep-all" }}>{lines.sub}</span>
             {/* 지도 한가운데 비교(#68 2단계): 방 미리보기 1위 단계에서 조건을 채울 때만. */}
@@ -197,7 +265,11 @@ export function SharedCard({ data, banban = null }: { data: SharedCardData; banb
             ) : null}
           </div>
         </div>
-        <Lines people={data.people} teaser={data.teaser ?? false} />
+        {banban?.kind === "bars" ? (
+          <Bars people={data.people} />
+        ) : (
+          <Lines people={data.people} teaser={data.teaser ?? false} />
+        )}
       </div>
     </OgFrame>
   );

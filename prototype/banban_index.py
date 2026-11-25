@@ -5,6 +5,7 @@ dev 산출물(data/artifacts/dev/od.bin, 평일 낮)로 출발역 조합을 뽑�
 
     python3 prototype/banban_index.py                       # 표(마크다운)
     python3 prototype/banban_index.py --fact-cases 30000    # 사실 문장 안의 무작위 입력과 기대 문장(JSONL, 웹 규칙 대조용)
+    python3 prototype/banban_index.py --layer-cases 30000   # 두 층·막대 안의 무작위 입력과 기대 문장(JSONL, 웹 규칙 대조용)
     python3 prototype/banban_index.py --check-server http://localhost:PORT   # 1위가 로컬 서버 /v1/recommend와 같은지
 """
 
@@ -15,6 +16,7 @@ import json
 import math
 import random
 import struct
+import time
 import urllib.request
 from collections import Counter
 from pathlib import Path
@@ -118,6 +120,23 @@ def fact_sentence(plan: str, top: list[int]) -> str | None:
     return f"걸리는 시간이 {who}{format_minutes(shown)}{' 차이예요' if pair else ' 차이 안이에요'}"
 
 
+def layer_sentences(plan: str, top: list[int]) -> dict:
+    """web/src/lib/result/banban-index.ts의 두 층(layer|layerwhy)과 막대(bars). 기본 층은 늘, 강조 층은 사실 문장(fact) 규칙일 때만."""
+    emphasis = fact_sentence("fact", top)
+    if plan == "bars":
+        return {"emphasis": emphasis}
+    if plan == "layer":
+        base = f"가장 오래 걸리는 사람도 {format_minutes(max(top))}이에요"
+    else:
+        base = "가장 오래 걸리는 사람 기준으로 가장 가까운 역이에요"
+    return {"base": base, "emphasis": emphasis}
+
+
+# 지도 한가운데 비교 문장(#68, server MapMiddle.kt): 출발역 좌표 평균점에서 가장 가까운, 모두가 갈 수 있는 후보가 1위와 다르고
+# 그 역의 최장(표시 분)이 1위보다 5분 이상 길 때만 보인다.
+MIDDLE_MIN_EXTRA = 5
+
+
 def even_title(top: list[int]) -> bool:
     """지금 있는 '완벽한 반반'(map-middle.ts evenTitle): 2명 1분 이하, 3~4명 2분 이하."""
     return spread(top) <= (1 if len(top) <= 2 else 2)
@@ -146,6 +165,29 @@ class Data:
             rows.append((max(cell), max(cell) - min(cell), sum(cell), code, [display_minutes(s) for s in cell]))
         rows.sort()
         return rows
+
+    def map_middle_shows(self, people: list[int], top_code: str, top_max_seconds: int) -> bool:
+        """server MapMiddlePicker.pick과 같은 조건. 거리는 평균 위도의 cos로 경도를 눌러 잰 평면 거리, 같으면 역 코드가 앞선 쪽."""
+        points = [self.station[self.origins[p]] for p in people]
+        n = len(points)
+        lats = [round(pt["lat"] * 1_000_000) for pt in points]
+        lngs = [round(pt["lng"] * 1_000_000) for pt in points]
+        squeeze = math.cos(sum(lats) / n / 1_000_000 * math.pi / 180)
+        m = len(self.candidates)
+        best = None
+        for c, code in enumerate(self.candidates):
+            cell = [self.seconds[p * m + c] for p in people]
+            station = self.station.get(code)
+            if UNREACHABLE in cell or station is None:
+                continue
+            d_lat = n * round(station["lat"] * 1_000_000) - sum(lats)
+            d_lng = (n * round(station["lng"] * 1_000_000) - sum(lngs)) * squeeze
+            key = (d_lat * d_lat + d_lng * d_lng, code)
+            if best is None or key < best[0]:
+                best = (key, code, max(cell))
+        if best is None or best[1] == top_code:
+            return False
+        return display_minutes(best[2]) - display_minutes(top_max_seconds) >= MIDDLE_MIN_EXTRA
 
     def km(self, a: int, b: int) -> float:
         return haversine_km(self.station[self.origins[a]], self.station[self.origins[b]])
@@ -186,6 +228,7 @@ def table() -> str:
     ]
     examples: list[str] = []
     fact_rows: list[str] = []
+    middle_rows: list[str] = []
     for n in (2, 3, 4):
         for kind in KINDS:
             pick = sampler(data, kind, rng)
@@ -194,6 +237,9 @@ def table() -> str:
             title = 0
             total = 0
             gaps: Counter = Counter()
+            middle = 0
+            middle_and_emphasis = 0
+            emphasis = 0
             while total < SAMPLES:
                 people = pick(n)
                 if people is None:
@@ -209,6 +255,11 @@ def table() -> str:
                     visible[p][grade(p, top, others[:2])] += 1
                 title += even_title(top)
                 gaps[spread(top)] += 1
+                shows = data.map_middle_shows(people, rows[0][3], rows[0][0])
+                has_emphasis = fact_sentence("fact", top) is not None
+                middle += shows
+                emphasis += has_emphasis
+                middle_and_emphasis += shows and has_emphasis
                 if n >= 3 and kind == "한 명만 멀리(30km 밖)" and len(examples) < 6 and top_two_gap(top) >= 10:
                     names = [data.station[data.origins[i]]["name"] for i in people]
                     meet = data.station[rows[0][3]]["name"]
@@ -228,6 +279,10 @@ def table() -> str:
                 f"| {n} | {kind} | {round(100 * (b[EVEN] + b[NEAR]) / total)} | {round(100 * b[EVEN] / total)} | "
                 f"**{within(limit)}** | " + " / ".join(str(within(k)) for k in steps) + " |"
             )
+            middle_rows.append(
+                f"| {n} | {kind} | 100 | {round(100 * emphasis / total)} | **{round(100 * middle / total)}** | "
+                f"{round(100 * middle_and_emphasis / total)} |"
+            )
             out.append(
                 f"| {n} | {kind} | {round(100 * title / total)} | "
                 + " | ".join(f"{cell(counts[p])}<br>{cell(visible[p])}" for p in PLANS)
@@ -243,6 +298,16 @@ def table() -> str:
         "|---|---|---|---|---|---|",
         *fact_rows,
     ]
+    out += [
+        "",
+        "두 층 안(같은 표본): 공평 1위 카드에 붙는 비율(%). 기본 층은 늘, 강조 층은 fact 규칙(2명 2분 · 3명+ 6분)일 때만 붙는다.",
+        "'지도 한가운데 문장'은 서버 규칙(MapMiddle.kt: 평균점에서 가장 가까운 후보가 1위와 다르고 최장이 5분 이상 김)으로 다시 계산했다.",
+        "숨긴 참가자는 없다고 본다(있으면 둘 다 꺼진다).",
+        "",
+        "| 인원 | 조합 | 기본 층 | 강조 층 | 지도 한가운데 문장 | 강조 층과 지도 문장이 함께 |",
+        "|---|---|---|---|---|---|",
+        *middle_rows,
+    ]
     return "\n".join(out)
 
 
@@ -257,10 +322,23 @@ def fact_cases(count: int) -> None:
         print(json.dumps({"plan": plan, "top": top, "sentence": fact_sentence(plan, top)}, ensure_ascii=False))
 
 
-def check_server(base: str, count: int) -> None:
+def layer_cases(count: int) -> None:
+    """웹 규칙 대조용 무작위 입력(두 층·막대). 1시간이 넘는 최장과 작은 차이가 함께 나오게 한다."""
+    rng = random.Random(SEED + 3)
+    for _ in range(count):
+        n = rng.choice((2, 3, 4))
+        base = rng.randrange(0, 150)
+        top = [base + rng.randrange(0, rng.choice((3, 8, 13, 40))) for _ in range(n)]
+        plan = rng.choice(("layer", "layerwhy", "bars"))
+        print(json.dumps({"plan": plan, "top": top, **layer_sentences(plan, top)}, ensure_ascii=False))
+
+
+def check_server(base: str, count: int, pause: float) -> None:
     data = Data()
     rng = random.Random(SEED + 1)
     same = 0
+    middle_same = 0
+    middle_shown = 0
     for i in range(count):
         n = 2 + i % 3
         people = rng.sample(range(len(data.origins)), n)
@@ -273,25 +351,36 @@ def check_server(base: str, count: int) -> None:
         )
         with urllib.request.urlopen(request) as response:
             result = json.load(response)
+        time.sleep(pause)
         first = result["candidates"][0]
         server_minutes = [display_minutes(t["seconds"]) for t in first["times"]]
         ok = first["stationCode"] == rows[0][3] and server_minutes == rows[0][4]
         same += ok
         if not ok:
             print("다름", [data.origins[p] for p in people], first["stationCode"], rows[0][3])
+        mine = data.map_middle_shows(people, rows[0][3], rows[0][0])
+        middle_same += mine == ("mapMiddle" in result)
+        middle_shown += "mapMiddle" in result
+        if mine != ("mapMiddle" in result):
+            print("지도 한가운데 다름", [data.origins[p] for p in people], mine, result.get("mapMiddle"))
     print(f"서버 1위와 같음: {same}/{count}")
+    print(f"지도 한가운데 문장 유무가 서버와 같음: {middle_same}/{count} (서버가 문장을 준 조합 {middle_shown})")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check-server")
     parser.add_argument("--count", type=int, default=60)
+    parser.add_argument("--pause", type=float, default=0.0, help="요청 사이 초(로컬 요청 제한 안에서 많이 볼 때)")
     parser.add_argument("--fact-cases", type=int)
+    parser.add_argument("--layer-cases", type=int)
     args = parser.parse_args()
     if args.fact_cases:
         fact_cases(args.fact_cases)
+    elif args.layer_cases:
+        layer_cases(args.layer_cases)
     elif args.check_server:
-        check_server(args.check_server.rstrip("/"), args.count)
+        check_server(args.check_server.rstrip("/"), args.count, args.pause)
     else:
         print(table())
 

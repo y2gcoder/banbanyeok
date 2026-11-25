@@ -70,3 +70,46 @@ describe("사실 문장 안(bbi=fact|factcap)", () => {
     expect(sentence("factcap", [27, 28, 16, 7])).toBeNull();
   });
 });
+
+describe("두 층 안(bbi=layer|layerwhy)과 막대 안(bbi=bars)", () => {
+  it("기본 층은 인원·차이와 상관없이 공평 1위면 늘 붙고, 강조 층은 사실 문장 규칙일 때만 붙는다", () => {
+    expect(banbanIndex("layer", { ...fair, top: [27, 28, 16, 7] })).toEqual({
+      kind: "layer",
+      plan: "layer",
+      base: "가장 오래 걸리는 사람도 28분이에요",
+      emphasis: null,
+    });
+    expect(banbanIndex("layer", { ...fair, top: [46, 53, 94] })).toMatchObject({
+      base: "가장 오래 걸리는 사람도 1시간 34분이에요",
+      emphasis: null,
+    });
+    expect(banbanIndex("layer", { ...fair, top: [30, 34, 32] })).toMatchObject({
+      base: "가장 오래 걸리는 사람도 34분이에요",
+      emphasis: "걸리는 시간이 모두 4분 차이 안이에요",
+    });
+    expect(banbanIndex("layerwhy", { ...fair, top: [21, 22] })).toEqual({
+      kind: "layer",
+      plan: "layerwhy",
+      base: "가장 오래 걸리는 사람 기준으로 가장 가까운 역이에요",
+      emphasis: "걸리는 시간이 두 사람 1분 차이예요",
+    });
+  });
+
+  it("막대 안은 막대를 늘 그리고(값이 있다) 강조 층 문장만 규칙대로 붙인다", () => {
+    expect(banbanIndex("bars", { ...fair, top: [27, 28, 16, 7] })).toEqual({
+      kind: "bars",
+      plan: "bars",
+      emphasis: null,
+    });
+    expect(banbanIndex("bars", { ...fair, top: [38, 34, 37, 36] })).toMatchObject({
+      emphasis: "걸리는 시간이 모두 4분 차이 안이에요",
+    });
+  });
+
+  it.each(["layer", "layerwhy", "bars"] as const)("bbi=%s: 숨긴 사람·다른 기준·갈 수 없는 사람이면 끈다", (plan) => {
+    expect(banbanIndex(plan, { ...fair, top: [21, 22] })).not.toBeNull();
+    expect(banbanIndex(plan, { ...fair, top: [21, 22], hidden: true })).toBeNull();
+    expect(banbanIndex(plan, { ...fair, mode: "fast", top: [21, 22] })).toBeNull();
+    expect(banbanIndex(plan, { ...fair, top: [21, null] })).toBeNull();
+  });
+});

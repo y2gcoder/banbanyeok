@@ -66,6 +66,62 @@ function Chip({ children, background, color }: { children: string; background: s
   );
 }
 
+/** 막대 안(`bbi=bars`, #202 시안): 큰 숫자 칸 대신 사람마다 한 줄(색 점 + 이름, 같은 축의 막대, 분, 막차). */
+const BAR_NAME = 230;
+const BAR_MINUTES = 170;
+const BAR_LAST_TRAIN = 250;
+const BAR_ROW: Record<number, number> = { 2: 78, 3: 62, 4: 52 };
+
+function Bars({ people }: { people: ScoreboardCardData["people"] }) {
+  const max = Math.max(1, ...people.map((p) => p.minutes ?? 0));
+  const hasLastTrain = people.some((p) => p.lastTrain);
+  const row = BAR_ROW[people.length] ?? 52;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {people.map((person, i) => (
+        <div key={`bar-${String(i)}`} style={{ display: "flex", alignItems: "center", height: row, gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, width: BAR_NAME }}>
+            <Dot color={personHex(i)} size={22} />
+            <span
+              style={{
+                fontSize: 30,
+                color: OG_COLORS.inkSoft,
+                maxWidth: BAR_NAME - 34,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {person.name}
+            </span>
+          </div>
+          <div style={{ display: "flex", flex: 1, height: 26, borderRadius: 13, backgroundColor: OG_COLORS.rule }}>
+            <div
+              style={{
+                display: "flex",
+                width: `${((person.minutes ?? 0) / max) * 100}%`,
+                height: 26,
+                borderRadius: 13,
+                backgroundColor: personHex(i),
+              }}
+            />
+          </div>
+          <span
+            style={{ display: "flex", justifyContent: "flex-end", width: BAR_MINUTES, fontSize: 46, letterSpacing: -2 }}
+          >
+            {minutesText(person.minutes)}
+          </span>
+          {hasLastTrain ? (
+            <span style={{ display: "flex", width: BAR_LAST_TRAIN, fontSize: 24, color: OG_COLORS.inkSoft }}>
+              {person.lastTrain ?? ""}
+            </span>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
   const head = `${data.stationName}${data.suffix ?? OG_TEXT.sharedSuffix}`;
   const count = data.people.length;
@@ -82,56 +138,66 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
         <div style={{ display: "flex", marginTop: 10 }}>
           <OgLineBadges stationCode={data.stationCode} />
         </div>
-        <div style={{ display: "flex", marginTop: layout.headGap }}>
-          {data.people.map((person, i) => (
-            <div
-              key={`person-${String(i)}`}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                width: column,
-                paddingLeft: i === 0 ? 0 : COLUMN_PADDING,
-                borderLeft: i === 0 ? "none" : `3px solid ${OG_COLORS.rule}`,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, height: 36 }}>
-                <Dot color={personHex(i)} size={22} />
-                <span
-                  style={{
-                    fontSize: count <= 2 ? 30 : 26,
-                    color: OG_COLORS.muted,
-                    maxWidth: column - COLUMN_PADDING - 40,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {person.name}
-                </span>
-              </div>
-              <span style={{ fontSize: size, letterSpacing: -4, lineHeight: 1.1 }}>{texts[i]}</span>
-              {hasLastTrain ? (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    height: LAST_TRAIN_ROW,
-                    fontSize: LAST_TRAIN_SIZE[count] ?? 23,
-                    color: OG_COLORS.inkSoft,
-                  }}
-                >
-                  {person.lastTrain ?? ""}
+        {data.banban?.kind === "bars" ? (
+          <div style={{ display: "flex", flexDirection: "column", marginTop: layout.headGap }}>
+            <Bars people={data.people} />
+          </div>
+        ) : (
+          <div style={{ display: "flex", marginTop: layout.headGap }}>
+            {data.people.map((person, i) => (
+              <div
+                key={`person-${String(i)}`}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  width: column,
+                  paddingLeft: i === 0 ? 0 : COLUMN_PADDING,
+                  borderLeft: i === 0 ? "none" : `3px solid ${OG_COLORS.rule}`,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, height: 36 }}>
+                  <Dot color={personHex(i)} size={22} />
+                  <span
+                    style={{
+                      fontSize: count <= 2 ? 30 : 26,
+                      color: OG_COLORS.muted,
+                      maxWidth: column - COLUMN_PADDING - 40,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {person.name}
+                  </span>
                 </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
+                <span style={{ fontSize: size, letterSpacing: -4, lineHeight: 1.1 }}>{texts[i]}</span>
+                {hasLastTrain ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      height: LAST_TRAIN_ROW,
+                      fontSize: LAST_TRAIN_SIZE[count] ?? 23,
+                      color: OG_COLORS.inkSoft,
+                    }}
+                  >
+                    {person.lastTrain ?? ""}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: layout.chipGap }}>
-          {data.banban?.kind === "fact" ? (
-            <Chip background={OG_COLORS.safety} color={OG_COLORS.ink}>
-              {data.banban.sentence}
+          {data.banban?.kind === "layer" ? (
+            <Chip background={OG_COLORS.ink} color={OG_COLORS.surface}>
+              {data.banban.base}
             </Chip>
-          ) : data.banban ? (
+          ) : data.banban?.kind === "fact" || (data.banban?.kind === "bars" && data.banban.emphasis) ? (
+            <Chip background={OG_COLORS.safety} color={OG_COLORS.ink}>
+              {data.banban.kind === "fact" ? data.banban.sentence : (data.banban.emphasis ?? "")}
+            </Chip>
+          ) : data.banban?.kind === "grade" ? (
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <Chip
                 background={
@@ -149,7 +215,7 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
               color={OG_COLORS.surface}
             >{`${OG_TEXT.spreadPrefix}${formatMinutes(data.spread)}`}</Chip>
           ) : null}
-          {data.title && !data.banban ? (
+          {data.title && (!data.banban || (data.banban.kind === "bars" && !data.banban.emphasis)) ? (
             <Chip background={OG_COLORS.safety} color={OG_COLORS.ink}>
               {data.title}
             </Chip>
@@ -158,7 +224,26 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
             <span style={{ fontSize: 28, color: OG_COLORS.muted, marginLeft: 6 }}>{data.basisLine}</span>
           ) : null}
         </div>
-        <div style={{ display: "flex", marginTop: "auto" }}>
+        <div
+          style={
+            data.banban?.kind === "layer"
+              ? { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: "auto" }
+              : { display: "flex", marginTop: "auto" }
+          }
+        >
+          {data.banban?.kind === "layer" && data.banban.emphasis ? (
+            <div
+              style={{
+                display: "flex",
+                backgroundColor: OG_COLORS.safety,
+                fontSize: 30,
+                padding: "4px 16px",
+                borderRadius: 10,
+              }}
+            >
+              {data.banban.emphasis}
+            </div>
+          ) : null}
           {/* 한국어도 낱말 단위로 줄을 바꾼다("저녁"이 "저/녁"으로 갈리지 않게). */}
           <span
             style={{

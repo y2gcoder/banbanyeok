@@ -69,6 +69,9 @@ describe("후보 목록의 반반지수 시안(#202)", () => {
   it.each([
     ["toptwo", "딱 반반"],
     ["fact", "걸리는 시간이 두 사람 1분 차이예요"],
+    ["layer", "가장 오래 걸리는 사람도 22분이에요"],
+    ["layerwhy", "가장 오래 걸리는 사람 기준으로 가장 가까운 역이에요"],
+    ["bars", "걸리는 시간이 두 사람 1분 차이예요"],
   ])("bbi=%s: 숨긴 참가자가 있으면 끄고(본인 21·22분), 없으면(대조군 21·22분) 보인다", async (plan, text) => {
     window.history.replaceState(null, "", `/?bbi=${plan}`);
     const control = render(<Candidates view={toResultView(resultOf(false))} meIndex={null} choice={choice} />);

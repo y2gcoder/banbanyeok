@@ -1,7 +1,9 @@
 /**
  * 반반지수 시안(#202). 버리는 프로토타입이다: 주소에 `bbi=spread|toptwo|ratio`가 있을 때만 결과 화면 1위 카드, `/s/og`,
  * 방 미리보기 그림에 등급을 그린다. `bbi=fact|factcap`은 등급 대신 화면 숫자로 확인할 수 있는 사실 문장 하나를 그리고, 자랑할 만하지
- * 않으면 아무것도 그리지 않는다. 없으면 지금 화면 그대로다. 분포표는 prototype/banban_index.py가 같은 규칙으로 만든다.
+ * 않으면 아무것도 그리지 않는다. `bbi=layer|layerwhy`(두 층)는 공평 1위가 보장하는 말(가장 오래 걸리는 사람 기준)을 늘 그리고, 사실 문장
+ * 규칙일 때만 그 문장을 강조 층으로 더한다. `bbi=bars`(막대)는 사람별 시간을 같은 축의 막대로 그리고 강조 층 문장을 함께 둔다.
+ * 없으면 지금 화면 그대로다. 분포표는 prototype/banban_index.py가 같은 규칙으로 만든다.
  *
  * 입력은 1위 후보의 사람별 표시 분과 같은 결과의 다른 후보들(그룹 최선 비교용)이다. 공평 순위는 건드리지 않는다.
  */
@@ -14,11 +16,15 @@ export const BANBAN_PARAM = "bbi";
 type GradePlan = "spread" | "toptwo" | "ratio";
 /** `fact`는 여러 명 문장에 실제 차이를, `factcap`은 문턱 값을 쓴다. 두 사람 문장은 둘 다 실제 차이다. */
 type FactPlan = "fact" | "factcap";
-export type BanbanPlan = GradePlan | FactPlan;
+/** `layer`는 기본 층에 최장 분을, `layerwhy`는 순위 기준을 말한다. */
+type LayerPlan = "layer" | "layerwhy";
+export type BanbanPlan = GradePlan | FactPlan | LayerPlan | "bars";
 type BanbanGrade = "even" | "near" | "bestHere" | "tilted";
 export type BanbanIndex =
   | { kind: "grade"; plan: GradePlan; grade: BanbanGrade; label: string; detail: string }
-  | { kind: "fact"; plan: FactPlan; sentence: string };
+  | { kind: "fact"; plan: FactPlan; sentence: string }
+  | { kind: "layer"; plan: LayerPlan; base: string; emphasis: string | null }
+  | { kind: "bars"; plan: "bars"; emphasis: string | null };
 
 type Rule = {
   measure: (minutes: readonly number[]) => number;
@@ -80,7 +86,7 @@ const FLOOR_SLACK = 2;
 const FACT_PAIR = 2;
 const FACT_GROUP = 6;
 
-const PLANS: readonly BanbanPlan[] = ["spread", "toptwo", "ratio", "fact", "factcap"];
+const PLANS: readonly BanbanPlan[] = ["spread", "toptwo", "ratio", "fact", "factcap", "layer", "layerwhy", "bars"];
 
 export function banbanPlan(value: string | null | undefined): BanbanPlan | null {
   return PLANS.find((plan) => plan === value) ?? null;
@@ -95,6 +101,13 @@ function factSentence(plan: FactPlan, minutes: readonly number[]): string | null
   if (gap === 0) return `${OG_TEXT.factLead}${who}${OG_TEXT.factSame}`;
   const shown = plan === "factcap" && !pair ? limit : gap;
   return `${OG_TEXT.factLead}${who}${formatMinutes(shown)}${pair ? OG_TEXT.factPairTail : OG_TEXT.factGroupTail}`;
+}
+
+/** 두 층의 기본 층. 공평 1위는 가장 오래 걸리는 사람의 시간이 가장 짧은 역이라 인원과 상관없이 늘 참이다. */
+function baseSentence(plan: LayerPlan, minutes: readonly number[]): string {
+  return plan === "layer"
+    ? `${OG_TEXT.layerLongestLead}${formatMinutes(Math.max(...minutes))}${OG_TEXT.layerLongestTail}`
+    : OG_TEXT.layerWhy;
 }
 
 /**
@@ -122,6 +135,10 @@ export function banbanIndex(
   const { mode, top, others, hidden } = input;
   if (plan === null || hidden || mode !== "fair" || top.length < 2 || top.some((m) => m === null)) return null;
   const minutes = top as readonly number[];
+  if (plan === "layer" || plan === "layerwhy") {
+    return { kind: "layer", plan, base: baseSentence(plan, minutes), emphasis: factSentence("fact", minutes) };
+  }
+  if (plan === "bars") return { kind: "bars", plan, emphasis: factSentence("fact", minutes) };
   if (plan === "fact" || plan === "factcap") {
     const sentence = factSentence(plan, minutes);
     return sentence === null ? null : { kind: "fact", plan, sentence };

@@ -100,15 +100,18 @@ type TopProps = {
  * 반반지수 시안(#202): 등급 말(좋은 두 등급은 노란 칩) + 무엇을 쟀는지 한 줄. 기울었으면 공평 순위가 그 역을 고른 이유를 붙인다.
  * 사실 문장 안은 문장 하나를 노란 칩으로 그린다.
  */
+function SentenceChip({ text }: { text: string }) {
+  return (
+    <p>
+      <span className="rounded-full bg-safety px-2.5 py-0.5 text-[14px] font-extrabold text-ink">{text}</span>
+    </p>
+  );
+}
+
 function BanbanLine({ banban }: { banban: BanbanIndex }) {
-  if (banban.kind === "fact") {
-    return (
-      <p>
-        <span className="rounded-full bg-safety px-2.5 py-0.5 text-[14px] font-extrabold text-ink">
-          {banban.sentence}
-        </span>
-      </p>
-    );
+  if (banban.kind === "fact") return <SentenceChip text={banban.sentence} />;
+  if (banban.kind === "layer" || banban.kind === "bars") {
+    return banban.emphasis ? <SentenceChip text={banban.emphasis} /> : null;
   }
   const good = banban.grade === "even" || banban.grade === "near";
   return (
@@ -168,6 +171,46 @@ function TimeList({ candidate, meIndex }: { candidate: CandidateView; meIndex: n
 }
 
 /**
+ * 막대 안(`bbi=bars`): 사람별 시간을 같은 축(가장 오래 걸리는 사람 = 끝)의 막대로. 차이가 작으면 막대 끝이 가지런하다.
+ * 이름·분을 글자로 함께 쓴다(색만으로 사람을 가르지 않는다).
+ */
+function BarList({ candidate, meIndex }: { candidate: CandidateView; meIndex: number | null }) {
+  const ordered =
+    meIndex === null
+      ? candidate.people
+      : [...candidate.people].sort((a, b) => Number(b.index === meIndex) - Number(a.index === meIndex));
+  const max = Math.max(1, candidate.aggregate.max);
+  return (
+    <ul className="flex flex-col gap-2.5">
+      {ordered.map((person) => (
+        <li key={person.index} className="flex flex-col gap-1">
+          <div className="flex items-baseline gap-2">
+            <span className="min-w-0 truncate text-[15px] font-bold text-ink">
+              {person.shortName}
+              {person.index === meIndex ? (
+                <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
+              ) : null}
+            </span>
+            <span className="min-w-0 shrink-[2] truncate text-[13px] text-muted-foreground">
+              {[originNote(person), shownTransferLabel(person)].filter(Boolean).join(" · ")}
+            </span>
+            <span className="tabular ml-auto shrink-0 text-[19px] leading-none font-extrabold text-ink">
+              {formatMinutes(person.minutes)}
+            </span>
+          </div>
+          <span aria-hidden="true" className="block h-3 rounded-full bg-rule">
+            <span
+              className="block h-full rounded-full"
+              style={{ width: `${(person.minutes / max) * 100}%`, backgroundColor: personColor(person.index) }}
+            />
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
  * 1위 카드(#122). 2·3위처럼 요약이 먼저다: 역 이름, 사람별 분, 순위 기준 값, 가장 이른 막차 한 줄, 정하기·길찾기가 폰 첫 화면에 들어온다.
  * 시간 막대·추천 이유·막차 자세히·지도 한가운데 비교는 "자세히"에서 펼친다. 막차는 접혀 있어도 요약 한 줄(`lastTrainSummary`)이 보인다.
  */
@@ -178,9 +221,17 @@ export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle 
     <article aria-labelledby={`cand-${candidate.rank}`} className={topCard}>
       <TopHeader candidate={candidate} />
       {banban ? <BanbanLine banban={banban} /> : null}
-      <TimeList candidate={candidate} meIndex={meIndex} />
+      {banban?.kind === "bars" ? (
+        <BarList candidate={candidate} meIndex={meIndex} />
+      ) : (
+        <TimeList candidate={candidate} meIndex={meIndex} />
+      )}
       <div className="flex flex-col gap-1.5 border-t border-rule pt-3">
-        <StatLine candidate={candidate} mode={choice.mode} />
+        {banban?.kind === "layer" ? (
+          <p className="text-[15px] font-bold break-keep text-ink">{banban.base}</p>
+        ) : (
+          <StatLine candidate={candidate} mode={choice.mode} />
+        )}
         {candidate.lastTrain ? (
           <p className="text-[14px] leading-snug break-keep text-ink">
             <span className="mr-1.5 text-ink-soft">막차</span>
