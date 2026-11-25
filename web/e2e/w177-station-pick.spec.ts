@@ -12,8 +12,10 @@ import { prepareRoom } from "./support/room-fixture";
  * ③ 한글 조합 중 한 번 누름(운영자 제보: 맥에서 마우스로 한 번 눌렀는데 역은 안 들어가고 숨기기가 켜짐): "서울" 뒤에 "대"를 조합하는
  *    중이면 목록이 입력 칸보다 한 글자 늦었다("서울" 목록, 서울대입구가 셋째). macOS는 누르는 순간 조합을 먼저 확정하므로 목록이
  *    "서울대" 목록으로 바뀌어 누른 자리에 항목이 없고 누름이 아래 라벨에 떨어졌다. 누르기 전과 확정한 뒤 모두 그 자리의 히트 테스트가
- *    항목이어야 한다(조합 이벤트는 페이지에서 보낸다: 브라우저 자동화에는 IME가 없다).
- * ④ 그대로여야 하는 것: 한 번 눌러 고른 뒤 목록 밖을 바로 누르는 것, Enter로 고른 뒤 바로 숨기기를 누르는 것.
+ *    항목이어야 한다(Chromium은 CDP의 trusted 조합, WebKit은 페이지에서 보낸 조합 이벤트). 확정이 누름보다 늦는 경우(고른 뒤 확정)에도
+ *    입력 칸은 고른 역 이름이어야 한다.
+ * ④ 그대로여야 하는 것: 한 번 눌러 고른 뒤 목록 밖을 바로 누르는 것, Enter로 고른 뒤 바로 숨기기를 누르는 것, 마우스로 따로 누른
+ *    클릭(detail 1), 두 번째 누름 도중 키보드 Space(detail 0 click).
  */
 const SIZES = [
   { project: "desktop-chrome", width: 1366, height: 1290 }, // 제보 화면(2732×2578 @2x)
@@ -82,25 +84,44 @@ async function search(page: Page, station: Locator, query: string, pick: RegExp)
   return option;
 }
 
-/** 입력 칸에서 한 글자를 조합 중인 상태로 만든다(IME가 보내는 compositionstart → 조합 중 input). */
-async function startComposing(station: Locator, syllable: string) {
-  await station.evaluate((el: HTMLInputElement, ch) => {
-    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    el.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "" }));
-    setValue?.call(el, el.value + ch);
-    el.dispatchEvent(new CompositionEvent("compositionupdate", { bubbles: true, data: ch }));
-    el.dispatchEvent(
-      new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText", data: ch }),
-    );
-  }, syllable);
-}
+type Ime = { start: (syllable: string) => Promise<void>; commit: (syllable: string) => Promise<void> };
 
-/** 조합을 확정한다(macOS는 마우스를 누르는 순간 이것을 먼저 보낸다). 화면이 다시 그려진 뒤 돌아온다. */
-async function commitComposing(page: Page, station: Locator, syllable: string) {
-  await station.evaluate((el, ch) => {
-    el.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: ch }));
-  }, syllable);
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve(null))));
+/**
+ * 한글 조합을 흉내 낸다. Chromium은 CDP로 브라우저가 직접 조합 이벤트를 낸다(Input.imeSetComposition → Input.insertText로 확정,
+ * trusted). WebKit은 CDP가 없어 페이지에서 같은 순서의 이벤트를 보낸다. 확정 뒤에는 화면이 다시 그려진 뒤 돌아온다.
+ */
+async function imeFor(page: Page, station: Locator, browserName: string): Promise<Ime> {
+  const painted = () => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve(null))));
+  if (browserName === "chromium") {
+    const cdp = await page.context().newCDPSession(page);
+    return {
+      start: async (text) => {
+        await cdp.send("Input.imeSetComposition", { text, selectionStart: text.length, selectionEnd: text.length });
+      },
+      commit: async (text) => {
+        await cdp.send("Input.insertText", { text });
+        await painted();
+      },
+    };
+  }
+  return {
+    start: (syllable) =>
+      station.evaluate((el: HTMLInputElement, ch) => {
+        const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        el.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "" }));
+        setValue?.call(el, el.value + ch);
+        el.dispatchEvent(new CompositionEvent("compositionupdate", { bubbles: true, data: ch }));
+        el.dispatchEvent(
+          new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText", data: ch }),
+        );
+      }, syllable),
+    commit: async (syllable) => {
+      await station.evaluate((el, ch) => {
+        el.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: ch }));
+      }, syllable);
+      await painted();
+    },
+  };
 }
 
 const hits = (target: Locator, { x, y }: Point) =>
@@ -169,17 +190,19 @@ for (const size of SIZES) {
 
       test(`${id}: 한글 조합 중에 목록의 역을 한 번 누르면(누르는 순간 확정) 그 역이 들어가고 숨기기는 그대로`, async ({
         page,
+        browserName,
       }) => {
         const f = await open(page);
         await f.name.fill("서연");
         await search(page, f.station, "서울", /^서울대입구/);
-        await startComposing(f.station, "대");
+        const ime = await imeFor(page, f.station, browserName);
+        await ime.start("대");
         await expect(f.station).toHaveValue("서울대");
         const option = page.getByRole("option", { name: /^서울대입구/ });
         // 항목이 숨기기 라벨 위에 뜨는 곳을 누른다. 누르기 전에도, 누르는 순간 조합이 확정된 뒤에도 그 자리는 항목이어야 한다.
         const point = await overlapCenter(option, f.hiddenLabel);
         expect(await hits(option, point), "누르기 전 그 자리는 항목이다").toBe(true);
-        await commitComposing(page, f.station, "대");
+        await ime.commit("대");
         expect(await hits(option, point), "조합이 확정된 뒤에도 그 자리는 항목이다").toBe(true);
         const before = await clicksSoFar(page);
         if (touch) await page.touchscreen.tap(point.x, point.y);
@@ -210,6 +233,65 @@ for (const size of SIZES) {
         await expect(f.name).toHaveValue("서연");
       });
     }
+
+    test("방 만들기: 조합을 확정하기 전에 역을 고르고 나중에 확정해도 입력 칸은 고른 역 이름이다(trusted 조합)", async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName !== "chromium", "trusted 조합(CDP)은 Chromium에만 있다");
+      // 안드로이드 UA에서는 Base UI가 조합을 따로 다루지 않고, 헤드리스의 CDP 조합은 안드로이드 키보드의 동작과 다르다.
+      test.skip(touch, "데스크톱 IME 경로");
+      const f = await openCreate(page);
+      await search(page, f.station, "서울", /^서울대입구/);
+      const ime = await imeFor(page, f.station, browserName);
+      await ime.start("대");
+      await expect(page.getByRole("option")).toHaveCount(2); // "서울대" 목록
+      const option = page.getByRole("option", { name: /^서울대입구/ });
+      if (touch) await option.tap();
+      else await option.click();
+      // 목록이 다 닫힌 뒤에 확정한다(닫히는 중에 확정하면 Base UI의 닫힘 정리가 입력 칸을 고른 역 이름으로 되돌려 준다).
+      await expect(page.locator('[data-slot="combobox-content"]')).toHaveCount(0);
+      await ime.commit("대");
+      await expect(f.station).toHaveValue("서울대입구");
+      await f.station.blur();
+      await expect(f.station).toHaveValue("서울대입구");
+      await expect(f.hidden).not.toBeChecked();
+    });
+
+    test("방 만들기: 마우스로 고른 뒤 따로 누른 클릭(detail 1)은 고른 자리 바로 옆이어도 닿는다", async ({ page }) => {
+      test.skip(touch, "마우스만");
+      const f = await openCreate(page);
+      const option = await search(page, f.station, "서울대입구", /^서울대입구/);
+      const point = await overlapCenter(option, f.hiddenLabel);
+      await page.mouse.click(point.x, point.y);
+      await listClosed(page);
+      const beside = { x: point.x + 18, y: point.y };
+      expect(await hits(f.hiddenLabel, beside), "옆자리에 숨기기 라벨이 드러나야 한다").toBe(true);
+      await page.mouse.click(beside.x, beside.y, { clickCount: 1 });
+      await expect(f.hidden).toBeChecked();
+      await expect(f.station).toHaveValue("서울대입구");
+    });
+
+    test("방 만들기: 더블클릭의 두 번째 누름 도중 키보드 Space는 그대로이고, 그 마우스 클릭만 막는다", async ({
+      page,
+    }) => {
+      test.skip(touch, "마우스만");
+      const f = await openCreate(page);
+      const option = await search(page, f.station, "서울대입구", /^서울대입구/);
+      const point = await overlapCenter(option, f.hiddenLabel);
+      await page.mouse.click(point.x, point.y);
+      await listClosed(page);
+      expect(await hits(f.hiddenLabel, point), "두 번째 누름 자리에 숨기기 라벨이 드러나야 한다").toBe(true);
+      await f.hidden.focus();
+      await page.mouse.down({ clickCount: 2 });
+      await page.keyboard.press("Space");
+      await expect(f.hidden).toBeChecked();
+      const before = await clicksSoFar(page);
+      await page.mouse.up({ clickCount: 2 });
+      await expect.poll(() => clicksSoFar(page)).toBe(before + 1);
+      await expect(f.hidden).toBeChecked();
+      await expect(f.station).toHaveValue("서울대입구");
+    });
 
     test("방 만들기: 한 번 눌러 고른 뒤 목록 밖(이름 칸)을 바로 누르면 그대로 움직인다", async ({ page }) => {
       const f = await openCreate(page);
