@@ -3,6 +3,7 @@
 package app.banbanyeok.server.artifact
 
 import app.banbanyeok.schema.DayType
+import app.banbanyeok.schema.RouteGraphCodec
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
 import io.kotest.assertions.throwables.shouldThrow
@@ -36,6 +37,28 @@ private suspend fun copyDev(
 class ArtifactLoaderTest :
     DescribeSpec({
         describe("loading the dev artifacts") {
+            it("keeps serving the legacy manifest and graph when a regional preview coexists in the store") {
+                val store =
+                    LocalFileArtifactStore(Files.createTempDirectory("regional-preview"), UnconfinedTestDispatcher())
+                copyDev(store)
+                val legacyGraph = store.get(ArtifactKey("rg.bin"))!!.content
+                val regionalGraph =
+                    legacyGraph.copyOf().also {
+                        it[4] = RouteGraphCodec.REGIONAL_FORMAT_VERSION.toByte()
+                    }
+                val version = "29991231.1"
+                store.put(ArtifactKey("regional/versions/$version/rg-preview.bin"), regionalGraph)
+                store.put(
+                    ArtifactKey("regional/manifest.v5.json"),
+                    """{"schemaVersion":5,"dataVersion":"$version"}""".encodeToByteArray(),
+                )
+                val loaded = ArtifactLoader(store).load()
+                loaded.dataVersion shouldNotBe version
+                loaded.dataSet.manifest.schemaVersion shouldBe 4
+                loaded.routeGraph.await()!!.formatVersion shouldBe RouteGraphCodec.FORMAT_VERSION
+                PublishedArtifacts(store, loaded).dataFile(version, "rg-preview.bin") shouldBe null
+            }
+
             it("loads and validates the data set the manifest points to") {
                 val loaded = ArtifactLoader(LocalFileArtifactStore(devArtifacts, UnconfinedTestDispatcher())).load()
                 loaded.dataVersion shouldBe loaded.dataSet.manifest.dataVersion

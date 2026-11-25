@@ -1,10 +1,11 @@
 package app.banbanyeok.pipeline
 
 import app.banbanyeok.schema.Registry
+import app.banbanyeok.schema.RouteGraph
 import app.banbanyeok.schema.StationStatus
 import app.banbanyeok.schema.TimeSlot
 
-/** Builds the regional station×service graph for a slot with all six services' headways available. */
+/** Builds the regional station×service graph, retaining nodes for explicitly unavailable slot services. */
 internal fun busanNetwork(
     registry: Registry,
     services: List<BusanService>,
@@ -27,7 +28,12 @@ internal fun busanNetwork(
         "Each long Busan transfer must name a station with two services"
     }
 
-    val waits = services.associate { it.id to it.headways.getValue(slot) / 2 }
+    require(transfers.outdoor.keys.all { it in byStation }) { "Outdoor transfer endpoint is outside the Busan graph" }
+    val waits =
+        services.associate {
+            it.id to
+                (it.headways[slot]?.let { seconds -> seconds / 2 } ?: RouteGraph.UNAVAILABLE_WAIT)
+        }
     val graph = List(nodes.size) { mutableListOf<Edge>() }
     for (service in services) {
         for (ride in service.rides) {
@@ -39,9 +45,14 @@ internal fun busanNetwork(
     for ((from, node) in nodes.withIndex()) {
         val code = node.first
         val walk = transfers.seconds(code)
-        for (to in byStation.getValue(code) - from) {
+        val destinations =
+            (byStation.getValue(code) - from).map { it to walk } +
+                transfers.outdoor[code].orEmpty().flatMap { (target, seconds) ->
+                    byStation.getValue(target).map { it to seconds }
+                }
+        for ((to, walkSeconds) in destinations) {
             val service = nodes[to].second
-            graph[from].add(Edge(to, walk + waits.getValue(service), 1, service))
+            graph[from].add(Edge(to, walkSeconds + waits.getValue(service), 1, service))
         }
     }
     return Network(registry, registry, origins, nodes, graph, waits, emptyList())

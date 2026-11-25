@@ -41,6 +41,19 @@ public data class Route(
     val legs: List<RouteLeg>,
 )
 
+/** One audited rail leg or external walk (line is null for a walk). */
+public data class RouteTraceSegment(
+    val fromCode: String,
+    val toCode: String,
+    val line: String?,
+)
+
+/** Internal route comparison data. The current route wire contract only exposes rail legs. */
+public data class RouteTrace(
+    val cost: RouteCost,
+    val segments: List<RouteTraceSegment>,
+)
+
 /**
  * [graph]에서 [slot]의 대기로 경로를 찾는다. 파이프라인 발행 게이트(od.bin 모든 칸 대조)와 서버(추천 응답의 사람별 경로)가 이 코드를
  * 함께 쓴다: 같은 그래프·같은 동률 규칙이라 서버의 경로 시간이 od.bin과 어긋나지 않는다.
@@ -50,12 +63,23 @@ public class RouteSearch(
     slot: TimeSlot,
 ) {
     private val waits = graph.waitsFor(slot)
+    private val arrivals by lazy {
+        val outdoorArrivals = reverseOutdoorWalks(graph.outdoorWalks)
+        graph.platforms.mapValues { (code, _) -> boardingNodes(graph, outdoorDistances(code, outdoorArrivals)) }
+    }
 
     /** [originCode]에서 모든 역까지. 그래프에 없는 역이면 null. */
     public fun from(originCode: String): RouteTree? {
         val value = StationCode.parseOrNull(originCode)?.value ?: return null
-        val origins = graph.platforms[value] ?: return null
-        return RouteTree(graph, waits, value, origins)
+        if (value !in graph.platforms) return null
+        val access = outdoorDistances(value, graph.outdoorWalks)
+        val origins =
+            boardingNodes(
+                graph,
+                access,
+            ).filter { waits[graph.service(it.node)] != RouteGraph.UNAVAILABLE_WAIT }
+        if (origins.isEmpty()) return null
+        return RouteTree(graph, waits, value, origins, access, arrivals)
     }
 }
 
@@ -73,7 +97,9 @@ public class RouteTree internal constructor(
     private val graph: RouteGraph,
     private val waits: IntArray,
     private val originValue: Int,
-    origins: IntArray,
+    origins: List<WalkingAccess>,
+    private val outdoorAccess: Map<Int, Int>,
+    private val arrivals: Map<Int, List<WalkingAccess>>,
 ) {
     private val layers = mutableListOf<Layer>()
 
@@ -117,12 +143,12 @@ public class RouteTree internal constructor(
         search(origins)
     }
 
-    private fun search(origins: IntArray) {
+    private fun search(origins: List<WalkingAccess>) {
         val n = graph.nodeCount
         // best[v]: 지금까지 계산한 층들(환승이 더 적은 길)에서 v에 닿는 가장 빠른 시간.
         val best = IntArray(n) { INF }
         var seeds = Seeds(n)
-        origins.forEach { seeds.offer(it, waits[graph.service(it)], -1, -1) }
+        origins.forEach { (node, walk) -> seeds.offer(node, waits[graph.service(node)] + walk, -1, -1) }
         while (true) {
             val layer = seed(seeds, best) ?: return
             if (layers.size == MAX_LAYERS) {
@@ -177,34 +203,42 @@ public class RouteTree internal constructor(
         for (e in graph.edgeStart(v) until graph.edgeEnd(v)) {
             val w = graph.edgeTarget(e)
             val wait = graph.edgeWaitService(e)
-            if (wait != RouteGraph.NO_WAIT) {
-                next.offer(w, time + graph.edgeSeconds(e) + waits[wait], v, e)
+            if (waits[graph.service(w)] == RouteGraph.UNAVAILABLE_WAIT ||
+                (wait != RouteGraph.NO_WAIT && waits[wait] == RouteGraph.UNAVAILABLE_WAIT)
+            ) {
                 continue
             }
-            val arrival = time + graph.edgeSeconds(e)
-            if (arrival < layer.label[w] && arrival < best[w]) {
-                layer.label[w] = arrival
-                layer.predNode[w] = v
-                layer.predEdge[w] = e
-                heap.push(key(arrival, w))
+            if (wait != RouteGraph.NO_WAIT) {
+                next.offer(w, time + graph.edgeSeconds(e) + waits[wait], v, e)
+            } else {
+                val arrival = time + graph.edgeSeconds(e)
+                if (arrival < layer.label[w] && arrival < best[w]) {
+                    layer.label[w] = arrival
+                    layer.predNode[w] = v
+                    layer.predEdge[w] = e
+                    heap.push(key(arrival, w))
+                }
             }
         }
     }
 
     /** 층마다 그 역의 "환승 k번 이하" 최단 시간. 갈 수 없으면 null. */
-    private fun stationBests(destination: IntArray): IntArray? {
+    private fun stationBests(
+        destination: List<WalkingAccess>,
+        onlyWalk: Int,
+    ): IntArray? {
         if (truncated) return null
-        var running = INF
+        var running = onlyWalk
         val bests =
             IntArray(layers.size) { k ->
-                destination.forEach { v -> running = minOf(running, layers[k].label[v]) }
+                destination.forEach { (node, walk) ->
+                    val riding = layers[k].label[node]
+                    if (riding < INF) running = minOf(running, riding + walk)
+                }
                 running
             }
         return bests.takeIf { it.isNotEmpty() && it.last() < INF }
     }
-
-    private fun platforms(destinationCode: String): IntArray? =
-        StationCode.parseOrNull(destinationCode)?.value?.let { graph.platforms[it] }
 
     private fun isOrigin(destinationCode: String): Boolean =
         StationCode.parseOrNull(destinationCode)?.value == originValue
@@ -212,7 +246,8 @@ public class RouteTree internal constructor(
     /** 최단 경로의 시간·환승 수(od.bin 한 칸과 같은 값). 출발역과 같은 역이면 0, 0. 갈 수 없거나 그래프에 없는 역이면 null. */
     public fun fastest(destinationCode: String): RouteCost? {
         if (isOrigin(destinationCode)) return if (truncated) null else RouteCost(0, 0)
-        val bests = platforms(destinationCode)?.let(::stationBests) ?: return null
+        val value = StationCode.parseOrNull(destinationCode)?.value ?: return null
+        val bests = stationBests(arrivals[value].orEmpty(), outdoorAccess[value] ?: INF) ?: return null
         val seconds = bests.last()
         return RouteCost(seconds, bests.indexOfFirst { it == seconds })
     }
@@ -225,20 +260,65 @@ public class RouteTree internal constructor(
         destinationCode: String,
         slackSeconds: Int = DISPLAY_ROUTE_SLACK_SECONDS,
     ): Route? {
-        require(slackSeconds >= 0) { "slackSeconds는 0 이상이어야 합니다" }
-        if (isOrigin(destinationCode)) return null
-        val destination = platforms(destinationCode) ?: return null
-        val bests = stationBests(destination) ?: return null
-        val limit = bests.last().toLong() + slackSeconds
-        val k = bests.indexOfFirst { it <= limit }
-        val node = destination.first { layers[k].label[it] == bests[k] }
-        return route(k, node)
+        val target = choose(destinationCode, slackSeconds) ?: return null
+        val node = target.node ?: return null
+        val path = restorePath(target.layer, node)
+        if (target.walk != 0 || hasOutdoorWalk(path)) return null
+        return Route(target.seconds, target.layer, legs(path.nodes, path.edges))
     }
 
-    private fun route(
+    /** An audit of the same selected route, including any outdoor portions omitted from the wire. */
+    public fun trace(
+        destinationCode: String,
+        slackSeconds: Int = DISPLAY_ROUTE_SLACK_SECONDS,
+    ): RouteTrace? {
+        val target = choose(destinationCode, slackSeconds) ?: return null
+        val node = target.node
+        val segments =
+            if (node == null) {
+                listOf(RouteTraceSegment(code(originValue), destinationCode, null))
+            } else {
+                traceSegments(restorePath(target.layer, node), destinationCode)
+            }
+        return RouteTrace(RouteCost(target.seconds, target.layer), segments)
+    }
+
+    private fun choose(
+        destinationCode: String,
+        slackSeconds: Int,
+    ): Target? {
+        require(slackSeconds >= 0) { "slackSeconds는 0 이상이어야 합니다" }
+        if (isOrigin(destinationCode)) return null
+        val value = StationCode.parseOrNull(destinationCode)?.value ?: return null
+        val destination = arrivals[value].orEmpty()
+        val onlyWalk = outdoorAccess[value] ?: INF
+        val bests = stationBests(destination, onlyWalk) ?: return null
+        val limit = bests.last().toLong() + slackSeconds
+        val k = bests.indexOfFirst { it <= limit }
+        val chosen =
+            destination.firstOrNull { (node, walk) ->
+                val riding = layers[k].label[node]
+                onlyWalk != bests[k] && riding < INF && riding + walk == bests[k]
+            }
+        return Target(k, chosen?.node, chosen?.seconds ?: 0, bests[k])
+    }
+
+    private data class Target(
+        val layer: Int,
+        val node: Int?,
+        val walk: Int,
+        val seconds: Int,
+    )
+
+    private data class Path(
+        val nodes: List<Int>,
+        val edges: List<Int>,
+    )
+
+    private fun restorePath(
         layer: Int,
         target: Int,
-    ): Route {
+    ): Path {
         val nodes = mutableListOf<Int>()
         val edges = mutableListOf<Int>()
         var k = layer
@@ -247,16 +327,52 @@ public class RouteTree internal constructor(
             nodes.add(v)
             val edge = layers[k].predEdge[v]
             if (edge < 0) break
-            edges.add(edge)
             val from = layers[k].predNode[v]
             if (graph.edgeWaitService(edge) != RouteGraph.NO_WAIT) k -= 1
+            edges.add(edge)
             v = from
         }
         check(k == 0) { "경로 복원이 출발 층에서 끝나지 않았습니다" }
-        nodes.reverse()
-        edges.reverse()
-        return Route(layers[layer].label[target], layer, legs(nodes, edges))
+        return Path(nodes.asReversed(), edges.asReversed())
     }
+
+    private fun hasOutdoorWalk(path: Path): Boolean =
+        graph.codeValue(path.nodes.first()) != originValue ||
+            path.edges.indices.any { i ->
+                graph.edgeWaitService(path.edges[i]) != RouteGraph.NO_WAIT &&
+                    graph.codeValue(path.nodes[i]) != graph.codeValue(path.nodes[i + 1])
+            }
+
+    private fun traceSegments(
+        path: Path,
+        destination: String,
+    ): List<RouteTraceSegment> =
+        buildList {
+            val first = nodeCode(path.nodes.first())
+            if (first != code(originValue)) add(RouteTraceSegment(code(originValue), first, null))
+            var railStart = 0
+            path.edges.forEachIndexed { i, edge ->
+                if (graph.edgeWaitService(edge) != RouteGraph.NO_WAIT) {
+                    if (railStart < i) add(railSegment(path.nodes[railStart], path.nodes[i]))
+                    val from = nodeCode(path.nodes[i])
+                    val to = nodeCode(path.nodes[i + 1])
+                    if (from != to) add(RouteTraceSegment(from, to, null))
+                    railStart = i + 1
+                }
+            }
+            if (railStart < path.edges.size) add(railSegment(path.nodes[railStart], path.nodes.last()))
+            val final = nodeCode(path.nodes.last())
+            if (final != destination) add(RouteTraceSegment(final, destination, null))
+        }
+
+    private fun railSegment(
+        from: Int,
+        to: Int,
+    ): RouteTraceSegment = RouteTraceSegment(nodeCode(from), nodeCode(to), graph.lineOf(from))
+
+    private fun nodeCode(node: Int): String = code(graph.codeValue(node))
+
+    private fun code(value: Int): String = StationCode.ofValue(value).toString()
 
     private fun legs(
         nodes: List<Int>,
@@ -313,6 +429,49 @@ public class RouteTree internal constructor(
             node: Int,
         ): Long = (time.toLong() shl NODE_BITS) or node.toLong()
     }
+}
+
+internal data class WalkingAccess(
+    val node: Int,
+    val seconds: Int,
+)
+
+private fun boardingNodes(
+    graph: RouteGraph,
+    walk: Map<Int, Int>,
+): List<WalkingAccess> =
+    walk.flatMap { (code, seconds) -> graph.platforms[code]?.map { WalkingAccess(it, seconds) }.orEmpty() }
+
+private fun reverseOutdoorWalks(walks: Map<Int, Map<Int, Int>>): Map<Int, Map<Int, Int>> {
+    val reverse = mutableMapOf<Int, MutableMap<Int, Int>>()
+    for ((from, edges) in walks) {
+        for ((to, seconds) in edges) {
+            reverse.getOrPut(to, ::mutableMapOf)[from] = seconds
+        }
+    }
+    return reverse
+}
+
+/** Shortest walks on the sparse graph of external station links, independent of rail boarding. */
+private fun outdoorDistances(
+    start: Int,
+    walks: Map<Int, Map<Int, Int>>,
+): Map<Int, Int> {
+    val best = mutableMapOf(start to 0)
+    val pending = mutableSetOf(start)
+    while (pending.isNotEmpty()) {
+        val current = pending.minBy(best::getValue)
+        pending.remove(current)
+        val elapsed = best.getValue(current)
+        for ((next, seconds) in walks[current].orEmpty()) {
+            val candidate = elapsed + seconds
+            if (candidate < (best[next] ?: Int.MAX_VALUE)) {
+                best[next] = candidate
+                pending.add(next)
+            }
+        }
+    }
+    return best
 }
 
 /** 최소 힙(Long). 공통 코드라 java.util.PriorityQueue를 쓰지 않는다. */

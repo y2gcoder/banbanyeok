@@ -1,11 +1,16 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.core.RouteCost
+import app.banbanyeok.core.RouteSearch
+import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.Registry
+import app.banbanyeok.schema.RouteGraphCodec
 import app.banbanyeok.schema.Station
 import app.banbanyeok.schema.StationStatus
 import app.banbanyeok.schema.TimeSlot
 import io.kotest.core.spec.style.DescribeSpec
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BusanGraphTest :
@@ -62,6 +67,44 @@ class BusanGraphTest :
                     listOf("001", "002", "003", "004", "006"),
                     combineRegions(capital, busan).origins.map { it.code },
                 )
+            }
+
+            it("round-trips a two-code outdoor link and preserves the known Saturday route") {
+                val a = "001"
+                val b = "002"
+                val c = "003"
+                val d = "004"
+                val registry = Registry(1, 1, listOf(a, b, c, d).map { graphStation(it, it) })
+                val rides = listOf(BusanRide(0, 1, 60), BusanRide(1, 0, 60))
+                val waits = TimeSlot.ALL.associateWith { 120 }
+                val first = BusanService("1", "1호선", listOf(BusanStop(a, a), BusanStop(b, b)), rides, waits)
+                val other =
+                    BusanService(
+                        "2",
+                        "2호선",
+                        listOf(BusanStop(c, c), BusanStop(d, d)),
+                        rides,
+                        waits.filterKeys { it.day != DayType.SATURDAY },
+                    )
+                val transfers =
+                    BusanTransfers(
+                        parseObject(
+                            """{"defaultSeconds":89,"longSeconds":221,"longStations":{},
+                        "outdoorLinks":[{"stations":["002","003"],"seconds":221}]}""",
+                        ),
+                    )
+                val slots = TimeSlot.ALL.associateWith { busanNetwork(registry, listOf(first, other), transfers, it) }
+                val encoded = RouteGraphCodec.encode(routeGraph(slots, RouteGraphCodec.REGIONAL_FORMAT_VERSION) { it })
+                val regional = RouteGraphCodec.decode(encoded)
+                val weekday = requireNotNull(RouteSearch(regional, TimeSlot.DEFAULT).from(a))
+                assertEquals(RouteCost(461, 1), weekday.fastest(d))
+                val saturdaySlot = TimeSlot.ALL.first { it.day == DayType.SATURDAY }
+                val saturday = RouteSearch(regional, saturdaySlot)
+                val available = requireNotNull(saturday.from(a))
+                assertEquals(RouteCost(120, 0), available.fastest(b))
+                assertEquals(RouteCost(341, 0), available.fastest(c))
+                assertNull(available.fastest(d))
+                assertNull(saturday.from(d))
             }
         }
     })
