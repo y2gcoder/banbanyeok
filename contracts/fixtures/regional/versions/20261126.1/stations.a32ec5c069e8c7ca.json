@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 2,
+  "registryVersion": 1,
+  "stations": [
+    {
+      "code": "001",
+      "name": "서울가",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.0,
+      "lines": [
+        "2호선"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "001"
+      },
+      "addedIn": 1,
+      "region": "capital"
+    },
+    {
+      "code": "002",
+      "name": "교대",
+      "status": "active",
+      "lat": 37.5,
+      "lng": 127.0,
+      "lines": [
+        "2호선"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "002"
+      },
+      "addedIn": 1,
+      "region": "capital"
+    },
+    {
+      "code": "003",
+      "name": "교대",
+      "status": "active",
+      "lat": 35.0,
+      "lng": 129.0,
+      "lines": [
+        "부산1호선"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "003"
+      },
+      "addedIn": 1,
+      "region": "busan"
+    },
+    {
+      "code": "004",
+      "name": "부산가",
+      "status": "active",
+      "lat": 35.0,
+      "lng": 129.0,
+      "lines": [
+        "부산1호선",
+        "동해선"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "004"
+      },
+      "addedIn": 1,
+      "region": "busan"
+    },
+    {
+      "code": "005",
+      "name": "부산나",
+      "status": "active",
+      "lat": 35.0,
+      "lng": 129.0,
+      "lines": [
+        "동해선"
+      ],
+      "aliases": [],
+      "sources": {
+        "fixture": "005"
+      },
+      "addedIn": 1,
+      "region": "busan"
+    }
+  ]
+}

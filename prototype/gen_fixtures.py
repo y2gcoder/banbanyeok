@@ -133,8 +133,108 @@ def build_files():
     }
 
 
+def regional_graph(labels, slots):
+    # Two services in Busan meet at 004, while the two capital stations form a separate component.
+    nodes = [(1, 0), (2, 0), (3, 1), (4, 1), (4, 2), (5, 2)]
+    edges = [
+        [(1, 60, 0xFF)], [(0, 60, 0xFF)], [(3, 60, 0xFF)],
+        [(2, 60, 0xFF), (4, 89, 2)], [(3, 89, 1), (5, 60, 0xFF)], [(4, 60, 0xFF)],
+    ]
+    starts = [0]
+    for outgoing in edges:
+        starts.append(starts[-1] + len(outgoing))
+    graph = bytearray(b'BBRG')
+    graph += struct.pack('<HHIIIIHHHH', 2, 32, 0, REGISTRY_VERSION, len(nodes), starts[-1],
+                         len(labels), len(labels), len(slots), 0)
+    for label in labels:
+        name = label.encode('utf-8')
+        graph += bytes([len(name)]) + name
+    graph += bytes(range(len(labels)))
+    for code, service in nodes:
+        graph += struct.pack('<HB', code, service)
+    graph += struct.pack(f'<{len(starts)}I', *starts)
+    for outgoing in edges:
+        for target, seconds, service in outgoing:
+            graph += struct.pack('<HHB', target, seconds, service)
+    for slot in slots:
+        graph += struct.pack('<3H', 60, 60, 0xFFFF if slot.startswith('saturday-') else 90)
+    return bytes(graph)
+
+
+def build_regional_files():
+    version = '20261126.1'
+    slots_contract = json.loads((FIXTURES_DIR.parent / 'time-slots.json').read_text(encoding='utf-8'))
+    slots = [f"{day['id']}-{band['id']}" for day in slots_contract['dayTypes'] for band in slots_contract['bands']]
+    default_slot = slots_contract['default']
+    origins = [1, 2, 3, 4, 5]
+    candidates = [2, 4]
+    labels = ['2호선', '부산1호선', '동해선']
+    stations = []
+    for code, name, region, lines in [
+        (1, '서울가', 'capital', [labels[0]]),
+        (2, '교대', 'capital', [labels[0]]),
+        (3, '교대', 'busan', [labels[1]]),
+        (4, '부산가', 'busan', labels[1:]),
+        (5, '부산나', 'busan', [labels[2]]),
+    ]:
+        stations.append({
+            'code': encode_code(code), 'name': name, 'status': 'active', 'lat': 37.5 if region == 'capital' else 35.0,
+            'lng': 127.0 if region == 'capital' else 129.0, 'lines': lines, 'aliases': [],
+            'sources': {'fixture': encode_code(code)}, 'addedIn': REGISTRY_VERSION, 'region': region,
+        })
+    files = {}
+
+    def add(name, payload):
+        digest = sha256_hex(payload)
+        stem, extension = name.rsplit('.', 1)
+        filename = f'{stem}.{digest[:16]}.{extension}'
+        path = f'regional/versions/{version}/{filename}'
+        files[path] = payload
+        return {'path': path, 'sha256': digest, 'bytes': len(payload)}
+
+    def od(saturday):
+        rows = [[120, None], [0, None], [None, 120], [None, 0], [None, None if saturday else 150]]
+        transfers = [[0 if seconds is not None else None for seconds in row] for row in rows]
+        return encode_od(REGISTRY_VERSION, origins, candidates, rows, transfers)
+
+    registry = {'schemaVersion': 2, 'registryVersion': REGISTRY_VERSION, 'stations': stations}
+    choices = {'schemaVersion': 1, 'registryVersion': REGISTRY_VERSION,
+               'candidates': [encode_code(code) for code in candidates]}
+    regular_od = add('od.bin', od(False))
+    saturday_od = add('od-saturday.bin', od(True))
+    cells_per_day = len(origins) * len(candidates)
+    unknown_day = b'\xff\xff' * cells_per_day + bytes(cells_per_day) + b'\xff\xff' * cells_per_day
+    lt = (b'BBLT' + struct.pack('<HHIIIIQ', 1, 32, 0, REGISTRY_VERSION, len(origins), len(candidates), 0)
+          + struct.pack(f'<{len(origins) + len(candidates)}H', *(origins + candidates)) + unknown_day * 3)
+    complete = {'available': True, 'missingServices': [], 'unsupportedOrigins': []}
+    partial = {'available': True, 'missingServices': ['동해선'], 'unsupportedOrigins': ['005']}
+    manifest = {
+        'schemaVersion': 5, 'minClientSchema': 5, 'dataVersion': version, 'generatedAt': '2026-11-26T00:00:00Z',
+        'registryVersion': REGISTRY_VERSION, 'timeModel': 'regional-fixture', 'originCount': len(origins),
+        'candidateCount': len(candidates),
+        'files': {
+            'registry': add('stations.json', dump(registry).encode('utf-8')),
+            'candidates': add('candidates.json', dump(choices).encode('utf-8')),
+            'od': regular_od,
+            'odSlots': {slot: saturday_od if slot.startswith('saturday-') else regular_od
+                        for slot in slots if slot != default_slot},
+            'lastTrain': add('lt.bin', lt),
+            'routeGraph': add('rg.bin', regional_graph(labels, slots)),
+        },
+        'lastTrainAsOf': '2026-11-26', 'lastTrainModel': 'regional-fixture',
+        'regionCoverage': {
+            region: {
+                slot: partial if region == 'busan' and slot.startswith('saturday-') else complete
+                for slot in slots
+            } for region in ['capital', 'busan']
+        },
+    }
+    files['regional/manifest.v5.json'] = dump(manifest).encode('utf-8')
+    return files
+
+
 def main(argv):
-    files = build_files()
+    files = build_files() | build_regional_files()
     if '--check' in argv:
         stale = [name for name, payload in files.items()
                  if not (FIXTURES_DIR / name).exists() or (FIXTURES_DIR / name).read_bytes() != payload]
@@ -145,7 +245,9 @@ def main(argv):
         return 0
     FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
     for name, payload in files.items():
-        (FIXTURES_DIR / name).write_bytes(payload)
+        path = FIXTURES_DIR / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(payload)
         print(f'{name}: {len(payload)} bytes')
     return 0
 

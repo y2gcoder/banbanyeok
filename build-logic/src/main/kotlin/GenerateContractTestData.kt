@@ -56,22 +56,23 @@ abstract class GenerateContractTestData : DefaultTask() {
         out.appendLine("object ContractFiles {")
         out.appendLine("    val paths: List<String> = listOf(${entries.joinToString { quote(it.second) }})")
         out.appendLine()
-        out.appendLine("    fun text(path: String): String = when (path) {")
-        entries.forEachIndexed {
-            i,
-            (_, rel),
-            ->
-            if (!isBinary(rel)) out.appendLine("        ${quote(rel)} -> file$i()")
-        }
-        out.appendLine("        else -> error(\"텍스트 계약 파일이 없습니다: \$path\")")
-        out.appendLine("    }")
-        out.appendLine()
-        out.appendLine("    fun bytes(path: String): ByteArray = when (path) {")
+        out.appendLine("    private val textFiles = mapOf<String, () -> String>(")
         entries.forEachIndexed { i, (_, rel) ->
-            if (isBinary(rel)) out.appendLine("        ${quote(rel)} -> Base64.decode(file$i())")
+            if (!isBinary(rel)) out.appendLine("        ${quote(rel)} to ::file$i,")
         }
-        out.appendLine("        else -> text(path).encodeToByteArray()")
-        out.appendLine("    }")
+        out.appendLine("    )")
+        out.appendLine()
+        out.appendLine("    private val binaryFiles = mapOf<String, () -> String>(")
+        entries.forEachIndexed { i, (_, rel) ->
+            if (isBinary(rel)) out.appendLine("        ${quote(rel)} to ::file$i,")
+        }
+        out.appendLine("    )")
+        out.appendLine()
+        out.appendLine("    fun text(path: String): String =")
+        out.appendLine("        textFiles[path]?.invoke() ?: error(\"텍스트 계약 파일이 없습니다: \$path\")")
+        out.appendLine()
+        out.appendLine("    fun bytes(path: String): ByteArray =")
+        out.appendLine("        binaryFiles[path]?.let { Base64.decode(it()) } ?: text(path).encodeToByteArray()")
         entries.forEachIndexed { i, (file, rel) ->
             val content =
                 if (isBinary(rel)) {

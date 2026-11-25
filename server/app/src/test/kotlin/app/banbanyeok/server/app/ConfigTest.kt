@@ -65,6 +65,15 @@ class ConfigTest :
                 config.profile shouldBe Profile.PROD
                 config.artifacts.kind shouldBe ArtifactStoreKind.GCS
                 config.artifacts.gcsBucket shouldBe "banbanyeok-artifacts"
+                config.artifacts.regional shouldBe false
+            }
+
+            it("enables regional artifacts only when the flag is true and rejects unsupported values") {
+                val flag = "REGIONAL_ARTIFACTS"
+                AppConfig.load(prodEnv + (flag to " TRUE ")).artifacts.regional shouldBe true
+                AppConfig.load(prodEnv + (flag to "false")).artifacts.regional shouldBe false
+                val error = shouldThrow<ConfigException> { AppConfig.load(prodEnv + (flag to "yes")) }
+                error.problems.single() shouldContain flag
             }
 
             it("fails to start and names every missing required value") {

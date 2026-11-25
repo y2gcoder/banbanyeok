@@ -301,6 +301,8 @@ data class ResultDto(
     /** 막차 표를 아직 읽는 중이라 막차가 빠졌을 때만 `true`. 아니면 키가 없다. */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val lastTrainPending: Boolean? = null,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val missingServices: List<String>? = null,
 )
 
 @Serializable

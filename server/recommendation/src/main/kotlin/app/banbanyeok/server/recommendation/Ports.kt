@@ -1,6 +1,7 @@
 package app.banbanyeok.server.recommendation
 
 import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.schema.TimeSlot
 
 /**
@@ -12,6 +13,7 @@ public class TravelMatrix(
     public val times: List<List<Int?>>,
     public val transfers: List<List<Int?>>,
     public val slot: TimeSlot = TimeSlot.DEFAULT,
+    public val missingServices: List<String> = emptyList(),
 )
 
 /** 출발역에서 모든 후보역까지의 시간·환승(정수 초, 횟수). 지금 구현은 od.bin 기반이다. */
@@ -20,6 +22,8 @@ public interface TravelTimeProvider {
     public val dataVersion: String
 
     public fun isOrigin(code: String): Boolean
+
+    public fun regionOf(code: String): StationRegion? = StationRegion.CAPITAL.takeIf { isOrigin(code) }
 
     /**
      * 모든 [origins]가 [isOrigin]이어야 한다. [slot]의 행렬이 없으면(manifest 1세대 데이터) 기본 구분으로 계산하고

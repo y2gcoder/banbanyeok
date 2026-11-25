@@ -1,6 +1,7 @@
 package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.DataSet
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.SlotMatrices
 import app.banbanyeok.server.recommendation.StationNames
@@ -25,6 +26,8 @@ class StationDirectory(
     StationNames,
     StationLocations {
     private val names: Map<String, String> = dataSet.registry.stations.associate { it.code to it.name }
+    private val regions: Map<String, StationRegion> =
+        dataSet.registry.stations.associate { it.code to (it.region ?: StationRegion.CAPITAL) }
     private val points: Map<String, GeoPoint> =
         dataSet.registry.stations.associate { it.code to GeoPoint(it.lat, it.lng) }
     private val replacements: Map<String, String> =
@@ -32,7 +35,7 @@ class StationDirectory(
             .mapNotNull { station -> station.replacedBy?.let { station.code to it } }
             .toMap()
     private val travelTimes: TravelTimeProvider =
-        OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion, slots)
+        OdTravelTimeProvider(dataSet.od, dataSet.manifest.dataVersion, slots, regions, dataSet.manifest.regionCoverage)
     val travel: TravelTimeProvider get() = travelTimes
 
     override val dataVersion: String = dataSet.manifest.dataVersion
@@ -41,6 +44,8 @@ class StationDirectory(
     val originCodes: List<String> = List(dataSet.od.originCount) { dataSet.od.originCode(it).toString() }
 
     override fun isOrigin(code: String): Boolean = travelTimes.isOrigin(code)
+
+    override fun regionOf(code: String): StationRegion? = regions[code]
 
     private val meetingCodes: Set<String> =
         List(dataSet.od.candidateCount) {

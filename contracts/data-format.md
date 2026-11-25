@@ -1,6 +1,6 @@
-# 데이터 형식 계약 (data-format) — 4판
+# 데이터 형식 계약 (data-format) — 5판
 
-4판 · 2026-11-23(#120: 사람별 경로의 노선 그래프 rg.bin, manifest 4세대, §11) · 3판 2026-11-20(#62: 귀갓길 막차 표 lt.bin, manifest 3세대, §10) · 2판 2026-11-16(T2: 구분별 od 행렬, manifest 2세대, 공유 링크 v=2, §9 구분) · 1판 2026-11-12 · 소유: S0a(이후 형식 변경은 `schemaVersion`을 올리고 이 문서와 `shared/schema`, `prototype/gen_fixtures.py`를 같이 고친다)
+5판 · 2026-11-26(#180: 권역 레지스트리와 manifest 5세대, §12) · 4판 2026-11-23(#120: 사람별 경로의 노선 그래프 rg.bin, manifest 4세대, §11) · 3판 2026-11-20(#62: 귀갓길 막차 표 lt.bin, manifest 3세대, §10) · 2판 2026-11-16(T2: 구분별 od 행렬, manifest 2세대, 공유 링크 v=2, §9 구분) · 1판 2026-11-12 · 소유: S0a(이후 형식 변경은 `schemaVersion`을 올리고 이 문서와 `shared/schema`, `prototype/gen_fixtures.py`를 같이 고친다)
 
 이 문서는 파이프라인(쓰는 쪽)과 서버·앱·웹 SEO 빌드(읽는 쪽)가 공유하는 산출물 형식이다. 웹 앱은 추천을 직접 계산하지 않고 서버 API를 호출하므로 `od.bin`을 읽지 않는다. 웹-서버 계약의 원본은 [`openapi.yaml`](openapi.yaml)이다(contract-first, 웹은 이 파일에서 TS 타입을 생성한다). 이 문서의 §7(링크 코덱)은 웹·공유 모듈·앱이 각자 구현하는 유일한 로직이라 테스트 벡터로 일치를 검증한다. 구현은 `shared/schema`(Kotlin)이고, `prototype/gen_fixtures.py`가 **독립 구현**으로 같은 형식의 샘플을 만든다. 둘이 어긋나면 `shared/schema`의 테스트가 깨진다.
 
@@ -16,13 +16,11 @@
 | 구분별 시간·환승 행렬 | `versions/<dataVersion>/od-<구분>.<hash>.bin` | 바이너리(od.bin과 같은 형식) | 파이프라인 |
 | 귀갓길 막차 표 | `versions/<dataVersion>/lt.<hash>.bin` | 바이너리(§10) | 파이프라인 |
 | 노선 그래프(사람별 경로) | `versions/<dataVersion>/rg.<hash>.bin` | 바이너리(§11) | 파이프라인 |
-| manifest | `manifest.json`(세대 1) + `manifest.v2.json`(세대 2) + `manifest.v3.json`(세대 3) + `manifest.v4.json`(세대 4) (발행 포인터) | JSON | 파이프라인 (`manifest.json`을 마지막에 교체) |
+| manifest | `manifest.json`(세대 1) + `manifest.v2.json`(세대 2) + `manifest.v3.json`(세대 3) + `manifest.v4.json`(세대 4), 권역 포인터 `regional/manifest.v5.json`(세대 5, §12) | JSON | 파이프라인 (기존 세대는 `manifest.json`을 마지막에 교체) |
 
-형식 판은 두 가지다. **구성 형식**(레지스트리 JSON·후보 JSON의 `schemaVersion`, od.bin 헤더의 `formatVersion`)은 `1`이고,
-**manifest 세대**(`manifest.schemaVersion`)는 `1`~`4`다. 세대 2는 구분(§9)별 od 행렬(`files.odSlots`)을, 세대 3은 귀갓길
-막차 표(`files.lastTrain`, §10)를, 세대 4는 사람별 경로의 노선 그래프(`files.routeGraph`, §11)를 더한 것이고 구성 형식은 그대로 1판이다(레지스트리·웹 역 인덱스를 다시 만들 이유가 없어서 구성 형식은
-올리지 않았다). reader는 자기가 아는 manifest 세대 안에서 각 세대의 구성 형식 판을 검사한다: 모든 세대에서 레지스트리·후보·od.bin이
-1판이어야 한다. lt.bin과 rg.bin은 각자 `formatVersion`(지금 둘 다 `1`)을 가진다.
+**manifest 세대**(`manifest.schemaVersion`)에 맞는 구성 파일 형식을 읽는다. 세대 2는 구분별 od 행렬(§9), 세대 3은 막차
+표(§10), 세대 4는 사람별 경로 그래프(§11)를 더한다. 세대 1~4의 구성 파일은 모두 1판이다.
+별도 포인터가 있는 권역 세대 5는 레지스트리 JSON과 rg.bin만 2판을 쓴다(§12).
 
 ## 2. 역 코드
 
@@ -75,6 +73,7 @@
 | `addedIn` | 정수 | 처음 들어간 `registryVersion` |
 | `deprecatedIn` | 정수, 선택 | `status=deprecated`일 때만 |
 | `replacedBy` | 코드, 선택 | 이 역을 대체하는 코드. 레지스트리에 존재해야 한다. 소비자(서버·웹 역 인덱스)는 사슬을 따라 `active` 코드까지 가서 그 코드로 계산·표시한다(순환·끊긴 사슬은 파이프라인 게이트가 거부한다) |
+| `region` | `"capital"` \| `"busan"` | 레지스트리 2판의 각 역에서 필수. `replacedBy`는 같은 권역이어야 한다. 1판 작성 시 생략한다 |
 
 **append-only 규칙** (옛 링크 보존, `RegistryCompatibility`와 CI가 검사):
 이전 `main`의 레지스트리에 있던 코드는 새 레지스트리에도 있어야 한다. 코드는 같은 `addedIn`을 유지하고, `status`는 `active → deprecated`로만 바뀐다(되돌림 금지). `registryVersion`은 줄어들지 않는다.
@@ -151,7 +150,7 @@
 
 | 필드 | 규칙 |
 |---|---|
-| `schemaVersion` | manifest 세대(§1). `1`~`4`. 구성 형식(레지스트리·후보 `schemaVersion`, od.bin `formatVersion`)은 모든 세대에서 `1` |
+| `schemaVersion` | manifest 세대(§1). 기존 포인터는 `1`~`4`, 권역 포인터는 `5`(§12) |
 | `minClientSchema` | 이 데이터를 읽을 수 있는 클라이언트의 **최소 지원 세대**. 클라이언트가 지원하는 최댓값 < `minClientSchema`이면 데이터를 쓰지 말고 업데이트를 안내한다. `≤ schemaVersion`. 파이프라인은 세대마다 그 세대의 수를 쓴다(세대 2에 `2`, 세대 3에 `3`, 세대 4에 `4`) |
 | `dataVersion` | `YYYYMMDD.N`(N ≥ 1, 같은 날 N번째 발행). 정규식 `^[0-9]{8}\.[0-9]{1,3}$`. 방(room)이 이 값을 기록해 두 계산이 어긋나지 않게 한다 |
 | `previousDataVersion` | 선택. 직전 정상 버전(롤백 안내용). 첫 발행이면 키를 생략한다 |
@@ -425,5 +424,24 @@ manifest 자체는 **발행의 마지막 단계에 한 번에 교체**한다(10.
   승인 후 별도 포인터 `regional/manifest.v5.json`과 파일 키
   `regional/versions/<dataVersion>/…`를 사용한다. 기존 포인터와 `versions/`를
   유지하므로 옛 서버의 포인터 읽기와 `/v1/data` 직접 조회는 권역 파일을 발견하지
-  못한다. 새 세대의 명시적 로더 선택, 역 권역 필드, 가용성 메타데이터는 이후 서버·계약
-  단계의 범위다. 형식 2의 오프라인 미리 보기는 이 포인터와 파일을 쓰지 않는다.
+  못한다. 형식 2의 오프라인 미리 보기는 이 포인터와 파일을 쓰지 않는다.
+
+## 12. 권역 데이터의 manifest 5세대
+
+- `regional/manifest.v5.json`만 `schemaVersion=5`, `minClientSchema=5`다.
+  모든 파일 키는 `regional/versions/<dataVersion>/<파일>` 형식이다. 별도 포인터
+  한 개가 같은 버전의 레지스트리·행렬·그래프를 가리킨다. 세대 5는
+  `stations.json` 2판과 rg.bin 2판을 요구한다. 후보·od.bin·lt.bin의 형식은 1판이다.
+  권역별로 막차까지 검증된 칸만 시각을 넣는다.
+- `regionCoverage`는 OD 출발역이 있는 권역 각각에 구분 12개의 상태를 담는다.
+  값의 키는 `weekday-day` 같은 구분 id다. 구분 값의 세 필드는 필수다.
+  `missingServices`는 배차를 확인하지 못한 계통의 표시 이름(중복 없이 오름차순),
+  `unsupportedOrigins`는 해당 계통을 빼면 승차할 수 없는 출발역 코드(중복 없이
+  오름차순)다. `available`은 배차를 확인한 그래프가 연결되고 지원 출발역이 두 곳
+  이상일 때만 `true`다. 다른 권역끼리의 칸과 미지원 출발역·구분의 칸은 도달 불가다.
+  서버는 부산권의 미지원 구분을 평일 낮으로 대체하지 않는다.
+- 서버는 설정 `REGIONAL_ARTIFACTS=true`로 이 포인터를 명시적으로 선택한다.
+  포인터가 없거나 기본 파일 검증이 실패하면 기동이 실패한다. 기본 설정의 서버는
+  기존 포인터와 `versions/`를 읽는다. 권역 파일의 저장·선택은 운영자가 발행을
+  승인한 뒤 진행한다.
+- 수도권 투영과 SEO 값은 ADR-0008의 발행 조건을 충족해야 한다.

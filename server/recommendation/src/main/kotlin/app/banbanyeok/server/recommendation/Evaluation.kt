@@ -25,6 +25,16 @@ public class Evaluation internal constructor(
      */
     public val mapMiddle: MapMiddle? by lazy { middle() }
 
+    /** 이 구분에서 배차 미확인으로 제외한 계통. 숨긴 출발역이 남아 있는 옛 방의 응답에서는 생략한다. */
+    public val missingServices: List<String>?
+        get() =
+            matrix.missingServices.takeIf {
+                it.isNotEmpty() &&
+                    request.participants.none { person ->
+                        person.hidden
+                    }
+            }
+
     /**
      * [stationCode]까지 사람별 시간(요청 참가자 순서). 순위와 상관없는 역(다른 기준 탭이나 방에서 정한 역)에도 쓴다.
      * 후보 축에 없는 역이면 null이고, 갈 수 없는 사람은 그 칸이 null이다. 순위 카드와 같이 보이는 값이다: 출발역을 숨긴 다른 사람의

@@ -34,6 +34,8 @@ public data class DecisionRequest(
 public class DecisionRule(
     private val stations: StationCatalog,
 ) {
+    private val regions = RoomRegionRule(stations)
+
     /** 정한 역이 지금 데이터에서 만날 역이 아니거나(사라진 역) 정한 사람이 방에 없으면 없는 것으로 보인다. 역 코드는 정식 코드다. */
     public fun visible(
         decision: Decision?,
@@ -49,16 +51,21 @@ public class DecisionRule(
      */
     public fun verdict(
         room: Room,
-        members: Collection<String>,
+        participants: List<Participant>,
         request: DecisionRequest,
-    ): DecisionResult =
-        when {
+    ): DecisionResult {
+        val members = participants.map { it.id }
+        if (request.actor in members && members.size >= MIN_PEOPLE) {
+            request.decision?.let { regions.requireMatch(participants, it.stationCode) }
+        }
+        return when {
             request.actor !in members -> DecisionResult.NotMember
             request.decision != null && members.size < MIN_PEOPLE -> DecisionResult.TooFew
             visible(room.decision, members)?.stationCode == request.decision?.stationCode -> DecisionResult.Unchanged
             request.seen < room.decisionBasis || request.seen > room.shareVersion -> DecisionResult.Stale
             else -> DecisionResult.Applied
         }
+    }
 
     private companion object {
         const val MIN_PEOPLE = 2

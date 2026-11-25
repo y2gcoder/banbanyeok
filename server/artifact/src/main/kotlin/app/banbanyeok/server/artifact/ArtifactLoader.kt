@@ -4,10 +4,13 @@ import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
 import app.banbanyeok.schema.LastTrainTable
+import app.banbanyeok.schema.MANIFEST_SCHEMA_VERSION
 import app.banbanyeok.schema.ManifestCodec
 import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.REGIONAL_MANIFEST_GENERATION
 import app.banbanyeok.schema.RouteGraph
+import app.banbanyeok.schema.RouteGraphCodec
 import app.banbanyeok.schema.SchemaException
 import app.banbanyeok.schema.TimeSlot
 import kotlinx.coroutines.CompletableDeferred
@@ -68,6 +71,7 @@ public class ArtifactLoader(
     private val store: ArtifactStore,
     private val background: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     private val backgroundStart: CoroutineStart = CoroutineStart.DEFAULT,
+    private val regional: Boolean = false,
     /** 단계 경과를 남기는 훅(시작 시간 측정용). 값은 단계 이름뿐이다. */
     private val onPhase: (String) -> Unit = {},
 ) {
@@ -91,6 +95,10 @@ public class ArtifactLoader(
      * 다른 높은 세대는 지난 것이다(예: 옛 스크립트로 이전 데이터로 되돌림) — 그러면 그 아래 세대를, 끝내 맞는 것이 없으면 세대 1을 쓴다.
      */
     private suspend fun currentManifest(): StoredArtifact {
+        if (regional) {
+            return store.get(ArtifactKey(ManifestNames.REGIONAL))
+                ?: throw ArtifactLoadException("권역 manifest가 저장소에 없습니다")
+        }
         val found =
             coroutineScope {
                 ManifestNames.NEWEST_FIRST.map { name -> async { store.get(ArtifactKey(name)) } }.map { it.await() }
@@ -111,7 +119,12 @@ public class ArtifactLoader(
 
     /** manifest와 기본 파일 세 개. 서로 독립이라 동시에 읽는다(원격 저장소에서 왕복이 직렬로 쌓이지 않게). */
     private suspend fun core(manifestText: String): DataSet {
-        val files = ManifestCodec.parse(manifestText).files
+        val manifest = ManifestCodec.parse(manifestText)
+        val supported = if (regional) REGIONAL_MANIFEST_GENERATION else MANIFEST_SCHEMA_VERSION
+        if ((manifest.schemaVersion == REGIONAL_MANIFEST_GENERATION) != regional) {
+            throw ArtifactLoadException("manifest가 설정한 산출물 세대와 다릅니다")
+        }
+        val files = manifest.files
         val (registry, candidates, od) =
             coroutineScope {
                 val registry = async { read(files.registry.path) }
@@ -120,9 +133,14 @@ public class ArtifactLoader(
                 Triple(registry.await(), candidates.await(), od.await())
             }
         onPhase("artifact-files-read")
-        return DataSetLoader.load(DataSetBytes(manifestText, registry, candidates, od), deferSlots = true).also {
-            onPhase("artifact-validated")
-        }
+        return DataSetLoader
+            .load(
+                DataSetBytes(manifestText, registry, candidates, od),
+                supported,
+                deferSlots = true,
+            ).also {
+                onPhase("artifact-validated")
+            }
     }
 
     /** 구분 행렬. 내용이 같은 구분은 한 파일을 함께 가리키므로(토요일·일요일) 경로마다 한 번만 읽는다. */
@@ -155,7 +173,8 @@ public class ArtifactLoader(
     private suspend fun routeGraph(dataSet: DataSet): RouteGraph? {
         val file = dataSet.manifest.files.routeGraph ?: return null
         val bytes = read(file.path)
-        return validated("노선 그래프 검증 실패") { DataSetLoader.routeGraph(dataSet, bytes) }
+        val format = if (regional) RouteGraphCodec.REGIONAL_FORMAT_VERSION else RouteGraphCodec.FORMAT_VERSION
+        return validated("노선 그래프 검증 실패") { DataSetLoader.routeGraph(dataSet, bytes, format) }
             .also { onPhase("artifact-route-graph-validated") }
     }
 

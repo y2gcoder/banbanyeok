@@ -18,6 +18,13 @@ export const PROBLEMS = {
         "출발역 코드가 지금 데이터의 출발역에 없습니다(추천·방 생성·참여·출발역 수정). 정하려는 역이 만날 역 후보가 아닌 경우도 같습니다.",
     },
     {
+      code: "REGION_MISMATCH",
+      slug: "region-mismatch",
+      status: 400,
+      title: "권역이 서로 다름",
+      meaning: "방과 추천은 한 권역 안에서 계산합니다.",
+    },
+    {
       code: "INVALID_PEOPLE_COUNT",
       slug: "invalid-people-count",
       status: 400,
@@ -202,6 +209,13 @@ export const PROBLEMS = {
       status: 409,
       title: "출발역을 지금 쓸 수 없음",
       meaning: "방을 만든 뒤 데이터가 바뀌어, 저장된 출발역이 지금 데이터에 없습니다. 출발역을 다시 고르면 됩니다.",
+    },
+    {
+      code: "SCHEDULE_UNAVAILABLE",
+      slug: "schedule-unavailable",
+      status: 409,
+      title: "시간표 미확인",
+      meaning: "요청한 구분 또는 출발역의 시간표를 확인하지 못해 계산할 수 없습니다.",
     },
     {
       code: "ROOM_CHANGED",

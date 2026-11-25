@@ -1,5 +1,6 @@
 package app.banbanyeok.server.recommendation
 
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainAttacher
 import app.banbanyeok.server.recommendation.lasttrain.LastTrainSource
 import app.banbanyeok.server.recommendation.mapmiddle.MapMiddlePicker
@@ -41,7 +42,7 @@ public class RecommendationService(
      */
     public suspend fun evaluate(requested: RecommendRequest): Evaluation {
         val request = requested.withParticipants(requested.participants.toList())
-        validate(request)
+        val region = validate(request)
         slotsReady.await(request.time.slot)
         val matrix = travelTimes.measure(request.participants.map { it.originCode }, request.time.slot)
         val timeBasis = computedBasis(request, matrix)
@@ -51,7 +52,12 @@ public class RecommendationService(
                 request.viewerId,
             )
         // 막차 표는 여기서 한 번 읽는다. 순위·시간·이유에는 쓰이지 않고, 순위를 다 정한 뒤 카드에 붙는다.
-        val lookup = lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
+        val lookup =
+            if (region == StationRegion.BUSAN) {
+                LastTrainAttacher.Lookup(null, pending = false)
+            } else {
+                lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
+            }
         val attached = lookup.attached
         val ranked =
             ranking
@@ -82,7 +88,7 @@ public class RecommendationService(
         matrix: TravelMatrix,
     ): TimeBasis = if (matrix.slot == request.time.slot) request.time else TimeBasis.of(matrix.slot)
 
-    private fun validate(request: RecommendRequest) {
+    private fun validate(request: RecommendRequest): StationRegion {
         val people = request.participants
         if (people.size !in MIN_PEOPLE..MAX_PEOPLE) reject(RecommendationError.PEOPLE_COUNT, "참가자는 2~4명이어야 합니다")
         if (people.any { it.nickname != null && !Nicknames.isValid(it.nickname) }) {
@@ -91,6 +97,18 @@ public class RecommendationService(
         if (people.any { !travelTimes.isOrigin(it.originCode) }) {
             reject(RecommendationError.UNKNOWN_STATION, "알 수 없는 출발역이 있습니다")
         }
+        val regions =
+            people
+                .map {
+                    if (it.hidden) {
+                        StationRegion.CAPITAL
+                    } else {
+                        travelTimes.regionOf(
+                            it.originCode,
+                        )
+                    }
+                }.toSet()
+        val region = regions.singleOrNull() ?: reject(RecommendationError.REGION_MISMATCH, "방과 추천은 한 권역 안에서 계산합니다")
         if (request.mode == RecommendMode.FAVOR) {
             val target = request.favorId ?: reject(RecommendationError.FAVOR_TARGET_REQUIRED, "우대 대상이 필요합니다")
             val favored =
@@ -101,6 +119,7 @@ public class RecommendationService(
                 reject(RecommendationError.FAVOR_TARGET_HIDDEN, "출발역을 숨긴 사람 쪽으로 맞춘 결과는 본인만 볼 수 있습니다")
             }
         }
+        return region
     }
 
     private fun reject(

@@ -160,7 +160,7 @@ private fun RoutingNode.methodsFor(segments: List<String>): List<HttpMethod> =
 // RecommendationError → 응답. 경로마다 표가 따로 있고 같은 오류에도 일부러 다른 코드를 쓴다. 두 표는 여기에서만 정한다.
 // 라우트는 추천을 부르는 곳을 아래 래퍼 중 하나로 감싼다. 감싸지 않은 RecommendationException은 처리하지 못한 오류(500)다.
 
-/** 무상태 `/v1/recommend`: 입력이 잘못된 것이라 모두 400이고, 메시지는 추천 모듈이 만든 것을 그대로 쓴다. */
+/** 무상태 `/v1/recommend`: 입력 오류는 400, 시간표 지원이 없으면 409다. */
 internal inline fun <T> statelessRecommendationErrors(block: () -> T): T =
     try {
         block()
@@ -168,14 +168,24 @@ internal inline fun <T> statelessRecommendationErrors(block: () -> T): T =
         throw e.asStatelessError()
     }
 
-internal fun RecommendationException.asStatelessError(): AppException =
-    AppException(ErrorKind.INVALID, statelessCode(error), message.orEmpty(), this)
+internal fun RecommendationException.asStatelessError(): AppException {
+    val kind = if (error == RecommendationError.SCHEDULE_UNAVAILABLE) ErrorKind.CONFLICT else ErrorKind.INVALID
+    val detail =
+        when (error) {
+            RecommendationError.REGION_MISMATCH -> "방과 추천은 한 권역 안에서 계산합니다"
+            RecommendationError.SCHEDULE_UNAVAILABLE -> "요청한 시간표를 확인하지 못했습니다"
+            else -> message.orEmpty()
+        }
+    return AppException(kind, statelessCode(error), detail, this)
+}
 
 private fun statelessCode(error: RecommendationError): String =
     when (error) {
         RecommendationError.PEOPLE_COUNT -> "INVALID_PEOPLE_COUNT"
         RecommendationError.INVALID_NICKNAME -> "INVALID_NICKNAME"
         RecommendationError.UNKNOWN_STATION -> "INVALID_STATION"
+        RecommendationError.REGION_MISMATCH -> "REGION_MISMATCH"
+        RecommendationError.SCHEDULE_UNAVAILABLE -> "SCHEDULE_UNAVAILABLE"
         RecommendationError.FAVOR_TARGET_REQUIRED -> "FAVOR_TARGET_REQUIRED"
         RecommendationError.FAVOR_TARGET_UNKNOWN -> "FAVOR_TARGET_UNKNOWN"
         RecommendationError.FAVOR_TARGET_HIDDEN -> "FAVOR_TARGET_HIDDEN"
@@ -194,6 +204,10 @@ internal inline fun <T> roomRecommendationErrors(block: () -> T): T =
 
 internal fun RecommendationException.asRoomError(): AppException =
     when (error) {
+        RecommendationError.REGION_MISMATCH, RecommendationError.SCHEDULE_UNAVAILABLE -> {
+            asStatelessError()
+        }
+
         RecommendationError.UNKNOWN_STATION -> {
             AppException(ErrorKind.CONFLICT, "STATION_UNAVAILABLE", "참가자의 출발역이 현재 데이터에 없습니다", this)
         }

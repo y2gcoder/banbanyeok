@@ -14,6 +14,7 @@ data class ArtifactConfig(
     val gcsPrefix: String,
     /** GCS 에뮬레이터 주소(이미지 AppCDS 학습·로컬 시험 전용). 운영에서는 비운다. */
     val gcsEndpoint: String? = null,
+    val regional: Boolean = false,
 )
 
 /** 한 종류의 요청에 대한 토큰 버킷: 버스트 크기와 초당 보충량. */
@@ -181,6 +182,7 @@ internal class ConfigLoader(
             gcsBucket = bucket,
             gcsPrefix = env["ARTIFACT_GCS_PREFIX"].orEmpty(),
             gcsEndpoint = endpoint,
+            regional = flag("REGIONAL_ARTIFACTS", default = false),
         )
     }
 

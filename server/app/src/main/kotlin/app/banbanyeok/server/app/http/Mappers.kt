@@ -210,7 +210,7 @@ private fun Recommendation.toDto(participants: List<ParticipantDto>) =
 fun RoomResult.toDto(stations: StationNames): ResultDto =
     recommendation
         .toDto(participants.zip(recommendation.labels) { participant, label -> participant.toDto(stations, label) })
-        .copy(shareVersion = shareVersion.value)
+        .copy(shareVersion = shareVersion.value, missingServices = missingServices)
 
 /** 무상태 추천: 참가자는 입력 순서의 인덱스 문자열("0", "1", …)로 구분한다. */
 fun StatelessResult.toDto(stations: StationNames): ResultDto =
@@ -231,7 +231,7 @@ fun StatelessResult.toDto(stations: StationNames): ResultDto =
                     shortLabel = label.short,
                 )
             },
-        ).copy(mapMiddle = mapMiddle?.toDto())
+        ).copy(mapMiddle = mapMiddle?.toDto(), missingServices = missingServices)
 
 /** 응답에 쓰는 막차 종류 이름(openapi `LastTrain.kind`): 직행 확정 / 여유 시각 / 확인 필요. */
 internal val LastTrainKind.wire: String

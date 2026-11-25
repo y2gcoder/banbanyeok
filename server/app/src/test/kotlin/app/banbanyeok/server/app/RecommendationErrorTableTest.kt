@@ -40,27 +40,37 @@ class RecommendationErrorTableTest :
         val recommendBody = """{"origins":["${origins[0]}","${origins[1]}"],"mode":"fair"}"""
 
         describe("the stateless /v1/recommend table") {
-            // 오류 → (코드). 상태는 모두 400이고 메시지는 추천 모듈이 만든 것이다.
             val table =
                 mapOf(
                     RecommendationError.PEOPLE_COUNT to "INVALID_PEOPLE_COUNT",
                     RecommendationError.INVALID_NICKNAME to "INVALID_NICKNAME",
                     RecommendationError.UNKNOWN_STATION to "INVALID_STATION",
+                    RecommendationError.REGION_MISMATCH to "REGION_MISMATCH",
+                    RecommendationError.SCHEDULE_UNAVAILABLE to "SCHEDULE_UNAVAILABLE",
                     RecommendationError.FAVOR_TARGET_REQUIRED to "FAVOR_TARGET_REQUIRED",
                     RecommendationError.FAVOR_TARGET_UNKNOWN to "FAVOR_TARGET_UNKNOWN",
                     RecommendationError.FAVOR_TARGET_HIDDEN to "FAVOR_TARGET_HIDDEN",
                 )
             it("lists every error") { table.keys shouldBe RecommendationError.entries.toSet() }
             for ((error, code) in table) {
-                it("answers $error with 400 $code and the recommendation's own message") {
+                val status =
+                    if (error ==
+                        RecommendationError.SCHEDULE_UNAVAILABLE
+                    ) {
+                        HttpStatusCode.Conflict
+                    } else {
+                        HttpStatusCode.BadRequest
+                    }
+                val detail = regionalDetails[error] ?: "추천 메시지"
+                it("answers $error with $status $code and the expected detail") {
                     withMockedApi { services ->
                         coEvery { services.recommendation.evaluate(any()) } throws
                             RecommendationException(error, "추천 메시지")
                         val response = client.json(HttpMethod.Post, "/v1/recommend", recommendBody)
                         val got = reply(response.status, response.bodyAsText())
-                        got.status shouldBe HttpStatusCode.BadRequest
+                        got.status shouldBe status
                         got.code shouldBe code
-                        got.message shouldBe "추천 메시지"
+                        got.message shouldBe detail
                     }
                 }
             }
@@ -76,6 +86,18 @@ class RecommendationErrorTableTest :
                         Triple(HttpStatusCode.BadRequest, "INVALID_NICKNAME", "별칭이 올바르지 않습니다"),
                     RecommendationError.UNKNOWN_STATION to
                         Triple(HttpStatusCode.Conflict, "STATION_UNAVAILABLE", "참가자의 출발역이 현재 데이터에 없습니다"),
+                    RecommendationError.REGION_MISMATCH to
+                        Triple(
+                            HttpStatusCode.BadRequest,
+                            "REGION_MISMATCH",
+                            regionalDetails.getValue(RecommendationError.REGION_MISMATCH),
+                        ),
+                    RecommendationError.SCHEDULE_UNAVAILABLE to
+                        Triple(
+                            HttpStatusCode.Conflict,
+                            "SCHEDULE_UNAVAILABLE",
+                            regionalDetails.getValue(RecommendationError.SCHEDULE_UNAVAILABLE),
+                        ),
                     RecommendationError.FAVOR_TARGET_REQUIRED to
                         Triple(HttpStatusCode.BadRequest, "FAVOR_TARGET_REQUIRED", "우대 대상이 필요합니다"),
                     RecommendationError.FAVOR_TARGET_UNKNOWN to
@@ -114,3 +136,9 @@ class RecommendationErrorTableTest :
             }
         }
     })
+
+private val regionalDetails =
+    mapOf(
+        RecommendationError.REGION_MISMATCH to "방과 추천은 한 권역 안에서 계산합니다",
+        RecommendationError.SCHEDULE_UNAVAILABLE to "요청한 시간표를 확인하지 못했습니다",
+    )

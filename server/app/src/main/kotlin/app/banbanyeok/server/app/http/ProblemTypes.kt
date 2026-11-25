@@ -13,6 +13,7 @@ internal object ProblemTypes {
         mapOf(
             "INVALID_REQUEST" to "요청 형식이 올바르지 않음",
             "INVALID_STATION" to "계산할 수 없는 출발역",
+            "REGION_MISMATCH" to "권역이 서로 다름",
             "INVALID_PEOPLE_COUNT" to "참가자 수가 올바르지 않음",
             "INVALID_MODE" to "모드가 올바르지 않음",
             "FAVOR_TARGET_REQUIRED" to "우대 대상이 필요함",
@@ -39,6 +40,7 @@ internal object ProblemTypes {
             "ROOM_LOCKED" to "방이 잠김",
             "NOT_ENOUGH_PARTICIPANTS" to "참가자가 부족함",
             "STATION_UNAVAILABLE" to "출발역을 지금 쓸 수 없음",
+            "SCHEDULE_UNAVAILABLE" to "시간표 미확인",
             "ROOM_CHANGED" to "그사이 방이 바뀜",
             "DRAW_NOT_AVAILABLE" to "뽑기로 만든 방이 아님",
             "NOT_ENOUGH_DRAW_CANDIDATES" to "뽑을 사람이 부족함",

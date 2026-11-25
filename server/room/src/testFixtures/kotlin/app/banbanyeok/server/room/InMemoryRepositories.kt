@@ -34,6 +34,7 @@ class InMemoryRoomRepository : RoomRepository {
         roomId: String,
         participant: Participant,
         activity: Activity,
+        regions: RoomRegionRule?,
     ): AddResult =
         lock.withLock {
             val stored = rooms[roomId] ?: return@withLock AddResult.RoomNotFound
@@ -48,6 +49,7 @@ class InMemoryRoomRepository : RoomRepository {
                 }
 
                 else -> {
+                    regions?.requireMatch(stored.participants, participant.originCode, hidden = participant.hidden)
                     write(roomId) { it.copy(participants = it.participants + participant) }
                     touch(roomId, activity)
                     AddResult.Added
@@ -60,11 +62,13 @@ class InMemoryRoomRepository : RoomRepository {
         participantId: String,
         change: ParticipantChange,
         activity: Activity,
+        regions: RoomRegionRule?,
     ): Boolean =
         lock.withLock {
             val stored = rooms[roomId] ?: return@withLock false
             val current = stored.participants.firstOrNull { it.id == participantId } ?: return@withLock false
             if (change.onlyIfHidden && !current.hidden) return@withLock false
+            regions?.requireMatch(stored.participants, change.originCode, participantId, change.hidden)
             write(roomId) {
                 it.copy(
                     participants =
@@ -168,8 +172,7 @@ class InMemoryRoomRepository : RoomRepository {
     ): DecisionResult =
         lock.withLock {
             val stored = rooms[roomId] ?: return@withLock DecisionResult.RoomNotFound
-            val members = stored.participants.map { it.id }
-            rule.verdict(stored.room, members, request).also { verdict ->
+            rule.verdict(stored.room, stored.participants, request).also { verdict ->
                 if (verdict == DecisionResult.Applied) {
                     write(roomId) {
                         it.copy(

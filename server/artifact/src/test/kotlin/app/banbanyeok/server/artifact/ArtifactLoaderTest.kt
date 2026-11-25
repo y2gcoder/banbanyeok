@@ -3,6 +3,7 @@
 package app.banbanyeok.server.artifact
 
 import app.banbanyeok.schema.DayType
+import app.banbanyeok.schema.ManifestNames
 import app.banbanyeok.schema.RouteGraphCodec
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.schema.TimeSlot
@@ -37,26 +38,39 @@ private suspend fun copyDev(
 class ArtifactLoaderTest :
     DescribeSpec({
         describe("loading the dev artifacts") {
-            it("keeps serving the legacy manifest and graph when a regional preview coexists in the store") {
+            it("loads either generation from one store and hides regional files from the legacy selector") {
                 val store =
                     LocalFileArtifactStore(Files.createTempDirectory("regional-preview"), UnconfinedTestDispatcher())
                 copyDev(store)
-                val legacyGraph = store.get(ArtifactKey("rg.bin"))!!.content
-                val regionalGraph =
-                    legacyGraph.copyOf().also {
-                        it[4] = RouteGraphCodec.REGIONAL_FORMAT_VERSION.toByte()
+                val fixtureRoot = Path.of(System.getProperty("regional.fixture.dir"))
+                Files
+                    .walk(fixtureRoot.resolve("regional"))
+                    .use { files ->
+                        files.filter { Files.isRegularFile(it) }.toList()
+                    }.forEach { file ->
+                        val key = fixtureRoot.relativize(file).joinToString("/")
+                        store.put(ArtifactKey(key), Files.readAllBytes(file))
                     }
-                val version = "29991231.1"
-                store.put(ArtifactKey("regional/versions/$version/rg-preview.bin"), regionalGraph)
-                store.put(
-                    ArtifactKey("regional/manifest.v5.json"),
-                    """{"schemaVersion":5,"dataVersion":"$version"}""".encodeToByteArray(),
-                )
-                val loaded = ArtifactLoader(store).load()
-                loaded.dataVersion shouldNotBe version
-                loaded.dataSet.manifest.schemaVersion shouldBe 4
-                loaded.routeGraph.await()!!.formatVersion shouldBe RouteGraphCodec.FORMAT_VERSION
-                PublishedArtifacts(store, loaded).dataFile(version, "rg-preview.bin") shouldBe null
+                val regional = ArtifactLoader(store, regional = true).load()
+                regional.dataSet.manifest.schemaVersion shouldBe 5
+                regional.dataSet.registry.schemaVersion shouldBe 2
+                regional.routeGraph.await()!!.formatVersion shouldBe RouteGraphCodec.REGIONAL_FORMAT_VERSION
+                regional.slots.await().size shouldBe 11
+                regional.lastTrains.await()!!.homeCount shouldBe 5
+                val graphName =
+                    regional.dataSet.manifest.files.routeGraph!!
+                        .path
+                        .substringAfterLast('/')
+                val regionalPublished = PublishedArtifacts(store, regional)
+                regionalPublished.manifest.content.toList() shouldBe
+                    store.get(ArtifactKey(ManifestNames.REGIONAL))!!.content.toList()
+                regionalPublished.dataFile(regional.dataVersion, graphName) shouldNotBe null
+
+                val legacy = ArtifactLoader(store).load()
+                legacy.dataSet.manifest.schemaVersion shouldBe 4
+                legacy.dataSet.registry.schemaVersion shouldBe 1
+                legacy.routeGraph.await()!!.formatVersion shouldBe RouteGraphCodec.FORMAT_VERSION
+                PublishedArtifacts(store, legacy).dataFile(regional.dataVersion, graphName) shouldBe null
             }
 
             it("loads and validates the data set the manifest points to") {

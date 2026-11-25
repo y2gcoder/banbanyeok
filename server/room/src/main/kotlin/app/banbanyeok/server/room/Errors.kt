@@ -7,6 +7,7 @@ public enum class RoomError(
     public val kind: ErrorKind,
 ) {
     INVALID_STATION(ErrorKind.INVALID),
+    REGION_MISMATCH(ErrorKind.INVALID),
     INVALID_NICKNAME(ErrorKind.INVALID),
     INVALID_MEETING_DATE(ErrorKind.INVALID),
     INVALID_MEETING_BAND(ErrorKind.INVALID),
