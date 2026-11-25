@@ -89,6 +89,7 @@ object CompositionRoot {
                         store,
                         onPhase = { timeline?.mark(it) },
                         backgroundStart = CoroutineStart.LAZY,
+                        regional = config.artifacts.regional,
                     ).load()
                 }
             timeline?.awaitLoggingReady()

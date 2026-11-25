@@ -30,6 +30,7 @@ class RoomResult(
     val participants: List<ParticipantView>,
     /** 이 결과를 계산한 방 읽기의 공유 번호. 결과 카드에서 정할 때 보내는 `seenVersion`이다. */
     val shareVersion: ShareVersion,
+    val missingServices: List<String>? = null,
 )
 
 /**
@@ -55,10 +56,12 @@ class RoomResultService(
             throw AppException(ErrorKind.CONFLICT, "NOT_ENOUGH_PARTICIPANTS", "참가자가 2명 이상이어야 합니다")
         }
         val request = requestOf(context, mode, favorId)
+        val evaluation = recommendation.evaluate(request)
         return RoomResult(
-            recommendation.evaluate(request).recommendation,
+            evaluation.recommendation,
             context.view.participants,
             context.view.shareVersion,
+            evaluation.missingServices,
         )
     }
 

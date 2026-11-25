@@ -28,12 +28,14 @@ public class RoomService(
     private val newHidden: NewHiddenOrigins = NewHiddenOrigins.REJECTED,
 ) {
     private val decisions = DecisionRule(stations)
+    private val regions = RoomRegionRule(stations)
     private val draws = FavorDrawRule(drawRandom, clock)
 
     public suspend fun create(command: CreateRoomCommand): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
         checkNewParticipant(host)
+        regions.requireMatch(emptyList(), host.originCode, hidden = host.hidden)
         validateCreation(command, now)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
@@ -86,7 +88,7 @@ public class RoomService(
         val participantId = ids.participantId()
         val token = tokens.issue()
         val participantEntity = newParticipant(participantId, token.hash, anonIdOf(deviceToken, now), participant, now)
-        when (rooms.addParticipant(room.id, participantEntity, activityOf(room, room.meetingDate, now))) {
+        when (rooms.addParticipant(room.id, participantEntity, activityOf(room, room.meetingDate, now), regions)) {
             AddResult.Added -> Unit
             AddResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
             AddResult.Full -> reject(RoomError.ROOM_FULL, "방이 가득 찼습니다")
@@ -112,12 +114,15 @@ public class RoomService(
         roomId: String,
         participantId: String,
         participantToken: String,
+        originCode: String,
     ) {
         val stored = loadActive(roomId, clock.instant())
         if (caller(stored, participantToken) != Caller.Member(participantId)) {
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
         }
         if (stored.room.locked) reject(RoomError.ROOM_LOCKED, "방이 잠겼습니다")
+        val origin = stations.canonical(originCode)
+        if (stations.isOrigin(origin)) regions.requireMatch(stored.participants, origin)
     }
 
     /** 토큰은 선택이다. 유효한 participantToken이면 본인 항목의 출발역이 숨김이어도 보인다. 잘못된 토큰은 무시한다. */
@@ -181,7 +186,7 @@ public class RoomService(
                 onlyIfHidden = keepsHidden,
             )
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
-        if (!rooms.updateParticipant(roomId, participantId, change, activity)) {
+        if (!rooms.updateParticipant(roomId, participantId, change, activity, regions)) {
             val stillThere = rooms.find(roomId)?.participants?.any { it.id == participantId } == true
             if (keepsHidden && stillThere) rejectNewHidden()
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
@@ -525,7 +530,9 @@ public class RoomService(
             if (!valid) reject(RoomError.INVALID_NICKNAME, "별칭이 올바르지 않습니다")
         }
         val originCode = stations.canonical(input.originCode)
-        if (!stations.isOrigin(originCode)) reject(RoomError.INVALID_STATION, "알 수 없는 출발역입니다")
+        if (!stations.isOrigin(originCode) || stations.regionOf(originCode) == null) {
+            reject(RoomError.INVALID_STATION, "알 수 없는 출발역입니다")
+        }
         return input.copy(nickname = nickname, originCode = originCode)
     }
 

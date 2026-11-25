@@ -139,7 +139,12 @@ private fun Route.participantRoutes(
             val input = call.receive<ParticipantInputDto>().toInput()
             services.rooms.checkNewParticipant(input)
             call.respondCreated<JoinedDto>(idempotency, replay = { cached ->
-                services.rooms.checkJoinReplay(call.roomId(), cached.participantId, cached.participantToken)
+                services.rooms.checkJoinReplay(
+                    call.roomId(),
+                    cached.participantId,
+                    cached.participantToken,
+                    input.originCode,
+                )
                 cached
             }) {
                 val joined = services.rooms.join(call.roomId(), input, call.bearerToken())

@@ -1,7 +1,9 @@
 package app.banbanyeok.server.recommendation
 
 import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.RegionalSlotCoverage
 import app.banbanyeok.schema.StationCode
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.schema.TimeSlot
 
 /**
@@ -12,6 +14,8 @@ public class OdTravelTimeProvider(
     private val od: OdMatrix,
     override val dataVersion: String,
     private val slots: SlotMatrices = SlotMatrices { null },
+    private val regions: Map<String, StationRegion>? = null,
+    private val coverage: Map<StationRegion, Map<String, RegionalSlotCoverage>>? = null,
 ) : TravelTimeProvider {
     public constructor(od: OdMatrix, dataVersion: String, slots: Map<TimeSlot, OdMatrix>) :
         this(od, dataVersion, SlotMatrices { slots[it] })
@@ -20,12 +24,23 @@ public class OdTravelTimeProvider(
 
     override fun isOrigin(code: String): Boolean = indexOfOrigin(code) >= 0
 
+    override fun regionOf(code: String): StationRegion? = if (regions == null) super.regionOf(code) else regions[code]
+
     override fun measure(
         origins: List<String>,
         slot: TimeSlot,
     ): TravelMatrix {
         val rows = origins.map { code -> indexOfOrigin(code).also { require(it >= 0) { "알 수 없는 출발역: $code" } } }
+        val region = origins.firstOrNull()?.let(::regionOf)
+        val known = region?.let { coverage?.get(it)?.get(slot.id) }
+        if (known?.available == false || (known != null && origins.any { it in known.unsupportedOrigins })) {
+            scheduleUnavailable()
+        }
         val slotMatrix = if (slot == TimeSlot.DEFAULT) null else slots.matrix(slot)
+        val requireBusanSlot = coverage != null && region == StationRegion.BUSAN
+        if (requireBusanSlot && slot != TimeSlot.DEFAULT && slotMatrix == null) {
+            scheduleUnavailable()
+        }
         val used = if (slotMatrix == null) TimeSlot.DEFAULT else slot
         val matrix = slotMatrix ?: od
 
@@ -33,8 +48,17 @@ public class OdTravelTimeProvider(
             rows.map { row ->
                 List(matrix.candidateCount) { column -> read(row, column).takeIf { it != OdMatrix.UNREACHABLE } }
             }
-        return TravelMatrix(candidateCodes, cells(matrix::timeSeconds), cells(matrix::transfers), used)
+        return TravelMatrix(
+            candidateCodes,
+            cells(matrix::timeSeconds),
+            cells(matrix::transfers),
+            used,
+            known?.missingServices.orEmpty(),
+        )
     }
 
     private fun indexOfOrigin(code: String): Int = StationCode.parseOrNull(code)?.let(od::indexOfOrigin) ?: -1
+
+    private fun scheduleUnavailable(): Nothing =
+        throw RecommendationException(RecommendationError.SCHEDULE_UNAVAILABLE, "요청한 시간표를 확인하지 못했습니다")
 }

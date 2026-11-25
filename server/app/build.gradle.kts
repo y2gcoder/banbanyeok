@@ -54,6 +54,7 @@ tasks.named<Test>("integrationTest") {
 }
 tasks.named<Test>("test") {
     inputs.file(rootProject.file("contracts/openapi.yaml")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(rootProject.file("contracts/fixtures/regional")).withPathSensitivity(PathSensitivity.RELATIVE)
     systemProperty(
         "contracts.dir",
         rootProject.layout.projectDirectory

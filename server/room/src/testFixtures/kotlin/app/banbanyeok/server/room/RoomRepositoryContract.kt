@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room
 
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.schema.TimeBand
 import io.kotest.core.spec.style.describeSpec
 import io.kotest.core.spec.style.scopes.DescribeSpecRootScope
@@ -43,6 +44,7 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
     describeSpec {
         createAndFind(newRepositories)
         addingParticipants(newRepositories)
+        regionalParticipants(newRepositories)
         changingParticipants(newRepositories)
         changingRooms(newRepositories)
         favorTargets(newRepositories)
@@ -150,6 +152,56 @@ private fun DescribeSpecRootScope.addingParticipants(repos: () -> RepositoryPair
             results.count { it == AddResult.Added } shouldBe 3
             results.count { it == AddResult.Full } shouldBe 5
             rooms.find(room.id)!!.participants.size shouldBe 4
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.regionalParticipants(repos: () -> RepositoryPair) {
+    describe("regional participant writes") {
+        it("keeps one region when a participant joins while the only member changes region") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            val catalog =
+                object : StationCatalog by FakeStationCatalog() {
+                    override fun regionOf(code: String) =
+                        if (code ==
+                            "130"
+                        ) {
+                            StationRegion.BUSAN
+                        } else {
+                            StationRegion.CAPITAL
+                        }
+                }
+            val regions = RoomRegionRule(catalog)
+            rooms.create(room, aParticipant("host01"))
+            val outcomes =
+                coroutineScope {
+                    listOf(
+                        async {
+                            runCatching {
+                                rooms.addParticipant(
+                                    room.id,
+                                    aParticipant("pid002"),
+                                    activity(1),
+                                    regions,
+                                )
+                            }
+                        },
+                        async {
+                            val change = ParticipantChange(null, "130", false, T0.plusSeconds(60))
+                            runCatching { rooms.updateParticipant(room.id, "host01", change, activity(1), regions) }
+                        },
+                    ).awaitAll()
+                }
+            outcomes.count { it.isSuccess } shouldBe 1
+            val rejected = outcomes.single { it.isFailure }.exceptionOrNull() as RoomException
+            rejected.error shouldBe RoomError.REGION_MISMATCH
+            rooms
+                .find(room.id)!!
+                .participants
+                .map { catalog.regionOf(it.originCode) }
+                .distinct()
+                .size shouldBe 1
         }
     }
 }

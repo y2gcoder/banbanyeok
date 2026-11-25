@@ -25,6 +25,10 @@ info:
     수정 `hidden=true`는 400 `HIDE_NOT_AVAILABLE`이다. 이미 숨긴 채 방에 있는 참가자는 방이 사라질 때까지 지금 규칙(`hidden=true` 유지,
     `false`로 풀기)을 그대로 쓴다. 풀고 나면 다시 숨길 수 없다.
 
+    **권역**: 한 방과 한 추천의 정식 출발역 코드는 같은 권역이어야 한다. 서로 다른 권역이면 직접 추천(옛 공유 링크 포함), 방 참여·출발역
+    수정·만날 역 정하기, 방 결과·미리보기에서 400 `REGION_MISMATCH`다. 오류에 역·참가자·권역 식별자를 싣지 않는다.
+    숨긴 참가자가 남아 있는 옛 방은 기존 수도권 방 규칙을 적용한다. 방 상태와 미리보기에는 숨긴 출발역의 권역 필드를 추가하지 않는다.
+
     **단위**: 시간은 정수 **초**, 환승은 정수 횟수. 역은 3자 역 코드(contracts/data-format.md §2).
 
     **데이터 버전**: 방은 생성 시점의 `dataVersion`(manifest의 값)을 기록하고, 결과 응답은 계산에 쓴 버전을 돌려준다.
@@ -37,6 +41,10 @@ info:
     구분과 화면 문구(`label`, 예: "토요일 저녁")이며 클라이언트는 문구를 다시 만들지 않는다. `requestedTimeSlot`은 요청한(방은 날짜·시각에서
     정한) 구분이다. 다음 경우에는 평일 낮으로 대신 계산하고 `timeSlot`이 `weekday-day`가 된다(= `requestedTimeSlot`과 다르다): 데이터에 그
     구분의 행렬이 없을 때(manifest 1세대), 서버가 기동 뒤 구분 행렬 검증에 실패했을 때, 기동 직후 검증이 10초 안에 끝나지 않았을 때.
+
+    권역 데이터에서 배차가 미확인인 계통은 해당 구분의 계산에서 제외한다. 지원 출발역에서 계산한 결과는 유지하며 빠진 계통은
+    `Result.missingServices`에 한 번 알린다. 요청한 구분 또는 출발역의 배차 지원이 없으면 409 `SCHEDULE_UNAVAILABLE`이고,
+    다른 구분으로 대체하지 않는다.
 
     **공통 규칙**: 요청 크기 제한(16 KiB, 초과 시 413), IP·기기 단위 속도 제한(초과 시 429와 `Retry-After`), 방 생성과
     참여에 선택적 `Idempotency-Key` 헤더(서버 인스턴스 메모리에서 10분간 같은 응답 재생), 오류는 항상 `application/problem+json`(RFC 9457 Problem Details, 스키마 `Problem`).
@@ -364,7 +372,7 @@ paths:
         '409':
           description: |
             참가자가 2명 미만(`NOT_ENOUGH_PARTICIPANTS`), 또는 참가자의 출발역이 지금 서버가 쓰는 데이터에 없다(`STATION_UNAVAILABLE`,
-            방을 만든 뒤 데이터가 바뀐 경우)
+            방을 만든 뒤 데이터가 바뀐 경우), 또는 요청 구분이나 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`)
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/Problem'}
@@ -393,9 +401,10 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/RoomPreview'}
+        '400': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
         '409':
-          description: 참가자의 출발역이 지금 데이터에 없다(`STATION_UNAVAILABLE`). 클라이언트는 기본 초대 미리보기를 쓴다
+          description: 참가자의 출발역이 데이터에 없거나(`STATION_UNAVAILABLE`), 요청 구분의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`). 클라이언트는 기본 초대 미리보기를 쓴다
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/Problem'}
@@ -473,6 +482,7 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/Result'}
         '400': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
         '429': {$ref: '#/components/responses/Error'}
 
   /manifest:
@@ -575,6 +585,7 @@ components:
         |---|---|---|
         | 400 | `INVALID_REQUEST` | 본문이 JSON이 아니거나 필드가 없거나 형식이 다르다 |
         | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정), 또는 정하려는 역이 만날 역 후보가 아니다(`setDecision`) |
+        | 400 | `REGION_MISMATCH` | 한 계산이나 방에 권역이 섞였다 |
         | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
         | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
         | 400 | `FAVOR_TARGET_HIDDEN` | 우대 대상이 출발역을 숨긴 참가자인데 그 사람 본인의 요청이 아니다(방 결과) |
@@ -588,6 +599,7 @@ components:
         | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
         | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
         | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
+        | 409 | `SCHEDULE_UNAVAILABLE` | 요청 구분 또는 출발역에 확인된 시간표가 없어 계산할 수 없다 |
         | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기(`setDecision`)나 뽑기(`drawFavorTarget`)를 받지 않았다. 방을 다시 불러 확인한 뒤 다시 누른다 |
         | 409 | `DRAW_NOT_AVAILABLE`, `NOT_ENOUGH_DRAW_CANDIDATES`, `DRAW_LIMIT_REACHED` | 뽑기 방이 아니거나, 출발역을 숨기지 않은 참가자가 2명 미만이거나, 다시 뽑기를 이미 썼다(`drawFavorTarget`) |
         | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
@@ -1082,6 +1094,12 @@ components:
           oneOf:
             - {$ref: '#/components/schemas/StationCode'}
             - {type: 'null'}
+        missingServices:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          description: 요청 구분에서 배차가 확인되지 않아 계산에서 제외한 같은 권역의 계통 표시 이름. 해당 계통이 있을 때만 싣는다.
+          items: {type: string}
         candidates:
           type: array
           maxItems: 3

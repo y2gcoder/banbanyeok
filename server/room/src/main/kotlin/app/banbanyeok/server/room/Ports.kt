@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room
 
+import app.banbanyeok.schema.StationRegion
 import java.time.Instant
 
 /** 활동 기록. 쓰기가 일어날 때 마지막 활동 시각과 새 만료 시각을 같은 트랜잭션에서 갱신한다. */
@@ -71,6 +72,7 @@ public interface RoomRepository {
         roomId: String,
         participant: Participant,
         activity: Activity,
+        regions: RoomRegionRule? = null,
     ): AddResult
 
     /** 바뀐 행이 있으면 true. */
@@ -79,6 +81,7 @@ public interface RoomRepository {
         participantId: String,
         change: ParticipantChange,
         activity: Activity,
+        regions: RoomRegionRule? = null,
     ): Boolean
 
     /** 우대 대상이었다면 우대 대상을 비운다. 지운 행이 있으면 true. */
@@ -155,6 +158,8 @@ public interface StationCatalog {
     public val dataVersion: String
 
     public fun isOrigin(code: String): Boolean
+
+    public fun regionOf(code: String): StationRegion? = StationRegion.CAPITAL
 
     /**
      * 폐기된(deprecated) 코드를 레지스트리의 replacedBy 사슬을 따라 정식(active) 코드로 바꾼다. 정식 코드와 모르는 코드는 그대로다.

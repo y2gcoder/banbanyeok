@@ -19,6 +19,7 @@ import app.banbanyeok.server.room.ParticipantChange
 import app.banbanyeok.server.room.Room
 import app.banbanyeok.server.room.RoomChange
 import app.banbanyeok.server.room.RoomMode
+import app.banbanyeok.server.room.RoomRegionRule
 import app.banbanyeok.server.room.RoomRepository
 import app.banbanyeok.server.room.ShareVersion
 import app.banbanyeok.server.room.StoredRoom
@@ -88,6 +89,7 @@ public class ExposedRoomRepository(
         roomId: String,
         participant: Participant,
         activity: Activity,
+        regions: RoomRegionRule?,
     ): AddResult =
         inTransaction {
             // 방 행을 잠가 같은 방의 동시 참여를 줄 세운다. 정원 판정이 경쟁 없이 맞다.
@@ -98,23 +100,19 @@ public class ExposedRoomRepository(
                     .forUpdate()
                     .singleOrNull()
                     ?: return@inTransaction AddResult.RoomNotFound
-            val count =
-                ParticipantsTable
-                    .selectAll()
-                    .where { ParticipantsTable.roomId eq roomId }
-                    .count()
-                    .toInt()
+            val participants = participantsOf(roomId)
             val capacity = minOf(MAX_PARTICIPANTS, room[RoomsTable.expectedCount]?.toInt() ?: MAX_PARTICIPANTS)
             when {
                 room[RoomsTable.status] == LOCKED -> {
                     AddResult.Locked
                 }
 
-                count >= capacity -> {
+                participants.size >= capacity -> {
                     AddResult.Full
                 }
 
                 else -> {
+                    regions?.requireMatch(participants, participant.originCode, hidden = participant.hidden)
                     insertParticipant(roomId, participant)
                     touch(roomId, activity)
                     AddResult.Added
@@ -127,8 +125,16 @@ public class ExposedRoomRepository(
         participantId: String,
         change: ParticipantChange,
         activity: Activity,
+        regions: RoomRegionRule?,
     ): Boolean =
         inTransaction {
+            if (!lockRoom(roomId)) return@inTransaction false
+            if (regions != null) {
+                val participants = participantsOf(roomId)
+                val current = participants.firstOrNull { it.id == participantId } ?: return@inTransaction false
+                if (change.onlyIfHidden && !current.hidden) return@inTransaction false
+                regions.requireMatch(participants, change.originCode, participantId, change.hidden)
+            }
             val updated =
                 ParticipantsTable.update({
                     val target = (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq participantId)
@@ -158,6 +164,7 @@ public class ExposedRoomRepository(
         activity: Activity,
     ): Boolean =
         inTransaction {
+            if (!lockRoom(roomId)) return@inTransaction false
             val deleted =
                 ParticipantsTable.deleteWhere {
                     (ParticipantsTable.roomId eq roomId) and
@@ -261,12 +268,7 @@ public class ExposedRoomRepository(
                     .singleOrNull()
                     ?.toRoom()
                     ?: return@inTransaction DecisionResult.RoomNotFound
-            val members =
-                ParticipantsTable
-                    .select(ParticipantsTable.pid)
-                    .where { ParticipantsTable.roomId eq roomId }
-                    .map { it[ParticipantsTable.pid] }
-            rule.verdict(room, members, request).also { verdict ->
+            rule.verdict(room, participantsOf(roomId), request).also { verdict ->
                 if (verdict == DecisionResult.Applied) {
                     RoomsTable.update({ RoomsTable.id eq roomId }) {
                         it[decidedStation] = request.decision?.stationCode
@@ -348,16 +350,19 @@ public class ExposedRoomRepository(
         roomId: String,
         participantId: String,
     ): Boolean {
-        RoomsTable
-            .select(RoomsTable.id)
-            .where { RoomsTable.id eq roomId }
-            .forUpdate()
-            .singleOrNull() ?: return false
+        if (!lockRoom(roomId)) return false
         return ParticipantsTable
             .select(ParticipantsTable.pid)
             .where { (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq participantId) }
             .any()
     }
+
+    private fun lockRoom(roomId: String): Boolean =
+        RoomsTable
+            .select(RoomsTable.id)
+            .where { RoomsTable.id eq roomId }
+            .forUpdate()
+            .singleOrNull() != null
 
     private fun touch(
         roomId: String,

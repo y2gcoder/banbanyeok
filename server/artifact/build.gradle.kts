@@ -15,6 +15,8 @@ tasks.named<Test>("integrationTest") {
 }
 
 tasks.named<Test>("test") {
+    inputs.dir(rootProject.file("contracts/fixtures/regional")).withPathSensitivity(PathSensitivity.RELATIVE)
+    systemProperty("regional.fixture.dir", rootProject.file("contracts/fixtures").path)
     systemProperty(
         "artifacts.dev.dir",
         rootProject.layout.projectDirectory

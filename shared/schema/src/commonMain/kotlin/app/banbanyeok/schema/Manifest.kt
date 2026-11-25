@@ -51,6 +51,14 @@ public data class Manifest(
      * 시간표가 없는 노선을 지나는 길일 수 있다. 없으면 모든 요일 종류를 전 노선으로 계산했다.
      */
     val lastTrainPartialDays: List<String>? = null,
+    val regionCoverage: Map<StationRegion, Map<String, RegionalSlotCoverage>>? = null,
+)
+
+@Serializable
+public data class RegionalSlotCoverage(
+    val available: Boolean,
+    val missingServices: List<String>,
+    val unsupportedOrigins: List<String>,
 )
 
 public object ManifestCodec {
@@ -86,8 +94,8 @@ public object ManifestCodec {
 
     /** 구조 규칙만 검사한다(파일 내용 대조는 [DataSetLoader]). */
     public fun validate(manifest: Manifest) {
-        schemaCheck(manifest.schemaVersion in 1..MANIFEST_SCHEMA_VERSION) {
-            "지원하지 않는 manifest schemaVersion=${manifest.schemaVersion} (지원: 1..$MANIFEST_SCHEMA_VERSION)"
+        schemaCheck(manifest.schemaVersion in 1..REGIONAL_MANIFEST_GENERATION) {
+            "지원하지 않는 manifest schemaVersion=${manifest.schemaVersion}"
         }
         schemaCheck(manifest.minClientSchema in 1..manifest.schemaVersion) {
             "minClientSchema=${manifest.minClientSchema}는 1..schemaVersion(${manifest.schemaVersion}) 이어야 합니다"
@@ -119,6 +127,50 @@ public object ManifestCodec {
         validateSlots(manifest)
         validateLastTrain(manifest)
         validateRouteGraph(manifest)
+        validateRegionalCoverage(manifest)
+    }
+
+    private fun validateRegionalCoverage(manifest: Manifest) {
+        val coverage = manifest.regionCoverage
+        if (manifest.schemaVersion < REGIONAL_MANIFEST_GENERATION) {
+            schemaCheck(coverage == null) { "regionCoverage는 권역 manifest에만 있습니다" }
+            return
+        }
+        schemaCheck(
+            manifest.minClientSchema == REGIONAL_MANIFEST_GENERATION,
+        ) { "권역 manifest는 minClientSchema=5가 필요합니다" }
+        schemaCheck(!coverage.isNullOrEmpty()) { "권역 manifest에 regionCoverage가 필요합니다" }
+        val slotIds = TimeSlot.ALL.map { it.id }.toSet()
+        for (slots in requireNotNull(coverage).values) {
+            schemaCheck(slots.keys == slotIds) { "권역 가용성에는 구분 12개가 필요합니다" }
+            for (slot in slots.values) {
+                schemaCheck(
+                    slot.missingServices == slot.missingServices.distinct().sorted() &&
+                        slot.missingServices.none { it.isBlank() },
+                ) {
+                    "빠진 계통은 비어 있지 않은 이름의 정렬된 목록이어야 합니다"
+                }
+                schemaCheck(slot.unsupportedOrigins == slot.unsupportedOrigins.distinct().sorted()) {
+                    "지원하지 않는 출발역은 코드 오름차순이어야 합니다"
+                }
+                slot.unsupportedOrigins.forEach { StationCode.parse(it) }
+            }
+        }
+        val files = manifest.files
+        val versionPrefix = "${ManifestNames.REGIONAL_VERSIONS}/${manifest.dataVersion}/"
+        val paths =
+            listOfNotNull(
+                files.registry,
+                files.candidates,
+                files.od,
+                files.seoPages,
+                files.lastTrain,
+                files.routeGraph,
+            ) +
+                files.odSlots.orEmpty().values
+        schemaCheck(paths.all { it.path.startsWith(versionPrefix) && '/' !in it.path.removePrefix(versionPrefix) }) {
+            "권역 산출물은 $versionPrefix 아래에 있어야 합니다"
+        }
     }
 
     /** 세대 4는 노선 그래프를 가져야 하고, 세대 1~3에는 없어야 한다. */
@@ -246,6 +298,8 @@ public object ManifestNames {
     public const val GENERATION_TWO: String = "manifest.v2.json"
     public const val GENERATION_THREE: String = "manifest.v3.json"
     public const val GENERATION_FOUR: String = "manifest.v4.json"
+    public const val REGIONAL: String = "regional/manifest.v5.json"
+    public const val REGIONAL_VERSIONS: String = "regional/versions"
 
     /** 높은 세대부터. */
     public val NEWEST_FIRST: List<String> = listOf(GENERATION_FOUR, GENERATION_THREE, GENERATION_TWO, GENERATION_ONE)
@@ -253,6 +307,7 @@ public object ManifestNames {
 
 /** 노선 그래프(사람별 경로)가 들어온 manifest 세대. */
 public const val ROUTE_GRAPH_GENERATION: Int = 4
+public const val REGIONAL_MANIFEST_GENERATION: Int = 5
 
 /** 막차 표가 들어온 manifest 세대. */
 public const val LAST_TRAIN_GENERATION: Int = 3
@@ -345,9 +400,16 @@ public object DataSetLoader {
         val candidates = RegistryCodec.parseCandidates(candidatesBytes.decodeToString(throwOnInvalidSequence = true))
         val od = OdBinCodec.decode(odBytes)
 
-        // 구성 형식(레지스트리·후보 JSON, od.bin)은 manifest 모든 세대에서 1판이다(data-format §1).
-        schemaCheck(registry.schemaVersion == SCHEMA_VERSION && candidates.schemaVersion == SCHEMA_VERSION) {
-            "manifest 세대 ${manifest.schemaVersion}의 레지스트리/후보 schemaVersion은 $SCHEMA_VERSION 이어야 합니다"
+        val registryFormat =
+            if (manifest.schemaVersion ==
+                REGIONAL_MANIFEST_GENERATION
+            ) {
+                REGIONAL_REGISTRY_SCHEMA_VERSION
+            } else {
+                SCHEMA_VERSION
+            }
+        schemaCheck(registry.schemaVersion == registryFormat) {
+            "manifest 세대 ${manifest.schemaVersion}의 레지스트리 schemaVersion은 $registryFormat 이어야 합니다"
         }
         schemaCheck(
             manifest.registryVersion == registry.registryVersion && manifest.registryVersion == od.registryVersion,
@@ -368,18 +430,21 @@ public object DataSetLoader {
             val code = od.originCode(i).toString()
             schemaCheck(registry.station(code) != null) { "od.bin 출발역 '$code'가 레지스트리에 없습니다" }
         }
+        val core = DataSet(manifest, registry, candidates, od)
+        validateRegionalOd(core, TimeSlot.DEFAULT, od)
         if (deferSlots) {
             schemaCheck(odSlotBytes.isEmpty()) { "deferSlots면 구분 행렬 파일을 넘기지 않습니다" }
-            return DataSet(manifest, registry, candidates, od)
+            return core
         }
-        return DataSet(manifest, registry, candidates, od, slotMatrices(manifest, od, odSlotBytes))
+        return DataSet(manifest, registry, candidates, od, slotMatrices(core, odSlotBytes))
     }
 
     /** [load]에서 미룬 구분 행렬을 검사해 읽는다. 규칙은 [load]와 같다(해시·길이, 헤더, 레지스트리 버전, 기본 행렬과 같은 축). */
     public fun slotMatrices(
         core: DataSet,
         odSlotBytes: Map<String, ByteArray>,
-    ): Map<TimeSlot, OdMatrix> = slotMatrices(core.manifest, core.od, odSlotBytes)
+    ): Map<TimeSlot, OdMatrix> =
+        slotMatrices(core.manifest, core.od, odSlotBytes).onEach { (slot, od) -> validateRegionalOd(core, slot, od) }
 
     /**
      * 막차 표(data-format §5 ⑨): 해시·길이, 헤더·길이·칸 불변식([LtBinCodec]), 레지스트리 버전, 기본 행렬과 같은 축. 세대 3 manifest에서만
@@ -421,6 +486,7 @@ public object DataSetLoader {
         axes.forEach { value ->
             schemaCheck(value in platforms) { "od.bin의 역 '${StationCode.ofValue(value)}'에 rg.bin 노드가 없습니다" }
         }
+        validateRegionalGraph(core, graph)
         return graph
     }
 

@@ -17,11 +17,12 @@ import kotlin.math.roundToLong
 
 /** 레지스트리·후보 JSON과 od.bin의 형식 판(contracts/data-format.md §1). manifest 세대는 [MANIFEST_SCHEMA_VERSION]. */
 public const val SCHEMA_VERSION: Int = 1
+public const val REGIONAL_REGISTRY_SCHEMA_VERSION: Int = 2
 
 /**
- * 이 모듈이 읽고 쓰는 manifest의 최신 세대. 2: 구분별 od 행렬(`files.odSlots`). 3: 귀갓길 막차 표(`files.lastTrain`, lt.bin).
+ * 기존 포인터가 읽고 쓰는 manifest의 최신 세대. 2: 구분별 od 행렬(`files.odSlots`). 3: 귀갓길 막차 표(`files.lastTrain`, lt.bin).
  * 4: 사람별 경로의 노선 그래프(`files.routeGraph`, rg.bin).
- * 구성 형식(레지스트리·후보·od.bin)은 모든 세대에서 [SCHEMA_VERSION]이다(data-format §1·§5).
+ * 권역 포인터는 [REGIONAL_MANIFEST_GENERATION]을 쓴다(data-format §12).
  */
 public const val MANIFEST_SCHEMA_VERSION: Int = 4
 
@@ -32,6 +33,15 @@ public enum class StationStatus {
 
     @SerialName("deprecated")
     DEPRECATED,
+}
+
+@Serializable
+public enum class StationRegion {
+    @SerialName("capital")
+    CAPITAL,
+
+    @SerialName("busan")
+    BUSAN,
 }
 
 @Serializable
@@ -47,6 +57,7 @@ public data class Station(
     val addedIn: Int,
     val deprecatedIn: Int? = null,
     val replacedBy: String? = null,
+    val region: StationRegion? = null,
 )
 
 /**
@@ -143,14 +154,17 @@ public object RegistryCodec {
 
     /** data-format.md §3의 구조 규칙. 위반이면 [SchemaException]. */
     public fun validate(registry: Registry) {
-        schemaCheck(registry.schemaVersion == SCHEMA_VERSION) {
-            "지원하지 않는 레지스트리 schemaVersion=${registry.schemaVersion} (지원: $SCHEMA_VERSION)"
+        schemaCheck(registry.schemaVersion in SCHEMA_VERSION..REGIONAL_REGISTRY_SCHEMA_VERSION) {
+            "지원하지 않는 레지스트리 schemaVersion=${registry.schemaVersion}"
         }
         schemaCheck(registry.registryVersion >= 1) { "registryVersion은 1 이상이어야 합니다" }
         var previous: String? = null
-        val codes = registry.stations.mapTo(HashSet()) { it.code }
+        val stationsByCode = registry.stations.associateBy { it.code }
         for (station in registry.stations) {
             StationCode.parse(station.code)
+            schemaCheck((station.region != null) == (registry.schemaVersion == REGIONAL_REGISTRY_SCHEMA_VERSION)) {
+                "${station.code}: 레지스트리 세대에 맞는 region이 필요합니다"
+            }
             schemaCheck(previous == null || previous < station.code) {
                 "stations는 code 오름차순·중복 없음이어야 합니다: '$previous' 다음에 '${station.code}'"
             }
@@ -178,7 +192,11 @@ public object RegistryCodec {
             }
             station.replacedBy?.let {
                 StationCode.parse(it)
-                schemaCheck(it in codes && it != station.code) { "${station.code}: replacedBy '$it'가 레지스트리에 없습니다" }
+                val replacement = stationsByCode[it]
+                schemaCheck(
+                    replacement != null && it != station.code,
+                ) { "${station.code}: replacedBy '$it'가 레지스트리에 없습니다" }
+                schemaCheck(station.region == replacement?.region) { "${station.code}: replacedBy는 같은 권역이어야 합니다" }
             }
         }
     }

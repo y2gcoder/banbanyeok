@@ -364,6 +364,7 @@ export interface components {
          *     |---|---|---|
          *     | 400 | `INVALID_REQUEST` | 본문이 JSON이 아니거나 필드가 없거나 형식이 다르다 |
          *     | 400 | `INVALID_STATION` | 출발역 코드가 지금 데이터의 출발역에 없다(`/recommend`, 방 생성·참여·출발역 수정), 또는 정하려는 역이 만날 역 후보가 아니다(`setDecision`) |
+         *     | 400 | `REGION_MISMATCH` | 한 계산이나 방에 권역이 섞였다 |
          *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
          *     | 400 | `FAVOR_TARGET_HIDDEN` | 우대 대상이 출발역을 숨긴 참가자인데 그 사람 본인의 요청이 아니다(방 결과) |
@@ -377,6 +378,7 @@ export interface components {
          *     | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
          *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
+         *     | 409 | `SCHEDULE_UNAVAILABLE` | 요청 구분 또는 출발역에 확인된 시간표가 없어 계산할 수 없다 |
          *     | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기(`setDecision`)나 뽑기(`drawFavorTarget`)를 받지 않았다. 방을 다시 불러 확인한 뒤 다시 누른다 |
          *     | 409 | `DRAW_NOT_AVAILABLE`, `NOT_ENOUGH_DRAW_CANDIDATES`, `DRAW_LIMIT_REACHED` | 뽑기 방이 아니거나, 출발역을 숨기지 않은 참가자가 2명 미만이거나, 다시 뽑기를 이미 썼다(`drawFavorTarget`) |
          *     | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
@@ -807,6 +809,8 @@ export interface components {
             timeBasis: components["schemas"]["TimeBasis"];
             /** @description 엄밀한 공평 1위. favor 상한의 기준(출발역을 숨긴 참가자에게는 상한이 없다) */
             baselineStationCode?: components["schemas"]["StationCode"] | null;
+            /** @description 요청 구분에서 배차가 확인되지 않아 계산에서 제외한 같은 권역의 계통 표시 이름. 해당 계통이 있을 때만 싣는다. */
+            missingServices?: string[];
             candidates: components["schemas"]["Candidate"][];
             /** @description 귀갓길 막차의 기준(#62). 있을 때만 `candidates[].lastTrains`가 있다 */
             lastTrainBasis?: components["schemas"]["LastTrainBasis"];
@@ -1402,7 +1406,7 @@ export interface operations {
             404: components["responses"]["Error"];
             /**
              * @description 참가자가 2명 미만(`NOT_ENOUGH_PARTICIPANTS`), 또는 참가자의 출발역이 지금 서버가 쓰는 데이터에 없다(`STATION_UNAVAILABLE`,
-             *     방을 만든 뒤 데이터가 바뀐 경우)
+             *     방을 만든 뒤 데이터가 바뀐 경우), 또는 요청 구분이나 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`)
              */
             409: {
                 headers: {
@@ -1435,8 +1439,9 @@ export interface operations {
                     "application/json": components["schemas"]["RoomPreview"];
                 };
             };
+            400: components["responses"]["Error"];
             404: components["responses"]["Error"];
-            /** @description 참가자의 출발역이 지금 데이터에 없다(`STATION_UNAVAILABLE`). 클라이언트는 기본 초대 미리보기를 쓴다 */
+            /** @description 참가자의 출발역이 데이터에 없거나(`STATION_UNAVAILABLE`), 요청 구분의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`). 클라이언트는 기본 초대 미리보기를 쓴다 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1521,6 +1526,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             429: components["responses"]["Error"];
         };
     };

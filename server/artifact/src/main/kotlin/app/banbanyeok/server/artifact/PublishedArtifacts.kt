@@ -1,5 +1,7 @@
 package app.banbanyeok.server.artifact
 
+import app.banbanyeok.schema.ManifestNames
+import app.banbanyeok.schema.REGIONAL_MANIFEST_GENERATION
 import app.banbanyeok.schema.Sha256
 
 public class PublishedFile(
@@ -24,6 +26,8 @@ public class PublishedArtifacts(
         file: String,
     ): PublishedFile? {
         if (!SAFE_NAME.matches(file) || !VERSION.matches(version)) return null
+        val regional = loaded.dataSet.manifest.schemaVersion == REGIONAL_MANIFEST_GENERATION
+        val versions = if (regional) ManifestNames.REGIONAL_VERSIONS else "versions"
         val files = loaded.dataSet.manifest.files
         val current =
             (
@@ -37,10 +41,16 @@ public class PublishedArtifacts(
                 ) + files.odSlots?.values.orEmpty()
             ).firstOrNull { entry ->
                 entry.path.substringAfterLast('/') == file &&
-                    (entry.path.startsWith("versions/$version/") || version == loaded.dataVersion)
+                    (entry.path.startsWith("$versions/$version/") || version == loaded.dataVersion)
             }?.path
-        val key = current ?: "versions/$version/$file"
-        val stored = store.get(ArtifactKey(key)) ?: return null
+        val key = current ?: "$versions/$version/$file"
+        val stored =
+            store.get(ArtifactKey(key)) ?: if (regional && current == null && version != loaded.dataVersion) {
+                store.get(ArtifactKey("versions/$version/$file"))
+            } else {
+                null
+            }
+        if (stored == null) return null
         return PublishedFile(stored.content, contentTypeOf(file), etagOf(stored.content))
     }
 

@@ -362,10 +362,11 @@ class RoomServiceTest :
                                 participantId: String,
                                 change: ParticipantChange,
                                 activity: Activity,
+                                regions: RoomRegionRule?,
                             ): Boolean {
                                 val shown = ParticipantChange("지연", "130", false, now.clock.instant())
                                 legacy.rooms.updateParticipant(roomId, participantId, shown, activity)
-                                return legacy.rooms.updateParticipant(roomId, participantId, change, activity)
+                                return legacy.rooms.updateParticipant(roomId, participantId, change, activity, regions)
                             }
                         }
                     val raced = RoomService(racing, now.anonUsers, now.tokens, now.ids, now.stations, now.clock)
