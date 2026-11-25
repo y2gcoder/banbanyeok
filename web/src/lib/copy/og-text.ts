@@ -115,12 +115,13 @@ export const OG_TEXT = {
   banbanTopTwo: "가장 오래 걸리는 두 사람 ",
   banbanRatioLead: "가장 짧은 사람이 가장 긴 사람의 ",
   banbanRatioTail: "%",
-  /** 사실 문장 안(`bbi=fact|factcap`): "두 사람 1분 차이로 도착해요", "모두 6분 차이 안에 도착해요". 0분이면 "같은 시간에". */
+  /** 사실 문장 안(`bbi=fact|factcap`): 화면에 보이는 분(걸리는 시간)의 차이만 말한다. "걸리는 시간이 두 사람 1분 차이예요", "걸리는 시간이 모두 6분 차이 안이에요", 0분이면 "걸리는 시간이 모두 같아요". */
+  factLead: "걸리는 시간이 ",
   factPair: "두 사람 ",
   factGroup: "모두 ",
-  factPairTail: " 차이로 도착해요",
-  factGroupTail: " 차이 안에 도착해요",
-  factSame: "같은 시간에 도착해요",
+  factPairTail: " 차이예요",
+  factGroupTail: " 차이 안이에요",
+  factSame: "같아요",
   /**
    * 공유 그림의 막차 줄(#62): "막차 23:52"(직행 확정, 분 그대로), "늦어도 23:00"(여유 시각, 10분 단위로 내린 값).
    * 시계 숫자와 쌍점은 `clockChars`로 서브셋에 넣는다.

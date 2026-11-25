@@ -92,7 +92,7 @@ def grade(plan: str, top: list[int], others: list[list[int]]) -> str:
     return BEST_HERE if close else TILTED
 
 
-# 사실 문장 안(bbi=fact|factcap): 도착 차이(최장 − 최단)가 두 사람 2분, 세 사람 이상 6분 안이면 한 문장, 아니면 문장 없음.
+# 사실 문장 안(bbi=fact|factcap): 화면에 보이는 분(걸리는 시간)의 차이(최장 − 최단)가 두 사람 2분, 세 사람 이상 6분 안이면 한 문장, 아니면 문장 없음.
 FACT_PAIR = 2
 FACT_GROUP = 6
 
@@ -112,10 +112,10 @@ def fact_sentence(plan: str, top: list[int]) -> str | None:
     if gap > limit:
         return None
     who = "두 사람 " if pair else "모두 "
+    if gap == 0:
+        return f"걸리는 시간이 {who}같아요"
     shown = limit if plan == "factcap" and not pair else gap
-    if shown == 0:
-        return f"{who}같은 시간에 도착해요"
-    return f"{who}{format_minutes(shown)}{' 차이로 도착해요' if pair else ' 차이 안에 도착해요'}"
+    return f"걸리는 시간이 {who}{format_minutes(shown)}{' 차이예요' if pair else ' 차이 안이에요'}"
 
 
 def even_title(top: list[int]) -> bool:
@@ -237,7 +237,7 @@ def table() -> str:
     out += [
         "",
         "사실 문장 안(같은 표본): 1위 카드에 문장이 붙는 비율(%). 문장은 1위 시간만 보므로 '전체'와 '3곳'이 같다.",
-        "마지막 칸은 도착 차이(최장 − 최단)가 그 분 이하인 비율로, 문턱을 바꿀 때의 붙는 비율이다(2명 1/2/3/4분, 3명 이상 2/4/6/8/10분).",
+        "마지막 칸은 표시 분 차이(최장 − 최단)가 그 분 이하인 비율로, 문턱을 바꿀 때의 붙는 비율이다(2명 1/2/3/4분, 3명 이상 2/4/6/8/10분).",
         "",
         "| 인원 | 조합 | B '딱+거의' | B '딱' | fact 문장 붙음 (2명 2분 · 3명+ 6분) | 문턱을 바꾸면 |",
         "|---|---|---|---|---|---|",

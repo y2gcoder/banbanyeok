@@ -76,7 +76,7 @@ const FLOOR_WINDOW = 10;
 /** 1위 값이 그 후보들의 가장 좋은 값보다 이만큼(분) 이내면 '이 조합에선 가장 반반'. */
 const FLOOR_SLACK = 2;
 
-/** 사실 문장을 붙이는 도착 차이(최장 − 최단) 문턱(분): 두 사람, 세 사람 이상. */
+/** 사실 문장을 붙이는 표시 분 차이(최장 − 최단) 문턱(분): 두 사람, 세 사람 이상. */
 const FACT_PAIR = 2;
 const FACT_GROUP = 6;
 
@@ -92,9 +92,9 @@ function factSentence(plan: FactPlan, minutes: readonly number[]): string | null
   const gap = spreadOf(minutes);
   if (gap > limit) return null;
   const who = pair ? OG_TEXT.factPair : OG_TEXT.factGroup;
+  if (gap === 0) return `${OG_TEXT.factLead}${who}${OG_TEXT.factSame}`;
   const shown = plan === "factcap" && !pair ? limit : gap;
-  if (shown === 0) return `${who}${OG_TEXT.factSame}`;
-  return `${who}${formatMinutes(shown)}${pair ? OG_TEXT.factPairTail : OG_TEXT.factGroupTail}`;
+  return `${OG_TEXT.factLead}${who}${formatMinutes(shown)}${pair ? OG_TEXT.factPairTail : OG_TEXT.factGroupTail}`;
 }
 
 /**
