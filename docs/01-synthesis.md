@@ -13,6 +13,7 @@
 | 제품 | 비회원, 익명 사용자 ID, 후보 3개 카드(사람별 시간·환승·이유), 모드 3종, 막차는 2차 | B, 사용자 |
 | 공평 규칙 | fair = (최장, 차이, 합계, ID), favor 상한 = fair 1위 대비 +min(15분, 50%)(숨긴 사람에게는 상한 없음, [ADR-0005](adr/0005-favor-without-hidden-origin.md)), 기본 동점 0분 | D |
 | 데이터 | 자체 그래프 사전계산. 외부 경로 API 결과는 저장하지 않음. KTDB는 허용 범위 확인 전 사용 안 함 | A |
+| 교통 권역 | 전국 산출물 한 벌에 M1 역 권역을 기록하고, 한 방·한 추천은 같은 권역으로 제한한다 | [ADR-0008](adr/0008-region-model.md) |
 | 공유 코어 | KMP `shared/{core,schema,links,api-client,app-logic,analytics}` | C3, 사용자 |
 | 서버 | Ktor + Cloud Run(서울, min 0) + Postgres | C3 |
 | 웹 | Next.js(App Router) on **Cloudflare Workers + OpenNext** (수익화 계획이 있어 Vercel Hobby의 비상업 제한을 피함). 인기 역 조합 SEO 페이지 + 링크별 동적 OG | C3, 사용자 |
