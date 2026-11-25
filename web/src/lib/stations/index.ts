@@ -167,6 +167,11 @@ export function searchStations(input: string, limit = 8, region: RegionId | null
   return results;
 }
 
+/** 친 글자가 그 역의 이름과 같은가(검색과 같은 정규화: 공백, 끝의 "역"). */
+export function isExactName(station: Station, input: string): boolean {
+  return station.name === normalize(input);
+}
+
 /** 역 코드들의 권역(중복 없이 인덱스 순서). 인덱스에 없는 코드는 건너뛴다. */
 export function regionsOf(codes: readonly (string | null | undefined)[]): RegionId[] {
   const found = new Set(codes.flatMap((code) => (code ? [stationByCode(code)?.region] : [])));

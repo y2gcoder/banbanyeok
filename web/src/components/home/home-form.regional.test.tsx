@@ -76,7 +76,7 @@ describe("입력 화면: 권역이 둘인 데이터", () => {
     await user.click(screen.getByRole("button", { name: "부산권" }));
     await user.click(screen.getByRole("button", { name: "바꾸기" }));
     expect(screen.getByRole("button", { name: "부산권" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "만날 역 찾기" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "나의 출발역" })).toHaveValue("");
   });
 
   it("고른 요일에 출발할 수 없는 역은 이유와 함께 고를 수 없다", async () => {

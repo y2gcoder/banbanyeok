@@ -14,7 +14,14 @@ import {
 } from "@/components/ui/combobox";
 import { withJosa } from "@/lib/display/korean";
 import { DEFAULT_REGION, type RegionId, regionName, type Station } from "@/lib/stations";
-import { blockedReason, elsewhere, OPEN_SCOPE, type StationScope, searchInScope } from "@/lib/stations/scope";
+import {
+  blockedReason,
+  type Elsewhere,
+  elsewhere,
+  OPEN_SCOPE,
+  type StationScope,
+  searchInScope,
+} from "@/lib/stations/scope";
 
 type Props = {
   id: string;
@@ -29,13 +36,19 @@ type Props = {
 
 /**
  * 역 자동완성. 초성("ㅎㄷ")·생략형("홍대")·"역" 접미사를 받는다. 계산하지 않는 역과 그 구분에 출발할 수 없는 역은 보이되 고를 수 없고
- * 이유가 붙는다(lib/stations/scope.ts). 결과가 없으면 계산 범위를 알리고, 다른 권역에 있는 이름이면 그 권역을 한 줄로 알린다.
+ * 이유가 붙는다(lib/stations/scope.ts). 결과가 없으면 계산 범위를 알리고, 다른 권역에 있는 이름이면 그 권역을 한 줄로 알린다
+ * (목록이 있어도 다른 권역에만 정확히 같은 이름이 있으면 목록 아래에).
  */
 export function StationField({ id, value, onChange, describedBy, scope = OPEN_SCOPE, onSwitchRegion }: Props) {
   const [query, setQuery] = useState(value?.name ?? "");
-  // 부모가 역을 채워 넣은 경우(기억해 둔 "나", SEO 페이지의 미리 채우기)에도 입력 칸에 이름이 보이게 한다.
+  // 부모가 역을 채워 넣은 경우(기억해 둔 "나", SEO 페이지의 미리 채우기)에도 입력 칸에 이름이 보이게 한다. 부모가 역을 지우면
+  // (권역 바꾸기) 칸에 남은 그 역 이름도 지운다. 그사이 사용자가 고쳐 친 글자는 그대로 둔다.
+  const lastValue = useRef(value);
   useEffect(() => {
+    const previous = lastValue.current;
+    lastValue.current = value;
     if (value) setQuery(value.name);
+    else if (previous) setQuery((current) => (current === previous.name ? "" : current));
   }, [value]);
   // 검색 결과만 후보로 둔다. 고른 역을 목록 맨 앞에 끼워 넣으면(예전 방식) 다른 역을 새로 칠 때 그 역이 첫 후보가 되어
   // 자동 하이라이트·Enter가 고른 역을 다시 고르고, 정확 일치("강남")는 두 번째로 밀렸다. 입력 칸 글자는 우리가 정하므로(inputValue)
@@ -59,6 +72,7 @@ export function StationField({ id, value, onChange, describedBy, scope = OPEN_SC
   // 항목을 누른 포인터 종류. 선택 click의 pointerType은 브라우저마다 다르다(iOS WebKit 탭은 터치가 아닐 수 있다).
   const itemPointerType = useRef<string | null>(null);
   const composingEmpty = composing !== null && items.length === 0;
+  const other = useMemo(() => (composing === null ? elsewhere(query, scope) : null), [composing, query, scope]);
 
   return (
     <Combobox<Station>
@@ -108,7 +122,11 @@ export function StationField({ id, value, onChange, describedBy, scope = OPEN_SC
       <ComboboxContent className={composingEmpty ? "hidden" : undefined}>
         <ComboboxEmpty>
           {query.trim() && composing === null ? (
-            <EmptyResult query={query} scope={scope} onSwitchRegion={onSwitchRegion} />
+            other && scope.region !== null ? (
+              <ElsewhereHint other={other} region={scope.region} onSwitchRegion={onSwitchRegion} />
+            ) : (
+              <NoStationMatch region={scope.region ?? DEFAULT_REGION} />
+            )
           ) : null}
         </ComboboxEmpty>
         <ComboboxList>
@@ -138,6 +156,11 @@ export function StationField({ id, value, onChange, describedBy, scope = OPEN_SC
             );
           }}
         </ComboboxList>
+        {items.length > 0 && other && scope.region !== null ? (
+          <div className="border-t border-rule px-3 py-3 text-sm text-muted-foreground">
+            <ElsewhereHint other={other} region={scope.region} onSwitchRegion={onSwitchRegion} />
+          </div>
+        ) : null}
       </ComboboxContent>
       {/* Combobox 뿌리는 요소를 그리지 않아 이 줄은 입력 칸 바로 아래에 놓인다. */}
       {valueProblem ? (
@@ -150,25 +173,24 @@ export function StationField({ id, value, onChange, describedBy, scope = OPEN_SC
 }
 
 /**
- * 결과가 없을 때. 고른 권역 밖의 이름이면 빈 목록 대신 "부산권에 서면이 있어요"와 바꾸기 버튼(첫 화면·방 만들기)이나
- * 이 방에서 고를 수 있는 권역(방 참여)을 말한다. 첫 칸에서 권역을 저절로 바꾸지는 않는다.
+ * 고른 권역 밖의 역 안내. 빈 목록 대신, 또는 다른 권역에만 정확히 같은 이름이 있으면 목록 아래에 "부산권에 서면이 있어요"와
+ * 바꾸기 버튼(첫 화면·방 만들기)이나 이 방에서 고를 수 있는 권역(방 참여)을 말한다. 첫 칸에서 권역을 저절로 바꾸지는 않는다.
  */
-function EmptyResult({
-  query,
-  scope,
+function ElsewhereHint({
+  other,
+  region,
   onSwitchRegion,
 }: {
-  query: string;
-  scope: StationScope;
+  other: Elsewhere;
+  region: RegionId;
   onSwitchRegion: ((region: RegionId) => void) | undefined;
 }) {
-  const other = elsewhere(query, scope);
-  if (!other || scope.region === null) return <NoStationMatch region={scope.region ?? DEFAULT_REGION} />;
   const target = regionName(other.region);
   return (
     <span className="flex flex-col items-start gap-2">
       <span className="font-semibold text-ink">
-        {target}에 {withJosa(other.name, "이/가")} 있어요
+        {target}
+        {other.alsoHere ? "에도" : "에"} {withJosa(other.name, "이/가")} 있어요
       </span>
       {onSwitchRegion ? (
         <Button
@@ -180,7 +202,7 @@ function EmptyResult({
           {target}으로 바꾸기
         </Button>
       ) : (
-        <span>이 방에서는 {regionName(scope.region)} 역만 고를 수 있어요.</span>
+        <span>이 방에서는 {regionName(region)} 역만 고를 수 있어요.</span>
       )}
     </span>
   );

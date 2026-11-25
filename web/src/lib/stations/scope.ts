@@ -5,7 +5,16 @@
  */
 import { BANDS, DAY_TYPES, slotLabel, slotOf, splitSlot, type TimeSlot } from "@/lib/when/time-slot";
 import { unsupportedReason } from "./coverage";
-import { REGIONS, REGIONS_ENABLED, type RegionId, regionName, type Station, searchStations, slotGap } from "./index";
+import {
+  isExactName,
+  REGIONS,
+  REGIONS_ENABLED,
+  type RegionId,
+  regionName,
+  type Station,
+  searchStations,
+  slotGap,
+} from "./index";
 
 export type StationScope = {
   /** 이 권역의 역만 찾는다. null이면 모든 권역(권역 화면이 꺼졌거나 방의 권역을 모를 때). */
@@ -58,11 +67,24 @@ export function searchInScope(query: string, scope: StationScope, limit = 8): St
   }));
 }
 
-/** 범위 안에서 찾지 못한 이름이 다른 권역에 있으면 그 권역과 역 이름(빈 목록 대신 알릴 한 줄). */
-export function elsewhere(query: string, scope: StationScope): { region: RegionId; name: string } | null {
+export type Elsewhere = {
+  region: RegionId;
+  name: string;
+  /** 고른 권역에도 같은 이름의 역이 있다("부산권에도 시청이 있어요"). */
+  alsoHere: boolean;
+};
+
+/**
+ * 고른 권역 밖에 있는 역을 알릴 한 줄. 범위 안에서 찾지 못하면 다른 권역의 첫 후보를 알린다. 범위 안에 후보가 있으면 다른 권역에
+ * 이름이 정확히 같은 역이 있을 때만 알린다: 수도권에서 '기장'을 치면 경기장들이 보여도 부산권 기장을 찾을 수 있어야 한다.
+ */
+export function elsewhere(query: string, scope: StationScope): Elsewhere | null {
   if (!REGIONS_ENABLED || scope.region === null) return null;
-  const hit = searchStations(query, 8).find((s) => s.region !== scope.region && s.supported);
-  return hit ? { region: hit.region, name: hit.name } : null;
+  const others = searchStations(query, 8).filter((s) => s.region !== scope.region && s.supported);
+  const here = searchStations(query, 8, scope.region);
+  const hit = here.length === 0 ? others[0] : others.find((s) => isExactName(s, query));
+  if (!hit) return null;
+  return { region: hit.region, name: hit.name, alsoHere: here.some((s) => s.name === hit.name) };
 }
 
 /** 권역 이름 목록("수도권", "부산권"). 화면의 권역 고르기 순서다. */

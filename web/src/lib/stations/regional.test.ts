@@ -31,8 +31,16 @@ describe("권역이 둘인 인덱스", () => {
 
   it("고른 권역 밖에만 있는 이름은 그 권역과 역 이름을 알린다", () => {
     expect(searchInScope("부산가", { region: "capital", slot: null })).toEqual([]);
-    expect(elsewhere("부산가", { region: "capital", slot: null })).toEqual({ region: "busan", name: "부산가" });
-    expect(elsewhere("서울가", { region: "busan", slot: null })).toEqual({ region: "capital", name: "서울가" });
+    expect(elsewhere("부산가", { region: "capital", slot: null })).toEqual({
+      region: "busan",
+      name: "부산가",
+      alsoHere: false,
+    });
+    expect(elsewhere("서울가", { region: "busan", slot: null })).toEqual({
+      region: "capital",
+      name: "서울가",
+      alsoHere: false,
+    });
     expect(elsewhere("없는역", { region: "busan", slot: null })).toBeNull();
     expect(elsewhere("부산가", OPEN_SCOPE)).toBeNull();
   });
