@@ -14,6 +14,7 @@ import app.banbanyeok.server.recommendation.sampleRouteGraph
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
 import app.banbanyeok.server.room.FixedDrawRandom
+import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -75,6 +76,7 @@ internal class RouteRoom(
             stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")),
             // 뽑기의 운: 처음 뽑기는 첫 대상, 다시 뽑기는 둘째 대상.
             drawRandom = FixedDrawRandom(0, 1),
+            newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
         )
     val recommendation =
         recommendation ?: RecommendationService(

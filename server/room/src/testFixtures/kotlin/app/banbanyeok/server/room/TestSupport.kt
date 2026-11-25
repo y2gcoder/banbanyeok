@@ -91,10 +91,12 @@ class RoomFixture(
     val rooms: InMemoryRoomRepository = InMemoryRoomRepository(),
     val stations: StationCatalog = FakeStationCatalog(),
     val drawRandom: RandomGenerator = FixedDrawRandom(0),
+    /** 숨긴 참가자가 있는 옛 방을 만드는 테스트는 [NewHiddenOrigins.LEGACY_FIXTURE]를 넣는다(운영은 거절, ADR-0007). */
+    val newHidden: NewHiddenOrigins = NewHiddenOrigins.REJECTED,
 ) {
     val anonUsers = InMemoryAnonUserRepository(rooms)
     val tokens = TokenService(testPepper, ids)
-    val service = RoomService(rooms, anonUsers, tokens, ids, stations, clock, drawRandom)
+    val service = RoomService(rooms, anonUsers, tokens, ids, stations, clock, drawRandom, newHidden)
     val anonService = AnonUserService(anonUsers, tokens, ids, clock)
     val cleanup = RoomCleanup(rooms, anonUsers, clock)
 }

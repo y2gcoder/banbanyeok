@@ -143,6 +143,18 @@ public sealed interface Change<out T> {
 
 // ---- 서비스 입력/출력 ----
 
+/**
+ * 새로 출발역을 숨기는 요청을 받는지(ADR-0007, #173). 이미 숨긴 채 방에 있는 참가자는 어느 쪽이든 방이 사라질 때까지 지금 규칙을 쓴다.
+ * 숨김 코드를 걷어내는 2단계(#182)에서 함께 지운다.
+ */
+public enum class NewHiddenOrigins {
+    /** 운영. 방 만들기·참여의 숨김과, 숨기지 않은 참가자가 고치기에서 숨기는 것을 [RoomError.HIDE_NOT_AVAILABLE]로 거절한다. */
+    REJECTED,
+
+    /** 테스트 픽스처 전용: ADR-0007 전에 숨긴 채 들어온 참가자가 있는 방(아직 남은 옛 방)을 재현한다. */
+    LEGACY_FIXTURE,
+}
+
 public data class ParticipantInput(
     val nickname: String?,
     val originCode: String,

@@ -1,4 +1,5 @@
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
+import { hideAsBefore, joinHiddenAsBefore } from "./legacy-hidden";
 
 /**
  * 방의 "집에 가는 막차"(#62) e2e: 실제 서버의 막차 값으로, 약속 날짜·시각에 따라 달라지는 화면을 본다(#83 검토).
@@ -16,14 +17,20 @@ async function createRoom(
 ): Promise<string> {
   const [host, friend] = people;
   const created = await request.post("/api/v1/rooms", {
-    data: { mode: "fair", ...meeting, host: { originCode: host.originCode, hidden: host.hidden === true } },
+    data: { mode: "fair", ...meeting, host: { originCode: host.originCode } },
   });
   expect(created.status()).toBe(201);
-  const { roomId } = (await created.json()) as { roomId: string };
-  const joined = await request.post(`/api/v1/rooms/${roomId}/participants`, {
-    data: { originCode: friend.originCode, hidden: friend.hidden === true },
-  });
-  expect(joined.status()).toBe(201);
+  const { roomId, participantId: hostId } = (await created.json()) as { roomId: string; participantId: string };
+  // 새로 숨길 수 없어서(ADR-0007) 숨긴 사람은 옛 방처럼 DB에서 숨긴다.
+  if (host.hidden) hideAsBefore(roomId, hostId);
+  if (friend.hidden) {
+    await joinHiddenAsBefore(request, roomId, { originCode: friend.originCode });
+  } else {
+    const joined = await request.post(`/api/v1/rooms/${roomId}/participants`, {
+      data: { originCode: friend.originCode },
+    });
+    expect(joined.status()).toBe(201);
+  }
   return roomId;
 }
 
@@ -86,7 +93,10 @@ test("약속 날짜가 없는 방: 이유를 먼저 말하고 요일·일부 노
   await expect(section).not.toContainText(/평일|토요일|일부 노선|계산했어요|전 출발|\d\d:\d\d/);
 });
 
-test("모두 출발역을 숨긴 방: 본인이 아닌 사람에게는 '본인 화면에서만 보여요'만 보인다", async ({ page, request }) => {
+test("모두 출발역을 숨긴 옛 방: 본인이 아닌 사람에게는 '본인 화면에서만 보여요'만 보인다", async ({
+  page,
+  request,
+}) => {
   const roomId = await createRoom(request, { meetingDate: nextSaturday(), meetingTime: "19:00" }, [
     { originCode: GANGNAM, hidden: true },
     { originCode: BUCHEON, hidden: true },
@@ -105,16 +115,13 @@ test("열어 둔 방의 약속을 바꾸면: 새 결과가 올 때까지 이전 
   const saturday = nextSaturday();
   const friday = new Date(new Date(`${saturday}T00:00:00Z`).getTime() - 86_400_000).toISOString().slice(0, 10);
 
-  // 강남(공개)·부천(숨김), 금요일 19:30 약속. 참여하지 않은 사람의 화면으로 열어 둔다.
+  // 강남(공개)·부천(옛 방처럼 숨김), 금요일 19:30 약속. 참여하지 않은 사람의 화면으로 열어 둔다.
   const created = await request.post("/api/v1/rooms", {
     data: { mode: "fair", meetingDate: friday, meetingTime: "19:30", host: { originCode: GANGNAM, hidden: false } },
   });
   expect(created.status()).toBe(201);
   const { roomId, hostToken } = (await created.json()) as { roomId: string; hostToken: string };
-  const joined = await request.post(`/api/v1/rooms/${roomId}/participants`, {
-    data: { originCode: BUCHEON, hidden: true },
-  });
-  expect(joined.status()).toBe(201);
+  await joinHiddenAsBefore(request, roomId, { originCode: BUCHEON });
   const section = await openLastTrain(page, roomId);
   await expect(section.getByRole("listitem")).toHaveCount(1);
   const before = (await section.textContent()) ?? "";

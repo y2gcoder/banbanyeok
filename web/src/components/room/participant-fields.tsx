@@ -16,15 +16,20 @@ type Props = {
   onChange: (patch: Partial<ParticipantFormValue>) => void;
   /** 노선도 점 색(참여 순서). */
   personIndex: number;
+  /**
+   * 이미 출발역을 숨긴 사람이 내 항목을 고친다. 새로 숨길 수는 없어서(ADR-0007) 숨기기 칸은 이때만 보이고, 숨김을 유지하거나 풀 수만 있다.
+   * 저장한 뒤 풀린 사람에게는 다시 보이지 않는다.
+   */
+  keepHidden?: boolean;
 };
 
 /**
- * 방에서 한 사람이 넣는 정보: 이름(선택), 출발역, 출발역 숨기기. 방장 생성·참여·수정이 같이 쓴다.
+ * 방에서 한 사람이 넣는 정보: 이름(선택), 출발역. 방장 생성·참여·수정이 같이 쓴다.
  * 칸마다 보이는 작은 라벨("이름 (선택)" / "출발역")을 두고 이름 칸도 입력칸 모양(연한 테두리 + 연필)으로 그린다. 굵은 글씨의
  * 테두리 없는 이름 칸이 바로 아래 출발역 칸의 제목처럼 읽히던 문제(W3)를 막는다. 첫 화면의 "나/친구1" 칸과는 다른 화면이다.
- * 숨기기는 "역 이름만" 가리고 소요시간·환승은 보인다는 점을 그 자리에서 알린다(product-ux 숨기기 고지).
+ * 출발역 숨기기는 새로 켤 수 없다(ADR-0007). 이미 숨긴 사람([Props.keepHidden])만 지금 상태를 보고 숨김을 풀 수 있다.
  */
-export function ParticipantFields({ idPrefix, value, onChange, personIndex }: Props) {
+export function ParticipantFields({ idPrefix, value, onChange, personIndex, keepHidden = false }: Props) {
   const nameId = `${idPrefix}-name`;
   const stationId = `${idPrefix}-station`;
   const hiddenId = `${idPrefix}-hidden`;
@@ -66,23 +71,27 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex }: Pr
           </div>
         </div>
       </div>
-      <div className="ml-8 flex items-start gap-2.5">
-        <input
-          id={hiddenId}
-          type="checkbox"
-          checked={value.hidden}
-          onChange={(e) => onChange({ hidden: e.target.checked })}
-          className="mt-0.5 size-5 shrink-0 accent-[var(--ink)]"
-        />
-        <label htmlFor={hiddenId} className="flex flex-col gap-0.5 text-[15px] text-ink">
-          <span className="font-semibold">출발역 이름 숨기기</span>
-          <span className="text-[13px] leading-snug text-muted-foreground">
-            다른 사람에게는 출발역 이름이 보이지 않아요. 이름을 넣었으면 그 이름으로, 안 넣었으면 &lsquo;참가자
-            N&rsquo;으로 보여요. 다만 각 후보까지 걸리는 시간이 5분 단위로 보여서, 출발역을 짐작할 수 있어요. 정확한
-            시간과 환승 횟수, 내 출발역은 나에게만 보여요.
-          </span>
-        </label>
-      </div>
+      {keepHidden ? (
+        <div className="ml-8 flex items-start gap-2.5">
+          <input
+            id={hiddenId}
+            type="checkbox"
+            checked={value.hidden}
+            onChange={(e) => onChange({ hidden: e.target.checked })}
+            aria-describedby={`${hiddenId}-note`}
+            className="mt-0.5 size-5 shrink-0 accent-[var(--ink)]"
+          />
+          <div className="flex flex-col gap-0.5 text-[15px] text-ink">
+            <label htmlFor={hiddenId} className="font-semibold">
+              출발역 이름 계속 숨기기
+            </label>
+            <span id={`${hiddenId}-note`} className="text-[13px] leading-snug text-muted-foreground">
+              지금 출발역 이름을 숨기고 있어요. 다른 사람에게는 각 후보까지 걸리는 시간이 5분 단위로 보여서 출발역을
+              짐작할 수 있어요. 숨기기는 이제 새로 켤 수 없어서, 끄고 저장하면 다시 숨길 수 없어요.
+            </span>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

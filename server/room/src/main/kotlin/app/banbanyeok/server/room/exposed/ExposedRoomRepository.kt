@@ -131,8 +131,8 @@ public class ExposedRoomRepository(
         inTransaction {
             val updated =
                 ParticipantsTable.update({
-                    (ParticipantsTable.roomId eq roomId) and
-                        (ParticipantsTable.pid eq participantId)
+                    val target = (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq participantId)
+                    if (change.onlyIfHidden) target and (ParticipantsTable.hidden eq true) else target
                 }) {
                     it[nickname] = change.nickname
                     it[originCode] = change.originCode

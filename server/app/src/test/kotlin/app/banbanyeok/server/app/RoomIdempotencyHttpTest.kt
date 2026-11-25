@@ -15,7 +15,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 private const val ROOMS = "/v1/rooms"
 private const val HOST_INPUT = """{"mode":"fair","host":{"originCode":"03v"}}"""
-private const val GUEST_INPUT = """{"originCode":"130","hidden":true}"""
+private const val GUEST_INPUT = """{"originCode":"130"}"""
 
 private fun withRoomApi(block: suspend HttpClient.() -> Unit) {
     val room = RouteRoom("130")

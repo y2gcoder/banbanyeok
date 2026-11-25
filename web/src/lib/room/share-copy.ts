@@ -48,11 +48,11 @@ export const INVITE_COPY: RoomShareCopy = {
   stage: "collecting",
   preview: {
     title: "같이 만날 역 정해요",
-    description: "각자 출발역을 넣으면 모두에게 공평한 만날 역을 지하철 시간으로 계산해요. 출발역은 숨길 수도 있어요.",
+    description: "각자 출발역을 넣으면 모두에게 공평한 만날 역을 지하철 시간으로 계산해요.",
   },
   message: {
     title: "같이 만날 역 정해요",
-    text: "각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요. 출발역은 숨길 수도 있어요.",
+    text: "각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요.",
     button: "카톡으로 보내기",
   },
   card: null,

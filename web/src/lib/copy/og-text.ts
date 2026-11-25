@@ -40,7 +40,7 @@ export const SHARED_OG_IMAGE_VERSION = "203b879f";
  * 방 내용이 바뀔 때만 오르므로, 그림을 그리는 코드·문구만 바뀐 뒤 같은 방을 다시 공유하면 주소가 같아 옛 그림이 캐시에서 나온다.
  * 그래서 `/r/<id>/og` 주소에 `iv=`로 붙인다(`roomImagePath`). 입력이 바뀌면 `components/og/og-image-version.test.ts`가 새 값을 알려 준다.
  */
-export const ROOM_OG_IMAGE_VERSION = "93c03e79";
+export const ROOM_OG_IMAGE_VERSION = "7a903021";
 
 /**
  * 방 공유의 **보이는 범위 정책** 버전. 방 내용(공유 번호 `sv`)과 그리는 코드(`ROOM_OG_IMAGE_VERSION`)가 그대로여도, 서버가 같은 방을

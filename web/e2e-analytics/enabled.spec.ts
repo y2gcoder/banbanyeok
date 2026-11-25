@@ -625,7 +625,7 @@ test("방: 만들기·참여·만났나 이벤트는 동의한 뒤에만, 방 ID
   expect(probe.outside).toEqual([]);
   expect(await analyticsKeys(page)).toEqual([]);
 
-  // 동의한 뒤: 내 기록을 지워 새 참여자처럼 열어 참여(숨기기)하고, 결과를 보고, 만났나에 답한다.
+  // 동의한 뒤: 내 기록을 지워 새 참여자처럼 열어 참여하고(숨기기 칸은 없다, ADR-0007), 결과를 보고, 만났나에 답한다.
   await acceptAll(page);
   await page.waitForTimeout(BATCH_WAIT_MS); // 전체 페이지 이동 전에 배치를 비운다
   await page.evaluate((id) => localStorage.removeItem(`bby.room.${id}`), FAKE_ROOM);
@@ -638,7 +638,7 @@ test("방: 만들기·참여·만났나 이벤트는 동의한 뒤에만, 방 ID
   await page.evaluate((id) => localStorage.removeItem(`bby.room.${id}`), FAKE_ROOM);
   await page.reload();
   await pickStation(page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
+  await expect(page.getByRole("form", { name: "나도 출발역 넣기" }).getByRole("checkbox")).toHaveCount(0);
   await page.getByRole("button", { name: "참여하기" }).click(); // participant_joined
   await expect(page.getByRole("region", { name: "만날 역 후보" }).getByRole("article")).toBeVisible();
   const outcome = page.getByRole("region", { name: "실제로 어디서 만났어요?" });
@@ -653,7 +653,8 @@ test("방: 만들기·참여·만났나 이벤트는 동의한 뒤에만, 방 ID
   expect(probe.events.map((e) => e.event)).toContain("room_created");
   expect(byName("room_created")).toHaveLength(1);
   expect(byName("room_created")[0]?.properties).toMatchObject({ hidden_used: false });
-  expect(byName("participant_joined")[0]?.properties).toMatchObject({ hidden: true });
+  // 통계 항목은 그대로 두고(바꾸면 다시 동의), 새로 숨길 수 없으므로 값은 늘 false다(ADR-0007).
+  expect(byName("participant_joined")[0]?.properties).toMatchObject({ hidden: false });
   expect(byName("outcome_answered")[0]?.properties).toMatchObject({ outcome: "top1", meeting_station_code: "1qs" });
   expect(byName("share_clicked")[0]?.properties).toMatchObject({ link_type: "room" });
   expect(byName("outcome_answered")[0]?.properties.days_since_result).toBe(0);

@@ -13,6 +13,7 @@ import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.recommendation.smallOd
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
+import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -27,7 +28,11 @@ private fun previewTest(
     od: app.banbanyeok.schema.OdMatrix = sampleOd,
     body: suspend RoomFixture.(RoomResultService) -> Unit,
 ) = runTest {
-    val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
+    val fixture =
+        RoomFixture(
+            stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")),
+            newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
+        )
     val recommendation = RecommendationService(OdTravelTimeProvider(od, "20261112.1"), codeNames)
     fixture.body(RoomResultService(fixture.service, recommendation, testTimes))
 }

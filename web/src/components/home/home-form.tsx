@@ -248,7 +248,7 @@ export function HomeForm() {
       >
         <span className="text-[16px] font-bold text-ink">방 만들어서 각자 입력하기 →</span>
         <span className="text-[13px] leading-snug text-muted-foreground">
-          링크를 보내면 친구가 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요.
+          링크를 보내면 친구가 자기 출발역을 직접 넣어요.
         </span>
       </Link>
     </form>

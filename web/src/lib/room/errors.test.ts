@@ -15,6 +15,13 @@ describe("방 오류", () => {
     expect(roomErrorMessage(new TypeError("Failed to fetch"))).toBe(CONNECTION_MESSAGE);
   });
 
+  it("새로 숨기기를 거절한 답(HIDE_NOT_AVAILABLE, ADR-0007)은 숨기기를 끄고 다시 하라고 안내한다", () => {
+    expect(roomErrorMessage(err(400, "HIDE_NOT_AVAILABLE"))).toBe(
+      "출발역 숨기기는 이제 쓸 수 없어요. 숨기기를 끄고 다시 해 주세요.",
+    );
+    expect(isStaleRoom(err(400, "HIDE_NOT_AVAILABLE"))).toBe(false);
+  });
+
   it("계약의 오류 모양이 아닌 4xx(빈 본문·HTML)는 'HTTP 403' 같은 값을 보이지 않는다", () => {
     expect(roomErrorMessage(err(403, "UNKNOWN", "HTTP 403"))).not.toMatch(/HTTP|403/);
   });

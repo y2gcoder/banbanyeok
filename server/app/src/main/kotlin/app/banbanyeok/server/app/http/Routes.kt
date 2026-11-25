@@ -58,6 +58,9 @@ private fun Route.roomCreationRoute(
     idempotency: IdempotencyCache,
 ) {
     post("/rooms") {
+        // 본문은 재생보다 먼저 읽고 숨김 규칙을 본다: 같은 키의 재시도라도 숨긴 본문에 숨기지 않은 성공을 재생하지 않는다(ADR-0007).
+        val command = call.receive<RoomCreateRequestDto>().toCommand(call.bearerToken())
+        rooms.checkNewParticipant(command.host)
         call.respondCreated<RoomCreatedDto>(idempotency, replay = { cached ->
             val expiresAt =
                 rooms.creationReplayExpiry(
@@ -68,7 +71,7 @@ private fun Route.roomCreationRoute(
                 )
             expiresAt?.let { cached.copy(expiresAt = it.toString()) }
         }) {
-            val created = rooms.create(call.receive<RoomCreateRequestDto>().toCommand(call.bearerToken()))
+            val created = rooms.create(command)
             RoomCreatedDto(
                 created.roomId,
                 created.hostToken,
@@ -132,11 +135,13 @@ private fun Route.participantRoutes(
 ) {
     route("/participants") {
         post {
+            // 방 만들기와 같다: 재생보다 먼저 숨김 규칙을 본다(ADR-0007).
+            val input = call.receive<ParticipantInputDto>().toInput()
+            services.rooms.checkNewParticipant(input)
             call.respondCreated<JoinedDto>(idempotency, replay = { cached ->
                 services.rooms.checkJoinReplay(call.roomId(), cached.participantId, cached.participantToken)
                 cached
             }) {
-                val input = call.receive<ParticipantInputDto>().toInput()
                 val joined = services.rooms.join(call.roomId(), input, call.bearerToken())
                 JoinedDto(joined.participantId, joined.participantToken)
             }

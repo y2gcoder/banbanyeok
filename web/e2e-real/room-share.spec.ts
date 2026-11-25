@@ -9,6 +9,7 @@ import {
   type TestInfo,
   test,
 } from "@playwright/test";
+import { hideAsBefore } from "./legacy-hidden";
 
 /**
  * 방 공유 번호와 정한 역(#51) e2e: 실제 서버(Ktor + DB)에 붙은 웹에서 링크 번호(`?sv=`)가 단계마다 오르고, 크롤러가 받는 미리보기
@@ -119,12 +120,21 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   expect(plain.title).toBe(INVITE_TITLE);
   expect(plain.description).toBe(collecting.description);
 
-  // 친구는 받은 링크(번호 포함)로 들어와 출발역을 숨기고 참여한다. 세 번째 사람(지연·신촌)은 API로 넣는다.
+  // 친구는 받은 링크(번호 포함)로 들어와 참여하고, 옛 방처럼 출발역을 숨긴 사람이 된다(새로 숨길 수 없다, ADR-0007).
+  // 세 번째 사람(지연·신촌)은 API로 넣는다.
   const friend = await newFriend(browser, testInfo);
   await friend.page.goto(`/r/${roomId}?sv=${collectingVersion}`);
   await pickStation(friend.page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await friend.page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
+  await expect(friend.page.getByRole("checkbox")).toHaveCount(0);
   await friend.page.getByRole("button", { name: "참여하기" }).click();
+  await expect(friend.page.getByText("(나)")).toBeVisible();
+  const friendId = await friend.page.evaluate(
+    (id) =>
+      (JSON.parse(window.localStorage.getItem(`bby.room.${id}`) ?? "{}") as { participantId?: string }).participantId,
+    roomId,
+  );
+  hideAsBefore(roomId, friendId ?? "");
+  await friend.page.reload();
   await expect(friend.page.getByText("홍대입구 · 나에게만 보여요")).toBeVisible();
   const third = await request.post(`/api/v1/rooms/${roomId}/participants`, {
     data: { originCode: SINCHON, hidden: false, nickname: "지연" },

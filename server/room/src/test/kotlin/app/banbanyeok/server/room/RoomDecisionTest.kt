@@ -109,7 +109,7 @@ class RoomDecisionTest :
                         },
                     )
                 for ((name, edit) in edits) {
-                    roomTest {
+                    legacyRoomTest {
                         val room = twoPeople()
                         val seen = version(room.roomId)
                         edit(room)
@@ -293,3 +293,7 @@ class RoomDecisionTest :
     })
 
 private fun roomTest(body: suspend RoomFixture.() -> Unit) = runTest { RoomFixture().body() }
+
+/** 숨긴 채 들어온 참가자가 있을 수 있는 옛 방(ADR-0007 전). */
+private fun legacyRoomTest(body: suspend RoomFixture.() -> Unit) =
+    runTest { RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE).body() }

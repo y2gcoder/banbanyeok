@@ -10,6 +10,11 @@ import { slowMessage, useSlowStage } from "./use-slow-hint";
 type Props = {
   mode: "join" | "edit";
   initial: ParticipantFormValue;
+  /**
+   * 고칠 때 서버가 준 지금의 숨김 상태(주기적 갱신으로 바뀐다). 다른 탭에서 숨김을 풀었으면 이 폼도 숨기기 칸을 없애고 숨기지 않은 값을
+   * 보낸다(새로 숨길 수 없다, ADR-0007). 없으면 처음 값(`initial.hidden`)을 쓴다.
+   */
+  hiddenNow?: boolean;
   personIndex: number;
   pending: boolean;
   /** 서버가 보낸 오류를 화면 문구로 바꾼 것. */
@@ -25,6 +30,7 @@ type Props = {
 export function JoinForm({
   mode,
   initial,
+  hiddenNow,
   personIndex,
   pending,
   error,
@@ -38,16 +44,18 @@ export function JoinForm({
   const [problem, setProblem] = useState<string | null>(null);
   const stage = useSlowStage(pending);
   const joining = mode === "join";
+  // 이미 숨긴 본인이 고칠 때만 숨김을 유지할 수 있다. 그 밖에는 칸도 없고 늘 숨기지 않은 값을 보낸다.
+  const canKeepHidden = !joining && (hiddenNow ?? initial.hidden);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const checked = toParticipantInput(value);
+    const checked = toParticipantInput({ ...value, hidden: canKeepHidden && value.hidden });
     if (!checked.ok) {
       setProblem(checked.message);
       return;
     }
     setProblem(null);
-    onSubmit(checked.value, value);
+    onSubmit(checked.value, { ...value, hidden: checked.value.hidden === true });
   };
 
   return (
@@ -69,6 +77,7 @@ export function JoinForm({
           setValue((current) => ({ ...current, ...patch }));
         }}
         personIndex={personIndex}
+        keepHidden={canKeepHidden}
       />
       {timeBasis ? (
         <p id={`${id}-basis`} role="status" className="text-[14px] font-semibold text-ink">

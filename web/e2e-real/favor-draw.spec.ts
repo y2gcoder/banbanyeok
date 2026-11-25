@@ -1,8 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { devices, expect, type Page, test } from "@playwright/test";
+import { joinHiddenAsBefore } from "./legacy-hidden";
 
 /**
  * '누구 쪽으로' 뽑기(#172) e2e: 실제 서버(Ktor + DB)에서 방장이 뽑기 방을 만들고, 친구 둘(한 명은 출발역을 숨김)이 들어온 뒤 뽑는다.
+ * 새로 숨길 수 없으므로(ADR-0007) 숨긴 친구는 옛 방처럼 DB에서 숨긴다: 아직 남은 옛 방에서도 숨긴 사람이 뽑기에서 빠지는지 본다.
  * 운은 서버가 정하므로 누가 뽑힐지는 모른다. 대신 숨긴 사람은 대상에 없고, 다른 기기에서 열어도 같은 사람이 보이며, 새로고침해도
  * 바뀌지 않는지 본다.
  */
@@ -44,14 +46,12 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   await expect(page).toHaveURL(ROOM_URL);
   const roomId = new URL(page.url()).pathname.split("/").pop() ?? "";
 
-  // 친구 둘: 지영(신촌, 공개)과 출발역을 숨긴 사람(강남).
-  for (const body of [
-    { nickname: "지영", originCode: SINCHON, hidden: false },
-    { originCode: GANGNAM, hidden: true },
-  ]) {
-    const res = await request.post(`/api/v1/rooms/${roomId}/participants`, { data: body });
-    expect(res.status()).toBe(201);
-  }
+  // 친구 둘: 지영(신촌, 공개)과 출발역을 숨긴 사람(강남, 옛 방처럼).
+  const res = await request.post(`/api/v1/rooms/${roomId}/participants`, {
+    data: { nickname: "지영", originCode: SINCHON },
+  });
+  expect(res.status()).toBe(201);
+  await joinHiddenAsBefore(request, roomId, { originCode: GANGNAM });
   await page.reload();
   await expect(page.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeVisible();
   await expect(page.getByText("누구 쪽으로(뽑기 전)")).toBeVisible();

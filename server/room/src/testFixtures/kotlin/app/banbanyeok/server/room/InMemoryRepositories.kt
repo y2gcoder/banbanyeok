@@ -63,7 +63,8 @@ class InMemoryRoomRepository : RoomRepository {
     ): Boolean =
         lock.withLock {
             val stored = rooms[roomId] ?: return@withLock false
-            if (stored.participants.none { it.id == participantId }) return@withLock false
+            val current = stored.participants.firstOrNull { it.id == participantId } ?: return@withLock false
+            if (change.onlyIfHidden && !current.hidden) return@withLock false
             write(roomId) {
                 it.copy(
                     participants =

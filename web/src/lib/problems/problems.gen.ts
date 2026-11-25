@@ -54,6 +54,14 @@ export const PROBLEMS = {
         "출발역을 숨긴 사람 쪽으로 맞춘 결과는 그 사람 본인만 볼 수 있습니다. 다른 사람에게는 '누구 쪽으로'에 그 사람이 없습니다.",
     },
     {
+      code: "HIDE_NOT_AVAILABLE",
+      slug: "hide-not-available",
+      status: 400,
+      title: "출발역 숨기기를 쓸 수 없음",
+      meaning:
+        "출발역 숨기기는 이제 제공하지 않습니다. 방 만들기·참여에서는 숨길 수 없고, 고칠 때는 이미 숨긴 사람만 숨김을 유지하거나 풀 수 있습니다. 숨기기를 끄고 다시 보내세요.",
+    },
+    {
       code: "INVALID_NICKNAME",
       slug: "invalid-nickname",
       status: 400,

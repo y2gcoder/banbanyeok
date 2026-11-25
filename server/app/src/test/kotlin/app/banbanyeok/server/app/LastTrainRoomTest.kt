@@ -18,6 +18,7 @@ import app.banbanyeok.server.recommendation.sampleLastTrains
 import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
+import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -54,7 +55,11 @@ private suspend fun room(
     date: LocalDate? = friday,
     source: LastTrainSource = LastTrainSource { LastTrainData(sampleLastTrains, sampleLastTrainAsOf) },
 ): Room {
-    val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
+    val fixture =
+        RoomFixture(
+            stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")),
+            newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
+        )
     val slots = TimeSlot.ALL.associateWith { sampleOd }
     val recommendation =
         RecommendationService(

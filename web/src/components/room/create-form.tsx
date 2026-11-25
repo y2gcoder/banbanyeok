@@ -160,7 +160,7 @@ export function CreateRoomForm() {
             친구가 각자 입력하는 방 만들기
           </h1>
           <p className="text-[15px] text-ink-soft">
-            내 출발역만 넣고 링크를 보내면, 친구들이 들어와서 자기 출발역을 직접 넣어요. 출발역은 숨길 수도 있어요.
+            내 출발역만 넣고 링크를 보내면, 친구들이 들어와서 자기 출발역을 직접 넣어요.
           </p>
         </section>
       </div>
@@ -232,7 +232,7 @@ export function CreateRoomForm() {
                     </fieldset>
                     {favorTarget === "draw" ? (
                       <p className="-mt-1.5 pr-3.5 pb-3.5 pl-10.5 text-[13px] leading-snug text-muted-foreground">
-                        출발역을 숨긴 사람은 뽑기에서 빠져요. 뽑기 전까지 결과는 공평하게로 보여요.
+                        뽑기 전까지 결과는 공평하게로 보여요.
                       </p>
                     ) : null}
                   </>

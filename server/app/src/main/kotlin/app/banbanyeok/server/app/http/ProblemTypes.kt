@@ -18,6 +18,7 @@ internal object ProblemTypes {
             "FAVOR_TARGET_REQUIRED" to "우대 대상이 필요함",
             "FAVOR_TARGET_UNKNOWN" to "우대 대상이 참가자에 없음",
             "FAVOR_TARGET_HIDDEN" to "숨긴 사람 쪽 결과는 본인만 봄",
+            "HIDE_NOT_AVAILABLE" to "출발역 숨기기를 쓸 수 없음",
             "INVALID_NICKNAME" to "별칭이 올바르지 않음",
             "INVALID_MEETING_DATE" to "약속일이 올바르지 않음",
             "INVALID_MEETING_TIME" to "약속 시각이 올바르지 않음",

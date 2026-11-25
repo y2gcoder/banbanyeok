@@ -14,6 +14,9 @@ public enum class RoomError(
     INVALID_OUTCOME(ErrorKind.INVALID),
     FAVOR_TARGET_REQUIRED(ErrorKind.INVALID),
     FAVOR_TARGET_UNKNOWN(ErrorKind.INVALID),
+
+    /** 새로 출발역을 숨기려 했다(ADR-0007). 이미 숨긴 참가자의 유지·풀기는 된다. */
+    HIDE_NOT_AVAILABLE(ErrorKind.INVALID),
     UNAUTHORIZED(ErrorKind.UNAUTHENTICATED),
     FORBIDDEN(ErrorKind.FORBIDDEN),
     ROOM_NOT_FOUND(ErrorKind.NOT_FOUND),

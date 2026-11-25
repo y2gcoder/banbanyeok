@@ -10,6 +10,7 @@ import {
   type TestInfo,
   test,
 } from "@playwright/test";
+import { hideAsBefore } from "./legacy-hidden";
 import { sweepViewports } from "./viewport-sweep";
 
 /**
@@ -95,7 +96,7 @@ async function addParticipants(request: APIRequestContext, roomId: string, count
   }
 }
 
-test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → 수정·삭제 → 만났나 → 방 삭제", async ({
+test("방 만들기 → 친구 참여(숨기기 없음) → 옛 방처럼 숨김 → 숨김 확인 → 결과 → 숨김 풀기·삭제 → 만났나 → 방 삭제", async ({
   page,
   context,
   browser,
@@ -127,7 +128,7 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   expect(link).toMatch(/\/r\/[0-9a-hjkmnp-tv-z]{10}\?sv=\d+&pv=\d+$/); // 공유 링크에는 방 공유 번호와 보이는 범위 정책 버전만 붙는다
   expect(link).not.toContain(hostRecord?.hostToken ?? "never");
 
-  // 친구(다른 컨텍스트): 링크를 열면 방장이 보이고, 숨기기로 참여한다.
+  // 친구(다른 컨텍스트): 링크를 열면 방장이 보이고 참여한다. 참여 폼에는 숨기기가 없다(ADR-0007).
   const friend = await newFriend(browser, testInfo);
   await friend.page.goto(link);
   await expect(friend.page.getByRole("heading", { name: "나도 출발역 넣기" })).toBeVisible();
@@ -138,9 +139,13 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await expectNoA11yViolations(friend.page);
   await shot(friend.page, "3-friend-join");
   await pickStation(friend.page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await friend.page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
-  await shot(friend.page, "4-friend-join-hidden");
+  await expect(friend.page.getByRole("form", { name: "나도 출발역 넣기" }).getByRole("checkbox")).toHaveCount(0);
+  await shot(friend.page, "4-friend-join-filled");
   await friend.page.getByRole("button", { name: "참여하기" }).click();
+  await expect(friendPeople.getByText("홍대입구에서 오는 분")).toBeVisible();
+  // 아직 남은 옛 방처럼 이 친구가 출발역을 숨긴 채 들어와 있다(새로 숨길 수 없어 DB에서 숨긴다). 아래는 그 방의 지금 동작이다.
+  hideAsBefore(hostRoom, (await storedRecord(friend.page, hostRoom))?.participantId ?? "");
+  await friend.page.reload();
 
   // 친구 화면: 본인 줄에만 (나), 본인에게만 자기 출발역이 보인다. 결과가 나오고 길찾기는 만든 사람 쪽만.
   await expect(friendPeople.getByRole("listitem").filter({ hasText: "참가자 2" })).toBeVisible();
@@ -210,16 +215,22 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   );
   await viewer.context.close();
 
-  // 친구: 내 입력 수정(숨기기 풀고 다른 역)
+  // 친구: 내 입력 수정(이미 숨긴 본인은 '계속 숨기기'가 켜진 채 보이고, 풀고 다른 역으로)
   await friend.page.getByRole("button", { name: "수정 내 항목" }).click();
   await expect(friend.page.getByRole("heading", { name: "내 출발역 고치기" })).toBeVisible();
   await shot(friend.page, "7-friend-edit");
-  await friend.page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).uncheck();
+  const keepHidden = friend.page.getByRole("checkbox", { name: "출발역 이름 계속 숨기기" });
+  await expect(keepHidden).toBeChecked();
+  await keepHidden.uncheck();
   await pickStation(friend.page, "내 출발역", "사당", /^사당\s?2호선/);
   await friend.page.getByRole("button", { name: "저장하기" }).click();
   await expect(friendPeople.getByText("출발역 비공개")).toHaveCount(0);
   await expect(friendPeople.getByText("사당에서 오는 분")).toBeVisible();
   await expect(friendPeople.getByText("(나)")).toBeVisible();
+  // 푼 뒤에는 다시 숨길 칸이 없다.
+  await friend.page.getByRole("button", { name: "수정 내 항목" }).click();
+  await expect(friend.page.getByRole("form", { name: "내 출발역 고치기" }).getByRole("checkbox")).toHaveCount(0);
+  await friend.page.getByRole("button", { name: "취소" }).click();
   // 방장은 이제 친구의 출발역이 보인다.
   await page.reload();
   await expect(
@@ -248,13 +259,12 @@ test("방 만들기 → 친구 참여(숨김) → 숨김 확인 → 결과 → �
   await expect(friendPeople.getByText("(나)")).toHaveCount(0);
   expect(await storedRecord(friend.page, hostRoom)).toBeNull();
 
-  // 같은 입력(처음 참여할 때와 같은 홍대입구·숨김)으로 다시 참여하면 새 토큰을 받는다. 서버는 같은 Idempotency-Key의 성공 응답을
+  // 같은 입력(처음 참여할 때와 같은 홍대입구)으로 다시 참여하면 새 토큰을 받는다. 서버는 같은 Idempotency-Key의 성공 응답을
   // 10분간 재생하므로, 키를 새로 만들지 않으면 이미 지워진 항목의 죽은 토큰을 받아 "(나)"가 나타나지 않는다.
   await pickStation(friend.page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await friend.page.getByRole("checkbox", { name: /출발역 이름 숨기기/ }).check();
   await friend.page.getByRole("button", { name: "참여하기" }).click();
   await expect(friendPeople.getByText("(나)")).toBeVisible();
-  await expect(friendPeople.getByText("홍대입구 · 나에게만 보여요")).toBeVisible();
+  await expect(friendPeople.getByText("홍대입구에서 오는 분")).toBeVisible();
   await expect(friend.page.getByRole("button", { name: "수정 내 항목" })).toBeVisible();
   await friend.page.reload();
   await expect(friendPeople.getByText("(나)")).toBeVisible(); // 새로 받은 토큰이 저장돼 있다

@@ -62,7 +62,7 @@ mise run dev                   # db → migrate → seed → server + web
 # 각각 실행하려면:
 mise run dev:db
 mise run dev:migrate
-mise run dev:seed               # 예시 방 하나(참가자 3명, 한 명은 출발역 숨김)와 curl 예시를 출력
+mise run dev:seed               # 예시 방 하나(참가자 3명, 새로 숨길 수 없어 모두 출발역 공개)와 curl 예시를 출력
 mise run dev:server             # :server:app:run. compose DB + data/artifacts/dev로 실제 동작(/healthz, /v1/...)
 mise run dev:web                # web/이 없으면 안내 후 종료
 mise run dev:web:mock           # web/이 없으면 안내 후 종료
