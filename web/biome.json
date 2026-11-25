@@ -16,7 +16,8 @@
       "!next-env.d.ts",
       "!playwright-report",
       "!test-results",
-      "!AGENTS.md"
+      "!AGENTS.md",
+      "!public/icons/kakaotalk-sharing.svg"
     ]
   },
   "formatter": {
