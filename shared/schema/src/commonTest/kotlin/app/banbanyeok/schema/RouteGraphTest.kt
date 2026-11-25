@@ -101,6 +101,14 @@ class RouteGraphTest {
     }
 
     @Test
+    fun versionOneRejectsUnavailableBoardingWithoutOutdoorTransfers() {
+        val unavailable = rg.copyOf()
+        unavailable[unavailable.lastIndex - 1] = 0xff.toByte()
+        unavailable[unavailable.lastIndex] = 0xff.toByte()
+        assertFailsWith<SchemaException> { RouteGraphCodec.decode(unavailable) }
+    }
+
+    @Test
     fun versionTwoRoundTripsOutdoorTransfersAndUnavailableBoarding() {
         fun graph(
             version: Int,

@@ -5,6 +5,7 @@ import app.banbanyeok.core.RouteSearch
 import app.banbanyeok.core.RouteTree
 import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.RouteGraph
 import app.banbanyeok.schema.RouteGraphCodec
 import app.banbanyeok.schema.Sha256
 import app.banbanyeok.schema.Station
@@ -40,7 +41,7 @@ internal fun busanRouteAudit(
             val matrix = requireNotNull(metropolitan.odFor(slot))
             val busanCodes = busan.origins.map { it.code }
             val capitalCodes = verifyMetropolitanProjection(metropolitan, search, matrix, busanCodes)
-            verifyRegionalSlot(search, busanCodes, capitalCodes)
+            verifyRegionalSlot(search, busan, capitalCodes)
         }
     val stations = busanSlots.getValue(TimeSlot.DEFAULT).origins.associateBy { it.code }
     val comparisons = compareRoutePairs(capital.root, RouteSearch(decoded, TimeSlot.DEFAULT), stations)
@@ -74,12 +75,14 @@ private fun verifyMetropolitanProjection(
         origin
     }
 
-private fun verifyRegionalSlot(
+internal fun verifyRegionalSlot(
     search: RouteSearch,
-    busanCodes: List<String>,
+    busan: Network,
     capitalCodes: List<String>,
 ): JsonObject {
+    val busanCodes = busan.origins.map { it.code }
     val trees = busanCodes.associateWith(search::from)
+    val comparedCells = verifyBusanMatrix(busan, trees)
     val boardable = trees.filterValues { it != null }
     val unavailable = trees.keys - boardable.keys
     var reachable = 0
@@ -91,21 +94,46 @@ private fun verifyRegionalSlot(
         require(capitalCodes.none { from.fastest(it) != null }) { "Busan origin reaches metropolitan region: $origin" }
     }
     val disconnected = boardable.size * boardable.size - connected
-    val disableReason =
-        when {
-            boardable.size < 2 -> "no-connected-rail"
-            disconnected != 0 -> "disconnected-known-services"
-            else -> null
-        }
     return obj(
+        "busanOdComparedCells" to comparedCells,
+        "busanOdMismatchCells" to 0,
         "busanReachableCells" to reachable,
         "busanUnreachableCells" to busanCodes.size * busanCodes.size - reachable,
         "busanOriginsWithoutKnownService" to unavailable,
         "crossRegionUnreachableCells" to 2 * busanCodes.size * capitalCodes.size,
         "boardableDisconnectedPairs" to disconnected,
-        "entireRegionDisableReason" to disableReason,
+        "entireRegionDisableReason" to regionDisableReason(boardable.size, disconnected),
     )
 }
+
+private fun verifyBusanMatrix(
+    busan: Network,
+    trees: Map<String, RouteTree?>,
+): Int {
+    val codes = busan.origins.map { it.code }
+    val expected =
+        if (RouteGraph.UNAVAILABLE_WAIT in busan.waits.values) regionalMatrixCosts(busan) else matrixCosts(busan)
+    for ((row, origin) in codes.withIndex()) {
+        for ((column, destination) in codes.withIndex()) {
+            val wanted = expected[row][column]
+            val actual = trees.getValue(origin)?.fastest(destination)
+            require(actual == if (wanted == infinity) null else RouteCost(wanted.seconds, wanted.changes)) {
+                "Busan OD mismatch $origin → $destination: matrix=$wanted rg=$actual"
+            }
+        }
+    }
+    return codes.size * codes.size
+}
+
+internal fun regionDisableReason(
+    supportedOrigins: Int,
+    disconnectedCells: Int,
+): String? =
+    when {
+        supportedOrigins < 2 -> "no-connected-rail"
+        disconnectedCells != 0 -> "disconnected-known-services"
+        else -> null
+    }
 
 private fun reachablePairs(
     destinations: Iterable<String>,

@@ -10,6 +10,7 @@ import app.banbanyeok.schema.StationStatus
 import app.banbanyeok.schema.TimeSlot
 import io.kotest.core.spec.style.DescribeSpec
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -98,6 +99,10 @@ class BusanGraphTest :
                 val regional = RouteGraphCodec.decode(encoded)
                 val weekday = requireNotNull(RouteSearch(regional, TimeSlot.DEFAULT).from(a))
                 assertEquals(RouteCost(461, 1), weekday.fastest(d))
+                val weekdayCosts = matrixCosts(slots.getValue(TimeSlot.DEFAULT))
+                assertEquals(Cost(461, 1), weekdayCosts[0][3])
+                assertEquals(Cost(221, 0), weekdayCosts[1][2])
+                assertEquals(Cost(341, 0), weekdayCosts[2][0])
                 val saturdaySlot = TimeSlot.ALL.first { it.day == DayType.SATURDAY }
                 val saturday = RouteSearch(regional, saturdaySlot)
                 val available = requireNotNull(saturday.from(a))
@@ -105,6 +110,20 @@ class BusanGraphTest :
                 assertEquals(RouteCost(341, 0), available.fastest(c))
                 assertNull(available.fastest(d))
                 assertNull(saturday.from(d))
+                val partial = slots.getValue(saturdaySlot)
+                assertFailsWith<IllegalArgumentException> { matrixCosts(partial) }
+                val saturdayCosts = regionalMatrixCosts(partial)
+                assertFailsWith<IllegalArgumentException> { graphGate(partial, saturdayCosts) }
+                assertEquals(Cost(341, 0), saturdayCosts[0][2])
+                assertEquals(infinity, saturdayCosts[0][3])
+                assertEquals(List(4) { infinity }, saturdayCosts[3])
+                verifyRegionalSlot(saturday, partial, emptyList())
+            }
+
+            it("disables a regional slot with too few origins or disconnected known services") {
+                assertEquals("no-connected-rail", regionDisableReason(1, 0))
+                assertEquals("disconnected-known-services", regionDisableReason(2, 2))
+                assertNull(regionDisableReason(2, 0))
             }
         }
     })

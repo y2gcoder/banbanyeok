@@ -27,7 +27,7 @@ internal class BusanTransfers(
                 listOf(Triple(codes[0], codes[1], seconds), Triple(codes[1], codes[0], seconds))
             }.groupBy { it.first }
             .mapValues { (_, links) ->
-                require(links.distinctBy { it.second }.size == links.size) { "Duplicate outdoor transfer" }
+                require(links.size == 1) { "An outdoor transfer endpoint must belong to a single pair" }
                 links.associate { (_, to, seconds) -> to to seconds }
             }
 

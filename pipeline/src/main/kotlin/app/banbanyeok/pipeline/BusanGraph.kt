@@ -55,7 +55,7 @@ internal fun busanNetwork(
             graph[from].add(Edge(to, walkSeconds + waits.getValue(service), 1, service))
         }
     }
-    return Network(registry, registry, origins, nodes, graph, waits, emptyList())
+    return Network(registry, registry, origins, nodes, graph, waits, emptyList(), outdoor = transfers.outdoor)
 }
 
 /** Append platform states without adding any cross-region edges or changing the metropolitan graph. */
@@ -83,6 +83,7 @@ internal fun combineRegions(
         nodes = capital.nodes + busan.nodes,
         graph = capital.graph + busanEdges,
         waits = capital.waits + busan.waits,
+        outdoor = capital.outdoor + busan.outdoor,
     )
 }
 
