@@ -61,6 +61,8 @@ export function keepDayAcrossMidnight(value: MeetingWhen, today: string): Meetin
   return { ...value, day: { choice: "pick", date: day.date } };
 }
 
+const clearDay = (current: MeetingWhen): MeetingWhen => ({ ...current, day: null });
+
 /** 칩 아래 작은 줄: "11월 21일 (토)", 공휴일이면 " · 공휴일". */
 function dayHint(date: string): string {
   return `${formatMeetingDay(date)}${holidayName(date) ? " · 공휴일" : ""}`;
@@ -81,7 +83,11 @@ export function MeetingWhenFields({
   /** 서울 기준 오늘(`YYYY-MM-DD`). 수화 전에는 빈 문자열이라 칩의 날짜 줄을 그리지 않는다. */
   today: string;
   value: MeetingWhen;
-  onChange: (next: MeetingWhen) => void;
+  /**
+   * 최신 값에서 다음 값을 만드는 함수를 넘긴다. 부모는 `setValue((current) => update(current))`로 적용한다. 이 렌더의 `value`를 펼쳐
+   * 넘기면 다시 그리기 전에 두 변경이 잇달아 올 때 뒤의 것이 앞의 것을 옛 값으로 덮는다(#177).
+   */
+  onChange: (update: (current: MeetingWhen) => MeetingWhen) => void;
 }) {
   const [timeOpen, setTimeOpen] = useState(value.time !== "");
   const timeRef = useRef<HTMLInputElement>(null);
@@ -100,11 +106,15 @@ export function MeetingWhenFields({
 
   // 누르는 순간의 서울 날짜로 정한다(화면을 연 뒤 자정을 넘겼어도 "오늘"은 오늘이다).
   const selectPreset = (choice: Exclude<DayChoice, "pick">) =>
-    onChange({ ...value, day: { choice, date: presetDate(choice, todayInSeoul()) } });
+    onChange((current) => ({ ...current, day: { choice, date: presetDate(choice, todayInSeoul()) } }));
   const timeNote = earlyMorningNote(date, time);
   const selectBand = (next: Band) =>
     // 시각과 다른 시간대를 고르면 시각을 지운다(둘이 어긋난 채로 보내지 않는다).
-    onChange({ ...value, band: next, time: time && bandOfTime(time) !== next ? "" : value.time });
+    onChange((current) => ({
+      ...current,
+      band: next,
+      time: current.time !== "" && bandOfTime(current.time) !== next ? "" : current.time,
+    }));
 
   return (
     <fieldset className="@container flex flex-col gap-3" aria-describedby={`${id}-basis`}>
@@ -123,13 +133,13 @@ export function MeetingWhenFields({
                     value={preset.id}
                     checked={checked}
                     onChange={() => selectPreset(preset.id)}
-                    onClick={checked ? () => onChange({ ...value, day: null }) : undefined}
+                    onClick={checked ? () => onChange(clearDay) : undefined}
                     onKeyDown={
                       checked
                         ? (e) => {
                             if (e.key !== " ") return;
                             e.preventDefault();
-                            onChange({ ...value, day: null });
+                            onChange(clearDay);
                           }
                         : undefined
                     }
@@ -157,9 +167,10 @@ export function MeetingWhenFields({
                 value={picked ?? ""}
                 min={today || undefined}
                 max={today ? dayAfter(today, MAX_MEETING_DAYS) : undefined}
-                onChange={(e) =>
-                  onChange({ ...value, day: e.target.value ? { choice: "pick", date: e.target.value } : null })
-                }
+                onChange={(e) => {
+                  const date = e.target.value;
+                  onChange((current) => ({ ...current, day: date ? { choice: "pick", date } : null }));
+                }}
                 onClick={(e) => openPicker(e.currentTarget)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -183,7 +194,7 @@ export function MeetingWhenFields({
             <button
               type="button"
               aria-label={`날짜 지우기: ${formatMeetingDay(picked)}`}
-              onClick={() => onChange({ ...value, day: null })}
+              onClick={() => onChange(clearDay)}
               className="inline-flex min-h-11 items-center gap-1 self-end rounded-md px-1 text-[13px] font-semibold text-ink-soft hover:text-ink"
             >
               <XIcon className="size-3.5" aria-hidden="true" />
@@ -201,7 +212,7 @@ export function MeetingWhenFields({
             options={BANDS.map((b) => ({ id: b.id, label: b.label, hint: b.hint }))}
             selected={band}
             onSelect={selectBand}
-            onClear={() => onChange({ ...value, band: null, time: "" })}
+            onClear={() => onChange((current) => ({ ...current, band: null, time: "" }))}
             className="grid grid-cols-4 gap-1.5 @sm:grid-cols-2"
           />
         </div>
@@ -212,7 +223,7 @@ export function MeetingWhenFields({
           aria-expanded={timeOpen}
           aria-controls={`${id}-time-row`}
           onClick={() => {
-            if (timeOpen) onChange({ ...value, time: "" });
+            if (timeOpen) onChange((current) => ({ ...current, time: "" }));
             focusTime.current = !timeOpen;
             setTimeOpen(!timeOpen);
           }}
@@ -232,7 +243,7 @@ export function MeetingWhenFields({
             value={value.time}
             onChange={(e) => {
               const next = e.target.value.slice(0, 5);
-              onChange({ ...value, time: next, band: next ? bandOfTime(next) : value.band });
+              onChange((current) => ({ ...current, time: next, band: next ? bandOfTime(next) : current.band }));
             }}
             aria-describedby={timeNote ? `${id}-time-note` : undefined}
             className="h-11 w-full max-w-48 min-w-0 rounded-lg border border-input bg-surface px-3 text-[16px]"

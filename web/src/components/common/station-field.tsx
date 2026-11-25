@@ -41,7 +41,10 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
       items={items}
       filter={null}
       value={value}
-      onValueChange={(next) => onChange(next)}
+      onValueChange={(next, details) => {
+        if (details.reason === "item-press") swallowFollowUpClicks(details.event);
+        onChange(next);
+      }}
       inputValue={query}
       onInputValueChange={setQuery}
       itemToStringLabel={(s) => s.name}
@@ -81,4 +84,26 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
       </ComboboxContent>
     </Combobox>
   );
+}
+
+const FOLLOW_UP_CLICK_EVENTS = ["mousedown", "mouseup", "click", "dblclick"] as const;
+
+/**
+ * 목록 항목을 마우스·손가락으로 고르면 목록은 곧바로 닫힘 상태가 되어 포인터를 받지 않고, 그 아래 칸이 드러난다. 같은 자리에서
+ * 이어지는 누름(더블클릭·두 번 탭의 두 번째, `detail` 2 이상)이 드러난 칸('출발역 이름 숨기기', '한 명 더')을 누르지 않게 그 연속
+ * 누름을 문서에 닿기 전에 삼킨다(#177). 새로 누르기 시작하면(`detail` 1인 mousedown) 풀린다. 키보드 선택(`detail` 0)은 건드리지 않는다.
+ */
+function swallowFollowUpClicks(selection: Event) {
+  const win = selection.target instanceof Node ? selection.target.ownerDocument?.defaultView : null;
+  if (!win || !(selection instanceof win.UIEvent) || selection.detail < 1) return;
+  const onEvent = (event: Event) => {
+    const detail = (event as UIEvent).detail;
+    if (detail >= 2) {
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (event.type === "mousedown") {
+      for (const type of FOLLOW_UP_CLICK_EVENTS) win.removeEventListener(type, onEvent, true);
+    }
+  };
+  for (const type of FOLLOW_UP_CLICK_EVENTS) win.addEventListener(type, onEvent, true);
 }

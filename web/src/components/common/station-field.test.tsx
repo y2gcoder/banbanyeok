@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
@@ -82,5 +82,42 @@ describe("역 자동완성: 계산 범위 안내(#170)", () => {
     await user.type(screen.getByRole("combobox"), "용유");
     const option = await screen.findByRole("option", { name: /용유.*관광용 열차가 띄엄띄엄 다녀서 계산하지 않아요/ });
     expect(option).toHaveAttribute("aria-disabled", "true");
+  });
+});
+
+/** 목록 아래에 있던 칸 하나(방 화면의 '출발역 이름 숨기기'와 같다). */
+function WithCheckbox() {
+  const [checked, setChecked] = useState(false);
+  return (
+    <>
+      <Harness />
+      <input type="checkbox" aria-label="아래 칸" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+    </>
+  );
+}
+
+describe("역 자동완성: 고른 뒤 이어지는 누름(#177)", () => {
+  it("마우스로 고른 클릭에 이어지는 두 번째 클릭(더블클릭)은 아래 칸에 닿지 않고, 새로 누르면 닿는다", async () => {
+    const user = userEvent.setup();
+    render(<WithCheckbox />);
+    await user.type(screen.getByRole("combobox"), "강남");
+    await user.click(screen.getAllByRole("option")[0] as HTMLElement);
+    expect(screen.getByTestId("picked")).toHaveTextContent(`강남/${station("강남").code}`);
+    const below = screen.getByRole("checkbox", { name: "아래 칸" });
+    fireEvent.mouseDown(below, { detail: 2 });
+    fireEvent.click(below, { detail: 2 });
+    expect(below).not.toBeChecked();
+    await user.click(below);
+    expect(below).toBeChecked();
+  });
+
+  it("키보드로 고르면 이어지는 클릭을 막지 않는다", async () => {
+    const user = userEvent.setup();
+    render(<WithCheckbox />);
+    await user.type(screen.getByRole("combobox"), "강남");
+    await user.keyboard("{Enter}");
+    const below = screen.getByRole("checkbox", { name: "아래 칸" });
+    fireEvent.click(below, { detail: 2 });
+    expect(below).toBeChecked();
   });
 });

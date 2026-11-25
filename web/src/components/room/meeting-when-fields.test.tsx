@@ -15,9 +15,12 @@ function Harness({ onValue, today = TODAY }: { onValue?: (value: MeetingWhen) =>
       id="when"
       today={today}
       value={value}
-      onChange={(next) => {
-        onValue?.(next);
-        setValue(next);
+      onChange={(update) => {
+        setValue((current) => {
+          const next = update(current);
+          onValue?.(next);
+          return next;
+        });
       }}
     />
   );

@@ -9,7 +9,11 @@ import type { ParticipantFormValue } from "@/lib/room/input";
 type Props = {
   idPrefix: string;
   value: ParticipantFormValue;
-  onChange: (next: ParticipantFormValue) => void;
+  /**
+   * 바뀐 칸만 넘긴다. 부모는 최신 상태에 합친다(`setValue((current) => ({ ...current, ...patch }))`). 이 렌더의 `value`를 펼쳐 넘기면
+   * 다시 그리기 전에 두 칸이 잇달아 바뀔 때 뒤의 것이 앞의 것을 옛 값으로 덮는다(#177: 역을 고르자 숨기기가 켜지며 역이 지워짐).
+   */
+  onChange: (patch: Partial<ParticipantFormValue>) => void;
   /** 노선도 점 색(참여 순서). */
   personIndex: number;
 };
@@ -46,7 +50,7 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex }: Pr
               <input
                 id={nameId}
                 value={value.nickname}
-                onChange={(e) => onChange({ ...value, nickname: e.target.value })}
+                onChange={(e) => onChange({ nickname: e.target.value })}
                 placeholder="예: 민수"
                 maxLength={MAX_NICKNAME_CODE_POINTS * 2}
                 autoComplete="off"
@@ -58,11 +62,7 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex }: Pr
             <label htmlFor={stationId} className={FIELD_LABEL}>
               <span className="sr-only">내</span> 출발역
             </label>
-            <StationField
-              id={stationId}
-              value={value.station}
-              onChange={(station) => onChange({ ...value, station })}
-            />
+            <StationField id={stationId} value={value.station} onChange={(station) => onChange({ station })} />
           </div>
         </div>
       </div>
@@ -71,7 +71,7 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex }: Pr
           id={hiddenId}
           type="checkbox"
           checked={value.hidden}
-          onChange={(e) => onChange({ ...value, hidden: e.target.checked })}
+          onChange={(e) => onChange({ hidden: e.target.checked })}
           className="mt-0.5 size-5 shrink-0 accent-[var(--ink)]"
         />
         <label htmlFor={hiddenId} className="flex flex-col gap-0.5 text-[15px] text-ink">
