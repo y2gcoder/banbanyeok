@@ -150,6 +150,9 @@ class ApiHttpTest :
                 withMockedApi { services ->
                     coEvery { services.rooms.create(any()) } returns
                         CreatedRoom(ROOM_ID, "host-tok", "p00001", "part-tok", expires, ROOM_HASH)
+                    coEvery {
+                        services.rooms.creationReplayExpiry(ROOM_ID, "host-tok", "p00001", "part-tok")
+                    } returns expires
                     val first =
                         client.json(
                             HttpMethod.Post,

@@ -92,6 +92,31 @@ public class RoomService(
         return JoinedRoom(participantId, token.plain)
     }
 
+    /** 생성 응답의 두 자격이 여전히 유효하면 현재 만료 시각을 반환한다. */
+    public suspend fun creationReplayExpiry(
+        roomId: String,
+        hostToken: String,
+        participantId: String,
+        participantToken: String,
+    ): Instant? {
+        val stored = findActive(roomId, clock.instant()) ?: return null
+        if (stored.room.hostParticipantId != participantId || caller(stored, hostToken) != Caller.Host) return null
+        return stored.room.expiresAt.takeIf { caller(stored, participantToken) == Caller.Member(participantId) }
+    }
+
+    /** 이미 들어온 참여자의 자리는 정원에 포함돼 있다. 잠금은 재시도에도 적용한다. */
+    public suspend fun checkJoinReplay(
+        roomId: String,
+        participantId: String,
+        participantToken: String,
+    ) {
+        val stored = loadActive(roomId, clock.instant())
+        if (caller(stored, participantToken) != Caller.Member(participantId)) {
+            reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
+        }
+        if (stored.room.locked) reject(RoomError.ROOM_LOCKED, "방이 잠겼습니다")
+    }
+
     /** 토큰은 선택이다. 유효한 participantToken이면 본인 항목의 출발역이 숨김이어도 보인다. 잘못된 토큰은 무시한다. */
     public suspend fun get(
         roomId: String,
@@ -306,13 +331,12 @@ public class RoomService(
     private suspend fun loadActive(
         roomId: String,
         now: Instant,
-    ): StoredRoom {
-        val stored = rooms.find(roomId.lowercase())
-        if (stored == null || ExpiryPolicy.isExpired(stored.room, now)) {
-            reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
-        }
-        return stored
-    }
+    ): StoredRoom = findActive(roomId, now) ?: reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
+
+    private suspend fun findActive(
+        roomId: String,
+        now: Instant,
+    ): StoredRoom? = rooms.find(roomId.lowercase())?.takeUnless { ExpiryPolicy.isExpired(it.room, now) }
 
     private fun caller(
         stored: StoredRoom,
