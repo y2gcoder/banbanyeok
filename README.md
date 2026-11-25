@@ -50,7 +50,7 @@ mise run test                      # 위 둘을 함께
 
 ### 에이전트 작업자(코디네이터용)
 
-Claude Code 작업자는 poteto-mode로 일합니다([AGENTS.md](AGENTS.md) '작업 관례'). Orca 작업자에서 켜는 일은 두 단계입니다. 먼저 `orca agent launch --agent claude --prompt "/pstack:poteto-mode <대기 지시>"`(새 체크아웃이면 `orca worktree create --name <이름> --agent claude --prompt "…"`)로 첫 입력에 이 슬래시 명령만 보내 켭니다. 대기 지시에는 지시가 올 때까지 아무것도 시작하지 말고 '대기 중'이라고만 답하라고 적습니다. 작업자가 바쁘면 다음 단계가 `agent_readiness`로 거절되기 때문입니다. 대기 상태가 되면 `orca orchestration worker-start --spec-file <지시서> --terminal <handle> --worktree <selector>`로 지시를 넘깁니다. 지시서에 슬래시 명령을 섞어 한 번에 보내면 Orca 안내문이 앞에 붙어 명령으로 인식되지 않고 poteto-mode가 켜지지 않습니다.
+Claude Code 작업자는 poteto-mode로 일합니다([AGENTS.md](AGENTS.md) '작업 관례'). Orca 작업자에서 켜는 일은 두 단계입니다. 먼저 첫 입력에 `/pstack:poteto-mode <대기 지시>`만 보내 켭니다. `orca agent launch --agent claude --surface terminal --json --prompt "/pstack:poteto-mode <대기 지시>"`(새 체크아웃이면 `orca worktree create --name <이름> --agent claude --surface terminal --json --prompt "…"`)로 실행합니다. `--surface terminal`이 없으면 Chat | CLI 설정에 따라 채팅으로 열릴 수 있고, 다음 단계에는 `--json` 결과가 돌려주는 터미널 핸들(아래 `$handle`)이 필요합니다. 대기 지시에는 지시가 올 때까지 아무것도 시작하지 말고 '대기 중'이라고만 답하라고 적습니다. 작업자가 바쁘면 다음 단계가 `agent_readiness`로 거절되기 때문입니다. `orca terminal wait --terminal "$handle" --for tui-idle --timeout-ms 60000`으로 대기 상태가 된 것을 확인한 뒤 `orca orchestration worker-start --spec-file <지시서> --terminal "$handle" --worktree <selector>`로 지시를 넘깁니다. 지시서에 슬래시 명령을 섞어 한 번에 보내면 Orca 안내문이 앞에 붙어 명령으로 인식되지 않고 poteto-mode가 켜지지 않습니다.
 
 ## 라이선스
 
