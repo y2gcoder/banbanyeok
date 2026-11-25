@@ -87,34 +87,41 @@ class BusanGraphTest :
                         rides,
                         waits.filterKeys { it.day != DayType.SATURDAY },
                     )
-                val transfers =
-                    BusanTransfers(
-                        parseObject(
-                            """{"defaultSeconds":89,"longSeconds":221,"longStations":{},
-                        "outdoorLinks":[{"stations":["002","003"],"seconds":221}]}""",
-                        ),
+                val config =
+                    parseObject(
+                        """{"defaultSeconds":89,"longSeconds":221,"longStations":{"005":"long"},
+                        "operatorInterchanges":{"seconds":480,"stations":{"006":"operator"}},
+                        "outdoorLinks":[{"stations":["002","003"],"seconds":221,"operatorInterchange":true}]}""",
                     )
+                val transfers = BusanTransfers(config)
+                val baseline = BusanTransfers(config, previousOperatorWalks = true)
+                assertEquals(89, transfers.seconds(a))
+                assertEquals(221, transfers.seconds("005"))
+                assertEquals(221, baseline.seconds("006"))
+                assertEquals(480, transfers.seconds("006"))
+                assertEquals(221, baseline.outdoor.getValue(b).getValue(c))
+                assertEquals(480, transfers.outdoor.getValue(c).getValue(b))
                 val slots = TimeSlot.ALL.associateWith { busanNetwork(registry, listOf(first, other), transfers, it) }
                 val encoded = RouteGraphCodec.encode(routeGraph(slots, RouteGraphCodec.REGIONAL_FORMAT_VERSION) { it })
                 val regional = RouteGraphCodec.decode(encoded)
                 val weekday = requireNotNull(RouteSearch(regional, TimeSlot.DEFAULT).from(a))
-                assertEquals(RouteCost(461, 1), weekday.fastest(d))
+                assertEquals(RouteCost(720, 1), weekday.fastest(d))
                 val weekdayCosts = matrixCosts(slots.getValue(TimeSlot.DEFAULT))
-                assertEquals(Cost(461, 1), weekdayCosts[0][3])
-                assertEquals(Cost(221, 0), weekdayCosts[1][2])
-                assertEquals(Cost(341, 0), weekdayCosts[2][0])
+                assertEquals(Cost(720, 1), weekdayCosts[0][3])
+                assertEquals(Cost(480, 0), weekdayCosts[1][2])
+                assertEquals(Cost(600, 0), weekdayCosts[2][0])
                 val saturdaySlot = TimeSlot.ALL.first { it.day == DayType.SATURDAY }
                 val saturday = RouteSearch(regional, saturdaySlot)
                 val available = requireNotNull(saturday.from(a))
                 assertEquals(RouteCost(120, 0), available.fastest(b))
-                assertEquals(RouteCost(341, 0), available.fastest(c))
+                assertEquals(RouteCost(600, 0), available.fastest(c))
                 assertNull(available.fastest(d))
                 assertNull(saturday.from(d))
                 val partial = slots.getValue(saturdaySlot)
                 assertFailsWith<IllegalArgumentException> { matrixCosts(partial) }
                 val saturdayCosts = regionalMatrixCosts(partial)
                 assertFailsWith<IllegalArgumentException> { graphGate(partial, saturdayCosts) }
-                assertEquals(Cost(341, 0), saturdayCosts[0][2])
+                assertEquals(Cost(600, 0), saturdayCosts[0][2])
                 assertEquals(infinity, saturdayCosts[0][3])
                 assertEquals(List(4) { infinity }, saturdayCosts[3])
                 verifyRegionalSlot(saturday, partial, emptyList())

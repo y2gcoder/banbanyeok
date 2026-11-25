@@ -1,6 +1,7 @@
 package app.banbanyeok.pipeline
 
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -9,10 +10,21 @@ import kotlinx.serialization.json.jsonPrimitive
 /** Estimated walking time for ordinary OD. No last-train evidence is inferred from these rules. */
 internal class BusanTransfers(
     data: JsonObject,
+    previousOperatorWalks: Boolean = false,
 ) {
     private val defaultSeconds = data.getValue("defaultSeconds").jsonPrimitive.int
     private val longSeconds = data.getValue("longSeconds").jsonPrimitive.int
-    val longStations: Set<String> = data.getValue("longStations").jsonObject.keys
+    private val long = data.getValue("longStations").jsonObject.keys
+    private val interchanges = data["operatorInterchanges"]?.jsonObject
+    private val operatorStations =
+        interchanges
+            ?.getValue("stations")
+            ?.jsonObject
+            ?.keys
+            .orEmpty()
+    private val operatorSeconds = interchanges?.getValue("seconds")?.jsonPrimitive?.int ?: longSeconds
+    private val adjusted = if (previousOperatorWalks) longSeconds else operatorSeconds
+    val longStations: Set<String> = long + operatorStations
     val outdoor: Map<String, Map<String, Int>> =
         data["outdoorLinks"]
             ?.jsonArray
@@ -20,7 +32,9 @@ internal class BusanTransfers(
             .flatMap {
                 val row = it.jsonObject
                 val codes = row.getValue("stations").jsonArray.map { code -> code.jsonPrimitive.content }
-                val seconds = row.getValue("seconds").jsonPrimitive.int
+                val estimate = row.getValue("seconds").jsonPrimitive.int
+                val operatorInterchange = row["operatorInterchange"]?.jsonPrimitive?.booleanOrNull == true
+                val seconds = if (operatorInterchange && !previousOperatorWalks) operatorSeconds else estimate
                 require(codes.size == 2 && codes[0] != codes[1] && seconds in 1..0xFFFE) {
                     "An outdoor transfer requires two distinct station codes and a positive walk"
                 }
@@ -32,8 +46,16 @@ internal class BusanTransfers(
             }
 
     init {
-        require(defaultSeconds > 0 && longSeconds >= defaultSeconds) { "Invalid Busan transfer walks" }
+        require(
+            defaultSeconds in 1..longSeconds && operatorSeconds in longSeconds..0xFFFE,
+        ) { "Invalid Busan transfer walks" }
+        require(long.intersect(operatorStations).isEmpty()) { "A Busan station has two walk estimates" }
     }
 
-    fun seconds(code: String): Int = if (code in longStations) longSeconds else defaultSeconds
+    fun seconds(code: String): Int =
+        when (code) {
+            in operatorStations -> adjusted
+            in long -> longSeconds
+            else -> defaultSeconds
+        }
 }
