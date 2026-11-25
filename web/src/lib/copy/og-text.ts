@@ -33,14 +33,14 @@ export const PAIR_OG_IMAGE_VERSION = "d524e1f2";
  * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
  * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 `ROOM_OG_IMAGE_VERSION`을 쓴다.
  */
-export const SHARED_OG_IMAGE_VERSION = "203b879f";
+export const SHARED_OG_IMAGE_VERSION = "9649389d";
 
 /**
  * 방 미리보기 그림(`app/r/[roomId]/og/route.tsx`, 노선 그림 `SharedCard`)의 버전. 숫자판과 같은 이유·방식이다: 방의 공유 번호(`sv`)는
  * 방 내용이 바뀔 때만 오르므로, 그림을 그리는 코드·문구만 바뀐 뒤 같은 방을 다시 공유하면 주소가 같아 옛 그림이 캐시에서 나온다.
  * 그래서 `/r/<id>/og` 주소에 `iv=`로 붙인다(`roomImagePath`). 입력이 바뀌면 `components/og/og-image-version.test.ts`가 새 값을 알려 준다.
  */
-export const ROOM_OG_IMAGE_VERSION = "7a903021";
+export const ROOM_OG_IMAGE_VERSION = "0c2dab1e";
 
 /**
  * 방 공유의 **보이는 범위 정책** 버전. 방 내용(공유 번호 `sv`)과 그리는 코드(`ROOM_OG_IMAGE_VERSION`)가 그대로여도, 서버가 같은 방을
@@ -107,6 +107,14 @@ export const OG_TEXT = {
   middleIf: "이면 ",
   middleMore: " 더 걸려요",
   middleLongest: "가장 오래 걸리는 사람",
+  /** 반반지수 시안(#202, `lib/result/banban-index.ts`): 등급 말과 설명 조각. */
+  banbanEven: "딱 반반",
+  banbanNear: "거의 반반",
+  banbanBestHere: "이 조합에선 가장 반반",
+  banbanTilted: "조금 기울었어요",
+  banbanTopTwo: "가장 오래 걸리는 두 사람 ",
+  banbanRatioLead: "가장 짧은 사람이 가장 긴 사람의 ",
+  banbanRatioTail: "%",
   /**
    * 공유 그림의 막차 줄(#62): "막차 23:52"(직행 확정, 분 그대로), "늦어도 23:00"(여유 시각, 10분 단위로 내린 값).
    * 시계 숫자와 쌍점은 `clockChars`로 서브셋에 넣는다.

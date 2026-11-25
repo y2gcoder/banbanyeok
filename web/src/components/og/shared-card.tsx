@@ -1,5 +1,6 @@
 import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
+import type { BanbanIndex } from "@/lib/result/banban-index";
 import type { SharedCardData } from "@/lib/share-card/shared-preview";
 import { OgFrame, personHex } from "./frame";
 import { OgLineBadges } from "./line-badges";
@@ -157,12 +158,14 @@ function Lines({ people, teaser = false }: { people: SharedCardData["people"]; t
  * 공유 링크(`/s?...`)와 방 링크(`/r/<id>?sv=`) 미리보기: 왼쪽에 "{1위역}에서 볼까?"(정한 역은 "에서 만나요")와 최장·차이, 오른쪽에 각자의 노선이 그 역으로 모이는 그림. 요청 때 만든다.
  * 카카오 말풍선(약 270px 폭)에서도 역 이름과 색 노선이 읽히게 크게 그린다. 노선 길이는 사람마다 같다(길이로 시간을 읽게 하지 않는다).
  */
-export function SharedCard({ data }: { data: SharedCardData }) {
+export function SharedCard({ data, banban = null }: { data: SharedCardData; banban?: BanbanIndex | null }) {
   const computed = summary(data.people);
-  const lines = data.footer ?? {
-    main: computed?.longest ?? null,
-    sub: computed ? `${computed.spread} ${OG_TEXT.middleDot} ${data.modeLine}` : data.modeLine,
-  };
+  const sub = banban
+    ? `${banban.label} ${OG_TEXT.middleDot} ${banban.detail}`
+    : computed
+      ? `${computed.spread} ${OG_TEXT.middleDot} ${data.modeLine}`
+      : data.modeLine;
+  const lines = data.footer ?? { main: computed?.longest ?? null, sub };
   return (
     <OgFrame>
       <div style={{ display: "flex", flex: 1 }}>

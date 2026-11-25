@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BANBAN_PARAM, type BanbanPlan, banbanIndex, banbanPlan } from "@/lib/result/banban-index";
 import type { ResultView } from "@/lib/result/view-model";
 import { OtherCandidateRow, TopCandidateCard } from "./candidate-card";
 import type { ChoiceContext } from "./directions";
@@ -18,6 +19,15 @@ export const RESULT_GRID =
 export const SIDE = "wide:col-start-1";
 /** 오른쪽 칸(후보). */
 export const PANEL = "wide:col-start-2 wide:row-span-4 wide:row-start-1";
+
+/** 반반지수 시안(#202): 주소의 `bbi=`로 안을 고른다. 수화 뒤에 읽어 서버 그림과 어긋나지 않게 한다. */
+function useBanbanPlan(): BanbanPlan | null {
+  const [plan, setPlan] = useState<BanbanPlan | null>(null);
+  useEffect(() => {
+    setPlan(banbanPlan(new URLSearchParams(window.location.search).get(BANBAN_PARAM)));
+  }, []);
+  return plan;
+}
 
 export function LoadingCard() {
   const [slow, setSlow] = useState(false);
@@ -47,10 +57,17 @@ export function Candidates({
   choice: ChoiceContext;
 }) {
   const [top, ...rest] = view.candidates;
+  const plan = useBanbanPlan();
   if (!top) return null;
+  const banban = banbanIndex(
+    plan,
+    view.mode,
+    top.aggregate.minutes,
+    rest.map((c) => c.aggregate.minutes),
+  );
   return (
     <>
-      <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} mapMiddle={view.mapMiddle} />
+      <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} mapMiddle={view.mapMiddle} banban={banban} />
       {rest.length > 0 ? (
         <section aria-label="다른 후보" className="overflow-hidden rounded-2xl border border-rule bg-surface">
           {rest.map((candidate) => (

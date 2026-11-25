@@ -127,13 +127,27 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
           ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: layout.chipGap }}>
-          {data.spread !== null ? (
+          {data.banban ? (
+            <div style={{ display: "flex", gap: 16 }}>
+              <Chip background={OG_COLORS.ink} color={OG_COLORS.surface}>
+                {data.banban.detail}
+              </Chip>
+              <Chip
+                background={
+                  data.banban.grade === "even" || data.banban.grade === "near" ? OG_COLORS.safety : OG_COLORS.rule
+                }
+                color={OG_COLORS.ink}
+              >
+                {data.banban.label}
+              </Chip>
+            </div>
+          ) : data.spread !== null ? (
             <Chip
               background={OG_COLORS.ink}
               color={OG_COLORS.surface}
             >{`${OG_TEXT.spreadPrefix}${formatMinutes(data.spread)}`}</Chip>
           ) : null}
-          {data.title ? (
+          {data.title && !data.banban ? (
             <Chip background={OG_COLORS.safety} color={OG_COLORS.ink}>
               {data.title}
             </Chip>

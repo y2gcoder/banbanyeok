@@ -6,6 +6,7 @@ import { LineBadges } from "@/components/common/line-badge";
 import { personColor } from "@/components/common/person-color";
 import type { Mode } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
+import type { BanbanIndex } from "@/lib/result/banban-index";
 import { lastTrainSummary } from "@/lib/result/last-train";
 import type { MapMiddleView } from "@/lib/result/map-middle";
 import type { CandidateView } from "@/lib/result/view-model";
@@ -92,7 +93,31 @@ type TopProps = {
   meIndex?: number | null;
   /** 보여 줄 조건을 모두 만족할 때만 값이 있다(`ResultView.mapMiddle`). 없으면 비교 표가 빠진다. */
   mapMiddle?: MapMiddleView | null;
+  banban?: BanbanIndex | null;
 };
+
+/** 반반지수 시안(#202): 등급 말(좋은 두 등급은 노란 칩) + 무엇을 쟀는지 한 줄. 기울었으면 공평 순위가 그 역을 고른 이유를 붙인다. */
+function BanbanLine({ banban }: { banban: BanbanIndex }) {
+  const good = banban.grade === "even" || banban.grade === "near";
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-0.5 text-[14px] font-extrabold text-ink",
+            good ? "bg-safety" : "bg-muted",
+          )}
+        >
+          {banban.label}
+        </span>
+        <span className="text-[14px] text-ink-soft">{banban.detail}</span>
+      </p>
+      {banban.grade === "tilted" ? (
+        <p className="text-[13px] text-muted-foreground">대신 가장 오래 걸리는 사람의 시간이 가장 짧은 곳이에요</p>
+      ) : null}
+    </div>
+  );
+}
 
 const topCard =
   "@container flex flex-col gap-4 rounded-2xl border border-rule bg-surface p-5 shadow-[0_1px_0_var(--rule)]";
@@ -134,12 +159,13 @@ function TimeList({ candidate, meIndex }: { candidate: CandidateView; meIndex: n
  * 1위 카드(#122). 2·3위처럼 요약이 먼저다: 역 이름, 사람별 분, 순위 기준 값, 가장 이른 막차 한 줄, 정하기·길찾기가 폰 첫 화면에 들어온다.
  * 시간 막대·추천 이유·막차 자세히·지도 한가운데 비교는 "자세히"에서 펼친다. 막차는 접혀 있어도 요약 한 줄(`lastTrainSummary`)이 보인다.
  */
-export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle = null }: TopProps) {
+export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle = null, banban = null }: TopProps) {
   const [open, setOpen] = useState(false);
   const detailId = useId();
   return (
     <article aria-labelledby={`cand-${candidate.rank}`} className={topCard}>
       <TopHeader candidate={candidate} />
+      {banban ? <BanbanLine banban={banban} /> : null}
       <TimeList candidate={candidate} meIndex={meIndex} />
       <div className="flex flex-col gap-1.5 border-t border-rule pt-3">
         <StatLine candidate={candidate} mode={choice.mode} />

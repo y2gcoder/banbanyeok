@@ -1,5 +1,6 @@
 import { ogImageResponse } from "@/components/og/og-response";
 import { SharedCard } from "@/components/og/shared-card";
+import { BANBAN_PARAM, banbanIndex, banbanPlan } from "@/lib/result/banban-index";
 import { isRoomId, normalizeRoomId } from "@/lib/room/id";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { parseDataVersion, parseShareVersion, SHARE_VERSION_PARAM } from "@/lib/room/share-link";
@@ -27,6 +28,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
     const card = roomShareCopy(preview).card;
     if (!card) return null;
     const provisional = ROOM_PREVIEW_LAST_TRAIN && preview.lastTrainPending === true;
-    return { element: <SharedCard data={card} />, provisional };
+    // 반반지수 시안(#202): 방 미리보기에는 1위만 오므로 그룹 최선 비교 없이 매긴다.
+    const banban =
+      preview.stage === "result"
+        ? banbanIndex(
+            banbanPlan(search.get(BANBAN_PARAM)),
+            preview.basis.mode,
+            card.people.map((p) => p.minutes),
+            [],
+          )
+        : null;
+    return { element: <SharedCard data={card} banban={banban} />, provisional };
   });
 }
