@@ -6,7 +6,7 @@ import { roomHashProperty, track } from "@/lib/analytics";
 import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
-import { roomDraw } from "@/lib/room/draw";
+import { type RoomDraw, roomDraw } from "@/lib/room/draw";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
@@ -23,6 +23,7 @@ import { canFavor, hasStaleParticipantToken, joinState, roomPeople } from "@/lib
 import { stationByCode } from "@/lib/stations";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
 import { FavorDrawCard } from "./draw/favor-draw-card";
+import { useReducedMotion } from "./draw/use-reduced-motion";
 import { HostControls } from "./host-controls";
 import { JoinForm } from "./join-form";
 import { JumpButton } from "./jump-button";
@@ -144,6 +145,39 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh: actions.refresh });
   const drawControl = useFavorDraw({ roomId, hostToken: record?.hostToken });
+  const reducedMotion = useReducedMotion();
+  // 이 기기에서 그림을 본 뽑기(세대·회차). 기록이 있으면 기록(drawSeen)에도 둔다(처리방침 11항).
+  const [seenDraws, setSeenDraws] = useState<ReadonlySet<string>>(() => new Set());
+  // 뽑기 결과 문장(aria-live). 재생하는 카드가 접힌 카드로 바뀌어도 남도록 여기 둔다. 이 화면에서 결과가 나온 그때 한 번 채운다.
+  const [drawAnnouncement, setDrawAnnouncement] = useState("");
+  // 뽑기 재생이 끝나 카드가 후보 아래로 접혔을 때 초점을 결과 제목(1위 카드 바로 위)으로 옮긴다. 아래 카드로 옮기면 화면이 1위를 지나쳐 내려간다.
+  const [focusResults, setFocusResults] = useState(false);
+  useEffect(() => {
+    if (!focusResults) return;
+    document.getElementById("result-title")?.focus();
+    setFocusResults(false);
+  }, [focusResults]);
+  const markDrawSeen = useCallback(
+    (seen: RoomDraw) => {
+      setSeenDraws((keys) => new Set(keys).add(seen.key));
+      if (record && record.drawSeen !== seen.key) commit({ ...record, drawSeen: seen.key });
+      const name = seen.winner === null ? null : seen.candidates[seen.winner]?.name;
+      if (name) setDrawAnnouncement(`뽑기 결과, 오늘은 ${name} 쪽으로 맞춰요.`);
+    },
+    [record, commit],
+  );
+  const shownDraw = room ? roomDraw(room) : null;
+  const drawUnseen =
+    shownDraw !== null &&
+    shownDraw.winner !== null &&
+    !seenDraws.has(shownDraw.key) &&
+    record?.drawSeen !== shownDraw.key;
+  // 동작 줄이기면 재생 없이 바로 접힌 결과다(이 기기에서는 본 것으로 둔다).
+  useEffect(() => {
+    if (!drawUnseen || !reducedMotion || !shownDraw) return;
+    markDrawSeen(shownDraw);
+    if (drawControl.drewKey === shownDraw.key) setFocusResults(true);
+  }, [drawUnseen, reducedMotion, shownDraw, markDrawSeen, drawControl.drewKey]);
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
 
@@ -259,12 +293,15 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     </>
   );
 
-  const draw = roomDraw(room);
+  const draw = shownDraw;
   const expectedCount = record?.expectedCount ?? null;
+  // 이 기기가 처음 보는 뽑기는 결과 위에서 한 번 재생하고, 끝나면 접힌 한 줄이 후보 아래로 간다(1위 카드가 첫 화면에, #168).
+  const playDraw = drawUnseen && !reducedMotion;
   const renderDraw = draw
-    ? (apply: (settled: NonNullable<typeof draw>) => void) => (
+    ? (apply: (settled: RoomDraw) => void) => (
         <FavorDrawCard
-          key={draw.key}
+          key={`${draw.key}:${playDraw ? "play" : "summary"}`}
+          variant={playDraw ? "play" : "summary"}
           roomId={roomId}
           draw={draw}
           viewer={isHost ? "host" : draw.selfLate ? "late" : "member"}
@@ -272,11 +309,15 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           joinedCount={room.participants.length}
           expectedCount={expectedCount}
           hiddenInRoom={room.participants.some((p) => p.hidden)}
-          justDrew={draw.winner !== null && drawControl.drewKey === draw.key}
+          focusOnMount={playDraw && drawControl.drewKey === draw.key ? "skip" : null}
           pending={drawControl.pending}
           error={drawControl.error}
           onDraw={drawControl.draw}
           onSettled={apply}
+          onPlayed={(focusInside) => {
+            if (focusInside) setFocusResults(true);
+            markDrawSeen(draw);
+          }}
         />
       )
     : undefined;
@@ -293,9 +334,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       onResultSeen={() => {
         if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
       }}
-      {...(renderDraw && draw
-        ? { renderDraw, drawAtTop: draw.winner === null || drawControl.drewKey === draw.key }
-        : {})}
+      {...(renderDraw && draw ? { renderDraw, drawAtTop: draw.winner === null || playDraw } : {})}
       renderAfter={(view) =>
         joined && token && meetingDay ? (
           <OutcomeCard
@@ -345,7 +384,16 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         )}
       </div>
 
-      {enough ? <div className={ROOM_MAIN}>{result}</div> : null}
+      {enough ? (
+        <div className={ROOM_MAIN}>
+          {draw ? (
+            <p aria-live="polite" className="sr-only">
+              {drawAnnouncement}
+            </p>
+          ) : null}
+          {result}
+        </div>
+      ) : null}
 
       <div className={ROOM_SIDE}>
         {roomPeopleBlock}

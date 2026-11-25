@@ -106,6 +106,18 @@ internal fun DescribeSpecRootScope.favorDrawResets(repos: () -> RepositoryPair) 
             rooms.room(roomId).favorDraw?.generation shouldBe 1
         }
 
+        it("forgets who left: their ID leaves the stored draw list, and only an anonymous slot keeps the picture") {
+            val rooms = repos().rooms
+            val roomId = rooms.drawRoom()
+            rooms.draw(roomId, 1, 5, fakeDrawRule(1)).shouldBeDrawn()
+            rooms.removeParticipant(roomId, "pid003", activity(6))
+            val after = rooms.room(roomId).favorDraw
+            after?.candidates shouldBe listOf("host01", "pid002", FavorDraw.leftSlot(2))
+            after?.roster shouldBe listOf("host01", "pid002")
+            after?.round shouldBe 1
+            rooms.room(roomId).favorParticipantId shouldBe "pid002"
+        }
+
         it("keeps the result when someone other than the winner leaves") {
             val rooms = repos().rooms
             val roomId = rooms.drawRoom()
@@ -113,7 +125,7 @@ internal fun DescribeSpecRootScope.favorDrawResets(repos: () -> RepositoryPair) 
             val drawn = rooms.room(roomId)
             rooms.removeParticipant(roomId, "pid003", activity(6))
             val after = rooms.room(roomId)
-            after.favorDraw shouldBe drawn.favorDraw
+            after.favorDraw shouldBe drawn.favorDraw?.without("pid003")
             after.favorParticipantId shouldBe "host01"
         }
 

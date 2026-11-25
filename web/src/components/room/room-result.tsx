@@ -210,7 +210,8 @@ export function RoomResult({
     <section aria-labelledby="result-title" className="flex flex-col gap-4">
       <DecisionBanner room={room} undo={undo} />
       {renderDraw && drawAtTop ? renderDraw(applyDraw) : null}
-      <h2 id="result-title" className="text-[20px] font-extrabold text-ink">
+      {/* 뽑기 재생이 끝나 카드가 접히면 초점이 여기로 온다(1위 카드가 바로 아래, #172). */}
+      <h2 id="result-title" tabIndex={-1} className="text-[20px] font-extrabold text-ink">
         만날 역 후보
       </h2>
       <ModeTabs

@@ -97,8 +97,21 @@ public data class FavorDraw(
     val roster: List<String>,
     val drawnAt: Instant?,
 ) {
+    /**
+     * 나간(내보내진) 참가자를 명단에서 지운다. 대상 칸은 그 자리만 남기고 원래 ID 없는 자리 표시로 바꾸고(그림 좌표·결정성 유지),
+     * 전체 명단에서는 뺀다. 참가자를 지우는 같은 트랜잭션에서 쓴다(처리방침 4항: 지울 때 바로 지운다).
+     */
+    public fun without(participantId: String): FavorDraw =
+        copy(
+            candidates = candidates.mapIndexed { index, id -> if (id == participantId) leftSlot(index) else id },
+            roster = roster - participantId,
+        )
+
     public companion object {
         public val PENDING: FavorDraw = FavorDraw(0, 0, emptyList(), emptyList(), null)
+
+        /** 나간 사람의 대상 칸. 참가자 ID 형식(base32)과 겹치지 않고 원래 ID를 담지 않는다. */
+        public fun leftSlot(index: Int): String = "~$index"
     }
 }
 

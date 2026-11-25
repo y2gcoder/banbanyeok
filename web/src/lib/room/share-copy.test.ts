@@ -96,16 +96,32 @@ describe("방 공유 문구", () => {
     );
   });
 
-  it("배려 대상을 뽑기로 정했으면 제목·설명·그림의 기준 줄이 '뽑기로 ○○ 쪽으로'다(#172)", () => {
+  it("뽑기 방에서 뽑은 뒤에는 공유 문구·미리보기·그림에 당첨자와 1위 역·시간을 넣지 않는다(#172)", () => {
     const basis = { mode: "favor" as const, favorLabel: "민수", drawRound: 1 };
     const open = roomShareCopy(result({ basis }));
-    expect(open.preview.title).toBe("뽑기로 민수 쪽으로! 지금은 동대문역사문화공원이 좋아요");
+    expect(open.preview.title).toBe("사다리 결과가 나왔어요! 누구 쪽일까요?");
+    expect(open.preview.description).toBe(
+      "아직이면 출발역 넣어 주세요 · 민수 · 참가자 2 · 홍대입구 · 사다리 결과는 방에서 확인해요",
+    );
     expect(open.message.title).toBe(open.preview.title);
-    expect(open.card?.modeLine).toBe("뽑기로 민수 쪽으로 고름");
     const full = roomShareCopy(result({ basis, room: room({ canJoin: false }) }));
-    expect(full.preview.description).toBe("민수 22분 · 참가자 2 21분 · 홍대입구 19분 · 뽑기로 민수 쪽으로 고름");
-    // 뽑기 전에는 서버가 공평하게로 주고 회차가 없다: 지금과 같은 문구.
+    expect(full.preview.description).toBe("민수 · 참가자 2 · 홍대입구 · 사다리 결과는 방에서 확인해요");
+    for (const copy of [open, full]) {
+      const all = JSON.stringify(copy);
+      expect(all).not.toContain("동대문역사문화공원");
+      expect(all).not.toContain("민수 쪽으로");
+      expect(all).not.toMatch(/\d+분/);
+      expect(copy.card?.stationCode).toBeUndefined();
+      expect(copy.card?.teaser).toBe(true);
+      expect(copy.card?.people.map((p) => [p.name, p.minutes, p.favored])).toEqual([
+        ["민수", null, false],
+        ["참가자 2", null, false],
+        ["홍대입구", null, false],
+      ]);
+    }
+    // 뽑기 전(서버가 공평하게로 주고 회차가 없다)과 정한 역 단계는 지금 그대로다.
     expect(roomShareCopy(result()).preview.title).toBe("지금은 동대문역사문화공원이 제일 공평해요");
+    expect(roomShareCopy(decided({ basis })).preview.title).toBe("강남에서 만나요");
   });
 
   it("더 들어올 수 없으면(정원·잠김) 초대 없이 '에서 볼까?'와 각자 시간·기준", () => {

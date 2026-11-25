@@ -75,7 +75,14 @@ const CANDIDATES = [
 /**
  * `candidates`는 뽑을 때의 대상(서버가 그대로 준다), `extra`는 방에 더 있는 사람. 대상 중 방에 없는 사람은 뽑은 뒤 나간 사람이다.
  */
-type DrawState = { round: number; winner: string | null; candidates?: string[]; extra?: typeof PEOPLE };
+type DrawState = {
+  round: number;
+  winner: string | null;
+  candidates?: string[];
+  extra?: typeof PEOPLE;
+  /** 다음 뽑기 요청을 409 ROOM_CHANGED로 거절한다(그사이 방이 바뀜). */
+  reject?: boolean;
+};
 
 /** 뽑기 방을 가로챈다. `state`를 바꾸면 다음 요청부터 그 상태다(다른 사람이 뽑은 것처럼). */
 async function fakeDrawRoom(page: Page, state: DrawState, record?: Record<string, unknown>) {
@@ -127,6 +134,19 @@ async function fakeDrawRoom(page: Page, state: DrawState, record?: Record<string
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
     if (request.method() === "POST" && path === `/rooms/${ROOM_ID}/favor-draw`) {
       expect(auth).toBe(`Bearer ${HOST_TOKEN}`);
+      if (state.reject) {
+        return route.fulfill({
+          status: 409,
+          contentType: "application/problem+json",
+          body: JSON.stringify({
+            type: "about:blank",
+            title: "바뀜",
+            status: 409,
+            detail: "바뀜",
+            code: "ROOM_CHANGED",
+          }),
+        });
+      }
       expect(request.postDataJSON()).toEqual({ generation: 0, round: state.round + 1 });
       state.round += 1;
       state.winner = "f2";
@@ -188,19 +208,27 @@ const ladderShape = (page: Page) =>
       ),
     );
 
-/** 뽑기 카드의 결과 문장 영역(다른 화면 영역의 aria-live와 섞지 않는다). */
-const liveText = (page: Page) =>
-  page
-    .getByRole("region")
-    .filter({ has: page.getByRole("heading", { name: /뽑기 전|뽑는 중|쪽으로!$/ }) })
-    .last()
-    .locator("[aria-live='polite']")
-    .textContent();
+/** 뽑기 결과 문장(aria-live). 카드가 바뀌어도 남도록 방 화면에 있다. */
+const announced = (page: Page) =>
+  page.locator("[aria-live='polite']", { hasText: "뽑기 결과, 오늘은 지영 쪽으로 맞춰요." });
+
+const topCard = (page: Page) => page.locator("article[aria-labelledby='cand-1']");
+
+/** 1위 카드의 정하기 버튼 아래끝이 폰 첫 화면 안에 있다(#168). */
+async function expectTopCardOnFirstScreen(page: Page) {
+  const name = "이 역으로 정했어요";
+  const decide = topCard(page).getByRole("button", { name }).or(topCard(page).getByRole("link", { name }));
+  const box = await decide.boundingBox();
+  expect((box?.y ?? 9999) + (box?.height ?? 0)).toBeLessThanOrEqual(PHONE.height);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+}
+
+const SEEN = { drawSeen: "0:1" };
 
 test.describe("'누구 쪽으로' 뽑기", () => {
   test.use({ viewport: PHONE, isMobile: true, hasTouch: true });
 
-  test("방장: 뽑기 전에는 한 줄 카드와 공평하게, 사다리를 타면 펼쳐 재생하고 결과가 저장된 지영 쪽으로 바뀐다(숨긴 사람은 빠짐)", async ({
+  test("방장: 뽑기 전 한 줄 카드에서 사다리를 타면 결과 위에서 재생하고, 끝나면 접혀 1위가 첫 화면에 돌아온다", async ({
     page,
   }) => {
     const state: DrawState = { round: 0, winner: null };
@@ -226,44 +254,76 @@ test.describe("'누구 쪽으로' 뽑기", () => {
     const skip = page.getByRole("button", { name: "건너뛰고 결과 보기" });
     await expect(skip).toBeFocused();
     await expectTouchTarget(page, "건너뛰고 결과 보기");
-    // 재생 중에는 그림 이름이 당첨자를 미리 말하지 않는다. 결과 문장도 아직 비어 있다.
+    // 재생 중에는 그림 이름이 당첨자를 미리 말하지 않고, 결과 문장도 아직 없다.
     await expect(page.getByRole("img", { name: /사다리타기/ })).toHaveAccessibleName(
       "사다리타기: 민수, 지영 중 한 사람",
     );
-    expect(await liveText(page)).toBe("");
-    const result = page.getByRole("heading", { name: "지영 쪽으로!" });
-    await expect(result).toBeVisible({ timeout: 6000 });
-    await expect(result).toBeFocused();
-    expect(await liveText(page)).toBe("뽑기 결과, 오늘은 지영 쪽으로 맞춰요.");
-    await expect(page.getByRole("img", { name: /사다리타기/ })).toHaveAccessibleName("사다리타기 결과: 지영 쪽으로");
+    await expect(announced(page)).toHaveCount(0);
+    await expectNoA11yViolations(page);
+    // 끝나면 접힌 한 줄이 후보 아래로 가고, 초점은 결과 제목(1위 카드 바로 위)에, 결과 문장은 한 번.
+    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible({ timeout: 6000 });
+    await expect(page.getByRole("heading", { name: "만날 역 후보" })).toBeFocused();
+    await expect(announced(page)).toHaveCount(1);
+    await expect(page.getByRole("img", { name: /사다리타기/ })).toHaveCount(0);
     await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("button", { name: "지영", pressed: true })).toBeVisible();
     await expect(page.getByText("지영 쪽으로(뽑기)")).toBeVisible();
+    await expectTopCardOnFirstScreen(page);
+    // 이 기기는 이번 뽑기를 봤다: 다시 열어도 재생하지 않는다.
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "뽑는 중…" })).toHaveCount(0);
+    await expectTopCardOnFirstScreen(page);
+  });
+
+  test("방장의 다시 뽑기: 확인·취소 사이 초점이 남고, 확정 뒤 서버가 거절하면 오류 안내로 초점이 간다", async ({
+    page,
+  }) => {
+    const state: DrawState = { round: 1, winner: "f2", reject: true };
+    await page.goto(
+      await fakeDrawRoom(page, state, {
+        hostToken: HOST_TOKEN,
+        participantToken: HOST_PART,
+        participantId: "h1",
+        ...SEEN,
+      }),
+    );
+    await page.getByRole("button", { name: "사다리 보기" }).click();
     await expectTouchTarget(page, "다시 보기");
-    // 다시 뽑기 확인: 키보드로 열면 확인 버튼에, 취소하면 원래 버튼에 초점이 있다(BODY로 빠지지 않는다).
     await page.getByRole("button", { name: "다시 뽑기 (1번 남음)" }).focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("button", { name: "다시 뽑기", exact: true })).toBeFocused();
-    await page.getByRole("button", { name: "취소" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "취소" })).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("button", { name: "다시 뽑기 (1번 남음)" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Enter");
+    const alert = page.getByRole("alert").filter({ hasText: "그사이 방이 바뀌었어요" });
+    await expect(alert).toBeFocused();
     await expectNoA11yViolations(page);
   });
 
-  test("동작 줄이기: 뽑기를 누르면 그림 없이 곧바로 결과를 한 번 읽는다", async ({ page }) => {
+  test("동작 줄이기: 뽑기를 누르면 재생 없이 곧바로 접힌 결과(펼치면 움직이지 않는 사다리)이고, 결과 문장을 한 번 읽는다", async ({
+    page,
+  }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     const state: DrawState = { round: 0, winner: null };
     await page.goto(
       await fakeDrawRoom(page, state, { hostToken: HOST_TOKEN, participantToken: HOST_PART, participantId: "h1" }),
     );
     await page.getByRole("button", { name: "사다리 타기" }).click();
-    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeFocused();
-    await expect(page.getByRole("button", { name: "건너뛰고 결과 보기" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "뽑는 중…" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "만날 역 후보" })).toBeFocused();
+    await expect(announced(page)).toHaveCount(1);
+    await expectTopCardOnFirstScreen(page);
+    await page.getByRole("button", { name: "사다리 보기" }).click();
+    await expect(page.getByRole("img", { name: "사다리타기 결과: 지영 쪽으로" })).toBeVisible();
     await expect(page.getByRole("button", { name: "다시 보기" })).toHaveCount(0);
-    await expect.poll(() => liveText(page)).toBe("뽑기 결과, 오늘은 지영 쪽으로 맞춰요.");
   });
 
-  test("다른 참가자: 뽑기 전에는 방장을 기다리고, 뽑힌 결과는 한 줄로 접혀 있다가 펼치면 사다리를 본다", async ({
+  test("다른 참가자: 뽑기 전에는 방장을 기다리고, 처음 보는 결과는 한 번 저절로 재생한 뒤 접히며, 다시 열면 접힌 결과다", async ({
     page,
   }) => {
     const state: DrawState = { round: 0, winner: null };
@@ -277,23 +337,31 @@ test.describe("'누구 쪽으로' 뽑기", () => {
     state.round = 1;
     state.winner = "f2";
     await page.reload();
-    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible();
-    await expect(page.getByRole("img", { name: /사다리타기/ })).toHaveCount(0);
-    expect(await liveText(page)).toBe("");
+    await expect(page.getByRole("heading", { name: "뽑는 중…" })).toBeVisible();
+    // 스스로 누른 것이 아니라 초점은 옮기지 않는다.
+    await expect(page.getByRole("button", { name: "건너뛰고 결과 보기" })).not.toBeFocused();
+    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible({ timeout: 6000 });
+    await expect(announced(page)).toHaveCount(1);
     await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
+    await expectTopCardOnFirstScreen(page);
+
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "뽑는 중…" })).toHaveCount(0);
     await page.getByRole("button", { name: "사다리 보기" }).click();
     await expect(page.getByRole("img", { name: "사다리타기 결과: 지영 쪽으로" })).toBeVisible();
     await expect(page.getByRole("button", { name: /다시 뽑기/ })).toHaveCount(0);
     await expectNoA11yViolations(page);
   });
 
-  test("뽑은 뒤 대상이 나가도 같은 사다리이고, 다시 보기는 끝까지 재생된다(#176 막음)", async ({ page }) => {
+  test("뽑은 뒤 대상이 나가도 같은 사다리이고(나간 사람은 자리만), 다시 보기는 끝까지 재생된다", async ({ page }) => {
     const state: DrawState = { round: 1, winner: "f2", candidates: ["h1", "f2", "f3"], extra: [SEOJUN] };
-    await page.goto(await fakeDrawRoom(page, state, { participantToken: JIYOUNG_PART, participantId: "f2" }));
+    await page.goto(await fakeDrawRoom(page, state, { participantToken: JIYOUNG_PART, participantId: "f2", ...SEEN }));
     await page.getByRole("button", { name: "사다리 보기" }).click();
     const before = await ladderShape(page);
-    // 서준이 나갔다(서버는 뽑을 때의 대상을 그대로 준다).
+    // 서준이 나갔다: 서버는 뽑을 때의 자리를 그대로 두고 원래 ID 대신 자리 표시를 준다.
     state.extra = [];
+    state.candidates = ["h1", "f2", "~2"];
     await page.reload();
     await page.getByRole("button", { name: "사다리 보기" }).click();
     await expect(page.getByText("나간 사람", { exact: true })).toBeVisible();
@@ -306,7 +374,7 @@ test.describe("'누구 쪽으로' 뽑기", () => {
 
   test("출발역을 숨긴 본인: 펼치면 뽑기에서 빠졌다는 안내를 보고, 그림에는 본인 칸이 없다", async ({ page }) => {
     const state: DrawState = { round: 1, winner: "f2" };
-    await page.goto(await fakeDrawRoom(page, state, { participantToken: HIDDEN_PART, participantId: "f1" }));
+    await page.goto(await fakeDrawRoom(page, state, { participantToken: HIDDEN_PART, participantId: "f1", ...SEEN }));
     await page.getByRole("button", { name: "사다리 보기" }).click();
     await expect(page.getByText(/참가자 2는 뽑을 때 출발역을 숨겨서/)).toBeVisible();
     await expect(page.getByText(/출발역을 숨긴 사람을 빼면, 다른 사람도/)).toBeVisible();

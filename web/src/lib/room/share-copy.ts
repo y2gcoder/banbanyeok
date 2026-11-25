@@ -67,26 +67,16 @@ function timesText(preview: Computed): string {
     .join(SEP);
 }
 
-/** 방의 기준 한 마디. 배려 대상을 뽑기로 정했으면 앞에 "뽑기로"를 붙인다("뽑기로 지영 쪽으로 고름", #172). */
-function roomModeSentence(mode: Mode, favorName: string | null, drawn: boolean): string {
-  const sentence = modeSentence(mode, favorName);
-  return drawn && mode === "favor" ? `${OG_TEXT.modeDrawPrefix}${sentence}` : sentence;
-}
-
 /** 평일 낮이 아니면 " · 토요일 저녁 기준"(혼자 입력한 링크와 같은 규칙). */
 function basisSuffix(basis: TimeBasis): string {
   return basis.timeSlot === DEFAULT_SLOT ? "" : `${SEP}${basis.label}${OG_TEXT.basisSuffix}`;
 }
 
-/**
- * 아직 들어올 수 있는 방의 제목: 지금 1위가 왜 1위인지 방의 기본 기준으로 말한다. 배려 대상을 뽑기로 정했으면 그것부터 말한다
- * ("뽑기로 지영 쪽으로! 지금은 공덕역이 좋아요", #172).
- */
-function leadingTitle(station: string, mode: Mode, favorLabel: string | null, drawn: boolean): string {
+/** 아직 들어올 수 있는 방의 제목: 지금 1위가 왜 1위인지 방의 기본 기준으로 말한다. */
+function leadingTitle(station: string, mode: Mode, favorLabel: string | null): string {
   const subject = withJosa(station, "이/가");
   if (mode === "fair") return `지금은 ${subject} 제일 공평해요`;
   if (mode === "fast") return `지금은 ${subject} 제일 빨라요`;
-  if (favorLabel && drawn) return `${OG_TEXT.modeDrawPrefix}${favorLabel} 쪽으로! 지금은 ${subject} 좋아요`;
   return favorLabel ? `지금은 ${favorLabel} 쪽으로 ${subject} 좋아요` : `지금은 ${subject} 제일 나아요`;
 }
 
@@ -147,19 +137,47 @@ function card(
   };
 }
 
+/**
+ * 뽑기 방에서 뽑은 뒤의 결과 단계(#172): 받는 사람이 방에서 사다리를 처음 보도록 당첨자와 1위 역(과 그 역까지의 시간)을 넣지 않는다.
+ * 참여자 이름만 기존 규칙대로 싣는다. 정한 역 단계는 정한 역을 그대로 보인다(`decidedCopy`).
+ */
+function drawTeaserCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomShareCopy {
+  const title = `${OG_TEXT.drawTeaserHead} ${OG_TEXT.drawTeaserTail} ${OG_TEXT.drawTeaserQuestion}`;
+  const names = preview.station.times.map((t) => t.label).join(SEP);
+  const hint = `사다리 결과는 ${OG_TEXT.drawTeaserHint}`;
+  const description = preview.room.canJoin
+    ? `아직이면 출발역 넣어 주세요${SEP}${names}${SEP}${hint}`
+    : `${names}${SEP}${hint}`;
+  return {
+    stage: "result",
+    preview: { title, description },
+    message: { title, text: description, button: "카톡으로 결과 보내기" },
+    card: {
+      stationName: OG_TEXT.drawTeaserHead,
+      suffix: OG_TEXT.drawTeaserTail,
+      people: preview.station.times.map((t, index) => ({
+        name: safeName(t.label, index),
+        minutes: null,
+        favored: false,
+      })),
+      modeLine: OG_TEXT.drawTeaserHint,
+      footer: { main: OG_TEXT.drawTeaserQuestion, sub: OG_TEXT.drawTeaserHint },
+      teaser: true,
+    },
+  };
+}
+
 function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLastTrain: boolean): RoomShareCopy {
+  if (preview.basis.mode === "favor" && preview.basis.drawRound !== undefined) return drawTeaserCopy(preview);
   const { stationName } = preview.station;
   const times = timesText(preview);
-  // 배려 대상을 뽑기로 정한 방(뽑은 뒤에만 서버가 회차를 준다).
-  const drawn = preview.basis.mode === "favor" && preview.basis.drawRound !== undefined;
-  const basisLine =
-    roomModeSentence(preview.basis.mode, preview.basis.favorLabel, drawn) + basisSuffix(preview.room.timeBasis);
+  const basisLine = modeSentence(preview.basis.mode, preview.basis.favorLabel) + basisSuffix(preview.room.timeBasis);
   // 지도 한가운데 비교는 무상태 링크(`sharedPreview`)처럼 설명 끝에 붙인다(잘려도 앞의 시간은 남는다).
   const middle = middleLine(preview, (index) => preview.station.times[index]?.label ?? "");
   const tail = middle ? `${SEP}${middle}` : "";
   const [title, description] = preview.room.canJoin
     ? [
-        leadingTitle(stationName, preview.basis.mode, preview.basis.favorLabel, drawn),
+        leadingTitle(stationName, preview.basis.mode, preview.basis.favorLabel),
         `아직이면 출발역 넣어 주세요${SEP}${times}${tail}`,
       ]
     : [`${stationName}${OG_TEXT.sharedSuffix}`, `${times}${SEP}${basisLine}${tail}`];
@@ -171,7 +189,7 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLast
     card: card(
       preview,
       OG_TEXT.sharedSuffix,
-      roomModeSentence(preview.basis.mode, favorName, drawn) + basisSuffix(preview.room.timeBasis),
+      modeSentence(preview.basis.mode, favorName) + basisSuffix(preview.room.timeBasis),
       showLastTrain,
     ),
   };

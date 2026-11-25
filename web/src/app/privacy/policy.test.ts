@@ -553,15 +553,17 @@ describe("개인정보 처리방침", () => {
     expect(draw).toContain("'누구 쪽으로'(배려) 대상을 뽑기로 정하는 기능을 더했습니다");
     expect(draw).toContain("2항: 방 정보에 배려 대상을 뽑기로 정했는지와 뽑은 결과");
     expect(draw).toContain("출발역을 숨긴 사람은 뽑기에서 빠지고");
-    // 숫자 회차는 미리보기 응답에만 있고, 그림·글·공유 문구는 '뽑기로'만 보인다. 이 기기에는 뽑기에 관해 저장하는 것이 없다(11항 그대로).
-    expect(draw).toContain(
-      "미리보기 그림·글과 공유 문구에는 뽑기로 정했다는 사실('뽑기로 ○○ 쪽으로')이, 누구나 받을 수 있는 미리보기 응답에는 몇 번째 뽑기인지가",
-    );
-    expect(draw).not.toContain("11항");
-    expect(textOf(POLICY, "cookies")).not.toContain("뽑기");
+    // 숫자 회차는 미리보기 응답에만 있고, 뽑은 뒤의 그림·글·공유 문구는 결과를 숨긴다. 이 기기에는 본 뽑기(세대와 회차)를 둔다.
+    expect(draw).toContain("뽑은 뒤의 미리보기 그림·글과 공유 문구에는 당첨된 사람, 1위 역, 소요시간을 넣지 않고");
+    expect(draw).toContain("뽑은 뒤 나간 사람은 이름과 식별자 없이 자리만 남으며");
+    expect(draw).toContain("11항: 이 기기의 방 기록에 그림을 이미 본 뽑기(세대와 회차)를 더했습니다");
+    expect(textOf(POLICY, "cookies")).toContain("뽑기 그림을 이미 본 뽑기(세대와 회차");
     const drawItem = lineOf(POLICY, "third-party", "방을 만들 때 '누구 쪽으로'를 뽑기로 정한 방에서는");
     expect(drawItem).toContain("빠진 이유는 뽑을 때의 상태로 보이므로");
-    expect(drawItem).toContain("이름 없이 '나간 사람'으로");
+    expect(drawItem).toContain("이름과 식별자 없이 자리만 '나간 사람'으로 남음");
+    expect(one(previewSentences(POLICY), "사다리 결과가 나왔어요")).toContain(
+      "당첨된 사람, 1위 역, 소요시간을 넣지 않고",
+    );
     expect(draw).toContain("수집하는 정보와 다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 화면에 알립니다");
     expect(draw).toContain("2026년 11월 24일 개정판은 이 판을 시행한 날 배포 전까지 적용했습니다");
     expect(draw).toContain("처리 목적, 보유 기간, 처리 위탁과 국외 이전, 이용 통계는 바뀌지 않았습니다");
@@ -665,7 +667,8 @@ describe("개인정보 처리방침", () => {
       "방 정보: '누구 쪽으로' 뽑기 (2항)",
       "방 화면의 '누구 쪽으로' 뽑기 결과 (6항)",
       "방 미리보기 응답: 방 ID만 있으면 누구나 받는 값 (6항)",
-      "메신저 미리보기 그림·글과 공유 문구의 추천 기준 (6항)",
+      "메신저 미리보기 그림·글과 공유 문구 (6항)",
+      "이 기기에 저장하는 방 기록 (11항)",
     ]);
     expect(rows.slice(0, mine.length)).toEqual(mine);
     expect(mine[0]?.after).toContain(
@@ -673,7 +676,10 @@ describe("개인정보 처리방침", () => {
     );
     expect(mine[1]?.after).toContain("출발역을 숨긴 사람은 뽑기 대상에서 빠짐");
     expect(mine[1]?.after).toContain("뽑기에서 빠진 사람과 그 이유(출발역을 숨김·뽑은 뒤에 들어옴)");
-    expect(mine[3]?.after).toContain("'뽑기로 ○○ 쪽으로'");
+    expect(mine[3]?.after).toContain(
+      "뽑은 뒤에는 당첨된 사람·1위 역·소요시간 없이 참여자 이름과 '사다리 결과가 나왔어요'만",
+    );
+    expect(mine[4]?.after).toContain("뽑기 그림을 이미 본 뽑기(세대와 회차");
     // 앞선 판(11-24 개정판 #162)의 행.
     const revised = rows.filter((r) => r.item.startsWith("[11월 24일 개정판] "));
     expect(revised.map((r) => r.item)).toEqual([

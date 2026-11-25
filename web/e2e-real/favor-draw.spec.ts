@@ -62,8 +62,10 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
 
   await page.getByRole("button", { name: "사다리 타기" }).first().click();
   await page.getByRole("button", { name: "건너뛰고 결과 보기" }).click();
+  // 재생이 끝나면 카드는 접혀 후보 아래로 가고 초점은 결과 제목(1위 카드 바로 위)에 있다.
   const heading = page.getByRole("heading", { name: /쪽으로!$/ });
-  await expect(heading).toBeFocused();
+  await expect(heading).toBeVisible();
+  await expect(page.getByRole("heading", { name: "만날 역 후보" })).toBeFocused();
 
   const stored = (await (await request.get(`/api/v1/rooms/${roomId}`)).json()) as ApiRoom;
   const draw = stored.favorDraw;
@@ -77,7 +79,7 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
   await expectNoA11yViolations(page);
 
-  // 다른 기기(친구): 같은 사람이 접힌 한 줄로 보이고, 펼치면 같은 사다리다.
+  // 다른 기기(친구): 처음 보는 뽑기라 한 번 저절로 재생한 뒤 같은 사람이 접힌 한 줄로 보이고, 펼치면 같은 사다리다.
   const friend = await browser.newContext({
     ...devices["Pixel 7"],
     locale: "ko-KR",
@@ -85,7 +87,8 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   });
   const other = await friend.newPage();
   await other.goto(`/r/${roomId}`);
-  await expect(other.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible();
+  await expect(other.getByRole("heading", { name: "뽑는 중…" })).toBeVisible();
+  await expect(other.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible({ timeout: 8000 });
   await other.getByRole("button", { name: "사다리 보기" }).click();
   await expect(other.getByRole("img", { name: `사다리타기 결과: ${winnerName} 쪽으로` })).toBeVisible();
   await expect(other.getByRole("button", { name: "사다리 타기" })).toHaveCount(0);

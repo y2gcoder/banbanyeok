@@ -8,11 +8,16 @@ import type { RoomDraw } from "@/lib/room/draw";
 import { cn } from "@/lib/utils";
 import { seedOf } from "./draw-layout";
 import { type DrawPhase, LADDER_PLAY_MS, LadderGame } from "./ladder-game";
-import { prefersReducedMotionNow, useReducedMotion } from "./use-reduced-motion";
+import { useReducedMotion } from "./use-reduced-motion";
 
 export type FavorDrawCardProps = {
   roomId: string;
   draw: RoomDraw;
+  /**
+   * `play`: 이 기기가 이 뽑기(세대·회차)를 처음 본다. 결과 위에서 펼쳐 한 번 저절로 재생하고, 끝나면 `onPlayed`(방 화면이 접힌 카드로
+   * 바꾼다). `summary`: 한 줄로 접힌 카드(뽑기 전이면 방장이 여기서 뽑는다). 펼치면 그림과 다시 보기·다시 뽑기가 있다.
+   */
+  variant: "play" | "summary";
   /** 이 화면을 보는 사람: 방장, 그 밖의 사람(참가자·보기만 하는 사람), 뽑은 뒤 들어온 참가자. */
   viewer: "host" | "member" | "late";
   /** 예정 인원이 다 찼는지(방장 버튼 강조). null이면 예정 인원을 모른다. */
@@ -21,16 +26,18 @@ export type FavorDrawCardProps = {
   expectedCount: number | null;
   /** 방에 출발역을 숨긴 사람이 있다(그 사람에게는 배려 상한이 없다, ADR-0005). */
   hiddenInRoom: boolean;
-  /** 이 기기가 방금 이 뽑기를 했다: 카드를 펼치고 그림을 재생한다. 그 밖에는 한 줄로 접어 1위 카드가 첫 화면에 들어오게 한다(#168). */
-  justDrew: boolean;
+  /** 마운트하면 초점을 둘 곳: 이 기기가 막 뽑아 재생하면 건너뛰기 버튼. */
+  focusOnMount?: "skip" | "heading" | null;
   /** 방장의 뽑기 요청이 서버로 가는 중. */
   pending: boolean;
   /** 마지막 뽑기 요청이 실패한 이유. */
   error: string | null;
   /** 방장이 뽑는다(지금 세대, `round` = 지금 회차 + 1). */
   onDraw: (generation: number, round: number) => void;
-  /** 이 뽑기가 화면에 자리 잡았을 때 한 번: 뽑기 전이면 바로, 뽑은 뒤면 결과가 보일 때(재생 중이면 끝난 뒤). */
+  /** `summary`가 자리 잡았을 때 한 번(결과 탭을 당첨자 쪽으로, 뽑기 전이면 공평하게로). */
   onSettled: (draw: RoomDraw) => void;
+  /** `play`의 재생이 끝났을 때(건너뛰기 포함). `focusInside`면 초점이 카드 안에 있었다(방 화면이 결과 제목으로 옮긴다). */
+  onPlayed?: (focusInside: boolean) => void;
 };
 
 /** 뽑은 시각 "20:14"(서울). */
@@ -44,53 +51,67 @@ function clockText(iso: string | null): string {
   }).format(new Date(iso));
 }
 
-type Focus = "skip" | "heading" | "confirm" | "redraw" | null;
-
 /**
  * '누구 쪽으로' 뽑기 카드(#172). 뽑기 전에는 결과가 '공평하게'로 보이고, 방장만 뽑을 수 있다. 뽑은 결과는 서버에 저장돼 모두에게 같고,
  * 사다리 그림은 그 결과를 재생만 한다(뽑을 때의 대상으로 그려 언제 봐도 같다). 재생은 카드의 타이머가 끝내므로 그림이 없어도 끝난다.
- * 평소에는 한 줄 요약이고, 방장이 막 뽑았을 때만 펼친 채 재생한다. 동작 줄이기면 그림 없이 결과를 보인다.
- * 방 화면이 뽑기(`draw.key`)마다 새로 그린다.
+ * 결과 문장(aria-live)은 카드가 바뀌어도 남도록 방 화면에 있다.
  */
 export function FavorDrawCard(props: FavorDrawCardProps) {
-  const { draw, viewer, pending } = props;
+  const { draw, viewer, pending, variant } = props;
   const titleId = useId();
   const detailsId = useId();
   const reduced = useReducedMotion();
-  const [phase, setPhase] = useState<DrawPhase>(() =>
-    draw.winner === null ? "idle" : props.justDrew && !prefersReducedMotionNow() ? "playing" : "done",
+  const [phase, setPhase] = useState<DrawPhase>(
+    variant === "play" ? "playing" : draw.winner === null ? "idle" : "done",
   );
-  const [expanded, setExpanded] = useState(props.justDrew);
-  // 이 카드에서 그림을 재생했으면 끝난 그림과 결과 문장을 남긴다.
-  const [played, setPlayed] = useState(phase === "playing" || props.justDrew);
+  const [expanded, setExpanded] = useState(variant === "play");
+  // 펼친 접힌 카드에서 [다시 보기]로 재생했다(끝난 그림을 남긴다).
+  const [replayed, setReplayed] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [announcement, setAnnouncement] = useState("");
+  const section = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
   const confirm = useRef<HTMLButtonElement>(null);
   const redraw = useRef<HTMLButtonElement>(null);
+  const alert = useRef<HTMLParagraphElement>(null);
   // 사라질 버튼에 있던 초점을 어디로 옮길지.
-  const [focus, setFocus] = useState<Focus>(props.justDrew ? (phase === "playing" ? "skip" : "heading") : null);
-
-  const finish = () => setPhase("done");
+  const [focus, setFocus] = useState<"skip" | "heading" | "confirm" | "redraw" | null>(props.focusOnMount ?? null);
+  // 이 카드에서 보낸 뽑기 요청의 답을 기다린다(실패하면 오류 안내로 초점을 옮긴다).
+  const awaiting = useRef(false);
 
   useEffect(() => {
-    if (reduced && phase === "playing") setPhase("done");
-  }, [reduced, phase]);
+    const target = { skip, heading, confirm, redraw }[focus ?? "heading"];
+    if (!focus || !target.current) return;
+    target.current.focus();
+    setFocus(null);
+  }, [focus]);
+
+  const played = useRef(false);
+  const onPlayed = useRef(props.onPlayed);
+  onPlayed.current = props.onPlayed;
+  const finish = () => {
+    if (variant === "play") {
+      if (played.current) return;
+      played.current = true;
+      const active = document.activeElement;
+      onPlayed.current?.(Boolean(active && section.current?.contains(active)));
+      return;
+    }
+    setPhase("done");
+  };
+
+  useEffect(() => {
+    if (reduced && phase === "playing") finish();
+  });
 
   // 재생은 그림이 아니라 여기서 끝낸다(대상이 한 사람만 남아도, 그림을 그리지 않아도 끝난다).
   useEffect(() => {
     if (phase !== "playing") return;
-    const timer = window.setTimeout(() => setPhase("done"), LADDER_PLAY_MS + 250);
+    const timer = window.setTimeout(() => finish(), LADDER_PLAY_MS + 250);
     return () => window.clearTimeout(timer);
-  }, [phase]);
+  });
 
-  useEffect(() => {
-    if (phase === "playing" && focus === "heading") setFocus("skip");
-    if (phase === "done" && focus === "skip") setFocus("heading");
-  }, [phase, focus]);
-
-  // 재생이 끝나 건너뛰기 버튼이 사라졌을 때 그 버튼에 있던 초점이 BODY로 빠지지 않게 제목으로 옮긴다.
+  // 접힌 카드에서 다시 보기가 끝나 건너뛰기 버튼이 사라지면 초점이 BODY로 빠지지 않게 제목으로.
   const previous = useRef(phase);
   useEffect(() => {
     const wasPlaying = previous.current === "playing";
@@ -104,30 +125,30 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
     }
   }, [phase]);
 
+  // 이 카드에서 보낸 뽑기가 실패하면 오류 안내로 초점을 옮긴다(확인 버튼이 사라져 BODY로 빠지지 않게).
   useEffect(() => {
-    const target = { skip, heading, confirm, redraw }[focus ?? "heading"];
-    if (!focus || !target.current) return;
-    target.current.focus();
-    setFocus(null);
-  }, [focus]);
+    if (!awaiting.current || pending) return;
+    awaiting.current = false;
+    if (props.error) alert.current?.focus();
+  }, [pending, props.error]);
 
   const settled = useRef(false);
   const onSettled = useRef(props.onSettled);
   onSettled.current = props.onSettled;
   useEffect(() => {
-    if (settled.current || (draw.winner !== null && phase !== "done")) return;
+    if (variant !== "summary" || settled.current) return;
     settled.current = true;
     onSettled.current(draw);
-  }, [phase, draw]);
+  }, [variant, draw]);
+
+  const sendDraw = () => {
+    awaiting.current = true;
+    setFocus("heading");
+    props.onDraw(draw.generation, draw.round + 1);
+  };
 
   const winnerName = draw.winner === null ? null : (draw.candidates[draw.winner]?.name ?? null);
-  // 결과 문장은 이 화면에서 결과가 나온 그때 한 번 읽힌다: 빈 영역이 먼저 있고, 그 뒤에 채운다.
-  useEffect(() => {
-    if (phase === "done" && played && winnerName) setAnnouncement(`뽑기 결과, 오늘은 ${winnerName} 쪽으로 맞춰요.`);
-  }, [phase, played, winnerName]);
-
   const redrawsLeft = Math.max(0, draw.maxRounds - draw.round);
-  const showGame = phase === "playing" || (phase === "done" && played);
   const enough = draw.candidates.length >= 2;
   const by = draw.round >= 2 ? "방장이 한 번 다시 뽑았어요" : "방장이 뽑았어요";
   const lateEligible = draw.late.filter((p) => !p.hidden).map((p) => p.name);
@@ -141,7 +162,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
       type="button"
       variant={props.full === false ? "outline" : "default"}
       disabled={!enough || pending}
-      onClick={() => props.onDraw(draw.generation, draw.round + 1)}
+      onClick={sendDraw}
       className={cn(
         compact ? "h-11 px-3.5 text-[15px] font-bold" : "h-13 rounded-xl text-[17px] font-bold",
         props.full === true && enough && "ring-4 ring-safety ring-offset-2 ring-offset-surface",
@@ -154,6 +175,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
 
   return (
     <section
+      ref={section}
       aria-labelledby={titleId}
       className={cn(
         "flex flex-col gap-3 rounded-2xl bg-surface",
@@ -209,11 +231,6 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
         )}
       </div>
 
-      {/* 결과 문장: 이 화면에서 그림이 끝났을 때(동작 줄이기·건너뛰기면 곧바로) 한 번 읽힌다. */}
-      <p aria-live="polite" className="sr-only">
-        {announcement}
-      </p>
-
       {expanded ? (
         <div id={detailsId} className="flex flex-col gap-3">
           {phase === "done" && winnerName ? (
@@ -228,12 +245,12 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
             </p>
           ) : null}
 
-          {(showGame || phase === "done") && enough ? (
+          {phase !== "idle" && enough ? (
             <LadderGame
               people={draw.candidates}
               winner={draw.winner}
               seed={seedOf(`${props.roomId}:${draw.key}`)}
-              phase={showGame ? phase : "done"}
+              phase={phase === "playing" || replayed ? phase : "done"}
             />
           ) : null}
 
@@ -253,7 +270,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
             </Button>
           ) : null}
 
-          {draw.hiddenNames.length > 0 ? (
+          {draw.hiddenNames.length > 0 && phase !== "playing" ? (
             <p className="flex items-start gap-1.5 rounded-xl bg-muted px-3 py-2.5 text-[14px] text-ink-soft">
               <EyeOffIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               <span>
@@ -310,7 +327,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
                   variant="ghost"
                   onClick={() => {
                     setFocus("skip");
-                    setPlayed(true);
+                    setReplayed(true);
                     setPhase("playing");
                   }}
                   className="h-11 px-3 text-[14px] font-semibold"
@@ -330,7 +347,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
                       disabled={pending}
                       onClick={() => {
                         setConfirming(false);
-                        props.onDraw(draw.generation, draw.round + 1);
+                        sendDraw();
                       }}
                       className="h-11 px-3 text-[14px] font-bold"
                     >
@@ -370,7 +387,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
       ) : null}
 
       {props.error ? (
-        <p role="alert" className="text-[14px] font-semibold text-destructive">
+        <p ref={alert} role="alert" tabIndex={-1} className="text-[14px] font-semibold text-destructive outline-none">
           {props.error}
         </p>
       ) : null}

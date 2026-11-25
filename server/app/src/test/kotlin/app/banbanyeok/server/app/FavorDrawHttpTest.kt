@@ -182,6 +182,36 @@ class FavorDrawHttpTest :
                 }
             }
 
+            it("keeps no trace of a candidate who left: only an anonymous slot stays in the draw (#176)") {
+                val room = drawRoom()
+                room.withApi {
+                    draw(room, 1).status.value shouldBe 200
+                    // 당첨자(방장)가 아닌 지연(thirdId)이 나간다.
+                    room.fixture.service.removeParticipant(room.roomId, room.thirdId, room.thirdToken)
+                    for (token in listOf(null, room.managementToken, room.hostToken, room.hiddenToken)) {
+                        val path = "/v1/rooms/${room.roomId}"
+                        for (endpoint in listOf("", "/preview", "/result")) {
+                            withClue("token=$token endpoint=$endpoint") {
+                                json(
+                                    HttpMethod.Get,
+                                    path + endpoint,
+                                    token = token,
+                                ).bodyAsText().contains(room.thirdId) shouldBe
+                                    false
+                            }
+                        }
+                    }
+                    val draw = json(HttpMethod.Get, "/v1/rooms/${room.roomId}").body().getValue("favorDraw").jsonObject
+                    draw.getValue("candidates").jsonArray.map { it.jsonPrimitive.content } shouldBe
+                        listOf(room.hostId, room.hiddenId, "~2")
+                    OpenApiContract.assertValid(
+                        HttpMethod.Get,
+                        "/v1/rooms/{roomId}",
+                        json(HttpMethod.Get, "/v1/rooms/${room.roomId}"),
+                    )
+                }
+            }
+
             it("refuses a room made without the draw and a room with fewer than two candidates") {
                 val plain = RouteRoom("130", hidden = false).open(RoomMode.FAVOR, "host")
                 plain.withApi { draw(plain, 1).body().code() shouldBe "DRAW_NOT_AVAILABLE" }

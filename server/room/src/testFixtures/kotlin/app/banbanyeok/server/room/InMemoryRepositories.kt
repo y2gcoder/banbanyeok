@@ -101,6 +101,10 @@ class InMemoryRoomRepository : RoomRepository {
             if (stored.room.favorParticipantId == participantId) {
                 write(roomId) { it.copy(room = it.room.copy(favorParticipantId = null)) }
             }
+            val draw = rooms.getValue(roomId).room.favorDraw
+            if (draw != null && (participantId in draw.candidates || participantId in draw.roster)) {
+                write(roomId) { it.copy(room = it.room.copy(favorDraw = draw.without(participantId))) }
+            }
             touch(roomId, activity)
             true
         }

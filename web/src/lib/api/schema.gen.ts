@@ -852,7 +852,8 @@ export interface components {
             maxRounds: 2;
             /**
              * @description 뽑기 대상의 participantId(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람(출발역을 숨기지 않은 참가자), 뽑은 뒤에는 뽑을 때의
-             *     대상 그대로다(그 뒤에 나간 사람도 남아 `participants`에 없을 수 있다). 화면 그림의 칸 순서라 같은 세대·회차면 늘 같다
+             *     대상 그대로다. 그 뒤에 나간(내보내진) 사람의 칸은 원래 ID 없이 자리 표시(`~N`, N은 칸 위치)로 남는다: 서버는 참가자를 지우는
+             *     같은 트랜잭션에서 뽑기 명단의 그 ID를 지운다. 화면 그림의 칸 순서라 같은 세대·회차면 늘 같다
              */
             candidates: string[];
             /** @description 당첨자 participantId(= `Room.favorTarget`). 뽑기 전 null */

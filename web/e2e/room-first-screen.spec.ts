@@ -19,28 +19,39 @@ async function bottomOf(locator: Locator) {
 test.describe("방 첫 화면에 1위", () => {
   test.use({ viewport: PHONE, isMobile: true, hasTouch: true });
 
-  // 뽑기 방(#172)도 같다: 뽑기 카드는 뽑기 전·뽑은 뒤 모두 한 줄로 접혀 있다(방장이 그 자리에서 막 뽑아 재생할 때만 펼친다).
-  const cases: { scenario: RoomScenario; label: string; draw?: RoomDraw }[] = [
+  // 뽑기 방(#172)도 같다. 뽑은 뒤 이 기기가 처음 보는 뽑기는 결과 위에서 한 번 재생하고(그동안은 1위가 첫 화면 밖이어도 된다), 끝나면
+  // 한 줄로 접혀 후보 아래로 간다. 이미 본 뽑기와 동작 줄이기는 처음부터 접힌 결과다.
+  const cases: { scenario: RoomScenario; label: string; draw?: RoomDraw; reduced?: boolean }[] = [
     { scenario: "host-full", label: "방장" },
     { scenario: "hidden-self", label: "출발역을 숨긴 본인" },
     { scenario: "friend-join", label: "링크로 들어와 아직 참여 전" },
     { scenario: "host-full", label: "뽑기 방, 방장, 뽑기 전", draw: "pending" },
-    { scenario: "host-full", label: "뽑기 방, 방장, 뽑은 뒤 다시 연 화면", draw: "drawn" },
-    { scenario: "hidden-self", label: "뽑기 방, 숨겨서 빠진 본인, 뽑은 뒤", draw: "drawn" },
-    { scenario: "friend-join", label: "뽑기 방, 링크로 들어와 아직 참여 전, 뽑은 뒤", draw: "drawn" },
+    { scenario: "host-full", label: "뽑기 방, 방장, 처음 본 뽑기의 재생이 끝난 뒤", draw: "drawn" },
+    { scenario: "host-full", label: "뽑기 방, 방장, 이미 본 뽑기", draw: "drawn-seen" },
+    { scenario: "hidden-self", label: "뽑기 방, 숨겨서 빠진 본인, 이미 본 뽑기", draw: "drawn-seen" },
+    { scenario: "friend-join", label: "뽑기 방, 참여 전 방문자, 재생이 끝난 뒤", draw: "drawn" },
+    { scenario: "friend-join", label: "뽑기 방, 참여 전 방문자, 동작 줄이기", draw: "drawn", reduced: true },
   ];
-  for (const { scenario, label, draw } of cases) {
+  for (const { scenario, label, draw, reduced } of cases) {
     test(`${label}: 1위 이름·사람별 줄·정하기 버튼이 스크롤 없이 보인다`, async ({ page }) => {
+      if (reduced) await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(await prepareRoom(page, scenario, undefined, "default", undefined, draw));
       if (draw === "pending") {
         // 뽑기 전: 한 줄 카드가 결과 위에 있다(방장은 거기서 뽑는다).
         await expect(page.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeInViewport();
       }
-      if (draw === "drawn") {
-        // 뽑은 뒤: 요약 줄과 결과 탭이 당첨자 쪽을 보이고, 접힌 뽑기 카드는 후보 아래에 있다.
+      if (draw === "drawn" && !reduced) {
+        // 처음 보는 뽑기: 결과 위에서 재생한다.
+        await expect(page.getByRole("heading", { name: "뽑는 중…" })).toBeInViewport();
+      }
+      if (draw && draw !== "pending") {
+        // 재생이 끝나면(이미 봤거나 동작 줄이기면 처음부터) 접힌 한 줄이 후보 아래에 있고, 요약 줄과 결과 탭이 당첨자 쪽을 보인다.
+        await expect(page.getByRole("heading", { name: "지연이와 함께 오는 아주 긴 이름 쪽으로!" })).toHaveCount(1, {
+          timeout: 6000,
+        });
+        await expect(page.getByRole("heading", { name: "뽑는 중…" })).toHaveCount(0);
         await expect(page.getByText("지연이와 함께 오는 아주 긴 이름 쪽으로(뽑기)")).toBeInViewport();
         await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
-        await expect(page.getByRole("heading", { name: "지연이와 함께 오는 아주 긴 이름 쪽으로!" })).toHaveCount(1);
       }
       const card = topCard(page);
       await expect(card).toBeVisible();

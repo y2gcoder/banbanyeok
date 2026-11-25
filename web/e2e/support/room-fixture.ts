@@ -28,10 +28,11 @@ export type RoomCrowd = { alone: boolean };
 export type RoomVariant = "default" | "dawn" | "undated" | "all-hidden";
 
 /**
- * '누구 쪽으로' 뽑기 방(#172)으로 열기: `pending`은 아직 안 뽑음, `drawn`은 지연이와 함께 오는 아주 긴 이름(f2)이 뽑힘.
+ * '누구 쪽으로' 뽑기 방(#172)으로 열기: `pending`은 아직 안 뽑음, `drawn`은 지연이와 함께 오는 아주 긴 이름(f2)이 뽑힘(이 기기는
+ * 처음 봄: 한 번 재생), `drawn-seen`은 같은 뽑기를 이 기기에서 이미 봄(기록이 있는 시나리오만, 처음부터 접힌 결과).
  * 숨긴 참가자 2는 대상에서 빠진다. 없으면 공평하게 방이다.
  */
-export type RoomDraw = "pending" | "drawn";
+export type RoomDraw = "pending" | "drawn" | "drawn-seen";
 
 const json = (status: number, body: unknown) => ({
   status,
@@ -235,12 +236,14 @@ export async function prepareRoom(
           participantToken: HOST_PARTICIPANT_TOKEN,
           participantId: "h1",
           keepUntil: "2999-01-01T00:00:00.000Z",
+          ...(draw === "drawn-seen" ? { drawSeen: "0:1" } : {}),
         }
       : {
           v: 1,
           participantToken: HIDDEN_PARTICIPANT_TOKEN,
           participantId: "f1",
           keepUntil: "2999-01-01T00:00:00.000Z",
+          ...(draw === "drawn-seen" ? { drawSeen: "0:1" } : {}),
         };
     await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [
       `bby.room.${FAKE_ROOM_ID}`,
@@ -271,14 +274,14 @@ export async function prepareRoom(
           mode: draw ? "favor" : "fair",
           ...(draw
             ? {
-                favorTarget: draw === "drawn" ? "f2" : null,
+                favorTarget: draw !== "pending" ? "f2" : null,
                 favorDraw: {
                   generation: 0,
-                  round: draw === "drawn" ? 1 : 0,
+                  round: draw !== "pending" ? 1 : 0,
                   maxRounds: 2,
                   candidates: ["h1", "f2"],
-                  winner: draw === "drawn" ? "f2" : null,
-                  drawnAt: draw === "drawn" ? "2026-11-21T10:14:00Z" : null,
+                  winner: draw !== "pending" ? "f2" : null,
+                  drawnAt: draw !== "pending" ? "2026-11-21T10:14:00Z" : null,
                   excluded: [{ participantId: "f1", reason: "hidden" }],
                 },
               }

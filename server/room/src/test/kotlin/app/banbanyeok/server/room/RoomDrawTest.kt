@@ -210,8 +210,10 @@ class RoomDrawTest :
                     val drawn = service.drawFavor(room.roomId, room.hostToken, 0, 1).favorDraw.shouldNotBeNull()
                     service.removeParticipant(room.roomId, room.thirdId, room.thirdPart)
                     val after = service.get(room.roomId, null).favorDraw.shouldNotBeNull()
-                    after.candidates shouldBe drawn.candidates
-                    after.candidates shouldBe listOf(room.hostId, room.friendId, room.thirdId)
+                    // 자리는 남고(같은 그림) 나간 사람의 ID는 남지 않는다.
+                    after.candidates shouldBe listOf(room.hostId, room.friendId, FavorDraw.leftSlot(2))
+                    drawn.candidates.size shouldBe after.candidates.size
+                    after.excluded.map { it.participantId } shouldBe emptyList()
                     after.winner shouldBe room.friendId
                     after.round shouldBe 1
                 }
