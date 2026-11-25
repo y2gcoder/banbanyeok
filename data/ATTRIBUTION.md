@@ -51,7 +51,7 @@
 
 ## 부산권 원천 수집 (#180)
 
-원본 파일은 Git 추적에서 제외한 `data/raw/busan/`에 두고, 이용허락과 파일 해시는 `source-manifest.json`에 기록합니다.
+B1·B2·K1·M1 원본은 Git 추적에서 제외한 `data/raw/busan/`에 두고, 이용허락과 파일 해시는 `source-manifest.json`에 기록합니다.
 
 | 원천 | 제공 기관과 자료 | 이용 조건 |
 |---|---|---|
@@ -59,3 +59,4 @@
 | B2 | [부산교통공사 역간 거리 및 소요시간 정보](https://www.data.go.kr/data/3033564/fileData.do) | 공공데이터포털 표기 이용허락범위 제한 없음 |
 | K1 | [국가철도공단 도시광역철도 운행정보](https://www.data.go.kr/data/15093878/fileData.do), [KRIC 제공 원본](https://data.kric.go.kr/rips/M_01_01/detail.do?id=900) | 공공데이터포털 표기 이용허락범위 제한 없음 |
 | M1 | [국토교통부 도시철도 전체노선](https://www.data.go.kr/data/15122916/fileData.do) | 공공데이터포털 표기 이용허락범위 제한 없음 |
+| S6-busan | [국토교통부 TAGO 지하철정보](https://www.data.go.kr/data/15098554/openapi.do), 부산김해·동해선 역별 시간표 | 공공데이터포털 표기 이용허락범위 제한 없음. 원 응답은 `data/raw/tago-busan/`(Git 제외), 영수증은 `source-manifest.json` |

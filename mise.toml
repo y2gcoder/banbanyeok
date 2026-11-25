@@ -108,8 +108,8 @@ description = "배차 간격 실제 값 갱신(키 필요: op) → pipeline refr
 run = "bash scripts/refresh-headways.sh"
 
 [tasks."data:fetch-tago"]
-description = "TAGO 지하철정보 수도권 시간표를 data/raw/tago에 이어받기 캐시(키 필요: op). 한도에 닿으면 종료코드 2, 다시 실행하면 이어받는다. 이후 data:refresh로 빌드"
-run = "bash scripts/fetch-tago.sh"
+description = "TAGO 시간표 이어받기(키 필요: op). 기본은 수도권, -- busan은 부산김해·동해선. 한도 종료 후 같은 명령으로 재개"
+run = 'bash scripts/fetch-tago.sh "$@"'
 
 # --- P8a 배포 보조 (docs/setup/p8a-notes.md) ---
 [tasks."release:stage"]
