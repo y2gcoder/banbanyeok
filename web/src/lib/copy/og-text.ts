@@ -33,14 +33,14 @@ export const PAIR_OG_IMAGE_VERSION = "d524e1f2";
  * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
  * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 `ROOM_OG_IMAGE_VERSION`을 쓴다.
  */
-export const SHARED_OG_IMAGE_VERSION = "8f894c4a";
+export const SHARED_OG_IMAGE_VERSION = "203b879f";
 
 /**
  * 방 미리보기 그림(`app/r/[roomId]/og/route.tsx`, 노선 그림 `SharedCard`)의 버전. 숫자판과 같은 이유·방식이다: 방의 공유 번호(`sv`)는
  * 방 내용이 바뀔 때만 오르므로, 그림을 그리는 코드·문구만 바뀐 뒤 같은 방을 다시 공유하면 주소가 같아 옛 그림이 캐시에서 나온다.
  * 그래서 `/r/<id>/og` 주소에 `iv=`로 붙인다(`roomImagePath`). 입력이 바뀌면 `components/og/og-image-version.test.ts`가 새 값을 알려 준다.
  */
-export const ROOM_OG_IMAGE_VERSION = "126d367b";
+export const ROOM_OG_IMAGE_VERSION = "93c03e79";
 
 /**
  * 방 공유의 **보이는 범위 정책** 버전. 방 내용(공유 번호 `sv`)과 그리는 코드(`ROOM_OG_IMAGE_VERSION`)가 그대로여도, 서버가 같은 방을
@@ -92,6 +92,15 @@ export const OG_TEXT = {
   modeFair: "공평하게 고름",
   modeFast: "가장 빠른 만남으로 고름",
   modeFavorSuffix: " 쪽으로 고름",
+  /**
+   * 배려 대상을 뽑기로 정한 방에서 뽑은 뒤(#172): 결과를 방에서 보게 당첨자와 1위 역을 숨긴 그림. 큰 줄 두 줄("사다리 결과가 / 나왔어요!"),
+   * 고리 안의 "?", 아래 두 줄("누구 쪽일까요?" / "방에서 확인해요"). 이름 옆에 시간을 쓰지 않는다.
+   */
+  drawTeaserHead: "사다리 결과가",
+  drawTeaserTail: "나왔어요!",
+  drawTeaserQuestion: "누구 쪽일까요?",
+  drawTeaserHint: "방에서 확인해요",
+  drawTeaserMark: "?",
   /** 공유 링크 그림 "A 숫자판"(`/s/og`): 차이가 아주 작을 때의 칭호와 지도 한가운데 비교 문장 "지도 한가운데인 한강진역이면 잠실은 14분 더 걸려요". */
   evenTitle: "완벽한 반반",
   middleLead: "지도 한가운데인 ",

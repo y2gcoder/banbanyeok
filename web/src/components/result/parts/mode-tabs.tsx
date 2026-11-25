@@ -64,7 +64,8 @@ export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex
               aria-pressed={favorIndex === person.index}
               onClick={() => onChange("favor", person.index)}
               className={cn(
-                "h-11 rounded-full border px-3.5 text-[15px] font-semibold",
+                // 긴 이름은 줄여 "쪽으로"가 다음 줄로 밀리지 않게 한다(폰 첫 화면, #168). 읽는 이름은 그대로다.
+                "h-11 max-w-40 truncate rounded-full border px-3.5 text-[15px] font-semibold",
                 favorIndex === person.index
                   ? "border-ink bg-ink text-primary-foreground"
                   : "border-rule-strong bg-surface text-ink",

@@ -137,7 +137,39 @@ function card(
   };
 }
 
+/**
+ * 뽑기 방에서 뽑은 뒤의 결과 단계(#172): 메신저에 보이는 미리보기(og 제목·설명·그림)와 공유 문구에 당첨자와 1위 역(과 그 역까지의
+ * 시간)을 넣지 않는다. 받는 사람이 방에서 사다리를 처음 보게 하려는 것이라 결과를 감추지는 않는다: 미리보기 응답(API)과 방 화면에는
+ * 그대로 있다. 참여자 이름만 기존 규칙대로 싣는다. 정한 역 단계는 정한 역을 그대로 보인다(`decidedCopy`).
+ */
+function drawTeaserCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomShareCopy {
+  const title = `${OG_TEXT.drawTeaserHead} ${OG_TEXT.drawTeaserTail} ${OG_TEXT.drawTeaserQuestion}`;
+  const names = preview.station.times.map((t) => t.label).join(SEP);
+  const hint = `사다리 결과는 ${OG_TEXT.drawTeaserHint}`;
+  const description = preview.room.canJoin
+    ? `아직이면 출발역 넣어 주세요${SEP}${names}${SEP}${hint}`
+    : `${names}${SEP}${hint}`;
+  return {
+    stage: "result",
+    preview: { title, description },
+    message: { title, text: description, button: "카톡으로 결과 보내기" },
+    card: {
+      stationName: OG_TEXT.drawTeaserHead,
+      suffix: OG_TEXT.drawTeaserTail,
+      people: preview.station.times.map((t, index) => ({
+        name: safeName(t.label, index),
+        minutes: null,
+        favored: false,
+      })),
+      modeLine: OG_TEXT.drawTeaserHint,
+      footer: { main: OG_TEXT.drawTeaserQuestion, sub: OG_TEXT.drawTeaserHint },
+      teaser: true,
+    },
+  };
+}
+
 function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLastTrain: boolean): RoomShareCopy {
+  if (preview.basis.mode === "favor" && preview.basis.drawRound !== undefined) return drawTeaserCopy(preview);
   const { stationName } = preview.station;
   const times = timesText(preview);
   const basisLine = modeSentence(preview.basis.mode, preview.basis.favorLabel) + basisSuffix(preview.room.timeBasis);

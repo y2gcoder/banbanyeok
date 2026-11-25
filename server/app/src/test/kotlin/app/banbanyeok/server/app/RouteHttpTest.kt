@@ -13,6 +13,7 @@ import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.recommendation.sampleRouteGraph
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
+import app.banbanyeok.server.room.FixedDrawRandom
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -69,7 +70,12 @@ internal class RouteRoom(
     private val date: java.time.LocalDate? = null,
     private val hidden: Boolean = true,
 ) {
-    val fixture = RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")))
+    val fixture =
+        RoomFixture(
+            stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")),
+            // 뽑기의 운: 처음 뽑기는 첫 대상, 다시 뽑기는 둘째 대상.
+            drawRandom = FixedDrawRandom(0, 1),
+        )
     val recommendation =
         recommendation ?: RecommendationService(
             OdTravelTimeProvider(sampleOd, "20261120.1", TimeSlot.ALL.associateWith { sampleOd }),
@@ -92,10 +98,13 @@ internal class RouteRoom(
     lateinit var thirdId: String
     lateinit var hostToken: String
 
-    suspend fun open(): RouteRoom {
+    suspend fun open(
+        mode: RoomMode = RoomMode.FAIR,
+        favorTarget: String? = null,
+    ): RouteRoom {
         val created =
             fixture.service.create(
-                CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v", false), null, null),
+                CreateRoomCommand(mode, favorTarget, date, ParticipantInput("민수", "03v", false), null, null),
             )
         val hidden = fixture.service.join(created.roomId, ParticipantInput(null, origin, hidden), null)
         val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a", false), null)

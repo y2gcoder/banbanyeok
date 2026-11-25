@@ -25,7 +25,7 @@ import { scoreboardCardData } from "@/lib/share-card/scoreboard-card-data";
 import * as stations from "@/lib/stations";
 import stationIndex from "@/lib/stations/index.gen.json";
 import { OgLineBadges } from "./line-badges";
-import { ROOM_CASES } from "./room-card.cases";
+import { ROOM_CASES, ROOM_DRAW_TEASER } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
 import { SHARED_CASES } from "./shared-card.cases";
@@ -154,7 +154,7 @@ const SHARED: Drawn = {
  * 그린다: 막차 줄 스위치(`ROOM_PREVIEW_LAST_TRAIN`)가 꺼져 있으면 막차 줄 없는 그림이 버전의 기준이고, 켜면 마크업이 달라져 버전이 바뀐다.
  */
 function renderedRoomSamples(): string[] {
-  return ROOM_CASES.map(({ id, preview }) => {
+  return [...ROOM_CASES, { id: "draw-teaser", preview: ROOM_DRAW_TEASER }].map(({ id, preview }) => {
     const card = roomShareCopy(preview).card;
     if (!card) throw new Error(`그림 값 없음: ${id}`);
     return renderToStaticMarkup(createElement(SharedCard, { data: card }));
@@ -178,6 +178,11 @@ const ROOM: Drawn = {
     "modeFair",
     "modeFast",
     "modeFavorSuffix",
+    "drawTeaserHead",
+    "drawTeaserTail",
+    "drawTeaserQuestion",
+    "drawTeaserHint",
+    "drawTeaserMark",
     "ellipsis",
     "middleDot",
     "basisSuffix",

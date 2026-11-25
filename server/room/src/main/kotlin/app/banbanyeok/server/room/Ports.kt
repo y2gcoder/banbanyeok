@@ -24,6 +24,11 @@ public data class ParticipantChange(
     val originCode: String,
     val hidden: Boolean,
     val updatedAt: Instant,
+    /**
+     * 바뀐 뒤 이 사람이 뽑기 대상이 될 수 없다([FavorDrawRule.isCandidate]). 뽑기 방에서 이 사람이 당첨자면 같은 트랜잭션에서
+     * 당첨자를 비운다(트리거가 뽑기 전으로 돌린다). 저장 때 다시 보므로 읽은 뒤 다시 뽑아 당첨자가 바뀌었어도 맞다.
+     */
+    val releasesDrawWin: Boolean = false,
 )
 
 public data class RoomChange(
@@ -40,12 +45,15 @@ public data class RoomChange(
      * 읽은 뒤 다른 요청이 넣은 시각과 어긋난 채 저장되지 않게 한다.
      */
     val onlyWithoutMeetingTime: Boolean = false,
+    /** 방장이 대상을 직접 정했다: 뽑기 방이면 뽑기를 끝낸다(지금 당첨자를 그대로 정해도). */
+    val endsDraw: Boolean = false,
 )
 
 /**
  * 방 저장소 포트. 정원·잠금 판정은 동시 참여에서도 맞도록 [addParticipant] 안에서 원자적으로 한다.
- * 메모리 fake와 Exposed 구현이 같은 계약 테스트를 통과한다.
+ * 메모리 fake와 Exposed 구현이 같은 계약 테스트를 통과한다. 쓰기마다 한 트랜잭션이라 방 하나의 쓰기를 한 포트에 둔다.
  */
+@Suppress("TooManyFunctions")
 public interface RoomRepository {
     public suspend fun create(
         room: Room,
@@ -98,6 +106,17 @@ public interface RoomRepository {
         activity: Activity,
         rule: DecisionRule,
     ): DecisionResult
+
+    /**
+     * 방 행을 잠그고(정하기와 같은 FOR UPDATE) [rule]로 판정해 [DrawResult.Drawn]일 때만 당첨자·뽑기 칸·활동 시각을 쓴다.
+     * 운은 [rule]이 잠근 뒤의 대상으로 뽑는다.
+     */
+    public suspend fun writeDraw(
+        roomId: String,
+        request: DrawRequest,
+        activity: Activity,
+        rule: FavorDrawRule,
+    ): DrawResult
 
     public suspend fun delete(roomId: String): Boolean
 

@@ -102,6 +102,18 @@ fun RoomView.toDto(
         decision?.let {
             DecisionDto(it.stationCode, stations.stationName(it.stationCode), it.decidedBy, it.decidedAt.toString())
         },
+    favorDraw =
+        favorDraw?.let { draw ->
+            FavorDrawDto(
+                draw.generation,
+                draw.round,
+                draw.maxRounds,
+                draw.candidates,
+                draw.winner,
+                draw.drawnAt?.toString(),
+                draw.excluded.map { DrawExclusionDto(it.participantId, it.reason.name.lowercase()) },
+            )
+        },
 )
 
 /** 출발역·정한 역의 표시 이름. 레지스트리에 없으면 null. */
@@ -124,7 +136,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
             timeBasis = room.timeBasis.toDto(requested = room.timeBasis.slot),
         )
 
-    fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel)
+    fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel, drawRound)
 
     fun PreviewStation.dto() =
         PreviewStationDto(

@@ -50,7 +50,7 @@ function drawOrder(people: SharedCardData["people"]): number[] {
 }
 
 /** 각자의 노선(같은 길이)이 만날 역으로 모이는 그림. "누구 쪽으로"면 고른 사람의 노선만 진하게 둔다. */
-function Lines({ people }: { people: SharedCardData["people"] }) {
+function Lines({ people, teaser = false }: { people: SharedCardData["people"]; teaser?: boolean }) {
   const rows = ys(people.length);
   const anyFavored = people.some((p) => p.favored);
   const ringY = AREA.height / 2;
@@ -94,6 +94,24 @@ function Lines({ people }: { people: SharedCardData["people"] }) {
         ))}
         <circle cx={RING_X} cy={ringY} r={44} fill={OG_COLORS.surface} stroke={OG_COLORS.ink} strokeWidth={18} />
       </svg>
+      {teaser ? (
+        <div
+          style={{
+            display: "flex",
+            position: "absolute",
+            left: RING_X - 44,
+            top: ringY - 44,
+            width: 88,
+            height: 88,
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 56,
+            color: OG_COLORS.ink,
+          }}
+        >
+          {OG_TEXT.drawTeaserMark}
+        </div>
+      ) : null}
       {people.map((person, i) => (
         <div
           key={`label-${String(i)}`}
@@ -110,7 +128,7 @@ function Lines({ people }: { people: SharedCardData["people"] }) {
           <span style={{ fontSize: 32, color: anyFavored && !person.favored ? OG_COLORS.muted : OG_COLORS.inkSoft }}>
             {person.name}
           </span>
-          <span style={{ fontSize: 38 }}>{minutesText(person.minutes)}</span>
+          {teaser ? null : <span style={{ fontSize: 38 }}>{minutesText(person.minutes)}</span>}
         </div>
       ))}
       {/* 막차 줄(#62): 각자의 노선 바로 아래, 작게. 시각을 모르거나 출발역을 숨긴 사람은 줄이 없다. */}
@@ -174,7 +192,7 @@ export function SharedCard({ data }: { data: SharedCardData }) {
             ) : null}
           </div>
         </div>
-        <Lines people={data.people} />
+        <Lines people={data.people} teaser={data.teaser ?? false} />
       </div>
     </OgFrame>
   );

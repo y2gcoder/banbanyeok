@@ -1,10 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
 import { missingGlyphs } from "@/lib/copy/og-coverage";
-import { OG_HEIGHT, OG_WIDTH } from "@/lib/copy/og-text";
+import { OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/copy/og-text";
 import { toResultView } from "@/lib/result/view-model";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { ogFonts } from "@/lib/seo/og-font";
@@ -15,7 +16,7 @@ import { sharedCardData, sharedPreview } from "@/lib/share-card/shared-preview";
 import { stationByCode } from "@/lib/stations";
 import fixture from "../../../fixtures/seo-pairs.json";
 import { PairCard } from "./pair-card";
-import { ROOM_CASES } from "./room-card.cases";
+import { ROOM_CASES, ROOM_DRAW_TEASER } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
 import { HIDDEN_ORIGIN, SHARED_CASES } from "./shared-card.cases";
@@ -159,6 +160,24 @@ describe("OG 이미지 그리기(satori)", () => {
       const description = sharedPreview(toResultView(c.result), c.state)?.description ?? "";
       expect(description, id).not.toMatch(/막차|늦어도/);
     }
+  });
+
+  it("뽑기 방에서 뽑은 뒤의 방 링크 이미지(#172): 역·시간·당첨자 강조 없이 이름과 '?'만, 글꼴에 없는 글자 없음", async () => {
+    const card = roomShareCopy(ROOM_DRAW_TEASER).card;
+    if (!card) throw new Error("그림 데이터 없음");
+    expect(card.teaser).toBe(true);
+    expect(card.stationCode).toBeUndefined();
+    expect(card.people.every((p) => p.minutes === null && !p.favored)).toBe(true);
+    const markup = renderToStaticMarkup(<SharedCard data={card} />);
+    expect(markup).not.toContain(ROOM_DRAW_TEASER.stage === "result" ? ROOM_DRAW_TEASER.station.stationName : "-");
+    expect(markup).not.toMatch(/\d+분/);
+    const text = [card.stationName, card.suffix, card.modeLine, OG_TEXT.drawTeaserQuestion, OG_TEXT.drawTeaserMark]
+      .concat(card.people.map((p) => p.name))
+      .join("");
+    expect(missingGlyphs(text)).toEqual([]);
+    const drawn = await render(<SharedCard data={card} />);
+    expectPng(drawn);
+    if (screensDir) writeFileSync(join(screensDir, "og-room-draw-teaser.png"), drawn.bytes);
   });
 
   it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 4명, 새벽 약속(02:59·03:00), 글꼴에 없는 글자 없음", async () => {

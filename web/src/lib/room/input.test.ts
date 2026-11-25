@@ -71,6 +71,13 @@ describe("방 만들기 본문", () => {
     });
   });
 
+  it("'누구 쪽으로'를 뽑기로 정하면 favorTarget: draw, 다른 기준에는 대상을 보내지 않는다(#172)", () => {
+    const drawn = toCreateRoomRequest(form({ mode: "favor", favorTarget: "draw" }), TODAY);
+    expect(drawn.ok && drawn.value.favorTarget).toBe("draw");
+    const fair = toCreateRoomRequest(form({ mode: "fair", favorTarget: "draw" }), TODAY);
+    expect(fair.ok && "favorTarget" in fair.value).toBe(false);
+  });
+
   it("약속일은 오늘~30일 안의 실제 날짜만(오늘은 가능, 어제·31일 뒤·없는 날짜는 거부)", () => {
     expect(toCreateRoomRequest(form({ meetingDate: TODAY }), TODAY).ok).toBe(true);
     expect(toCreateRoomRequest(form({ meetingDate: "2026-12-15" }), TODAY).ok).toBe(true);

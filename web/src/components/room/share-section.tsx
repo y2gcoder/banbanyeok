@@ -15,6 +15,10 @@ const HINTS: Record<ShareStage, string | null> = {
   decided: "카톡 미리보기에 정한 역과 각자 시간이 보여요. 이미 보낸 미리보기는 나중에 바뀌지 않아요.",
 };
 
+/** 뽑기 방에서 뽑은 뒤의 결과 단계(#172): 카톡 미리보기에는 결과를 숨기고 이름만 보인다. */
+const DRAW_TEASER_HINT =
+  "카톡 미리보기에는 사다리 결과(누구 쪽인지, 1위 역, 각자 시간)를 숨기고 이름만 보여요. 받은 사람은 방에서 결과를 봐요. 이미 보낸 미리보기는 나중에 바뀌지 않아요.";
+
 /**
  * 방 화면의 공유 칸(하나). 링크와 문구는 같은 미리보기(`roomShareCopy`)에서 나온다: 링크의 번호는 그 미리보기를 만든 방의 번호다.
  * 미리보기는 방의 공유 번호가 바뀔 때 미리 받아 둔다(버튼을 누른 뒤 네트워크를 기다리면 iOS가 공유 시트를 열어 주지 않는다).
@@ -29,7 +33,9 @@ export function RoomShareSection({ roomId, room }: { roomId: string; room: Room 
   const alone = room.participants.length < 2;
   const hint = alone
     ? "친구가 링크로 들어와 자기 출발역을 넣으면 여기에 나타나요. 두 명 이상 모이면 결과를 볼 수 있어요."
-    : HINTS[copy.stage];
+    : copy.card?.teaser
+      ? DRAW_TEASER_HINT
+      : HINTS[copy.stage];
 
   return (
     <section

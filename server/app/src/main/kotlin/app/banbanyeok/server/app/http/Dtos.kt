@@ -105,6 +105,35 @@ data class RoomDto(
     /** 공유 번호(링크 `?sv=`, 정하기의 `seenVersion`). */
     val shareVersion: Long,
     val decision: DecisionDto?,
+    /** '누구 쪽으로' 뽑기 상태(#172). 뽑기로 만든 방이 아니면 null. */
+    val favorDraw: FavorDrawDto?,
+)
+
+@Serializable
+data class FavorDrawDto(
+    /** 뽑기 세대(뽑기 전으로 돌아갈 때마다 1씩 커진다). 뽑기 요청에 그대로 보낸다. */
+    val generation: Int,
+    val round: Int,
+    val maxRounds: Int,
+    /** 뽑기 대상 participantId(입장 순서, 그림의 칸 순서). */
+    val candidates: List<String>,
+    val winner: String?,
+    val drawnAt: String?,
+    val excluded: List<DrawExclusionDto>,
+)
+
+@Serializable
+data class DrawExclusionDto(
+    val participantId: String,
+    /** `hidden` / `late`. */
+    val reason: String,
+)
+
+/** 화면이 본 세대(`favorDraw.generation`)와 이번이 몇 번째 뽑기인지(화면이 본 `favorDraw.round` + 1). */
+@Serializable
+data class FavorDrawRequestDto(
+    val generation: Int,
+    val round: Int,
 )
 
 @Serializable
@@ -290,6 +319,9 @@ data class PreviewRoomDto(
 data class PreviewBasisDto(
     val mode: String,
     val favorLabel: String?,
+    /** 배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지. 뽑기 방이 아니거나 아직 안 뽑았으면 키가 없다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val drawRound: Int? = null,
 )
 
 @Serializable

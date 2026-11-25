@@ -94,6 +94,18 @@ private fun Route.roomRoutes(
                 )
             call.respondRoom(services, room)
         }
+        // 멱등은 방의 세대·회차로 한다(인스턴스와 상관없음). 메모리 응답 캐시를 쓰지 않으므로 재시도도 늘 방장 확인을 지나고 지금 방을 받는다.
+        post("/favor-draw") {
+            call.request.header("Idempotency-Key")?.let(::requireIdempotencyKey)
+            val body = call.receive<FavorDrawRequestDto>()
+            if (body.round < 1 || body.generation < 0) {
+                throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "generation은 0 이상, round는 1 이상이어야 합니다")
+            }
+            call.respondRoom(
+                services,
+                services.rooms.drawFavor(call.roomId(), call.bearerToken(), body.generation, body.round),
+            )
+        }
         participantRoutes(services, idempotency)
     }
 }
@@ -217,6 +229,15 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondCreated(
         respond(HttpStatusCode.Created, produce())
         return
     }
+    requireIdempotencyKey(key)
+    val scoped = "${request.local.method.value} ${request.local.uri} $key"
+    val body =
+        cache.find(scoped)?.body
+            ?: apiJson.encodeToString(serializer<T>(), produce()).also { cache.store(scoped, StoredResponse(it)) }
+    respondText(body, ContentType.Application.Json, HttpStatusCode.Created)
+}
+
+private fun requireIdempotencyKey(key: String) {
     if (key.isBlank() || key.length > MAX_IDEMPOTENCY_KEY) {
         throw AppException(
             ErrorKind.INVALID,
@@ -224,9 +245,4 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondCreated(
             "Idempotency-Key는 1~${MAX_IDEMPOTENCY_KEY}자여야 합니다",
         )
     }
-    val scoped = "${request.local.method.value} ${request.local.uri} $key"
-    val body =
-        cache.find(scoped)?.body
-            ?: apiJson.encodeToString(serializer<T>(), produce()).also { cache.store(scoped, StoredResponse(it)) }
-    respondText(body, ContentType.Application.Json, HttpStatusCode.Created)
 }

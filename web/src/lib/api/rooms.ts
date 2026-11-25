@@ -113,6 +113,27 @@ export async function updateRoom(roomId: string, hostToken: string, patch: RoomP
   throw failure(result.response.status, result.error);
 }
 
+/**
+ * '누구 쪽으로' 뽑기(#172, 방장). `generation`은 화면이 본 `favorDraw.generation`, `round`는 화면이 본 `favorDraw.round` + 1이다.
+ * 같은 세대에서 방이 이미 그 회차 이상이면 서버가 바꾸지 않고 지금 방을 돌려준다(재시도 안전). 세대가 바뀌었으면 409 `ROOM_CHANGED`. 응답은 토큰 없는 요청과 같은 시점이라(`isSelf` 없음) 방 캐시에 넣지 말고 다시 불러온다.
+ */
+export async function drawFavorTarget(
+  roomId: string,
+  hostToken: string,
+  generation: number,
+  round: number,
+  idempotencyKey: string,
+): Promise<Room> {
+  const result = await client().POST("/rooms/{roomId}/favor-draw", {
+    params: { path: { roomId }, header: { "Idempotency-Key": idempotencyKey } },
+    headers: bearer(hostToken),
+    body: { generation, round },
+    cache: "no-store",
+  });
+  if (result.data !== undefined) return result.data;
+  throw failure(result.response.status, result.error);
+}
+
 export async function deleteRoom(roomId: string, hostToken: string): Promise<void> {
   const result = await client().DELETE("/rooms/{roomId}", {
     params: { path: { roomId } },

@@ -222,6 +222,67 @@ class HiddenOriginNoninterferenceHttpTest :
             snapshots[0].forEach { (path, body) -> withClue(path) { body shouldBe snapshots[1].getValue(path) } }
         }
 
+        it("changing only a hidden origin cannot change the favor draw or what others see around it (#172)") {
+            // 운은 두 방에서 같게 고정한다(처음 0번째, 다시 뽑기 1번째). 그러면 대상·순서·당첨·회차가 출발역에서 나오지 않는 한
+            // 두 방의 응답이 바이트까지 같다. 숨긴 사람은 대상에서 빠지고 이유는 hidden이다.
+            val snapshots =
+                HIDDEN_ORIGINS.map { origin ->
+                    val room = RouteRoom(origin, recommendation, MEETING_DATE).open(RoomMode.FAVOR, "draw")
+                    val responses = linkedMapOf<String, String>()
+                    room.withApi {
+                        val path = "/v1/rooms/${room.roomId}"
+                        val viewers = listOf(null, room.managementToken, room.hostToken, room.thirdToken)
+
+                        suspend fun scan(stage: String) {
+                            for ((viewer, token) in viewers.withIndex()) {
+                                for (endpoint in listOf("", "/preview", "/result")) {
+                                    val response = json(HttpMethod.Get, path + endpoint, token = token)
+                                    response.status.value shouldBe 200
+                                    val raw = response.bodyAsText()
+                                    withClue("$stage viewer=$viewer endpoint=$endpoint") {
+                                        assertNoHiddenOrigin(
+                                            meetingStationsMasked(Json.parseToJsonElement(raw).jsonObject),
+                                        )
+                                    }
+                                    responses["$stage/$viewer/$endpoint"] = raw
+                                }
+                            }
+                        }
+
+                        suspend fun draw(round: Int): JsonObject {
+                            val response =
+                                json(
+                                    HttpMethod.Post,
+                                    "$path/favor-draw",
+                                    """{"generation":0,"round":$round}""",
+                                    room.managementToken,
+                                )
+                            response.status.value shouldBe 200
+                            val raw = response.bodyAsText()
+                            responses["draw/$round"] = raw
+                            return Json
+                                .parseToJsonElement(raw)
+                                .jsonObject
+                                .getValue("favorDraw")
+                                .jsonObject
+                        }
+
+                        scan("before")
+                        val first = draw(1)
+                        first.getValue("candidates").jsonArray.map { it.jsonPrimitive.content } shouldBe
+                            listOf(room.hostId, room.thirdId)
+                        first.getValue("excluded").toString() shouldBe
+                            """[{"participantId":"${room.hiddenId}","reason":"hidden"}]"""
+                        scan("drawn")
+                        draw(2).getValue("winner").jsonPrimitive.content shouldBe room.thirdId
+                        scan("redrawn")
+                    }
+                    responses
+                }
+            snapshots[0].keys shouldBe snapshots[1].keys
+            snapshots[0].forEach { (key, body) -> withClue(key) { body shouldBe snapshots[1].getValue(key) } }
+        }
+
         describe(
             "meeting-station slots: the scan allows a hidden-origin candidate only where the station itself goes",
         ) {

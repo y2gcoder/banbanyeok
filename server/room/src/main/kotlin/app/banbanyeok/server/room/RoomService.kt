@@ -3,15 +3,19 @@ package app.banbanyeok.server.room
 import app.banbanyeok.links.NicknameRules
 import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeBand
+import java.security.SecureRandom
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.random.RandomGenerator
 
 /**
  * 방 유스케이스. Ktor를 모르는 일반 클래스이고 오류는 [RoomException]으로 알린다(HTTP 상태 변환은 app 몫).
  * 만료는 읽을 때 판정한다(만료된 방은 없는 방과 같다). 정리 명령([cleanup])이 실제로 지운다.
+ * 방 하나의 모든 유스케이스가 같은 읽기·권한·화면 규칙(loadActive, requireHost, viewOf)을 지나도록 한 클래스에 둔다.
  */
+@Suppress("TooManyFunctions", "LongParameterList")
 public class RoomService(
     private val rooms: RoomRepository,
     private val anonUsers: AnonUserRepository,
@@ -19,8 +23,11 @@ public class RoomService(
     private val ids: IdGenerator,
     private val stations: StationCatalog,
     private val clock: Clock,
+    /** 뽑기의 운. 테스트는 고정 값을 넣는다. */
+    drawRandom: RandomGenerator = SecureRandom(),
 ) {
     private val decisions = DecisionRule(stations)
+    private val draws = FavorDrawRule(drawRandom, clock)
 
     public suspend fun create(command: CreateRoomCommand): CreatedRoom {
         val now = clock.instant()
@@ -32,6 +39,7 @@ public class RoomService(
         val participantToken = tokens.issue()
         val expiresAt = ExpiryPolicy.expiresAt(now, now, command.meetingDate)
         val anonId = anonIdOf(command.deviceToken, now)
+        val drawn = command.mode == RoomMode.FAVOR && command.favorTarget == CreateRoomCommand.DRAW_TARGET
         rooms.create(
             Room(
                 id = roomId,
@@ -39,7 +47,7 @@ public class RoomService(
                 hostParticipantId = hostParticipantId,
                 hostAnonId = anonId,
                 mode = command.mode,
-                favorParticipantId = if (command.mode == RoomMode.FAVOR) hostParticipantId else null,
+                favorParticipantId = if (command.mode == RoomMode.FAVOR && !drawn) hostParticipantId else null,
                 dataVersion = stations.dataVersion,
                 meetingDate = command.meetingDate,
                 meetingTime = command.meetingTime?.withSecond(0)?.withNano(0),
@@ -50,6 +58,7 @@ public class RoomService(
                 createdAt = now,
                 lastActivityAt = now,
                 expiresAt = expiresAt,
+                favorDraw = if (drawn) FavorDraw.PENDING else null,
             ),
             newParticipant(hostParticipantId, participantToken.hash, anonId, host, now),
         )
@@ -130,7 +139,9 @@ public class RoomService(
         // 저장된 코드가 폐기된 코드여도 정식 코드가 같으면 그대로 쓴다. 출발역이 바뀐 것으로 보면 트리거가 정한 역을 풀기 때문이다.
         val storedOrigin = stored.participants.first { it.id == participantId }.originCode
         val origin = if (stations.canonical(storedOrigin) == value.originCode) storedOrigin else value.originCode
-        val change = ParticipantChange(value.nickname, origin, value.hidden, now)
+        val updated = stored.participants.first { it.id == participantId }.copy(hidden = value.hidden)
+        val change =
+            ParticipantChange(value.nickname, origin, value.hidden, now, releasesDrawWin = !draws.isCandidate(updated))
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
         if (!rooms.updateParticipant(roomId, participantId, change, activity)) {
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
@@ -169,10 +180,12 @@ public class RoomService(
                 is Change.Set -> requested.value?.also { checkMeetingDate(it, now) }
             }
         val band = bandChange(stored.room, patch)
+        val favor = favorChange(stored, patch)
         val change =
             RoomChange(
                 mode = patch.mode,
-                favorParticipantId = favorChange(stored, patch),
+                favorParticipantId = favor,
+                endsDraw = stored.room.favorDraw != null && (favor as? Change.Set)?.value != null,
                 locked = patch.locked,
                 meetingDate = patch.meetingDate,
                 meetingTime = minutes(patch.meetingTime),
@@ -225,6 +238,31 @@ public class RoomService(
             DecisionResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
         }
         return viewOf(loadActive(roomId, now), caller.participantId)
+    }
+
+    /**
+     * 방장이 '누구 쪽으로' 대상을 뽑는다([generation] = 화면이 본 세대, [round] = 화면이 본 회차 + 1). 같은 세대에서 방이 이미 그 회차
+     * 이상이면 아무것도 쓰지 않고 지금 방을 돌려준다(재시도 안전). 뽑은 결과는 방에 저장되어 누가 열어도 같다.
+     */
+    public suspend fun drawFavor(
+        roomId: String,
+        hostToken: String?,
+        generation: Int,
+        round: Int,
+    ): RoomView {
+        val now = clock.instant()
+        val stored = loadActive(roomId, now)
+        requireHost(stored, hostToken)
+        val activity = activityOf(stored.room, stored.room.meetingDate, now)
+        when (rooms.writeDraw(stored.room.id, DrawRequest(generation, round), activity, draws)) {
+            is DrawResult.Drawn, DrawResult.Unchanged -> Unit
+            DrawResult.NotAvailable -> reject(RoomError.DRAW_NOT_AVAILABLE, "뽑기로 만든 방이 아닙니다")
+            DrawResult.TooFew -> reject(RoomError.NOT_ENOUGH_DRAW_CANDIDATES, "출발역을 숨기지 않은 참가자가 2명 이상이어야 합니다")
+            DrawResult.LimitReached -> reject(RoomError.DRAW_LIMIT_REACHED, "다시 뽑기는 한 번만 할 수 있습니다")
+            DrawResult.Stale -> reject(RoomError.ROOM_CHANGED, "화면을 본 뒤 뽑기 상태가 바뀌었습니다")
+            DrawResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
+        }
+        return viewOf(loadActive(roomId, now), null)
     }
 
     public suspend fun delete(
@@ -323,6 +361,7 @@ public class RoomService(
             createdAt = room.createdAt,
             shareVersion = room.shareVersion,
             decision = decisions.visible(room.decision, stored.participants.map { it.id }),
+            favorDraw = draws.view(room, stored.participants),
             participants =
                 stored.participants.map {
                     ParticipantView(
@@ -352,6 +391,8 @@ public class RoomService(
         val newMode = patch.mode ?: stored.room.mode
         if (patch.mode == null && patch.favorTarget == null) return Change.Unchanged
         if (newMode != RoomMode.FAVOR) return Change.Set(null)
+        // 뽑기 방에서 대상 없이 favor만 다시 보내면 그대로다. 대상을 직접 정하면 뽑기를 끝낸다(RoomChange.endsDraw).
+        if (patch.favorTarget == null && stored.room.favorDraw != null) return Change.Unchanged
         val target =
             when (val requested = patch.favorTarget) {
                 null -> stored.room.favorParticipantId
@@ -376,8 +417,8 @@ public class RoomService(
         if (command.mode == RoomMode.FAVOR) {
             when (command.favorTarget) {
                 null -> reject(RoomError.FAVOR_TARGET_REQUIRED, "우대 대상이 필요합니다")
-                CreateRoomCommand.HOST_TARGET -> Unit
-                else -> reject(RoomError.FAVOR_TARGET_UNKNOWN, "방을 만들 때 우대 대상은 host뿐입니다")
+                CreateRoomCommand.HOST_TARGET, CreateRoomCommand.DRAW_TARGET -> Unit
+                else -> reject(RoomError.FAVOR_TARGET_UNKNOWN, "방을 만들 때 우대 대상은 host나 draw입니다")
             }
         }
     }

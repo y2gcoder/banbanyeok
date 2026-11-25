@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, DicesIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
@@ -13,7 +13,7 @@ import type { Mode, RoomCreateRequest } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { roomErrorMessage } from "@/lib/room/errors";
 import { roomPath } from "@/lib/room/id";
-import { type ParticipantFormValue, toCreateRoomRequest } from "@/lib/room/input";
+import { type FavorTargetChoice, type ParticipantFormValue, toCreateRoomRequest } from "@/lib/room/input";
 import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
 import { stationByCode } from "@/lib/stations";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,23 @@ import { slowMessage, useSlowStage } from "./use-slow-hint";
 const MODE_OPTIONS: readonly { mode: Mode; title: string; hint: string }[] = [
   { mode: "fair", title: "공평하게", hint: "가장 오래 걸리는 사람의 시간을 줄여요" },
   { mode: "fast", title: "빨리 만나기", hint: "모두의 이동시간 합계가 가장 짧아요" },
-  { mode: "favor", title: "내 쪽으로", hint: "오늘은 내가 덜 이동해요. 결과에서 다른 사람 쪽으로도 바꿔 볼 수 있어요" },
+  { mode: "favor", title: "누구 쪽으로", hint: "" },
+];
+
+/** '누구 쪽으로'의 대상(#172). 설명은 고른 대상에 따라 바뀐다. */
+const FAVOR_TARGETS: readonly { target: FavorTargetChoice; label: string; hint: string; Icon: typeof UserIcon }[] = [
+  {
+    target: "host",
+    label: "나",
+    hint: "오늘은 내가 덜 이동해요. 결과에서 다른 사람 쪽으로도 바꿔 볼 수 있어요",
+    Icon: UserIcon,
+  },
+  {
+    target: "draw",
+    label: "뽑기로 정하기",
+    hint: "누구 쪽으로 할지 뽑기로 정해요. 모두 들어오면 내가 뽑아요",
+    Icon: DicesIcon,
+  },
 ];
 
 const COUNTS = [2, 3, 4] as const;
@@ -39,6 +55,7 @@ export function CreateRoomForm() {
   const keys = useIdempotencyKey();
   const [host, setHost] = useState<ParticipantFormValue>({ nickname: "", station: null, hidden: false });
   const [mode, setMode] = useState<Mode>("fair");
+  const [favorTarget, setFavorTarget] = useState<FavorTargetChoice>("host");
   const [when, setWhen] = useState<MeetingWhen>(NO_MEETING_WHEN);
   const [expectedCount, setExpectedCount] = useState<number | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -106,6 +123,7 @@ export function CreateRoomForm() {
       {
         host,
         mode,
+        favorTarget,
         meetingDate: when.day?.date ?? "",
         meetingTime: when.time,
         meetingBand: when.band,
@@ -165,28 +183,63 @@ export function CreateRoomForm() {
         />
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-[15px] font-bold text-ink">추천 기준</legend>
-          {MODE_OPTIONS.map((option) => (
-            <label
-              key={option.mode}
-              className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-xl border bg-surface p-3.5",
-                mode === option.mode ? "border-ink ring-1 ring-ink" : "border-rule",
-              )}
-            >
-              <input
-                type="radio"
-                name={`${id}-mode`}
-                value={option.mode}
-                checked={mode === option.mode}
-                onChange={() => setMode(option.mode)}
-                className="mt-1 size-4 shrink-0 accent-[var(--ink)]"
-              />
-              <span className="flex flex-col gap-0.5">
-                <span className="text-[15px] font-bold text-ink">{option.title}</span>
-                <span className="text-[13px] leading-snug text-muted-foreground">{option.hint}</span>
-              </span>
-            </label>
-          ))}
+          {MODE_OPTIONS.map((option) => {
+            const favor = option.mode === "favor";
+            const hint = favor ? (FAVOR_TARGETS.find((t) => t.target === favorTarget)?.hint ?? "") : option.hint;
+            return (
+              <div
+                key={option.mode}
+                className={cn(
+                  "flex flex-col rounded-xl border bg-surface",
+                  mode === option.mode ? "border-ink ring-1 ring-ink" : "border-rule",
+                )}
+              >
+                <label className="flex cursor-pointer items-start gap-3 p-3.5">
+                  <input
+                    type="radio"
+                    name={`${id}-mode`}
+                    value={option.mode}
+                    checked={mode === option.mode}
+                    onChange={() => setMode(option.mode)}
+                    className="mt-1 size-4 shrink-0 accent-[var(--ink)]"
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-[15px] font-bold text-ink">{option.title}</span>
+                    <span className="text-[13px] leading-snug text-muted-foreground">{hint}</span>
+                  </span>
+                </label>
+                {favor && mode === "favor" ? (
+                  <>
+                    <fieldset className="-mt-1 flex flex-wrap gap-2 pr-3.5 pb-3.5 pl-10.5">
+                      <legend className="sr-only">누구 쪽으로 할지</legend>
+                      {FAVOR_TARGETS.map(({ target, label, Icon }) => (
+                        <button
+                          key={target}
+                          type="button"
+                          aria-pressed={favorTarget === target}
+                          onClick={() => setFavorTarget(target)}
+                          className={cn(
+                            "inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-[15px] font-semibold",
+                            favorTarget === target
+                              ? "border-ink bg-ink text-primary-foreground"
+                              : "border-rule-strong bg-surface text-ink",
+                          )}
+                        >
+                          <Icon className="size-4" aria-hidden="true" />
+                          {label}
+                        </button>
+                      ))}
+                    </fieldset>
+                    {favorTarget === "draw" ? (
+                      <p className="-mt-1.5 pr-3.5 pb-3.5 pl-10.5 text-[13px] leading-snug text-muted-foreground">
+                        출발역을 숨긴 사람은 뽑기에서 빠져요. 뽑기 전까지 결과는 공평하게로 보여요.
+                      </p>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            );
+          })}
         </fieldset>
         <MeetingWhenFields
           id={`${id}-when`}

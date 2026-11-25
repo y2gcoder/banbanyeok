@@ -8,6 +8,10 @@ import app.banbanyeok.server.room.Decision
 import app.banbanyeok.server.room.DecisionRequest
 import app.banbanyeok.server.room.DecisionResult
 import app.banbanyeok.server.room.DecisionRule
+import app.banbanyeok.server.room.DrawRequest
+import app.banbanyeok.server.room.DrawResult
+import app.banbanyeok.server.room.FavorDraw
+import app.banbanyeok.server.room.FavorDrawRule
 import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
 import app.banbanyeok.server.room.Participant
@@ -61,6 +65,7 @@ public class ExposedRoomRepository(
             it[createdAt] = room.createdAt
             it[lastActivityAt] = room.lastActivityAt
             it[expiresAt] = room.expiresAt
+            it[favorDraw] = room.favorDraw != null
         }
         insertParticipant(room.id, host)
     }
@@ -134,6 +139,15 @@ public class ExposedRoomRepository(
                     it[hidden] = change.hidden
                     it[updatedAt] = change.updatedAt
                 }
+            if (updated > 0 && change.releasesDrawWin) {
+                // 당첨자가 대상이 될 수 없게 됐다(숨겼다). 당첨자를 비우면 트리거가 뽑기 전으로 돌린다.
+                RoomsTable.update({
+                    (RoomsTable.id eq roomId) and (RoomsTable.favorDraw eq true) and
+                        (RoomsTable.favorPid eq participantId)
+                }) {
+                    it[favorPid] = null
+                }
+            }
             if (updated > 0) touch(roomId, activity)
             updated > 0
         }
@@ -153,10 +167,31 @@ public class ExposedRoomRepository(
                 RoomsTable.update({ (RoomsTable.id eq roomId) and (RoomsTable.favorPid eq participantId) }) {
                     it[favorPid] = null
                 }
+                forgetInDraw(roomId, participantId)
                 touch(roomId, activity)
             }
             deleted > 0
         }
+
+    /** 뽑기 명단에 남은 나간 사람의 ID를 지운다(당첨자였다면 트리거가 이미 뽑기 전으로 돌려 명단이 비었다). */
+    private fun forgetInDraw(
+        roomId: String,
+        participantId: String,
+    ) {
+        val draw =
+            RoomsTable
+                .selectAll()
+                .where { RoomsTable.id eq roomId }
+                .singleOrNull()
+                ?.favorDrawOf()
+                ?: return
+        if (participantId !in draw.candidates && participantId !in draw.roster) return
+        val forgotten = draw.without(participantId)
+        RoomsTable.update({ RoomsTable.id eq roomId }) {
+            it[drawCandidates] = forgotten.candidates
+            it[drawRoster] = forgotten.roster
+        }
+    }
 
     override suspend fun updateRoom(
         roomId: String,
@@ -180,6 +215,14 @@ public class ExposedRoomRepository(
                     (change.meetingDate as? Change.Set)?.let { set -> it[meetingDate] = set.value }
                     (change.meetingTime as? Change.Set)?.let { set -> it[meetingTime] = set.value }
                     (change.meetingBand as? Change.Set)?.let { set -> it[meetingBand] = set.value?.id }
+                    if (change.endsDraw) {
+                        // 지금 당첨자를 그대로 정하면 favor_pid가 같아 트리거가 알 수 없으므로 여기서 끈다.
+                        it[favorDraw] = false
+                        it[drawRound] = 0
+                        it[drawCandidates] = null
+                        it[drawRoster] = null
+                        it[drawnAt] = null
+                    }
                     it[expiresAt] = activity.expiresAt
                     it[lastActivityAt] = activity.at
                 }
@@ -229,6 +272,37 @@ public class ExposedRoomRepository(
                         it[decidedStation] = request.decision?.stationCode
                         it[decidedByPid] = request.decision?.decidedBy
                         it[decidedAt] = request.decision?.decidedAt
+                        it[lastActivityAt] = activity.at
+                        it[expiresAt] = activity.expiresAt
+                    }
+                }
+            }
+        }
+
+    override suspend fun writeDraw(
+        roomId: String,
+        request: DrawRequest,
+        activity: Activity,
+        rule: FavorDrawRule,
+    ): DrawResult =
+        inTransaction {
+            // 정하기와 같은 잠금: 참여·나가기·숨기기(트리거가 방 행을 고친다)와 줄을 서므로 대상이 뽑는 순간의 방과 같다.
+            val room =
+                RoomsTable
+                    .selectAll()
+                    .where { RoomsTable.id eq roomId }
+                    .forUpdate()
+                    .singleOrNull()
+                    ?.toRoom()
+                    ?: return@inTransaction DrawResult.RoomNotFound
+            rule.verdict(room, participantsOf(roomId), request).also { result ->
+                if (result is DrawResult.Drawn) {
+                    RoomsTable.update({ RoomsTable.id eq roomId }) {
+                        it[favorPid] = result.winner
+                        it[drawRound] = result.draw.round.toShort()
+                        it[drawCandidates] = result.draw.candidates
+                        it[drawRoster] = result.draw.roster
+                        it[drawnAt] = result.draw.drawnAt
                         it[lastActivityAt] = activity.at
                         it[expiresAt] = activity.expiresAt
                     }
@@ -328,7 +402,20 @@ public class ExposedRoomRepository(
             shareVersion = ShareVersion(this[RoomsTable.shareVersion]),
             decisionBasis = ShareVersion(this[RoomsTable.decisionBasisVersion]),
             decision = decisionOf(),
+            favorDraw = favorDrawOf(),
         )
+
+    /** CHECK rooms_draw_complete가 회차 0 ⇔ 대상·명단·시각 없음을 보장한다. */
+    private fun ResultRow.favorDrawOf(): FavorDraw? {
+        if (!this[RoomsTable.favorDraw]) return null
+        return FavorDraw(
+            generation = this[RoomsTable.drawGeneration],
+            round = this[RoomsTable.drawRound].toInt(),
+            candidates = this[RoomsTable.drawCandidates].orEmpty(),
+            roster = this[RoomsTable.drawRoster].orEmpty(),
+            drawnAt = this[RoomsTable.drawnAt],
+        )
+    }
 
     /** CHECK rooms_decision_complete가 세 칸이 함께 있거나 함께 없음을 보장한다. */
     private fun ResultRow.decisionOf(): Decision? {

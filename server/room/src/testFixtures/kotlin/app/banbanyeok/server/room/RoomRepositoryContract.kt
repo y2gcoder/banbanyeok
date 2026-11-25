@@ -53,6 +53,9 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
         decisions(newRepositories)
         decisionGuards(newRepositories)
         visibleDecisions(newRepositories)
+        favorDraws(newRepositories)
+        favorDrawResets(newRepositories)
+        favorDrawVersions(newRepositories)
     }
 
 private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {
