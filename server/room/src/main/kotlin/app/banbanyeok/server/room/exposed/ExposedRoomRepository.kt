@@ -167,10 +167,31 @@ public class ExposedRoomRepository(
                 RoomsTable.update({ (RoomsTable.id eq roomId) and (RoomsTable.favorPid eq participantId) }) {
                     it[favorPid] = null
                 }
+                forgetInDraw(roomId, participantId)
                 touch(roomId, activity)
             }
             deleted > 0
         }
+
+    /** 뽑기 명단에 남은 나간 사람의 ID를 지운다(당첨자였다면 트리거가 이미 뽑기 전으로 돌려 명단이 비었다). */
+    private fun forgetInDraw(
+        roomId: String,
+        participantId: String,
+    ) {
+        val draw =
+            RoomsTable
+                .selectAll()
+                .where { RoomsTable.id eq roomId }
+                .singleOrNull()
+                ?.favorDrawOf()
+                ?: return
+        if (participantId !in draw.candidates && participantId !in draw.roster) return
+        val forgotten = draw.without(participantId)
+        RoomsTable.update({ RoomsTable.id eq roomId }) {
+            it[drawCandidates] = forgotten.candidates
+            it[drawRoster] = forgotten.roster
+        }
+    }
 
     override suspend fun updateRoom(
         roomId: String,

@@ -319,6 +319,9 @@ data class PreviewRoomDto(
 data class PreviewBasisDto(
     val mode: String,
     val favorLabel: String?,
+    /** 배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지. 뽑기 방이 아니거나 아직 안 뽑았으면 키가 없다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val drawRound: Int? = null,
 )
 
 @Serializable

@@ -210,7 +210,7 @@ paths:
       summary: "'누구 쪽으로' 뽑기 (방장, #172)"
       description: |
         방을 만들 때 `favorTarget=draw`를 고른 방에서 방장이 배려 대상을 뽑는다. 운은 서버가 정한다(`SecureRandom`, 대상마다 1/N).
-        결과는 방에 저장되어 누가 언제 열어도 같고, 화면의 그림(사다리·룰렛)은 저장된 결과를 재생만 한다.
+        결과는 방에 저장되어 누가 언제 열어도 같고, 화면의 그림(사다리)은 저장된 결과를 재생만 한다.
 
         대상은 뽑는 순간 출발역을 숨기지 않은 참가자다(입장 순서). 숨긴 사람은 빠진다: 그 사람 쪽 결과는 본인만 볼 수 있어서다(ADR-0005).
         대상이 2명 미만이면 409 `NOT_ENOUGH_DRAW_CANDIDATES`. 대상과 당첨은 출발역에 따라 달라지지 않는다(숨긴 출발역 비간섭).
@@ -1130,8 +1130,9 @@ components:
           type: array
           maxItems: 4
           description: |
-            뽑기 대상의 participantId(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람(출발역을 숨기지 않은 참가자), 뽑은 뒤에는 그때의
-            대상 중 아직 방에 있는 사람이다. 화면 그림의 칸 순서다
+            뽑기 대상의 participantId(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람(출발역을 숨기지 않은 참가자), 뽑은 뒤에는 뽑을 때의
+            대상 그대로다. 그 뒤에 나간(내보내진) 사람의 칸은 원래 ID 없이 자리 표시(`~N`, N은 칸 위치)로 남는다: 서버는 참가자를 지우는
+            같은 트랜잭션에서 뽑기 명단의 그 ID를 지운다. 화면 그림의 칸 순서라 같은 세대·회차면 늘 같다
           items: {type: string}
         winner: {type: [string, 'null'], description: 당첨자 participantId(= `Room.favorTarget`). 뽑기 전 null}
         drawnAt: {type: [string, 'null'], format: date-time}
@@ -1269,6 +1270,13 @@ components:
       properties:
         mode: {$ref: '#/components/schemas/Mode'}
         favorLabel: {type: [string, 'null'], description: '`mode=favor`일 때 우대하는 사람의 짧은 이름'}
+        drawRound:
+          type: integer
+          minimum: 1
+          maximum: 2
+          description: |
+            배려 대상을 뽑기로 정했으면 그 세대에서 몇 번째 뽑기인지(`favorDraw.round`, #172). 뽑기 방이 아니거나 아직 안 뽑았으면(그때
+            `mode`는 `fair`) 키가 없다. 공유 문구 "뽑기로 ○○ 쪽으로"에 쓴다
 
     PreviewStation:
       type: object

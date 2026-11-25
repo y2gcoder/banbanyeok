@@ -6,6 +6,7 @@ import { roomHashProperty, track } from "@/lib/analytics";
 import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
+import { type RoomDraw, roomDraw } from "@/lib/room/draw";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
@@ -21,6 +22,8 @@ import {
 import { canFavor, hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
+import { FavorDrawCard } from "./draw/favor-draw-card";
+import { useReducedMotion } from "./draw/use-reduced-motion";
 import { HostControls } from "./host-controls";
 import { JoinForm } from "./join-form";
 import { JumpButton } from "./jump-button";
@@ -38,6 +41,7 @@ import {
   RoomShell,
 } from "./room-states";
 import { RoomShareSection } from "./share-section";
+import { useFavorDraw } from "./use-favor-draw";
 import { useIdempotencyKey } from "./use-idempotency-key";
 import { useRoomActions } from "./use-room-actions";
 import { useRoomDecision } from "./use-room-decision";
@@ -56,16 +60,18 @@ function rememberedValue(): ParticipantFormValue {
 
 /**
  * 방 설정 요약의 기준: "공평하게" / "빨리 만나기" / "{짧은 이름} 쪽으로"(배려 대상을 아직 모르면 "누구 쪽으로").
- * 배려 대상이 출발역을 숨긴 다른 사람이면 결과 화면·미리보기처럼 "공평하게"다(#162).
+ * 배려 대상이 출발역을 숨긴 다른 사람이면 결과 화면·미리보기처럼 "공평하게"다(#162). 뽑기로 정하는 방은 "(뽑기)"를 붙이고, 아직 안
+ * 뽑았으면 그렇다고 적는다(#172).
  */
 function modeText(room: Room): string {
   if (room.mode === "fair") return "공평하게";
   if (room.mode === "fast") return "빨리 만나기";
   const target = room.participants.find((p) => p.participantId === room.favorTarget);
+  if (room.favorDraw && !target) return "누구 쪽으로(뽑기 전)";
   if (target && !canFavor(target)) return "공평하게";
   // shortLabel을 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로 쓴다.
   const name = target ? ((target.shortLabel as string | undefined) ?? target.label) : "누구";
-  return `${name} 쪽으로`;
+  return room.favorDraw ? `${name} 쪽으로(뽑기)` : `${name} 쪽으로`;
 }
 
 function summary(room: Room): string {
@@ -138,6 +144,45 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const actions = useRoomActions({ roomId, room, record, commit, keys });
 
   const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh: actions.refresh });
+  const drawControl = useFavorDraw({ roomId, hostToken: record?.hostToken });
+  const reducedMotion = useReducedMotion();
+  // 이 기기에서 그림을 본 뽑기(세대·회차). 기록이 있으면 기록(drawSeen)에도 둔다(처리방침 11항).
+  const [seenDraws, setSeenDraws] = useState<ReadonlySet<string>>(() => new Set());
+  // 뽑기 결과 문장(aria-live). 재생하는 카드가 접힌 카드로 바뀌어도 남도록 여기 둔다. 이 화면에서 결과가 나온 그때 한 번 채운다.
+  const [drawAnnouncement, setDrawAnnouncement] = useState("");
+  // 뽑기 재생이 끝나 카드가 후보 아래로 접혔을 때 초점을 결과 제목(1위 카드 바로 위)으로 옮긴다. 아래 카드로 옮기면 화면이 1위를 지나쳐 내려간다.
+  const [focusResults, setFocusResults] = useState(false);
+  useEffect(() => {
+    if (!focusResults) return;
+    document.getElementById("result-title")?.focus();
+    setFocusResults(false);
+  }, [focusResults]);
+  const markDrawSeen = useCallback(
+    (seen: RoomDraw) => {
+      setSeenDraws((keys) => new Set(keys).add(seen.key));
+      if (record && record.drawSeen !== seen.key) commit({ ...record, drawSeen: seen.key });
+      const name = seen.winner === null ? null : seen.candidates[seen.winner]?.name;
+      if (!name) return;
+      // 다시 뽑아 같은 사람이 또 나와도 읽히게 회차를 드러내고, 영역을 한 번 비운 뒤 채운다(같은 글자를 다시 넣으면 읽지 않는다).
+      const text =
+        seen.round >= 2 ? `다시 뽑은 결과, 오늘은 ${name} 쪽으로 맞춰요.` : `뽑기 결과, 오늘은 ${name} 쪽으로 맞춰요.`;
+      setDrawAnnouncement("");
+      window.setTimeout(() => setDrawAnnouncement(text), 100);
+    },
+    [record, commit],
+  );
+  const shownDraw = room ? roomDraw(room) : null;
+  const drawUnseen =
+    shownDraw !== null &&
+    shownDraw.winner !== null &&
+    !seenDraws.has(shownDraw.key) &&
+    record?.drawSeen !== shownDraw.key;
+  // 동작 줄이기면 재생 없이 바로 접힌 결과다(이 기기에서는 본 것으로 둔다).
+  useEffect(() => {
+    if (!drawUnseen || !reducedMotion || !shownDraw) return;
+    markDrawSeen(shownDraw);
+    if (drawControl.drewKey === shownDraw.key) setFocusResults(true);
+  }, [drawUnseen, reducedMotion, shownDraw, markDrawSeen, drawControl.drewKey]);
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
 
@@ -253,6 +298,35 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     </>
   );
 
+  const draw = shownDraw;
+  const expectedCount = record?.expectedCount ?? null;
+  // 이 기기가 처음 보는 뽑기는 결과 위에서 한 번 재생하고, 끝나면 접힌 한 줄이 후보 아래로 간다(1위 카드가 첫 화면에, #168).
+  const playDraw = drawUnseen && !reducedMotion;
+  const renderDraw = draw
+    ? (apply: (settled: RoomDraw) => void) => (
+        <FavorDrawCard
+          key={`${draw.key}:${playDraw ? "play" : "summary"}`}
+          variant={playDraw ? "play" : "summary"}
+          roomId={roomId}
+          draw={draw}
+          viewer={isHost ? "host" : draw.selfLate ? "late" : "member"}
+          full={expectedCount === null ? null : room.participants.length >= expectedCount}
+          joinedCount={room.participants.length}
+          expectedCount={expectedCount}
+          hiddenInRoom={room.participants.some((p) => p.hidden)}
+          focusOnMount={playDraw && drawControl.drewKey === draw.key ? "skip" : null}
+          pending={drawControl.pending}
+          error={drawControl.error}
+          onDraw={drawControl.draw}
+          onSettled={apply}
+          onPlayed={(focusInside) => {
+            if (focusInside) setFocusResults(true);
+            markDrawSeen(draw);
+          }}
+        />
+      )
+    : undefined;
+
   const result = (
     <RoomResult
       roomId={roomId}
@@ -265,6 +339,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       onResultSeen={() => {
         if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
       }}
+      {...(renderDraw && draw ? { renderDraw, drawAtTop: draw.winner === null || playDraw } : {})}
       renderAfter={(view) =>
         joined && token && meetingDay ? (
           <OutcomeCard
@@ -314,7 +389,16 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         )}
       </div>
 
-      {enough ? <div className={ROOM_MAIN}>{result}</div> : null}
+      {enough ? (
+        <div className={ROOM_MAIN}>
+          {draw ? (
+            <p aria-live="polite" className="sr-only">
+              {drawAnnouncement}
+            </p>
+          ) : null}
+          {result}
+        </div>
+      ) : null}
 
       <div className={ROOM_SIDE}>
         {roomPeopleBlock}

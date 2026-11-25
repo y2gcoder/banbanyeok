@@ -59,6 +59,8 @@ export type SharedCardData = {
    * 않으므로 숨긴 사람이 있는 방에는 이 줄이 없다. 무상태 링크는 숫자판(`ScoreboardCard`)의 `compareLine`을 쓴다.
    */
   middleLine?: string;
+  /** 결과를 숨긴 그림(뽑기 방에서 뽑은 뒤, #172): 이름 옆 시간·노선 강조·역 배지를 그리지 않고 고리 안에 "?"를 둔다. */
+  teaser?: boolean;
 };
 
 export type SharedPreview = { title: string; description: string };

@@ -211,3 +211,12 @@ export const ROOM_CASES: {
     middle: "지도 한가운데인 동대문역사문화공원역이면 가장 오래 걸리는 사람은 20분 더 걸려요",
   },
 ];
+
+/** 뽑기 방에서 뽑은 뒤의 결과 단계(#172): 결과를 숨긴 그림(`teaser`). 이름만 있고 역·시간·당첨자 강조가 없다. */
+export const ROOM_DRAW_TEASER: RoomPreview = {
+  stage: "result",
+  room: ROOM,
+  dataVersion: "1",
+  basis: { mode: "favor", favorLabel: "민수", drawRound: 1 },
+  station: STATION,
+};

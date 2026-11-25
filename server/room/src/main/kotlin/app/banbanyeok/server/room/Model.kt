@@ -97,8 +97,21 @@ public data class FavorDraw(
     val roster: List<String>,
     val drawnAt: Instant?,
 ) {
+    /**
+     * 나간(내보내진) 참가자를 명단에서 지운다. 대상 칸은 그 자리만 남기고 원래 ID 없는 자리 표시로 바꾸고(그림 좌표·결정성 유지),
+     * 전체 명단에서는 뺀다. 참가자를 지우는 같은 트랜잭션에서 쓴다(처리방침 4항: 지울 때 바로 지운다).
+     */
+    public fun without(participantId: String): FavorDraw =
+        copy(
+            candidates = candidates.mapIndexed { index, id -> if (id == participantId) leftSlot(index) else id },
+            roster = roster - participantId,
+        )
+
     public companion object {
         public val PENDING: FavorDraw = FavorDraw(0, 0, emptyList(), emptyList(), null)
+
+        /** 나간 사람의 대상 칸. 참가자 ID 형식(base32)과 겹치지 않고 원래 ID를 담지 않는다. */
+        public fun leftSlot(index: Int): String = "~$index"
     }
 }
 
@@ -220,7 +233,10 @@ public data class FavorDrawView(
     val generation: Int,
     val round: Int,
     val maxRounds: Int,
-    /** 그림의 칸 순서(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람, 뽑은 뒤에는 그때의 대상 중 아직 방에 있는 사람. */
+    /**
+     * 그림의 칸 순서(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람, 뽑은 뒤에는 뽑을 때의 대상 그대로(그 뒤에 나간 사람도 남는다:
+     * 같은 세대·회차면 언제 봐도 같은 그림이어야 한다). 당첨자는 늘 방에 있다(나가면 뽑기 전으로 돌아간다).
+     */
     val candidates: List<String>,
     val winner: String?,
     val drawnAt: Instant?,

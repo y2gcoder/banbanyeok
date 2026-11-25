@@ -96,6 +96,34 @@ describe("방 공유 문구", () => {
     );
   });
 
+  it("뽑기 방에서 뽑은 뒤 메신저 미리보기(og 제목·설명·그림)와 공유 문구에는 당첨자와 1위 역·시간을 넣지 않는다(미리보기 응답은 그대로, #172)", () => {
+    const basis = { mode: "favor" as const, favorLabel: "민수", drawRound: 1 };
+    const open = roomShareCopy(result({ basis }));
+    expect(open.preview.title).toBe("사다리 결과가 나왔어요! 누구 쪽일까요?");
+    expect(open.preview.description).toBe(
+      "아직이면 출발역 넣어 주세요 · 민수 · 참가자 2 · 홍대입구 · 사다리 결과는 방에서 확인해요",
+    );
+    expect(open.message.title).toBe(open.preview.title);
+    const full = roomShareCopy(result({ basis, room: room({ canJoin: false }) }));
+    expect(full.preview.description).toBe("민수 · 참가자 2 · 홍대입구 · 사다리 결과는 방에서 확인해요");
+    for (const copy of [open, full]) {
+      const all = JSON.stringify(copy);
+      expect(all).not.toContain("동대문역사문화공원");
+      expect(all).not.toContain("민수 쪽으로");
+      expect(all).not.toMatch(/\d+분/);
+      expect(copy.card?.stationCode).toBeUndefined();
+      expect(copy.card?.teaser).toBe(true);
+      expect(copy.card?.people.map((p) => [p.name, p.minutes, p.favored])).toEqual([
+        ["민수", null, false],
+        ["참가자 2", null, false],
+        ["홍대입구", null, false],
+      ]);
+    }
+    // 뽑기 전(서버가 공평하게로 주고 회차가 없다)과 정한 역 단계는 지금 그대로다.
+    expect(roomShareCopy(result()).preview.title).toBe("지금은 동대문역사문화공원이 제일 공평해요");
+    expect(roomShareCopy(decided({ basis })).preview.title).toBe("강남에서 만나요");
+  });
+
   it("더 들어올 수 없으면(정원·잠김) 초대 없이 '에서 볼까?'와 각자 시간·기준", () => {
     const copy = roomShareCopy(result({ room: room({ canJoin: false, timeBasis: SATURDAY_EVENING }) }));
     expect(copy.preview.title).toBe("동대문역사문화공원에서 볼까?");

@@ -136,7 +136,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
             timeBasis = room.timeBasis.toDto(requested = room.timeBasis.slot),
         )
 
-    fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel)
+    fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel, drawRound)
 
     fun PreviewStation.dto() =
         PreviewStationDto(
