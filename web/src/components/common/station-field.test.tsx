@@ -83,6 +83,86 @@ describe("역 자동완성: 한글 조합(#177)", () => {
   });
 });
 
+describe("역 자동완성: 조합을 확정하기 전에 고르기(#177)", () => {
+  /** "서울" 뒤 "대"를 조합하는 중에 서울대입구를 마우스로 고른다(확정은 아직). */
+  async function pickWhileComposing() {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const input = screen.getByRole("combobox");
+    await user.type(input, "서울");
+    fireEvent.compositionStart(input, { data: "" });
+    fireEvent.input(input, { target: { value: "서울대" } });
+    fireEvent.click(screen.getAllByRole("option")[0] as HTMLElement, { detail: 1 });
+    expect(screen.getByTestId("picked")).toHaveTextContent(`서울대입구/${station("서울대입구").code}`);
+    return { user, input };
+  }
+
+  it("그 조합이 늦게 확정되면(같은 글자든 다른 글자든) 입력 칸은 고른 역 이름이다", async () => {
+    const { input } = await pickWhileComposing();
+    fireEvent.input(input, { target: { value: "서울데" } }); // 확정 전에 조합이 바뀌었다
+    fireEvent.compositionEnd(input, { data: "데" });
+    expect(input).toHaveValue("서울대입구");
+  });
+
+  it("보정은 그 조합 한 번뿐이다: 그 뒤 전체를 지우고 새로 '서울대'를 치면 그대로 '서울대'다", async () => {
+    const { user, input } = await pickWhileComposing();
+    fireEvent.compositionEnd(input, { data: "대" });
+    expect(input).toHaveValue("서울대입구");
+    // 전체를 골라 한 번에 '서울대'로 바꾼다(붙여넣기·IME 한 번 확정과 같다).
+    (input as HTMLInputElement).select();
+    fireEvent.input(input, { target: { value: "서울대" } });
+    expect(input).toHaveValue("서울대");
+    await user.clear(input);
+    await user.type(input, "서울대");
+    expect(input).toHaveValue("서울대");
+    // 새 조합으로 쳐도 그대로다.
+    await user.clear(input);
+    await user.type(input, "서울");
+    fireEvent.compositionStart(input, { data: "" });
+    fireEvent.input(input, { target: { value: "서울대" } });
+    fireEvent.compositionEnd(input, { data: "대" });
+    expect(input).toHaveValue("서울대");
+  });
+});
+
+describe("역 자동완성: 조합 중 Enter(ime-safe-enter-submit)", () => {
+  /** "서울" 뒤 "대"를 조합하는 중(첫 항목 서울대입구가 강조됨). */
+  async function composingSeoulDae() {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const input = screen.getByRole("combobox");
+    await user.type(input, "서울");
+    fireEvent.compositionStart(input, { data: "" });
+    fireEvent.input(input, { target: { value: "서울대" } });
+    expect(optionNames()[0]).toBe("서울대입구");
+    return input;
+  }
+
+  it("조합을 확정하는 Enter(isComposing, keyCode 229)는 항목을 고르지 않는다", async () => {
+    const input = await composingSeoulDae();
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 229, which: 229, isComposing: true });
+    fireEvent.compositionEnd(input, { data: "대" });
+    expect(screen.getByTestId("picked")).toHaveTextContent("없음");
+    expect(input).toHaveValue("서울대");
+    expect(screen.getAllByRole("option").length).toBeGreaterThan(0);
+  });
+
+  it("Safari 순서(compositionend가 먼저 와서 isComposing false, keyCode 229)여도 고르지 않는다", async () => {
+    const input = await composingSeoulDae();
+    fireEvent.compositionEnd(input, { data: "대" });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 229, which: 229, isComposing: false });
+    expect(screen.getByTestId("picked")).toHaveTextContent("없음");
+    expect(input).toHaveValue("서울대");
+  });
+
+  it("확정한 뒤의 Enter(keyCode 13)는 강조된 항목을 고른다", async () => {
+    const input = await composingSeoulDae();
+    fireEvent.compositionEnd(input, { data: "대" });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13, which: 13 });
+    expect(screen.getByTestId("picked")).toHaveTextContent(`서울대입구/${station("서울대입구").code}`);
+  });
+});
+
 describe("역 자동완성: 조합 중 결과 없음(#177)", () => {
   it("조합 중에는 '없음' 안내를 미루고, 확정한 뒤에도 없으면 알린다", async () => {
     const user = userEvent.setup();
@@ -219,6 +299,21 @@ describe("역 자동완성: 고른 뒤 같은 자리의 두 번째 누름(#177)"
     expect(below).toBeChecked();
     // 그 탭이 끝난다(손을 뗀 뒤의 click은 삼킨다).
     fireEvent.pointerUp(below, { pointerType: "touch", pointerId: 8, clientX: 150, clientY: 250 });
+    fireEvent.click(below, { clientX: 150, clientY: 250, detail: 1 });
+    expect(below).toBeChecked();
+  });
+
+  it("손가락을 누른 채 마우스로 다른 곳을 누르면 그 마우스 클릭은 닿고, 손가락을 뗀 뒤의 click만 막는다", async () => {
+    const below = await pick("touch");
+    fireEvent.pointerDown(below, { pointerType: "touch", pointerId: 3, clientX: 150, clientY: 250 });
+    const mouse = { pointerType: "mouse", pointerId: 1, clientX: 280, clientY: 290 };
+    fireEvent.pointerDown(below, mouse);
+    fireEvent.pointerUp(below, mouse);
+    fireEvent.mouseDown(below, { clientX: 280, clientY: 290, detail: 1 });
+    fireEvent.mouseUp(below, { clientX: 280, clientY: 290, detail: 1 });
+    fireEvent.click(below, { clientX: 280, clientY: 290, detail: 1 });
+    expect(below).toBeChecked();
+    fireEvent.pointerUp(below, { pointerType: "touch", pointerId: 3, clientX: 150, clientY: 250 });
     fireEvent.click(below, { clientX: 150, clientY: 250, detail: 1 });
     expect(below).toBeChecked();
   });

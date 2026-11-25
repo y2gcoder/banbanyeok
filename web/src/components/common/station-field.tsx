@@ -41,9 +41,9 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
   const composingRef = useRef(false);
   const [composing, setComposing] = useState<string | null>(null);
   const items = useMemo(() => searchStations(composing ?? query), [composing, query]);
-  // 조합을 확정하기 전에 역을 고르면(확정이 누름보다 늦는 브라우저) 나중에 오는 확정 글자("서울대")가 입력 칸을 덮는다. 그 확정 글자는
-  // 고른 역 이름으로 바꾼다.
-  const pickedWhileComposing = useRef<{ composed: string; name: string } | null>(null);
+  // 조합을 확정하기 전에 역을 고르면(확정이 누름보다 늦는 브라우저) 나중에 오는 확정 글자("서울대")가 입력 칸을 덮는다. 고를 때 진행 중이던
+  // 그 조합의 compositionend 한 번만 고른 역 이름으로 바꾸고 바로 잊는다. 그 뒤의 입력·새 조합에는 끼어들지 않는다.
+  const pickedWhileComposing = useRef<string | null>(null);
   // 항목을 누른 포인터 종류. 선택 click의 pointerType은 브라우저마다 다르다(iOS WebKit 탭은 터치가 아닐 수 있다).
   const itemPointerType = useRef<string | null>(null);
   const composingEmpty = composing !== null && items.length === 0;
@@ -57,19 +57,15 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
         if (details.reason === "item-press") {
           guardFollowUpPress(details.event, itemPointerType.current);
           itemPointerType.current = null;
-          if (composing !== null && next) pickedWhileComposing.current = { composed: composing, name: next.name };
+          pickedWhileComposing.current = composingRef.current && next ? next.name : null;
         }
         onChange(next);
       }}
       inputValue={query}
       onInputValueChange={(next, details) => {
         const picked = pickedWhileComposing.current;
-        if (picked && details.reason === "input-change" && next === picked.composed) {
-          setQuery(picked.name);
-          return;
-        }
         if (details.reason === "input-change") pickedWhileComposing.current = null;
-        setQuery(next);
+        setQuery(picked !== null && details.event?.type === "compositionend" ? picked : next);
       }}
       itemToStringLabel={(s) => s.name}
       itemToStringValue={(s) => s.code}
@@ -188,7 +184,7 @@ function guardFollowUpPress(selection: Event, itemPointerType: string | null) {
     "mouse";
   const picked = { x: selection.clientX + view.scrollX, y: selection.clientY + view.scrollY };
   if (pointerType === "mouse") guardMouseFollowUp(view, area);
-  else guardTapFollowUp(view, area, picked);
+  else guardTapFollowUp(view, area, picked, selection.timeStamp);
 }
 
 function inArea(win: Window, area: Area, event: MouseEvent): boolean {
@@ -217,8 +213,11 @@ function guardMouseFollowUp(win: Window, area: Area) {
   for (const type of MOUSE_EVENTS) win.addEventListener(type, onEvent, true);
 }
 
-function guardTapFollowUp(win: Window, area: Area, picked: { x: number; y: number }) {
+function guardTapFollowUp(win: Window, area: Area, picked: { x: number; y: number }, pickedAt: number) {
   let tap: { pointerId: number; lifted: boolean } | null = null;
+  // 마지막으로 눌리거나 떼어진 포인터. 호환 mouse 이벤트와 click은 pointerId를 믿을 수 없어(iOS WebKit은 탭 click도 pointerId 1)
+  // 이것이 그 탭의 포인터일 때만 그 탭의 것으로 본다(손가락을 누른 채 마우스로 다른 칸을 누르는 경우를 가르기 위해).
+  let lastPointerId: number | null = null;
   let expired = false;
   let liftTimer: number | undefined;
   const release = () => {
@@ -232,13 +231,16 @@ function guardTapFollowUp(win: Window, area: Area, picked: { x: number; y: numbe
     if (expired) release();
   };
   function onEvent(event: Event) {
+    if (event.type === "pointerdown" || event.type === "pointerup") lastPointerId = (event as PointerEvent).pointerId;
     if (event.type === "pointerdown") {
       const pointer = event as PointerEvent;
-      if (tap) return; // 다른 손가락은 그대로
+      if (tap) return; // 다른 손가락·마우스는 그대로
       const x = pointer.clientX + win.scrollX;
       const y = pointer.clientY + win.scrollY;
       const near = Math.hypot(x - picked.x, y - picked.y) <= FOLLOW_UP_TAP_RADIUS;
-      if (expired || pointer.pointerType === "mouse" || !near || !inArea(win, area, pointer)) return release();
+      // 시간은 브라우저가 찍은 event.timeStamp로 잰다(메인 스레드가 막혀 타이머가 늦어도 창이 늘지 않는다). 타이머는 정리용이다.
+      const late = pointer.timeStamp - pickedAt > FOLLOW_UP_TAP_MS;
+      if (expired || late || pointer.pointerType === "mouse" || !near || !inArea(win, area, pointer)) return release();
       tap = { pointerId: pointer.pointerId, lifted: false };
       return swallow(event);
     }
@@ -257,11 +259,8 @@ function guardTapFollowUp(win: Window, area: Area, picked: { x: number; y: numbe
       if (event.type === "touchcancel") endTap();
       return;
     }
-    // 그 탭의 호환 mouse 이벤트와 click. detail 0(키보드·보조기기)과 다른 손가락·펜의 click은 건드리지 않는다. 탭이 만든 click은
-    // 브라우저에 따라 그 탭의 pointerId를 갖거나(Chromium) pointerType "mouse"로 온다(iOS WebKit: pointerId 1).
-    if ((event as MouseEvent).detail === 0) return;
-    const other = event as PointerEvent;
-    if (other.pointerType && other.pointerType !== "mouse" && other.pointerId !== tap.pointerId) return;
+    // 그 탭의 호환 mouse 이벤트와 click. detail 0(키보드·보조기기)과 다른 포인터가 마지막으로 움직인 뒤의 것은 건드리지 않는다.
+    if ((event as MouseEvent).detail === 0 || lastPointerId !== tap.pointerId) return;
     swallow(event);
     if (event.type === "click") endTap();
   }
