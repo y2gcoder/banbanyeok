@@ -958,6 +958,11 @@ export interface components {
             mode: components["schemas"]["Mode"];
             /** @description `mode=favor`일 때 우대하는 사람의 짧은 이름 */
             favorLabel: string | null;
+            /**
+             * @description 배려 대상을 뽑기로 정했으면 그 세대에서 몇 번째 뽑기인지(`favorDraw.round`, #172). 뽑기 방이 아니거나 아직 안 뽑았으면(그때
+             *     `mode`는 `fair`) 키가 없다. 공유 문구 "뽑기로 ○○ 쪽으로"에 쓴다
+             */
+            drawRound?: number;
         };
         PreviewStation: {
             stationCode: components["schemas"]["StationCode"];

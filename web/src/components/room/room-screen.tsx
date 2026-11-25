@@ -6,6 +6,7 @@ import { roomHashProperty, track } from "@/lib/analytics";
 import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
+import { roomDraw } from "@/lib/room/draw";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
@@ -21,6 +22,7 @@ import {
 import { canFavor, hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
+import { FavorDrawCard } from "./draw/favor-draw-card";
 import { HostControls } from "./host-controls";
 import { JoinForm } from "./join-form";
 import { JumpButton } from "./jump-button";
@@ -38,6 +40,7 @@ import {
   RoomShell,
 } from "./room-states";
 import { RoomShareSection } from "./share-section";
+import { useFavorDraw } from "./use-favor-draw";
 import { useIdempotencyKey } from "./use-idempotency-key";
 import { useRoomActions } from "./use-room-actions";
 import { useRoomDecision } from "./use-room-decision";
@@ -56,16 +59,18 @@ function rememberedValue(): ParticipantFormValue {
 
 /**
  * 방 설정 요약의 기준: "공평하게" / "빨리 만나기" / "{짧은 이름} 쪽으로"(배려 대상을 아직 모르면 "누구 쪽으로").
- * 배려 대상이 출발역을 숨긴 다른 사람이면 결과 화면·미리보기처럼 "공평하게"다(#162).
+ * 배려 대상이 출발역을 숨긴 다른 사람이면 결과 화면·미리보기처럼 "공평하게"다(#162). 뽑기로 정하는 방은 "(뽑기)"를 붙이고, 아직 안
+ * 뽑았으면 그렇다고 적는다(#172).
  */
 function modeText(room: Room): string {
   if (room.mode === "fair") return "공평하게";
   if (room.mode === "fast") return "빨리 만나기";
   const target = room.participants.find((p) => p.participantId === room.favorTarget);
+  if (room.favorDraw && !target) return "누구 쪽으로(뽑기) · 아직 안 뽑았어요";
   if (target && !canFavor(target)) return "공평하게";
   // shortLabel을 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로 쓴다.
   const name = target ? ((target.shortLabel as string | undefined) ?? target.label) : "누구";
-  return `${name} 쪽으로`;
+  return room.favorDraw ? `${name} 쪽으로(뽑기)` : `${name} 쪽으로`;
 }
 
 function summary(room: Room): string {
@@ -138,6 +143,9 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const actions = useRoomActions({ roomId, room, record, commit, keys });
 
   const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh: actions.refresh });
+  const drawControl = useFavorDraw({ roomId, hostToken: record?.hostToken });
+  // 이 기기에 기록이 없는 사람(보기만 함)이 이번 방문에 그림을 본 뽑기. 기록이 있으면 기록(drawSeen)에 둔다.
+  const [seenDraws, setSeenDraws] = useState<ReadonlySet<string>>(() => new Set());
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
 
@@ -253,6 +261,34 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     </>
   );
 
+  const draw = roomDraw(room);
+  const expectedCount = record?.expectedCount ?? null;
+  const drawSeen = (key: string) => (record ? record.drawSeen === key : seenDraws.has(key));
+  const renderDraw = draw
+    ? (apply: (settled: NonNullable<typeof draw>) => void) => (
+        <FavorDrawCard
+          key={draw.key}
+          roomId={roomId}
+          draw={draw}
+          viewer={isHost ? "host" : draw.selfLate ? "late" : "member"}
+          full={expectedCount === null ? null : room.participants.length >= expectedCount}
+          joinedCount={room.participants.length}
+          expectedCount={expectedCount}
+          seen={drawSeen(draw.key)}
+          justDrew={draw.winner !== null && drawControl.drewKey === draw.key}
+          pending={drawControl.pending}
+          error={drawControl.error}
+          onDraw={drawControl.draw}
+          onSettled={(settled) => {
+            apply(settled);
+            if (settled.winner === null || drawSeen(settled.key)) return;
+            if (record) commit({ ...record, drawSeen: settled.key });
+            else setSeenDraws((seen) => new Set(seen).add(settled.key));
+          }}
+        />
+      )
+    : undefined;
+
   const result = (
     <RoomResult
       roomId={roomId}
@@ -265,6 +301,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       onResultSeen={() => {
         if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
       }}
+      {...(renderDraw ? { renderDraw } : {})}
       renderAfter={(view) =>
         joined && token && meetingDay ? (
           <OutcomeCard

@@ -13,6 +13,7 @@ import { track, trackResultViewed } from "@/lib/analytics";
 import type { Mode, Room } from "@/lib/api/types";
 import type { ResultView } from "@/lib/result/view-model";
 import { toResultView } from "@/lib/result/view-model";
+import type { RoomDraw } from "@/lib/room/draw";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
 import { canFavor, favorIndexOf } from "@/lib/room/view";
@@ -38,6 +39,11 @@ type Props = {
   onResultSeen: (view: ResultView) => void;
   /** 결과 화면 아래에 붙일 것(예: "실제로 어디서 만났나"). 1위 후보가 있을 때만 그린다. */
   renderAfter?: (view: ResultView) => React.ReactNode;
+  /**
+   * 후보 위에 붙일 '누구 쪽으로' 뽑기 카드(#172). `apply`는 그 뽑기가 화면에 자리 잡았을 때 한 번 부른다: 결과 탭을 당첨자 쪽으로
+   * (뽑기 전이면 공평하게로) 옮긴다.
+   */
+  renderDraw?: (apply: (draw: RoomDraw) => void) => React.ReactNode;
 };
 
 type Pick = { mode: Mode; favorId: string | null };
@@ -82,6 +88,7 @@ export function RoomResult({
   onRoomGone,
   onResultSeen,
   renderAfter,
+  renderDraw,
 }: Props) {
   const panelId = useId();
   const queryClient = useQueryClient();
@@ -90,7 +97,14 @@ export function RoomResult({
   const people = room.participants.flatMap((p, index) =>
     canFavor(p) ? [{ index, name: (p.shortLabel as string | undefined) ?? p.label }] : [],
   );
-  const [pick, setPick] = useState<Pick>(() => ({ mode: room.mode, favorId: room.favorTarget ?? null }));
+  // 뽑기로 정하는 방에서 아직 안 뽑았으면 공평하게로 시작한다(서버의 방 기본 결과·미리보기와 같다, #172).
+  const [pick, setPick] = useState<Pick>(() =>
+    room.favorDraw && !room.favorDraw.winner
+      ? { mode: "fair", favorId: null }
+      : { mode: room.mode, favorId: room.favorTarget ?? null },
+  );
+  const applyDraw = (draw: RoomDraw) =>
+    setPick(draw.winnerId ? { mode: "favor", favorId: draw.winnerId } : { mode: "fair", favorId: null });
 
   // 배려 대상이 방에서 빠졌으면 첫 사람으로(없는 ID를 서버에 보내지 않는다).
   const favorIndexRaw =
@@ -189,6 +203,7 @@ export function RoomResult({
   return (
     <section aria-labelledby="result-title" className="flex flex-col gap-4">
       <DecisionBanner room={room} undo={undo} />
+      {renderDraw ? renderDraw(applyDraw) : null}
       <h2 id="result-title" className="text-[20px] font-extrabold text-ink">
         만날 역 후보
       </h2>

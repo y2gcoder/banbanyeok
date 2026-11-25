@@ -178,6 +178,7 @@ const ROOM: Drawn = {
     "modeFair",
     "modeFast",
     "modeFavorSuffix",
+    "modeDrawPrefix",
     "ellipsis",
     "middleDot",
     "basisSuffix",

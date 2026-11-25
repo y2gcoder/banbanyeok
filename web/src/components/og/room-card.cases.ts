@@ -89,6 +89,18 @@ export const ROOM_CASES: {
     lastTrains: ["막차 다음 날 00:03", null, "늦어도 23:00"],
   },
   {
+    // 배려 대상을 뽑기로 정한 방(#172): 기준 줄이 "뽑기로 민수 쪽으로 고름"이다.
+    id: "room-result-favor-drawn",
+    preview: {
+      stage: "result",
+      room: ROOM,
+      dataVersion: "1",
+      basis: { mode: "favor", favorLabel: "민수", drawRound: 1 },
+      station: STATION,
+    },
+    lastTrains: ["막차 다음 날 00:03", null, "늦어도 23:00"],
+  },
+  {
     id: "room-decided",
     preview: {
       stage: "decided",

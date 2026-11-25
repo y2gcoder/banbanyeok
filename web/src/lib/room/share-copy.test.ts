@@ -96,6 +96,18 @@ describe("방 공유 문구", () => {
     );
   });
 
+  it("배려 대상을 뽑기로 정했으면 제목·설명·그림의 기준 줄이 '뽑기로 ○○ 쪽으로'다(#172)", () => {
+    const basis = { mode: "favor" as const, favorLabel: "민수", drawRound: 1 };
+    const open = roomShareCopy(result({ basis }));
+    expect(open.preview.title).toBe("뽑기로 민수 쪽으로! 지금은 동대문역사문화공원이 좋아요");
+    expect(open.message.title).toBe(open.preview.title);
+    expect(open.card?.modeLine).toBe("뽑기로 민수 쪽으로 고름");
+    const full = roomShareCopy(result({ basis, room: room({ canJoin: false }) }));
+    expect(full.preview.description).toBe("민수 22분 · 참가자 2 21분 · 홍대입구 19분 · 뽑기로 민수 쪽으로 고름");
+    // 뽑기 전에는 서버가 공평하게로 주고 회차가 없다: 지금과 같은 문구.
+    expect(roomShareCopy(result()).preview.title).toBe("지금은 동대문역사문화공원이 제일 공평해요");
+  });
+
   it("더 들어올 수 없으면(정원·잠김) 초대 없이 '에서 볼까?'와 각자 시간·기준", () => {
     const copy = roomShareCopy(result({ room: room({ canJoin: false, timeBasis: SATURDAY_EVENING }) }));
     expect(copy.preview.title).toBe("동대문역사문화공원에서 볼까?");

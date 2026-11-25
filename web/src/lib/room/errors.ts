@@ -19,6 +19,9 @@ const MESSAGES: Readonly<Record<string, string>> = {
   NOT_ENOUGH_PARTICIPANTS: "두 명 이상 들어와야 결과를 볼 수 있어요.",
   ROOM_CHANGED: "그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.",
   FAVOR_TARGET_HIDDEN: "출발역을 숨긴 사람 쪽으로 맞춘 결과는 그 사람만 볼 수 있어요. 다른 기준을 골라 주세요.",
+  DRAW_NOT_AVAILABLE: "이 방은 뽑기로 정하는 방이 아니에요.",
+  NOT_ENOUGH_DRAW_CANDIDATES: "출발역을 숨기지 않은 사람이 두 명 이상이어야 뽑을 수 있어요.",
+  DRAW_LIMIT_REACHED: "다시 뽑기는 한 번만 할 수 있어요.",
 };
 
 /** 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 계약의 오류 모양을 가진 그 밖의 4xx는 서버 message, 나머지는 결과 화면과 같은 안내. */

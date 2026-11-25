@@ -44,9 +44,14 @@ export function toParticipantInput(form: ParticipantFormValue): Checked<Particip
 /** 계약의 MeetingTime(`HH:MM`, 24시간). `<input type="time">`은 이 형식을 준다. */
 const MEETING_TIME = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
 
+/** '누구 쪽으로'(favor) 방의 대상: 방장(나), 또는 방장이 나중에 뽑는다(#172). */
+export type FavorTargetChoice = "host" | "draw";
+
 export type CreateRoomForm = {
   host: ParticipantFormValue;
   mode: Mode;
+  /** `mode`가 favor일 때 대상. 없으면 방장. */
+  favorTarget?: FavorTargetChoice;
   /** `YYYY-MM-DD` 또는 빈 문자열(약속일 없음). */
   meetingDate: string;
   /** `HH:MM` 또는 빈 문자열(약속 시각 없음). 결과를 어느 시간대 기준으로 계산할지 정한다. */
@@ -60,7 +65,7 @@ export type CreateRoomForm = {
   expectedCount: number | null;
 };
 
-/** 방 만들기 본문. 배려 모드는 방을 만들 때 대상이 방장뿐이므로 `favorTarget: "host"`다. */
+/** 방 만들기 본문. 배려 모드는 방을 만들 때 대상이 방장(`host`)이거나 나중에 뽑기(`draw`)다. */
 export function toCreateRoomRequest(form: CreateRoomForm, today: string): Checked<RoomCreateRequest> {
   const host = toParticipantInput(form.host);
   if (!host.ok) return host;
@@ -75,7 +80,7 @@ export function toCreateRoomRequest(form: CreateRoomForm, today: string): Checke
     value: {
       mode: form.mode,
       host: host.value,
-      ...(form.mode === "favor" ? { favorTarget: "host" } : {}),
+      ...(form.mode === "favor" ? { favorTarget: form.favorTarget ?? "host" } : {}),
       ...(form.meetingDate !== "" ? { meetingDate: form.meetingDate } : {}),
       ...(form.meetingTime !== "" ? { meetingTime: form.meetingTime } : {}),
       ...(form.meetingTime === "" && form.meetingBand !== null ? { meetingBand: form.meetingBand } : {}),

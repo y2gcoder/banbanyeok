@@ -80,7 +80,8 @@ class RoomResultService(
                 .map { it.id }
                 .zip(ranked.labels.map { it.short })
                 .toMap()
-        val basis = PreviewBasis(request.mode, request.favorId?.let(labels::getValue))
+        val drawRound = view.favorDraw?.round?.takeIf { it > 0 && request.mode == RecommendMode.FAVOR }
+        val basis = PreviewBasis(request.mode, request.favorId?.let(labels::getValue), drawRound)
 
         fun station(
             code: String,

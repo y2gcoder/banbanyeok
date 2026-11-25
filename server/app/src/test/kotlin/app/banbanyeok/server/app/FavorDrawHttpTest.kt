@@ -196,7 +196,7 @@ class FavorDrawHttpTest :
         }
 
         describe("results and the preview of a draw room") {
-            it("are fair before the draw and favor the winner after it") {
+            it("are fair before the draw and favor the winner after it, with the draw round on the preview") {
                 val room = drawRoom()
                 room.withApi {
                     val path = "/v1/rooms/${room.roomId}"
@@ -214,7 +214,8 @@ class FavorDrawHttpTest :
                         .jsonPrimitive.content shouldBe "favor"
                     val after = json(HttpMethod.Get, "$path/preview")
                     OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/{roomId}/preview", after)
-                    after.body().getValue("basis").toString() shouldBe """{"mode":"favor","favorLabel":"민수"}"""
+                    after.body().getValue("basis").toString() shouldBe
+                        """{"mode":"favor","favorLabel":"민수","drawRound":1}"""
                 }
             }
 
