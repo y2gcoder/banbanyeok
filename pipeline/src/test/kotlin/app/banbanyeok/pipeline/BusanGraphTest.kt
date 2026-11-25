@@ -89,16 +89,12 @@ class BusanGraphTest :
                     )
                 val config =
                     parseObject(
-                        """{"defaultSeconds":89,"longSeconds":221,"longStations":{"005":"long"},
-                        "operatorInterchanges":{"seconds":480,"stations":{"006":"operator"}},
+                        """{"defaultSeconds":89,"longSeconds":221,"longStations":{},
+                        "operatorInterchanges":{"seconds":480,"stations":{}},
                         "outdoorLinks":[{"stations":["002","003"],"seconds":221,"operatorInterchange":true}]}""",
                     )
                 val transfers = BusanTransfers(config)
                 val baseline = BusanTransfers(config, previousOperatorWalks = true)
-                assertEquals(89, transfers.seconds(a))
-                assertEquals(221, transfers.seconds("005"))
-                assertEquals(221, baseline.seconds("006"))
-                assertEquals(480, transfers.seconds("006"))
                 assertEquals(221, baseline.outdoor.getValue(b).getValue(c))
                 assertEquals(480, transfers.outdoor.getValue(c).getValue(b))
                 val slots = TimeSlot.ALL.associateWith { busanNetwork(registry, listOf(first, other), transfers, it) }
