@@ -22,9 +22,9 @@ private suspend fun RoomRepository.draw(
     roomId: String,
     round: Int,
     minutes: Long,
-    rule: FavorDrawRule = fakeDrawRule,
+    rule: FavorDrawRule = fakeDrawRule(at = T0.plusSeconds(minutes * 60)),
     generation: Int = 0,
-) = writeDraw(roomId, DrawRequest(generation, round, T0.plusSeconds(minutes * 60)), activity(minutes), rule)
+) = writeDraw(roomId, DrawRequest(generation, round), activity(minutes), rule)
 
 private suspend fun RoomRepository.room(roomId: String): Room = find(roomId)!!.room
 
@@ -41,9 +41,10 @@ internal fun DescribeSpecRootScope.favorDraws(repos: () -> RepositoryPair) {
             val rooms = repos().rooms
             val roomId = rooms.drawRoom(hidden = setOf("pid002"))
             val before = rooms.room(roomId)
-            val result = rooms.draw(roomId, 1, 5, FavorDrawRule(FixedDrawRandom(1)))
+            // 뽑은 시각은 요청 시각(activity)이 아니라 잠근 뒤 규칙의 시계에서 읽는다.
+            val result = rooms.draw(roomId, 1, 5, fakeDrawRule(1, at = T0.plusSeconds(301)))
             val stored =
-                FavorDraw(0, 1, listOf("host01", "pid003"), listOf("host01", "pid002", "pid003"), T0.plusSeconds(300))
+                FavorDraw(0, 1, listOf("host01", "pid003"), listOf("host01", "pid002", "pid003"), T0.plusSeconds(301))
             result shouldBe DrawResult.Drawn("pid003", stored)
             val after = rooms.room(roomId)
             after.favorParticipantId shouldBe "pid003"
@@ -57,9 +58,9 @@ internal fun DescribeSpecRootScope.favorDraws(repos: () -> RepositoryPair) {
             val roomId = rooms.drawRoom()
             rooms.draw(roomId, 1, 5).shouldBeDrawn()
             val first = rooms.room(roomId)
-            rooms.draw(roomId, 1, 6, FavorDrawRule(FixedDrawRandom(2))) shouldBe DrawResult.Unchanged
+            rooms.draw(roomId, 1, 6, fakeDrawRule(2)) shouldBe DrawResult.Unchanged
             rooms.room(roomId) shouldBe first
-            rooms.draw(roomId, 2, 7, FavorDrawRule(FixedDrawRandom(2))).shouldBeDrawn()
+            rooms.draw(roomId, 2, 7, fakeDrawRule(2)).shouldBeDrawn()
             val second = rooms.room(roomId)
             second.favorDraw?.round shouldBe 2
             second.favorParticipantId shouldBe "pid003"

@@ -27,7 +27,7 @@ public class RoomService(
     drawRandom: RandomGenerator = SecureRandom(),
 ) {
     private val decisions = DecisionRule(stations)
-    private val draws = FavorDrawRule(drawRandom)
+    private val draws = FavorDrawRule(drawRandom, clock)
 
     public suspend fun create(command: CreateRoomCommand): CreatedRoom {
         val now = clock.instant()
@@ -254,7 +254,7 @@ public class RoomService(
         val stored = loadActive(roomId, now)
         requireHost(stored, hostToken)
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
-        when (rooms.writeDraw(stored.room.id, DrawRequest(generation, round, now), activity, draws)) {
+        when (rooms.writeDraw(stored.room.id, DrawRequest(generation, round), activity, draws)) {
             is DrawResult.Drawn, DrawResult.Unchanged -> Unit
             DrawResult.NotAvailable -> reject(RoomError.DRAW_NOT_AVAILABLE, "뽑기로 만든 방이 아닙니다")
             DrawResult.TooFew -> reject(RoomError.NOT_ENOUGH_DRAW_CANDIDATES, "출발역을 숨기지 않은 참가자가 2명 이상이어야 합니다")

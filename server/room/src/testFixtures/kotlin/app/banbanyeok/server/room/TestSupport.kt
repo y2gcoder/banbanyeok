@@ -77,8 +77,11 @@ class FixedDrawRandom(
     override fun nextLong(): Long = error("뽑기는 nextInt(bound)만 쓴다")
 }
 
-/** 늘 첫 대상을 뽑는 규칙. 저장소 계약 테스트가 쓴다. */
-val fakeDrawRule = FavorDrawRule(FixedDrawRandom(0))
+/** 늘 [pick]번째 대상을 뽑는 규칙(뽑은 시각은 [at]). 저장소 계약 테스트가 쓴다. */
+fun fakeDrawRule(
+    pick: Int = 0,
+    at: Instant = Instant.parse("2026-11-14T00:00:00Z"),
+): FavorDrawRule = FavorDrawRule(FixedDrawRandom(pick), Clock.fixed(at, ZoneOffset.UTC))
 
 val testPepper = "test-pepper-0123456789-0123456789".toByteArray()
 

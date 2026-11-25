@@ -1,6 +1,6 @@
 package app.banbanyeok.server.room
 
-import java.time.Instant
+import java.time.Clock
 import java.util.random.RandomGenerator
 
 /** 뽑기 쓰기의 결과. 저장소가 방 행을 잠근 채 [FavorDrawRule.verdict]로 정한다. */
@@ -29,20 +29,21 @@ public sealed interface DrawResult {
     public data object RoomNotFound : DrawResult
 }
 
-/** 세대 [generation]의 [round]번째 뽑기(1 = 처음, 2 = 다시 뽑기) 요청. [at]은 뽑은 시각으로 저장된다. */
+/** 세대 [generation]의 [round]번째 뽑기(1 = 처음, 2 = 다시 뽑기) 요청. */
 public data class DrawRequest(
     val generation: Int,
     val round: Int,
-    val at: Instant,
 )
 
 /**
  * '누구 쪽으로' 뽑기(#172)의 규칙을 한 곳에 둔다: 누가 대상인지, 몇 번 뽑을 수 있는지, 화면에 어떻게 보이는지.
- * 운은 [random]이 정한다(운영은 SecureRandom, 테스트는 고정 값). 대상과 당첨은 참가자 ID·숨김 여부·입장 순서에서만 나오고
+ * 운은 [random]이 정한다(운영은 SecureRandom, 테스트는 고정 값). 뽑은 시각은 저장소가 방 행을 잠근 뒤 [clock]에서 읽는다(실제로 뽑은 때).
+ * 대상과 당첨은 참가자 ID·숨김 여부·입장 순서에서만 나오고
  * 출발역은 보지 않는다(숨긴 출발역 비간섭, ADR-0004). 두 저장소(Postgres, 메모리 fake)가 방 행을 잠근 채 [verdict]를 부른다.
  */
 public class FavorDrawRule(
     private val random: RandomGenerator,
+    private val clock: Clock,
 ) {
     /**
      * 뽑기 대상인지. 출발역을 숨긴 사람은 빠진다: 숨긴 사람 쪽 결과는 본인만 볼 수 있어서(ADR-0005), 뽑히면 사람마다 결과가 갈린다.
@@ -91,7 +92,7 @@ public class FavorDrawRule(
                         round = request.round,
                         candidates = candidates.map { it.id },
                         roster = participants.map { it.id },
-                        drawnAt = request.at,
+                        drawnAt = clock.instant(),
                     )
                 DrawResult.Drawn(winner.id, next)
             }
