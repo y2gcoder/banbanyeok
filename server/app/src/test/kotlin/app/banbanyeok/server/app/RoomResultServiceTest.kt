@@ -15,6 +15,7 @@ import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.ErrorKind
+import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -30,7 +31,7 @@ import java.time.LocalTime
 
 private fun resultTest(body: suspend (RoomFixture, RoomResultService) -> Unit) =
     runTest {
-        val fixture = RoomFixture()
+        val fixture = RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
         val recommendation = RecommendationService(OdTravelTimeProvider(sampleOd, "20261112.1"), codeNames)
         body(fixture, RoomResultService(fixture.service, recommendation, testTimes))
     }
@@ -47,7 +48,7 @@ class RoomResultServiceTest :
         describe("the time basis of a room") {
             it("computes the slot of the meeting date and time, weekday daytime when the room has neither") {
                 runTest {
-                    val fixture = RoomFixture()
+                    val fixture = RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
                     val everySlot = TimeSlot.ALL.filter { it != TimeSlot.DEFAULT }.associateWith { sampleOd }
                     val recommendation =
                         RecommendationService(OdTravelTimeProvider(sampleOd, "20261112.1", everySlot), codeNames)

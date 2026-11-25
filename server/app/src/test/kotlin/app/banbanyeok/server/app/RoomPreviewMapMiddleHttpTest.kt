@@ -3,6 +3,7 @@ package app.banbanyeok.server.app
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.room.CreateRoomCommand
+import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -39,7 +40,7 @@ private fun JsonObject.secondsOf(key: String) =
 
 /** 실제 dev 산출물(역 좌표 포함)로 방을 만들고 미리보기·무상태 추천을 같은 서버에서 부른다. */
 private class Rooms {
-    val fixture = RoomFixture(stations = directory)
+    val fixture = RoomFixture(stations = directory, newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
     private val recommendation = RecommendationService(directory.travel, directory, locations = directory)
     val api =
         apiServices(

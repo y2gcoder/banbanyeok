@@ -25,6 +25,7 @@ public class RoomService(
     private val clock: Clock,
     /** 뽑기의 운. 테스트는 고정 값을 넣는다. */
     drawRandom: RandomGenerator = SecureRandom(),
+    private val newHidden: NewHiddenOrigins = NewHiddenOrigins.REJECTED,
 ) {
     private val decisions = DecisionRule(stations)
     private val draws = FavorDrawRule(drawRandom, clock)
@@ -32,6 +33,7 @@ public class RoomService(
     public suspend fun create(command: CreateRoomCommand): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
+        if (host.hidden) rejectNewHidden()
         validateCreation(command, now)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
@@ -80,6 +82,7 @@ public class RoomService(
         val now = clock.instant()
         val room = loadActive(roomId, now).room
         val participant = validated(input)
+        if (participant.hidden) rejectNewHidden()
         val participantId = ids.participantId()
         val token = tokens.issue()
         val participantEntity = newParticipant(participantId, token.hash, anonIdOf(deviceToken, now), participant, now)
@@ -161,6 +164,8 @@ public class RoomService(
             reject(RoomError.FORBIDDEN, "본인 항목만 고칠 수 있습니다")
         }
         val value = validated(input)
+        // 이미 숨긴 사람만 숨김을 유지할 수 있다. 풀고 나면 다시 숨기지 못한다.
+        if (value.hidden && !stored.participants.first { it.id == participantId }.hidden) rejectNewHidden()
         // 저장된 코드가 폐기된 코드여도 정식 코드가 같으면 그대로 쓴다. 출발역이 바뀐 것으로 보면 트리거가 정한 역을 풀기 때문이다.
         val storedOrigin = stored.participants.first { it.id == participantId }.originCode
         val origin = if (stations.canonical(storedOrigin) == value.originCode) storedOrigin else value.originCode
@@ -512,6 +517,12 @@ public class RoomService(
         val originCode = stations.canonical(input.originCode)
         if (!stations.isOrigin(originCode)) reject(RoomError.INVALID_STATION, "알 수 없는 출발역입니다")
         return input.copy(nickname = nickname, originCode = originCode)
+    }
+
+    private fun rejectNewHidden() {
+        if (newHidden == NewHiddenOrigins.REJECTED) {
+            reject(RoomError.HIDE_NOT_AVAILABLE, "출발역 숨기기는 이제 쓸 수 없습니다. 숨기기를 끄고 다시 보내 주세요")
+        }
     }
 
     private fun newParticipant(

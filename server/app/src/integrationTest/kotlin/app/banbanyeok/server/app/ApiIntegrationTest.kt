@@ -31,6 +31,20 @@ private fun JsonElement.str(key: String) = jsonObject.getValue(key).jsonPrimitiv
 
 private fun parse(body: String): JsonElement = Json.parseToJsonElement(body)
 
+/** 새로 숨길 수 없으므로(ADR-0007), ADR-0007 전에 숨긴 채 들어온 참가자는 DB 행을 직접 바꿔 만든다. */
+private fun hideAsBefore(
+    roomId: String,
+    participantId: String,
+) {
+    TestDatabase.dataSource.connection.use { connection ->
+        connection.prepareStatement("UPDATE participants SET hidden = true WHERE room_id = ? AND pid = ?").use {
+            it.setString(1, roomId)
+            it.setString(2, participantId)
+            it.executeUpdate() shouldBe 1
+        }
+    }
+}
+
 /**
  * API 통합 테스트: 실제 조립(composition root) + Testcontainers Postgres(Liquibase 적용) + data/artifacts/dev 산출물.
  * 모든 응답을 contracts/openapi.yaml로 검증한다.
@@ -96,17 +110,29 @@ class ApiIntegrationTest :
                     val hostToken = created.str("hostToken")
                     val room = "/v1/rooms/$roomId"
 
+                    // 새로 숨기며 참여하는 요청은 받지 않는다(ADR-0007).
+                    parse(
+                        api
+                            .call(
+                                HttpMethod.Post,
+                                "$room/participants",
+                                """{"nickname":"지연","originCode":"$b","hidden":true}""",
+                                expected = HttpStatusCode.BadRequest,
+                            ).bodyAsText(),
+                    ).str("code") shouldBe "HIDE_NOT_AVAILABLE"
                     val friend =
                         parse(
                             api
                                 .call(
                                     HttpMethod.Post,
                                     "$room/participants",
-                                    """{"nickname":"지연","originCode":"$b","hidden":true}""",
+                                    """{"nickname":"지연","originCode":"$b"}""",
                                     expected = HttpStatusCode.Created,
                                 ).bodyAsText(),
                         )
                     val friendToken = friend.str("participantToken")
+                    // 아직 남은 옛 방처럼, 이 친구는 숨긴 채 들어와 있다.
+                    hideAsBefore(roomId, friend.str("participantId"))
 
                     // 출발역 입력(수정): 친구가 한 번 바꿨다가 숨김을 유지한 채 다시 맞춘다.
                     api.call(
@@ -323,11 +349,13 @@ class ApiIntegrationTest :
                                 .call(
                                     HttpMethod.Post,
                                     "$room/participants",
-                                    """{"originCode":"$b","hidden":true}""",
+                                    """{"originCode":"$b"}""",
                                     expected = HttpStatusCode.Created,
                                 ).bodyAsText(),
                         )
                     val friendPart = friend.str("participantToken")
+                    // ADR-0007 전에 숨긴 채 들어온 참가자(새로 숨길 수 없다).
+                    hideAsBefore(created.str("roomId"), friend.str("participantId"))
                     // 숨긴 본인의 토큰을 보내도 미리보기에는 출발역이 없다.
                     val shown =
                         api.call(

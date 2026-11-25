@@ -3,6 +3,7 @@ package app.banbanyeok.server.app
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.room.CreateRoomCommand
+import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -80,7 +81,7 @@ class HiddenOriginTimesHttpTest :
 
         for (scenario in scenarios) {
             it("${scenario.name}: 다른 사람의 응답에는 숨긴 사람의 0분·정확한 초·환승이 없고, 본인은 정확하다") {
-                val fixture = RoomFixture(stations = directory)
+                val fixture = RoomFixture(stations = directory, newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
                 val results = RoomResultService(fixture.service, recommendation, testTimes)
                 val api =
                     apiServices(

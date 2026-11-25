@@ -59,7 +59,13 @@ private suspend fun RoomFixture.drawRoom(hiddenThird: Boolean = false): DrawRoom
 private fun drawTest(
     vararg picks: Int,
     body: suspend RoomFixture.() -> Unit,
-) = runTest { RoomFixture(drawRandom = FixedDrawRandom(*(if (picks.isEmpty()) intArrayOf(0) else picks))).body() }
+) = runTest {
+    // 숨긴 사람이 빠지는 규칙은 아직 남은 옛 방에서 그대로다(ADR-0007).
+    RoomFixture(
+        drawRandom = FixedDrawRandom(*(if (picks.isEmpty()) intArrayOf(0) else picks)),
+        newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
+    ).body()
+}
 
 class RoomDrawTest :
     DescribeSpec({

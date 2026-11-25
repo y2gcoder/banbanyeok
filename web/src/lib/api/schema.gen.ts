@@ -190,7 +190,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 자기 출발역·별칭·숨김 수정 */
+        /**
+         * 자기 출발역·별칭·숨김 수정
+         * @description 숨김은 이미 숨긴 참가자만 유지(`true`)하거나 풀(`false`) 수 있다. 출발역을 숨기지 않은 참가자가 `hidden=true`를 보내면 400
+         *     `HIDE_NOT_AVAILABLE`이다(ADR-0007).
+         */
         put: operations["updateParticipant"];
         post?: never;
         /** 자기 항목 삭제, 또는 방장이 강퇴 */
@@ -363,6 +367,7 @@ export interface components {
          *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
          *     | 400 | `FAVOR_TARGET_HIDDEN` | 우대 대상이 출발역을 숨긴 참가자인데 그 사람 본인의 요청이 아니다(방 결과) |
+         *     | 400 | `HIDE_NOT_AVAILABLE` | 새로 출발역을 숨기려 했다(방 만들기 `host.hidden=true`, 참여 `hidden=true`, 숨기지 않은 참가자의 수정 `hidden=true`). 이미 숨긴 참가자의 유지·풀기는 된다(ADR-0007) |
          *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
@@ -463,7 +468,9 @@ export interface components {
             nickname?: string;
             originCode: components["schemas"]["StationCode"];
             /**
-             * @description 출발역 이름을 다른 사람에게 가린다. 시간은 보이지만 다른 사람에게는 5분 단위로 뭉뚱그린 값이고 환승 횟수는 보이지 않는다(`PersonalTime`)
+             * @description 출발역 이름을 다른 사람에게 가린다. 시간은 보이지만 다른 사람에게는 5분 단위로 뭉뚱그린 값이고 환승 횟수는 보이지 않는다(`PersonalTime`).
+             *     새로 숨길 수는 없다(ADR-0007): 방 만들기·참여에서 `true`, 숨기지 않은 참가자의 수정에서 `true`는 400 `HIDE_NOT_AVAILABLE`이다.
+             *     이미 숨긴 참가자의 수정에서만 `true`(유지)를 받는다.
              * @default false
              */
             hidden: boolean;
