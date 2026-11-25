@@ -1,5 +1,5 @@
 {
-  "basis": "TAGO 전체 역 목록(GetKwrdFndSubwaySttnList, 키워드 없음, 1,108건) 중 수도권 도시·광역철도 노선의 역 ID 접두어. 역 ID는 노선 ID + 공식 역번호다(예: MTRDXD1 + D011). 서울교통공사 1~8호선 본선은 S3/S5가 원천이므로 받지 않고, 직통 연결점과 추정 방법 검증용(1·4호선)만 받는다. 부산·대구·광주·대전·동해·대경선은 범위 밖이다.",
+  "basis": "TAGO 전체 역 목록(GetKwrdFndSubwaySttnList, 키워드 없음, 1,108건) 중 수도권 도시·광역철도 노선의 역 ID 접두어. 역 ID는 노선 ID + 공식 역번호다(예: MTRDXD1 + D011). 서울교통공사 1~8호선 본선은 S3/S5가 원천이므로 받지 않고, 직통 연결점과 추정 방법 검증용(1·4호선)만 받는다. 현재 수집·빌드는 수도권만 사용한다. 부산권의 후속 수집 후보는 plannedRoutePrefixes에 둔다.",
   "routePrefixes": {
     "MTRKR11": "1호선 코레일(경원·경인)",
     "MTRKR1P": "1호선 코레일(경부·장항)",
@@ -30,6 +30,10 @@
     "MTRGMG1": "김포골드라인",
     "MTREVE1": "에버라인",
     "MTRULU1": "의정부경전철"
+  },
+  "plannedRoutePrefixes": {
+    "MTRBGB1": "부산김해경전철",
+    "MTRKRK6": "동해선 광역전철"
   },
   "extraStations": {
     "MTRS13309": "3호선 지축(일산선 직통 연결점)",
