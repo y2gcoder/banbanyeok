@@ -111,9 +111,9 @@ export const BUSAN_LINES: readonly BusanLine[] = [
 const busanLine = new Map(BUSAN_LINES.map((l) => [l.label, l]));
 export const busanLineOf = (label: string): BusanLine | undefined => busanLine.get(label);
 
-/** 작은 배지 글자색: 흰색·검정 중 4.5:1을 넘는 쪽(흰색 우선). */
+/** 작은 배지 글자색: 흰색이 4.5:1을 넘으면 흰색, 아니면 검정. 부산 6개 노선색에서는 둘 중 하나가 늘 4.5:1을 넘는다. */
 export function badgeInk(color: string): string {
-  return contrastRatio(color, "#ffffff") >= 4.5 ? "#ffffff" : "#16201b";
+  return contrastRatio(color, "#ffffff") >= 4.5 ? "#ffffff" : "#000000";
 }
 
 export const CAPITAL_LINE_COUNT = SUPPORTED_LINES.length;
@@ -139,15 +139,15 @@ function searchBusan(query: string): DraftStation[] {
     .map((x) => x.station);
 }
 
-/** 수도권(운영 인덱스)과 부산권(픽스처)을 함께 찾는다. 같은 점수면 이름이 짧은 순. */
-export function searchBoth(query: string, limit = 8): DraftStation[] {
-  const capital: DraftStation[] = searchStations(query, limit).map((s) => ({
-    ...s,
-    region: "capital",
-    unsupportedDays: [],
-  }));
+/** 수도권(운영 인덱스)과 부산권(픽스처)을 찾는다. `region`이 있으면 그 권역만 찾고 나서 자른다. 같은 점수면 이름이 짧은 순. */
+export function searchBoth(query: string, limit = 8, region: Region | null = null): DraftStation[] {
+  const capital: DraftStation[] =
+    region === "busan"
+      ? []
+      : searchStations(query, limit).map((s) => ({ ...s, region: "capital", unsupportedDays: [] }));
+  const busanHits = region === "capital" ? [] : searchBusan(query);
   const exact = (s: DraftStation) => (s.name === query.replace(/\s+|역$/g, "") ? 0 : 1);
-  return [...capital, ...searchBusan(query)]
+  return [...capital, ...busanHits]
     .sort((a, b) => exact(a) - exact(b) || a.name.length - b.name.length || a.name.localeCompare(b.name, "ko"))
     .slice(0, limit);
 }
@@ -160,11 +160,22 @@ export function stationNamed(name: string, region: Region, line?: string): Draft
   return hit;
 }
 
+/** 두 권역에 모두 있는 역 이름(운영 인덱스와 픽스처의 이름 교집합). */
+export const SHARED_NAMES: ReadonlySet<string> = new Set(
+  busan.map((s) => s.name).filter((name) => searchStations(name, 20).some((c) => c.name === name)),
+);
+
 function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const rad = Math.PI / 180;
   const x = (b.lng - a.lng) * rad * Math.cos(((a.lat + b.lat) / 2) * rad);
   const y = (b.lat - a.lat) * rad;
   return Math.sqrt(x * x + y * y) * 6_371_000;
+}
+
+/** 그 요일에 출발할 수 없는 부산권 역 수와, 그중 직선 `maxMeters` 안에 대안이 있는 역 수. */
+export function nearbyAlternatives(day: DayType, maxMeters: number): { total: number; near: number } {
+  const blocked = busan.filter((s) => s.unsupportedDays.includes(day));
+  return { total: blocked.length, near: blocked.filter((s) => nearestAvailable(s, day, maxMeters)).length };
 }
 
 /** 그 요일에 출발할 수 있는 가장 가까운 부산권 역(직선 `maxMeters` 안). */

@@ -8,9 +8,11 @@ import {
   DAY_NAME,
   type DayType,
   type DraftStation,
+  nearbyAlternatives,
   nearestAvailable,
   REGION_NAME,
   type Region,
+  SHARED_NAMES,
   searchBoth,
   stationNamed,
   UNSUPPORTED_COUNT,
@@ -290,7 +292,8 @@ const ERROR_COPY: {
 }[] = [
   {
     code: "REGION_MISMATCH",
-    where: "방 만들기·참여·출발역 고치기(지금은 서버 문구가 그대로), 직접 추천·옛 공유 링크(지금은 일반 안내)",
+    where:
+      "방 참여·출발역 고치기·만날 역 정하기·결과·미리보기(지금은 서버 문구가 그대로), 직접 추천·옛 공유 링크(지금은 일반 안내). 방 만들기에서는 나지 않아요(방장 한 명이라 견줄 역이 없어요).",
     current: "방과 추천은 한 권역 안에서 계산합니다",
     variants: [
       {
@@ -306,7 +309,7 @@ const ERROR_COPY: {
       {
         id: "C",
         text: "이 방은 다른 권역의 역으로 계산하고 있어요. 이 역으로 만나려면 새 방을 만들어 주세요.",
-        note: "다음 행동(새 방)을 줘요. 대신 방의 권역이 내 역과 다르다는 사실을 알려 줘서, 숨긴 사람만 남은 옛 방이면 그 권역을 짐작할 수 있어요(ADR-0008).",
+        note: "다음 행동(새 방)을 줘요. '이 방'이라 방 화면에서만 쓸 수 있고, 방이 없는 직접 추천·옛 공유 링크의 400에는 A나 B를 따로 써야 해요. 방의 권역이 내 역과 다르다는 사실을 알려 줘서, 숨긴 사람만 남은 옛 방이면 그 권역을 짐작할 수 있어요(ADR-0008).",
       },
     ],
   },
@@ -317,18 +320,18 @@ const ERROR_COPY: {
     variants: [
       {
         id: "A",
-        text: "이 요일에는 시간표를 아직 확인하지 못한 역이 있어 계산하지 못했어요. 약속 요일이나 출발역을 바꿔 주세요.",
-        note: "서버 응답만으로 쓸 수 있어요(어느 역·노선인지 몰라도 돼요).",
+        text: "이 요일·시간대의 시간표를 아직 확인하지 못해 계산하지 못했어요. 다른 요일이나 시간대로 바꿔 보세요.",
+        note: "원인을 단정하지 않아 서버 응답만으로 쓸 수 있어요. 같은 409가 출발역 하나가 그 구분에 출발할 수 없을 때, 구분 전체가 미지원일 때, 부산 방의 평일 낮 밖 구분 행렬이 없을 때 모두 나요. 요일·시간대 바꾸기는 세 경우 모두에 맞고, 출발역 바꾸기는 첫 경우에만 맞아 문장에서 뺐어요.",
       },
       {
         id: "B",
         text: "토요일 동해선 시간표를 아직 확인하지 못해 계산할 수 없어요. 다른 요일로 바꾸거나 다른 노선 역을 골라 주세요.",
-        note: "가장 구체적이에요. 요일·노선을 알려면 웹이 권역별 시간표 범위(regionCoverage)를 받아야 해요. 지금 계약에는 없어요.",
+        note: "가장 구체적이지만 출발역 하나가 원인일 때만 맞아요. 웹이 방의 구분과 구분별 미지원 출발역을 알아야 가를 수 있고, 구분 전체가 막혔거나 행렬이 없으면 A 같은 문장으로 떨어져야 해요. 그 정보는 v5 산출물 regionCoverage에 이미 있고, 웹에 싣는 길은 5번 B와 같은 결정이에요.",
       },
       {
         id: "C",
         text: "이 시간대 시간표를 아직 확인하지 못했어요. 다른 요일로 바꿔 보세요.",
-        note: "가장 짧아요. 출발역 때문일 때도 요일 탓처럼 들려요.",
+        note: "가장 짧아요. 출발역 때문일 때도 요일 탓처럼 들리고, 부산 방에서 같은 요일의 다른 시간대로 풀리는 경우도 요일만 말해요.",
       },
     ],
   },
@@ -366,6 +369,7 @@ export function ErrorCopySection() {
                     <p className="text-[14px] font-semibold text-destructive">{v?.text}</p>
                   </div>
                   <span className="text-[11px] text-muted-foreground">지금: {e.current}</span>
+                  <span className="text-[11px] text-muted-foreground">나는 곳: {e.where}</span>
                 </div>
               );
             })}
@@ -379,6 +383,7 @@ export function ErrorCopySection() {
 type Gate = "warn" | "block" | "suggest";
 const ROOM_DAY: DayType = "saturday";
 const SUGGEST_WITHIN_M = 1500;
+const NEARBY = nearbyAlternatives(ROOM_DAY, SUGGEST_WITHIN_M);
 
 function dayReason(s: DraftStation, day: DayType): string | null {
   if (!s.unsupportedDays.includes(day)) return null;
@@ -482,7 +487,7 @@ export function ScheduleGateSection({ style }: { style: BadgeStyle }) {
         ]}
         cons={[
           "그 역 사람은 다른 역을 직접 찾아야 해요",
-          "웹이 요일별 미지원 출발역 목록을 받아야 해요(계약 추가)",
+          "웹이 구분별 미지원 출발역을 알아야 해요. v5 산출물 regionCoverage에 이미 있어 역 인덱스에 싣거나(인덱스 생성·배포, 방 데이터 버전과 어긋날 때 처리) API로 내려 줘야(OpenAPI 변경) 해요",
           "방장이 나중에 요일을 바꾸면 이미 들어온 사람은 못 막아요(따로 경고 필요)",
         ]}
       >
@@ -492,10 +497,13 @@ export function ScheduleGateSection({ style }: { style: BadgeStyle }) {
         id="s5c"
         title="안 C · 막고 가까운 역을 제안"
         summary={`B에 더해, 직선 ${SUGGEST_WITHIN_M / 1000}km 안에 그 요일에 출발할 수 있는 역이 있으면 버튼으로 제안해요.`}
-        pros={["한 번 눌러 바로 참여할 수 있어요", "센텀 → 센텀시티처럼 걸어갈 만한 역이 흔해요"]}
+        pros={[
+          "제안을 누르면 그 역으로 바뀌고, 참여하기로 확인해요(누른 역을 보고 들어오게)",
+          "센텀 → 센텀시티(약 1.3km)처럼 걸어갈 만한 대안을 바로 보여요",
+        ]}
         cons={[
           "직선거리라 강·고개를 건너는 역을 권할 수 있어요",
-          "동해선 북쪽(기장·일광 이북)은 가까운 역이 없어 제안이 비어요",
+          `${DAY_NAME[ROOM_DAY]}에 못 고르는 ${NEARBY.total}곳 중 ${NEARBY.near}곳만 ${SUGGEST_WITHIN_M / 1000}km 안에 대안이 있어요. 동해선 북쪽(기장·일광 이북)은 제안이 비어요`,
           "역 좌표를 웹 번들에 더 실어야 해요",
         ]}
       >
@@ -536,7 +544,7 @@ export function BadgeSection() {
     <Section
       n={6}
       title="노선 색·배지"
-      question="부산 1~4호선을 수도권 1~4호선과 같은 숫자 원으로 그리면, 같은 이름 역(시청 등 13곳)이 섞인 검색에서 헷갈릴 수 있어요."
+      question={`부산 1~4호선을 수도권 1~4호선과 같은 숫자 원으로 그리면, 같은 이름 역(시청 등 ${SHARED_NAMES.size}곳)이 섞인 검색에서 헷갈릴 수 있어요.`}
       note={<ColorSources />}
     >
       <Variant

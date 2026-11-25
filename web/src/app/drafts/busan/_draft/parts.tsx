@@ -3,7 +3,7 @@
 import { ChevronDownIcon, XIcon } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { LineBadges } from "@/components/common/line-badge";
-import { SUPPORTED_LINES } from "@/lib/stations/coverage";
+import { SUPPORTED_LINES, unsupportedReason } from "@/lib/stations/coverage";
 import {
   BUSAN_LINE_LABELS,
   BUSAN_LINES,
@@ -150,7 +150,8 @@ export function StationRow({
   onPick?: () => void;
   extra?: ReactNode;
 }) {
-  const disabled = Boolean(reason);
+  const why = reason ?? unsupportedReason(station);
+  const disabled = why !== null;
   return (
     <li>
       <button
@@ -166,7 +167,7 @@ export function StationRow({
           <DraftLineBadges lines={station.lines} style={style} />
           {tag ? <RegionTag region={station.region} /> : null}
         </span>
-        {reason ? <span className="text-xs text-muted-foreground">{reason}</span> : null}
+        {why ? <span className="text-xs text-muted-foreground">{why}</span> : null}
       </button>
       {extra}
     </li>

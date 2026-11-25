@@ -1,5 +1,6 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 import { analyticsConfig } from "./src/lib/analytics/config";
 import { apiOrigin } from "./src/lib/api/config";
 import { securityHeaders } from "./src/lib/security/headers";
@@ -12,15 +13,16 @@ const analytics = analyticsConfig({
   host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
 });
 
-const nextConfig: NextConfig = {
+const nextConfig = (phase: string): NextConfig => ({
   reactStrictMode: true,
   // 사이트 주소는 빌드 값으로 번들에 박는다(src/lib/seo/site.ts `siteEnv`). Worker 런타임 환경에는 없어서, 요청 때 렌더되는
   // 페이지(/s 등)의 og:image·canonical이 localhost로 나가던 문제를 막는다. 비밀값이 아니다(공개 주소).
   env: { SITE_URL: process.env.SITE_URL ?? "", SITE_NOINDEX: process.env.SITE_NOINDEX ?? "" },
   poweredByHeader: false,
-  // `page.draft.tsx`(운영자 검토용 화면 시안, 예: /drafts/busan)는 `next dev`에서만 라우트가 된다. 운영 빌드에는 그 경로가 없다.
+  // `page.draft.tsx`(운영자 검토용 화면 시안, 예: /drafts/busan)는 `next dev`에서만 라우트가 된다. NODE_ENV가 아니라 실행 단계로
+  // 가르므로 `NODE_ENV=development next build`에도 그 경로가 들어가지 않는다.
   pageExtensions:
-    process.env.NODE_ENV === "production" ? ["tsx", "ts", "jsx", "js"] : ["draft.tsx", "tsx", "ts", "jsx", "js"],
+    phase === PHASE_DEVELOPMENT_SERVER ? ["draft.tsx", "tsx", "ts", "jsx", "js"] : ["tsx", "ts", "jsx", "js"],
   // 같은 출처 rewrite: 브라우저는 /api/* 로 부르고 서버(Ktor 또는 mock)로 넘긴다(contracts/openapi.yaml servers).
   async rewrites() {
     return [
@@ -42,7 +44,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-};
+});
 
 export default nextConfig;
 
