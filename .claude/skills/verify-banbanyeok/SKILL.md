@@ -23,14 +23,16 @@ bash $V where                     # 마지막 실행 폴더
 
 사전 조건은 Docker 실행 중, `mise run setup`(도구·`pnpm install`) 한 번, Playwright Chromium 설치(`pnpm --dir web exec playwright install chromium`, 이미 있으면 생략)다. 1Password나 `.env`는 필요 없다. 로컬 프로필의 DB 계정은 `compose.yaml`에 있는 개발 전용 공개 값이다. 키가 필요한 일(배차 API 갱신, 운영 연결)은 이 스킬의 범위가 아니다. 필요하면 `op run --env-file=.env.tpl -- <명령>`으로 감싸고, 값은 절대 출력하지 않는다.
 
-`bash $V launch`가 하는 일은 다음과 같다. 저장소의 `scripts/dev.sh`를 그대로 쓰고, 환경 변수로 이 실행 전용 값만 바꾼다.
+`bash $V launch`가 하는 일은 다음과 같다. DB·마이그레이션·웹은 저장소의 `scripts/dev.sh`를 쓴다. 서버와 seed는 설치본으로 실행한다. 그래야 서버 JVM이 Gradle 데몬 아래가 아니라 launch가 시작한 프로세스의 자손이 되어, 소유를 확인하고 끌 수 있다.
 
-1. 실행 폴더 `~/.cache/banbanyeok-verify/<워크트리>-<체크섬>/<run-id>/`를 만들고 `latest` 링크를 건다.
-2. 빈 포트 셋(DB·서버·웹)을 고르고 compose 프로젝트 이름을 `bbyverify-<run-id>`로 정한다. 사용자의 `mise run dev`(체크섬 포트, 같은 볼륨)와 겹치지 않는다. 포트를 고정하려면 `DB_PORT=… SERVER_PORT=… WEB_PORT=… bash $V launch`로 실행한다.
-3. `dev.sh db`는 새 볼륨으로 Postgres를 띄우고 healthy까지 기다린다. 이어서 `dev.sh migrate`(Liquibase 컨테이너)와 `dev.sh seed`(예시 방 하나)를 돌린다.
-4. `dev.sh server`(`gradle :server:app:run`)를 자기 프로세스 그룹으로 띄우고 `GET /healthz` = `ok`를 기다린다(최대 300초).
-5. `dev.sh web`(`next dev`)도 같은 방식으로 띄운다. 첫 화면 HTML의 `<title>`에 `반반역`이 있고, `GET /api/healthz`가 웹 프록시를 거쳐 `ok`일 때까지 기다린다. 이 둘이 맞아야 "사용 가능"이다.
-6. 각 포트의 실제 주인 PID와 그 시작 시각, 띄운 커밋(`REPO_HEAD`)을 `state.env`에 적는다.
+1. 빈 포트 셋(DB·서버·웹)을 고르고 compose 프로젝트 이름을 `bbyverify-<run-id>`로 정한다. 사용자의 `mise run dev`(체크섬 포트, 같은 볼륨)와 겹치지 않는다. 포트를 고정하려면 `DB_PORT=… SERVER_PORT=… WEB_PORT=… bash $V launch`로 실행한다. 이미 쓰이는 포트면 아무것도 만들지 않고 멈춘다.
+2. 실행 폴더 `~/.cache/banbanyeok-verify/<워크트리>-<체크섬>/<run-id>/`에 `state.env`를 쓴 뒤 `latest` 링크를 건다.
+3. 모든 단계를 빈 환경(`env -i`)에서 돌린다. 남기는 것은 `PATH`·`HOME`·로케일·`JAVA_HOME`·Docker 연결 변수뿐이다. 그 위에 이 실행의 값을 넣는다. DB 주소·계정, `API_ORIGIN`(이 서버), `COMPOSE_FILE`(저장소 `compose.yaml`만), CORS, 로컬 요청 제한이 여기에 든다. 사용자 셸의 `DATABASE_URL`, `API_ORIGIN`, `NEXT_PUBLIC_API_MOCKING`, `COMPOSE_*`, 통계·카카오 키, `PROXY_SHARED_SECRET`은 실행에 들어가지 않는다. 웹 키 이름은 빈 값으로 넣어 `web/.env*` 파일도 덮지 못하게 한다.
+4. `dev.sh db`는 새 볼륨으로 Postgres를 띄우고 healthy까지 기다린다. 이어서 `dev.sh migrate`(Liquibase 컨테이너)를 돌린다.
+5. 서버 쪽 파일(`server`, `shared`, `build-logic`, `gradle`, 루트 Gradle 파일, `data/artifacts/dev`)의 지문(HEAD 트리, 미커밋 변경, 추적 안 하는 파일)을 적는다. 그다음 `:server:app:installDist`로 설치본을 만들고 `bin/app seed`로 예시 방 하나를 만든다. 그 방 ID(`SEED_ROOM_ID`)는 이 실행의 DB에만 있다.
+6. 설치본 서버를 띄우고, 포트 주인이 launch가 시작한 리더의 자손이며 `GET /healthz` = `ok`가 될 때까지 기다린다(최대 120초).
+7. `dev.sh web`(`next dev`)을 띄운다. 포트 주인이 리더의 자손이고, 첫 화면 `<title>`에 `반반역`이 있고, 웹 프록시 `GET /api/v1/rooms/<SEED_ROOM_ID>`가 그 방을 돌려줄 때까지 기다린다. 이 셋이 맞아야 "사용 가능"이다. 다른 서버나 모의 서버는 이 방을 모르므로 통과하지 못한다.
+8. 포트 주인 PID와 시작 시각, 리더와 그 자손 전체(`procs-server.tsv`, `procs-web.tsv`: PID와 시작 시각)를 남긴다. cleanup은 이 목록만 끈다.
 
 준비되면 마지막 줄에 `ready: web http://localhost:<WEB_PORT> …`가 나온다. 빌드 캐시가 있으면 15~30초, 처음이면 Gradle·Docker 빌드 때문에 몇 분 걸린다. 실패하면 단계 이름과 `logs/<단계>.log` 경로를 찍고 멈춘다. 그때도 `cleanup`을 돌린다.
 
@@ -41,10 +43,11 @@ bash $V where                     # 마지막 실행 폴더
 이상해 보이면 무엇보다 먼저 `bash $V doctor`를 돌린다. 읽기만 하고, 하나라도 `FAIL`이면 종료 코드가 1이다.
 
 - `db`는 compose 프로젝트 `bbyverify-<run-id>`의 5432가 `127.0.0.1:<DB_PORT>`에 매핑돼 있는지 본다.
-- `server`와 `web`은 포트 주인 PID와 그 시작 시각이 launch가 적은 값과 같은지 본다. 다르면 남의 프로세스이므로 조작하지 않는다.
+- `server`와 `web`은 포트 주인 PID와 그 시작 시각이 launch가 적은 값과 같고, launch가 시작한 리더의 자손인지 본다. 다르면 남의 프로세스이므로 조작하지 않는다.
 - `server: /healthz`가 `ok`인지, 서버가 내는 `/v1/manifest`의 `dataVersion`이 작업 트리 `data/artifacts/dev/manifest.json`과 같은지 본다.
-- `web`은 첫 화면 제목과 `/api/healthz` 프록시가 이 서버에 닿는지 본다.
-- `build`는 띄운 뒤 HEAD가 바뀌었는지 본다. 웹은 `next dev`가 다시 읽지만 서버는 그렇지 않다. 서버 코드를 바꿨으면 `cleanup` 후 다시 `launch`한다.
+- `server: 빌드 지문`은 launch 때 적은 서버 쪽 파일 지문과 지금이 같은지 본다. 커밋하지 않은 변경과 새 파일도 잡는다. 다르면 떠 있는 서버는 낡은 것이므로 `FAIL`이다. `cleanup` 후 다시 `launch`한다.
+- `web`은 첫 화면 제목을 보고, seed 방이 서버에서 직접, 그리고 웹 `/api` 프록시를 거쳐 둘 다 보이는지 본다. 프록시 대상이 이 서버라는 증거다.
+- `build`는 HEAD 변화를 알려 준다. 서버 지문이 같으면 웹만 바뀐 것이고 `next dev`가 다시 읽으므로 그대로 써도 된다.
 
 ## Drive
 
@@ -105,12 +108,13 @@ PR에 화면을 붙일 때는 필요한 `png`만 골라 올린다. `result.json`
 
 `bash $V cleanup`은 이 실행이 띄운 것만 끈다.
 
-1. 웹과 서버를 각자의 프로세스 그룹(`WEB_PGID`, `SERVER_PGID`)에 `TERM`으로 끈다. 15초 안에 안 꺼지면 `KILL`로 끈다.
-2. 포트 주인 PID가 아직 살아 있고 시작 시각까지 기록과 같을 때만 그 PID를 끈다.
-3. `docker compose --profile tools down -v --rmi local`로 이 실행의 compose 프로젝트(컨테이너, DB 볼륨, migrate 이미지)를 지운다.
-4. 세 포트가 비었는지 확인하고, `state.env`에 `STOPPED_AT`을 적고, 남은 증거 폴더를 나열한다.
+1. 웹과 서버마다 launch가 남긴 프로세스 목록과, 리더가 그대로 살아 있으면 지금 리더의 자손을 합친다. pnpm은 스크립트를 다른 프로세스 그룹에서 돌리므로 그룹이 아니라 부모 사슬로 찾는다.
+2. 그 PID마다 시작 시각이 기록과 같은지 확인하고 `TERM`을 보낸다. 모두 끝날 때까지 최대 20초 기다린다. 남은 것은 다시 확인한 뒤 `KILL`을 보낸다. 그래도 남으면 `FAIL`이다.
+3. `docker compose --profile tools down -v --rmi local`로 이 실행의 compose 프로젝트(컨테이너, DB 볼륨, migrate 이미지)를 지운다. 공용 이미지(`postgres`, `liquibase`)는 남는다.
+4. 세 포트가 비었는지 확인하고 남은 증거 폴더를 나열한다.
+5. 모든 단계가 성공했을 때만 `state.env`에 `STOPPED_AT`을 적고 0으로 끝난다. 하나라도 실패하면 `FAIL` 줄을 찍고 1로 끝난다. 원인(Docker가 꺼짐 등)을 고친 뒤 다시 `cleanup`한다. 다시 돌려도 안전하다.
 
-프로세스 이름으로 끄지 않는다. `pkill`과 `killall`은 이 저장소에서 금지다(AGENTS.md '하지 말 것'). 이름으로 끄면 다른 워크트리나 사용자가 띄운 `next dev`·Gradle도 같이 꺼지고, 이 규칙은 이미 두 번 어겨졌다. Gradle 데몬은 공용이라 남겨 둔다. 실패한 시도 뒤에도 매번 cleanup을 돌린다. 증거와 `logs/`는 남는다. 오래된 실행 폴더는 사람이 `~/.cache/banbanyeok-verify/`에서 지운다.
+프로세스 이름으로 끄지 않는다. `pkill`과 `killall`은 이 저장소에서 금지다(AGENTS.md '하지 말 것'). 이름으로 끄면 다른 워크트리나 사용자가 띄운 `next dev`·Gradle도 같이 꺼지고, 이 규칙은 이미 두 번 어겨졌다. Gradle 데몬(설치본 빌드에 쓴 것)은 공용이라 남겨 둔다. 실패한 시도 뒤에도 매번 cleanup을 돌린다. 증거와 `logs/`는 남는다. 오래된 실행 폴더는 사람이 `~/.cache/banbanyeok-verify/`에서 지운다.
 
 ## 하지 않는 것
 

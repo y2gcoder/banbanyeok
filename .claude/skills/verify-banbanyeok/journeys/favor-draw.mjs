@@ -38,20 +38,21 @@ export default async ({ page, step, expect, db, newPerson }) => {
     await expect(heading).toBeVisible();
     await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
   });
-  const winnerText = await heading.textContent();
-
-  const [[favorDraw, round, favorPid]] = db(
+  const [[favorDraw, round, winnerName]] = db(
     "room-draw",
-    `select favor_draw, draw_round, favor_pid from rooms where id = '${roomId}'`,
+    `select r.favor_draw, r.draw_round, p.nickname from rooms r
+       join participants p on p.room_id = r.id and p.pid = r.favor_pid
+      where r.id = '${roomId}'`,
   );
   expect([favorDraw, round]).toEqual(["t", "1"]);
-  expect(favorPid).not.toBe("");
+  expect(["민수", "지영"]).toContain(winnerName);
+  await expect(heading).toHaveText(`${winnerName} 쪽으로!`);
 
   await step(
     "friend-sees-same-winner",
     async () => {
       await friend.reload();
-      await expect(friend.getByRole("heading", { name: /쪽으로!$/ })).toHaveText(winnerText ?? "");
+      await expect(friend.getByRole("heading", { name: /쪽으로!$/ })).toHaveText(`${winnerName} 쪽으로!`);
     },
     { page: friend },
   );
