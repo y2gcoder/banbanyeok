@@ -4,16 +4,16 @@ import { StartLink } from "@/components/seo/start-link";
 import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { loadSeoSite } from "@/lib/seo/load";
 import { HUB_PATH, hubMetadata } from "@/lib/seo/metadata";
-import { groupByStation } from "@/lib/seo/pair-pages";
+import { groupByRegion, groupByStation, type PairPage, type StationRef } from "@/lib/seo/pair-pages";
 
 export function generateMetadata() {
   return hubMetadata();
 }
 
-/** 허브: 미리 계산해 둔 인기 조합 전체. 역마다 묶어 상대 역을 고르게 한다. */
+/** 허브: 미리 계산해 둔 인기 조합 전체. 역마다 묶어 상대 역을 고르게 한다. 조합이 두 권역 이상에 있으면 권역별로 묶는다(#180). */
 export default function HubPage() {
   const { pages } = loadSeoSite();
-  const groups = groupByStation(pages);
+  const regions = groupByRegion(groupByStation(pages));
   const breadcrumbs = breadcrumbJsonLd([
     { name: "반반역", path: "/" },
     { name: "인기 역 조합", path: HUB_PATH },
@@ -28,33 +28,19 @@ export default function HubPage() {
           시간이 짧은 순서로 3곳을 보여 줘요.
         </p>
       </section>
-      {groups.length === 0 ? (
+      {regions.length === 0 ? (
         <p className="text-[15px] text-muted-foreground">아직 준비된 조합이 없어요.</p>
+      ) : regions.length === 1 ? (
+        <StationGroups groups={regions[0]?.groups ?? []} heading="h2" />
       ) : (
-        // 넓은 화면에서는 역 묶음을 여러 칸으로(묶음마다 높이가 달라 위쪽을 맞춘다).
-        <div className="grid gap-6 wide:grid-cols-2 wide:gap-x-8 lg:grid-cols-3">
-          {groups.map(({ station, partners }) => (
-            <section key={station.code} aria-labelledby={`hub-${station.code}`} className="flex flex-col gap-2.5">
-              <h2 id={`hub-${station.code}`} className="text-lg font-bold text-ink">
-                {station.label}에서 출발하면
-              </h2>
-              <ul className="flex flex-wrap gap-2">
-                {partners.map(({ page, partner }) => (
-                  <li key={page.slug}>
-                    <Link
-                      href={page.path}
-                      className="inline-flex min-h-11 items-center rounded-full border border-rule bg-surface px-3.5 text-[14px] font-semibold text-ink hover:border-ink"
-                    >
-                      <span className="sr-only">{station.label}·</span>
-                      {partner.name}
-                      <span className="sr-only">역 중간 만날 곳</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
+        regions.map(({ region, name, groups }) => (
+          <section key={region} aria-labelledby={`hub-region-${region}`} className="flex flex-col gap-4">
+            <h2 id={`hub-region-${region}`} className="text-[22px] font-extrabold text-ink">
+              {name}
+            </h2>
+            <StationGroups groups={groups} heading="h3" />
+          </section>
+        ))
       )}
       <StartLink
         pageKind="hub"
@@ -64,5 +50,36 @@ export default function HubPage() {
         다른 역으로 직접 찾아보기
       </StartLink>
     </>
+  );
+}
+
+type Group = { station: StationRef; partners: { page: PairPage; partner: StationRef }[] };
+
+/** 역 묶음 목록. 넓은 화면에서는 여러 칸으로(묶음마다 높이가 달라 위쪽을 맞춘다). */
+function StationGroups({ groups, heading: Heading }: { groups: readonly Group[]; heading: "h2" | "h3" }) {
+  return (
+    <div className="grid gap-6 wide:grid-cols-2 wide:gap-x-8 lg:grid-cols-3">
+      {groups.map(({ station, partners }) => (
+        <section key={station.code} aria-labelledby={`hub-${station.code}`} className="flex flex-col gap-2.5">
+          <Heading id={`hub-${station.code}`} className="text-lg font-bold text-ink">
+            {station.label}에서 출발하면
+          </Heading>
+          <ul className="flex flex-wrap gap-2">
+            {partners.map(({ page, partner }) => (
+              <li key={page.slug}>
+                <Link
+                  href={page.path}
+                  className="inline-flex min-h-11 items-center rounded-full border border-rule bg-surface px-3.5 text-[14px] font-semibold text-ink hover:border-ink"
+                >
+                  <span className="sr-only">{station.label}·</span>
+                  {partner.name}
+                  <span className="sr-only">역 중간 만날 곳</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   );
 }
