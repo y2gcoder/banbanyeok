@@ -16,6 +16,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from comparison import compare_departures, compare_runtime, join_regions
+from network_input import network_input
 from timetable import BUSAN_LINES, METRO_LINES, day_types, parse_b1, parse_k1
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -280,10 +281,7 @@ def validate_timetable(source, timetable, lines, *, max_defects):
 
 
 def diagnose(root, rows):
-    b1 = parse_b1(rows["B1"])
-    validate_timetable("B1", b1, METRO_LINES, max_defects=6)
-    k1 = parse_k1(rows["K1"])
-    validate_timetable("K1", k1, BUSAN_LINES, max_defects=0)
+    b1, k1 = validated_timetables(rows)
     regions = join_regions(rows["M1"], read_json(root / REGISTRY))
     return {
         "b1": timetable_report(b1),
@@ -296,15 +294,30 @@ def diagnose(root, rows):
     }
 
 
+def validated_timetables(rows):
+    b1 = parse_b1(rows["B1"])
+    validate_timetable("B1", b1, METRO_LINES, max_defects=6)
+    k1 = parse_k1(rows["K1"])
+    validate_timetable("K1", k1, BUSAN_LINES, max_defects=0)
+    return b1, k1
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("fetch", "report"))
+    parser.add_argument("command", choices=("fetch", "report", "network-input"))
     args = parser.parse_args()
     try:
-        result = fetch(ROOT) if args.command == "fetch" else diagnose(ROOT, read_cached(ROOT))
+        if args.command == "fetch":
+            result = fetch(ROOT)
+        elif args.command == "report":
+            result = diagnose(ROOT, read_cached(ROOT))
+        else:
+            rows = read_cached(ROOT)
+            result = network_input(rows["M1"], read_json(ROOT / REGISTRY), *validated_timetables(rows))
     except (OSError, ValueError, KeyError, ET.ParseError, zipfile.BadZipFile) as error:
         parser.exit(1, f"Busan sources: {error}\n")
-    print(json_text(result), end="")
+    output = json.dumps(result, ensure_ascii=False) + "\n" if args.command == "network-input" else json_text(result)
+    print(output, end="")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,8 @@ from pathlib import Path
 from unittest.mock import patch
 from xml.sax.saxutils import escape
 
-from comparison import compare_departures, compare_runtime, join_regions
+from comparison import compare_departures, compare_runtime, join_regions, join_stations
+from network_input import ordered_stations, train_record
 from sources import K1_HEADER, MANIFEST, SOURCES, fetch, read_cached, read_source, validate_timetable
 from timetable import parse_b1, parse_k1
 
@@ -144,8 +145,24 @@ class BusanSourcesTest(unittest.TestCase):
         metro = ["02", "부산", "부산교통공사", "1호선", "26", "부전(부산시민공원.송상현광장)"]
         donghae = ["02", "부산", "코레일", "동해", "1", "부전"]
         self.assertEqual(join_regions([metro, donghae], registry), {"hsd": "busan", "1bp": "busan"})
+        self.assertEqual(join_stations([metro, donghae], registry),
+                         {("S2601", "부전"): (26, "hsd"), ("I26K6", "부전"): (1, "1bp")})
         with self.assertRaisesRegex(ValueError, "1bp"):
             join_regions([metro], registry)
+
+    def test_network_input_preserves_partial_trains_days_and_service_midnight(self):
+        row = ["4001", "L2604", "", "", "", "", "일요일",
+               "001-미남+002-안평", "001-:+002-00:02", "001-23:59+002-:", "", "", "20260722"]
+        train = parse_b1([row]).trains[0]
+        ordered = ordered_stations({("L2604", "안평"): (1, "anp"), ("L2604", "미남"): (2, "min")})
+        self.assertEqual(ordered["L2604"], [("안평", "anp"), ("미남", "min")])
+        self.assertEqual(train_record(train, {"안평": 0, "미남": 1}), {
+            "number": "4001", "day": "sunday", "stops": [[1, None, 86_340], [0, 86_520, None]],
+        })
+        with self.assertRaisesRegex(ValueError, "non-adjacent"):
+            train_record(train, {"안평": 0, "미남": 2})
+        with self.assertRaisesRegex(ValueError, "absent from M1"):
+            train_record(train, {"미남": 1})
 
     def test_comparisons_use_direction_arrival_and_departure(self):
         rows = [

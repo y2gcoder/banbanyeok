@@ -16,6 +16,11 @@ private fun fetchOrStage(
             stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
         }
 
+        args.firstOrNull() == "busan-preview" -> {
+            require(args.size == 2) { "Usage: busan-preview <network-input.json>" }
+            busanPreview(root, root.resolve(args[1]))
+        }
+
         args.firstOrNull() == "tago-fetch" -> {
             tagoCommand(root, args.drop(1))
         }
@@ -98,7 +103,7 @@ fun main(args: Array<String>) {
                 "Usage: fetch|seoul-fetch|official-fetch|shinbundang-samples|shinbundang-baseline|headways|build|" +
                     "validate|all|spotcheck|" +
                     "refresh|" +
-                    "tago-fetch [busan|probe]|" +
+                    "tago-fetch [busan|probe]|busan-preview <network-input.json>|" +
                     "stage-release [outDir]",
             )
         }
