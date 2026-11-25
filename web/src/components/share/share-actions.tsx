@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, CopyIcon, Loader2Icon, MessageCircleIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, Loader2Icon } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -25,6 +26,8 @@ type Props = {
   /** 카카오톡 공유 API로 보낼 메시지. 빌드에 카카오 앱 키가 없으면 쓰지 않는다. */
   kakao?: KakaoFeedMessage;
 };
+
+const KAKAOTALK_ICON = "/icons/kakaotalk-sharing.svg";
 
 /** 카카오톡 앱이 안 열리고 이 페이지에 머물 때 "여는 중"을 거두는 시간(ms). */
 const OPENING_MS = 4000;
@@ -155,7 +158,7 @@ export function ShareActions({
         {opening ? (
           <Loader2Icon className="size-5 animate-spin" aria-hidden="true" />
         ) : (
-          <MessageCircleIcon className="size-5" aria-hidden="true" />
+          <Image src={KAKAOTALK_ICON} alt="" aria-hidden="true" width={34} height={35} className="h-auto w-7" />
         )}
         {opening ? "카카오톡 여는 중…" : button}
       </Button>

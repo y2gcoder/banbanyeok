@@ -1,4 +1,7 @@
 // @vitest-environment jsdom
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KakaoFeedMessage, KakaoFeedSettings } from "@/lib/share/kakao";
@@ -305,5 +308,21 @@ describe("카톡으로 보내기", () => {
     expect(scripts()).toHaveLength(0);
     expect(share).not.toHaveBeenCalled();
     expect(track).not.toHaveBeenCalled();
+  });
+});
+
+const KAKAO_SHARING_SMALL_SVG_SHA256 = "50da321346429f056fec55cef12f398eeb5571ca9c5551f921ce12cba8760b72";
+
+describe("카톡으로 보내기 버튼의 아이콘(#193)", () => {
+  it("카카오 공식 공유 아이콘을 고치지 않은 채로 장식으로만 보이고, 버튼 이름은 문구 그대로다", async () => {
+    vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", "");
+    await renderShare();
+    const button = screen.getByRole("button", { name: "카톡으로 결과 보내기" });
+    const icon = button.querySelector("img");
+
+    expect(icon?.getAttribute("alt")).toBe("");
+    expect(icon?.getAttribute("aria-hidden")).toBe("true");
+    const file = readFileSync(resolve(import.meta.dirname, "../../../public", `.${icon?.getAttribute("src")}`));
+    expect(createHash("sha256").update(file).digest("hex")).toBe(KAKAO_SHARING_SMALL_SVG_SHA256);
   });
 });

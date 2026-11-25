@@ -60,3 +60,9 @@ B1·B2·K1·M1 원본은 Git 추적에서 제외한 `data/raw/busan/`에 두고,
 | K1 | [국가철도공단 도시광역철도 운행정보](https://www.data.go.kr/data/15093878/fileData.do), [KRIC 제공 원본](https://data.kric.go.kr/rips/M_01_01/detail.do?id=900) | 공공데이터포털 표기 이용허락범위 제한 없음 |
 | M1 | [국토교통부 도시철도 전체노선](https://www.data.go.kr/data/15122916/fileData.do) | 공공데이터포털 표기 이용허락범위 제한 없음 |
 | S6-busan | [국토교통부 TAGO 지하철정보](https://www.data.go.kr/data/15098554/openapi.do), 부산김해·동해선 역별 시간표 | 공공데이터포털 표기 이용허락범위 제한 없음. 원 응답은 `data/raw/tago-busan/`(Git 제외), 영수증은 `source-manifest.json` |
+
+## 웹 화면의 카카오톡 공유 아이콘 (#193)
+
+| 파일 | 출처 | 이용 조건 |
+|---|---|---|
+| `web/public/icons/kakaotalk-sharing.svg` | 카카오디벨로퍼스 디자인 리소스 다운로드 > 카카오톡 > 카카오톡 공유(https://developers.kakao.com/tool/resource/talk), 전체 다운로드 ZIP의 `Kakao Talk Sharing/small/SVG/kakaotalk_sharing_btn_small.svg`. 2026-11-25 받음, 파일 SHA-256 `50da3213…8760b72`(전체 값은 `share-actions.test.tsx`가 확인한다) | 카카오가 [카카오톡 공유](https://developers.kakao.com/docs/ko/kakaotalk-share/common)를 적용한 서비스에 주는 아이콘이다([도구 소개의 리소스 다운로드](https://developers.kakao.com/docs/ko/tool/common#resource-download)). 반반역은 결과·방 화면의 공유 버튼에서 카카오톡 공유 API(JavaScript SDK `Kakao.Share.sendDefault`)를 부른다. [운영 정책](https://developers.kakao.com/terms/ko/site-policies) 제18조 ③(상표 수정·변형, 다른 상표와의 결합 금지)에 따라 파일을 고치지 않고 크기만 줄여 쓴다. 카카오톡 공유에는 버튼 디자인 가이드(색·문구·크기 규정)가 없어 버튼은 기존 모양 그대로다 |
