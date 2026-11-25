@@ -2,8 +2,8 @@
  * 계산 범위(#170). 첫 화면의 "수도권 전철 N개 노선"과 역 검색의 "계산하지 않는 역" 안내가 여기서 나온다.
  * 노선 목록·개수·빠진 곳은 역 인덱스(index.gen.json)의 lines·supported에서 계산한다(손으로 적지 않는다).
  * 계산하지 않는 이유 문구는 아래 표 한 곳에만 둔다. 표의 각 줄은 범위를 정한 원본 data/config/tago-scope.json의
- * excludedStations·excludedRoutes 항목(`tago` 키)에 대응하며, coverage.test.ts가 그 키가 원본에 있는지와 계산하지 않는 역마다
- * 이유가 있는지를 본다.
+ * regions.capital.excludedStations·regions.capital.excludedRoutes 항목(`tago` 키)에 대응한다.
+ * coverage.test.ts는 그 키가 원본에 있는지와 계산하지 않는 역마다 이유가 있는지를 본다.
  */
 
 import type { Station } from "./index";

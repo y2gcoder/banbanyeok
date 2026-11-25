@@ -11,6 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
+import java.nio.file.attribute.PosixFileAttributeView
 import java.time.Clock
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.moveTo
@@ -211,6 +212,9 @@ private fun replaceTagoManifest(
     val staged = Files.createTempFile(path.parent, ".tago-receipts-", ".json")
     try {
         staged.writeText(jsonText(jsonValue(receipts)))
+        Files.getFileAttributeView(path, PosixFileAttributeView::class.java)?.let { attributes ->
+            Files.setPosixFilePermissions(staged, attributes.readAttributes().permissions())
+        }
         staged.moveTo(path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
     } finally {
         staged.deleteIfExists()
