@@ -12,6 +12,13 @@ describe("다른 권역에 있는 역 안내", () => {
     expect(elsewhere("기장역", capital)).toEqual({ region: "busan", name: "기장", alsoHere: false });
   });
 
+  it("한/영 전환을 잊고 친 이름도 후보 검색과 같은 자판 변환으로 정확히 같은지 본다", () => {
+    expect(searchInScope("rlwkd", capital).map((c) => c.station.name)).toEqual(["문학경기장", "월드컵경기장"]);
+    expect(elsewhere("rlwkd", capital)).toEqual({ region: "busan", name: "기장", alsoHere: false });
+    expect(elsewhere("rlwkddur", capital)).toEqual({ region: "busan", name: "기장", alsoHere: false });
+    expect(elsewhere("rudrl", capital)).toBeNull();
+  });
+
   it("고른 권역에도 같은 이름이 있으면 '에도'로 구별할 수 있게 알린다", () => {
     expect(elsewhere("시청", capital)).toEqual({ region: "busan", name: "시청", alsoHere: true });
   });

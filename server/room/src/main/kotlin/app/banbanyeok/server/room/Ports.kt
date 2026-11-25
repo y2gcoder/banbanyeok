@@ -1,10 +1,7 @@
 package app.banbanyeok.server.room
 
 import app.banbanyeok.schema.StationRegion
-import app.banbanyeok.schema.TimeBand
 import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalTime
 
 /** 활동 기록. 쓰기가 일어날 때 마지막 활동 시각과 새 만료 시각을 같은 트랜잭션에서 갱신한다. */
 public data class Activity(
@@ -75,7 +72,7 @@ public interface RoomRepository {
         roomId: String,
         participant: Participant,
         activity: Activity,
-        regions: RoomRegionRule? = null,
+        origins: OriginRule? = null,
     ): AddResult
 
     /** 바뀐 행이 있으면 true. */
@@ -84,7 +81,7 @@ public interface RoomRepository {
         participantId: String,
         change: ParticipantChange,
         activity: Activity,
-        regions: RoomRegionRule? = null,
+        origins: OriginRule? = null,
     ): Boolean
 
     /** 우대 대상이었다면 우대 대상을 비운다. 지운 행이 있으면 true. */
@@ -165,15 +162,16 @@ public interface StationCatalog {
     public fun regionOf(code: String): StationRegion? = StationRegion.CAPITAL
 
     /**
-     * [code]로 그 약속 날짜·시각(또는 시간대)의 구분을 계산할 수 있는가. 현재 데이터의 구분별 배차 범위로 본다. 아니면 방 결과가
-     * `SCHEDULE_UNAVAILABLE`이 되므로 참가자로 저장하지 않는다.
+     * [code]로 [meeting]의 구분을 계산할 수 있는가. 방 결과 계산과 같은 판정이다. 아니면 방 결과가 `SCHEDULE_UNAVAILABLE`이 되므로
+     * 참가자로 저장하지 않는다. 막지 않는다: 아직 읽는 중인 구분 행렬은 없는 것으로 본다. 기다림은 [awaitSchedule]이 한다.
      */
     public fun departs(
         code: String,
-        meetingDate: LocalDate?,
-        meetingTime: LocalTime?,
-        meetingBand: TimeBand?,
+        meeting: Meeting,
     ): Boolean = true
+
+    /** [departs]가 볼 [meeting]의 구분 데이터를 결과 계산처럼 기다린다. 쓰기 트랜잭션 밖에서 부른다. */
+    public suspend fun awaitSchedule(meeting: Meeting) {}
 
     /**
      * 폐기된(deprecated) 코드를 레지스트리의 replacedBy 사슬을 따라 정식(active) 코드로 바꾼다. 정식 코드와 모르는 코드는 그대로다.

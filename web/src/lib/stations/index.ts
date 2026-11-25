@@ -155,21 +155,25 @@ function searchOnce(query: string, limit: number, region: RegionId | null): Stat
   return hits.slice(0, limit).map(({ station: { jamo: _j, choseong: _c, aliasJamo: _a, ...station } }) => station);
 }
 
+/** 한/영 전환을 잊고 친 경우("ghdeo" → "홍대")의 한글 질의. 영문 자판 글자만 쳤을 때만 있다. */
+function hangulTypo(query: string): string | null {
+  return LATIN_ONLY.test(query) ? normalize(convertQwertyToHangul(query)) : null;
+}
+
 /** 역 이름 검색. `region`을 주면 그 권역의 역만 찾고 나서 자른다. */
 export function searchStations(input: string, limit = 8, region: RegionId | null = null): Station[] {
   const query = normalize(input);
   if (!query) return [];
   const results = searchOnce(query, limit, region);
-  if (results.length === 0 && LATIN_ONLY.test(query)) {
-    // 한/영 전환을 잊고 친 경우("ghdeo" → "홍대").
-    return searchOnce(normalize(convertQwertyToHangul(query)), limit, region);
-  }
+  const typo = hangulTypo(query);
+  if (results.length === 0 && typo !== null) return searchOnce(typo, limit, region);
   return results;
 }
 
-/** 친 글자가 그 역의 이름과 같은가(검색과 같은 정규화: 공백, 끝의 "역"). */
+/** 친 글자가 그 역의 이름과 같은가(검색과 같은 정규화: 공백, 끝의 "역", 한/영 자판 변환). */
 export function isExactName(station: Station, input: string): boolean {
-  return station.name === normalize(input);
+  const query = normalize(input);
+  return station.name === query || station.name === hangulTypo(query);
 }
 
 /** 역 코드들의 권역(중복 없이 인덱스 순서). 인덱스에 없는 코드는 건너뛴다. */

@@ -25,7 +25,10 @@ public interface TravelTimeProvider {
 
     public fun regionOf(code: String): StationRegion? = StationRegion.CAPITAL.takeIf { isOrigin(code) }
 
-    /** [code]에서 [slot]의 배차를 확인했는가(현재 데이터의 권역별 구분 범위). 아니면 [measure]가 `SCHEDULE_UNAVAILABLE`이다. */
+    /**
+     * [code]에서 [slot]으로 계산할 수 있는가(현재 데이터의 권역별 구분 범위와, 대신 계산하지 않는 구분이면 그 행렬). 아니면 [measure]가
+     * `SCHEDULE_UNAVAILABLE`이다. 방 쓰기도 이 판정으로 저장 여부를 정한다.
+     */
     public fun departs(
         code: String,
         slot: TimeSlot,

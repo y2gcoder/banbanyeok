@@ -101,7 +101,7 @@ object CompositionRoot {
             val slots = BackgroundSlots(loaded.slots)
             // 약속 날짜·시각 → 구분 규칙은 한 번만 만들어 방 참가자 검사, 방 결과 계산, 방 응답이 함께 쓴다.
             val times = TimeSlotResolver(HolidayCalendar.bundled())
-            val directory = StationDirectory(loaded.dataSet, slots, times)
+            val directory = StationDirectory(loaded.dataSet, slots, times, slots)
 
             val clock = Clock.systemUTC()
             val ids = SecureRandomIdGenerator()

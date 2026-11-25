@@ -4,23 +4,32 @@ package app.banbanyeok.server.app
 
 import app.banbanyeok.links.LinkDecoding
 import app.banbanyeok.links.ShareLinkCodec
+import app.banbanyeok.schema.OdMatrix
+import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundSlots
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.artifact.ArtifactLoader
+import app.banbanyeok.server.artifact.LoadedArtifacts
 import app.banbanyeok.server.artifact.LocalFileArtifactStore
 import app.banbanyeok.server.artifact.PublishedArtifacts
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.room.Activity
+import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.MutableClock
 import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
+import app.banbanyeok.server.room.RoomError
+import app.banbanyeok.server.room.RoomException
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
+import app.banbanyeok.server.room.RoomPatch
+import app.banbanyeok.server.room.RoomRepository
 import app.banbanyeok.server.room.RoomService
 import app.banbanyeok.server.room.aParticipant
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.statement.HttpResponse
@@ -29,6 +38,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
@@ -39,6 +49,8 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDate
+import kotlin.concurrent.thread
+import kotlin.time.Duration.Companion.milliseconds
 
 class RegionalHttpTest :
     DescribeSpec({
@@ -165,6 +177,110 @@ class RegionalHttpTest :
             }
         }
 
+        it("checks the room's current day when the host changes it between a participant's read and write") {
+            withRegionalApi { fixture ->
+                val host = fixture.service.create(command("003"))
+                val member = fixture.service.join(host.roomId, ParticipantInput(null, "004", false), null)
+                var changeDayOnRead = false
+                val racing =
+                    object : RoomRepository by fixture.rooms {
+                        override suspend fun find(roomId: String) =
+                            fixture.rooms.find(roomId).also {
+                                if (changeDayOnRead) {
+                                    changeDayOnRead = false
+                                    fixture.service.updateRoom(
+                                        roomId,
+                                        host.hostToken,
+                                        RoomPatch(meetingDate = Change.Set(LocalDate.parse("2026-11-28"))),
+                                    )
+                                }
+                            }
+                    }
+                val service =
+                    RoomService(racing, fixture.anonUsers, fixture.tokens, fixture.ids, fixture.stations, fixture.clock)
+                val path = "/v1/rooms/${host.roomId}"
+
+                changeDayOnRead = true
+                shouldThrow<RoomException> {
+                    service.join(host.roomId, ParticipantInput(null, "005", false), null)
+                }.error shouldBe RoomError.SCHEDULE_UNAVAILABLE
+                client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("003", "004")
+
+                fixture.service.updateRoom(host.roomId, host.hostToken, RoomPatch(meetingDate = Change.Set(null)))
+                changeDayOnRead = true
+                shouldThrow<RoomException> {
+                    service.updateParticipant(
+                        host.roomId,
+                        member.participantId,
+                        member.participantToken,
+                        ParticipantInput(null, "005", false),
+                    )
+                }.error shouldBe RoomError.SCHEDULE_UNAVAILABLE
+                client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("003", "004")
+                client.json(HttpMethod.Get, "$path/result").status shouldBe HttpStatusCode.OK
+            }
+        }
+
+        it("judges a room write by the same slot matrices the result needs, waiting for them as the result does") {
+            val saturdayRoom = """{"mode":"fair","host":{"originCode":"003"},"meetingDate":"2026-11-28"}"""
+            val failed = CompletableDeferred<Map<TimeSlot, OdMatrix>>()
+            failed.completeExceptionally(IllegalStateException("구분 행렬 검증 실패(테스트)"))
+            val unusable =
+                listOf(BackgroundSlots(failed), BackgroundSlots(CompletableDeferred(), wait = 10.milliseconds))
+            unusable.forEach { slots ->
+                withRegionalApi({ slots }) {
+                    client.json(HttpMethod.Post, "/v1/rooms", saturdayRoom).assertScheduleUnavailable()
+                    val weekday =
+                        client.json(HttpMethod.Post, "/v1/rooms", """{"mode":"fair","host":{"originCode":"003"}}""")
+                    weekday.status shouldBe HttpStatusCode.Created
+                    client
+                        .json(HttpMethod.Post, "/v1/rooms", """{"mode":"fair","host":{"originCode":"001"}}""")
+                        .status shouldBe HttpStatusCode.Created
+                }
+            }
+            val late = CompletableDeferred<Map<TimeSlot, OdMatrix>>()
+            lateinit var verified: Map<TimeSlot, OdMatrix>
+            withRegionalApi({ loaded ->
+                verified = loaded.slots.await()
+                BackgroundSlots(late)
+            }) {
+                thread {
+                    Thread.sleep(300)
+                    late.complete(verified)
+                }
+                val created = client.json(HttpMethod.Post, "/v1/rooms", saturdayRoom)
+                created.status shouldBe HttpStatusCode.Created
+                val path = "/v1/rooms/${created.objectBody().text("roomId")}"
+                client
+                    .json(HttpMethod.Post, "$path/participants", """{"originCode":"004"}""")
+                    .status shouldBe HttpStatusCode.Created
+                client.json(HttpMethod.Get, "$path/result").status shouldBe HttpStatusCode.OK
+            }
+        }
+
+        it("answers REGION_MISMATCH before the room's day for a station of another region") {
+            withRegionalApi {
+                val created =
+                    client.json(
+                        HttpMethod.Post,
+                        "/v1/rooms",
+                        """{"mode":"fair","host":{"originCode":"001"},"meetingDate":"2026-11-28"}""",
+                    )
+                created.status shouldBe HttpStatusCode.Created
+                val path = "/v1/rooms/${created.objectBody().text("roomId")}"
+                client.json(HttpMethod.Post, "$path/participants", """{"originCode":"005"}""").assertRegionMismatch()
+                val member = client.json(HttpMethod.Post, "$path/participants", """{"originCode":"002"}""").objectBody()
+                client
+                    .json(
+                        HttpMethod.Put,
+                        "$path/participants/${member.text("participantId")}",
+                        """{"originCode":"005"}""",
+                        member.text("participantToken"),
+                    ).assertRegionMismatch()
+                client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("001", "002")
+            }
+        }
+
         it("rejects result and preview of an already stored mixed room") {
             withRegionalApi { fixture ->
                 val room = fixture.service.create(command("001"))
@@ -242,18 +358,28 @@ private suspend fun HttpResponse.assertScheduleUnavailable() {
 private suspend fun HttpResponse.participantCodes() =
     objectBody().getValue("participants").jsonArray.map { it.jsonObject.text("originCode") }
 
-private fun withRegionalApi(block: suspend ApplicationTestBuilder.(RoomFixture) -> Unit) {
+private fun withRegionalApi(
+    slotsOf: suspend (LoadedArtifacts) -> BackgroundSlots = { BackgroundSlots(it.slots) },
+    block: suspend ApplicationTestBuilder.(RoomFixture) -> Unit,
+) {
     testApplication {
         val store =
             LocalFileArtifactStore(Path.of(System.getProperty("contracts.dir"), "fixtures"), UnconfinedTestDispatcher())
         val loaded = ArtifactLoader(store, regional = true).load()
         loaded.slots.await()
         loaded.lastTrains.await()
-        val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots), testTimes)
+        val slots = slotsOf(loaded)
+        val directory = StationDirectory(loaded.dataSet, slots, testTimes, slots)
         val fixture = RoomFixture(clock = MutableClock(Instant.parse("2026-11-26T03:00:00Z")), stations = directory)
         val lastTrains = BackgroundLastTrains(loaded.lastTrains, LocalDate.parse("2026-11-26"), emptySet())
         val recommendation =
-            RecommendationService(directory.travel, directory, lastTrains = lastTrains, clock = fixture.clock)
+            RecommendationService(
+                directory.travel,
+                directory,
+                lastTrains = lastTrains,
+                clock = fixture.clock,
+                slotsReady = slots,
+            )
         val results = RoomResultService(fixture.service, recommendation, testTimes)
         application {
             val services =
