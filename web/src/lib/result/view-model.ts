@@ -80,6 +80,8 @@ export type ResultView = {
    * 이 값으로 만든 공유 그림은 오래 캐시하지 않는다(`/s/og`).
    */
   lastTrainPending: boolean;
+  /** 출발역을 숨긴 참가자가 있다. 반반지수 시안(#202)이 이때 등급을 끈다. */
+  anyHidden?: boolean;
 };
 
 function place(code: string | null, name: string | null) {
@@ -176,5 +178,6 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
       ? toMapMiddleView(result, { stationCode: first.stationCode, minutes: first.aggregate.minutes })
       : null,
     lastTrainPending: result.lastTrainPending === true,
+    anyHidden: result.participants.some((p) => p.hidden === true),
   };
 }

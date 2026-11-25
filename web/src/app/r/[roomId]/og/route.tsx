@@ -1,6 +1,6 @@
 import { ogImageResponse } from "@/components/og/og-response";
 import { SharedCard } from "@/components/og/shared-card";
-import { BANBAN_PARAM, banbanIndex, banbanPlan } from "@/lib/result/banban-index";
+import { BANBAN_PARAM, banbanIndex, banbanPlan, mayIncludeHidden } from "@/lib/result/banban-index";
 import { isRoomId, normalizeRoomId } from "@/lib/room/id";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { parseDataVersion, parseShareVersion, SHARE_VERSION_PARAM } from "@/lib/room/share-link";
@@ -28,15 +28,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
     const card = roomShareCopy(preview).card;
     if (!card) return null;
     const provisional = ROOM_PREVIEW_LAST_TRAIN && preview.lastTrainPending === true;
-    // 반반지수 시안(#202): 방 미리보기에는 1위만 오므로 그룹 최선과 비교하는 낮은 등급은 그리지 않는다.
+    // 반반지수 시안(#202): 1위만 오므로 낮은 등급은 그리지 않고, 숨김 표시가 없으므로 5분 배수 시간이 있으면 끈다.
+    const minutes = card.people.map((p) => p.minutes);
     const banban =
       preview.stage === "result"
-        ? banbanIndex(
-            banbanPlan(search.get(BANBAN_PARAM)),
-            preview.basis.mode,
-            card.people.map((p) => p.minutes),
-            null,
-          )
+        ? banbanIndex(banbanPlan(search.get(BANBAN_PARAM)), {
+            mode: preview.basis.mode,
+            top: minutes,
+            others: null,
+            hidden: mayIncludeHidden(minutes),
+          })
         : null;
     return { element: <SharedCard data={card} banban={banban} />, provisional };
   });

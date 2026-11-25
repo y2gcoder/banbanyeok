@@ -39,11 +39,11 @@ export function scoreboardCardData(
     title: spread === null ? null : evenTitle(view.mode, spread, minutes.length),
     compareLine: middle && name ? mapMiddleSentence(view, name) : null,
     basisLine: basisText(view),
-    banban: banbanIndex(
-      plan,
-      view.mode,
-      base.people.map((p) => p.minutes),
-      view.candidates.slice(1).map((c) => c.aggregate.minutes),
-    ),
+    banban: banbanIndex(plan, {
+      mode: view.mode,
+      top: base.people.map((p) => p.minutes),
+      others: view.candidates.slice(1).map((c) => c.aggregate.minutes),
+      hidden: view.anyHidden === true,
+    }),
   };
 }

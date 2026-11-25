@@ -59,12 +59,12 @@ export function Candidates({
   const [top, ...rest] = view.candidates;
   const plan = useBanbanPlan();
   if (!top) return null;
-  const banban = banbanIndex(
-    plan,
-    view.mode,
-    top.aggregate.minutes,
-    rest.map((c) => c.aggregate.minutes),
-  );
+  const banban = banbanIndex(plan, {
+    mode: view.mode,
+    top: top.aggregate.minutes,
+    others: rest.map((c) => c.aggregate.minutes),
+    hidden: view.anyHidden === true,
+  });
   return (
     <>
       <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} mapMiddle={view.mapMiddle} banban={banban} />

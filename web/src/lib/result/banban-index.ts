@@ -75,16 +75,29 @@ export function banbanPlan(value: string | null | undefined): BanbanPlan | null 
 }
 
 /**
+ * 방 미리보기에는 믿을 숨김 표시가 없다. 숨긴 사람의 시간은 남에게 5분 단위로 올려 보이므로(ADR-0004), 5분 배수인 시간이 하나라도
+ * 있으면 숨긴 사람이 있을 수 있다고 본다. 숨기지 않은 사람도 걸리지만 등급을 빼는 쪽으로만 틀린다.
+ */
+export function mayIncludeHidden(minutes: readonly (number | null)[]): boolean {
+  return minutes.some((m) => m !== null && m % 5 === 0);
+}
+
+/**
  * 공평 기준에서만 값이 있다(빨리·누구 쪽으로는 '반반'을 말하지 않는다). 갈 수 없는 사람이 있으면 없다.
+ * 숨긴 사람이 있으면 없다: 본인은 정확한 시간, 남은 5분 단위 시간을 보므로 같은 방에서 등급이 갈린다.
  * `others`가 null이면(방 미리보기: 1위만 온다) 그룹 최선과 비교할 수 없으므로 낮은 등급은 그리지 않는다.
  */
 export function banbanIndex(
   plan: BanbanPlan | null,
-  mode: Mode,
-  top: readonly (number | null)[],
-  others: readonly (readonly number[])[] | null,
+  input: {
+    mode: Mode;
+    top: readonly (number | null)[];
+    others: readonly (readonly number[])[] | null;
+    hidden: boolean;
+  },
 ): BanbanIndex | null {
-  if (plan === null || mode !== "fair" || top.length < 2 || top.some((m) => m === null)) return null;
+  const { mode, top, others, hidden } = input;
+  if (plan === null || hidden || mode !== "fair" || top.length < 2 || top.some((m) => m === null)) return null;
   const minutes = top as readonly number[];
   const rule = RULES[plan];
   const value = rule.measure(minutes);
