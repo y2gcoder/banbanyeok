@@ -70,12 +70,16 @@ function Chip({ children, background, color }: { children: string; background: s
 const BAR_NAME = 230;
 const BAR_MINUTES = 170;
 const BAR_LAST_TRAIN = 250;
-const BAR_ROW: Record<number, number> = { 2: 78, 3: 62, 4: 52 };
+const BAR_ROW: Record<number, number> = { 2: 72, 3: 56, 4: 44 };
 
 function Bars({ people }: { people: ScoreboardCardData["people"] }) {
   const max = Math.max(1, ...people.map((p) => p.minutes ?? 0));
   const hasLastTrain = people.some((p) => p.lastTrain);
-  const row = BAR_ROW[people.length] ?? 52;
+  const row = BAR_ROW[people.length] ?? 44;
+  const minutesSize = Math.min(
+    46,
+    Math.floor(BAR_MINUTES / Math.max(...people.map((p) => emWidth(minutesText(p.minutes))))),
+  );
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {people.map((person, i) => (
@@ -107,7 +111,14 @@ function Bars({ people }: { people: ScoreboardCardData["people"] }) {
             />
           </div>
           <span
-            style={{ display: "flex", justifyContent: "flex-end", width: BAR_MINUTES, fontSize: 46, letterSpacing: -2 }}
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              width: BAR_MINUTES,
+              fontSize: minutesSize,
+              letterSpacing: -2,
+              whiteSpace: "nowrap",
+            }}
           >
             {minutesText(person.minutes)}
           </span>
@@ -130,7 +141,11 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
   const hasLastTrain = data.people.some((p) => p.lastTrain);
   const layout = hasLastTrain ? WITH_LAST_TRAIN : WITHOUT_LAST_TRAIN;
   const size = numberSize(texts, count, layout.numberScale);
-  const bottom = data.compareLine ?? data.modeLine;
+  // 두 층(#202 시안)은 강조 층 칩이 아래 줄을 쓰면 지도 한가운데 문장을 뺀다(세 줄이면 1200×630을 넘친다).
+  const layerEmphasis = data.banban?.kind === "layer" ? data.banban.emphasis : null;
+  // 막대 안에서 강조 층 문장이 없으면 칩 줄(차이·칭호·기준)은 지금 그대로다.
+  const chipRowAsNow = !data.banban || (data.banban.kind === "bars" && !data.banban.emphasis);
+  const bottom = layerEmphasis ? data.modeLine : (data.compareLine ?? data.modeLine);
   return (
     <OgFrame>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingTop: 10 }}>
@@ -215,12 +230,12 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
               color={OG_COLORS.surface}
             >{`${OG_TEXT.spreadPrefix}${formatMinutes(data.spread)}`}</Chip>
           ) : null}
-          {data.title && (!data.banban || (data.banban.kind === "bars" && !data.banban.emphasis)) ? (
+          {data.title && chipRowAsNow ? (
             <Chip background={OG_COLORS.safety} color={OG_COLORS.ink}>
               {data.title}
             </Chip>
           ) : null}
-          {data.compareLine && data.basisLine && !data.banban ? (
+          {data.compareLine && data.basisLine && chipRowAsNow ? (
             <span style={{ fontSize: 28, color: OG_COLORS.muted, marginLeft: 6 }}>{data.basisLine}</span>
           ) : null}
         </div>
@@ -231,7 +246,7 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
               : { display: "flex", marginTop: "auto" }
           }
         >
-          {data.banban?.kind === "layer" && data.banban.emphasis ? (
+          {layerEmphasis ? (
             <div
               style={{
                 display: "flex",
@@ -241,7 +256,7 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
                 borderRadius: 10,
               }}
             >
-              {data.banban.emphasis}
+              {layerEmphasis}
             </div>
           ) : null}
           {/* 한국어도 낱말 단위로 줄을 바꾼다("저녁"이 "저/녁"으로 갈리지 않게). */}
@@ -249,7 +264,7 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
             style={{
               fontSize: 30,
               lineHeight: 1.25,
-              color: data.compareLine ? OG_COLORS.inkSoft : OG_COLORS.muted,
+              color: bottom === data.compareLine ? OG_COLORS.inkSoft : OG_COLORS.muted,
               wordBreak: "keep-all",
             }}
           >
