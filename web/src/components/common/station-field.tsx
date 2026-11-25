@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LineBadges } from "@/components/common/line-badge";
 import { NoStationMatch } from "@/components/common/supported-lines";
+import { Button } from "@/components/ui/button";
 import {
   Combobox,
   ComboboxContent,
@@ -11,21 +12,26 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import { type Station, searchStations } from "@/lib/stations";
-import { unsupportedReason } from "@/lib/stations/coverage";
+import { withJosa } from "@/lib/display/korean";
+import { DEFAULT_REGION, type RegionId, regionName, type Station } from "@/lib/stations";
+import { blockedReason, elsewhere, OPEN_SCOPE, type StationScope, searchInScope } from "@/lib/stations/scope";
 
 type Props = {
   id: string;
   value: Station | null;
   onChange: (station: Station | null) => void;
   describedBy?: string;
+  /** 고를 수 있는 범위(권역·구분, lib/stations/scope.ts). 없으면 모든 역. */
+  scope?: StationScope;
+  /** 다른 권역에만 있는 역을 쳤을 때 "○○권으로 바꾸기"를 누르면 부른다. 없으면(방 참여) 바꾸기 버튼이 없다. */
+  onSwitchRegion?: (region: RegionId) => void;
 };
 
 /**
- * 역 자동완성. 초성("ㅎㄷ")·생략형("홍대")·"역" 접미사를 받는다. 계산하지 않는 역은 보이되 고를 수 없고 이유가 붙는다
- * (lib/stations/coverage.ts). 결과가 없으면 계산 범위(수도권 전철 노선)를 함께 알린다.
+ * 역 자동완성. 초성("ㅎㄷ")·생략형("홍대")·"역" 접미사를 받는다. 계산하지 않는 역과 그 구분에 출발할 수 없는 역은 보이되 고를 수 없고
+ * 이유가 붙는다(lib/stations/scope.ts). 결과가 없으면 계산 범위를 알리고, 다른 권역에 있는 이름이면 그 권역을 한 줄로 알린다.
  */
-export function StationField({ id, value, onChange, describedBy }: Props) {
+export function StationField({ id, value, onChange, describedBy, scope = OPEN_SCOPE, onSwitchRegion }: Props) {
   const [query, setQuery] = useState(value?.name ?? "");
   // 부모가 역을 채워 넣은 경우(기억해 둔 "나", SEO 페이지의 미리 채우기)에도 입력 칸에 이름이 보이게 한다.
   useEffect(() => {
@@ -40,7 +46,13 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
   // 자리의 항목이 사라지고 누름이 목록 아래 칸에 떨어졌다. 보이는 글자로 찾으면 확정해도 목록이 그대로다.
   const composingRef = useRef(false);
   const [composing, setComposing] = useState<string | null>(null);
-  const items = useMemo(() => searchStations(composing ?? query), [composing, query]);
+  const choices = useMemo(() => searchInScope(composing ?? query, scope), [composing, query, scope]);
+  const items = useMemo(() => choices.map((c) => c.station), [choices]);
+  const choiceOf = useMemo(() => new Map(choices.map((c) => [c.station.code, c])), [choices]);
+  // 고른 뒤 요일·시간대를 바꿔 그 구분에 출발할 수 없게 된 역(첫 화면·방 만들기). 칸 아래에 이유를 둔다.
+  const valueProblem = value ? blockedReason(value, scope) : null;
+  const problemId = `${id}-problem`;
+  const describedByAll = [describedBy, valueProblem ? problemId : null].filter(Boolean).join(" ");
   // 조합을 확정하기 전에 역을 고르면(확정이 누름보다 늦는 브라우저) 나중에 오는 확정 글자("서울대")가 입력 칸을 덮는다. 고를 때 진행 중이던
   // 그 조합의 compositionend 한 번만 고른 역 이름으로 바꾸고 바로 잊는다. 그 뒤의 입력·새 조합에는 끼어들지 않는다.
   const pickedWhileComposing = useRef<string | null>(null);
@@ -90,39 +102,87 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
           composingRef.current = false;
           setComposing(null);
         }}
-        {...(describedBy ? { "aria-describedby": describedBy } : {})}
+        {...(describedByAll ? { "aria-describedby": describedByAll } : {})}
       />
       {/* 조합 중에는 결과가 없어도 '없음' 안내를 미루고(다음 자모에 다시 맞을 수 있다) 빈 목록은 그리지 않는다. */}
       <ComboboxContent className={composingEmpty ? "hidden" : undefined}>
-        <ComboboxEmpty>{query.trim() && composing === null ? <NoStationMatch /> : null}</ComboboxEmpty>
+        <ComboboxEmpty>
+          {query.trim() && composing === null ? (
+            <EmptyResult query={query} scope={scope} onSwitchRegion={onSwitchRegion} />
+          ) : null}
+        </ComboboxEmpty>
         <ComboboxList>
-          {(station: Station) => (
-            <ComboboxItem
-              key={station.code}
-              value={station}
-              disabled={!station.supported}
-              onPointerDown={(e) => {
-                itemPointerType.current = e.pointerType;
-              }}
-            >
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="flex items-center gap-2">
-                  <span
-                    className={station.supported ? "font-semibold text-ink" : "font-semibold text-muted-foreground"}
-                  >
-                    {station.name}
+          {(station: Station) => {
+            const blocked = choiceOf.get(station.code)?.blocked ?? null;
+            const tag = choiceOf.get(station.code)?.tag ?? null;
+            return (
+              <ComboboxItem
+                key={station.code}
+                value={station}
+                disabled={blocked !== null}
+                onPointerDown={(e) => {
+                  itemPointerType.current = e.pointerType;
+                }}
+              >
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="flex items-center gap-2">
+                    <span className={blocked ? "font-semibold text-muted-foreground" : "font-semibold text-ink"}>
+                      {station.name}
+                    </span>
+                    {tag ? <span className="text-xs font-semibold text-ink-soft">{tag}</span> : null}
+                    <LineBadges lines={station.lines} />
                   </span>
-                  <LineBadges lines={station.lines} />
+                  {blocked ? <span className="text-xs text-muted-foreground">{blocked}</span> : null}
                 </span>
-                {station.supported ? null : (
-                  <span className="text-xs text-muted-foreground">{unsupportedReason(station)}</span>
-                )}
-              </span>
-            </ComboboxItem>
-          )}
+              </ComboboxItem>
+            );
+          }}
         </ComboboxList>
       </ComboboxContent>
+      {/* Combobox 뿌리는 요소를 그리지 않아 이 줄은 입력 칸 바로 아래에 놓인다. */}
+      {valueProblem ? (
+        <p id={problemId} className="text-[13px] font-semibold text-destructive">
+          {valueProblem}
+        </p>
+      ) : null}
     </Combobox>
+  );
+}
+
+/**
+ * 결과가 없을 때. 고른 권역 밖의 이름이면 빈 목록 대신 "부산권에 서면이 있어요"와 바꾸기 버튼(첫 화면·방 만들기)이나
+ * 이 방에서 고를 수 있는 권역(방 참여)을 말한다. 첫 칸에서 권역을 저절로 바꾸지는 않는다.
+ */
+function EmptyResult({
+  query,
+  scope,
+  onSwitchRegion,
+}: {
+  query: string;
+  scope: StationScope;
+  onSwitchRegion: ((region: RegionId) => void) | undefined;
+}) {
+  const other = elsewhere(query, scope);
+  if (!other || scope.region === null) return <NoStationMatch region={scope.region ?? DEFAULT_REGION} />;
+  const target = regionName(other.region);
+  return (
+    <span className="flex flex-col items-start gap-2">
+      <span className="font-semibold text-ink">
+        {target}에 {withJosa(other.name, "이/가")} 있어요
+      </span>
+      {onSwitchRegion ? (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onSwitchRegion(other.region)}
+          className="h-11 border-rule-strong bg-surface px-3 text-[14px] font-semibold text-ink hover:border-ink"
+        >
+          {target}으로 바꾸기
+        </Button>
+      ) : (
+        <span>이 방에서는 {regionName(scope.region)} 역만 고를 수 있어요.</span>
+      )}
+    </span>
   );
 }
 

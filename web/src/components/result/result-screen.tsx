@@ -20,6 +20,7 @@ import { mapMiddleSentence } from "@/lib/result/map-middle";
 import { shareMessage, soloKakaoMessage } from "@/lib/result/share-message";
 import { sharePath } from "@/lib/result/share-url";
 import { toResultView } from "@/lib/result/view-model";
+import { regionName, regionsOf } from "@/lib/stations";
 import { cn } from "@/lib/utils";
 import { Candidates, LoadingCard, PANEL, RESULT_GRID, SIDE } from "./parts/candidates";
 import type { ChoiceContext } from "./parts/directions";
@@ -192,7 +193,9 @@ export function ResultScreen({
           </>
         ) : query.isError ? (
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
-            <p className="text-[15px] text-ink">{resultErrorMessage(query.error)}</p>
+            <p className="text-[15px] text-ink">
+              {resultErrorMessage(query.error, regionsOf(state.origins).map(regionName))}
+            </p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-11">
                 <RotateCwIcon aria-hidden="true" />

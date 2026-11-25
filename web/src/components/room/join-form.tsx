@@ -4,6 +4,7 @@ import { type FormEvent, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { type ParticipantFormValue, toParticipantInput } from "@/lib/room/input";
+import { blockedReason, OPEN_SCOPE, type StationScope } from "@/lib/stations/scope";
 import { ParticipantFields } from "./participant-fields";
 import { slowMessage, useSlowStage } from "./use-slow-hint";
 
@@ -24,6 +25,8 @@ type Props = {
   onEdited?: () => void;
   /** 방의 계산 기준(서버가 준 `timeBasis`). 없으면(옛 서버) 문구를 그리지 않는다. 화면은 라벨을 다시 만들지 않는다. */
   timeBasis?: Room["timeBasis"];
+  /** 출발역 칸이 고를 수 있는 범위: 방의 권역과 구분(lib/room/region.ts). 방 참여 화면에는 권역 고르기가 없다. */
+  scope?: StationScope;
 };
 
 /** 방에 참여하거나(친구) 내 항목을 고치는(참여자) 폼. */
@@ -38,9 +41,15 @@ export function JoinForm({
   onCancel,
   onEdited,
   timeBasis,
+  scope = OPEN_SCOPE,
 }: Props) {
   const id = useId();
-  const [value, setValue] = useState(initial);
+  // 기억해 둔 "나"가 이 방에서 고를 수 없는 역(다른 권역, 방의 구분에 출발할 수 없는 역)이면 비워 둔다.
+  const [value, setValue] = useState(() =>
+    initial.station && mode === "join" && blockedReason(initial.station, scope)
+      ? { ...initial, station: null }
+      : initial,
+  );
   const [problem, setProblem] = useState<string | null>(null);
   const stage = useSlowStage(pending);
   const joining = mode === "join";
@@ -49,6 +58,11 @@ export function JoinForm({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    const blocked = value.station ? blockedReason(value.station, scope) : null;
+    if (blocked) {
+      setProblem(`${blocked}. 다른 출발역을 골라 주세요.`);
+      return;
+    }
     const checked = toParticipantInput({ ...value, hidden: canKeepHidden && value.hidden });
     if (!checked.ok) {
       setProblem(checked.message);
@@ -78,6 +92,7 @@ export function JoinForm({
         }}
         personIndex={personIndex}
         keepHidden={canKeepHidden}
+        scope={scope}
       />
       {timeBasis ? (
         <p id={`${id}-basis`} role="status" className="text-[14px] font-semibold text-ink">

@@ -1,6 +1,11 @@
 /** 방 API 오류를 화면 문구·상태로 바꾼다. 분기는 항상 `code`로 한다(계약 Error 표). */
 import { ApiRequestError } from "@/lib/api/client";
-import { CONNECTION_MESSAGE, resultErrorMessage } from "@/lib/api/errors";
+import {
+  CONNECTION_MESSAGE,
+  regionMismatchMessage,
+  resultErrorMessage,
+  SCHEDULE_UNAVAILABLE_MESSAGE,
+} from "@/lib/api/errors";
 
 const MESSAGES: Readonly<Record<string, string>> = {
   ROOM_NOT_FOUND: "없거나 만료된 방이에요.",
@@ -23,11 +28,16 @@ const MESSAGES: Readonly<Record<string, string>> = {
   NOT_ENOUGH_DRAW_CANDIDATES: "뽑기에 들어갈 사람이 두 명 이상이어야 뽑을 수 있어요.",
   HIDE_NOT_AVAILABLE: "출발역 숨기기는 이제 쓸 수 없어요. 숨기기를 끄고 다시 해 주세요.",
   DRAW_LIMIT_REACHED: "다시 뽑기는 한 번만 할 수 있어요.",
+  SCHEDULE_UNAVAILABLE: SCHEDULE_UNAVAILABLE_MESSAGE,
 };
 
-/** 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 계약의 오류 모양을 가진 그 밖의 4xx는 서버 message, 나머지는 결과 화면과 같은 안내. */
-export function roomErrorMessage(error: unknown): string {
+/**
+ * 사용자에게 보여 줄 문구. 알려진 code는 우리 문구, 계약의 오류 모양을 가진 그 밖의 4xx는 서버 message, 나머지는 결과 화면과 같은 안내.
+ * `regionNames`는 권역이 섞였을 때 짚을 권역 이름이다(lib/room/region.ts의 roomRegionNames).
+ */
+export function roomErrorMessage(error: unknown, regionNames: readonly string[] = []): string {
   if (!(error instanceof ApiRequestError)) return CONNECTION_MESSAGE;
+  if (error.code === "REGION_MISMATCH") return regionMismatchMessage(regionNames);
   const known = MESSAGES[error.code];
   if (known) return known;
   const fromServer = error.code !== "UNKNOWN" && error.status >= 400 && error.status < 500 && error.message;

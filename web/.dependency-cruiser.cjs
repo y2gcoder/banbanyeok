@@ -25,7 +25,7 @@ const libDependencies = {
   seo: ["api", "copy", "display", "link", "result", "room", "stations", "when"],
   share: ["copy"],
   "share-card": ["api", "copy", "display", "link", "result", "when"],
-  stations: [],
+  stations: ["when"],
   text: [],
   utils: [],
   zod: [],

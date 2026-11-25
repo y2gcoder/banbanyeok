@@ -11,6 +11,7 @@ import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
 import { roomQueryOptions } from "@/lib/room/queries";
+import { roomStationScope } from "@/lib/room/region";
 import {
   canStoreRoomTokens,
   loadRoomRecord,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/room/tokens";
 import { canFavor, hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
+import { OPEN_SCOPE } from "@/lib/stations/scope";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
 import { FavorDrawCard } from "./draw/favor-draw-card";
 import { useReducedMotion } from "./draw/use-reduced-motion";
@@ -185,6 +187,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   }, [drawUnseen, reducedMotion, shownDraw, markDrawSeen, drawControl.drewKey]);
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
+  const stationScope = useMemo(() => (room ? roomStationScope(room) : null), [room]);
 
   // 정원이 찬 방에 들어오려던 사람(참여하지 않았고 방장도 아님): 인원 상한 수요로 한 번만 센다. 방장이 예상 인원을 4로 고르는 것은 세지 않는다.
   const cannotJoinFull = room !== undefined && !record?.hostToken && joinState(room) === "full";
@@ -262,6 +265,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           personIndex={Math.max(0, selfIndex)}
           pending={actions.editPending}
           timeBasis={room.timeBasis}
+          scope={stationScope ?? OPEN_SCOPE}
           error={actions.editError}
           onSubmit={(input, value) => {
             if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });
@@ -281,6 +285,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
               personIndex={room.participants.length}
               pending={actions.joinPending}
               timeBasis={room.timeBasis}
+              scope={stationScope ?? OPEN_SCOPE}
               error={actions.joinError}
               onSubmit={(input, value) => {
                 if (value.station) saveRememberedMe({ code: value.station.code, nickname: value.nickname.trim() });

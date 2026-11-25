@@ -2,7 +2,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { SUPPORTED_LINES } from "@/lib/stations/coverage";
+import { regionScope } from "@/lib/stations/coverage";
+
+const SUPPORTED_LINES = regionScope("capital").lines;
+
 import { SupportedLinesDisclosure } from "./supported-lines";
 
 describe("첫 화면 계산 범위 한 줄(#170)", () => {

@@ -3,8 +3,9 @@
 import { PlusIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { personColor } from "@/components/common/person-color";
+import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
 import { StationField } from "@/components/common/station-field";
 import { Button } from "@/components/ui/button";
 import { WhenPicker } from "@/components/when/when-picker";
@@ -17,7 +18,8 @@ import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/codec";
 import { resultPath } from "@/lib/result/share-url";
 import { NEW_ROOM_PATH } from "@/lib/room/id";
-import { type Station, stationByCode } from "@/lib/stations";
+import { REGIONS_ENABLED, type Station, stationByCode } from "@/lib/stations";
+import { blockedReason, type StationScope } from "@/lib/stations/scope";
 import { DEFAULT_SLOT, slotNow, type TimeSlot } from "@/lib/when/time-slot";
 
 /**
@@ -56,6 +58,16 @@ export function HomeForm() {
   const [limitNoteShown, setLimitNoteShown] = useState(false);
   const limitReported = useRef(false);
   const [focusKey, setFocusKey] = useState<number | null>(null);
+  // 권역(#180): 검색은 고른 권역 안에서. 바꾸면 고른 출발역을 지운다(있으면 먼저 묻는다).
+  const regionChoice = useRegionChoice({
+    picked: rows.some((row) => row.station),
+    clear: () => setRows((current) => current.map((row) => ({ ...row, station: null }))),
+  });
+  const { adopt } = regionChoice;
+  const scope = useMemo<StationScope>(
+    () => (REGIONS_ENABLED ? { region: regionChoice.region, slot } : { region: null, slot: null }),
+    [regionChoice.region, slot],
+  );
 
   useEffect(() => {
     startedAt.current = performance.now();
@@ -66,6 +78,8 @@ export function HomeForm() {
     // 결과의 "다시 입력"이 보낸 주소(`/?v=2&o=…&m=…&t=…&n=…`)면 모든 줄·모드·구분을 그대로 되살린다.
     const restored = parseRestore(window.location.search);
     if (restored) {
+      const region = restored.rows.find((row) => row.station)?.station?.region;
+      if (region) adopt(region);
       setRows(restored.rows.map((row, key) => ({ key, ...row })));
       setSlot(restored.slot);
       setSlotIsNow(false);
@@ -74,18 +88,20 @@ export function HomeForm() {
     }
     // SEO 페이지가 보낸 `/?o=<코드>.<코드>`가 있으면 그 역으로 채운다(기억해 둔 "나"보다 우선).
     const prefilled = parsePrefill(window.location.search);
-    if (prefilled.length > 0) {
+    if (prefilled[0]) {
+      adopt(prefilled[0].region);
       setRows(rowsFor(prefilled));
       return;
     }
     const me = loadRememberedMe();
     const station = me ? stationByCode(me.code) : undefined;
     if (me && station?.supported) {
+      adopt(station.region);
       setRows((current) =>
         current.map((row, i) => (i === 0 && !row.station ? { ...row, nickname: me.nickname, station } : row)),
       );
     }
-  }, []);
+  }, [adopt]);
 
   useEffect(() => {
     if (focusKey === null) return;
@@ -115,6 +131,11 @@ export function HomeForm() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    const blocked = rows.map((row) => (row.station ? blockedReason(row.station, scope) : null)).find(Boolean);
+    if (blocked) {
+      setError(`${blocked}. 출발역이나 요일·시간대를 바꿔 주세요.`);
+      return;
+    }
     const result = toShareState(
       rows.map((row) => ({ nickname: row.nickname, code: row.station?.code ?? null, favored: row.favored === true })),
       slot,
@@ -138,6 +159,7 @@ export function HomeForm() {
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
+      <RegionPicker id={`${formId}-region`} choice={regionChoice} />
       <ol className="relative flex flex-col gap-4">
         {rows.map((row, index) => {
           const placeholder = INPUT_PLACEHOLDERS[index] ?? `친구${index}`;
@@ -186,7 +208,13 @@ export function HomeForm() {
                 <label htmlFor={stationId} className="sr-only">
                   {row.nickname.trim() || placeholder}의 출발역
                 </label>
-                <StationField id={stationId} value={row.station} onChange={(station) => update(row.key, { station })} />
+                <StationField
+                  id={stationId}
+                  value={row.station}
+                  onChange={(station) => update(row.key, { station })}
+                  scope={scope}
+                  onSwitchRegion={regionChoice.request}
+                />
               </div>
             </li>
           );

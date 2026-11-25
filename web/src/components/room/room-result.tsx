@@ -16,6 +16,7 @@ import { toResultView } from "@/lib/result/view-model";
 import type { RoomDraw } from "@/lib/room/draw";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
+import { roomRegionNames } from "@/lib/room/region";
 import { canFavor, favorIndexOf } from "@/lib/room/view";
 import { DecisionBanner } from "./decision-banner";
 import type { DecisionControl } from "./use-room-decision";
@@ -239,7 +240,7 @@ export function RoomResult({
           </>
         ) : query.isError && !roomGone ? (
           <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
-            <p className="text-[15px] text-ink">{roomErrorMessage(query.error)}</p>
+            <p className="text-[15px] text-ink">{roomErrorMessage(query.error, roomRegionNames(room))}</p>
             <Button type="button" variant="outline" onClick={() => void query.refetch()} className="h-11">
               <RotateCwIcon aria-hidden="true" />
               다시 시도

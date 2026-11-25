@@ -24,7 +24,12 @@ const err = (status: number, code: string) => new ApiRequestError(status, code, 
 const host: RoomRecord = { v: 1, hostToken: "host-tok", keepUntil: KEEP };
 const member: RoomRecord = { v: 1, participantToken: "tok-1", participantId: "m1", keepUntil: KEEP };
 const hostAndMember: RoomRecord = { ...host, participantToken: "tok-1", participantId: "m1" };
-const room = { roomId: ROOM, roomHash: "0123456789abcdef", createdAt: "2026-11-20T00:00:00Z" } as Room;
+const room = {
+  roomId: ROOM,
+  roomHash: "0123456789abcdef",
+  createdAt: "2026-11-20T00:00:00Z",
+  participants: [],
+} as unknown as Room;
 
 let log: string[];
 
