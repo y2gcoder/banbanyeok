@@ -145,22 +145,28 @@ describe("/r/[roomId]/og", () => {
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
   });
 
-  it("반반지수 시안(#202): 숨긴 사람이 있을 수 있는 방(5분 배수 시간)이면 등급을 빼고, 없으면(21·22분) 그린다", async () => {
-    const { room, dataVersion, basis, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
-    const resultOf = (seconds: number[]): RoomPreview => ({
-      stage: "result",
-      room,
-      dataVersion,
-      basis,
-      station: { ...station, times: seconds.map((s, index) => ({ label: `참가자 ${index + 1}`, seconds: s })) },
-    });
-    // 숨긴 참가자는 남에게 5분 단위로 올려 보인다(25·22분). 본인 화면은 21·22분이라 같은 방에서 등급이 갈린다.
-    loadRoomPreview.mockResolvedValue(resultOf([25 * 60, 22 * 60]));
-    expect((await get("?sv=9&dv=20261115.8&bbi=toptwo")).status).toBe(200);
-    expect(drawn).toEqual([null]);
-    drawn.length = 0;
-    loadRoomPreview.mockResolvedValue(resultOf([21 * 60, 22 * 60]));
-    expect((await get("?sv=9&dv=20261115.8&bbi=toptwo")).status).toBe(200);
-    expect(drawn.map((banban) => banban?.label)).toEqual(["딱 반반"]);
-  });
+  it.each([
+    ["toptwo", { label: "딱 반반" }],
+    ["fact", { sentence: "두 사람 1분 차이로 도착해요" }],
+  ])(
+    "반반지수 시안(#202, bbi=%s): 숨긴 사람이 있을 수 있는 방(5분 배수 시간)이면 빼고, 없으면(21·22분) 그린다",
+    async (plan, shown) => {
+      const { room, dataVersion, basis, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
+      const resultOf = (seconds: number[]): RoomPreview => ({
+        stage: "result",
+        room,
+        dataVersion,
+        basis,
+        station: { ...station, times: seconds.map((s, index) => ({ label: `참가자 ${index + 1}`, seconds: s })) },
+      });
+      // 숨긴 참가자는 남에게 5분 단위로 올려 보인다(20·21분). 본인 화면은 정확한 시간이라 같은 방에서 말이 갈린다.
+      loadRoomPreview.mockResolvedValue(resultOf([20 * 60, 21 * 60]));
+      expect((await get(`?sv=9&dv=20261115.8&bbi=${plan}`)).status).toBe(200);
+      expect(drawn).toEqual([null]);
+      drawn.length = 0;
+      loadRoomPreview.mockResolvedValue(resultOf([21 * 60, 22 * 60]));
+      expect((await get(`?sv=9&dv=20261115.8&bbi=${plan}`)).status).toBe(200);
+      expect(drawn).toMatchObject([shown]);
+    },
+  );
 });

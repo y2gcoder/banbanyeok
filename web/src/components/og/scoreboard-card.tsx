@@ -127,7 +127,11 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
           ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: layout.chipGap }}>
-          {data.banban ? (
+          {data.banban?.kind === "fact" ? (
+            <Chip background={OG_COLORS.safety} color={OG_COLORS.ink}>
+              {data.banban.sentence}
+            </Chip>
+          ) : data.banban ? (
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <Chip
                 background={

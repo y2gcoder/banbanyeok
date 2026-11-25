@@ -66,14 +66,17 @@ const choice: ChoiceContext = { mode: "fair", participantCount: 2, variant: "cre
 afterEach(() => window.history.replaceState(null, "", "/"));
 
 describe("후보 목록의 반반지수 시안(#202)", () => {
-  it("숨긴 참가자가 있으면 등급을 끄고(본인 21·22분), 없으면(대조군 21·22분) 보인다", async () => {
-    window.history.replaceState(null, "", "/?bbi=toptwo");
+  it.each([
+    ["toptwo", "딱 반반"],
+    ["fact", "두 사람 1분 차이로 도착해요"],
+  ])("bbi=%s: 숨긴 참가자가 있으면 끄고(본인 21·22분), 없으면(대조군 21·22분) 보인다", async (plan, text) => {
+    window.history.replaceState(null, "", `/?bbi=${plan}`);
     const control = render(<Candidates view={toResultView(resultOf(false))} meIndex={null} choice={choice} />);
-    expect(await screen.findByText("딱 반반")).toBeVisible();
+    expect(await screen.findByText(text)).toBeVisible();
     control.unmount();
 
     render(<Candidates view={toResultView(resultOf(true))} meIndex={0} choice={choice} />);
     expect(await screen.findByRole("article", { name: "신촌" })).toBeVisible();
-    expect(screen.queryByText("딱 반반")).toBeNull();
+    expect(screen.queryByText(text)).toBeNull();
   });
 });

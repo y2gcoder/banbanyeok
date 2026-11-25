@@ -4,6 +4,7 @@ dev 산출물(data/artifacts/dev/od.bin, 평일 낮)로 출발역 조합을 뽑�
 1위를 다시 계산한 뒤 안마다 등급을 매긴다. 규칙은 web/src/lib/result/banban-index.ts와 같아야 한다.
 
     python3 prototype/banban_index.py                       # 표(마크다운)
+    python3 prototype/banban_index.py --fact-cases 30000    # 사실 문장 안의 무작위 입력과 기대 문장(JSONL, 웹 규칙 대조용)
     python3 prototype/banban_index.py --check-server http://localhost:PORT   # 1위가 로컬 서버 /v1/recommend와 같은지
 """
 
@@ -91,6 +92,32 @@ def grade(plan: str, top: list[int], others: list[list[int]]) -> str:
     return BEST_HERE if close else TILTED
 
 
+# 사실 문장 안(bbi=fact|factcap): 도착 차이(최장 − 최단)가 두 사람 2분, 세 사람 이상 6분 안이면 한 문장, 아니면 문장 없음.
+FACT_PAIR = 2
+FACT_GROUP = 6
+
+
+def format_minutes(minutes: int) -> str:
+    hours, rest = divmod(minutes, 60)
+    if hours == 0:
+        return f"{rest}분"
+    return f"{hours}시간" if rest == 0 else f"{hours}시간 {rest}분"
+
+
+def fact_sentence(plan: str, top: list[int]) -> str | None:
+    """web/src/lib/result/banban-index.ts factSentence와 같다. plan은 'fact'(실제 차이) 또는 'factcap'(여러 명은 문턱)."""
+    pair = len(top) == 2
+    limit = FACT_PAIR if pair else FACT_GROUP
+    gap = spread(top)
+    if gap > limit:
+        return None
+    who = "두 사람 " if pair else "모두 "
+    shown = limit if plan == "factcap" and not pair else gap
+    if shown == 0:
+        return f"{who}같은 시간에 도착해요"
+    return f"{who}{format_minutes(shown)}{' 차이로 도착해요' if pair else ' 차이 안에 도착해요'}"
+
+
 def even_title(top: list[int]) -> bool:
     """지금 있는 '완벽한 반반'(map-middle.ts evenTitle): 2명 1분 이하, 3~4명 2분 이하."""
     return spread(top) <= (1 if len(top) <= 2 else 2)
@@ -158,6 +185,7 @@ def table() -> str:
         "|---|---|---|" + "---|" * len(PLANS),
     ]
     examples: list[str] = []
+    fact_rows: list[str] = []
     for n in (2, 3, 4):
         for kind in KINDS:
             pick = sampler(data, kind, rng)
@@ -165,6 +193,7 @@ def table() -> str:
             visible = {p: Counter() for p in PLANS}
             title = 0
             total = 0
+            gaps: Counter = Counter()
             while total < SAMPLES:
                 people = pick(n)
                 if people is None:
@@ -179,6 +208,7 @@ def table() -> str:
                 for p in PLANS:
                     visible[p][grade(p, top, others[:2])] += 1
                 title += even_title(top)
+                gaps[spread(top)] += 1
                 if n >= 3 and kind == "한 명만 멀리(30km 밖)" and len(examples) < 6 and top_two_gap(top) >= 10:
                     names = [data.station[data.origins[i]]["name"] for i in people]
                     meet = data.station[rows[0][3]]["name"]
@@ -187,13 +217,44 @@ def table() -> str:
             def cell(c: Counter) -> str:
                 return " / ".join(str(round(100 * c[g] / total)) for g in GRADES)
 
+            b = counts["B 가장 오래 걸리는 두 사람"]
+            limit = FACT_PAIR if n == 2 else FACT_GROUP
+
+            def within(k: int) -> int:
+                return round(100 * sum(v for g, v in gaps.items() if g <= k) / total)
+
+            steps = (1, 2, 3, 4) if n == 2 else (2, 4, 6, 8, 10)
+            fact_rows.append(
+                f"| {n} | {kind} | {round(100 * (b[EVEN] + b[NEAR]) / total)} | {round(100 * b[EVEN] / total)} | "
+                f"**{within(limit)}** | " + " / ".join(str(within(k)) for k in steps) + " |"
+            )
             out.append(
                 f"| {n} | {kind} | {round(100 * title / total)} | "
                 + " | ".join(f"{cell(counts[p])}<br>{cell(visible[p])}" for p in PLANS)
                 + " |"
             )
     out += ["", "B가 낮은 등급을 받은 3~4명 '한 명만 멀리' 조합 예:", *examples]
+    out += [
+        "",
+        "사실 문장 안(같은 표본): 1위 카드에 문장이 붙는 비율(%). 문장은 1위 시간만 보므로 '전체'와 '3곳'이 같다.",
+        "마지막 칸은 도착 차이(최장 − 최단)가 그 분 이하인 비율로, 문턱을 바꿀 때의 붙는 비율이다(2명 1/2/3/4분, 3명 이상 2/4/6/8/10분).",
+        "",
+        "| 인원 | 조합 | B '딱+거의' | B '딱' | fact 문장 붙음 (2명 2분 · 3명+ 6분) | 문턱을 바꾸면 |",
+        "|---|---|---|---|---|---|",
+        *fact_rows,
+    ]
     return "\n".join(out)
+
+
+def fact_cases(count: int) -> None:
+    """웹 규칙 대조용 무작위 입력. 작은 차이가 자주 나오게 기준 분에 0~12분을 더한다."""
+    rng = random.Random(SEED + 2)
+    for _ in range(count):
+        n = rng.choice((2, 3, 4))
+        base = rng.randrange(0, 130)
+        top = [base + rng.randrange(0, rng.choice((3, 8, 13))) for _ in range(n)]
+        plan = rng.choice(("fact", "factcap"))
+        print(json.dumps({"plan": plan, "top": top, "sentence": fact_sentence(plan, top)}, ensure_ascii=False))
 
 
 def check_server(base: str, count: int) -> None:
@@ -225,8 +286,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check-server")
     parser.add_argument("--count", type=int, default=60)
+    parser.add_argument("--fact-cases", type=int)
     args = parser.parse_args()
-    if args.check_server:
+    if args.fact_cases:
+        fact_cases(args.fact_cases)
+    elif args.check_server:
         check_server(args.check_server.rstrip("/"), args.count)
     else:
         print(table())

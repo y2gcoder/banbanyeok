@@ -96,8 +96,20 @@ type TopProps = {
   banban?: BanbanIndex | null;
 };
 
-/** 반반지수 시안(#202): 등급 말(좋은 두 등급은 노란 칩) + 무엇을 쟀는지 한 줄. 기울었으면 공평 순위가 그 역을 고른 이유를 붙인다. */
+/**
+ * 반반지수 시안(#202): 등급 말(좋은 두 등급은 노란 칩) + 무엇을 쟀는지 한 줄. 기울었으면 공평 순위가 그 역을 고른 이유를 붙인다.
+ * 사실 문장 안은 문장 하나를 노란 칩으로 그린다.
+ */
 function BanbanLine({ banban }: { banban: BanbanIndex }) {
+  if (banban.kind === "fact") {
+    return (
+      <p>
+        <span className="rounded-full bg-safety px-2.5 py-0.5 text-[14px] font-extrabold text-ink">
+          {banban.sentence}
+        </span>
+      </p>
+    );
+  }
   const good = banban.grade === "even" || banban.grade === "near";
   return (
     <div className="flex flex-col gap-1">

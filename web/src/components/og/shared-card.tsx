@@ -161,7 +161,9 @@ function Lines({ people, teaser = false }: { people: SharedCardData["people"]; t
 export function SharedCard({ data, banban = null }: { data: SharedCardData; banban?: BanbanIndex | null }) {
   const computed = summary(data.people);
   const sub = banban
-    ? `${banban.label} ${OG_TEXT.middleDot} ${banban.detail}`
+    ? banban.kind === "fact"
+      ? banban.sentence
+      : `${banban.label} ${OG_TEXT.middleDot} ${banban.detail}`
     : computed
       ? `${computed.spread} ${OG_TEXT.middleDot} ${data.modeLine}`
       : data.modeLine;
