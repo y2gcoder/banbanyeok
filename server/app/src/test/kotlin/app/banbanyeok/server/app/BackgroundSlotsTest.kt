@@ -69,7 +69,7 @@ class SlotReadinessWiringTest :
                     .load()
             val slots = BackgroundSlots(loaded.slots)
             val directory =
-                StationDirectory(loaded.dataSet, slots)
+                StationDirectory(loaded.dataSet, slots, testTimes)
             val service =
                 RecommendationService(directory.travel, directory, slotsReady = slots)
             val people =

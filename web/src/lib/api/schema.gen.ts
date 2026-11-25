@@ -378,7 +378,7 @@ export interface components {
          *     | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
          *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
-         *     | 409 | `SCHEDULE_UNAVAILABLE` | 요청 구분 또는 출발역에 확인된 시간표가 없어 계산할 수 없다 |
+         *     | 409 | `SCHEDULE_UNAVAILABLE` | 요청 구분 또는 출발역에 확인된 시간표가 없어 계산할 수 없다. 방 만들기·참여·출발역 수정에서는 그런 출발역을 저장하지 않는다 |
          *     | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기(`setDecision`)나 뽑기(`drawFavorTarget`)를 받지 않았다. 방을 다시 불러 확인한 뒤 다시 누른다 |
          *     | 409 | `DRAW_NOT_AVAILABLE`, `NOT_ENOUGH_DRAW_CANDIDATES`, `DRAW_LIMIT_REACHED` | 뽑기 방이 아니거나, 출발역을 숨기지 않은 참가자가 2명 미만이거나, 다시 뽑기를 이미 썼다(`drawFavorTarget`) |
          *     | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
@@ -1105,6 +1105,15 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            /** @description 고른 약속 구분에 방장 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             429: components["responses"]["Error"];
         };
     };
@@ -1308,7 +1317,7 @@ export interface operations {
             };
             400: components["responses"]["Error"];
             404: components["responses"]["Error"];
-            /** @description 방이 가득 찼거나 잠겼다 (`ROOM_FULL`, `ROOM_LOCKED`) */
+            /** @description 방이 가득 찼거나 잠겼다(`ROOM_FULL`, `ROOM_LOCKED`), 또는 방의 약속 구분에 그 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1350,6 +1359,15 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            /** @description 방의 약속 구분에 그 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`). 저장하지 않는다 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     removeParticipant: {

@@ -26,6 +26,9 @@ public enum class RoomError(
     ROOM_LOCKED(ErrorKind.CONFLICT),
     NOT_ENOUGH_PARTICIPANTS(ErrorKind.CONFLICT),
 
+    /** 방의 약속 구분에 그 출발역의 배차를 확인하지 못했다. 저장하면 방 결과가 같은 409가 된다. */
+    SCHEDULE_UNAVAILABLE(ErrorKind.CONFLICT),
+
     /** 화면이 본 뒤 방의 입력이나 정한 역(또는 뽑기 상태)이 바뀌었다. 방을 다시 불러 확인한 뒤 다시 누른다. */
     ROOM_CHANGED(ErrorKind.CONFLICT),
 

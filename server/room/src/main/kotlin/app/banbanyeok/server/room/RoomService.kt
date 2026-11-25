@@ -37,6 +37,7 @@ public class RoomService(
         checkNewParticipant(host)
         regions.requireMatch(emptyList(), host.originCode, hidden = host.hidden)
         validateCreation(command, now)
+        requireDeparts(host.originCode, command.meetingDate, command.meetingTime, command.meetingBand)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
         val hostToken = tokens.issue()
@@ -85,6 +86,7 @@ public class RoomService(
         val room = loadActive(roomId, now).room
         val participant = validated(input)
         checkNewParticipant(participant)
+        requireDeparts(participant.originCode, room.meetingDate, room.meetingTime, room.meetingBand)
         val participantId = ids.participantId()
         val token = tokens.issue()
         val participantEntity = newParticipant(participantId, token.hash, anonIdOf(deviceToken, now), participant, now)
@@ -172,6 +174,7 @@ public class RoomService(
         // 이미 숨긴 사람만 숨김을 유지할 수 있다. 풀고 나면 다시 숨기지 못한다. 저장할 때도 다시 본다(다른 탭이 그사이 풀었을 수 있다).
         val keepsHidden = value.hidden && newHidden == NewHiddenOrigins.REJECTED
         if (keepsHidden && !stored.participants.first { it.id == participantId }.hidden) rejectNewHidden()
+        requireDeparts(value.originCode, stored.room.meetingDate, stored.room.meetingTime, stored.room.meetingBand)
         // 저장된 코드가 폐기된 코드여도 정식 코드가 같으면 그대로 쓴다. 출발역이 바뀐 것으로 보면 트리거가 정한 역을 풀기 때문이다.
         val storedOrigin = stored.participants.first { it.id == participantId }.originCode
         val origin = if (stations.canonical(storedOrigin) == value.originCode) storedOrigin else value.originCode
@@ -534,6 +537,17 @@ public class RoomService(
             reject(RoomError.INVALID_STATION, "알 수 없는 출발역입니다")
         }
         return input.copy(nickname = nickname, originCode = originCode)
+    }
+
+    private fun requireDeparts(
+        originCode: String,
+        meetingDate: LocalDate?,
+        meetingTime: LocalTime?,
+        meetingBand: TimeBand?,
+    ) {
+        if (!stations.departs(originCode, meetingDate, meetingTime, meetingBand)) {
+            reject(RoomError.SCHEDULE_UNAVAILABLE, "이 방의 요일·시간대에 확인된 시간표가 없는 출발역입니다")
+        }
     }
 
     /**

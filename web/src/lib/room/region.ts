@@ -27,8 +27,9 @@ export function roomRegion(room: Room): RegionId | null {
 
 /**
  * 방에 참여하거나 내 출발역을 고칠 때의 범위: 방의 권역, 방의 구분. 방이 이 웹 빌드의 인덱스보다 새 데이터로 만들어졌으면
- * (방 dataVersion > 인덱스 dataVersion) 웹의 구분별 출발 가능 정보가 낡았을 수 있어 구분으로는 막지 않는다. 그때는 서버의 409
- * `SCHEDULE_UNAVAILABLE`과 그 문구가 안전망이다. 그 밖에는 막는다: 배포는 서버가 먼저라 서버 데이터는 인덱스보다 오래되지 않는다.
+ * (방 dataVersion > 인덱스 dataVersion) 웹의 구분별 출발 가능 정보가 낡았을 수 있어 구분으로는 막지 않는다. 그 밖에는 미리 막는다.
+ * 최종 판단은 서버다: 참여·고치기에서 서버의 지금 데이터로 그 역이 방의 구분에 출발할 수 없으면 저장하지 않고 409
+ * `SCHEDULE_UNAVAILABLE`을 낸다(participantErrorMessage).
  */
 export function roomStationScope(room: Room): StationScope {
   if (!REGIONS_ENABLED) return OPEN_SCOPE;

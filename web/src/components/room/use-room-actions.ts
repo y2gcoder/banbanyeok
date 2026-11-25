@@ -7,7 +7,7 @@ import { roomHashProperty, secondsSinceRoomCreated, track } from "@/lib/analytic
 import { deleteRoom, joinRoom, removeParticipant, updateParticipant, updateRoom } from "@/lib/api/rooms";
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { errorPolicy, type RoomAction } from "@/lib/room/action-policy";
-import { roomErrorMessage } from "@/lib/room/errors";
+import { participantErrorMessage, roomErrorMessage } from "@/lib/room/errors";
 import type { KeyTracker } from "@/lib/room/idempotency";
 import { roomRegionNames } from "@/lib/room/region";
 import { keepUntilFrom, type RoomRecord, removeRoomRecord, withoutParticipant } from "@/lib/room/tokens";
@@ -168,7 +168,9 @@ export function useRoomActions({
   return {
     join: (input) => join.mutate(input),
     joinPending: join.isPending,
-    joinError: join.isError ? roomErrorMessage(join.error, roomRegionNames(room, join.variables?.originCode)) : null,
+    joinError: join.isError
+      ? participantErrorMessage(join.error, roomRegionNames(room, join.variables?.originCode))
+      : null,
     edit: (input) => edit.mutate(input),
     editing,
     startEdit: () => {
@@ -178,7 +180,9 @@ export function useRoomActions({
     },
     cancelEdit: () => setEditing(false),
     editPending: edit.isPending,
-    editError: edit.isError ? roomErrorMessage(edit.error, roomRegionNames(room, edit.variables?.originCode)) : null,
+    editError: edit.isError
+      ? participantErrorMessage(edit.error, roomRegionNames(room, edit.variables?.originCode))
+      : null,
     leave: () => {
       setActionError(null);
       leave.mutate();

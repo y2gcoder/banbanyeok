@@ -25,6 +25,12 @@ public interface TravelTimeProvider {
 
     public fun regionOf(code: String): StationRegion? = StationRegion.CAPITAL.takeIf { isOrigin(code) }
 
+    /** [code]에서 [slot]의 배차를 확인했는가(현재 데이터의 권역별 구분 범위). 아니면 [measure]가 `SCHEDULE_UNAVAILABLE`이다. */
+    public fun departs(
+        code: String,
+        slot: TimeSlot,
+    ): Boolean = true
+
     /**
      * 모든 [origins]가 [isOrigin]이어야 한다. [slot]의 행렬이 없으면(manifest 1세대 데이터) 기본 구분으로 계산하고
      * [TravelMatrix.slot]에 그 사실을 남긴다. 모든 구분은 같은 출발역·후보 축이다.

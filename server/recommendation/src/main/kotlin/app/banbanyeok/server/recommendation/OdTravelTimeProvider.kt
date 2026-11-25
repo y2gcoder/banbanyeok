@@ -33,9 +33,7 @@ public class OdTravelTimeProvider(
         val rows = origins.map { code -> indexOfOrigin(code).also { require(it >= 0) { "알 수 없는 출발역: $code" } } }
         val region = origins.firstOrNull()?.let(::regionOf)
         val known = region?.let { coverage?.get(it)?.get(slot.id) }
-        if (known?.available == false || (known != null && origins.any { it in known.unsupportedOrigins })) {
-            scheduleUnavailable()
-        }
+        if (origins.any { !departs(it, slot) }) scheduleUnavailable()
         val slotMatrix = if (slot == TimeSlot.DEFAULT) null else slots.matrix(slot)
         val requireBusanSlot = coverage != null && region == StationRegion.BUSAN
         if (requireBusanSlot && slot != TimeSlot.DEFAULT && slotMatrix == null) {
@@ -55,6 +53,14 @@ public class OdTravelTimeProvider(
             used,
             known?.missingServices.orEmpty(),
         )
+    }
+
+    override fun departs(
+        code: String,
+        slot: TimeSlot,
+    ): Boolean {
+        val known = regionOf(code)?.let { coverage?.get(it)?.get(slot.id) } ?: return true
+        return known.available && code !in known.unsupportedOrigins
     }
 
     private fun indexOfOrigin(code: String): Int = StationCode.parseOrNull(code)?.let(od::indexOfOrigin) ?: -1

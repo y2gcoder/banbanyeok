@@ -44,6 +44,18 @@ export function roomErrorMessage(error: unknown, regionNames: readonly string[] 
   return fromServer || resultErrorMessage(error);
 }
 
+/**
+ * 참여·고치기의 오류 문구. 서버는 방의 요일·시간대에 시간표를 확인하지 못한 출발역을 저장하지 않는다(409 `SCHEDULE_UNAVAILABLE`).
+ * 웹 인덱스가 서버 데이터보다 낡아 칸이 미리 막지 못한 경우다. 참여자는 방의 요일을 바꿀 수 없으니 역을 바꾸라고만 한다.
+ */
+export function participantErrorMessage(error: unknown, regionNames: readonly string[] = []): string {
+  if (error instanceof ApiRequestError && error.code === "SCHEDULE_UNAVAILABLE") return PARTICIPANT_SCHEDULE_MESSAGE;
+  return roomErrorMessage(error, regionNames);
+}
+
+const PARTICIPANT_SCHEDULE_MESSAGE =
+  "이 방의 요일·시간대에는 고른 역의 시간표를 아직 확인하지 못해 고를 수 없어요. 다른 출발역을 골라 주세요.";
+
 export const errorCode = (error: unknown): string | null => (error instanceof ApiRequestError ? error.code : null);
 
 /** 화면이 그린 방이 오래됐다는 답(정원·잠김·없어짐, 그사이 바뀐 방). 다시 불러와 안내를 바꾼다. */

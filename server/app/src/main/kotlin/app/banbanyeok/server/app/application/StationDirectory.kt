@@ -2,13 +2,17 @@ package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.StationRegion
+import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.SlotMatrices
 import app.banbanyeok.server.recommendation.StationNames
 import app.banbanyeok.server.recommendation.TravelTimeProvider
 import app.banbanyeok.server.recommendation.mapmiddle.GeoPoint
 import app.banbanyeok.server.recommendation.mapmiddle.StationLocations
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.StationCatalog
+import java.time.LocalDate
+import java.time.LocalTime
 
 /**
  * 현재 산출물(DataSet) 하나를 기능 모듈들이 각자 필요한 포트로 보여 준다. 기능 모듈끼리 서로 알지 못하므로
@@ -21,6 +25,8 @@ class StationDirectory(
      * 데이터 세트의 행렬.
      */
     slots: SlotMatrices = SlotMatrices { dataSet.odSlots[it] },
+    /** 약속 날짜·시각 → 구분. 방 결과 계산과 같은 규칙이어야 참가자 검사([departs])가 결과와 같은 구분을 본다. */
+    private val times: TimeSlotResolver,
 ) : StationCatalog,
     CanonicalStations,
     StationNames,
@@ -46,6 +52,13 @@ class StationDirectory(
     override fun isOrigin(code: String): Boolean = travelTimes.isOrigin(code)
 
     override fun regionOf(code: String): StationRegion? = regions[code]
+
+    override fun departs(
+        code: String,
+        meetingDate: LocalDate?,
+        meetingTime: LocalTime?,
+        meetingBand: TimeBand?,
+    ): Boolean = travelTimes.departs(code, times.resolve(meetingDate, meetingTime, meetingBand).slot)
 
     private val meetingCodes: Set<String> =
         List(dataSet.od.candidateCount) {

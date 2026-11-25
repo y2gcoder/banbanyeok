@@ -44,7 +44,8 @@ info:
 
     권역 데이터에서 배차가 미확인인 계통은 해당 구분의 계산에서 제외한다. 지원 출발역에서 계산한 결과는 유지하며 빠진 계통은
     `Result.missingServices`에 한 번 알린다. 요청한 구분 또는 출발역의 배차 지원이 없으면 409 `SCHEDULE_UNAVAILABLE`이고,
-    다른 구분으로 대체하지 않는다.
+    다른 구분으로 대체하지 않는다. 방 만들기·참여·출발역 수정은 방의 약속 날짜·시각(또는 시간대)에서 정한 구분에 그 출발역의 배차
+    지원이 없으면 저장하지 않고 같은 409를 낸다. 판단은 서버의 지금 데이터로 하며 방의 `dataVersion`과는 상관없다.
 
     **공통 규칙**: 요청 크기 제한(16 KiB, 초과 시 413), IP·기기 단위 속도 제한(초과 시 429와 `Retry-After`), 방 생성과
     참여에 선택적 `Idempotency-Key` 헤더(서버 인스턴스 메모리에서 10분간 같은 응답 재생), 오류는 항상 `application/problem+json`(RFC 9457 Problem Details, 스키마 `Problem`).
@@ -122,6 +123,11 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/RoomCreated'}
         '400': {$ref: '#/components/responses/Error'}
+        '409':
+          description: 고른 약속 구분에 방장 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
         '429': {$ref: '#/components/responses/Error'}
 
   /rooms/{roomId}:
@@ -292,7 +298,7 @@ paths:
         '404': {$ref: '#/components/responses/Error'}
         '429': {$ref: '#/components/responses/Error'}
         '409':
-          description: 방이 가득 찼거나 잠겼다 (`ROOM_FULL`, `ROOM_LOCKED`)
+          description: 방이 가득 찼거나 잠겼다(`ROOM_FULL`, `ROOM_LOCKED`), 또는 방의 약속 구분에 그 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`)
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/Problem'}
@@ -324,6 +330,11 @@ paths:
         '401': {$ref: '#/components/responses/Error'}
         '403': {$ref: '#/components/responses/Error'}
         '404': {$ref: '#/components/responses/Error'}
+        '409':
+          description: 방의 약속 구분에 그 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`). 저장하지 않는다
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
     delete:
       tags: [rooms]
       operationId: removeParticipant
@@ -599,7 +610,7 @@ components:
         | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
         | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
         | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
-        | 409 | `SCHEDULE_UNAVAILABLE` | 요청 구분 또는 출발역에 확인된 시간표가 없어 계산할 수 없다 |
+        | 409 | `SCHEDULE_UNAVAILABLE` | 요청 구분 또는 출발역에 확인된 시간표가 없어 계산할 수 없다. 방 만들기·참여·출발역 수정에서는 그런 출발역을 저장하지 않는다 |
         | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기(`setDecision`)나 뽑기(`drawFavorTarget`)를 받지 않았다. 방을 다시 불러 확인한 뒤 다시 누른다 |
         | 409 | `DRAW_NOT_AVAILABLE`, `NOT_ENOUGH_DRAW_CANDIDATES`, `DRAW_LIMIT_REACHED` | 뽑기 방이 아니거나, 출발역을 숨기지 않은 참가자가 2명 미만이거나, 다시 뽑기를 이미 썼다(`drawFavorTarget`) |
         | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |

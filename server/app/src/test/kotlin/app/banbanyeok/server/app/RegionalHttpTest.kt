@@ -128,6 +128,43 @@ class RegionalHttpTest :
             }
         }
 
+        it("does not store a participant without a timetable for the room's day, so the result stays computable") {
+            withRegionalApi {
+                val saturday = ""","meetingDate":"2026-11-28""""
+                client
+                    .json(HttpMethod.Post, "/v1/rooms", """{"mode":"fair","host":{"originCode":"005"}$saturday}""")
+                    .assertScheduleUnavailable()
+                val busanSaturday = """{"mode":"fair","host":{"originCode":"003"}$saturday}"""
+                val created = client.json(HttpMethod.Post, "/v1/rooms", busanSaturday)
+                created.status shouldBe HttpStatusCode.Created
+                val path = "/v1/rooms/${created.objectBody().text("roomId")}"
+                client
+                    .json(HttpMethod.Post, "$path/participants", """{"originCode":"005"}""")
+                    .assertScheduleUnavailable()
+                client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("003")
+
+                val joined = client.json(HttpMethod.Post, "$path/participants", """{"originCode":"004"}""")
+                joined.status shouldBe HttpStatusCode.Created
+                val member = joined.objectBody()
+                client
+                    .json(
+                        HttpMethod.Put,
+                        "$path/participants/${member.text("participantId")}",
+                        """{"originCode":"005"}""",
+                        member.text("participantToken"),
+                    ).assertScheduleUnavailable()
+                client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("003", "004")
+                client.json(HttpMethod.Get, "$path/result").status shouldBe HttpStatusCode.OK
+
+                val weekday =
+                    client.json(HttpMethod.Post, "/v1/rooms", """{"mode":"fair","host":{"originCode":"003"}}""")
+                val weekdayPath = "/v1/rooms/${weekday.objectBody().text("roomId")}"
+                client
+                    .json(HttpMethod.Post, "$weekdayPath/participants", """{"originCode":"005"}""")
+                    .status shouldBe HttpStatusCode.Created
+            }
+        }
+
         it("rejects result and preview of an already stored mixed room") {
             withRegionalApi { fixture ->
                 val room = fixture.service.create(command("001"))
@@ -197,6 +234,14 @@ private suspend fun HttpResponse.assertRegionMismatch() {
     error.text("detail") shouldBe "방과 추천은 한 권역 안에서 계산합니다"
 }
 
+private suspend fun HttpResponse.assertScheduleUnavailable() {
+    status shouldBe HttpStatusCode.Conflict
+    objectBody().text("code") shouldBe "SCHEDULE_UNAVAILABLE"
+}
+
+private suspend fun HttpResponse.participantCodes() =
+    objectBody().getValue("participants").jsonArray.map { it.jsonObject.text("originCode") }
+
 private fun withRegionalApi(block: suspend ApplicationTestBuilder.(RoomFixture) -> Unit) {
     testApplication {
         val store =
@@ -204,7 +249,7 @@ private fun withRegionalApi(block: suspend ApplicationTestBuilder.(RoomFixture) 
         val loaded = ArtifactLoader(store, regional = true).load()
         loaded.slots.await()
         loaded.lastTrains.await()
-        val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
+        val directory = StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots), testTimes)
         val fixture = RoomFixture(clock = MutableClock(Instant.parse("2026-11-26T03:00:00Z")), stations = directory)
         val lastTrains = BackgroundLastTrains(loaded.lastTrains, LocalDate.parse("2026-11-26"), emptySet())
         val recommendation =

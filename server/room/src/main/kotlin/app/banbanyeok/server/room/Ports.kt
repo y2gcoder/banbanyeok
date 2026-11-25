@@ -1,7 +1,10 @@
 package app.banbanyeok.server.room
 
 import app.banbanyeok.schema.StationRegion
+import app.banbanyeok.schema.TimeBand
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
 
 /** 활동 기록. 쓰기가 일어날 때 마지막 활동 시각과 새 만료 시각을 같은 트랜잭션에서 갱신한다. */
 public data class Activity(
@@ -160,6 +163,17 @@ public interface StationCatalog {
     public fun isOrigin(code: String): Boolean
 
     public fun regionOf(code: String): StationRegion? = StationRegion.CAPITAL
+
+    /**
+     * [code]로 그 약속 날짜·시각(또는 시간대)의 구분을 계산할 수 있는가. 현재 데이터의 구분별 배차 범위로 본다. 아니면 방 결과가
+     * `SCHEDULE_UNAVAILABLE`이 되므로 참가자로 저장하지 않는다.
+     */
+    public fun departs(
+        code: String,
+        meetingDate: LocalDate?,
+        meetingTime: LocalTime?,
+        meetingBand: TimeBand?,
+    ): Boolean = true
 
     /**
      * 폐기된(deprecated) 코드를 레지스트리의 replacedBy 사슬을 따라 정식(active) 코드로 바꾼다. 정식 코드와 모르는 코드는 그대로다.
