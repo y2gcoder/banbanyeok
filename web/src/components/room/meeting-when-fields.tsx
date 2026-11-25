@@ -105,8 +105,11 @@ export function MeetingWhenFields({
   const picked = value.day?.choice === "pick" ? value.day.date : null;
 
   // 누르는 순간의 서울 날짜로 정한다(화면을 연 뒤 자정을 넘겼어도 "오늘"은 오늘이다).
-  const selectPreset = (choice: Exclude<DayChoice, "pick">) =>
-    onChange((current) => ({ ...current, day: { choice, date: presetDate(choice, todayInSeoul()) } }));
+  const selectPreset = (choice: Exclude<DayChoice, "pick">) => {
+    // 날짜는 누른 순간에 정한다. updater 안에서 읽으면 서울 자정 무렵에 다시 그릴 때의 날짜가 들어간다.
+    const date = presetDate(choice, todayInSeoul());
+    onChange((current) => ({ ...current, day: { choice, date } }));
+  };
   const timeNote = earlyMorningNote(date, time);
   const selectBand = (next: Band) =>
     // 시각과 다른 시간대를 고르면 시각을 지운다(둘이 어긋난 채로 보내지 않는다).
