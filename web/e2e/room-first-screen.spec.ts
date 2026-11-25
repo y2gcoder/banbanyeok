@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { horizontalOverflow } from "./support/layout";
-import { prepareRoom, type RoomCrowd, type RoomScenario } from "./support/room-fixture";
+import { prepareRoom, type RoomCrowd, type RoomDraw, type RoomScenario } from "./support/room-fixture";
 
 /**
  * 방 화면 첫 화면(#168). 결과가 있는 방은 폰(390×844)에서 스크롤 없이 1위 역 이름·사람별 줄·"이 역으로 정했어요"가 보여야 한다.
@@ -19,14 +19,29 @@ async function bottomOf(locator: Locator) {
 test.describe("방 첫 화면에 1위", () => {
   test.use({ viewport: PHONE, isMobile: true, hasTouch: true });
 
-  const cases: { scenario: RoomScenario; label: string }[] = [
+  // 뽑기 방(#172)도 같다: 뽑기 카드는 뽑기 전·뽑은 뒤 모두 한 줄로 접혀 있다(방장이 그 자리에서 막 뽑아 재생할 때만 펼친다).
+  const cases: { scenario: RoomScenario; label: string; draw?: RoomDraw }[] = [
     { scenario: "host-full", label: "방장" },
     { scenario: "hidden-self", label: "출발역을 숨긴 본인" },
     { scenario: "friend-join", label: "링크로 들어와 아직 참여 전" },
+    { scenario: "host-full", label: "뽑기 방, 방장, 뽑기 전", draw: "pending" },
+    { scenario: "host-full", label: "뽑기 방, 방장, 뽑은 뒤 다시 연 화면", draw: "drawn" },
+    { scenario: "hidden-self", label: "뽑기 방, 숨겨서 빠진 본인, 뽑은 뒤", draw: "drawn" },
+    { scenario: "friend-join", label: "뽑기 방, 링크로 들어와 아직 참여 전, 뽑은 뒤", draw: "drawn" },
   ];
-  for (const { scenario, label } of cases) {
+  for (const { scenario, label, draw } of cases) {
     test(`${label}: 1위 이름·사람별 줄·정하기 버튼이 스크롤 없이 보인다`, async ({ page }) => {
-      await page.goto(await prepareRoom(page, scenario));
+      await page.goto(await prepareRoom(page, scenario, undefined, "default", undefined, draw));
+      if (draw === "pending") {
+        // 뽑기 전: 한 줄 카드가 결과 위에 있다(방장은 거기서 뽑는다).
+        await expect(page.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeInViewport();
+      }
+      if (draw === "drawn") {
+        // 뽑은 뒤: 요약 줄과 결과 탭이 당첨자 쪽을 보이고, 접힌 뽑기 카드는 후보 아래에 있다.
+        await expect(page.getByText("지연이와 함께 오는 아주 긴 이름 쪽으로(뽑기)")).toBeInViewport();
+        await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
+        await expect(page.getByRole("heading", { name: "지연이와 함께 오는 아주 긴 이름 쪽으로!" })).toHaveCount(1);
+      }
       const card = topCard(page);
       await expect(card).toBeVisible();
       expect(await page.evaluate(() => window.scrollY)).toBe(0);

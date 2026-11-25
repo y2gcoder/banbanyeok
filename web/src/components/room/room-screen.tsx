@@ -66,7 +66,7 @@ function modeText(room: Room): string {
   if (room.mode === "fair") return "공평하게";
   if (room.mode === "fast") return "빨리 만나기";
   const target = room.participants.find((p) => p.participantId === room.favorTarget);
-  if (room.favorDraw && !target) return "누구 쪽으로(뽑기) · 아직 안 뽑았어요";
+  if (room.favorDraw && !target) return "누구 쪽으로(뽑기 전)";
   if (target && !canFavor(target)) return "공평하게";
   // shortLabel을 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로 쓴다.
   const name = target ? ((target.shortLabel as string | undefined) ?? target.label) : "누구";
@@ -144,8 +144,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh: actions.refresh });
   const drawControl = useFavorDraw({ roomId, hostToken: record?.hostToken });
-  // 이 기기에 기록이 없는 사람(보기만 함)이 이번 방문에 그림을 본 뽑기. 기록이 있으면 기록(drawSeen)에 둔다.
-  const [seenDraws, setSeenDraws] = useState<ReadonlySet<string>>(() => new Set());
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
 
@@ -263,7 +261,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   const draw = roomDraw(room);
   const expectedCount = record?.expectedCount ?? null;
-  const drawSeen = (key: string) => (record ? record.drawSeen === key : seenDraws.has(key));
   const renderDraw = draw
     ? (apply: (settled: NonNullable<typeof draw>) => void) => (
         <FavorDrawCard
@@ -274,17 +271,12 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           full={expectedCount === null ? null : room.participants.length >= expectedCount}
           joinedCount={room.participants.length}
           expectedCount={expectedCount}
-          seen={drawSeen(draw.key)}
+          hiddenInRoom={room.participants.some((p) => p.hidden)}
           justDrew={draw.winner !== null && drawControl.drewKey === draw.key}
           pending={drawControl.pending}
           error={drawControl.error}
           onDraw={drawControl.draw}
-          onSettled={(settled) => {
-            apply(settled);
-            if (settled.winner === null || drawSeen(settled.key)) return;
-            if (record) commit({ ...record, drawSeen: settled.key });
-            else setSeenDraws((seen) => new Set(seen).add(settled.key));
-          }}
+          onSettled={apply}
         />
       )
     : undefined;
@@ -301,7 +293,9 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       onResultSeen={() => {
         if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
       }}
-      {...(renderDraw ? { renderDraw } : {})}
+      {...(renderDraw && draw
+        ? { renderDraw, drawAtTop: draw.winner === null || drawControl.drewKey === draw.key }
+        : {})}
       renderAfter={(view) =>
         joined && token && meetingDay ? (
           <OutcomeCard

@@ -78,9 +78,32 @@ describe("roomDraw(#172): 서버가 정한 대상·당첨·빠진 사람을 그�
     expect(draw?.winner).toBe(1);
     expect(draw?.winnerId).toBe("하늘");
     expect(draw?.candidates[1]?.personIndex).toBe(2);
-    expect(draw?.lateNames).toEqual(["지영"]);
+    expect(draw?.late).toEqual([{ name: "지영", hidden: false }]);
     expect(draw?.selfLate).toBe(true);
     expect(draw?.key).toBe("3:2");
     expect(draw?.generation).toBe(3);
+  });
+
+  it("뽑은 뒤 나간 대상도 칸이 남는다(이름 없이 '나간 사람', 사람 색 없음): 같은 세대·회차면 같은 그림", () => {
+    const draw = roomDraw(
+      room(
+        {
+          generation: 0,
+          round: 1,
+          maxRounds: 2,
+          candidates: ["민수", "떠남", "하늘"],
+          winner: "하늘",
+          drawnAt: "2026-11-25T11:14:00Z",
+          excluded: [],
+        },
+        [person("민수"), person("하늘")],
+      ),
+    );
+    expect(draw?.candidates.map((c) => [c.name, c.personIndex, c.left])).toEqual([
+      ["민수", 0, false],
+      ["나간 사람", null, true],
+      ["하늘", 1, false],
+    ]);
+    expect(draw?.winner).toBe(2);
   });
 });

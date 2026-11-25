@@ -27,10 +27,6 @@ const recordSchema = z.object({
   resultSeenAt: z.iso.datetime({ offset: true }).optional(),
   /** "실제로 어디서 만났나"에 이미 답했는지. 같은 질문을 다시 보여 주지 않기 위해서다. */
   outcomeAnswered: z.boolean().optional(),
-  /**
-   * 이 기기에서 그림을 이미 본 '누구 쪽으로' 뽑기(#172, `drawKey`: 회차와 뽑은 시각). 같은 결과의 그림을 다시 틀지 않기 위해서만 쓴다.
-   */
-  drawSeen: z.string().min(1).max(64).optional(),
 });
 
 export type RoomRecord = z.infer<typeof recordSchema>;

@@ -204,6 +204,19 @@ class RoomDrawTest :
         }
 
         describe("after the draw") {
+            it("keeps the drawn candidates (the picture) when someone other than the winner leaves") {
+                drawTest(1) {
+                    val room = drawRoom()
+                    val drawn = service.drawFavor(room.roomId, room.hostToken, 0, 1).favorDraw.shouldNotBeNull()
+                    service.removeParticipant(room.roomId, room.thirdId, room.thirdPart)
+                    val after = service.get(room.roomId, null).favorDraw.shouldNotBeNull()
+                    after.candidates shouldBe drawn.candidates
+                    after.candidates shouldBe listOf(room.hostId, room.friendId, room.thirdId)
+                    after.winner shouldBe room.friendId
+                    after.round shouldBe 1
+                }
+            }
+
             it("goes back to not drawn when the winner hides their origin, and keeps it when someone else does") {
                 drawTest(1) {
                     val room = drawRoom()

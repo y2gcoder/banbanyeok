@@ -220,7 +220,10 @@ public data class FavorDrawView(
     val generation: Int,
     val round: Int,
     val maxRounds: Int,
-    /** 그림의 칸 순서(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람, 뽑은 뒤에는 그때의 대상 중 아직 방에 있는 사람. */
+    /**
+     * 그림의 칸 순서(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람, 뽑은 뒤에는 뽑을 때의 대상 그대로(그 뒤에 나간 사람도 남는다:
+     * 같은 세대·회차면 언제 봐도 같은 그림이어야 한다). 당첨자는 늘 방에 있다(나가면 뽑기 전으로 돌아간다).
+     */
     val candidates: List<String>,
     val winner: String?,
     val drawnAt: Instant?,

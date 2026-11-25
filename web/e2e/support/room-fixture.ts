@@ -27,6 +27,12 @@ export type RoomCrowd = { alone: boolean };
  */
 export type RoomVariant = "default" | "dawn" | "undated" | "all-hidden";
 
+/**
+ * '누구 쪽으로' 뽑기 방(#172)으로 열기: `pending`은 아직 안 뽑음, `drawn`은 지연이와 함께 오는 아주 긴 이름(f2)이 뽑힘.
+ * 숨긴 참가자 2는 대상에서 빠진다. 없으면 공평하게 방이다.
+ */
+export type RoomDraw = "pending" | "drawn";
+
 const json = (status: number, body: unknown) => ({
   status,
   contentType: "application/json",
@@ -204,6 +210,7 @@ export async function prepareRoom(
   shareVersion?: number,
   variant: RoomVariant = "default",
   crowd: RoomCrowd = { alone: scenario === "host-alone" || scenario === "friend-alone" },
+  draw?: RoomDraw,
 ): Promise<string> {
   const peopleNow = () => {
     const listed = crowd.alone ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
@@ -261,7 +268,21 @@ export async function prepareRoom(
       return route.fulfill(
         json(200, {
           roomId: FAKE_ROOM_ID,
-          mode: "fair",
+          mode: draw ? "favor" : "fair",
+          ...(draw
+            ? {
+                favorTarget: draw === "drawn" ? "f2" : null,
+                favorDraw: {
+                  generation: 0,
+                  round: draw === "drawn" ? 1 : 0,
+                  maxRounds: 2,
+                  candidates: ["h1", "f2"],
+                  winner: draw === "drawn" ? "f2" : null,
+                  drawnAt: draw === "drawn" ? "2026-11-21T10:14:00Z" : null,
+                  excluded: [{ participantId: "f1", reason: "hidden" }],
+                },
+              }
+            : {}),
           locked: false,
           expiresAt: "2999-01-01T00:00:00Z",
           dataVersion: "20261114.5",

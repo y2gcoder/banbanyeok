@@ -53,13 +53,14 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
     expect(res.status()).toBe(201);
   }
   await page.reload();
-  await expect(page.getByRole("heading", { name: "누구 쪽으로 할지 뽑아요" })).toBeVisible();
-  await expect(page.getByText("누구 쪽으로(뽑기) · 아직 안 뽑았어요")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeVisible();
+  await expect(page.getByText("누구 쪽으로(뽑기 전)")).toBeVisible();
+  await page.getByRole("button", { name: "뽑기 자세히 보기" }).click();
   await expect(page.getByText(/출발역을 숨겨서 뽑기에서 빠졌어요/)).toBeVisible();
   await expect(page.getByRole("tab", { name: "공평하게" })).toHaveAttribute("aria-selected", "true");
   await expectNoA11yViolations(page);
 
-  await page.getByRole("button", { name: "사다리 타기" }).click();
+  await page.getByRole("button", { name: "사다리 타기" }).first().click();
   await page.getByRole("button", { name: "건너뛰고 결과 보기" }).click();
   const heading = page.getByRole("heading", { name: /쪽으로!$/ });
   await expect(heading).toBeFocused();
@@ -76,7 +77,7 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
   await expectNoA11yViolations(page);
 
-  // 다른 기기(친구): 같은 사람이 보이고, 처음 보는 결과라 그림을 한 번 재생한다.
+  // 다른 기기(친구): 같은 사람이 접힌 한 줄로 보이고, 펼치면 같은 사다리다.
   const friend = await browser.newContext({
     ...devices["Pixel 7"],
     locale: "ko-KR",
@@ -84,13 +85,15 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   });
   const other = await friend.newPage();
   await other.goto(`/r/${roomId}`);
-  await expect(other.getByRole("button", { name: "건너뛰고 결과 보기" })).toBeVisible();
-  await expect(other.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible({ timeout: 8000 });
+  await expect(other.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible();
+  await other.getByRole("button", { name: "사다리 보기" }).click();
+  await expect(other.getByRole("img", { name: `사다리타기 결과: ${winnerName} 쪽으로` })).toBeVisible();
   await expect(other.getByRole("button", { name: "사다리 타기" })).toHaveCount(0);
   await friend.close();
 
   // 새로고침해도 같은 결과(서버에 저장), 방장 화면에서 다시 뽑기는 한 번 남았다.
   await page.reload();
   await expect(page.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible();
+  await page.getByRole("button", { name: "사다리 보기" }).click();
   await expect(page.getByRole("button", { name: "다시 뽑기 (1번 남음)" })).toBeVisible();
 });

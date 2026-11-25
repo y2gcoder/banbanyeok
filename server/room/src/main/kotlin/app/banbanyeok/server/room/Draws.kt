@@ -124,7 +124,8 @@ public class FavorDrawRule(
             generation = draw.generation,
             round = draw.round,
             maxRounds = MAX_ROUNDS,
-            candidates = participants.filter { it.id in drawn }.map { it.id },
+            // 그림은 뽑을 때의 대상으로만 그린다: 그 뒤에 누가 나가도 같은 세대·회차면 언제 봐도 같은 사다리다.
+            candidates = draw.candidates,
             winner = winner,
             drawnAt = draw.drawnAt,
             // 뽑을 때 방에 있었는데 대상이 아니었으면 숨겨서 빠진 것이고, 명단에 없으면 뽑은 뒤에 들어온 것이다.

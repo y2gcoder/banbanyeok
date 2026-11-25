@@ -19,14 +19,18 @@ type Props = {
   winner: number | null;
   seed: number;
   phase: DrawPhase;
-  onDone?: () => void;
 };
+
+/** 사람 색. 뽑은 뒤 나간 사람의 칸은 흐린 선이다. */
+const colorOf = (person: DrawPerson) =>
+  person.personIndex === null ? "var(--rule-strong)" : personColor(person.personIndex);
 
 /**
  * 사다리타기. 위 칸이 뽑기 대상(입장 순서), 아래 한 칸이 '이쪽으로'. 가로줄은 씨앗에서 나오고 당첨 칸은 당첨자의 길이 닿는 곳이다.
- * 그림은 장식이다: 스크린리더에는 감싼 카드의 결과 문장이 읽힌다(role="img"의 이름도 결과를 말한다).
+ * 재생이 언제 끝나는지는 감싼 카드가 정한다(이 그림이 없어도 끝나게). 스크린리더에는 카드의 결과 문장이 읽히고, role="img"의 이름은
+ * 그림이 끝난 뒤에만 당첨자를 말한다(재생 중에 미리 읽히지 않게).
  */
-export function LadderGame({ people, winner, seed, phase, onDone }: Props) {
+export function LadderGame({ people, winner, seed, phase }: Props) {
   const ladder = useMemo(() => ladderOf(people.length, seed), [people.length, seed]);
   const goal = winner === null ? null : (ladder.ends[winner] ?? null);
   // 가로줄마다 (행, 왼쪽 줄)이 하나뿐이라 그것으로 이름을 붙인다.
@@ -46,15 +50,11 @@ export function LadderGame({ people, winner, seed, phase, onDone }: Props) {
     setDrawn(false);
     // 다음 프레임에 길이를 0→1로 바꿔 선이 그려지게 한다.
     const frame = requestAnimationFrame(() => requestAnimationFrame(() => setDrawn(true)));
-    const timer = window.setTimeout(() => onDone?.(), LADDER_PLAY_MS + 250);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
-    };
-  }, [phase, onDone]);
+    return () => cancelAnimationFrame(frame);
+  }, [phase]);
 
   const label =
-    winner === null
+    winner === null || phase !== "done"
       ? `사다리타기: ${people.map((p) => p.name).join(", ")} 중 한 사람`
       : `사다리타기 결과: ${people[winner]?.name} 쪽으로`;
 
@@ -66,6 +66,7 @@ export function LadderGame({ people, winner, seed, phase, onDone }: Props) {
             <span
               className={cn(
                 "inline-flex max-w-full items-center gap-1 rounded-full border border-rule bg-surface px-2 py-1 text-[14px] font-bold text-ink",
+                person.left && "border-dashed font-semibold text-ink-soft",
                 // 끝나면 당첨자 이름에 테두리를 두른다(나머지를 흐리게 하면 글자 대비가 모자란다).
                 phase === "done" && winner !== null && index === winner && "border-ink ring-2 ring-ink",
               )}
@@ -73,7 +74,7 @@ export function LadderGame({ people, winner, seed, phase, onDone }: Props) {
               <span
                 aria-hidden="true"
                 className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: personColor(person.personIndex) }}
+                style={{ backgroundColor: colorOf(person) }}
               />
               <span className="truncate">{person.name}</span>
             </span>
@@ -119,7 +120,7 @@ export function LadderGame({ people, winner, seed, phase, onDone }: Props) {
                   key={person.id}
                   points={points}
                   fill="none"
-                  stroke={personColor(person.personIndex)}
+                  stroke={colorOf(person)}
                   strokeWidth={isWinner ? 6 : 4}
                   strokeLinejoin="round"
                   strokeLinecap="round"

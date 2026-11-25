@@ -44,6 +44,11 @@ type Props = {
    * (뽑기 전이면 공평하게로) 옮긴다.
    */
   renderDraw?: (apply: (draw: RoomDraw) => void) => React.ReactNode;
+  /**
+   * 뽑기 카드를 후보 위에 둘지. 뽑기 전(방장은 거기서 뽑는다)과 이 기기가 막 뽑았을 때만 위다. 이미 뽑힌 결과는 접힌 채 후보 아래에 둬
+   * 폰 첫 화면에 1위 카드가 들어오게 한다(#168). 결과 탭과 요약 줄이 이미 당첨자 쪽을 보여 준다.
+   */
+  drawAtTop?: boolean;
 };
 
 type Pick = { mode: Mode; favorId: string | null };
@@ -89,6 +94,7 @@ export function RoomResult({
   onResultSeen,
   renderAfter,
   renderDraw,
+  drawAtTop = true,
 }: Props) {
   const panelId = useId();
   const queryClient = useQueryClient();
@@ -203,7 +209,7 @@ export function RoomResult({
   return (
     <section aria-labelledby="result-title" className="flex flex-col gap-4">
       <DecisionBanner room={room} undo={undo} />
-      {renderDraw ? renderDraw(applyDraw) : null}
+      {renderDraw && drawAtTop ? renderDraw(applyDraw) : null}
       <h2 id="result-title" className="text-[20px] font-extrabold text-ink">
         만날 역 후보
       </h2>
@@ -243,6 +249,7 @@ export function RoomResult({
           <LoadingCard />
         )}
       </div>
+      {renderDraw && !drawAtTop ? renderDraw(applyDraw) : null}
       <TimeBasisNote basis={data ? (data.timeBasis ?? null) : undefined} requested={null} />
       {view && top && renderAfter ? renderAfter(view) : null}
     </section>
