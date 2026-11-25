@@ -98,7 +98,7 @@ fun main(args: Array<String>) {
                 "Usage: fetch|seoul-fetch|official-fetch|shinbundang-samples|shinbundang-baseline|headways|build|" +
                     "validate|all|spotcheck|" +
                     "refresh|" +
-                    "tago-fetch [probe]|" +
+                    "tago-fetch [busan|probe]|" +
                     "stage-release [outDir]",
             )
         }
@@ -127,10 +127,11 @@ private fun tagoCommand(
     root: Path,
     args: List<String>,
 ) {
-    require(args.size <= 1) { "Usage: tago-fetch [probe]" }
+    require(args.size <= 1) { "Usage: tago-fetch [busan|probe]" }
     when (args.firstOrNull()) {
         null -> kotlin.system.exitProcess(tagoFetch(root))
+        "busan" -> kotlin.system.exitProcess(tagoFetch(root, TagoRegion.BUSAN))
         "probe" -> tagoProbe(root)
-        else -> error("Usage: tago-fetch [probe]")
+        else -> error("Usage: tago-fetch [busan|probe]")
     }
 }

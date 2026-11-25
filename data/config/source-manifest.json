@@ -350,5 +350,19 @@
     "rows": 1103,
     "sha256": "8a60490ea582a62ce859877380e4b96b34416c536d96b1dcb1a869426bedc363",
     "source_url": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003561913&fileDetailSn=1"
+  },
+  {
+    "bytes": 5211663,
+    "content_type": "application/json",
+    "effective_date": "timetable revision date not supplied; dailyTypeCode 01/02/03 (01 weekday, 02 Saturday, 03 Sunday/holiday)",
+    "estimated": false,
+    "fetched_at": "2026-11-25T13:14:05.855645Z",
+    "file": "data/raw/tago-busan",
+    "id": "S6-busan",
+    "license": "이용허락범위 제한 없음 (data.go.kr/15098554)",
+    "request_body": null,
+    "rows": 266,
+    "sha256": "965fcf8660d22dd7fd2aa349a1c2fea43867578b68d935186af019027c5a67e3",
+    "source_url": "https://apis.data.go.kr/1613000/SubwayInfo (GetKwrdFndSubwaySttnList, GetSubwaySttnAcctoSchdulList)"
   }
 ]
