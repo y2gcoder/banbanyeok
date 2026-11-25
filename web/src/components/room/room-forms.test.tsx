@@ -55,6 +55,28 @@ describe("참여 폼", () => {
     expect(screen.queryByText(/숨기/)).not.toBeInTheDocument();
   });
 
+  it("내 항목 고치기: 고치는 사이 다른 탭에서 숨김을 풀면(갱신된 방) 숨기기 칸이 사라지고 숨기지 않은 값을 보낸다", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const form = (hiddenNow: boolean) => (
+      <JoinForm
+        mode="edit"
+        initial={{ nickname: "지연", station, hidden: true }}
+        hiddenNow={hiddenNow}
+        personIndex={1}
+        pending={false}
+        error={null}
+        onSubmit={onSubmit}
+      />
+    );
+    const { rerender } = render(form(true));
+    expect(screen.getByRole("checkbox", { name: "출발역 이름 계속 숨기기" })).toBeChecked();
+    rerender(form(false));
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "저장하기" }));
+    expect(onSubmit.mock.calls[0]?.[0]).toEqual({ originCode: station.code, hidden: false, nickname: "지연" });
+  });
+
   it("내 항목 고치기: 이미 숨긴 사람은 지금 숨긴 상태를 보고 숨김을 풀 수 있다", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();

@@ -258,6 +258,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           key="edit"
           mode="edit"
           initial={myValue()}
+          hiddenNow={room.participants.find((p) => p.isSelf === true)?.hidden === true}
           personIndex={Math.max(0, selfIndex)}
           pending={actions.editPending}
           timeBasis={room.timeBasis}
