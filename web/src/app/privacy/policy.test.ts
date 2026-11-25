@@ -676,12 +676,12 @@ describe("개인정보 처리방침", () => {
     expect(text).toContain("2026년 11월 21일부터 알렸으나 시행하지 않았습니다.");
   });
 
-  it("날짜: 이 판의 시행일은 REVISION_DATE 하나이고, 11월 28일 예정 판이 시행되기 전이다", () => {
+  it("날짜: 이 판의 시행일은 REVISION_DATE 하나다", () => {
     expect(REVISION_DATE).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(new Date(`${REVISION_DATE}T00:00:00Z`).toISOString().slice(0, 10)).toBe(REVISION_DATE);
-    // main의 예정 판(11-28 시행)이 시행된 뒤라면 '시행하지 않았다'는 이력이 틀린다. 그때는 이력을 고쳐 쓴다.
-    // 하한은 이 판을 정하고 배포하는 날(2026-11-21)이다.
-    expect(REVISION_DATE >= "2026-11-21" && REVISION_DATE < WITHDRAWN_EFFECTIVE_DATE).toBe(true);
+    // 11-28 예정 판은 11-21 시행판으로 대신해 시행하지 않았으므로(UPCOMING_POLICY = null) 그날이 지나도 이력은 그대로 맞다. 상한을 두지 않아
+    // 병합일이 11-28 뒤여도 REVISION_DATE만 고치면 된다. 하한은 직전 판(11-25 시행판)의 날이다.
+    expect(REVISION_DATE >= "2026-11-25").toBe(true);
     expect(textOf(POLICY, "changes").split("\n")[0]).toBe(
       `이 개인정보 처리방침은 ${koreanDate(REVISION_DATE, { year: true })}부터 적용됩니다.`,
     );
