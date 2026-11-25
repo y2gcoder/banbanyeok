@@ -53,6 +53,7 @@ mkdir "$tmp/bin"
 cat > "$tmp/bin/gh" <<'FAKE'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "$CALLS"
+if [ -n "${GH_ERROR:-}" ]; then printf '%s\n' "$GH_ERROR" >&2; fi
 exit "${GH_EXIT:-0}"
 FAKE
 cat > "$tmp/bin/curl" <<'FAKE'
@@ -69,6 +70,42 @@ bash "$here/create-deploy-release.sh"
 expect '명시한 전체 커밋으로 생성' "$(sed -n '5p' "$CALLS")" "$HEAD_SHA"
 expect '노트 시작 태그' "$(sed -n '/^--notes-start-tag$/{n;p;}' "$CALLS")" "$PREVIOUS"
 expect '대상별 첫 줄' "$(sed -n '/^--notes$/{n;p;}' "$CALLS")" "서버 ${HEAD_SHA:0:7} (새로 배포) · 웹 abcdef1 (그대로) · 데이터 20261124.1 (바뀜)"
+
+release_api=https://api.github.com/repos/test/repo/releases
+denied='HTTP 403: Resource not accessible by integration'
+summary="$tmp/summary"
+GH_EXIT=1 GH_ERROR="$denied ($release_api)" GH_REPO=test/repo GITHUB_STEP_SUMMARY="$summary" \
+  bash "$here/create-deploy-release.sh" > "$tmp/warning" 2> "$tmp/gh-error"
+grep -q '^::warning .*릴리즈 생략' "$tmp/warning"
+grep -qF "$denied" "$tmp/gh-error"
+grep -qF '다음 릴리즈 노트에 포함됩니다' "$summary"
+grep -qF "gh release create $TAG --target $HEAD_SHA" "$summary"
+grep -qF -- "--notes-start-tag $PREVIOUS" "$summary"
+grep -qF -- '--repo test/repo' "$summary"
+echo 'ok 릴리즈 생성 권한 거부는 경고와 잡 요약에 기록하고 성공 종료'
+
+skipped_sha="$HEAD_SHA"
+g checkout -q main
+commit third
+HEAD_SHA="$(g rev-parse HEAD)"
+TAG="$(value tag)"
+PREVIOUS="$(value previous)"
+expect '다음 릴리즈도 기존 태그를 기준으로 계획' "$PREVIOUS" v2026.11.25.10
+expect '생략된 태그 번호는 다시 사용 가능' "$TAG" v2026.11.25.13
+bash "$here/create-deploy-release.sh"
+notes_start="$(sed -n '/^--notes-start-tag$/{n;p;}' "$CALLS")"
+release_target="$(sed -n '/^--target$/{n;p;}' "$CALLS")"
+g rev-list "$notes_start..$release_target" > "$tmp/notes-range"
+grep -qxF "$skipped_sha" "$tmp/notes-range"
+echo 'ok 다음 릴리즈 노트 범위에 생략된 커밋 포함'
+
+if GH_EXIT=1 GH_ERROR="$denied ($release_api/generate-notes)" \
+  bash "$here/create-deploy-release.sh" 2> "$tmp/gh-error"; then
+  echo 'FAIL 노트 생성 권한 오류 은폐'; exit 1
+fi
+grep -qF "$release_api/generate-notes" "$tmp/gh-error"
+echo 'ok 노트 API 권한 오류는 실패 유지'
+
 export DATA_AFTER="$DATA_BEFORE" SERVER_NEW=false SERVER_BEFORE=1234567890 WEB_NEW=true
 bash "$here/create-deploy-release.sh"
 expect '서버 그대로·웹 배포·데이터 그대로' "$(sed -n '/^--notes$/{n;p;}' "$CALLS")" "서버 1234567 (그대로) · 웹 ${HEAD_SHA:0:7} (새로 배포) · 데이터 $DATA_AFTER (그대로)"
