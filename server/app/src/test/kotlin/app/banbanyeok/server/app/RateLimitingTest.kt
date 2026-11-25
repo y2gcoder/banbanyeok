@@ -2,13 +2,16 @@ package app.banbanyeok.server.app
 
 import app.banbanyeok.server.app.config.LimitSpec
 import app.banbanyeok.server.app.http.IdempotencyCache
-import app.banbanyeok.server.app.http.StoredResponse
 import app.banbanyeok.server.app.http.TokenBucketLimiter
 import app.banbanyeok.server.room.MutableClock
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.time.Duration
 
 class RateLimitingTest :
@@ -45,15 +48,38 @@ class RateLimitingTest :
             it("returns the stored response until it expires and keeps the cache bounded") {
                 val clock = MutableClock()
                 val cache = IdempotencyCache(clock, Duration.ofMinutes(10), maxEntries = 2)
-                cache.store("k1", StoredResponse("one"))
-                cache.find("k1")?.body shouldBe "one"
+                cache.resolve("k1", { it }) { "one" } shouldBe "one"
+                cache.resolve("k1", { it }) { error("expected a cache hit") } shouldBe "one"
                 clock.advance(Duration.ofMinutes(11))
-                cache.find("k1").shouldBeNull()
-                cache.store("k2", StoredResponse("two"))
-                cache.store("k3", StoredResponse("three"))
-                cache.store("k4", StoredResponse("four"))
-                cache.find("k2").shouldBeNull()
-                cache.find("k4")?.body shouldBe "four"
+                cache.resolve("k1", { it }) { "after expiry" } shouldBe "after expiry"
+                cache.resolve("k2", { it }) { "two" }
+                cache.resolve("k3", { it }) { "three" }
+                cache.resolve("k3", { it }) { error("expected a cache hit") } shouldBe "three"
+                cache.resolve("k1", { it }) { "after eviction" } shouldBe "after eviction"
+            }
+
+            it("runs the create callback only once for overlapping requests with the same key") {
+                val cache = IdempotencyCache(MutableClock())
+                coroutineScope {
+                    val creating = CompletableDeferred<Unit>()
+                    val finish = CompletableDeferred<Unit>()
+                    val first =
+                        async {
+                            cache.resolve("key", { it }) {
+                                creating.complete(Unit)
+                                finish.await()
+                                "first"
+                            }
+                        }
+                    creating.await()
+                    val second =
+                        async(start = CoroutineStart.UNDISPATCHED) {
+                            cache.resolve("key", { it }) { "duplicate" }
+                        }
+                    finish.complete(Unit)
+                    first.await() shouldBe "first"
+                    second.await() shouldBe "first"
+                }
             }
         }
     })

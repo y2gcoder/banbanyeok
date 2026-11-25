@@ -53,13 +53,22 @@ private fun Route.anonRoutes(services: ApiServices) {
     }
 }
 
-private fun Route.roomRoutes(
-    services: ApiServices,
+private fun Route.roomCreationRoute(
+    rooms: RoomService,
     idempotency: IdempotencyCache,
 ) {
     post("/rooms") {
-        call.respondCreated(idempotency) {
-            val created = services.rooms.create(call.receive<RoomCreateRequestDto>().toCommand(call.bearerToken()))
+        call.respondCreated<RoomCreatedDto>(idempotency, replay = { cached ->
+            val expiresAt =
+                rooms.creationReplayExpiry(
+                    cached.roomId,
+                    cached.hostToken,
+                    cached.participantId,
+                    cached.participantToken,
+                )
+            expiresAt?.let { cached.copy(expiresAt = it.toString()) }
+        }) {
+            val created = rooms.create(call.receive<RoomCreateRequestDto>().toCommand(call.bearerToken()))
             RoomCreatedDto(
                 created.roomId,
                 created.hostToken,
@@ -70,6 +79,13 @@ private fun Route.roomRoutes(
             )
         }
     }
+}
+
+private fun Route.roomRoutes(
+    services: ApiServices,
+    idempotency: IdempotencyCache,
+) {
+    roomCreationRoute(services.rooms, idempotency)
     route("/rooms/{roomId}") {
         get { call.respondRoom(services, services.rooms.get(call.roomId(), call.bearerToken())) }
         patch {
@@ -116,7 +132,10 @@ private fun Route.participantRoutes(
 ) {
     route("/participants") {
         post {
-            call.respondCreated(idempotency) {
+            call.respondCreated<JoinedDto>(idempotency, replay = { cached ->
+                services.rooms.checkJoinReplay(call.roomId(), cached.participantId, cached.participantToken)
+                cached
+            }) {
                 val input = call.receive<ParticipantInputDto>().toInput()
                 val joined = services.rooms.join(call.roomId(), input, call.bearerToken())
                 JoinedDto(joined.participantId, joined.participantToken)
@@ -218,11 +237,12 @@ private fun ApplicationCall.participantId(): String = requireNotNull(parameters[
 private const val MAX_IDEMPOTENCY_KEY = 64
 
 /**
- * 201로 응답하는 변경 요청. `Idempotency-Key`가 있으면 같은 키·메서드·경로의 재시도에 처음 응답을 그대로 돌려준다(성공 응답만 저장).
+ * 201로 응답하는 변경 요청. 같은 키·메서드·URI의 재시도는 [replay]로 현재 상태를 확인한다.
  */
 private suspend inline fun <reified T : Any> ApplicationCall.respondCreated(
     cache: IdempotencyCache,
-    produce: () -> T,
+    crossinline replay: suspend (T) -> T?,
+    crossinline produce: suspend () -> T,
 ) {
     val key = request.header("Idempotency-Key")
     if (key == null) {
@@ -231,9 +251,14 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondCreated(
     }
     requireIdempotencyKey(key)
     val scoped = "${request.local.method.value} ${request.local.uri} $key"
+    val codec = serializer<T>()
     val body =
-        cache.find(scoped)?.body
-            ?: apiJson.encodeToString(serializer<T>(), produce()).also { cache.store(scoped, StoredResponse(it)) }
+        cache.resolve(scoped, replay = { encoded ->
+            val cached = apiJson.decodeFromString(codec, encoded)
+            replay(cached)?.let { if (it == cached) encoded else apiJson.encodeToString(codec, it) }
+        }) {
+            apiJson.encodeToString(codec, produce())
+        }
     respondText(body, ContentType.Application.Json, HttpStatusCode.Created)
 }
 
