@@ -20,6 +20,6 @@ public class RoomRegionRule(
     }
 
     private fun regionOf(participant: Participant): StationRegion? =
-        // Existing hidden participants were created when only the metropolitan network was available.
+        // 지금 남아 있는 숨긴 참가자는 수도권만 지원하던 때 들어왔다.
         if (participant.hidden) StationRegion.CAPITAL else stations.regionOf(stations.canonical(participant.originCode))
 }

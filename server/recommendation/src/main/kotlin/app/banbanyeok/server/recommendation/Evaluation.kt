@@ -25,7 +25,7 @@ public class Evaluation internal constructor(
      */
     public val mapMiddle: MapMiddle? by lazy { middle() }
 
-    /** Lines excluded from this slot; omitted from the wire for rooms with legacy hidden origins. */
+    /** 이 구분에서 배차 미확인으로 제외한 계통. 숨긴 출발역이 남아 있는 옛 방의 응답에서는 생략한다. */
     public val missingServices: List<String>?
         get() =
             matrix.missingServices.takeIf {

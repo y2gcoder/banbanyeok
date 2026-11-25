@@ -16,7 +16,7 @@
 | 구분별 시간·환승 행렬 | `versions/<dataVersion>/od-<구분>.<hash>.bin` | 바이너리(od.bin과 같은 형식) | 파이프라인 |
 | 귀갓길 막차 표 | `versions/<dataVersion>/lt.<hash>.bin` | 바이너리(§10) | 파이프라인 |
 | 노선 그래프(사람별 경로) | `versions/<dataVersion>/rg.<hash>.bin` | 바이너리(§11) | 파이프라인 |
-| manifest | `manifest.json`(세대 1) + `manifest.v2.json`(세대 2) + `manifest.v3.json`(세대 3) + `manifest.v4.json`(세대 4) (발행 포인터) | JSON | 파이프라인 (`manifest.json`을 마지막에 교체) |
+| manifest | `manifest.json`(세대 1) + `manifest.v2.json`(세대 2) + `manifest.v3.json`(세대 3) + `manifest.v4.json`(세대 4), 권역 포인터 `regional/manifest.v5.json`(세대 5, §12) | JSON | 파이프라인 (기존 세대는 `manifest.json`을 마지막에 교체) |
 
 **manifest 세대**(`manifest.schemaVersion`)에 맞는 구성 파일 형식을 읽는다. 세대 2는 구분별 od 행렬(§9), 세대 3은 막차
 표(§10), 세대 4는 사람별 경로 그래프(§11)를 더한다. 세대 1~4의 구성 파일은 모두 1판이다.
