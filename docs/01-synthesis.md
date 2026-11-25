@@ -16,7 +16,7 @@
 | 공유 코어 | KMP `shared/{core,schema,links,api-client,app-logic,analytics}` | C3, 사용자 |
 | 서버 | Ktor + Cloud Run(서울, min 0) + Postgres | C3 |
 | 웹 | Next.js(App Router) on **Cloudflare Workers + OpenNext** (수익화 계획이 있어 Vercel Hobby의 비상업 제한을 피함). 인기 역 조합 SEO 페이지 + 링크별 동적 OG | C3, 사용자 |
-| 숨기기 | 숨긴 출발역은 이름만 가리고 시간은 보임. 다른 사람에게는 5분 단위로 올린 시간만, 환승은 숨김(순위는 정확한 값, [ADR-0004](adr/0004-hidden-origin-times-coarsened.md)). 숨긴 사람 쪽 '누구 쪽으로' 결과는 본인만([ADR-0005](adr/0005-favor-without-hidden-origin.md)) | 사용자 |
+| 숨기기 | **새로 숨길 수 없음**([ADR-0007](adr/0007-stop-new-hidden-origins.md), 2026-11-25): 방 만들기·참여·수정의 새 숨김은 `HIDE_NOT_AVAILABLE`. 이미 숨긴 사람만 방이 사라질 때까지 다음 규칙 그대로(풀 수는 있음). 옛 방이 모두 사라지면 걷어냄(#182). 숨긴 출발역은 이름만 가리고 시간은 보임. 다른 사람에게는 5분 단위로 올린 시간만, 환승은 숨김(순위는 정확한 값, [ADR-0004](adr/0004-hidden-origin-times-coarsened.md)). 숨긴 사람 쪽 '누구 쪽으로' 결과는 본인만([ADR-0005](adr/0005-favor-without-hidden-origin.md)) | 사용자 |
 | 앱 | Android Compose → iOS SwiftUI. RN/Expo/Compose Multiplatform 아님 | 사용자 |
 | 공유 방식 | 혼자 입력 → URL 상태(3자 base32 역 코드), 각자 입력/숨기기 → 서버 방 ID | C3 |
 | 계산 위치 | 클라이언트(혼자 입력, 즉시) + 서버(방, 숨기기). 코어는 한 벌 | C3 |
