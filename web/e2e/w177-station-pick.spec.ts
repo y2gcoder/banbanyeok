@@ -256,6 +256,60 @@ for (const size of SIZES) {
       await f.station.blur();
       await expect(f.station).toHaveValue("서울대입구");
       await expect(f.hidden).not.toBeChecked();
+      // 보정은 그 조합 한 번뿐이다: 전체를 골라 새로 '서울대'를 넣으면 그대로 '서울대'다(되돌리지 않는다).
+      await f.station.click();
+      await f.station.selectText();
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Input.insertText", { text: "서울대" });
+      await expect(f.station).toHaveValue("서울대");
+      await expect(page.getByRole("option")).toHaveCount(2);
+    });
+
+    test("방 만들기: 고른 뒤 그 조합이 다른 글자로 늦게 확정돼도 입력 칸은 고른 역 이름이다(trusted 조합)", async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName !== "chromium" || touch, "데스크톱 Chromium의 trusted 조합(CDP)");
+      const f = await openCreate(page);
+      await search(page, f.station, "서울", /^서울대입구/);
+      const ime = await imeFor(page, f.station, browserName);
+      await ime.start("대");
+      const option = page.getByRole("option", { name: /^서울대입구/ });
+      await option.click();
+      await expect(page.locator('[data-slot="combobox-content"]')).toHaveCount(0);
+      await ime.start("데"); // 확정 전에 조합이 바뀐다
+      await ime.commit("데");
+      await expect(f.station).toHaveValue("서울대입구");
+      await expect(f.hidden).not.toBeChecked();
+    });
+
+    test("방 만들기: 조합을 확정하는 Enter(keyCode 229)는 역을 고르지도 폼을 제출하지도 않는다(trusted 조합)", async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName !== "chromium" || touch, "데스크톱 Chromium의 trusted 조합(CDP)");
+      const f = await openCreate(page);
+      await search(page, f.station, "서울", /^서울대입구/);
+      const ime = await imeFor(page, f.station, browserName);
+      await ime.start("대");
+      await expect(page.getByRole("option").first()).toHaveAttribute("data-highlighted", "");
+      const posts: string[] = [];
+      page.on("request", (req) => {
+        if (req.method() === "POST") posts.push(req.url());
+      });
+      // IME가 후보를 확정하는 Enter: key는 Enter, keyCode는 229(VK_PROCESSKEY).
+      const cdp = await page.context().newCDPSession(page);
+      const enter = { key: "Enter", code: "Enter", windowsVirtualKeyCode: 229, nativeVirtualKeyCode: 229 };
+      await cdp.send("Input.dispatchKeyEvent", { type: "rawKeyDown", ...enter });
+      await ime.commit("대");
+      await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...enter });
+      await expect(f.station).toHaveValue("서울대");
+      await expect(page.getByRole("option", { name: /^서울대입구/ })).toBeVisible();
+      await expect(page.getByText("출발역을 골라 주세요.")).toHaveCount(0);
+      expect(posts).toEqual([]);
+      // 확정한 뒤의 Enter는 강조된 항목을 고른다.
+      await page.keyboard.press("Enter");
+      await expect(f.station).toHaveValue("서울대입구");
     });
 
     test("방 만들기: 마우스로 고른 뒤 따로 누른 클릭(detail 1)은 고른 자리 바로 옆이어도 닿는다", async ({ page }) => {
