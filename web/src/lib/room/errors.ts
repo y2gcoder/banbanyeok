@@ -20,7 +20,8 @@ const MESSAGES: Readonly<Record<string, string>> = {
   ROOM_CHANGED: "그사이 방이 바뀌었어요. 새로 불러왔으니 다시 골라 주세요.",
   FAVOR_TARGET_HIDDEN: "출발역을 숨긴 사람 쪽으로 맞춘 결과는 그 사람만 볼 수 있어요. 다른 기준을 골라 주세요.",
   DRAW_NOT_AVAILABLE: "이 방은 뽑기로 정하는 방이 아니에요.",
-  NOT_ENOUGH_DRAW_CANDIDATES: "출발역을 숨기지 않은 사람이 두 명 이상이어야 뽑을 수 있어요.",
+  NOT_ENOUGH_DRAW_CANDIDATES: "뽑기에 들어갈 사람이 두 명 이상이어야 뽑을 수 있어요.",
+  HIDE_NOT_AVAILABLE: "출발역 숨기기는 이제 쓸 수 없어요. 숨기기를 끄고 다시 해 주세요.",
   DRAW_LIMIT_REACHED: "다시 뽑기는 한 번만 할 수 있어요.",
 };
 

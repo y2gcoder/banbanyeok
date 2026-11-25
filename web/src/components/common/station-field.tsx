@@ -37,7 +37,7 @@ export function StationField({ id, value, onChange, describedBy }: Props) {
   //
   // 한글은 조합 중인 글자까지 찾는다(#177). Base UI는 IME 조합 중에는 inputValue를 넘기지 않아(안드로이드 제외) 목록이 입력 칸보다
   // 한 글자 늦다("서울대"를 쳐도 "서울" 목록). macOS는 마우스를 누르는 순간 조합을 먼저 확정하므로, 확정으로 목록이 바뀌어 누른
-  // 자리의 항목이 사라지고 누름이 목록 아래('출발역 이름 숨기기')에 떨어졌다. 보이는 글자로 찾으면 확정해도 목록이 그대로다.
+  // 자리의 항목이 사라지고 누름이 목록 아래 칸에 떨어졌다. 보이는 글자로 찾으면 확정해도 목록이 그대로다.
   const composingRef = useRef(false);
   const [composing, setComposing] = useState<string | null>(null);
   const items = useMemo(() => searchStations(composing ?? query), [composing, query]);
@@ -154,7 +154,7 @@ const swallow = (event: Event) => {
 
 /**
  * 목록 항목을 마우스·손가락으로 고르면 목록은 곧바로 닫힘 상태가 되어 포인터를 받지 않고, 그 아래 칸이 드러난다. 같은 자리를 이어
- * 누르는 두 번째 누름이 드러난 칸('출발역 이름 숨기기', '한 명 더')을 누르지 않게, 그 누름만 문서에 닿기 전에(window 캡처) 삼킨다(#177).
+ * 누르는 두 번째 누름이 드러난 칸(추천 기준·'참여하기'·'한 명 더' 등)을 누르지 않게, 그 누름만 문서에 닿기 전에(window 캡처) 삼킨다(#177).
  * - 마우스: 운영체제가 같은 연속 클릭으로 센 누름(`detail` 2 이상)이 목록 자리에서 시작하면 mousedown부터 click까지 삼킨다. 따로 누른
  *   클릭(`detail` 1)은 그대로 닿는다.
  * - 손가락·펜: iOS WebKit은 두 번째 탭도 `detail`이 1이라, 고른 뒤 `FOLLOW_UP_TAP_MS` 안에 목록 자리이면서 고른 자리

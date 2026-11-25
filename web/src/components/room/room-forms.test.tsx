@@ -12,7 +12,7 @@ if (!station) throw new Error("테스트 역이 없다");
 describe("참여 폼", () => {
   beforeEach(() => window.localStorage.clear());
 
-  it("역을 고르기 전에는 참여할 수 없고, 고르면 이름(선택)·숨김과 함께 입력을 넘긴다", async () => {
+  it("역을 고르기 전에는 참여할 수 없고, 고르면 이름(선택)과 함께 숨기지 않은 입력을 넘긴다", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(
@@ -27,19 +27,56 @@ describe("참여 폼", () => {
     );
     const button = screen.getByRole("button", { name: "참여하기" });
     expect(button).toBeDisabled();
-    // 숨기기는 역 이름만 가리고 시간은 5분 단위로 보여 출발역을 짐작할 수 있다는 고지가 그 자리에 있다(#142).
-    expect(
-      screen.getByText(/각 후보까지 걸리는 시간이 5분 단위로 보여서, 출발역을 짐작할 수 있어요/),
-    ).toBeInTheDocument();
+    // 새로 숨길 수 없다(ADR-0007): 숨기기 칸도, 숨기기 안내도 없다.
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(screen.queryByText(/숨기/)).not.toBeInTheDocument();
 
     await user.type(screen.getByRole("textbox", { name: "내 이름 (선택)" }), "  지연 ");
     await user.type(screen.getByRole("combobox", { name: "내 출발역" }), "강남");
     await user.click(await screen.findByRole("option", { name: /^강남\s?2호선/ }));
-    await user.click(screen.getByRole("checkbox", { name: /출발역 이름 숨기기/ }));
     expect(button).toBeEnabled();
     await user.click(button);
     expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]?.[0]).toEqual({ originCode: station.code, hidden: false, nickname: "지연" });
+  });
+
+  it("내 항목 고치기: 숨기지 않은 사람에게는 숨기기 칸이 없다", () => {
+    render(
+      <JoinForm
+        mode="edit"
+        initial={{ nickname: "지연", station, hidden: false }}
+        personIndex={1}
+        pending={false}
+        error={null}
+        onSubmit={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(screen.queryByText(/숨기/)).not.toBeInTheDocument();
+  });
+
+  it("내 항목 고치기: 이미 숨긴 사람은 지금 숨긴 상태를 보고 숨김을 풀 수 있다", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(
+      <JoinForm
+        mode="edit"
+        initial={{ nickname: "지연", station, hidden: true }}
+        personIndex={1}
+        pending={false}
+        error={null}
+        onSubmit={onSubmit}
+      />,
+    );
+    const keep = screen.getByRole("checkbox", { name: "출발역 이름 계속 숨기기" });
+    expect(keep).toBeChecked();
+    expect(keep).toHaveAccessibleDescription(/지금 출발역 이름을 숨기고 있어요/);
+    expect(keep).toHaveAccessibleDescription(/끄고 저장하면 다시 숨길 수 없어요/);
+    await user.click(screen.getByRole("button", { name: "저장하기" }));
     expect(onSubmit.mock.calls[0]?.[0]).toEqual({ originCode: station.code, hidden: true, nickname: "지연" });
+    await user.click(keep);
+    await user.click(screen.getByRole("button", { name: "저장하기" }));
+    expect(onSubmit.mock.calls[1]?.[0]).toEqual({ originCode: station.code, hidden: false, nickname: "지연" });
   });
 
   it("21자 이름은 보내지 않고 안내한다", async () => {

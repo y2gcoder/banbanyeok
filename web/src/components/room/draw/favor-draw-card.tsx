@@ -300,7 +300,9 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
             <div className="flex flex-col gap-2">
               {!enough ? (
                 <p className="text-[14px] text-ink-soft">
-                  출발역을 숨기지 않은 사람이 두 명 이상이어야 뽑을 수 있어요.
+                  {props.hiddenInRoom
+                    ? "출발역을 숨기지 않은 사람이 두 명 이상이어야 뽑을 수 있어요."
+                    : "두 명 이상 들어와야 뽑을 수 있어요."}
                 </p>
               ) : props.full === false ? (
                 <p className="text-[14px] text-ink-soft">

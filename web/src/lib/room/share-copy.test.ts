@@ -67,9 +67,9 @@ describe("방 공유 문구", () => {
     const copy = roomShareCopy({ stage: "collecting", room: room({ participantCount: 1 }) });
     expect(copy).toBe(INVITE_COPY);
     expect(copy.preview.title).toBe("같이 만날 역 정해요");
-    expect(copy.message.text).toBe(
-      "각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요. 출발역은 숨길 수도 있어요.",
-    );
+    // 출발역 숨기기는 새로 쓸 수 없으므로(ADR-0007) 초대 문구에 넣지 않는다.
+    expect(copy.message.text).toBe("각자 출발역을 넣으면 모두에게 공평한 만날 역을 계산해 줘요.");
+    expect(copy.preview.description).not.toMatch(/숨/);
     expect(copy.message.button).toBe("카톡으로 보내기");
     expect(copy.card).toBeNull();
   });

@@ -76,7 +76,6 @@ async function joinAsFriend(user: ReturnType<typeof userEvent.setup>) {
   await screen.findByRole("heading", { name: "나도 출발역 넣기" });
   await user.type(screen.getByRole("combobox", { name: "내 출발역" }), "ㅎㄷㅇㄱ");
   await user.click(await screen.findByRole("option", { name: /^홍대입구\s?2호선/ }));
-  await user.click(screen.getByRole("checkbox", { name: /출발역 이름 숨기기/ }));
   await user.click(screen.getByRole("button", { name: "참여하기" }));
 }
 

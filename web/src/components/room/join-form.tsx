@@ -69,6 +69,7 @@ export function JoinForm({
           setValue((current) => ({ ...current, ...patch }));
         }}
         personIndex={personIndex}
+        keepHidden={!joining && initial.hidden}
       />
       {timeBasis ? (
         <p id={`${id}-basis`} role="status" className="text-[14px] font-semibold text-ink">
