@@ -1,7 +1,7 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
-  entry: ["scripts/*.ts", "e2e/**/*.ts"],
+  entry: ["scripts/*.ts", "e2e/**/*.ts", "src/app/**/page.draft.tsx"],
   project: ["src/**/*.{ts,tsx,css}", "mock/**/*.ts", "scripts/**/*.ts", "e2e/**/*.ts"],
   ignore: ["src/lib/api/schema.gen.ts"],
   compilers: {

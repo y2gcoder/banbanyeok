@@ -13,6 +13,7 @@
       "!**/.wrangler",
       "!src/lib/api/schema.gen.ts",
       "!src/lib/stations/index.gen.json",
+      "!src/app/drafts/**/*.gen.json",
       "!next-env.d.ts",
       "!playwright-report",
       "!test-results",

@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
   // 페이지(/s 등)의 og:image·canonical이 localhost로 나가던 문제를 막는다. 비밀값이 아니다(공개 주소).
   env: { SITE_URL: process.env.SITE_URL ?? "", SITE_NOINDEX: process.env.SITE_NOINDEX ?? "" },
   poweredByHeader: false,
+  // `page.draft.tsx`(운영자 검토용 화면 시안, 예: /drafts/busan)는 `next dev`에서만 라우트가 된다. 운영 빌드에는 그 경로가 없다.
+  pageExtensions:
+    process.env.NODE_ENV === "production" ? ["tsx", "ts", "jsx", "js"] : ["draft.tsx", "tsx", "ts", "jsx", "js"],
   // 같은 출처 rewrite: 브라우저는 /api/* 로 부르고 서버(Ktor 또는 mock)로 넘긴다(contracts/openapi.yaml servers).
   async rewrites() {
     return [
