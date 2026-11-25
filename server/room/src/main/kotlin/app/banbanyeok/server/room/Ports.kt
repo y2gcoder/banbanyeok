@@ -170,8 +170,14 @@ public interface StationCatalog {
         meeting: Meeting,
     ): Boolean = true
 
-    /** [departs]가 볼 [meeting]의 구분 데이터를 결과 계산처럼 기다린다. 쓰기 트랜잭션 밖에서 부른다. */
-    public suspend fun awaitSchedule(meeting: Meeting) {}
+    /**
+     * [departs]가 [code]로 볼 [meeting]의 구분 데이터를 결과 계산처럼 기다린다. 그 권역·구분의 판정에 행렬이 필요할 때만 기다린다.
+     * 쓰기 트랜잭션 밖에서 부른다.
+     */
+    public suspend fun awaitSchedule(
+        code: String,
+        meeting: Meeting,
+    ) {}
 
     /**
      * 폐기된(deprecated) 코드를 레지스트리의 replacedBy 사슬을 따라 정식(active) 코드로 바꾼다. 정식 코드와 모르는 코드는 그대로다.

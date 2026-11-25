@@ -58,10 +58,14 @@ public class OdTravelTimeProvider(
         val region = regionOf(code)
         val known = region?.let { coverage?.get(it)?.get(slot.id) }
         if (known != null && (!known.available || code in known.unsupportedOrigins)) return false
-        // 부산권은 기본 구분으로 대신 계산하지 않는다. 그 구분의 행렬을 아직 못 읽었거나 읽지 못했으면 출발할 수 없는 것과 같다.
-        val needsSlotMatrix = coverage != null && region == StationRegion.BUSAN && slot != TimeSlot.DEFAULT
-        return !needsSlotMatrix || slots.matrix(slot) != null
+        return !needsSlotMatrix(code, slot) || slots.matrix(slot) != null
     }
+
+    // 부산권은 기본 구분으로 대신 계산하지 않는다. 그 구분의 행렬을 아직 못 읽었거나 읽지 못했으면 출발할 수 없는 것과 같다.
+    override fun needsSlotMatrix(
+        code: String,
+        slot: TimeSlot,
+    ): Boolean = coverage != null && regionOf(code) == StationRegion.BUSAN && slot != TimeSlot.DEFAULT
 
     private fun indexOfOrigin(code: String): Int = StationCode.parseOrNull(code)?.let(od::indexOfOrigin) ?: -1
 

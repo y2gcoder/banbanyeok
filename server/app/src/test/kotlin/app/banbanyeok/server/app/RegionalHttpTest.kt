@@ -51,6 +51,8 @@ import java.time.Instant
 import java.time.LocalDate
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 class RegionalHttpTest :
     DescribeSpec({
@@ -255,6 +257,26 @@ class RegionalHttpTest :
                     .json(HttpMethod.Post, "$path/participants", """{"originCode":"004"}""")
                     .status shouldBe HttpStatusCode.Created
                 client.json(HttpMethod.Get, "$path/result").status shouldBe HttpStatusCode.OK
+            }
+        }
+
+        it("does not make a Capital room write wait for slot matrices that cannot change its verdict") {
+            val saturdayRoom = """{"mode":"fair","host":{"originCode":"001"},"meetingDate":"2026-11-28"}"""
+            withRegionalApi({ BackgroundSlots(CompletableDeferred(), wait = 30.seconds) }) {
+                val started = TimeSource.Monotonic.markNow()
+                val created = client.json(HttpMethod.Post, "/v1/rooms", saturdayRoom)
+                created.status shouldBe HttpStatusCode.Created
+                val room = created.objectBody()
+                val path = "/v1/rooms/${room.text("roomId")}"
+                val member = client.json(HttpMethod.Post, "$path/participants", """{"originCode":"002"}""").objectBody()
+                client
+                    .json(
+                        HttpMethod.Put,
+                        "$path/participants/${member.text("participantId")}",
+                        """{"originCode":"002","nickname":"새 이름"}""",
+                        member.text("participantToken"),
+                    ).status shouldBe HttpStatusCode.OK
+                (started.elapsedNow() < 5.seconds) shouldBe true
             }
         }
 

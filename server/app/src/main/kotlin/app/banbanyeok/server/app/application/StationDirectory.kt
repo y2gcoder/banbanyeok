@@ -59,8 +59,12 @@ class StationDirectory(
         meeting: Meeting,
     ): Boolean = travelTimes.departs(code, slotOf(meeting))
 
-    override suspend fun awaitSchedule(meeting: Meeting) {
-        slotsReady.await(slotOf(meeting))
+    override suspend fun awaitSchedule(
+        code: String,
+        meeting: Meeting,
+    ) {
+        val slot = slotOf(meeting)
+        if (travelTimes.needsSlotMatrix(canonical(code), slot)) slotsReady.await(slot)
     }
 
     private fun slotOf(meeting: Meeting) = times.resolve(meeting.date, meeting.time, meeting.band).slot

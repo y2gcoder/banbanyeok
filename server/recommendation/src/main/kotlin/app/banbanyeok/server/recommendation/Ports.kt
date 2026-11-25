@@ -35,6 +35,15 @@ public interface TravelTimeProvider {
     ): Boolean = true
 
     /**
+     * [departs]가 [code]의 권역에서 [slot]의 행렬을 읽었는지에 따라 달라지는가. 아니면 행렬을 기다려도 판정이 바뀌지 않는다
+     * (대신 기본 구분으로 계산하는 권역). 방 쓰기는 이 판정이 참일 때만 행렬을 기다린다.
+     */
+    public fun needsSlotMatrix(
+        code: String,
+        slot: TimeSlot,
+    ): Boolean = false
+
+    /**
      * 모든 [origins]가 [isOrigin]이어야 한다. [slot]의 행렬이 없으면(manifest 1세대 데이터) 기본 구분으로 계산하고
      * [TravelMatrix.slot]에 그 사실을 남긴다. 모든 구분은 같은 출발역·후보 축이다.
      */
