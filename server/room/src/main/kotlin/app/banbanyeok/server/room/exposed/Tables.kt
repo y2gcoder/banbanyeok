@@ -41,6 +41,12 @@ internal object RoomsTable : Table("rooms") {
     val decidedStation = text("decided_station").nullable()
     val decidedByPid = text("decided_by_pid").nullable()
     val decidedAt = timestamp("decided_at").nullable()
+
+    /** 방을 만들 때 배려 대상을 뽑기로 정했다(#172). 당첨자는 [favorPid]. 기준·대상을 직접 바꾸면 트리거가 false로 돌린다. */
+    val favorDraw = bool("favor_draw")
+    val drawRound = short("draw_round")
+    val drawCandidates = array<String>("draw_candidates").nullable()
+    val drawnAt = timestamp("drawn_at").nullable()
     override val primaryKey = PrimaryKey(id)
 }
 

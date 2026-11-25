@@ -80,7 +80,8 @@ class RoomResultService(
                 .map { it.id }
                 .zip(ranked.labels.map { it.short })
                 .toMap()
-        val basis = PreviewBasis(request.mode, request.favorId?.let(labels::getValue))
+        val drawRound = view.favorDraw?.round?.takeIf { it > 0 && request.mode == RecommendMode.FAVOR }
+        val basis = PreviewBasis(request.mode, request.favorId?.let(labels::getValue), drawRound)
 
         fun station(
             code: String,
@@ -175,7 +176,9 @@ class RoomResultService(
             context.computeParticipants.map {
                 RecommendParticipant(it.id, it.nickname, it.originCode, it.hidden)
             }
-        val requestedMode = mode ?: view.mode.toRecommendMode()
+        // 뽑기 방에서 아직 안 뽑았으면 방의 기본 기준은 공평하게다(#172). 첫 참가자 우대로 떨어지지 않게 한다.
+        val drawPending = view.favorDraw?.let { it.winner == null } == true
+        val requestedMode = mode ?: if (drawPending) RecommendMode.FAIR else view.mode.toRecommendMode()
         val target = favorTarget(requestedMode, favorId, view, roomDefault = mode == null)
         // 방의 기본 기준이 숨긴 사람 쪽인데 본인이 아니면(미리보기 포함) 공평하게로 계산한다(#162). 웹 결과 화면도 같은 규칙이다.
         // 요청에 모드가 있으면 바꾸지 않는다: 추천이 FAVOR_TARGET_HIDDEN으로 거절한다.

@@ -79,7 +79,24 @@ public data class Room(
     /** 정한 역 칸이 마지막으로 바뀐(입력이 바뀌어 풀린 것 포함) [shareVersion]. 정하기·풀기의 기준이다. */
     val decisionBasis: ShareVersion = ShareVersion.ZERO,
     val decision: Decision? = null,
+    /** '누구 쪽으로' 뽑기(#172). 방을 만들 때 대상을 뽑기로 정한 방에만 있다. 당첨자는 [favorParticipantId]다. */
+    val favorDraw: FavorDraw? = null,
 )
+
+/**
+ * 저장된 뽑기 상태. [round]가 0이면 아직 안 뽑았고 [candidates]·[drawnAt]이 비어 있다(DB CHECK rooms_draw_complete).
+ * 당첨자가 비면(나가거나 숨겼다) DB 트리거가 0으로 돌린다.
+ */
+public data class FavorDraw(
+    val round: Int,
+    /** 뽑을 때 대상이던 참가자 ID(입장 순서). */
+    val candidates: List<String>,
+    val drawnAt: Instant?,
+) {
+    public companion object {
+        public val PENDING: FavorDraw = FavorDraw(0, emptyList(), null)
+    }
+}
 
 public data class Participant(
     val id: String,
@@ -129,6 +146,9 @@ public data class CreateRoomCommand(
 ) {
     public companion object {
         public const val HOST_TARGET: String = "host"
+
+        /** 방장이 나중에 뽑는다([RoomService.drawFavor]). 뽑기 전까지 방의 기본 결과는 공평하게다. */
+        public const val DRAW_TARGET: String = "draw"
     }
 }
 
@@ -187,7 +207,33 @@ public data class RoomView(
     val shareVersion: ShareVersion = ShareVersion.ZERO,
     /** 지금 데이터에서도 만날 역이고 정한 사람이 방에 있는 정함만 보인다. 역 코드는 정식 코드다. */
     val decision: Decision? = null,
+    /** 뽑기 방이 아니면 null. */
+    val favorDraw: FavorDrawView? = null,
 )
+
+/** 화면에 보이는 뽑기 상태. 참가자 ID·숨김 여부·입장 시각과 저장된 결과에서만 나온다(출발역과 상관없다). */
+public data class FavorDrawView(
+    val round: Int,
+    val maxRounds: Int,
+    /** 그림의 칸 순서(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람, 뽑은 뒤에는 그때의 대상 중 아직 방에 있는 사람. */
+    val candidates: List<String>,
+    val winner: String?,
+    val drawnAt: Instant?,
+    val excluded: List<DrawExclusion>,
+)
+
+public data class DrawExclusion(
+    val participantId: String,
+    val reason: DrawExclusionReason,
+)
+
+public enum class DrawExclusionReason {
+    /** 뽑을 때(뽑기 전이면 지금) 출발역을 숨겼다. */
+    HIDDEN,
+
+    /** 뽑은 뒤에 들어왔다. */
+    LATE,
+}
 
 /** 결과 계산에 필요한 방의 원본 정보(마스킹 전). room 모듈 밖으로 나가는 유일한 원본 출발역이다. */
 public data class RoomResultContext(

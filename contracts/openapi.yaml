@@ -201,6 +201,51 @@ paths:
               schema: {$ref: '#/components/schemas/Problem'}
         '429': {$ref: '#/components/responses/Error'}
 
+  /rooms/{roomId}/favor-draw:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    post:
+      tags: [rooms]
+      operationId: drawFavorTarget
+      summary: "'누구 쪽으로' 뽑기 (방장, #172)"
+      description: |
+        방을 만들 때 `favorTarget=draw`를 고른 방에서 방장이 배려 대상을 뽑는다. 운은 서버가 정한다(`SecureRandom`, 대상마다 1/N).
+        결과는 방에 저장되어 누가 언제 열어도 같고, 화면의 그림(사다리·룰렛)은 저장된 결과를 재생만 한다.
+
+        대상은 뽑는 순간 출발역을 숨기지 않은 참가자다(입장 순서). 숨긴 사람은 빠진다: 그 사람 쪽 결과는 본인만 볼 수 있어서다(ADR-0005).
+        대상이 2명 미만이면 409 `NOT_ENOUGH_DRAW_CANDIDATES`. 대상과 당첨은 출발역에 따라 달라지지 않는다(숨긴 출발역 비간섭).
+
+        `round`는 이번이 몇 번째 뽑기인지다(1 = 처음, 2 = 다시 뽑기). 방의 `favorDraw.round`가 이미 `round` 이상이면 아무것도 바꾸지
+        않고 지금 방을 돌려준다(재시도·새로고침 안전, 인스턴스와 상관없음). `favorDraw.round + 1`이면 뽑는다. 다시 뽑기는 한 번이라
+        `round`가 `favorDraw.maxRounds`보다 크면 409 `DRAW_LIMIT_REACHED`. 그 밖(화면이 본 뒤 당첨자가 나가 처음으로 돌아갔다 등)은
+        409 `ROOM_CHANGED`. `Idempotency-Key`도 다른 변경 요청처럼 받는다.
+      security: [{hostToken: []}]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FavorDrawRequest'}
+      responses:
+        '200':
+          description: 뽑은(또는 그대로인) 방. 토큰 없는 요청과 같은 시점이다(방장 토큰은 참여자 토큰이 아니다)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Room'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409':
+          description: |
+            뽑기 방이 아니다(`DRAW_NOT_AVAILABLE`), 대상이 2명 미만이다(`NOT_ENOUGH_DRAW_CANDIDATES`), 다시 뽑기를 이미 썼다
+            (`DRAW_LIMIT_REACHED`), 화면이 본 뒤 뽑기 상태가 바뀌었다(`ROOM_CHANGED`)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+        '429': {$ref: '#/components/responses/Error'}
+
   /rooms/{roomId}/participants:
     parameters:
       - $ref: '#/components/parameters/RoomId'
@@ -285,6 +330,7 @@ paths:
         숨긴 참가자 쪽으로 맞춘 결과(favor 대상 = 숨긴 사람)는 그 사람 본인의 요청에만 낸다(#162). 다른 요청(토큰 없음·다른 참가자)이
         그 사람을 `favor`로 고르면(또는 `mode=favor`만 보내 방의 우대 대상이 그 사람이면) 400 `FAVOR_TARGET_HIDDEN`이다. `mode`를 생략해
         방의 기본 기준으로 계산하는데 그 우대 대상(나갔으면 첫 참가자)이 숨긴 사람이면, 본인이 아닌 요청은 `mode=fair`로 계산한다.
+        뽑기 방(`favorDraw`)에서 아직 안 뽑았으면 `mode`를 생략한 요청은 누구든 `mode=fair`로 계산한다(#172).
         favor의 배려 상한은 숨긴 참가자에게 두지 않는다(누가 보든 같다). 그래서 다른 사람 쪽으로 맞춘 결과의 후보는 숨긴 사람의 출발역에 따라
         갈리지 않는다. 숨긴 사람이 없는 방의 결과는 그대로이고, 공평하게·빨리 만나기 순위는 숨긴 사람이 있어도 바뀌지 않는다.
       security: [{}, {participantToken: []}]
@@ -325,6 +371,7 @@ paths:
         읽은 같은 값에서 나온다.
 
         결과는 방의 기본 기준(`Room.mode`·`favorTarget`)으로 계산한다. favor 방에서 우대 대상이 나갔으면 첫 참가자를 우대한다.
+        뽑기 방(`favorDraw`)에서 아직 안 뽑았으면 공평하게로 계산한다(`basis.mode`=`fair`).
         그 우대 대상이 출발역을 숨긴 사람이면 공평하게(`basis.mode=fair`, `favorLabel=null`)로 계산한다(토큰 없는 결과 요청과 같다, #162).
         단계(`stage`): `collecting`은 2명 미만이거나 모두 갈 수 있는 후보가 없다. `result`는 기본 기준의 1위. `decided`는 정한 역이며
         상위 3곳 밖이어도 그 역까지의 시간을 싣는다.
@@ -529,7 +576,8 @@ components:
         | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
         | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
         | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
-        | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기를 받지 않았다(`setDecision`). 방을 다시 불러 확인한 뒤 다시 누른다 |
+        | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기(`setDecision`)나 뽑기(`drawFavorTarget`)를 받지 않았다. 방을 다시 불러 확인한 뒤 다시 누른다 |
+        | 409 | `DRAW_NOT_AVAILABLE`, `NOT_ENOUGH_DRAW_CANDIDATES`, `DRAW_LIMIT_REACHED` | 뽑기 방이 아니거나, 출발역을 숨기지 않은 참가자가 2명 미만이거나, 다시 뽑기를 이미 썼다(`drawFavorTarget`) |
         | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
         | 415 | `UNSUPPORTED_MEDIA_TYPE` | 본문이 있는 요청의 `Content-Type`이 `application/json`이 아니다(본문 문법 오류는 `INVALID_REQUEST`) |
         | 429 | `RATE_LIMITED` | 속도 제한. `Retry-After`(초)를 따른다 |
@@ -662,7 +710,9 @@ components:
         mode: {$ref: '#/components/schemas/Mode'}
         favorTarget:
           type: string
-          description: '`mode=favor`일 때 우대 대상. 방장은 `host`, 이후 참여자는 participantId'
+          description: |
+            `mode=favor`일 때 우대 대상. 방을 만들 때는 `host`(방장) 또는 `draw`(방장이 나중에 뽑는다, `drawFavorTarget`)다.
+            `draw`면 뽑기 전까지 방의 기본 기준은 공평하게로 계산한다(`Room.mode`는 `favor`, `favorTarget`은 null, `favorDraw.round`=0)
         meetingDate:
           type: string
           format: date
@@ -704,8 +754,14 @@ components:
     RoomPatch:
       type: object
       properties:
-        mode: {$ref: '#/components/schemas/Mode'}
-        favorTarget: {type: string}
+        mode:
+          $ref: '#/components/schemas/Mode'
+          description: |
+            방의 기본 기준. 뽑기 방(`favorDraw`가 있음)에서 favor가 아닌 기준으로 바꾸면 뽑기 방이 아니게 된다(`favorDraw`=null).
+            `favorTarget` 없이 favor를 다시 보내면 그대로다
+        favorTarget:
+          type: string
+          description: '우대 대상(`host` 또는 participantId). 뽑기 방에서 대상을 직접 정하면 뽑기 방이 아니게 된다'
         locked: {type: boolean}
         meetingDate: {type: [string, 'null'], format: date}
         meetingTime:
@@ -755,6 +811,12 @@ components:
         shareVersion:
           $ref: '#/components/schemas/ShareVersion'
           description: 지금 방의 공유 번호. 공유 링크의 `?sv=`와 풀기의 `seenVersion`에 쓴다. 이 필드를 모르는 옛 서버는 보내지 않는다
+        favorDraw:
+          description: |
+            '누구 쪽으로' 뽑기 상태(#172). 뽑기로 만든 방이 아니면 null. 뽑은 뒤에는 `favorTarget`이 당첨자다. 이 필드를 모르는 옛 서버는 보내지 않는다
+          oneOf:
+            - {$ref: '#/components/schemas/FavorDraw'}
+            - {type: 'null'}
         decision:
           description: |
             방에서 정한 만날 역. 없으면 null. 참여·출발역 변경·나가기·내보내기가 있으면 풀린다. 정한 역이 지금 데이터의 만날 역이 아니면
@@ -1045,6 +1107,42 @@ components:
         decidedBy: {type: string, description: '정한 참가자의 participantId. 이름은 `participants[].label`에서 찾는다'}
         decidedAt: {type: string, format: date-time}
 
+    FavorDraw:
+      type: object
+      required: [round, maxRounds, candidates, winner, drawnAt, excluded]
+      description: |
+        `round`=0이면 아직 안 뽑았다(방의 기본 결과·미리보기는 공평하게). 당첨자가 방을 나가거나(내보내기 포함) 출발역을 숨기면
+        `round`=0으로 돌아간다(다시 뽑기 횟수도 처음부터). 당첨자가 아닌 사람이 나가거나 숨기면 결과는 그대로다.
+        모든 값은 참가자 ID·숨김 여부·입장 시각과 서버의 운에서만 나오고 출발역과는 상관없다.
+      properties:
+        round: {type: integer, minimum: 0, maximum: 2, description: 몇 번째 뽑기의 결과인지. 2면 방장이 다시 뽑았다(모두에게 보인다)}
+        maxRounds: {type: integer, const: 2, description: 처음 뽑기 1번 + 다시 뽑기 1번}
+        candidates:
+          type: array
+          maxItems: 4
+          description: |
+            뽑기 대상의 participantId(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람(출발역을 숨기지 않은 참가자), 뽑은 뒤에는 그때의
+            대상 중 아직 방에 있는 사람이다. 화면 그림의 칸 순서다
+          items: {type: string}
+        winner: {type: [string, 'null'], description: 당첨자 participantId(= `Room.favorTarget`). 뽑기 전 null}
+        drawnAt: {type: [string, 'null'], format: date-time}
+        excluded:
+          type: array
+          maxItems: 4
+          description: 방에 있지만 대상이 아닌 사람과 이유. `hidden`은 뽑을 때(뽑기 전이면 지금) 출발역을 숨겼다, `late`는 뽑은 뒤에 들어왔다
+          items:
+            type: object
+            required: [participantId, reason]
+            properties:
+              participantId: {type: string}
+              reason: {type: string, enum: [hidden, late]}
+
+    FavorDrawRequest:
+      type: object
+      required: [round]
+      properties:
+        round: {type: integer, minimum: 1, description: '이번이 몇 번째 뽑기인지(화면이 본 `favorDraw.round` + 1). `favorDraw.maxRounds`보다 크면 409 `DRAW_LIMIT_REACHED`'}
+
     DecisionRequest:
       type: object
       required: [stationCode, seenVersion]
@@ -1161,6 +1259,13 @@ components:
       properties:
         mode: {$ref: '#/components/schemas/Mode'}
         favorLabel: {type: [string, 'null'], description: '`mode=favor`일 때 우대하는 사람의 짧은 이름'}
+        drawRound:
+          type: integer
+          minimum: 1
+          maximum: 2
+          description: |
+            배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지(`favorDraw.round`). 뽑기 방이 아니거나 아직 안 뽑았으면(그때 `mode`는 `fair`) 키가 없다.
+            공유 문구 "뽑기로 ○○ 쪽으로"에 쓴다
 
     PreviewStation:
       type: object

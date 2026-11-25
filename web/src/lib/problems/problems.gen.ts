@@ -200,7 +200,30 @@ export const PROBLEMS = {
       slug: "room-changed",
       status: 409,
       title: "그사이 방이 바뀜",
-      meaning: "화면이 본 뒤 방이 바뀌어 정하기·풀기를 받지 않았습니다. 방을 다시 불러 확인한 뒤 다시 누르세요.",
+      meaning:
+        "화면이 본 뒤 방이 바뀌어 정하기·풀기나 '누구 쪽으로' 뽑기를 받지 않았습니다. 방을 다시 불러 확인한 뒤 다시 누르세요.",
+    },
+    {
+      code: "DRAW_NOT_AVAILABLE",
+      slug: "draw-not-available",
+      status: 409,
+      title: "뽑기로 만든 방이 아님",
+      meaning:
+        "방을 만들 때 '누구 쪽으로'를 뽑기로 정한 방만 뽑을 수 있습니다. 방장이 대상을 직접 바꾼 방도 뽑기 방이 아닙니다.",
+    },
+    {
+      code: "NOT_ENOUGH_DRAW_CANDIDATES",
+      slug: "not-enough-draw-candidates",
+      status: 409,
+      title: "뽑을 사람이 부족함",
+      meaning: "출발역을 숨기지 않은 참가자가 2명 이상이어야 뽑을 수 있습니다. 숨긴 사람은 뽑기에서 빠집니다.",
+    },
+    {
+      code: "DRAW_LIMIT_REACHED",
+      slug: "draw-limit-reached",
+      status: 409,
+      title: "다시 뽑기를 이미 씀",
+      meaning: "다시 뽑기는 한 번만 할 수 있습니다.",
     },
     {
       code: "PAYLOAD_TOO_LARGE",

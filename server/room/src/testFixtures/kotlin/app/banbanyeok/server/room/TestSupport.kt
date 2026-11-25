@@ -5,6 +5,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.random.RandomGenerator
 
 /** 직접 움직이는 시계(고정 Clock). */
 class MutableClock(
@@ -65,6 +66,20 @@ class FakeStationCatalog(
 /** 역 코드를 바꾸지 않는 [FakeStationCatalog] 기본값의 판정. 저장소 계약 테스트가 쓴다. */
 val fakeDecisionRule = DecisionRule(FakeStationCatalog())
 
+/** 뽑기의 운을 정해 둔다: 뽑을 때마다 [picks]를 차례로(끝나면 처음부터) 대상 수로 나눈 나머지 자리를 고른다. */
+class FixedDrawRandom(
+    private vararg val picks: Int,
+) : RandomGenerator {
+    private val next = AtomicInteger()
+
+    override fun nextInt(bound: Int): Int = picks[next.getAndIncrement() % picks.size] % bound
+
+    override fun nextLong(): Long = error("뽑기는 nextInt(bound)만 쓴다")
+}
+
+/** 늘 첫 대상을 뽑는 규칙. 저장소 계약 테스트가 쓴다. */
+val fakeDrawRule = FavorDrawRule(FixedDrawRandom(0))
+
 val testPepper = "test-pepper-0123456789-0123456789".toByteArray()
 
 class RoomFixture(
@@ -72,10 +87,11 @@ class RoomFixture(
     val ids: IdGenerator = SequentialIdGenerator(),
     val rooms: InMemoryRoomRepository = InMemoryRoomRepository(),
     val stations: StationCatalog = FakeStationCatalog(),
+    val drawRandom: RandomGenerator = FixedDrawRandom(0),
 ) {
     val anonUsers = InMemoryAnonUserRepository(rooms)
     val tokens = TokenService(testPepper, ids)
-    val service = RoomService(rooms, anonUsers, tokens, ids, stations, clock)
+    val service = RoomService(rooms, anonUsers, tokens, ids, stations, clock, drawRandom)
     val anonService = AnonUserService(anonUsers, tokens, ids, clock)
     val cleanup = RoomCleanup(rooms, anonUsers, clock)
 }

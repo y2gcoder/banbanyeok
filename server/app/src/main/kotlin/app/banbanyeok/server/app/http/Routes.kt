@@ -94,6 +94,17 @@ private fun Route.roomRoutes(
                 )
             call.respondRoom(services, room)
         }
+        post("/favor-draw") {
+            call.respondOk(idempotency) {
+                val body = call.receive<FavorDrawRequestDto>()
+                if (body.round < 1) throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "round는 1 이상이어야 합니다")
+                val room = services.rooms.drawFavor(call.roomId(), call.bearerToken(), body.round)
+                room.toDto(
+                    services.stations,
+                    services.times.resolve(room.meetingDate, room.meetingTime, room.meetingBand),
+                )
+            }
+        }
         participantRoutes(services, idempotency)
     }
 }
@@ -211,10 +222,22 @@ private const val MAX_IDEMPOTENCY_KEY = 64
 private suspend inline fun <reified T : Any> ApplicationCall.respondCreated(
     cache: IdempotencyCache,
     produce: () -> T,
+) = respondIdempotent(cache, HttpStatusCode.Created, produce)
+
+/** [respondCreated]와 같고 200으로 응답한다(뽑기: 방을 새로 만들지 않고 고친다). */
+private suspend inline fun <reified T : Any> ApplicationCall.respondOk(
+    cache: IdempotencyCache,
+    produce: () -> T,
+) = respondIdempotent(cache, HttpStatusCode.OK, produce)
+
+private suspend inline fun <reified T : Any> ApplicationCall.respondIdempotent(
+    cache: IdempotencyCache,
+    status: HttpStatusCode,
+    produce: () -> T,
 ) {
     val key = request.header("Idempotency-Key")
     if (key == null) {
-        respond(HttpStatusCode.Created, produce())
+        respond(status, produce())
         return
     }
     if (key.isBlank() || key.length > MAX_IDEMPOTENCY_KEY) {
@@ -228,5 +251,5 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondCreated(
     val body =
         cache.find(scoped)?.body
             ?: apiJson.encodeToString(serializer<T>(), produce()).also { cache.store(scoped, StoredResponse(it)) }
-    respondText(body, ContentType.Application.Json, HttpStatusCode.Created)
+    respondText(body, ContentType.Application.Json, status)
 }

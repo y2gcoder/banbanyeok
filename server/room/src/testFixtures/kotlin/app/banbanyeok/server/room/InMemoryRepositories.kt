@@ -81,6 +81,10 @@ class InMemoryRoomRepository : RoomRepository {
                         },
                 )
             }
+            val room = rooms.getValue(roomId).room
+            if (change.releasesDrawWin && room.favorDraw != null && room.favorParticipantId == participantId) {
+                write(roomId) { it.copy(room = it.room.copy(favorParticipantId = null)) }
+            }
             touch(roomId, activity)
             true
         }
@@ -175,6 +179,32 @@ class InMemoryRoomRepository : RoomRepository {
             }
         }
 
+    override suspend fun writeDraw(
+        roomId: String,
+        request: DrawRequest,
+        activity: Activity,
+        rule: FavorDrawRule,
+    ): DrawResult =
+        lock.withLock {
+            val stored = rooms[roomId] ?: return@withLock DrawResult.RoomNotFound
+            val participants = stored.participants.sortedWith(compareBy({ p -> p.joinedAt }, { p -> p.id }))
+            rule.verdict(stored.room, participants, request).also { result ->
+                if (result is DrawResult.Drawn) {
+                    write(roomId) {
+                        it.copy(
+                            room =
+                                it.room.copy(
+                                    favorParticipantId = result.winner,
+                                    favorDraw = result.draw,
+                                    lastActivityAt = activity.at,
+                                    expiresAt = activity.expiresAt,
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+
     override suspend fun delete(roomId: String): Boolean = lock.withLock { rooms.remove(roomId) != null }
 
     override suspend fun deleteExpired(now: Instant): Int =
@@ -219,15 +249,16 @@ class InMemoryRoomRepository : RoomRepository {
 }
 
 /**
- * DB 트리거(changeset 20261117-room-share-version)의 거울. 쓰기 한 번의 전후를 비교한다. 참여·나가기·출발역 변경은 정한 역을 풀고,
- * 별칭·숨기기·미리보기에 보이는 방 칸·정한 역 변경은 번호만 올린다. 활동 시각과 결과 설문은 올리지 않는다. 앱이 넣은 번호는 무시한다.
+ * DB 트리거(changeset 20261117-room-share-version, 20261125-favor-draw)의 거울. 쓰기 한 번의 전후를 비교한다. 참여·나가기·출발역 변경은
+ * 정한 역을 풀고, 별칭·숨기기·미리보기에 보이는 방 칸·정한 역·뽑기 변경은 번호만 올린다. 활동 시각과 결과 설문은 올리지 않는다.
+ * 앱이 넣은 번호는 무시한다. 뽑기 방에서 기준·대상을 직접 바꾸면 뽑기 방이 아니게 되고, 당첨자가 비면 뽑기 전으로 돌아간다.
  */
 internal fun settle(
     before: StoredRoom,
     after: StoredRoom,
 ): Room {
     val old = before.room
-    val new = after.room.copy(shareVersion = old.shareVersion, decisionBasis = old.decisionBasis)
+    val new = drawSettled(old, after.room.copy(shareVersion = old.shareVersion, decisionBasis = old.decisionBasis))
     val was = before.participants.associateBy { it.id }
     val kept = after.participants.mapNotNull { p -> was[p.id]?.let { it to p } }
     val releases =
@@ -243,8 +274,35 @@ internal fun settle(
     )
 }
 
+private fun drawSettled(
+    old: Room,
+    new: Room,
+): Room {
+    val draw = new.favorDraw ?: return new
+    val favor = new.favorParticipantId
+    val direct =
+        new.mode != RoomMode.FAVOR ||
+            (favor != null && favor != old.favorParticipantId && draw.round == (old.favorDraw?.round ?: 0))
+    return when {
+        direct -> new.copy(favorDraw = null)
+        favor == null && draw.round > 0 -> new.copy(favorDraw = FavorDraw.PENDING)
+        else -> new
+    }
+}
+
 private fun Room.previewColumns() =
-    listOf(mode, favorParticipantId, locked, expectedCount, meetingDate, meetingTime, meetingBand)
+    listOf(
+        mode,
+        favorParticipantId,
+        locked,
+        expectedCount,
+        meetingDate,
+        meetingTime,
+        meetingBand,
+        favorDraw != null,
+        favorDraw?.round,
+        favorDraw?.drawnAt,
+    )
 
 class InMemoryAnonUserRepository(
     private val rooms: InMemoryRoomRepository,

@@ -47,6 +47,8 @@ data class PreviewBasis(
     val mode: RecommendMode,
     /** favor 모드에서 우대하는 사람의 짧은 이름. */
     val favorLabel: String?,
+    /** 배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지(#172). 뽑기 방이 아니거나 아직 안 뽑았으면 null. */
+    val drawRound: Int? = null,
 )
 
 data class PreviewRoom(
