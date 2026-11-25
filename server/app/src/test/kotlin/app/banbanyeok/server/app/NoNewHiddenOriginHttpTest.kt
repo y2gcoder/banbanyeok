@@ -103,6 +103,49 @@ class NoNewHiddenOriginHttpTest :
                 }
             }
 
+            it("does not replay a public success for a hidden body sent with the same Idempotency-Key") {
+                val fixture = RoomFixture(stations = stations)
+                withApi(fixture) {
+                    val key: io.ktor.client.request.HttpRequestBuilder.() -> Unit = {
+                        headers.append("Idempotency-Key", "same-key")
+                    }
+                    val created =
+                        json(
+                            HttpMethod.Post,
+                            "/v1/rooms",
+                            """{"mode":"fair","host":{"originCode":"03v"}}""",
+                            configure = key,
+                        )
+                    created.status.value shouldBe 201
+                    json(
+                        HttpMethod.Post,
+                        "/v1/rooms",
+                        """{"mode":"fair","host":{"originCode":"03v","hidden":true}}""",
+                        configure = key,
+                    ).shouldBeHideNotAvailable(HttpMethod.Post, "/v1/rooms")
+                    val roomId =
+                        created
+                            .body()
+                            .getValue("roomId")
+                            .jsonPrimitive.content
+                    val path = "/v1/rooms/$roomId/participants"
+                    json(HttpMethod.Post, path, """{"originCode":"130"}""", configure = key).status.value shouldBe 201
+                    json(HttpMethod.Post, path, """{"originCode":"130","hidden":true}""", configure = key)
+                        .shouldBeHideNotAvailable(HttpMethod.Post, "/v1/rooms/{roomId}/participants")
+                    val participants =
+                        json(
+                            HttpMethod.Get,
+                            "/v1/rooms/$roomId",
+                        ).body().getValue("participants").jsonArray
+                    participants.map {
+                        it.jsonObject
+                            .getValue("hidden")
+                            .jsonPrimitive.content
+                    } shouldBe
+                        listOf("false", "false")
+                }
+            }
+
             it("lets someone who hid before keep it or show their origin, then not hide again") {
                 val legacy = RoomFixture(stations = stations, newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
                 val created =

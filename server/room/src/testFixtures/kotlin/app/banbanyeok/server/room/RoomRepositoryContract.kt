@@ -170,6 +170,26 @@ private fun DescribeSpecRootScope.changingParticipants(repos: () -> RepositoryPa
             rooms.updateParticipant(room.id, "nobody", change, activity(2)) shouldBe false
         }
 
+        it("keeps a hide only for someone still hidden when saving (ADR-0007)") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            rooms.create(room, aParticipant("host01") { it.copy(hidden = true) })
+            rooms.addParticipant(room.id, aParticipant("pid002"), activity(1))
+            val keep = ParticipantChange("지연", "225", true, T0.plusSeconds(60), onlyIfHidden = true)
+            // 숨기지 않은 사람에게는 쓰지 않는다(새로 숨기지 않는다).
+            rooms.updateParticipant(room.id, "pid002", keep, activity(2)) shouldBe false
+            rooms.find(room.id)!!.participants.single { it.id == "pid002" }.run {
+                hidden shouldBe false
+                nickname shouldBe null
+            }
+            // 이미 숨긴 사람은 유지하며 고친다.
+            rooms.updateParticipant(room.id, "host01", keep, activity(3)) shouldBe true
+            rooms.find(room.id)!!.participants.single { it.id == "host01" }.run {
+                hidden shouldBe true
+                nickname shouldBe "지연"
+            }
+        }
+
         it("removes a participant and clears the favor target when it was the target") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(favorParticipantId = "pid002") }

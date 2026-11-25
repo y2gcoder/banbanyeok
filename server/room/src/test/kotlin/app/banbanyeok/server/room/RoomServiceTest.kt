@@ -347,6 +347,45 @@ class RoomServiceTest :
             }
         }
 
+        describe("hide races (ADR-0007)") {
+            it("refuses keeping a hide when another tab showed the origin after it was read, and stays shown") {
+                runTest {
+                    val legacy = RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
+                    val created = legacy.service.create(command())
+                    val friend = legacy.service.join(created.roomId, host("130", "지연", hidden = true), null)
+                    val now = RoomFixture(rooms = legacy.rooms, clock = legacy.clock)
+                    // 서비스가 방을 읽은 뒤(아직 숨김), 저장하기 전에 다른 탭이 숨김을 풀었다.
+                    val racing =
+                        object : RoomRepository by legacy.rooms {
+                            override suspend fun updateParticipant(
+                                roomId: String,
+                                participantId: String,
+                                change: ParticipantChange,
+                                activity: Activity,
+                            ): Boolean {
+                                val shown = ParticipantChange("지연", "130", false, now.clock.instant())
+                                legacy.rooms.updateParticipant(roomId, participantId, shown, activity)
+                                return legacy.rooms.updateParticipant(roomId, participantId, change, activity)
+                            }
+                        }
+                    val raced = RoomService(racing, now.anonUsers, now.tokens, now.ids, now.stations, now.clock)
+                    shouldFailWith(RoomError.HIDE_NOT_AVAILABLE) {
+                        raced.updateParticipant(
+                            created.roomId,
+                            friend.participantId,
+                            friend.participantToken,
+                            host("225", "수진", hidden = true),
+                        )
+                    }
+                    now.service.get(created.roomId, null).participants.single { it.id == friend.participantId }.run {
+                        hidden shouldBe false
+                        originCode shouldBe "130"
+                        nickname shouldBe "지연"
+                    }
+                }
+            }
+        }
+
         describe("authorization") {
             it("lets participants edit only their own entry") {
                 roomTest {

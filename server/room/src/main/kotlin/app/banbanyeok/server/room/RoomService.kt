@@ -33,7 +33,7 @@ public class RoomService(
     public suspend fun create(command: CreateRoomCommand): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
-        if (host.hidden) rejectNewHidden()
+        checkNewParticipant(host)
         validateCreation(command, now)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
@@ -82,7 +82,7 @@ public class RoomService(
         val now = clock.instant()
         val room = loadActive(roomId, now).room
         val participant = validated(input)
-        if (participant.hidden) rejectNewHidden()
+        checkNewParticipant(participant)
         val participantId = ids.participantId()
         val token = tokens.issue()
         val participantEntity = newParticipant(participantId, token.hash, anonIdOf(deviceToken, now), participant, now)
@@ -164,16 +164,26 @@ public class RoomService(
             reject(RoomError.FORBIDDEN, "본인 항목만 고칠 수 있습니다")
         }
         val value = validated(input)
-        // 이미 숨긴 사람만 숨김을 유지할 수 있다. 풀고 나면 다시 숨기지 못한다.
-        if (value.hidden && !stored.participants.first { it.id == participantId }.hidden) rejectNewHidden()
+        // 이미 숨긴 사람만 숨김을 유지할 수 있다. 풀고 나면 다시 숨기지 못한다. 저장할 때도 다시 본다(다른 탭이 그사이 풀었을 수 있다).
+        val keepsHidden = value.hidden && newHidden == NewHiddenOrigins.REJECTED
+        if (keepsHidden && !stored.participants.first { it.id == participantId }.hidden) rejectNewHidden()
         // 저장된 코드가 폐기된 코드여도 정식 코드가 같으면 그대로 쓴다. 출발역이 바뀐 것으로 보면 트리거가 정한 역을 풀기 때문이다.
         val storedOrigin = stored.participants.first { it.id == participantId }.originCode
         val origin = if (stations.canonical(storedOrigin) == value.originCode) storedOrigin else value.originCode
         val updated = stored.participants.first { it.id == participantId }.copy(hidden = value.hidden)
         val change =
-            ParticipantChange(value.nickname, origin, value.hidden, now, releasesDrawWin = !draws.isCandidate(updated))
+            ParticipantChange(
+                value.nickname,
+                origin,
+                value.hidden,
+                now,
+                releasesDrawWin = !draws.isCandidate(updated),
+                onlyIfHidden = keepsHidden,
+            )
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
         if (!rooms.updateParticipant(roomId, participantId, change, activity)) {
+            val stillThere = rooms.find(roomId)?.participants?.any { it.id == participantId } == true
+            if (keepsHidden && stillThere) rejectNewHidden()
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
         }
         return get(roomId, token).participants.first { it.id == participantId }
@@ -517,6 +527,14 @@ public class RoomService(
         val originCode = stations.canonical(input.originCode)
         if (!stations.isOrigin(originCode)) reject(RoomError.INVALID_STATION, "알 수 없는 출발역입니다")
         return input.copy(nickname = nickname, originCode = originCode)
+    }
+
+    /**
+     * 새로 들어오는 참가자(방 만들기의 방장, 참여)의 숨김 규칙(ADR-0007). 멱등 재시도가 캐시된 성공을 재생하기 전에도 부른다: 같은 키로
+     * 숨긴 본문을 보내면 숨기지 않은 응답을 조용히 돌려주지 않고 거절한다.
+     */
+    public fun checkNewParticipant(input: ParticipantInput) {
+        if (input.hidden) rejectNewHidden()
     }
 
     private fun rejectNewHidden() {
