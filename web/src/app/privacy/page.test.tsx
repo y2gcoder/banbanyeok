@@ -87,7 +87,6 @@ describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
       "2026년 11월 28일 시행 예정 판(시행하지 않음)",
       "2026년 11월 21일 시행판",
       "2026년 11월 24일 시행판",
-      "2026년 11월 24일 개정판",
     ]);
     expect(links[4]?.getAttribute("href")).toBe(historyUrl(HISTORY.withdrawn.file));
     expect(changes).not.toHaveTextContent("](https://");

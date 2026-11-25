@@ -251,7 +251,12 @@ class HiddenOriginNoninterferenceHttpTest :
 
                         suspend fun draw(round: Int): JsonObject {
                             val response =
-                                json(HttpMethod.Post, "$path/favor-draw", """{"round":$round}""", room.managementToken)
+                                json(
+                                    HttpMethod.Post,
+                                    "$path/favor-draw",
+                                    """{"generation":0,"round":$round}""",
+                                    room.managementToken,
+                                )
                             response.status.value shouldBe 200
                             val raw = response.bodyAsText()
                             responses["draw/$round"] = raw

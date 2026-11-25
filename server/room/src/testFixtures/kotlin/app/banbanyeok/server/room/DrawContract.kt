@@ -23,7 +23,8 @@ private suspend fun RoomRepository.draw(
     round: Int,
     minutes: Long,
     rule: FavorDrawRule = fakeDrawRule,
-) = writeDraw(roomId, DrawRequest(round, T0.plusSeconds(minutes * 60)), activity(minutes), rule)
+    generation: Int = 0,
+) = writeDraw(roomId, DrawRequest(generation, round, T0.plusSeconds(minutes * 60)), activity(minutes), rule)
 
 private suspend fun RoomRepository.room(roomId: String): Room = find(roomId)!!.room
 
@@ -41,10 +42,12 @@ internal fun DescribeSpecRootScope.favorDraws(repos: () -> RepositoryPair) {
             val roomId = rooms.drawRoom(hidden = setOf("pid002"))
             val before = rooms.room(roomId)
             val result = rooms.draw(roomId, 1, 5, FavorDrawRule(FixedDrawRandom(1)))
-            result shouldBe DrawResult.Drawn("pid003", FavorDraw(1, listOf("host01", "pid003"), T0.plusSeconds(300)))
+            val stored =
+                FavorDraw(0, 1, listOf("host01", "pid003"), listOf("host01", "pid002", "pid003"), T0.plusSeconds(300))
+            result shouldBe DrawResult.Drawn("pid003", stored)
             val after = rooms.room(roomId)
             after.favorParticipantId shouldBe "pid003"
-            after.favorDraw shouldBe FavorDraw(1, listOf("host01", "pid003"), T0.plusSeconds(300))
+            after.favorDraw shouldBe stored
             after.lastActivityAt shouldBe activity(5).at
             after.shareVersion.value shouldBe before.shareVersion.value + 1
         }
@@ -90,11 +93,16 @@ internal fun DescribeSpecRootScope.favorDrawResets(repos: () -> RepositoryPair) 
             rooms.draw(roomId, 2, 6).shouldBeDrawn()
             rooms.removeParticipant(roomId, "host01", activity(7))
             val after = rooms.room(roomId)
-            after.favorDraw shouldBe FavorDraw.PENDING
+            after.favorDraw shouldBe FavorDraw.PENDING.copy(generation = 1)
             after.favorParticipantId.shouldBeNull()
             after.mode shouldBe RoomMode.FAVOR
-            rooms.draw(roomId, 1, 8).shouldBeDrawn()
+            // 리셋 전 세대의 요청(처음 뽑기·다시 뽑기의 재시도)은 새로 뽑지 않는다.
+            rooms.draw(roomId, 1, 8) shouldBe DrawResult.Stale
+            rooms.draw(roomId, 2, 8) shouldBe DrawResult.Stale
+            rooms.room(roomId) shouldBe after
+            rooms.draw(roomId, 1, 8, generation = 1).shouldBeDrawn()
             rooms.room(roomId).favorParticipantId shouldBe "pid002"
+            rooms.room(roomId).favorDraw?.generation shouldBe 1
         }
 
         it("keeps the result when someone other than the winner leaves") {
@@ -117,7 +125,7 @@ internal fun DescribeSpecRootScope.favorDrawResets(repos: () -> RepositoryPair) 
             rooms.room(roomId).favorParticipantId shouldBe "host01"
             rooms.updateParticipant(roomId, "host01", hide, activity(7))
             val after = rooms.room(roomId)
-            after.favorDraw shouldBe FavorDraw.PENDING
+            after.favorDraw shouldBe FavorDraw.PENDING.copy(generation = 1)
             after.favorParticipantId.shouldBeNull()
         }
     }
@@ -152,6 +160,19 @@ internal fun DescribeSpecRootScope.favorDrawVersions(repos: () -> RepositoryPair
             after.favorDraw.shouldBeNull()
             after.favorParticipantId shouldBe "pid003"
             after.mode shouldBe RoomMode.FAVOR
+        }
+
+        it("stops being a draw room when the host sets the current winner directly, and bumps the share version") {
+            val rooms = repos().rooms
+            val roomId = rooms.drawRoom()
+            rooms.draw(roomId, 1, 5).shouldBeDrawn()
+            val drawn = rooms.room(roomId)
+            val same = RoomChange(favorParticipantId = Change.Set("host01"), endsDraw = true)
+            rooms.updateRoom(roomId, same, activity(6)) shouldBe true
+            val after = rooms.room(roomId)
+            after.favorDraw.shouldBeNull()
+            after.favorParticipantId shouldBe "host01"
+            after.shareVersion.value shouldBe drawn.shareVersion.value + 1
         }
     }
 }

@@ -180,10 +180,12 @@ public class RoomService(
                 is Change.Set -> requested.value?.also { checkMeetingDate(it, now) }
             }
         val band = bandChange(stored.room, patch)
+        val favor = favorChange(stored, patch)
         val change =
             RoomChange(
                 mode = patch.mode,
-                favorParticipantId = favorChange(stored, patch),
+                favorParticipantId = favor,
+                endsDraw = stored.room.favorDraw != null && (favor as? Change.Set)?.value != null,
                 locked = patch.locked,
                 meetingDate = patch.meetingDate,
                 meetingTime = minutes(patch.meetingTime),
@@ -239,19 +241,20 @@ public class RoomService(
     }
 
     /**
-     * 방장이 '누구 쪽으로' 대상을 뽑는다([round] = 화면이 본 회차 + 1). 방이 이미 그 회차 이상이면 아무것도 쓰지 않고 지금 방을
-     * 돌려준다(재시도 안전). 뽑은 결과는 방에 저장되어 누가 열어도 같다.
+     * 방장이 '누구 쪽으로' 대상을 뽑는다([generation] = 화면이 본 세대, [round] = 화면이 본 회차 + 1). 같은 세대에서 방이 이미 그 회차
+     * 이상이면 아무것도 쓰지 않고 지금 방을 돌려준다(재시도 안전). 뽑은 결과는 방에 저장되어 누가 열어도 같다.
      */
     public suspend fun drawFavor(
         roomId: String,
         hostToken: String?,
+        generation: Int,
         round: Int,
     ): RoomView {
         val now = clock.instant()
         val stored = loadActive(roomId, now)
         requireHost(stored, hostToken)
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
-        when (rooms.writeDraw(stored.room.id, DrawRequest(round, now), activity, draws)) {
+        when (rooms.writeDraw(stored.room.id, DrawRequest(generation, round, now), activity, draws)) {
             is DrawResult.Drawn, DrawResult.Unchanged -> Unit
             DrawResult.NotAvailable -> reject(RoomError.DRAW_NOT_AVAILABLE, "뽑기로 만든 방이 아닙니다")
             DrawResult.TooFew -> reject(RoomError.NOT_ENOUGH_DRAW_CANDIDATES, "출발역을 숨기지 않은 참가자가 2명 이상이어야 합니다")
@@ -388,7 +391,7 @@ public class RoomService(
         val newMode = patch.mode ?: stored.room.mode
         if (patch.mode == null && patch.favorTarget == null) return Change.Unchanged
         if (newMode != RoomMode.FAVOR) return Change.Set(null)
-        // 뽑기 방에서 대상 없이 favor만 다시 보내면 그대로다. 대상을 직접 정하면 트리거가 뽑기를 끝낸다.
+        // 뽑기 방에서 대상 없이 favor만 다시 보내면 그대로다. 대상을 직접 정하면 뽑기를 끝낸다(RoomChange.endsDraw).
         if (patch.favorTarget == null && stored.room.favorDraw != null) return Change.Unchanged
         val target =
             when (val requested = patch.favorTarget) {

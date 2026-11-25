@@ -41,8 +41,14 @@ private suspend fun HttpClient.draw(
     round: Int,
     token: String? = room.managementToken,
     key: String? = null,
+    generation: Int = 0,
 ): HttpResponse =
-    json(HttpMethod.Post, "/v1/rooms/${room.roomId}/favor-draw", """{"round":$round}""", token) {
+    json(
+        HttpMethod.Post,
+        "/v1/rooms/${room.roomId}/favor-draw",
+        """{"generation":$generation,"round":$round}""",
+        token,
+    ) {
         key?.let { headers.append("Idempotency-Key", it) }
     }
 
@@ -106,6 +112,54 @@ class FavorDrawHttpTest :
                 }
             }
 
+            it("checks the host on every retry and answers with the room as it is now (no response cache)") {
+                val room = drawRoom()
+                room.withApi {
+                    draw(room, 1, key = "same-key").status.value shouldBe 200
+                    // 같은 키라도 방장이 아니면 거절한다(응답을 캐시해 두지 않는다).
+                    draw(room, 1, token = room.thirdToken, key = "same-key").status.value shouldBe 403
+                    // 그사이 방이 바뀌면(이름 변경) 같은 키의 재시도도 지금 방을 받는다.
+                    room.fixture.service.updateParticipant(
+                        room.roomId,
+                        room.thirdId,
+                        room.thirdToken,
+                        app.banbanyeok.server.room
+                            .ParticipantInput("지연이", "31a"),
+                    )
+                    val retried = draw(room, 1, key = "same-key").bodyAsText()
+                    retried shouldBe json(HttpMethod.Get, "/v1/rooms/${room.roomId}").bodyAsText()
+                    draw(room, 1, key = "").body().code() shouldBe "INVALID_IDEMPOTENCY_KEY"
+                }
+            }
+
+            it("does not draw again for a retry sent before the winner left, and draws in the new generation") {
+                val room = drawRoom()
+                room.withApi {
+                    draw(room, 1)
+                        .body()
+                        .getValue("favorTarget")
+                        .jsonPrimitive.content shouldBe room.hostId
+                    room.fixture.service.removeParticipant(room.roomId, room.hostId, room.managementToken)
+                    val reset = json(HttpMethod.Get, "/v1/rooms/${room.roomId}").body().getValue("favorDraw").jsonObject
+                    reset.getValue("generation").jsonPrimitive.content shouldBe "1"
+                    reset.getValue("round").jsonPrimitive.content shouldBe "0"
+                    for (round in listOf(1, 2)) {
+                        val stale = draw(room, round, key = "before-reset")
+                        stale.status.value shouldBe 409
+                        stale.body().code() shouldBe "ROOM_CHANGED"
+                    }
+                    val again = draw(room, 1, generation = 1)
+                    again.status.value shouldBe 200
+                    again
+                        .body()
+                        .getValue("favorDraw")
+                        .jsonObject
+                        .getValue("generation")
+                        .jsonPrimitive.content shouldBe
+                        "1"
+                }
+            }
+
             it("rejects anyone but the host and a bad round") {
                 val room = drawRoom()
                 room.withApi {
@@ -117,6 +171,7 @@ class FavorDrawHttpTest :
                     draw(room, 1, token = null).status.value shouldBe 401
                     draw(room, 1, token = "not-a-token").status.value shouldBe 401
                     draw(room, 0).body().code() shouldBe "INVALID_REQUEST"
+                    draw(room, 1, generation = -1).body().code() shouldBe "INVALID_REQUEST"
                     draw(room, 2).body().code() shouldBe "ROOM_CHANGED"
                     json(HttpMethod.Get, "/v1/rooms/${room.roomId}")
                         .body()
@@ -141,7 +196,7 @@ class FavorDrawHttpTest :
         }
 
         describe("results and the preview of a draw room") {
-            it("are fair before the draw and favor the winner after it, with the draw round on the preview") {
+            it("are fair before the draw and favor the winner after it") {
                 val room = drawRoom()
                 room.withApi {
                     val path = "/v1/rooms/${room.roomId}"
@@ -159,8 +214,7 @@ class FavorDrawHttpTest :
                         .jsonPrimitive.content shouldBe "favor"
                     val after = json(HttpMethod.Get, "$path/preview")
                     OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/{roomId}/preview", after)
-                    after.body().getValue("basis").toString() shouldBe
-                        """{"mode":"favor","favorLabel":"민수","drawRound":1}"""
+                    after.body().getValue("basis").toString() shouldBe """{"mode":"favor","favorLabel":"민수"}"""
                 }
             }
 

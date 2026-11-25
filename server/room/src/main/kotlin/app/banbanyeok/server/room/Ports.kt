@@ -45,6 +45,8 @@ public data class RoomChange(
      * 읽은 뒤 다른 요청이 넣은 시각과 어긋난 채 저장되지 않게 한다.
      */
     val onlyWithoutMeetingTime: Boolean = false,
+    /** 방장이 대상을 직접 정했다: 뽑기 방이면 뽑기를 끝낸다(지금 당첨자를 그대로 정해도). */
+    val endsDraw: Boolean = false,
 )
 
 /**

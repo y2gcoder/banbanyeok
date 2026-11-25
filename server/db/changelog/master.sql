@@ -161,75 +161,58 @@ CREATE TRIGGER participants_share_version AFTER INSERT OR DELETE OR UPDATE OF ni
 
 --changeset banbanyeok:20261125-favor-draw splitStatements:false
 -- '누구 쪽으로' 뽑기(#172). favor_draw: 방을 만들 때 배려 대상을 뽑기로 정했다. 뽑은 당첨자는 favor_pid에 둔다(결과·미리보기의 배려 대상).
--- draw_round: 몇 번째 뽑기의 결과인지(0 = 아직, 2 = 다시 뽑음). draw_candidates: 뽑을 때 대상이던 참가자 ID(입장 순서, 숨긴 사람 제외).
+-- draw_generation: 뽑기 세대. 뽑기 전으로 돌아갈 때마다 1씩 커지고 줄지 않는다(리셋 전에 보낸 요청이 재시도돼도 새로 뽑지 않게).
+-- draw_round: 그 세대에서 몇 번째 뽑기의 결과인지(0 = 아직, 2 = 다시 뽑음). draw_candidates: 뽑을 때 대상이던 참가자 ID(입장 순서,
+-- 숨긴 사람 제외). draw_roster: 뽑을 때 방에 있던 모든 참가자 ID(뒤늦게 들어온 사람과 숨겨서 빠진 사람을 가른다).
 -- 대상과 당첨은 참가자 ID·숨김 여부·입장 순서와 서버의 운에서만 나온다(출발역을 보지 않는다).
 ALTER TABLE rooms
     ADD COLUMN favor_draw      boolean NOT NULL DEFAULT false,
+    ADD COLUMN draw_generation integer NOT NULL DEFAULT 0 CONSTRAINT rooms_draw_generation_nonneg CHECK (draw_generation >= 0),
     ADD COLUMN draw_round      smallint NOT NULL DEFAULT 0 CONSTRAINT rooms_draw_round_range CHECK (draw_round BETWEEN 0 AND 2),
     ADD COLUMN draw_candidates text[],
+    ADD COLUMN draw_roster     text[],
     ADD COLUMN drawn_at        timestamptz,
     ADD CONSTRAINT rooms_draw_only_favor CHECK (NOT favor_draw OR mode = 'favor'),
     ADD CONSTRAINT rooms_draw_complete CHECK (
         (draw_round = 0) = (drawn_at IS NULL) AND (draw_round = 0) = (draw_candidates IS NULL)
+        AND (draw_round = 0) = (draw_roster IS NULL)
         AND (NOT favor_draw OR (draw_round = 0) = (favor_pid IS NULL))
         AND (favor_draw OR draw_round = 0)
     );
 
--- 앞 changeset(20261117-room-share-version)의 함수에 뽑기 규칙 두 가지를 더한다. 트리거라서 배포 중 옛 서버의 쓰기에도 맞는다.
--- 1. 뽑기 방에서 기준을 바꾸거나 대상을 직접 정하면(뽑기 없이 favor_pid가 다른 사람으로) 뽑기 방이 아니게 된다.
--- 2. 당첨자가 비면(나가기·내보내기는 앱이 favor_pid를 비우고, 숨기기는 앱이 같은 트랜잭션에서 비운다) 뽑기 전으로, 횟수도 0으로.
--- 뽑기 상태도 미리보기에 보이므로 공유 번호를 올린다(다시 뽑아 같은 사람이 나와 favor_pid가 그대로여도 draw_round가 바뀐다).
-CREATE OR REPLACE FUNCTION rooms_share_version() RETURNS trigger AS $$
-DECLARE
-    decision_changed boolean;
-    preview_changed  boolean;
+-- 뽑기 규칙을 트리거에 둔다. 배포 중 옛 서버의 쓰기(나가기·기준 바꾸기)에도 CHECK가 깨지지 않게 하려는 것이다.
+-- 1. 뽑기 방에서 기준을 favor가 아닌 것으로 바꾸거나, 뽑기 없이 favor_pid가 다른 사람으로 바뀌면 뽑기 방이 아니게 된다
+--    (지금 당첨자를 그대로 직접 정하는 것은 새 서버가 favor_draw를 직접 끈다).
+-- 2. 당첨자가 비면(나가기·내보내기는 앱이 favor_pid를 비우고, 숨기기는 앱이 같은 트랜잭션에서 비운다) 뽑기 전으로 돌리고 세대를 올린다.
+-- 3. 뽑기 칸이 바뀌면 미리보기에 보이는 것이 바뀐 것이라 공유 번호를 올려 달라고 표시한다(share_version > OLD). 정확히 1 올리는 것은
+--    20261117-room-share-version의 rooms_share_version이 한다. BEFORE 트리거는 이름순으로 돌므로 이 트리거(rooms_draw_state)가 먼저다.
+CREATE FUNCTION rooms_draw_state() RETURNS trigger AS $$
 BEGIN
     IF NEW.favor_draw AND (
         NEW.mode IS DISTINCT FROM 'favor'
-        OR (NEW.favor_pid IS NOT NULL AND NEW.favor_pid IS DISTINCT FROM OLD.favor_pid AND NEW.draw_round = OLD.draw_round)
+        OR (NEW.favor_pid IS NOT NULL AND NEW.favor_pid IS DISTINCT FROM OLD.favor_pid
+            AND NEW.draw_round = OLD.draw_round AND NEW.draw_generation = OLD.draw_generation)
     ) THEN
         NEW.favor_draw := false;
         NEW.draw_round := 0;
         NEW.draw_candidates := NULL;
+        NEW.draw_roster := NULL;
         NEW.drawn_at := NULL;
     ELSIF NEW.favor_draw AND NEW.favor_pid IS NULL AND NEW.draw_round > 0 THEN
+        NEW.draw_generation := OLD.draw_generation + 1;
         NEW.draw_round := 0;
         NEW.draw_candidates := NULL;
+        NEW.draw_roster := NULL;
         NEW.drawn_at := NULL;
     END IF;
-    decision_changed :=
-        (NEW.decided_station, NEW.decided_by_pid, NEW.decided_at)
-            IS DISTINCT FROM (OLD.decided_station, OLD.decided_by_pid, OLD.decided_at)
-        OR NEW.decision_basis_version > OLD.decision_basis_version;
-    preview_changed :=
-        decision_changed
-        OR NEW.share_version > OLD.share_version
-        OR (NEW.mode, NEW.favor_pid, NEW.status, NEW.expected_count, NEW.meeting_date, NEW.meeting_time, NEW.meeting_band,
-            NEW.favor_draw, NEW.draw_round, NEW.drawn_at)
-            IS DISTINCT FROM (OLD.mode, OLD.favor_pid, OLD.status, OLD.expected_count, OLD.meeting_date, OLD.meeting_time, OLD.meeting_band,
-            OLD.favor_draw, OLD.draw_round, OLD.drawn_at);
-    NEW.share_version := OLD.share_version + CASE WHEN preview_changed THEN 1 ELSE 0 END;
-    NEW.decision_basis_version := CASE WHEN decision_changed THEN NEW.share_version ELSE OLD.decision_basis_version END;
+    IF (NEW.favor_draw, NEW.draw_generation, NEW.draw_round, NEW.drawn_at)
+        IS DISTINCT FROM (OLD.favor_draw, OLD.draw_generation, OLD.draw_round, OLD.drawn_at) THEN
+        NEW.share_version := GREATEST(NEW.share_version, OLD.share_version + 1);
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
---rollback CREATE OR REPLACE FUNCTION rooms_share_version() RETURNS trigger AS $$
---rollback DECLARE
---rollback     decision_changed boolean;
---rollback     preview_changed  boolean;
---rollback BEGIN
---rollback     decision_changed :=
---rollback         (NEW.decided_station, NEW.decided_by_pid, NEW.decided_at)
---rollback             IS DISTINCT FROM (OLD.decided_station, OLD.decided_by_pid, OLD.decided_at)
---rollback         OR NEW.decision_basis_version > OLD.decision_basis_version;
---rollback     preview_changed :=
---rollback         decision_changed
---rollback         OR NEW.share_version > OLD.share_version
---rollback         OR (NEW.mode, NEW.favor_pid, NEW.status, NEW.expected_count, NEW.meeting_date, NEW.meeting_time, NEW.meeting_band)
---rollback             IS DISTINCT FROM (OLD.mode, OLD.favor_pid, OLD.status, OLD.expected_count, OLD.meeting_date, OLD.meeting_time, OLD.meeting_band);
---rollback     NEW.share_version := OLD.share_version + CASE WHEN preview_changed THEN 1 ELSE 0 END;
---rollback     NEW.decision_basis_version := CASE WHEN decision_changed THEN NEW.share_version ELSE OLD.decision_basis_version END;
---rollback     RETURN NEW;
---rollback END;
---rollback $$ LANGUAGE plpgsql;
---rollback ALTER TABLE rooms DROP CONSTRAINT rooms_draw_complete, DROP CONSTRAINT rooms_draw_only_favor, DROP COLUMN drawn_at, DROP COLUMN draw_candidates, DROP COLUMN draw_round, DROP COLUMN favor_draw;
+
+CREATE TRIGGER rooms_draw_state BEFORE UPDATE ON rooms
+    FOR EACH ROW EXECUTE FUNCTION rooms_draw_state();
+--rollback DROP TRIGGER rooms_draw_state ON rooms; DROP FUNCTION rooms_draw_state(); ALTER TABLE rooms DROP CONSTRAINT rooms_draw_complete, DROP CONSTRAINT rooms_draw_only_favor, DROP COLUMN drawn_at, DROP COLUMN draw_roster, DROP COLUMN draw_candidates, DROP COLUMN draw_round, DROP COLUMN draw_generation, DROP COLUMN favor_draw;

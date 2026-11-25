@@ -298,8 +298,6 @@ describe("개인정보 처리방침", () => {
       "mapMiddle.times[].label": "그 역까지 참여자별 소요시간",
       "mapMiddle.times[].seconds": "그 역까지 참여자별 소요시간",
       lastTrainPending: "막차 표 준비 중 표시",
-      // 이 판(#172)에 더한 키.
-      "basis.drawRound": "배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지",
     };
     expect(leaves.sort()).toEqual(Object.keys(described).sort());
     const sentences = previewSentences(POLICY);
@@ -308,21 +306,12 @@ describe("개인정보 처리방침", () => {
     const preview = sentences.join(" ");
     for (const [key, phrase] of Object.entries(described)) expect(preview, key).toContain(phrase);
     expect(one(sentences, "막차 표 준비 중 표시")).toContain("서버의 상태이고 참여자의 정보가 아닙니다");
-    // 이 판 전부터 응답에 있던 키는 비교표의 '바뀌기 전'에도 적는다(이 판에 더한 키는 '바뀐 후'). 이 판의 행이 맨 앞이다.
+    // 이 판 전부터 응답에 있던 키는 비교표의 '바뀌기 전'에도 적는다(이 판에 더한 키는 '바뀐 후').
     const row = CHANGE_NOTICE?.rows.find((r) => r.item.includes("방 미리보기 응답"));
-    expect(row?.item.startsWith("[")).toBe(false);
     for (const [key, phrase] of Object.entries(described)) {
-      const added = key === "basis.drawRound";
+      const added = key.startsWith("mapMiddle.") || key === "lastTrainPending";
       expect(added ? row?.after : row?.before, key).toContain(phrase);
       if (added) expect(row?.before, key).not.toContain(phrase);
-    }
-    // 11월 21일 시행판에 더한 키(지도 한가운데·막차 표 준비 중)는 그 판의 행에서 '바뀐 후'에만 있다.
-    const nov21 = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("[11월 21일 시행판] 방 미리보기 응답"));
-    for (const [key, phrase] of Object.entries(described)) {
-      if (key === "basis.drawRound") continue;
-      const added = key.startsWith("mapMiddle.") || key === "lastTrainPending";
-      expect(added ? nov21?.after : nov21?.before, key).toContain(phrase);
-      if (added) expect(nov21?.before, key).not.toContain(phrase);
     }
   });
 
@@ -547,18 +536,9 @@ describe("개인정보 처리방침", () => {
   it("15항 변경 이력: 7일 전 알림 없이 바로 시행했다는 것과 그 이유, 11월 28일 예정 판을 시행하지 않는다는 것을 정직하게 적는다", () => {
     const text = textOf(POLICY, "changes");
     const day = koreanDate(REVISION_DATE, { year: true });
-    // 이 판(#172): '누구 쪽으로' 뽑기. 11월 24일 개정판 다음 날 이후에 시행하므로 그날의 '시행판'이다.
-    expect(REVISION_DATE > "2026-11-24").toBe(true);
-    const draw = lineOf(POLICY, "changes", `변경 이력: ${day} 시행판은`);
-    expect(draw).toContain("'누구 쪽으로'(배려) 대상을 뽑기로 정하는 기능을 더했습니다");
-    expect(draw).toContain("2항: 방 정보에 배려 대상을 뽑기로 정했는지와 뽑은 결과");
-    expect(draw).toContain("출발역을 숨긴 사람은 뽑기에서 빠지고");
-    expect(draw).toContain("11항: 이 기기의 방 기록에 뽑기 그림을 이미 본 회차를 더했습니다");
-    expect(draw).toContain("수집하는 정보와 다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 화면에 알립니다");
-    expect(draw).toContain("2026년 11월 24일 개정판은 이 판을 시행한 날 배포 전까지 적용했습니다");
-    expect(draw).toContain("처리 목적, 보유 기간, 처리 위탁과 국외 이전, 이용 통계는 바뀌지 않았습니다");
-    // 11월 24일 개정판(#162): 같은 날 두 번째로 고친 판이라 11월 17일의 예처럼 '개정판'이다.
-    const mine = lineOf(POLICY, "changes", "변경 이력: 2026년 11월 24일 개정판은");
+    // 이 판(#162): 같은 날 두 번째로 고친 판이라 11월 17일의 예처럼 '개정판'이다.
+    expect(REVISION_DATE).toBe("2026-11-24");
+    const mine = lineOf(POLICY, "changes", `변경 이력: ${day} 개정판은`);
     expect(mine).toContain("숨긴 사람 쪽으로 맞춘 결과는 그 사람 본인의 화면에만 보이고");
     expect(mine).toContain(
       "다른 사람에게는 '공평하게'로 보이며 미리보기·공유 문구에도 그 사람의 이름을 배려 대상으로 넣지 않습니다",
@@ -598,7 +578,7 @@ describe("개인정보 처리방침", () => {
       label,
       url,
     }));
-    for (const commit of ["57a068a", "267cda0", "bd083b5", "ecd3a47", "44631a9", "5b0e704", "26dc73e"]) {
+    for (const commit of ["57a068a", "267cda0", "bd083b5", "ecd3a47", "44631a9", "5b0e704"]) {
       expect(links.map((l) => l.url)).toContain(
         `https://github.com/y2gcoder/banbanyeok/blob/${commit}/docs/legal/privacy-policy.md`,
       );
@@ -611,7 +591,7 @@ describe("개인정보 처리방침", () => {
       expect(existsSync(resolve(legal, url.split("/docs/legal/")[1] ?? "")), url).toBe(true);
     }
     const versions = text.split("\n").filter((l) => l.startsWith("["));
-    expect(versions).toHaveLength(8);
+    expect(versions).toHaveLength(7);
     expect(versions.map((l) => [...l.matchAll(/\]\(https:/g)].length)).toEqual(versions.map(() => 1));
     expect(text).toContain(
       "세 번째 개정판](https://github.com/y2gcoder/banbanyeok/blob/ecd3a47/docs/legal/privacy-policy.md): 2026년 11월 17일부터 2026년 11월 21일 시행판 시행 전까지 적용했습니다.",
@@ -620,10 +600,7 @@ describe("개인정보 처리방침", () => {
       "11월 21일 시행판](https://github.com/y2gcoder/banbanyeok/blob/44631a9/docs/legal/privacy-policy.md): 2026년 11월 21일부터 2026년 11월 24일 시행판 시행 전까지 적용했습니다.",
     );
     expect(text).toContain(
-      "11월 24일 시행판](https://github.com/y2gcoder/banbanyeok/blob/5b0e704/docs/legal/privacy-policy.md): 2026년 11월 24일 하루, 2026년 11월 24일 개정판 시행 전까지 적용했습니다.",
-    );
-    expect(text).toContain(
-      `11월 24일 개정판](https://github.com/y2gcoder/banbanyeok/blob/26dc73e/docs/legal/privacy-policy.md): 2026년 11월 24일부터 ${koreanDate(REVISION_DATE, { year: true })} 이 판 시행 전까지 적용했습니다.`,
+      "11월 24일 시행판](https://github.com/y2gcoder/banbanyeok/blob/5b0e704/docs/legal/privacy-policy.md): 2026년 11월 24일 하루, 이 판 시행 전까지 적용했습니다.",
     );
     expect(text).toContain("2026년 11월 21일부터 알렸으나 시행하지 않았습니다.");
   });
@@ -641,44 +618,26 @@ describe("개인정보 처리방침", () => {
     expect(addDays("2026-12-30", 7)).toBe("2027-01-06");
   });
 
-  it("중요한 변경 안내(CHANGE_NOTICE): 이 판은 수집하는 정보와 보이는 범위가 바뀌어 켜고, 시행일부터 15항의 일수만큼이며 전후 비교가 빠짐없다", () => {
+  it("중요한 변경 안내(CHANGE_NOTICE): 이 판은 보이는 범위가 바뀌어 켜고, 시행일부터 15항의 일수만큼이며 전후 비교가 빠짐없다", () => {
     expect(CHANGE_NOTICE).not.toBeNull();
     expect(changeNoticeProblems(CHANGE_NOTICE, CHANGE_NOTICE_DAYS)).toEqual([]);
     expect(CHANGE_NOTICE?.since).toBe(REVISION_DATE);
-    // 직전 판은 11월 24일 개정판(#162)이다.
+    // 직전 판은 같은 날 앞서 시행한 11월 24일 시행판(#142)이다.
     expect(CHANGE_NOTICE?.previous.url).toBe(
-      "https://github.com/y2gcoder/banbanyeok/blob/26dc73e/docs/legal/privacy-policy.md",
+      "https://github.com/y2gcoder/banbanyeok/blob/5b0e704/docs/legal/privacy-policy.md",
     );
-    expect(CHANGE_NOTICE?.previous.label).toBe("2026년 11월 24일 개정판");
+    expect(CHANGE_NOTICE?.previous.label).toBe("2026년 11월 24일 시행판");
     const rows = CHANGE_NOTICE?.rows ?? [];
-    // 이 판의 행(#172)이 맨 앞이다: 2항(저장), 6항(방 화면·미리보기 응답·그림과 글), 11항(이 기기).
-    const mine = rows.filter((r) => !r.item.startsWith("["));
-    expect(mine.map((r) => r.item)).toEqual([
-      "방 정보: '누구 쪽으로' 뽑기 (2항)",
-      "방 화면의 '누구 쪽으로' 뽑기 결과 (6항)",
-      "방 미리보기 응답: 방 ID만 있으면 누구나 받는 값 (6항)",
-      "메신저 미리보기 그림·글과 공유 문구의 추천 기준 (6항)",
-      "이 기기에 저장하는 방 기록 (11항)",
-    ]);
-    expect(rows.slice(0, mine.length)).toEqual(mine);
-    expect(mine[0]?.after).toContain("뽑기 대상인 참여자, 당첨된 참여자, 몇 번째 뽑기인지, 뽑은 시각");
-    expect(mine[1]?.after).toContain("출발역을 숨긴 사람은 뽑기 대상에서 빠짐");
-    expect(mine[1]?.after).toContain("뽑기에서 빠진 사람과 그 이유(출발역을 숨김·뽑은 뒤에 들어옴)");
-    expect(mine[3]?.after).toContain("'뽑기로 ○○ 쪽으로'");
-    expect(mine[4]?.after).toContain("뽑기 그림을 이미 본 회차");
-    // 앞선 판(11-24 개정판 #162)의 행.
-    const revised = rows.filter((r) => r.item.startsWith("[11월 24일 개정판] "));
-    expect(revised.map((r) => r.item)).toEqual([
-      "[11월 24일 개정판] 출발역을 숨긴 사람 쪽으로 맞춘 '누구 쪽으로' 결과 (6항)",
-      "[11월 24일 개정판] 다른 사람 쪽으로 맞춘 '누구 쪽으로' 결과의 후보 (6항)",
-    ]);
-    expect(revised[0]?.before).toContain(
+    // 이 판의 행(#162)이 맨 앞이다. 보이는 범위가 줄어도 중요한 변경으로 알린다(15항에 '축소면 생략' 예외가 없다).
+    expect(rows[0]?.item).toBe("출발역을 숨긴 사람 쪽으로 맞춘 '누구 쪽으로' 결과 (6항)");
+    expect(rows[0]?.before).toContain(
       "링크 미리보기(응답·그림·글), 공유 문구에 그 결과와 그 사람의 이름(배려 대상)이 나감",
     );
-    expect(revised[0]?.after).toContain("그 사람 본인의 화면에만 보임");
-    expect(revised[0]?.after).toContain("'공평하게'로 보이고 그 사람의 이름을 배려 대상으로 넣지 않음");
-    // 11-24 시행판(#142)의 행. 미리보기 응답(PreviewTime)에는 환승이 없으므로 소요시간과 환승의 노출 범위를 나눠 적는다.
-    const nov24 = rows.find((r) => r.item.startsWith("[11월 24일 시행판] "));
+    expect(rows[0]?.after).toContain("그 사람 본인의 화면에만 보임");
+    expect(rows[0]?.after).toContain("'공평하게'로 보이고 그 사람의 이름을 배려 대상으로 넣지 않음");
+    expect(rows[1]?.item).toBe("다른 사람 쪽으로 맞춘 '누구 쪽으로' 결과의 후보 (6항)");
+    // 같은 날 앞선 판(11-24, #142)의 행. 미리보기 응답(PreviewTime)에는 환승이 없으므로 소요시간과 환승의 노출 범위를 나눠 적는다.
+    const nov24 = rows[2];
     expect(nov24?.item).toBe("[11월 24일 시행판] 출발역을 숨긴 사람의 소요시간과 환승 횟수 (6항)");
     expect(nov24?.before).toContain(
       "정확한 소요시간이 다른 사람의 방 화면과 링크 미리보기(응답·그림·글), 공유 문구에 보이고",
@@ -688,16 +647,16 @@ describe("개인정보 처리방침", () => {
     );
     expect(nov24?.after).toContain("5분 단위로 올린 소요시간(0분도 5분)만 보이고 환승 횟수는 보이지 않음");
     expect(nov24?.after).toContain("출발역을 짐작할 수 있고");
-    // 앞선 세 판의 안내 기간(11-30·11-30·11-27까지)이 남아 그 판들의 행도 머리말을 붙여 함께 싣는다(15항의 7일 약속을 끊지 않는다).
+    // 앞선 두 판의 안내 기간(11-30·11-27까지)이 남아 그 판들의 행도 머리말을 붙여 함께 싣는다(15항의 7일 약속을 끊지 않는다).
     expect(addDays("2026-11-24", CHANGE_NOTICE_DAYS - 1) >= REVISION_DATE).toBe(true);
     expect(addDays("2026-11-21", CHANGE_NOTICE_DAYS - 1) >= REVISION_DATE).toBe(true);
+    expect(CHANGE_NOTICE?.since).toBe("2026-11-24");
     // 이 안내는 앞선 판의 기간 뒤에도(시행일부터 7일) 보이므로 그 기간을 요약에 적지 않는다.
     expect(CHANGE_NOTICE?.summary).toContain(
-      "표 뒷부분에는 앞선 판(2026년 11월 24일 개정판, 2026년 11월 24일 시행판, 2026년 11월 21일 시행판)에서 바뀐 내용도 함께 적었습니다.",
+      "표 뒷부분에는 앞선 판(2026년 11월 24일 시행판, 2026년 11월 21일 시행판)에서 바뀐 내용도 함께 적었습니다.",
     );
     expect(CHANGE_NOTICE?.summary).not.toMatch(/\d+일까지/);
-    const tail = rows.slice(mine.length + revised.length + 1);
-    expect(tail.length > 0 && tail.every((r) => r.item.startsWith("[11월 21일 시행판] "))).toBe(true);
+    expect(rows.slice(3).every((r) => r.item.startsWith("[11월 21일 시행판] "))).toBe(true);
     const row = (item: string) => rows.find((r) => r.item.startsWith(`[11월 21일 시행판] ${item}`));
     expect(row("방 미리보기 응답")?.after).toContain("역 코드·이름과 그 역까지 참여자별 소요시간");
     expect(row("방 미리보기 응답")?.after).toContain("막차 표 준비 중 표시");

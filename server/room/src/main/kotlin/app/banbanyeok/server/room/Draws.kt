@@ -11,7 +11,7 @@ public sealed interface DrawResult {
         val draw: FavorDraw,
     ) : DrawResult
 
-    /** 방이 이미 그 회차 이상이다. 아무것도 쓰지 않았다(재시도·새로고침 안전, 인스턴스와 상관없음). */
+    /** 같은 세대에서 방이 이미 그 회차 이상이다. 아무것도 쓰지 않았다(재시도·새로고침 안전, 인스턴스와 상관없음). */
     public data object Unchanged : DrawResult
 
     /** 방을 만들 때 대상을 뽑기로 정한 방이 아니다. */
@@ -23,14 +23,15 @@ public sealed interface DrawResult {
     /** 다시 뽑기를 이미 썼다. */
     public data object LimitReached : DrawResult
 
-    /** 화면이 본 회차 다음이 아니다(그사이 당첨자가 나가 처음으로 돌아갔다 등). */
+    /** 화면이 본 세대·회차의 다음이 아니다(그사이 당첨자가 나가 뽑기 전으로 돌아갔다 등). */
     public data object Stale : DrawResult
 
     public data object RoomNotFound : DrawResult
 }
 
-/** [round]번째 뽑기(1 = 처음, 2 = 다시 뽑기) 요청. [at]은 뽑은 시각으로 저장된다. */
+/** 세대 [generation]의 [round]번째 뽑기(1 = 처음, 2 = 다시 뽑기) 요청. [at]은 뽑은 시각으로 저장된다. */
 public data class DrawRequest(
+    val generation: Int,
     val round: Int,
     val at: Instant,
 )
@@ -50,8 +51,9 @@ public class FavorDrawRule(
     public fun isCandidate(participant: Participant): Boolean = !participant.hidden
 
     /**
-     * 순서가 규칙이다. 이미 그 회차 이상이면 다른 검사 없이 [DrawResult.Unchanged]라서 성공한 요청의 재시도도 200이다.
-     * 다시 뽑기는 한 번([MAX_ROUNDS])이고, 화면이 본 회차의 다음만 받는다.
+     * 순서가 규칙이다. 화면이 본 세대가 지금 세대가 아니면(그사이 뽑기 전으로 돌아갔다) [DrawResult.Stale]이라, 리셋 전에 보낸 요청이
+     * 다른 인스턴스로 재시도돼도 새로 뽑지 않는다. 같은 세대에서 이미 그 회차 이상이면 [DrawResult.Unchanged]라서 성공한 요청의
+     * 재시도도 200이다. 다시 뽑기는 한 번([MAX_ROUNDS])이고, 화면이 본 회차의 다음만 받는다.
      */
     public fun verdict(
         room: Room,
@@ -61,6 +63,10 @@ public class FavorDrawRule(
         val draw = room.favorDraw ?: return DrawResult.NotAvailable
         val candidates = participants.filter(::isCandidate)
         return when {
+            request.generation != draw.generation -> {
+                DrawResult.Stale
+            }
+
             request.round <= draw.round -> {
                 DrawResult.Unchanged
             }
@@ -79,7 +85,15 @@ public class FavorDrawRule(
 
             else -> {
                 val winner = candidates[random.nextInt(candidates.size)]
-                DrawResult.Drawn(winner.id, FavorDraw(request.round, candidates.map { it.id }, request.at))
+                val next =
+                    FavorDraw(
+                        generation = draw.generation,
+                        round = request.round,
+                        candidates = candidates.map { it.id },
+                        roster = participants.map { it.id },
+                        drawnAt = request.at,
+                    )
+                DrawResult.Drawn(winner.id, next)
             }
         }
     }
@@ -91,10 +105,10 @@ public class FavorDrawRule(
     ): FavorDrawView? {
         val draw = room.favorDraw ?: return null
         val winner = room.favorParticipantId?.takeIf { id -> participants.any { it.id == id } }
-        val drawnAt = draw.drawnAt
-        if (draw.round == 0 || winner == null || drawnAt == null) {
+        if (draw.round == 0 || winner == null || draw.drawnAt == null) {
             val (candidates, hidden) = participants.partition(::isCandidate)
             return FavorDrawView(
+                generation = draw.generation,
                 round = 0,
                 maxRounds = MAX_ROUNDS,
                 candidates = candidates.map { it.id },
@@ -104,25 +118,20 @@ public class FavorDrawRule(
             )
         }
         val drawn = draw.candidates.toSet()
+        val roster = draw.roster.toSet()
         return FavorDrawView(
+            generation = draw.generation,
             round = draw.round,
             maxRounds = MAX_ROUNDS,
             candidates = participants.filter { it.id in drawn }.map { it.id },
             winner = winner,
-            drawnAt = drawnAt,
+            drawnAt = draw.drawnAt,
+            // 뽑을 때 방에 있었는데 대상이 아니었으면 숨겨서 빠진 것이고, 명단에 없으면 뽑은 뒤에 들어온 것이다.
             excluded =
                 participants
                     .filter { it.id !in drawn }
                     .map {
-                        val reason =
-                            if (it.joinedAt.isAfter(
-                                    drawnAt,
-                                )
-                            ) {
-                                DrawExclusionReason.LATE
-                            } else {
-                                DrawExclusionReason.HIDDEN
-                            }
+                        val reason = if (it.id in roster) DrawExclusionReason.HIDDEN else DrawExclusionReason.LATE
                         DrawExclusion(it.id, reason)
                     },
         )

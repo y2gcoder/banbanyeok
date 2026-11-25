@@ -105,6 +105,7 @@ fun RoomView.toDto(
     favorDraw =
         favorDraw?.let { draw ->
             FavorDrawDto(
+                draw.generation,
                 draw.round,
                 draw.maxRounds,
                 draw.candidates,
@@ -135,7 +136,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
             timeBasis = room.timeBasis.toDto(requested = room.timeBasis.slot),
         )
 
-    fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel, drawRound)
+    fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel)
 
     fun PreviewStation.dto() =
         PreviewStationDto(

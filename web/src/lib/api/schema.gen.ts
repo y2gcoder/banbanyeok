@@ -141,10 +141,15 @@ export interface paths {
          *     대상은 뽑는 순간 출발역을 숨기지 않은 참가자다(입장 순서). 숨긴 사람은 빠진다: 그 사람 쪽 결과는 본인만 볼 수 있어서다(ADR-0005).
          *     대상이 2명 미만이면 409 `NOT_ENOUGH_DRAW_CANDIDATES`. 대상과 당첨은 출발역에 따라 달라지지 않는다(숨긴 출발역 비간섭).
          *
-         *     `round`는 이번이 몇 번째 뽑기인지다(1 = 처음, 2 = 다시 뽑기). 방의 `favorDraw.round`가 이미 `round` 이상이면 아무것도 바꾸지
-         *     않고 지금 방을 돌려준다(재시도·새로고침 안전, 인스턴스와 상관없음). `favorDraw.round + 1`이면 뽑는다. 다시 뽑기는 한 번이라
-         *     `round`가 `favorDraw.maxRounds`보다 크면 409 `DRAW_LIMIT_REACHED`. 그 밖(화면이 본 뒤 당첨자가 나가 처음으로 돌아갔다 등)은
-         *     409 `ROOM_CHANGED`. `Idempotency-Key`도 다른 변경 요청처럼 받는다.
+         *     `generation`은 화면이 본 `favorDraw.generation`, `round`는 이번이 몇 번째 뽑기인지다(1 = 처음, 2 = 다시 뽑기). 멱등은 이 두
+         *     값으로 방 행을 잠근 채 판정한다(재시도·새로고침 안전, 인스턴스와 상관없음):
+         *     - `generation`이 방의 세대와 다르면(그사이 당첨자가 나가거나 숨겨 뽑기 전으로 돌아갔다) 409 `ROOM_CHANGED`. 리셋 전에 보낸 요청이
+         *       재시도돼도 새로 뽑지 않는다.
+         *     - 같은 세대에서 방의 `favorDraw.round`가 이미 `round` 이상이면 아무것도 바꾸지 않고 지금 방을 돌려준다.
+         *     - `favorDraw.round + 1`이면 뽑는다. 다시 뽑기는 한 번이라 `round`가 `favorDraw.maxRounds`보다 크면 409 `DRAW_LIMIT_REACHED`.
+         *       회차를 건너뛰면 409 `ROOM_CHANGED`.
+         *
+         *     `Idempotency-Key`는 형식만 확인하고 응답을 캐시하지 않는다: 재시도도 늘 방장 확인을 지나고 지금 방을 받는다.
          */
         post: operations["drawFavorTarget"];
         delete?: never;
@@ -832,11 +837,13 @@ export interface components {
         };
         /**
          * @description `round`=0이면 아직 안 뽑았다(방의 기본 결과·미리보기는 공평하게). 당첨자가 방을 나가거나(내보내기 포함) 출발역을 숨기면
-         *     `round`=0으로 돌아간다(다시 뽑기 횟수도 처음부터). 당첨자가 아닌 사람이 나가거나 숨기면 결과는 그대로다.
+         *     `round`=0으로 돌아가고 `generation`이 1 오른다(다시 뽑기 횟수도 처음부터). 당첨자가 아닌 사람이 나가거나 숨기면 결과는 그대로다.
          *     모든 값은 참가자 ID·숨김 여부·입장 시각과 서버의 운에서만 나오고 출발역과는 상관없다.
          */
         FavorDraw: {
-            /** @description 몇 번째 뽑기의 결과인지. 2면 방장이 다시 뽑았다(모두에게 보인다) */
+            /** @description 뽑기 세대. 뽑기 전으로 돌아갈 때마다 1씩 커지고 줄지 않는다. 뽑기 요청에 그대로 보낸다 */
+            generation: number;
+            /** @description 그 세대에서 몇 번째 뽑기의 결과인지. 2면 방장이 다시 뽑았다(모두에게 보인다) */
             round: number;
             /**
              * @description 처음 뽑기 1번 + 다시 뽑기 1번
@@ -852,7 +859,7 @@ export interface components {
             winner: string | null;
             /** Format: date-time */
             drawnAt: string | null;
-            /** @description 방에 있지만 대상이 아닌 사람과 이유. `hidden`은 뽑을 때(뽑기 전이면 지금) 출발역을 숨겼다, `late`는 뽑은 뒤에 들어왔다 */
+            /** @description 방에 있지만 대상이 아닌 사람과 이유. `hidden`은 뽑을 때(뽑기 전이면 지금) 방에 있었지만 출발역을 숨겼다, `late`는 뽑을 때 방에 없었다(뒤에 들어왔다) */
             excluded: {
                 participantId: string;
                 /** @enum {string} */
@@ -860,6 +867,8 @@ export interface components {
             }[];
         };
         FavorDrawRequest: {
+            /** @description 화면이 본 `favorDraw.generation` */
+            generation: number;
             /** @description 이번이 몇 번째 뽑기인지(화면이 본 `favorDraw.round` + 1). `favorDraw.maxRounds`보다 크면 409 `DRAW_LIMIT_REACHED` */
             round: number;
         };
@@ -949,11 +958,6 @@ export interface components {
             mode: components["schemas"]["Mode"];
             /** @description `mode=favor`일 때 우대하는 사람의 짧은 이름 */
             favorLabel: string | null;
-            /**
-             * @description 배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지(`favorDraw.round`). 뽑기 방이 아니거나 아직 안 뽑았으면(그때 `mode`는 `fair`) 키가 없다.
-             *     공유 문구 "뽑기로 ○○ 쪽으로"에 쓴다
-             */
-            drawRound?: number;
         };
         PreviewStation: {
             stationCode: components["schemas"]["StationCode"];

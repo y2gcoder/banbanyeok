@@ -84,17 +84,21 @@ public data class Room(
 )
 
 /**
- * 저장된 뽑기 상태. [round]가 0이면 아직 안 뽑았고 [candidates]·[drawnAt]이 비어 있다(DB CHECK rooms_draw_complete).
- * 당첨자가 비면(나가거나 숨겼다) DB 트리거가 0으로 돌린다.
+ * 저장된 뽑기 상태. [round]가 0이면 아직 안 뽑았고 [candidates]·[roster]·[drawnAt]이 비어 있다(DB CHECK rooms_draw_complete).
+ * 당첨자가 비면(나가거나 숨겼다) DB 트리거가 회차를 0으로 돌리고 [generation]을 1 올린다.
  */
 public data class FavorDraw(
+    /** 뽑기 세대. 뽑기 전으로 돌아갈 때마다 1씩 커지고 줄지 않는다. 회차(0~2)는 세대 안에서 센다. */
+    val generation: Int,
     val round: Int,
     /** 뽑을 때 대상이던 참가자 ID(입장 순서). */
     val candidates: List<String>,
+    /** 뽑을 때 방에 있던 모든 참가자 ID. 그 뒤에 들어온 사람(late)과 숨겨서 빠진 사람(hidden)을 이것으로 가른다. */
+    val roster: List<String>,
     val drawnAt: Instant?,
 ) {
     public companion object {
-        public val PENDING: FavorDraw = FavorDraw(0, emptyList(), null)
+        public val PENDING: FavorDraw = FavorDraw(0, 0, emptyList(), emptyList(), null)
     }
 }
 
@@ -213,6 +217,7 @@ public data class RoomView(
 
 /** 화면에 보이는 뽑기 상태. 참가자 ID·숨김 여부·입장 시각과 저장된 결과에서만 나온다(출발역과 상관없다). */
 public data class FavorDrawView(
+    val generation: Int,
     val round: Int,
     val maxRounds: Int,
     /** 그림의 칸 순서(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람, 뽑은 뒤에는 그때의 대상 중 아직 방에 있는 사람. */

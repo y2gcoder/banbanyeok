@@ -72,6 +72,7 @@ class RoomDrawTest :
                     view.favorParticipantId.shouldBeNull()
                     view.favorDraw shouldBe
                         FavorDrawView(
+                            generation = 0,
                             round = 0,
                             maxRounds = 2,
                             candidates = listOf(room.hostId, room.friendId),
@@ -97,7 +98,7 @@ class RoomDrawTest :
             it("stores one result that every viewer sees the same way") {
                 drawTest(1) {
                     val room = drawRoom()
-                    val drawn = service.drawFavor(room.roomId, room.hostToken, 1)
+                    val drawn = service.drawFavor(room.roomId, room.hostToken, 0, 1)
                     drawn.favorParticipantId shouldBe room.friendId
                     val draw = drawn.favorDraw.shouldNotBeNull()
                     draw.round shouldBe 1
@@ -115,19 +116,19 @@ class RoomDrawTest :
             it("answers a repeated round with the stored result instead of drawing again") {
                 drawTest(0, 2) {
                     val room = drawRoom()
-                    val first = service.drawFavor(room.roomId, room.hostToken, 1)
+                    val first = service.drawFavor(room.roomId, room.hostToken, 0, 1)
                     clock.advance(Duration.ofMinutes(1))
-                    service.drawFavor(room.roomId, room.hostToken, 1) shouldBe first
+                    service.drawFavor(room.roomId, room.hostToken, 0, 1) shouldBe first
                 }
             }
 
             it("lets only the host draw") {
                 drawTest {
                     val room = drawRoom()
-                    shouldFailWith(RoomError.FORBIDDEN) { service.drawFavor(room.roomId, room.hostPart, 1) }
-                    shouldFailWith(RoomError.FORBIDDEN) { service.drawFavor(room.roomId, room.friendPart, 1) }
-                    shouldFailWith(RoomError.UNAUTHORIZED) { service.drawFavor(room.roomId, null, 1) }
-                    shouldFailWith(RoomError.UNAUTHORIZED) { service.drawFavor(room.roomId, "wrong", 1) }
+                    shouldFailWith(RoomError.FORBIDDEN) { service.drawFavor(room.roomId, room.hostPart, 0, 1) }
+                    shouldFailWith(RoomError.FORBIDDEN) { service.drawFavor(room.roomId, room.friendPart, 0, 1) }
+                    shouldFailWith(RoomError.UNAUTHORIZED) { service.drawFavor(room.roomId, null, 0, 1) }
+                    shouldFailWith(RoomError.UNAUTHORIZED) { service.drawFavor(room.roomId, "wrong", 0, 1) }
                     service.get(room.roomId, null).favorDraw!!.round shouldBe 0
                 }
             }
@@ -135,12 +136,14 @@ class RoomDrawTest :
             it("allows one redraw, shown to everyone as round 2, and refuses a third") {
                 drawTest(0, 2) {
                     val room = drawRoom()
-                    service.drawFavor(room.roomId, room.hostToken, 1).favorParticipantId shouldBe room.hostId
-                    val redrawn = service.drawFavor(room.roomId, room.hostToken, 2)
+                    service.drawFavor(room.roomId, room.hostToken, 0, 1).favorParticipantId shouldBe room.hostId
+                    val redrawn = service.drawFavor(room.roomId, room.hostToken, 0, 2)
                     redrawn.favorParticipantId shouldBe room.thirdId
                     redrawn.favorDraw!!.round shouldBe 2
                     service.get(room.roomId, room.friendPart).favorDraw!!.round shouldBe 2
-                    shouldFailWith(RoomError.DRAW_LIMIT_REACHED) { service.drawFavor(room.roomId, room.hostToken, 3) }
+                    shouldFailWith(
+                        RoomError.DRAW_LIMIT_REACHED,
+                    ) { service.drawFavor(room.roomId, room.hostToken, 0, 3) }
                     service.get(room.roomId, null).favorParticipantId shouldBe room.thirdId
                 }
             }
@@ -148,7 +151,7 @@ class RoomDrawTest :
             it("leaves out participants who hid their origin and needs two candidates") {
                 drawTest(1) {
                     val room = drawRoom(hiddenThird = true)
-                    val drawn = service.drawFavor(room.roomId, room.hostToken, 1)
+                    val drawn = service.drawFavor(room.roomId, room.hostToken, 0, 1)
                     drawn.favorDraw!!.candidates shouldBe listOf(room.hostId, room.friendId)
                     drawn.favorDraw.excluded shouldBe listOf(DrawExclusion(room.thirdId, DrawExclusionReason.HIDDEN))
                     drawn.favorParticipantId shouldBe room.friendId
@@ -161,7 +164,7 @@ class RoomDrawTest :
                         ParticipantInput("지연", "130", true),
                     )
                     shouldFailWith(RoomError.NOT_ENOUGH_DRAW_CANDIDATES) {
-                        service.drawFavor(alone.roomId, alone.hostToken, 1)
+                        service.drawFavor(alone.roomId, alone.hostToken, 0, 1)
                     }
                 }
             }
@@ -175,10 +178,10 @@ class RoomDrawTest :
                     service.join(created.roomId, ParticipantInput("지연", "130"), null)
                     shouldFailWith(
                         RoomError.DRAW_NOT_AVAILABLE,
-                    ) { service.drawFavor(created.roomId, created.hostToken, 1) }
+                    ) { service.drawFavor(created.roomId, created.hostToken, 0, 1) }
 
                     val room = drawRoom()
-                    shouldFailWith(RoomError.ROOM_CHANGED) { service.drawFavor(room.roomId, room.hostToken, 2) }
+                    shouldFailWith(RoomError.ROOM_CHANGED) { service.drawFavor(room.roomId, room.hostToken, 0, 2) }
                 }
             }
 
@@ -190,7 +193,7 @@ class RoomDrawTest :
                         )
                     val friend = service.join(created.roomId, ParticipantInput("지연", "130"), null)
                     clock.advance(Duration.ofMinutes(1))
-                    service.drawFavor(created.roomId, created.hostToken, 1)
+                    service.drawFavor(created.roomId, created.hostToken, 0, 1)
                     clock.advance(Duration.ofMinutes(1))
                     val late = service.join(created.roomId, ParticipantInput("하늘", "225", hidden = true), null)
                     val draw = service.get(created.roomId, null).favorDraw.shouldNotBeNull()
@@ -204,7 +207,7 @@ class RoomDrawTest :
             it("goes back to not drawn when the winner hides their origin, and keeps it when someone else does") {
                 drawTest(1) {
                     val room = drawRoom()
-                    service.drawFavor(room.roomId, room.hostToken, 1)
+                    service.drawFavor(room.roomId, room.hostToken, 0, 1)
                     service.updateParticipant(
                         room.roomId,
                         room.thirdId,
@@ -228,18 +231,22 @@ class RoomDrawTest :
             it("goes back to not drawn with the redraw count reset when the host removes the winner") {
                 drawTest(0, 0, 0) {
                     val room = drawRoom()
-                    service.drawFavor(room.roomId, room.hostToken, 1)
-                    service.drawFavor(room.roomId, room.hostToken, 2)
+                    service.drawFavor(room.roomId, room.hostToken, 0, 1)
+                    service.drawFavor(room.roomId, room.hostToken, 0, 2)
                     service.removeParticipant(room.roomId, room.hostId, room.hostToken)
-                    service.get(room.roomId, null).favorDraw!!.round shouldBe 0
-                    service.drawFavor(room.roomId, room.hostToken, 1).favorParticipantId shouldBe room.friendId
+                    val reset = service.get(room.roomId, null).favorDraw.shouldNotBeNull()
+                    reset.round shouldBe 0
+                    reset.generation shouldBe 1
+                    // 리셋 전 화면의 재시도는 새로 뽑지 않는다.
+                    shouldFailWith(RoomError.ROOM_CHANGED) { service.drawFavor(room.roomId, room.hostToken, 0, 1) }
+                    service.drawFavor(room.roomId, room.hostToken, 1, 1).favorParticipantId shouldBe room.friendId
                 }
             }
 
             it("keeps the draw when the host sends favor again without a target, and ends it for a direct target") {
                 drawTest {
                     val room = drawRoom()
-                    service.drawFavor(room.roomId, room.hostToken, 1)
+                    service.drawFavor(room.roomId, room.hostToken, 0, 1)
                     service
                         .updateRoom(
                             room.roomId,
@@ -251,7 +258,19 @@ class RoomDrawTest :
                     val direct = service.updateRoom(room.roomId, room.hostToken, RoomPatch(favorTarget = room.thirdId))
                     direct.favorDraw.shouldBeNull()
                     direct.favorParticipantId shouldBe room.thirdId
-                    shouldFailWith(RoomError.DRAW_NOT_AVAILABLE) { service.drawFavor(room.roomId, room.hostToken, 2) }
+                    shouldFailWith(
+                        RoomError.DRAW_NOT_AVAILABLE,
+                    ) { service.drawFavor(room.roomId, room.hostToken, 0, 2) }
+                }
+            }
+
+            it("ends the draw when the host sets the current winner directly") {
+                drawTest {
+                    val room = drawRoom()
+                    val winner = service.drawFavor(room.roomId, room.hostToken, 0, 1).favorParticipantId
+                    val direct = service.updateRoom(room.roomId, room.hostToken, RoomPatch(favorTarget = winner))
+                    direct.favorDraw.shouldBeNull()
+                    direct.favorParticipantId shouldBe winner
                 }
             }
         }

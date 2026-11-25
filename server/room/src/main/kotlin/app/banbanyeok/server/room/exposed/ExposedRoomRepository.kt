@@ -194,6 +194,14 @@ public class ExposedRoomRepository(
                     (change.meetingDate as? Change.Set)?.let { set -> it[meetingDate] = set.value }
                     (change.meetingTime as? Change.Set)?.let { set -> it[meetingTime] = set.value }
                     (change.meetingBand as? Change.Set)?.let { set -> it[meetingBand] = set.value?.id }
+                    if (change.endsDraw) {
+                        // 지금 당첨자를 그대로 정하면 favor_pid가 같아 트리거가 알 수 없으므로 여기서 끈다.
+                        it[favorDraw] = false
+                        it[drawRound] = 0
+                        it[drawCandidates] = null
+                        it[drawRoster] = null
+                        it[drawnAt] = null
+                    }
                     it[expiresAt] = activity.expiresAt
                     it[lastActivityAt] = activity.at
                 }
@@ -272,6 +280,7 @@ public class ExposedRoomRepository(
                         it[favorPid] = result.winner
                         it[drawRound] = result.draw.round.toShort()
                         it[drawCandidates] = result.draw.candidates
+                        it[drawRoster] = result.draw.roster
                         it[drawnAt] = result.draw.drawnAt
                         it[lastActivityAt] = activity.at
                         it[expiresAt] = activity.expiresAt
@@ -375,13 +384,15 @@ public class ExposedRoomRepository(
             favorDraw = favorDrawOf(),
         )
 
-    /** CHECK rooms_draw_complete가 회차 0 ⇔ 대상·시각 없음을 보장한다. */
+    /** CHECK rooms_draw_complete가 회차 0 ⇔ 대상·명단·시각 없음을 보장한다. */
     private fun ResultRow.favorDrawOf(): FavorDraw? {
         if (!this[RoomsTable.favorDraw]) return null
         return FavorDraw(
-            this[RoomsTable.drawRound].toInt(),
-            this[RoomsTable.drawCandidates].orEmpty(),
-            this[RoomsTable.drawnAt],
+            generation = this[RoomsTable.drawGeneration],
+            round = this[RoomsTable.drawRound].toInt(),
+            candidates = this[RoomsTable.drawCandidates].orEmpty(),
+            roster = this[RoomsTable.drawRoster].orEmpty(),
+            drawnAt = this[RoomsTable.drawnAt],
         )
     }
 
