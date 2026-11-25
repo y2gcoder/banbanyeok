@@ -162,7 +162,12 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       setSeenDraws((keys) => new Set(keys).add(seen.key));
       if (record && record.drawSeen !== seen.key) commit({ ...record, drawSeen: seen.key });
       const name = seen.winner === null ? null : seen.candidates[seen.winner]?.name;
-      if (name) setDrawAnnouncement(`뽑기 결과, 오늘은 ${name} 쪽으로 맞춰요.`);
+      if (!name) return;
+      // 다시 뽑아 같은 사람이 또 나와도 읽히게 회차를 드러내고, 영역을 한 번 비운 뒤 채운다(같은 글자를 다시 넣으면 읽지 않는다).
+      const text =
+        seen.round >= 2 ? `다시 뽑은 결과, 오늘은 ${name} 쪽으로 맞춰요.` : `뽑기 결과, 오늘은 ${name} 쪽으로 맞춰요.`;
+      setDrawAnnouncement("");
+      window.setTimeout(() => setDrawAnnouncement(text), 100);
     },
     [record, commit],
   );

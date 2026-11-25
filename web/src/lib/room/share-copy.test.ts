@@ -96,7 +96,7 @@ describe("방 공유 문구", () => {
     );
   });
 
-  it("뽑기 방에서 뽑은 뒤에는 공유 문구·미리보기·그림에 당첨자와 1위 역·시간을 넣지 않는다(#172)", () => {
+  it("뽑기 방에서 뽑은 뒤 메신저 미리보기(og 제목·설명·그림)와 공유 문구에는 당첨자와 1위 역·시간을 넣지 않는다(미리보기 응답은 그대로, #172)", () => {
     const basis = { mode: "favor" as const, favorLabel: "민수", drawRound: 1 };
     const open = roomShareCopy(result({ basis }));
     expect(open.preview.title).toBe("사다리 결과가 나왔어요! 누구 쪽일까요?");

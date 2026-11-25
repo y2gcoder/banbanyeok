@@ -138,8 +138,9 @@ function card(
 }
 
 /**
- * 뽑기 방에서 뽑은 뒤의 결과 단계(#172): 받는 사람이 방에서 사다리를 처음 보도록 당첨자와 1위 역(과 그 역까지의 시간)을 넣지 않는다.
- * 참여자 이름만 기존 규칙대로 싣는다. 정한 역 단계는 정한 역을 그대로 보인다(`decidedCopy`).
+ * 뽑기 방에서 뽑은 뒤의 결과 단계(#172): 메신저에 보이는 미리보기(og 제목·설명·그림)와 공유 문구에 당첨자와 1위 역(과 그 역까지의
+ * 시간)을 넣지 않는다. 받는 사람이 방에서 사다리를 처음 보게 하려는 것이라 결과를 감추지는 않는다: 미리보기 응답(API)과 방 화면에는
+ * 그대로 있다. 참여자 이름만 기존 규칙대로 싣는다. 정한 역 단계는 정한 역을 그대로 보인다(`decidedCopy`).
  */
 function drawTeaserCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomShareCopy {
   const title = `${OG_TEXT.drawTeaserHead} ${OG_TEXT.drawTeaserTail} ${OG_TEXT.drawTeaserQuestion}`;

@@ -153,6 +153,31 @@ async function fakeDrawRoom(page: Page, state: DrawState, record?: Record<string
       return ok(room(null));
     }
     if (request.method() === "GET" && path === `/rooms/${ROOM_ID}`) return ok(room(selfId));
+    if (request.method() === "GET" && path === `/rooms/${ROOM_ID}/preview`) {
+      // 미리보기 응답은 뽑은 뒤에도 결과를 그대로 준다(웹이 메신저 그림·글에서만 숨긴다).
+      return ok({
+        stage: "result",
+        room: {
+          roomId: ROOM_ID,
+          shareVersion: 4 + state.round,
+          participantCount: PEOPLE.length,
+          canJoin: true,
+          meetingDate: null,
+          meetingTime: null,
+          meetingBand: null,
+          timeBasis: BASIS,
+        },
+        dataVersion: "20261114.5",
+        basis: state.winner
+          ? { mode: "favor", favorLabel: "지영", drawRound: state.round }
+          : { mode: "fair", favorLabel: null },
+        station: {
+          stationCode: "s1q",
+          stationName: "동대문역사문화공원",
+          times: PEOPLE.map((p, i) => ({ label: p.shortLabel, seconds: 1200 + i * 60 })),
+        },
+      });
+    }
     if (request.method() === "GET" && path === `/rooms/${ROOM_ID}/result`) {
       return ok({
         status: "ok",
@@ -209,8 +234,8 @@ const ladderShape = (page: Page) =>
     );
 
 /** 뽑기 결과 문장(aria-live). 카드가 바뀌어도 남도록 방 화면에 있다. */
-const announced = (page: Page) =>
-  page.locator("[aria-live='polite']", { hasText: "뽑기 결과, 오늘은 지영 쪽으로 맞춰요." });
+const announced = (page: Page, text = "뽑기 결과, 오늘은 지영 쪽으로 맞춰요.") =>
+  page.locator("[aria-live='polite']", { hasText: text });
 
 const topCard = (page: Page) => page.locator("article[aria-labelledby='cand-1']");
 
@@ -269,6 +294,18 @@ test.describe("'누구 쪽으로' 뽑기", () => {
     await expect(page.getByRole("button", { name: "지영", pressed: true })).toBeVisible();
     await expect(page.getByText("지영 쪽으로(뽑기)")).toBeVisible();
     await expectTopCardOnFirstScreen(page);
+    // 공유 칸 안내도 실제 공유(결과를 숨긴 미리보기)와 같다.
+    await expect(
+      page.getByText(/카톡 미리보기에는 사다리 결과\(누구 쪽인지, 1위 역, 각자 시간\)를 숨기고 이름만 보여요/),
+    ).toBeVisible();
+    await expect(page.getByText(/카톡 미리보기에 지금 1위 역과 각자 시간이 보여요/)).toHaveCount(0);
+    // 다시 뽑아 같은 사람이 또 나와도 두 번째 결과가 읽힌다(회차가 드러나는 문장).
+    await page.getByRole("button", { name: "사다리 보기" }).click();
+    await page.getByRole("button", { name: "다시 뽑기 (1번 남음)" }).click();
+    await page.getByRole("button", { name: "다시 뽑기", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "뽑는 중…" })).toBeVisible();
+    await expect(announced(page, "다시 뽑은 결과, 오늘은 지영 쪽으로 맞춰요.")).toHaveCount(1, { timeout: 6000 });
+    await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible();
     // 이 기기는 이번 뽑기를 봤다: 다시 열어도 재생하지 않는다.
     await page.reload();
     await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible();

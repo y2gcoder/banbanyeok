@@ -554,7 +554,13 @@ describe("개인정보 처리방침", () => {
     expect(draw).toContain("2항: 방 정보에 배려 대상을 뽑기로 정했는지와 뽑은 결과");
     expect(draw).toContain("출발역을 숨긴 사람은 뽑기에서 빠지고");
     // 숫자 회차는 미리보기 응답에만 있고, 뽑은 뒤의 그림·글·공유 문구는 결과를 숨긴다. 이 기기에는 본 뽑기(세대와 회차)를 둔다.
-    expect(draw).toContain("뽑은 뒤의 미리보기 그림·글과 공유 문구에는 당첨된 사람, 1위 역, 소요시간을 넣지 않고");
+    expect(draw).toContain(
+      "뽑은 뒤 메신저에 보이는 미리보기 그림·글과 공유 문구에는 당첨된 사람, 1위 역, 소요시간을 넣지 않으며",
+    );
+    // 미리보기 응답(방 ID로 받는 값)은 결과를 그대로 준다: 메신저 그림·글에서만 숨긴다는 것을 사실대로 적는다.
+    expect(draw).toContain(
+      "미리보기 응답에는 몇 번째 뽑기인지가 더 담기고(당첨된 사람과 1위 역, 소요시간도 그대로 담김)",
+    );
     expect(draw).toContain("뽑은 뒤 나간 사람은 이름과 식별자 없이 자리만 남으며");
     expect(draw).toContain("11항: 이 기기의 방 기록에 그림을 이미 본 뽑기(세대와 회차)를 더했습니다");
     expect(textOf(POLICY, "cookies")).toContain("뽑기 그림을 이미 본 뽑기(세대와 회차");
@@ -562,7 +568,10 @@ describe("개인정보 처리방침", () => {
     expect(drawItem).toContain("빠진 이유는 뽑을 때의 상태로 보이므로");
     expect(drawItem).toContain("이름과 식별자 없이 자리만 '나간 사람'으로 남음");
     expect(one(previewSentences(POLICY), "사다리 결과가 나왔어요")).toContain(
-      "당첨된 사람, 1위 역, 소요시간을 넣지 않고",
+      "메신저에 보이는 미리보기 그림·글과 공유 문구에",
+    );
+    expect(one(previewSentences(POLICY), "보여 주는 곳을 방으로 미루는")).toContain(
+      "방 링크를 가진 사람은 방 화면과 아래 미리보기 응답에서 당첨된 사람과 1위 역, 소요시간을 볼 수 있습니다",
     );
     expect(draw).toContain("수집하는 정보와 다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 화면에 알립니다");
     expect(draw).toContain("2026년 11월 24일 개정판은 이 판을 시행한 날 배포 전까지 적용했습니다");
