@@ -162,7 +162,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm check:contracts
-      - run: pnpm exec playwright install --with-deps chromium
+      # webkit은 #177 iOS 터치 e2e(playwright.config.ts의 iphone-webkit)용.
+      - run: pnpm exec playwright install --with-deps chromium webkit
       - run: pnpm e2e
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()

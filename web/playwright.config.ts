@@ -19,7 +19,13 @@ export default defineConfig({
     locale: "ko-KR",
     trace: "retain-on-failure",
   },
-  projects: [{ name: "mobile-chrome", use: { ...devices["Pixel 7"] } }],
+  projects: [
+    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
+    // #177 역 목록 위 두 번째 누름은 입력 방식마다 이벤트가 달라(iOS WebKit 터치는 두 번째 탭도 click detail이 1) 마우스(Chromium·WebKit)와 iOS 터치에서도 본다.
+    { name: "desktop-chrome", use: { ...devices["Desktop Chrome"] }, testMatch: /w177-station-pick\.spec\.ts$/ },
+    { name: "desktop-webkit", use: { ...devices["Desktop Safari"] }, testMatch: /w177-station-pick\.spec\.ts$/ },
+    { name: "iphone-webkit", use: { ...devices["iPhone 13"] }, testMatch: /w177-station-pick\.spec\.ts$/ },
+  ],
   webServer: [
     {
       command: "node mock/main.ts",

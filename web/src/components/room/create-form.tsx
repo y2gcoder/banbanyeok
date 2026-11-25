@@ -175,9 +175,9 @@ export function CreateRoomForm() {
         <ParticipantFields
           idPrefix={`${id}-host`}
           value={host}
-          onChange={(next) => {
+          onChange={(patch) => {
             setProblem(null);
-            setHost(next);
+            setHost((current) => ({ ...current, ...patch }));
           }}
           personIndex={0}
         />
@@ -245,11 +245,11 @@ export function CreateRoomForm() {
           id={`${id}-when`}
           today={today}
           value={when}
-          onChange={(next) => {
+          onChange={(update) => {
             setProblem(null);
             const fresh = todayInSeoul();
             setToday(fresh);
-            setWhen(keepDayAcrossMidnight(next, fresh));
+            setWhen((current) => keepDayAcrossMidnight(update(current), fresh));
           }}
         />
         <details className="rounded-xl border border-rule bg-surface p-3.5">

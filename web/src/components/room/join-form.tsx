@@ -63,10 +63,10 @@ export function JoinForm({
       <ParticipantFields
         idPrefix={id}
         value={value}
-        onChange={(next) => {
+        onChange={(patch) => {
           setProblem(null);
           onEdited?.();
-          setValue(next);
+          setValue((current) => ({ ...current, ...patch }));
         }}
         personIndex={personIndex}
       />

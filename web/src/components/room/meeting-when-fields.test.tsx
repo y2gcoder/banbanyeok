@@ -15,9 +15,12 @@ function Harness({ onValue, today = TODAY }: { onValue?: (value: MeetingWhen) =>
       id="when"
       today={today}
       value={value}
-      onChange={(next) => {
-        onValue?.(next);
-        setValue(next);
+      onChange={(update) => {
+        setValue((current) => {
+          const next = update(current);
+          onValue?.(next);
+          return next;
+        });
       }}
     />
   );
@@ -160,5 +163,23 @@ describe("언제 만나요? (방 만들기)", () => {
       const saturday = { ...NO_MEETING_WHEN, day: { choice: "saturday" as const, date: "2026-11-21" } };
       expect(keepDayAcrossMidnight(saturday, "2026-11-17")).toBe(saturday);
     });
+  });
+});
+
+describe("언제 만나요?: 서울 자정 무렵(#177)", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("'오늘'을 누른 순간의 날짜가 들어간다(다시 그릴 때 자정을 넘겨도)", () => {
+    // 2026-11-28(토) 23:59:59.900 서울.
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-11-28T14:59:59.900Z") });
+    const updates: ((current: MeetingWhen) => MeetingWhen)[] = [];
+    render(
+      <MeetingWhenFields id="when" today="2026-11-28" value={NO_MEETING_WHEN} onChange={(u) => updates.push(u)} />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: /^오늘/ }));
+    expect(updates).toHaveLength(1);
+    // 부모가 updater를 적용하기 전에 서울 날짜가 바뀌었다.
+    vi.setSystemTime(new Date("2026-11-28T15:00:00.100Z"));
+    expect(updates[0]?.(NO_MEETING_WHEN).day).toEqual({ choice: "today", date: "2026-11-28" });
   });
 });
