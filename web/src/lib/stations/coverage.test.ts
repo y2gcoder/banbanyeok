@@ -8,9 +8,11 @@ import raw from "./index.gen.json";
 import { isCapitalAreaLine } from "./lines";
 
 /** 범위를 정한 원본(파이프라인 입력). 이유 문구 표가 여기와 어긋나지 않게 본다. */
-const tagoScope = JSON.parse(
-  readFileSync(resolve(import.meta.dirname, "../../../../data/config/tago-scope.json"), "utf8"),
-) as { excludedStations: Record<string, string>; excludedRoutes: Record<string, string> };
+const {
+  regions: { capital: tagoScope },
+} = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../../../data/config/tago-scope.json"), "utf8")) as {
+  regions: { capital: { excludedStations: Record<string, string>; excludedRoutes: Record<string, string> } };
+};
 
 type RawStation = [string, string, number[], string[], number, ...number[]];
 const rawStations = raw.stations as RawStation[];
