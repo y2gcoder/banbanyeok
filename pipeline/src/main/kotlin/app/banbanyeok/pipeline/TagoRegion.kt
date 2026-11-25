@@ -1,5 +1,6 @@
 package app.banbanyeok.pipeline
 
+import app.banbanyeok.schema.DayType
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import java.nio.file.Path
@@ -22,3 +23,9 @@ internal enum class TagoRegion(
             .getValue(configKey)
             .jsonObject
 }
+
+internal data class TagoSnapshot(
+    val stations: Map<String, Pair<String, String>>,
+    /** No day-type fallback is applied when reading a region's cached timetables. */
+    val raw: Map<DayType, TagoTimetable>,
+)

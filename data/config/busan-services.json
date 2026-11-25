@@ -1,0 +1,45 @@
+{
+  "region": "busan",
+  "services": {
+    "S2601": {
+      "label": "부산1호선",
+      "numberedDays": {"weekday": "weekday", "saturday": "saturday", "holiday": "holiday"}
+    },
+    "S2602": {
+      "label": "부산2호선",
+      "numberedDays": {"weekday": "weekday", "saturday": "saturday", "holiday": "holiday"}
+    },
+    "S2603": {
+      "label": "부산3호선",
+      "numberedDays": {"weekday": "weekday", "saturday": "saturday", "holiday": "holiday"}
+    },
+    "L2604": {
+      "label": "부산4호선",
+      "numberedDays": {"weekday": "weekday", "saturday": "saturday"}
+    },
+    "L48B1": {
+      "label": "부산김해경전철",
+      "tagoPrefix": "MTRBGB1",
+      "numberedComparisonDay": "all-days"
+    },
+    "I26K6": {
+      "label": "동해선",
+      "numberedDays": {"weekday": "weekday", "holiday": "holiday-unspecified"},
+      "tagoComparisonPrefix": "MTRKRK6"
+    }
+  },
+  "transfers": {
+    "defaultSeconds": 89,
+    "longSeconds": 221,
+    "longStations": {
+      "eqk": "동래 1↔4호선, 휠체어 실측에서 가장 긴 환승",
+      "783": "연산 1↔3호선, 일부 방향 보행 경로가 김",
+      "bqc": "서면 1↔2호선, 일부 방향 보행 경로가 김",
+      "6k4": "교대 1호선↔동해선, 별도 운영사 역사",
+      "cj1": "거제 3호선↔동해선, 별도 운영사 역사",
+      "pwg": "벡스코 2호선↔동해선, 지하·지상 역사",
+      "zxx": "사상 2호선↔부산김해경전철, 별도 운영사 역사",
+      "6vq": "대저 3호선↔부산김해경전철, 별도 운영사 역사"
+    }
+  }
+}

@@ -221,26 +221,38 @@ private fun replaceTagoManifest(
     }
 }
 
-/** Offline read of the cached TAGO inputs; verifies the S6 receipt digest like verifyRaw does for S1/S3/S4. */
+/** Offline read of the metropolitan TAGO inputs, including its existing headway-only weekend fallback. */
 internal fun readTago(root: Path): TagoInput {
     val lines = MetroLines(parseObject(root.resolve("data/config/metro-lines.json").readText()))
+    val (stations, raw) = readRegionalTago(root, TagoRegion.CAPITAL)
+    require(lines.stationIds.all { it in raw.getValue(DayType.WEEKDAY) }) {
+        "metro-lines.json uses a TAGO station outside tago-scope.json"
+    }
+    return TagoInput(lines, stations, raw.getValue(DayType.WEEKDAY), weekendFallback(raw), raw)
+}
+
+/** Offline read pinned to the selected region's own receipt, independent of other regions' caches. */
+internal fun readRegionalTago(
+    root: Path,
+    region: TagoRegion,
+): TagoSnapshot {
     val config = tagoConfig(root)
-    val region = TagoRegion.CAPITAL
     val cache = region.cache(root)
     val api = TagoApi(null, tagoOffline, cache)
     val list = api.stations(null)
     val scoped = tagoScope(region.scope(config), list).map { it.text("subwayStationId") }
-    require(lines.stationIds.all { it in scoped }) { "metro-lines.json uses a TAGO station outside tago-scope.json" }
     val receipt =
         Json
             .parseToJsonElement(root.resolve("data/config/source-manifest.json").readText())
             .jsonArray
             .map { it.jsonObject }
             .firstOrNull { it.text("id") == region.receiptId }
-    requireNotNull(receipt) { "S6 (TAGO) receipt missing; run tago-fetch" }
+    requireNotNull(receipt) { "${region.receiptId} (TAGO) receipt missing; run tago-fetch for ${region.configKey}" }
     val days = tagoDailyTypes(config)
     val files = tagoFiles(cache, scoped, days)
-    require(receipt.text("sha256") == tagoDigest(root, files)) { "S6: TAGO cache digest mismatch; run tago-fetch" }
+    require(receipt.text("sha256") == tagoDigest(root, files)) {
+        "${region.receiptId}: TAGO cache digest mismatch; run tago-fetch for ${region.configKey}"
+    }
     val raw =
         DayType.entries.filter { it.tagoDailyType in days }.associateWith { day ->
             scoped.associateWith { id ->
@@ -249,11 +261,8 @@ internal fun readTago(root: Path): TagoInput {
                 }
             }
         }
-    return TagoInput(
-        lines,
+    return TagoSnapshot(
         list.associate { it.text("subwayStationId") to (it.text("subwayStationName") to it.text("subwayRouteName")) },
-        raw.getValue(DayType.WEEKDAY),
-        weekendFallback(raw),
         raw,
     )
 }

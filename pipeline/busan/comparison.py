@@ -13,6 +13,11 @@ M1_LINES = {
 
 
 def join_regions(rows, registry):
+    return {code: "busan" for _, code in join_stations(rows, registry).values()}
+
+
+def join_stations(rows, registry):
+    """Join M1 line/station names to stable registry codes, retaining the M1 line order."""
     expected = {}
     for station in registry["stations"]:
         if station["status"] != "active":
@@ -32,7 +37,7 @@ def join_regions(rows, registry):
     matched = set()
     result = {}
     unmatched = []
-    for region_code, region, operator, name, _, station in rows:
+    for region_code, region, operator, name, order, station in rows:
         line = M1_LINES.get((operator, name))
         if line is None and region != "부산":
             continue
@@ -43,7 +48,7 @@ def join_regions(rows, registry):
             raise ValueError(f"M1: duplicate station {name} {station}")
         matched.add(key)
         if key in expected:
-            result[expected[key]] = "busan"
+            result[key] = (int(order), expected[key])
         else:
             unmatched.append(f"{operator} {name} {station}")
 
