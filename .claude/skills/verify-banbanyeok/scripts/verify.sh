@@ -106,13 +106,12 @@ wait_for() {
 
 launch() {
   mkdir -p "$runs_root"
-  local lock="$runs_root/launch.lock"
-  if ! mkdir "$lock" 2>/dev/null; then
-    die "다른 launch가 진행 중이다(잠금 $lock, PID $(cat "$lock/pid" 2>/dev/null || echo '?')). 그 PID가 없으면 잠금 폴더를 지우고 다시 launch"
+  LAUNCH_LOCK="$runs_root/launch.lock"
+  if ! mkdir "$LAUNCH_LOCK" 2>/dev/null; then
+    die "다른 launch가 진행 중이다(잠금 $LAUNCH_LOCK, PID $(cat "$LAUNCH_LOCK/pid" 2>/dev/null || echo '?')). 그 PID가 없으면 잠금 폴더를 지우고 다시 launch"
   fi
-  echo $$ > "$lock/pid"
-  # shellcheck disable=SC2064 # 잠금 경로는 지금 펼친다. 끝날 때는 launch의 지역 변수가 없다.
-  trap "rm -rf '$lock'" EXIT
+  echo $$ > "$LAUNCH_LOCK/pid"
+  trap 'rm -rf -- "$LAUNCH_LOCK"' EXIT
   if [[ -L "$runs_root/latest" && -f "$runs_root/latest/state.env" ]]; then
     local prev; prev=$(cd "$runs_root/latest" && pwd -P)
     if ! grep -q '^STOPPED_AT=' "$prev/state.env"; then

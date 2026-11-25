@@ -36,7 +36,7 @@ bash $V where                     # 마지막 실행 폴더
 
 준비되면 마지막 줄에 `ready: web http://localhost:<WEB_PORT> …`가 나온다. 빌드 캐시가 있으면 15~30초, 처음이면 Gradle·Docker 빌드 때문에 몇 분 걸린다. 실패하면 단계 이름과 `logs/<단계>.log` 경로를 찍고 멈춘다. 그때도 `cleanup`을 돌린다.
 
-워크트리당 한 실행만 띄운다. `web/.next`를 같이 쓰기 때문이다. launch는 시작하자마자 `launch.lock` 폴더를 원자적으로 만들어 실행을 예약한다. 동시에 부른 두 번째 launch는 바로 거절된다. 잠금은 launch가 끝나면 풀린다. 정리하지 않은 실행이 있어도 launch가 거절한다. launch 프로세스가 강제로 죽어 잠금이 남았으면, 메시지의 PID가 없는지 확인하고 잠금 폴더를 지운다. 사용자가 같은 워크트리에서 `mise run dev`나 `mise run dev:web`을 띄워 두었으면 launch가 그것까지는 알아채지 못한다. 띄우기 전에 묻거나 다른 워크트리를 쓴다. 다른 워크트리와는 동시에 돌려도 된다.
+워크트리당 한 실행만 띄운다. `web/.next`를 같이 쓰기 때문이다. launch는 시작하자마자 `launch.lock` 폴더를 원자적으로 만들어 실행을 예약한다. 동시에 부른 두 번째 launch는 바로 거절된다. 잠금은 launch가 끝나면 풀린다. 정리하지 않은 실행이 있어도 launch가 거절한다. launch 프로세스가 강제로 죽어 잠금이 남았으면, 메시지의 PID가 없는지 확인하고 잠금 폴더를 지운다. 잠금이 풀리는지는 `bash .claude/skills/verify-banbanyeok/scripts/test-launch-lock.sh`로 확인한다(Docker 불필요, 경로에 작은따옴표가 있는 경우 포함). 사용자가 같은 워크트리에서 `mise run dev`나 `mise run dev:web`을 띄워 두었으면 launch가 그것까지는 알아채지 못한다. 띄우기 전에 묻거나 다른 워크트리를 쓴다. 다른 워크트리와는 동시에 돌려도 된다.
 
 ## Doctor
 
