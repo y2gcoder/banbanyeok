@@ -1,11 +1,7 @@
 package app.banbanyeok.pipeline
 
 import app.banbanyeok.core.RankInput
-import app.banbanyeok.core.RouteCost
-import app.banbanyeok.core.RouteSearch
 import app.banbanyeok.core.rank
-import app.banbanyeok.schema.RouteGraph
-import app.banbanyeok.schema.RouteGraphCodec
 import app.banbanyeok.schema.TimeSlot
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Path
@@ -13,7 +9,6 @@ import java.nio.file.Path
 /** Re-run both walking estimates with the same stations, timetables, and fair ranking. */
 internal fun busanWalkComparison(
     root: Path,
-    services: List<BusanService>,
     before: Map<TimeSlot, Network>,
     after: Map<TimeSlot, Network>,
 ): JsonObject {
@@ -21,13 +16,10 @@ internal fun busanWalkComparison(
     val codes = origins.map { it.code }
     val candidates = candidateCodes(root, origins.associateBy { it.code })
     val columns = candidates.map(codes::indexOf)
-    val labels = services.associate { it.id to it.label }
-    val baseline = routeGraph(before, RouteGraphCodec.REGIONAL_FORMAT_VERSION, labels::getValue)
-    val adjusted = routeGraph(after, RouteGraphCodec.REGIONAL_FORMAT_VERSION, labels::getValue)
     val slots =
         TimeSlot.ALL.associate { slot ->
-            val old = localOd(baseline, slot, codes)
-            val new = localOd(adjusted, slot, codes)
+            val old = localOd(before.getValue(slot))
+            val new = localOd(after.getValue(slot))
             val comparison = walkCellComparison(old, new)
             slot.id to
                 obj(
@@ -39,26 +31,17 @@ internal fun busanWalkComparison(
     return JsonObject(slots)
 }
 
-private fun localOd(
-    graph: RouteGraph,
-    slot: TimeSlot,
-    codes: List<String>,
-): List<List<RouteCost?>> {
-    val search = RouteSearch(graph, slot)
-    return codes.map { origin ->
-        val tree = search.from(origin)
-        codes.map { destination -> tree?.fastest(destination) }
-    }
-}
+private fun localOd(network: Network): List<List<Cost?>> =
+    regionalMatrixCosts(network).map { row -> row.map { cost -> cost.takeUnless { it == infinity } } }
 
 private fun selectColumns(
-    od: List<List<RouteCost?>>,
+    od: List<List<Cost?>>,
     columns: List<Int>,
-): List<List<RouteCost?>> = od.map { row -> columns.map(row::get) }
+): List<List<Cost?>> = od.map { row -> columns.map(row::get) }
 
 private fun walkCellComparison(
-    old: List<List<RouteCost?>>,
-    new: List<List<RouteCost?>>,
+    old: List<List<Cost?>>,
+    new: List<List<Cost?>>,
 ): JsonObject {
     val increases = mutableListOf<Int>()
     var changedTransfers = 0
@@ -73,7 +56,7 @@ private fun walkCellComparison(
             val delta = after.seconds - before.seconds
             require(delta >= 0) { "Longer walking estimate reduced travel time" }
             if (delta > 0) increases.add(delta)
-            if (after.transfers != before.transfers) changedTransfers++
+            if (after.changes != before.changes) changedTransfers++
         }
     }
     return obj(
@@ -87,8 +70,8 @@ private fun compareMeetingRanks(
     codes: List<String>,
     candidates: List<String>,
     columns: List<Int>,
-    old: List<List<RouteCost?>>,
-    new: List<List<RouteCost?>>,
+    old: List<List<Cost?>>,
+    new: List<List<Cost?>>,
 ): JsonObject {
     var pairs = 0
     var changedFirst = 0
@@ -112,13 +95,13 @@ private fun topThree(
     people: List<String>,
     candidates: List<String>,
     columns: List<Int>,
-    rows: List<List<RouteCost?>>,
+    rows: List<List<Cost?>>,
 ): List<String> =
     rank(
         RankInput(
             participants = people,
             candidates = candidates,
             times = rows.map { row -> columns.map { row[it]?.seconds } },
-            transfers = rows.map { row -> columns.map { row[it]?.transfers } },
+            transfers = rows.map { row -> columns.map { row[it]?.changes } },
         ),
     ).recommendations.take(3).map { it.stationCode }

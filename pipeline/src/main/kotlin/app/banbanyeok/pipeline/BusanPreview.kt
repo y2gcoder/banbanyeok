@@ -34,7 +34,7 @@ internal fun busanPreview(
     val regionalRouteGraph = busanRouteAudit(capital, busanSlots, services)
     val priorTransfers = BusanTransfers(transferRules, previousOperatorWalks = true)
     val prior = TimeSlot.ALL.associateWith { busanNetwork(registry, services, priorTransfers, it) }
-    val walkAdjustment = busanWalkComparison(root, services, prior, busanSlots)
+    val walkAdjustment = busanWalkComparison(root, prior, busanSlots)
     val slots =
         TimeSlot.ALL.associateWith { slot ->
             val missing = services.filter { slot !in it.headways }.map { it.label }
