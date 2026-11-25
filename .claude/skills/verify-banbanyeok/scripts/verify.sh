@@ -34,7 +34,8 @@ record() { printf '%s=%q\n' "$1" "$2" >> "$RUN/state.env"; }
 # 웹의 키 이름은 빈 값으로 넣는다. Next는 이미 있는 변수를 web/.env* 파일로 덮어쓰지 않는다.
 in_run_env() {
   local keep=() v
-  for v in PATH HOME USER LOGNAME SHELL TMPDIR LANG LC_ALL LC_CTYPE TERM JAVA_HOME GRADLE_USER_HOME DOCKER_HOST DOCKER_CONTEXT DOCKER_CONFIG; do
+  for v in PATH HOME USER LOGNAME SHELL TMPDIR LANG LC_ALL LC_CTYPE TERM JAVA_HOME GRADLE_USER_HOME \
+    DOCKER_HOST DOCKER_CONTEXT DOCKER_CONFIG DOCKER_TLS_VERIFY DOCKER_CERT_PATH DOCKER_API_VERSION; do
     if [[ -n ${!v:-} ]]; then keep+=("$v=${!v}"); fi
   done
   env -i ${keep[@]+"${keep[@]}"} \
@@ -81,13 +82,15 @@ owned_listener() {
   [[ -n $pid ]] && owned_tree "$2" "$3" | grep -qx "$pid"
 }
 
-server_healthy() { [[ $(curl -fsS "http://127.0.0.1:$SERVER_PORT/healthz") == ok ]]; }
+# 루프백 요청은 http_proxy·~/.curlrc를 무시한다. 그렇지 않으면 다른 프록시의 응답으로 준비를 판정할 수 있다.
+lcurl() { curl -q --noproxy '*' -fsS "$@"; }
+server_healthy() { [[ $(lcurl "http://127.0.0.1:$SERVER_PORT/healthz") == ok ]]; }
 # seed 방은 이 실행의 DB에만 있다. 웹 프록시로 그 방이 보이면 프록시 대상이 이 서버다.
-seed_room_via() { curl -fsS "$1/rooms/$SEED_ROOM_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["roomId"])'; }
+seed_room_via() { lcurl "$1/rooms/$SEED_ROOM_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["roomId"])'; }
 server_ready() { owned_listener "$SERVER_PORT" "$SERVER_LEADER" "$SERVER_LEADER_STARTED" && server_healthy; }
 web_ready() {
   owned_listener "$WEB_PORT" "$WEB_LEADER" "$WEB_LEADER_STARTED" &&
-    curl -fsS "http://127.0.0.1:$WEB_PORT/" | grep -q '<title>[^<]*반반역' &&
+    lcurl "http://127.0.0.1:$WEB_PORT/" | grep -q '<title>[^<]*반반역' &&
     [[ $(seed_room_via "http://127.0.0.1:$WEB_PORT/api/v1") == "$SEED_ROOM_ID" ]]
 }
 
@@ -102,6 +105,14 @@ wait_for() {
 }
 
 launch() {
+  mkdir -p "$runs_root"
+  local lock="$runs_root/launch.lock"
+  if ! mkdir "$lock" 2>/dev/null; then
+    die "다른 launch가 진행 중이다(잠금 $lock, PID $(cat "$lock/pid" 2>/dev/null || echo '?')). 그 PID가 없으면 잠금 폴더를 지우고 다시 launch"
+  fi
+  echo $$ > "$lock/pid"
+  # shellcheck disable=SC2064 # 잠금 경로는 지금 펼친다. 끝날 때는 launch의 지역 변수가 없다.
+  trap "rm -rf '$lock'" EXIT
   if [[ -L "$runs_root/latest" && -f "$runs_root/latest/state.env" ]]; then
     local prev; prev=$(cd "$runs_root/latest" && pwd -P)
     if ! grep -q '^STOPPED_AT=' "$prev/state.env"; then
@@ -109,7 +120,6 @@ launch() {
     fi
   fi
   for tool in docker curl lsof python3 pnpm shasum; do command -v "$tool" >/dev/null || die "$tool 필요"; done
-  docker info >/dev/null 2>&1 || die "Docker가 꺼져 있다"
 
   local run_id; run_id="$(date +%Y%m%d-%H%M%S)-$(openssl rand -hex 2)"
   COMPOSE_PROJECT_NAME="bbyverify-${run_id}"
@@ -119,6 +129,7 @@ launch() {
   for port in "$DB_PORT" "$SERVER_PORT" "$WEB_PORT"; do
     [[ -z $(listener "$port") ]] || die "포트 $port 를 이미 누가 쓰고 있다"
   done
+  in_run_env docker info >/dev/null 2>&1 || die "Docker에 닿지 않는다(이 실행이 넘기는 DOCKER_* 변수로 접속한다)"
 
   RUN="$runs_root/$run_id"
   mkdir -p "$RUN/logs" "$RUN/evidence"
@@ -184,7 +195,7 @@ doctor() {
   bad() { echo "FAIL $*"; fail=1; }
 
   echo "run: $RUN"
-  if grep -q '^STOPPED_AT=' "$RUN/state.env"; then bad "이미 정리한 실행이다(STOPPED_AT). 새로 launch"; fi
+  if grep -q '^STOPPED_AT=' "$RUN/state.env"; then bad "이미 정리한 실행이다(STOPPED_AT). 새로 launch"; return 1; fi
 
   local mapped; mapped=$(in_run_env docker compose port db 5432 2>/dev/null || true)
   if [[ $mapped == "127.0.0.1:$DB_PORT" ]]; then ok "db: 프로젝트 $COMPOSE_PROJECT_NAME 컨테이너가 $mapped"
@@ -200,10 +211,11 @@ doctor() {
       ok "$role: 포트 $port 주인 PID $have, 이 실행이 시작한 ${!leader_var}의 자손"
     else bad "$role: 포트 $port 주인 '$have' 가 이 실행이 시작한 ${!leader_var:-?}의 자손 $want 가 아니다"; fi
   done
+  if (( fail )); then echo "HTTP 검사는 하지 않았다: 이 실행의 것이 아닌 포트에 요청하지 않는다"; return 1; fi
 
   if server_healthy; then ok "server: /healthz ok"; else bad "server: /healthz 응답 없음"; fi
   local served local_v
-  served=$(curl -fsS "http://127.0.0.1:$SERVER_PORT/v1/manifest" | python3 -c 'import json,sys; print(json.load(sys.stdin)["dataVersion"])' 2>/dev/null || true)
+  served=$(lcurl "http://127.0.0.1:$SERVER_PORT/v1/manifest" | python3 -c 'import json,sys; print(json.load(sys.stdin)["dataVersion"])' 2>/dev/null || true)
   local_v=$(python3 -c 'import json; print(json.load(open("data/artifacts/dev/manifest.json"))["dataVersion"])')
   if [[ $served == "$local_v" ]]; then ok "server: 데이터 버전 $served (data/artifacts/dev와 같음)"
   else bad "server: 데이터 버전 '$served', 작업 트리는 $local_v"; fi
@@ -212,7 +224,7 @@ doctor() {
   if [[ $now_fp == "${SERVER_FINGERPRINT:-}" ]]; then ok "server: 빌드 지문 $now_fp (띄운 뒤 서버 쪽 파일 변경 없음)"
   else bad "server: 띄운 뒤 서버 쪽 파일이 바뀌었다(지문 ${SERVER_FINGERPRINT:-?} → $now_fp). cleanup 후 launch"; fi
 
-  if curl -fsS "http://127.0.0.1:$WEB_PORT/" 2>/dev/null | grep -q '<title>[^<]*반반역'; then ok "web: 첫 화면 <title> 반반역"
+  if lcurl "http://127.0.0.1:$WEB_PORT/" 2>/dev/null | grep -q '<title>[^<]*반반역'; then ok "web: 첫 화면 <title> 반반역"
   else bad "web: 첫 화면 응답 없음"; fi
   local direct proxied
   direct=$(seed_room_via "http://127.0.0.1:$SERVER_PORT/v1" 2>/dev/null || true)
@@ -227,16 +239,33 @@ doctor() {
   return "$fail"
 }
 
+# 정리하지 않았고 서버·웹 포트 주인이 launch가 기록한 그 프로세스일 때만 통과한다.
+require_live() {
+  ! grep -q '^STOPPED_AT=' "$RUN/state.env" || die "이미 정리한 실행이다($RUN). 새로 launch"
+  local up
+  for up in SERVER WEB; do
+    local port_var="${up}_PORT" pid_var="${up}_LISTENER_PID" st_var="${up}_LISTENER_STARTED"
+    local leader_var="${up}_LEADER" lst_var="${up}_LEADER_STARTED" have
+    have=$(listener "${!port_var}")
+    if ! { [[ -n $have && $have == "${!pid_var:-}" ]] && owned_pid "$have" "${!st_var:-}" &&
+      owned_listener "${!port_var}" "${!leader_var:-}" "${!lst_var:-}"; }; then
+      die "포트 ${!port_var} 주인 '$have' 가 이 실행이 띄운 프로세스가 아니다. doctor로 확인한다"
+    fi
+  done
+}
+
 drive() {
   load_state
   (( $# >= 1 )) || die "drive <여정 이름 또는 .mjs 경로> [phone|desktop]"
+  require_live
   BBY_VERIFY_RUN="$RUN" BBY_REPO="$repo" BBY_SKILL="$skill_dir" node "$skill_dir/scripts/drive.mjs" "$@"
 }
 
 db() {
   load_state
   (( $# == 1 )) || die "db '<SQL>'"
-  in_run_env docker compose exec -T db psql -U local -d banbanyeok -X -A -F $'\t' -P footer=off -c "$1"
+  ! grep -q '^STOPPED_AT=' "$RUN/state.env" || die "이미 정리한 실행이다($RUN)"
+  in_run_env docker compose exec -T -e PGOPTIONS='-c default_transaction_read_only=on' db psql -U local -d banbanyeok -X -A -F $'\t' -P footer=off -c "$1"
 }
 
 # 이 실행의 프로세스: launch가 남긴 목록과 지금 리더의 자손. 한 줄에 "PID<탭>시작 시각".

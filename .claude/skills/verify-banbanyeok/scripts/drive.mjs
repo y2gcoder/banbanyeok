@@ -21,6 +21,7 @@ const state = Object.fromEntries(
       return [line.slice(0, i), line.slice(i + 1).replace(/^'(.*)'$/, "$1")];
     }),
 );
+if (state.STOPPED_AT) throw new Error(`이미 정리한 실행이다: ${run}`);
 const baseURL = `http://localhost:${state.WEB_PORT}`;
 
 const require = createRequire(join(repo, "web/package.json"));
