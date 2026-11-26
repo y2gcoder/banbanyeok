@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { horizontalOverflow } from "./support/layout";
 import { VIEWPORTS } from "./support/viewports";
 
 test("홈 탭: 방향키로 선택하고 Tab으로 열린 패널에 들어간다", async ({ page }) => {
@@ -66,6 +67,7 @@ test("홈 탭: 최대 4명과 두 폼의 서로 다른 초안이 유지된다", 
 
 test("기존 기기 폭에서 홈 탭은 같은 폭이고 아이콘과 이름이 한 줄에 보인다", async ({ page }) => {
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
   const tabs = page.getByRole("tablist", { name: "출발역 입력 방식" }).getByRole("tab");
   for (const { width, height } of VIEWPORTS) {
     await page.setViewportSize({ width, height });
@@ -73,17 +75,26 @@ test("기존 기기 폭에서 홈 탭은 같은 폭이고 아이콘과 이름이
       elements.map((tab) => {
         const { left, right, width, top } = tab.getBoundingClientRect();
         const icon = tab.querySelector("svg")?.getBoundingClientRect();
-        const label = tab.querySelector("span")?.getBoundingClientRect();
+        const label = tab.querySelector("span");
+        if (!label) throw new Error("탭 이름을 찾지 못했어요");
+        const labelBounds = label.getBoundingClientRect();
+        const text = document.createRange();
+        text.selectNodeContents(label);
         return {
           top,
           width,
-          inline: !!icon && !!label && left <= icon.left && icon.right <= label.left && label.right <= right,
+          labelLines: new Set(Array.from(text.getClientRects(), (line) => line.top)).size,
+          inline: !!icon && left <= icon.left && icon.right <= labelBounds.left && labelBounds.right <= right,
         };
       }),
     );
     expect(positions).toHaveLength(2);
     expect(positions[0]?.width).toBeCloseTo(positions[1]?.width ?? 0);
     expect(positions[0]?.top).toBe(positions[1]?.top);
+    expect(
+      positions.map(({ labelLines }) => labelLines),
+      `${width}×${height} 탭 이름 줄 수`,
+    ).toEqual([1, 1]);
     expect(
       positions.every(({ inline }) => inline),
       `${width}×${height}`,
@@ -93,4 +104,60 @@ test("기존 기기 폭에서 홈 탭은 같은 폭이고 아이콘과 이름이
   await expect(selected).toHaveCSS("background-color", "rgb(255, 243, 198)");
   await expect(selected).toHaveCSS("color", "rgb(22, 32, 27)");
   await expect(selected.locator("svg")).toHaveCSS("fill", "rgb(245, 197, 24)");
+});
+
+test("320 CSS px에서 기본 글자를 두 배로 키워도 홈 탭 이름과 터치 영역이 들어간다", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Page.setFontSizes", { fontSizes: { standard: 32, fixed: 26 } });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveCSS("font-size", "32px");
+  await page.evaluate(() => document.fonts.ready);
+
+  const list = page.getByRole("tablist", { name: "출발역 입력 방식" });
+  const all = list.getByRole("tab", { name: "모두 입력" });
+  const room = list.getByRole("tab", { name: "각자 입력" });
+  const expectTabsFit = async () => {
+    expect(await horizontalOverflow(page)).toEqual([]);
+    const positions = await list.getByRole("tab").evaluateAll((tabs) =>
+      tabs.map((tab) => {
+        const { left, right, top, bottom, width, height } = tab.getBoundingClientRect();
+        const icon = tab.querySelector("svg");
+        const label = tab.querySelector("span");
+        if (!icon || !label) throw new Error("탭 아이콘과 이름을 찾지 못했어요");
+        const text = document.createRange();
+        text.selectNodeContents(label);
+        const content = [icon.getBoundingClientRect(), ...text.getClientRects()];
+        return {
+          left,
+          right,
+          width,
+          height,
+          contentFits: content.every((r) => r.left >= left && r.right <= right && r.top >= top && r.bottom <= bottom),
+        };
+      }),
+    );
+    expect(positions).toHaveLength(2);
+    const [first, last] = positions;
+    expect(first?.right).toBeLessThanOrEqual(last?.left ?? 0);
+    for (const position of positions) {
+      expect(position.width).toBeGreaterThanOrEqual(44);
+      expect(position.height).toBeGreaterThanOrEqual(44);
+      expect(position.contentFits).toBe(true);
+    }
+    await all.click({ trial: true });
+    await room.click({ trial: true });
+  };
+
+  await expectTabsFit();
+  await all.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(room).toBeFocused();
+  await expect(room).toHaveAttribute("aria-selected", "true");
+  await expect(room).toHaveCSS("outline-style", "solid");
+  await expectTabsFit();
+  await page.keyboard.press("ArrowLeft");
+  await expect(all).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("tabpanel", { name: "모두 입력" })).toBeFocused();
 });
