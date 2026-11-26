@@ -81,6 +81,9 @@ jobs:
               - '.github/release.yml'
               - 'web/scripts/smoke-deploy.sh'
               - 'web/scripts/test-smoke-deploy.py'
+              - 'web/scripts/wait-data-version.sh'
+              - 'web/scripts/regional-precheck.sh'
+              - 'web/scripts/test-regional-precheck.sh'
               - 'web/scripts/worker-version.sh'
               - 'web/scripts/test-worker-version.sh'
               - 'web/scripts/test-worker-version-api.py'
@@ -253,6 +256,8 @@ jobs:
       - run: bash -n web/scripts/smoke-deploy.sh
       - run: shellcheck -S warning web/scripts/smoke-deploy.sh
       - run: python3 -B web/scripts/test-smoke-deploy.py
+      - run: shellcheck -S warning web/scripts/wait-data-version.sh web/scripts/regional-precheck.sh web/scripts/test-regional-precheck.sh
+      - run: bash web/scripts/test-regional-precheck.sh
       - run: |
           for script in scripts/release-tag.sh scripts/release-data-version.sh scripts/create-deploy-release.sh scripts/test-deploy-release.sh; do
             bash -n "$script"

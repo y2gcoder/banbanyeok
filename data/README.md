@@ -341,7 +341,8 @@ python3 -B pipeline/busan/sources.py network-input > build/busan-network-input.j
 - `deploy-server.yml`이 서버 설정에 `REGIONAL_ARTIFACTS=true`를 넣고, 후보·공개 스모크가 manifest 5세대, 부산 추천,
   권역이 섞인 추천의 400 `REGION_MISMATCH`를 본다. 포인터가 없으면 `false`이고 스모크는 5세대가 아님을 본다.
 - 웹 역 색인에 `regions`가 생긴다. 권역 색인 빌드는 Worker를 공개하기 전에 서버 manifest가 5세대인지 확인한다(`deploy-web.yml`의
-  권역 서버 선행 확인, 웹 먼저·웹 단독 배포에서도). 5세대가 아니면 웹은 나가지 않는다. 수도권 색인(되돌리기)은 확인 없이 나간다.
+  권역 서버 선행 확인 = `web/scripts/regional-precheck.sh`, 웹 먼저·웹 단독 배포에서도). 서버 주소가 없거나 5세대가 아니면 웹은
+  나가지 않는다. 수도권 색인(되돌리기)은 확인 없이 나간다. `web/scripts/test-regional-precheck.sh`가 네 경우를 CI에서 본다.
   `RegionalArtifactsCommittedTest`가 색인의 `regions`와 포인터가 함께 있거나 함께 없는지 본다.
 
 수도권 산출물을 다시 만들면 dataVersion이 바뀌므로 `regional-build`도 다시 돌려야 합니다. 그러지 않으면
