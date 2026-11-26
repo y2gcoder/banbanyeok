@@ -17,7 +17,9 @@ import io.ktor.server.testing.testApplication
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -33,6 +35,15 @@ class ProjectConfig : AbstractProjectConfig() {
 private fun JsonElement.str(key: String) = jsonObject.getValue(key).jsonPrimitive.content
 
 private fun parse(body: String): JsonElement = Json.parseToJsonElement(body)
+
+private suspend fun awaitTotal(
+    stage: String,
+    expected: Long,
+) {
+    withTimeout(5000) {
+        while (stageTotal(stage) != expected) delay(10)
+    }
+}
 
 private fun stageTotal(stage: String): Long =
     TestDatabase.dataSource.connection.use { connection ->
@@ -94,9 +105,11 @@ class ApiIntegrationTest :
                         database = ConnectedDatabase(TestDatabase.dataSource, TestDatabase.database),
                     )
                 }
-            testApplication {
-                application { apiModule(components.config, components.services, components.clock) }
-                block(Flow(client), DevArtifacts.origins)
+            components.use {
+                testApplication {
+                    application { apiModule(components.config, components.services, components.clock) }
+                    block(Flow(client), DevArtifacts.origins)
+                }
             }
         }
 
@@ -295,7 +308,7 @@ class ApiIntegrationTest :
                             val before = stageTotal("RECOMMEND")
                             val responses = coroutineScope { List(8) { async { recommend() } }.awaitAll() }
                             responses.forEach { it.status shouldBe HttpStatusCode.OK }
-                            stageTotal("RECOMMEND") shouldBe before + 8
+                            awaitTotal("RECOMMEND", before + 8)
                             sql.execute("ALTER TABLE daily_stage_counts RENAME TO unavailable")
                             try {
                                 val degraded = recommend()
@@ -479,7 +492,7 @@ class ApiIntegrationTest :
                         token = hostPart,
                         expected = HttpStatusCode.OK,
                     )
-                    stages.forEach { stage -> stageTotal(stage) shouldBe before.getValue(stage) + 1 }
+                    stages.forEach { stage -> awaitTotal(stage, before.getValue(stage) + 1) }
                 }
             }
         }

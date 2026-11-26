@@ -69,7 +69,7 @@ first() { sed -n 1p; }
 # 방장 토큰이 있으면(host_token) Authorization을 파일 헤더로 붙인다.
 api() {
   local method="$1" path="$2" data="${3:-}"
-  local args=(-sS --max-time 40 -o "$api_body" -w '%{http_code}' -X "$method")
+  local args=(-H "X-Banbanyeok-Synthetic: 1" -sS --max-time 40 -o "$api_body" -w '%{http_code}' -X "$method")
   [ "$method" != "GET" ] && args+=(-H "$origin_header")   # 브라우저는 같은 출처 GET에는 Origin을 붙이지 않는다
   [ -n "$data" ] && args+=(-H 'content-type: application/json' --data-binary "$data")
   [ -n "${use_host_token:-}" ] && args+=(-H @"$auth_file")

@@ -150,8 +150,8 @@ export function ConsentSettings() {
   return (
     <div className="flex flex-col gap-3">
       <p>
-        {parenSafe(CONSENT_COPY.question)} {parenSafe(CONSENT_COPY.reassure[1])} {parenSafe(CONSENT_COPY.age)}{" "}
-        {parenSafe(CONSENT_COPY.rule)}
+        {parenSafe(CONSENT_COPY.question)} 통계에는 출발역과 이름이 들어가지 않아요.{" "}
+        {parenSafe(CONSENT_COPY.reassure[1])} {parenSafe(CONSENT_COPY.age)} {parenSafe(CONSENT_COPY.rule)}
       </p>
       <p id={statusId} aria-live="polite" className="font-semibold text-ink">
         {state === null

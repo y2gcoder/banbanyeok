@@ -4,12 +4,13 @@ import app.banbanyeok.schema.DayType
 import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundRoutes
 import app.banbanyeok.server.app.application.BackgroundSlots
-import app.banbanyeok.server.app.application.JdbcDailyCounter
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StatelessRecommendation
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.config.AppConfig
 import app.banbanyeok.server.app.config.ArtifactStoreKind
+import app.banbanyeok.server.app.counter.BackgroundDailyCounter
+import app.banbanyeok.server.app.counter.JdbcDailyCounter
 import app.banbanyeok.server.app.http.ApiServices
 import app.banbanyeok.server.artifact.ArtifactLoader
 import app.banbanyeok.server.artifact.ArtifactStore
@@ -112,6 +113,7 @@ object CompositionRoot {
             val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
             val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
             val recommendation = recommendationService(loaded, directory, slots, clock)
+            val counter = BackgroundDailyCounter(clock, ioDispatcher, JdbcDailyCounter(connected.dataSource)::write)
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
@@ -121,7 +123,7 @@ object CompositionRoot {
                     stations = directory,
                     published = PublishedArtifacts(store, loaded),
                     times = times,
-                    counter = JdbcDailyCounter(connected.dataSource, ioDispatcher),
+                    counter = counter,
                 )
             timeline?.mark("services-assembled")
             Components(
@@ -135,6 +137,7 @@ object CompositionRoot {
                     loaded.startBackground()
                 },
             ) {
+                counter.close()
                 owned?.close()
             }
         }

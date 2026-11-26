@@ -15,7 +15,7 @@ trap 'rm -rf "$tmp"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
 http() { # http <out-file> <curl args...> → 상태 코드
   local out="$1"; shift
-  curl -sS --max-time 30 -o "$out" -w '%{http_code}' "$@"
+  curl -H "X-Banbanyeok-Synthetic: 1" -sS --max-time 30 -o "$out" -w '%{http_code}' "$@"
 }
 
 # 주의: Cloud Run 앞단(GFE)은 /healthz 경로를 예약해서 앱에 닿기 전에 404를 준다. 배포된 서버는 /v1/healthz로 확인한다.

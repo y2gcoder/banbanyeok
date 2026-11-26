@@ -18,6 +18,7 @@ describe("결과 불러오기(서버 호출)", () => {
     expect(recommend).toHaveBeenCalledWith(
       { origins: ["1qs", "70x"], mode: "fair", favorIndex: null, nicknames: ["지훈🎂", null], timeSlot: "weekday-day" },
       expect.any(AbortSignal),
+      "preview",
     );
   });
 
@@ -37,6 +38,7 @@ describe("결과 불러오기(서버 호출)", () => {
         slotDefaulted: true,
       },
       expect.any(AbortSignal),
+      "preview",
     );
     // 구분을 고른 링크는 그 표시 없이 요청한다(위 "성공하면 화면 값으로").
     recommend.mockClear();

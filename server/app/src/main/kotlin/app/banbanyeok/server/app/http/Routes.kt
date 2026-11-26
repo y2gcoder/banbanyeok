@@ -73,7 +73,7 @@ private fun Route.roomCreationRoute(
             expiresAt?.let { cached.copy(expiresAt = it.toString()) }
         }) {
             val created = rooms.create(command)
-            services.counter.increment(UsageStage.CREATE_ROOM)
+            call.count(services, UsageStage.CREATE_ROOM)
             RoomCreatedDto(
                 created.roomId,
                 created.hostToken,
@@ -113,7 +113,7 @@ private fun Route.roomRoutes(
                     body.stationCode,
                     ShareVersion(body.seenVersion),
                 )
-            if (body.stationCode != null) services.counter.increment(UsageStage.DECIDE_STATION)
+            if (body.stationCode != null) call.count(services, UsageStage.DECIDE_STATION)
             call.respondRoom(services, room)
         }
         // 멱등은 방의 세대·회차로 한다(인스턴스와 상관없음). 메모리 응답 캐시를 쓰지 않으므로 재시도도 늘 방장 확인을 지나고 지금 방을 받는다.
@@ -151,7 +151,7 @@ private fun Route.participantRoutes(
                 cached
             }) {
                 val joined = services.rooms.join(call.roomId(), input, call.bearerToken())
-                services.counter.increment(UsageStage.JOIN_ROOM)
+                call.count(services, UsageStage.JOIN_ROOM)
                 JoinedDto(joined.participantId, joined.participantToken)
             }
         }
@@ -207,7 +207,7 @@ private fun Route.resultRoutes(services: ApiServices) {
     post("/recommend") {
         val request = call.receive<RecommendRequestDto>().toStatelessRequest()
         val result = statelessRecommendationErrors { services.stateless.recommend(request) }
-        services.counter.increment(UsageStage.RECOMMEND)
+        call.count(services, UsageStage.RECOMMEND)
         call.respond(result.toDto(services.stations))
     }
 }
@@ -238,6 +238,13 @@ private fun Route.dataRoutes(services: ApiServices) {
             call.respondBytes(file.content, ContentType.parse(file.contentType))
         }
     }
+}
+
+private fun ApplicationCall.count(
+    services: ApiServices,
+    stage: UsageStage,
+) {
+    if (request.header("X-Banbanyeok-Synthetic") != "1") services.counter.increment(stage)
 }
 
 private suspend fun ApplicationCall.respondRoom(

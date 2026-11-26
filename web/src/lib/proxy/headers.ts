@@ -8,6 +8,7 @@
  * (IP만 보내면 서버가 믿을 근거가 없다).
  */
 export const PROXY_SECRET_HEADER = "x-banbanyeok-proxy-secret";
+export const SYNTHETIC_HEADER = "x-banbanyeok-synthetic";
 export const CLIENT_IP_HEADER = "x-banbanyeok-client-ip";
 
 /**
@@ -46,6 +47,7 @@ export function upstreamHeaders(incoming: Headers, trusted: TrustedEnv): Headers
     if (DROPPED_PREFIXES.some((prefix) => lower.startsWith(prefix))) return;
     out.set(name, value);
   });
+  if (incoming.get(SYNTHETIC_HEADER) === "1") out.set(SYNTHETIC_HEADER, "1");
   return withTrustHeaders(out, trusted);
 }
 
