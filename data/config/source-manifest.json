@@ -364,5 +364,45 @@
     "rows": 266,
     "sha256": "965fcf8660d22dd7fd2aa349a1c2fea43867578b68d935186af019027c5a67e3",
     "source_url": "https://apis.data.go.kr/1613000/SubwayInfo (GetKwrdFndSubwaySttnList, GetSubwaySttnAcctoSchdulList)"
+  },
+  {
+    "bytes": 1384336,
+    "checked_against": {
+      "B1": "30397f2aa38835dfc37c2093a02a6e02547eb8a9b635b187f0db4c9e19ec69b7"
+    },
+    "checks_file": "data/config/busan-last-train-checks.csv",
+    "checks_sha256": "553dc052fc3d9795a597dad2d9f60d0bb8e2cb178938bfa2578df2431dbbde37",
+    "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "effective_date": "2026-08-24",
+    "estimated": false,
+    "fetched_at": "2026-11-26",
+    "file": "data/raw/busan-operator/H1.xlsx",
+    "id": "H1",
+    "license": "부산교통공사 누리집 공지 첨부(사이트 표기 All Rights Reserved, 공공누리 표시 없음). 칸별 대조용으로만 쓰고 커밋하지 않는다(#180 운영자 결정 1)",
+    "request_body": null,
+    "rows": 2835,
+    "sha256": "fa59d93409ac4729a32e4ebc85adc3ba4765e0beb16df747d66d3c78130741dc",
+    "source_url": "https://www.humetro.busan.kr/homepage/default/board/view.do?board_no=26088C3X3L&conf_no=80&menu_no=1001040101",
+    "use": "check-only; not committed, not a calculation input"
+  },
+  {
+    "bytes": 82608,
+    "checked_against": {
+      "S6-busan": "965fcf8660d22dd7fd2aa349a1c2fea43867578b68d935186af019027c5a67e3"
+    },
+    "checks_file": "data/config/busan-last-train-checks.csv",
+    "checks_sha256": "553dc052fc3d9795a597dad2d9f60d0bb8e2cb178938bfa2578df2431dbbde37",
+    "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "effective_date": "2026-09-01",
+    "estimated": false,
+    "fetched_at": "2026-11-26",
+    "file": "data/raw/busan-operator/K2.xlsx",
+    "id": "K2",
+    "license": "코레일 누리집 게시(재사용 조건 불명확: 저작권정책에 공공누리 4유형 문구). 칸별 대조용으로만 쓰고 커밋하지 않는다(#180 운영자 결정 1)",
+    "request_body": null,
+    "rows": 176,
+    "sha256": "3c29b97ac0145258f9eff9f86bdca052004c3f707f99b527b59a81b9f666f7e5",
+    "source_url": "https://www.korail.com/ticket/reserve/train-timeTable",
+    "use": "check-only; not committed, not a calculation input"
   }
 ]
