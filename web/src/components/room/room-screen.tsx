@@ -31,17 +31,9 @@ import { JoinForm } from "./join-form";
 import { JumpButton } from "./jump-button";
 import { OutcomeCard } from "./outcome-card";
 import { PEOPLE_TITLE_ID, PeopleList } from "./people-list";
+import { ROOM_MAIN, ROOM_SIDE } from "./room-layout";
 import { type RoomDecisionMode, RoomResult } from "./room-result";
-import {
-  CannotJoin,
-  ROOM_MAIN,
-  ROOM_SIDE,
-  RoomGone,
-  RoomIntro,
-  RoomLoadError,
-  RoomLoading,
-  RoomShell,
-} from "./room-states";
+import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell } from "./room-states";
 import { RoomShareSection } from "./share-section";
 import { useFavorDraw } from "./use-favor-draw";
 import { useIdempotencyKey } from "./use-idempotency-key";

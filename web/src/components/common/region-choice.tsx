@@ -11,7 +11,7 @@ type RegionState = readonly [RegionId, (region: RegionId) => void];
 const RegionContext = createContext<RegionState | null>(null);
 
 /**
- * 첫 화면에서 고른 권역을 입력 카드와 계산 범위 한 줄(왼쪽 칸)이 같이 본다. 고르는 곳은 입력 카드다(useRegionChoice).
+ * 첫 화면에서 고른 권역을 입력 카드와 계산 범위 한 줄이 같이 본다. 고르는 곳은 입력 카드다(useRegionChoice).
  * 방 만들기처럼 범위 한 줄이 없는 화면은 감싸지 않아도 된다(useRegionChoice가 제 상태를 쓴다).
  */
 export function RegionProvider({ children }: { children: ReactNode }) {

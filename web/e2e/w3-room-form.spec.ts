@@ -37,6 +37,7 @@ for (const size of SIZES) {
 
     test("이름 칸 라벨, 칩 크기, 넘침 없음, 좁으면 위아래·넓으면 좌우", async ({ page }) => {
       await openForm(page);
+      await expect(page.locator("main > form")).toHaveCSS("grid-column-start", size.width >= 640 ? "2" : "auto");
       // 보이는 라벨(화면 낭독기는 앞에 "내"를 더 읽는다).
       await expect(page.locator("label", { hasText: /^내 이름 \(선택\)$/ })).toBeVisible();
       await expect(page.locator("label", { hasText: /^내 출발역$/ })).toBeVisible();

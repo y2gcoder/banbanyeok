@@ -62,7 +62,7 @@ for (const vp of CASES) {
 
 /**
  * U2: 폰에서 배너가 화면 아래를 크게 가리지 않는다. 안내는 짧게, 두 버튼은 한 줄로 같은 크기, 체크박스 설명·철회 안내는 폰에서도 보인다.
- * 맨 아래까지 스크롤하면 본문의 마지막 줄이 배너 위에 온다(배너는 문서 끝에 있어 본문 아래에 자기 자리가 있다).
+ * 맨 아래까지 스크롤하면 입력 폼의 제출 버튼이 배너 위에 온다(배너는 문서 끝에 있어 본문 아래에 자기 자리가 있다).
  */
 const u2ShotsDir = resolve(import.meta.dirname, "../../docs/setup/u2-screens");
 const U2_CASES = [
@@ -168,16 +168,20 @@ for (const vp of U2_CASES) {
       await expect(banner(page).getByText("두 가지 모두 체크해야 PostHog 통계를 모아요.")).toBeHidden();
     });
 
-    test("맨 아래까지 스크롤하면 본문 마지막 줄이 배너에 가려지지 않는다", async ({ page }) => {
-      await page.goto("/");
-      await expect(banner(page)).toBeVisible();
+    test("맨 아래까지 스크롤하면 만날 역 찾기 버튼을 배너에 가리지 않고 누를 수 있다", async ({ page }) => {
+      await page.goto("/?o=k3a.ryf"); // 강남·홍대입구를 미리 채워 제출 버튼을 활성화한다.
+      const submit = page.getByRole("button", { name: "만날 역 찾기", exact: true });
+      const consentBanner = banner(page);
+      await expect(submit).toBeEnabled();
+      await expect(consentBanner).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      const last = page.getByRole("link", { name: /방 만들어서 각자 입력하기/ });
-      await expect(last).toBeInViewport({ ratio: 1 });
-      const lastBox = await last.boundingBox();
-      const bannerBox = await banner(page).boundingBox();
-      expect(lastBox && bannerBox ? lastBox.y + lastBox.height <= bannerBox.y + 1 : false).toBe(true);
-      await last.click({ trial: true }); // 다른 요소가 가로채지 않는다
+      await expect(submit).toBeInViewport({ ratio: 1 });
+      await expect(consentBanner).toBeInViewport({ ratio: 1 });
+      const [submitBox, bannerBox] = await Promise.all([submit.boundingBox(), consentBanner.boundingBox()]);
+      if (!submitBox || !bannerBox) throw new Error("제출 버튼이나 배너의 위치를 찾지 못했어요.");
+      expect(submitBox.y + submitBox.height).toBeLessThanOrEqual(bannerBox.y + 1);
+      await submit.click({ trial: true }); // 다른 요소가 가로채지 않는다
     });
   });
 }
