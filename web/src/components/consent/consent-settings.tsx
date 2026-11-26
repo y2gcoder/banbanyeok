@@ -10,19 +10,20 @@ import { CONSENT_COPY } from "./consent-text";
 import { useAnalyticsId, useConsentScopes, useConsentState } from "./use-consent";
 
 const STATUS = {
-  granted: "모두 동의함 — 이용 통계를 모으고 있어요.",
-  denied: "동의하지 않음 — 이용 통계를 모으지 않아요.",
-  ask: "아직 고르지 않음 — 이용 통계를 모으지 않아요.",
-  "browser-declined": "브라우저의 추적 거부 신호(Do Not Track 또는 Global Privacy Control)가 켜져 있어 모으지 않아요.",
-  unavailable: "이 서비스는 지금 이용 통계를 모으지 않아요.",
+  granted: "모두 동의함 — PostHog 이용 통계를 모으고 있어요.",
+  denied: "동의하지 않음 — PostHog 이용 통계를 모으지 않아요.",
+  ask: "아직 고르지 않음 — PostHog 이용 통계를 모으지 않아요.",
+  "browser-declined":
+    "브라우저의 추적 거부 신호(Do Not Track 또는 Global Privacy Control)가 켜져 있어 PostHog 통계를 모으지 않아요.",
+  unavailable: "이 서비스는 지금 PostHog 이용 통계를 모으지 않아요.",
 } as const;
 
 const WITHDRAW_NOTE =
-  "하나라도 끄면 바로 통계를 멈추고, 이 기기에 저장된 통계 식별자를 지워요. 이미 모은 통계는 식별자를 보내 요청하면 삭제하고 (완전히 지워지기까지 몇 주 걸릴 수 있어요), 요청하지 않으면 보유 기간 (1년)이 지나 파기해요 (개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.";
+  "하나라도 끄면 바로 PostHog 통계를 멈추고, 이 기기에 저장된 통계 식별자를 지워요. 이미 모은 PostHog 통계는 식별자를 보내 요청하면 삭제하고 (완전히 지워지기까지 몇 주 걸릴 수 있어요), 요청하지 않으면 보유 기간 (1년)이 지나 파기해요 (개인정보 처리방침 참고). 동의하지 않아도 서비스는 모두 쓸 수 있어요.";
 
 /** 철회 전 식별자 칸의 안내(운영자 결정 B안, W4). 철회하면 기기에서 지워지므로 그 전에 복사해 보내도록 한다. */
 const DELETE_REQUEST_NOTE =
-  "이미 모은 통계도 지우려면 철회하기 전에 이 값을 복사해 privacy@banbanyeok.app 으로 보내 주세요. 이 값은 화면에만 보이고 어디로도 보내지 않아요.";
+  "이미 모은 PostHog 통계도 지우려면 철회하기 전에 이 값을 복사해 privacy@banbanyeok.app 으로 보내 주세요. 이 값은 화면에만 보이고 어디로도 보내지 않아요.";
 
 /** 항목 하나의 동의 스위치. 둘 다 켜져야 통계를 모으고, 하나라도 끄면 바로 멈춘다. */
 function ScopeSwitch({
@@ -125,7 +126,7 @@ function IdentifierBox({ id, heading, note }: { id: string; heading: string; not
 
 /**
  * /privacy의 통계 설정: 현재 동의 상태와 두 항목(수집·이용, 국외 이전)의 스위치. 둘 다 켜져야 통계를 모은다.
- * 하나라도 끄면(철회) 바로 통계를 멈추고 이 기기에 저장된 통계 식별자를 지운다. 철회는 동의만큼 쉬워야 하므로 한 번 누르면 끝난다.
+ * 하나라도 끄면(철회) 바로 PostHog 통계를 멈추고 이 기기에 저장된 통계 식별자를 지운다. 철회는 동의만큼 쉬워야 하므로 한 번 누르면 끝난다.
  * 스위치 아래에 세부 고지([ConsentNotice])를 늘 펼쳐 둔다(배너의 '자세히 보기'·'언제든 변경'이 오는 곳).
  */
 export function ConsentSettings() {
@@ -149,25 +150,26 @@ export function ConsentSettings() {
   return (
     <div className="flex flex-col gap-3">
       <p>
-        {parenSafe(CONSENT_COPY.question)} {parenSafe(CONSENT_COPY.reassure.join(" "))} {parenSafe(CONSENT_COPY.age)}{" "}
-        {parenSafe(CONSENT_COPY.rule)}
+        {parenSafe(CONSENT_COPY.question)} {CONSENT_COPY.stationAndNameNotice} {parenSafe(CONSENT_COPY.reassure[1])}{" "}
+        {parenSafe(CONSENT_COPY.age)} {parenSafe(CONSENT_COPY.rule)}
       </p>
       <p id={statusId} aria-live="polite" className="font-semibold text-ink">
         {state === null
           ? "상태를 확인하는 중이에요."
           : partial
-            ? "일부만 동의함 — 두 가지 모두 동의해야 모으므로 지금은 모으지 않아요."
+            ? "일부만 동의함 — 두 가지 모두 동의해야 하므로 PostHog 통계는 꺼져 있어요."
             : parenSafe(STATUS[state])}
       </p>
+      <p>{CONSENT_COPY.dailyTotal}</p>
       <ScopeSwitch
-        label="이용 통계 수집·이용 동의"
+        label="PostHog 이용 통계 수집·이용 동의"
         detail={CONSENT_COPY.collect.detail}
         checked={scopes.collect}
         disabled={!adjustable}
         onToggle={() => toggle("collect")}
       />
       <ScopeSwitch
-        label="통계의 국외 이전 동의"
+        label="PostHog 통계의 국외 이전 동의"
         detail={CONSENT_COPY.transfer.detail}
         checked={scopes.transfer}
         disabled={!adjustable}
@@ -182,7 +184,7 @@ export function ConsentSettings() {
         <IdentifierBox
           id={clearedId}
           heading="방금 지운 통계 식별자"
-          note="이 기기에서는 지웠어요. 이미 모은 통계도 지우려면 지금 이 값을 복사해 privacy@banbanyeok.app 으로 보내 주세요. 저장하지 않으므로 이 화면을 나가거나 새로 고치면 다시 볼 수 없어요."
+          note="이 기기에서는 지웠어요. 이미 모은 PostHog 통계도 지우려면 지금 이 값을 복사해 privacy@banbanyeok.app 으로 보내 주세요. 저장하지 않으므로 이 화면을 나가거나 새로 고치면 다시 볼 수 없어요."
         />
       ) : null}
       <p className="text-[14px]">{parenSafe(WITHDRAW_NOTE)}</p>

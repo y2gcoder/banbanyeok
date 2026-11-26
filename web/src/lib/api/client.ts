@@ -3,7 +3,7 @@
  * 웹은 추천을 직접 계산하지 않는다. 계약 원본은 contracts/openapi.yaml.
  */
 import createClient from "openapi-fetch";
-import { withTrustHeaders } from "@/lib/proxy/headers";
+import { SYNTHETIC_HEADER, withTrustHeaders } from "@/lib/proxy/headers";
 import { apiBaseUrl, HEALTHZ_PATH } from "./config";
 import type { paths } from "./schema.gen";
 import type { ApiError, Mode, RecommendBody, RecommendResult, TimeSlotId } from "./types";
@@ -72,10 +72,15 @@ export function recommendBody(query: RecommendQuery): RecommendBody {
   };
 }
 
-export async function recommend(query: RecommendQuery, signal?: AbortSignal): Promise<RecommendResult> {
+export async function recommend(
+  query: RecommendQuery,
+  signal?: AbortSignal,
+  purpose?: "preview",
+): Promise<RecommendResult> {
   const body = recommendBody(query);
   const result = await client(await trustedServerHeaders()).POST("/recommend", {
     body,
+    ...(purpose === "preview" ? { headers: { [SYNTHETIC_HEADER]: "1" } } : {}),
     cache: "no-store",
     ...(signal ? { signal } : {}),
   });

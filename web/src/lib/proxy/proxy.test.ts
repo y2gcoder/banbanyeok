@@ -34,6 +34,7 @@ describe("upstreamHeaders", () => {
     const incoming = new Headers({
       [PROXY_SECRET_HEADER]: "forged",
       [CLIENT_IP_HEADER]: "6.6.6.6",
+      "X-Banbanyeok-Synthetic": "1",
       "X-Banbanyeok-Other": "x",
       "content-type": "application/json",
       authorization: "Bearer t",
@@ -41,6 +42,7 @@ describe("upstreamHeaders", () => {
     const out = upstreamHeaders(incoming, { secret: "s3cret", clientIp: "1.2.3.4" });
     expect(out.get(PROXY_SECRET_HEADER)).toBe("s3cret");
     expect(out.get(CLIENT_IP_HEADER)).toBe("1.2.3.4");
+    expect(out.get("x-banbanyeok-synthetic")).toBe("1");
     expect(out.get("x-banbanyeok-other")).toBeNull();
     expect(out.get("content-type")).toBe("application/json");
     expect(out.get("authorization")).toBe("Bearer t");

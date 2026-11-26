@@ -58,7 +58,7 @@ function ScopeCheckbox({
  * - 고르기 전에는 미동의다. 통계를 모으지 않고 PostHog도 불러오지 않는다.
  * - 왼쪽 [모두 거부]와 오른쪽 버튼은 같은 크기·같은 모양이다(다크 패턴 금지). 오른쪽 문구는 둘 다 체크했을 때만 "동의하고 닫기",
  *   그 외에는 "이대로 닫기"다(둘 다 체크하지 않은 채 닫으면 거부로 저장된다). 닫기(X)나 "나중에"는 두지 않는다.
- * - 정확히 하나만 체크하면 버튼 위에 "두 가지 모두 체크해야 통계를 모아요."를 알린다(aria-live polite).
+ * - 정확히 하나만 체크하면 버튼 위에 "두 가지 모두 체크해야 PostHog 통계를 모아요."를 알린다(aria-live polite).
  * - 문서 끝에 `sticky bottom-0`으로 둔다: 문서 안(in-flow)에 자기 자리를 차지하므로 맨 아래까지 스크롤하면 어떤 입력·버튼도
  *   배너 뒤에 숨지 않고 닿는다(= 배너 높이만큼의 하단 여백). `fixed`로 바꾸면 이 여백이 사라지니 바꾸지 않는다.
  * - 키가 없는 빌드(통계 꺼짐)나 브라우저 추적 거부(DNT·GPC)에서는 묻지 않는다. /privacy에서도 띄우지 않는다(같은 동의를 고르는 '통계 설정' 카드가 있다).
@@ -93,8 +93,8 @@ export function ConsentBanner() {
         "sticky bottom-0 z-40 mx-auto w-full max-w-md pt-1 pb-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] [padding-left:max(0.75rem,env(safe-area-inset-left))] [padding-right:max(0.75rem,env(safe-area-inset-right))] wide:max-w-3xl",
       )}
     >
-      <div className="flex max-h-[60dvh] flex-col gap-2 rounded-2xl border border-rule-strong bg-surface p-3 shadow-lg wide:gap-3 wide:p-4">
-        <div className="scroll-shadow-y -mx-1 flex min-h-0 flex-col gap-1.5 overflow-y-auto px-1 wide:grid wide:grid-cols-2 wide:gap-x-6 wide:gap-y-3">
+      <div className="flex max-h-[60dvh] flex-col gap-1 rounded-2xl border border-rule-strong bg-surface px-3 py-2 shadow-lg wide:gap-3 wide:p-4">
+        <div className="scroll-shadow-y -mx-1 flex min-h-0 flex-col gap-1 overflow-y-auto px-1 wide:grid wide:grid-cols-2 wide:gap-x-6 wide:gap-y-3">
           <div className="flex flex-col gap-1 wide:row-span-2">
             <h2 id={titleId} className="text-[14px] leading-snug font-bold text-ink wide:text-[15px]">
               {parenSafe(CONSENT_COPY.question)}
@@ -154,7 +154,7 @@ export function ConsentBanner() {
         <div className="flex shrink-0 flex-col wide:ml-auto wide:w-full wide:max-w-sm">
           {/* 안내 줄 자리는 늘 잡아 둔다: 하나만 체크해도 배너 높이가 변하지 않아 체크박스가 밀리지 않는다. */}
           <div aria-live="polite">
-            <p className="min-h-[17px] pb-1 text-[12px] leading-[17px] font-semibold text-ink box-content">
+            <p className="min-h-[17px] text-[12px] leading-[17px] font-semibold text-ink box-content">
               {onlyOne ? parenSafe(CONSENT_COPY.bothNeeded) : null}
             </p>
           </div>

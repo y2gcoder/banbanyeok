@@ -9,6 +9,8 @@ import app.banbanyeok.server.app.application.StatelessRecommendation
 import app.banbanyeok.server.app.application.StationDirectory
 import app.banbanyeok.server.app.config.AppConfig
 import app.banbanyeok.server.app.config.ArtifactStoreKind
+import app.banbanyeok.server.app.counter.BackgroundDailyCounter
+import app.banbanyeok.server.app.counter.JdbcDailyCounter
 import app.banbanyeok.server.app.http.ApiServices
 import app.banbanyeok.server.artifact.ArtifactLoader
 import app.banbanyeok.server.artifact.ArtifactStore
@@ -95,7 +97,8 @@ object CompositionRoot {
             timeline?.awaitLoggingReady()
             val owned = if (database == null) DatabaseFactory.connect(config.database) else null
             owned?.warmUp { timeline?.mark("database-connection-warm") }
-            val db = (database ?: requireNotNull(owned)).database
+            val connected = database ?: requireNotNull(owned)
+            val db = connected.database
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
             val slots = BackgroundSlots(loaded.slots)
@@ -110,6 +113,7 @@ object CompositionRoot {
             val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
             val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
             val recommendation = recommendationService(loaded, directory, slots, clock)
+            val counter = BackgroundDailyCounter(clock, ioDispatcher, JdbcDailyCounter(connected.dataSource)::write)
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),
@@ -119,6 +123,7 @@ object CompositionRoot {
                     stations = directory,
                     published = PublishedArtifacts(store, loaded),
                     times = times,
+                    counter = counter,
                 )
             timeline?.mark("services-assembled")
             Components(
@@ -132,6 +137,7 @@ object CompositionRoot {
                     loaded.startBackground()
                 },
             ) {
+                counter.close()
                 owned?.close()
             }
         }

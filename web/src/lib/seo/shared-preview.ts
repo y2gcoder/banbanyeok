@@ -38,6 +38,7 @@ async function fetchResult(
         ...(slotDefaulted ? { slotDefaulted } : {}),
       },
       signal ? AbortSignal.any([timeout, signal]) : timeout,
+      "preview",
     );
   } catch {
     return null;
