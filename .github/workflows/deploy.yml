@@ -176,6 +176,7 @@ jobs:
     uses: ./.github/workflows/deploy-web.yml
     with:
       # 서버가 같이 바뀌면 서버는 아직 옛 상태라 "서버 데이터 대기"를 건너뛴다. 서버가 안 바뀌면 지금처럼 확인한다.
+      # 권역 색인 빌드의 "권역 서버 선행 확인"은 이 값과 상관없이 Worker 공개 전에 돈다(서버가 5세대가 아니면 웹은 나가지 않는다).
       wait_server_data: ${{ needs.plan.outputs.server != 'true' }}
     secrets: inherit
 

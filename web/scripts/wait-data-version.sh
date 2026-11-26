@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 웹 스모크 전에 서버가 이 웹 빌드와 같은 데이터를 발행했는지 기다린다(.github/workflows/deploy-web.yml이 부른다).
-#   BASE_URL   배포된 웹 주소(필수). /api/v1/manifest는 Worker 프록시를 거쳐 서버 manifest를 돌려준다
+#   BASE_URL   배포된 웹 주소. /api/v1/manifest는 Worker 프록시를 거쳐 서버 manifest를 돌려준다
+#   MANIFEST_URL 서버 manifest 주소를 직접 줄 때(웹을 공개하기 전 선행 확인: <서버>/v1/manifest). 없으면 $BASE_URL/api/v1/manifest
 #   EXPECTED   기다릴 dataVersion(없으면 src/lib/stations/index.gen.json의 값)
 #   INTERVAL   확인 간격 초(기본 30), MAX_WAIT 최대 대기 초(기본 1500 = 25분)
 #              MAX_WAIT는 요청 시간까지 포함한 경과 시간 기준이다. 마지막 요청(최대 20초)까지 합쳐 MAX_WAIT+20초 안에 끝난다.
@@ -17,8 +18,10 @@
 set -uo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
-BASE_URL="${BASE_URL:?BASE_URL이 필요합니다}"
-BASE_URL="${BASE_URL%/}"
+if [[ -z "${MANIFEST_URL:-}" ]]; then
+  BASE_URL="${BASE_URL:?BASE_URL 또는 MANIFEST_URL이 필요합니다}"
+  MANIFEST_URL="${BASE_URL%/}/api/v1/manifest"
+fi
 EXPECTED="${EXPECTED:-$(jq -r .dataVersion "$here/../src/lib/stations/index.gen.json")}"
 REGIONAL="${REGIONAL:-$(jq -r 'has("regions")' "$here/../src/lib/stations/index.gen.json")}"
 INTERVAL="${INTERVAL:-30}"
@@ -39,9 +42,9 @@ body="$(mktemp)"
 trap 'rm -f "$body"' EXIT
 start=$SECONDS
 reason="아직 확인 전"
-echo "== 서버 데이터 대기: $BASE_URL/api/v1/manifest 의 dataVersion >= $EXPECTED, 권역 세대 필요=$REGIONAL (최대 ${MAX_WAIT}초)"
+echo "== 서버 데이터 대기: $MANIFEST_URL 의 dataVersion >= $EXPECTED, 권역 세대 필요=$REGIONAL (최대 ${MAX_WAIT}초)"
 while :; do
-  status="$(curl -sS --max-time 20 -o "$body" -w '%{http_code}' "$BASE_URL/api/v1/manifest" 2>/dev/null || echo 000)"
+  status="$(curl -sS --max-time 20 -o "$body" -w '%{http_code}' "$MANIFEST_URL" 2>/dev/null || echo 000)"
   if [ "$status" = "200" ]; then
     served="$(jq -r '.dataVersion // empty' "$body" 2>/dev/null || true)"
     schema="$(jq -r '.schemaVersion // empty' "$body" 2>/dev/null || true)"
@@ -58,7 +61,7 @@ while :; do
       reason="manifest 응답에 dataVersion이 없거나 형식이 다름: '${served}'"
     fi
   else
-    reason="/api/v1/manifest status=$status"
+    reason="manifest status=$status"
   fi
   waited=$((SECONDS - start))
   if ((waited >= MAX_WAIT)); then

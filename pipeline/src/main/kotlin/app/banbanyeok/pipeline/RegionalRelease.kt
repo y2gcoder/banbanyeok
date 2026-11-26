@@ -6,6 +6,8 @@ import app.banbanyeok.schema.CandidateList
 import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.DataSetBytes
 import app.banbanyeok.schema.DataSetLoader
+import app.banbanyeok.schema.DayType
+import app.banbanyeok.schema.LastTrainCell
 import app.banbanyeok.schema.LastTrainTable
 import app.banbanyeok.schema.LtBinCodec
 import app.banbanyeok.schema.Manifest
@@ -506,6 +508,48 @@ internal fun verifyRegionalProjection(
             LtBinCodec.encode(capitalLastTrains),
         ),
     ) { "Capital last trains changed in the regional set" }
+    val problems =
+        regionalLastTrainProblems(
+            capital.manifest.lastTrainPartialDays,
+            set.manifest.lastTrainPartialDays,
+            set.registry,
+            regional.lastTrains,
+        )
+    require(problems.isEmpty()) {
+        "Regional last trains break the capital's or the regions' rules:\n" +
+            problems.joinToString("\n")
+    }
+}
+
+/**
+ * What the capital projection cannot see in the last-train part: the regional manifest keeps the capital's partial
+ * days (the server reads them for every region, so a capital screen would lose or gain its "일부 노선만" note), and
+ * every cell between two regions stays "확인 필요" (data-format §12).
+ */
+internal fun regionalLastTrainProblems(
+    capitalPartialDays: List<String>?,
+    regionalPartialDays: List<String>?,
+    registry: Registry,
+    table: LastTrainTable,
+): List<String> {
+    val problems = mutableListOf<String>()
+    if (regionalPartialDays != capitalPartialDays) {
+        problems += "lastTrainPartialDays $regionalPartialDays is not the capital's $capitalPartialDays"
+    }
+    val regionOf = registry.stations.associate { StationCode.parse(it.code).value to it.region }
+    val homes = List(table.homeCount) { regionOf[table.homeCode(it).value] }
+    val meetings = List(table.meetingCount) { regionOf[table.meetingCode(it).value] }
+    val crossRegion =
+        homes.indices.flatMap { row -> meetings.indices.filter { homes[row] != meetings[it] }.map { row to it } }
+    for (day in DayType.entries) {
+        problems +=
+            crossRegion
+                .filter { (row, column) -> table.cell(day, row, column) != LastTrainCell.UNKNOWN }
+                .map { (row, column) ->
+                    "$day ${table.homeCode(row)} → ${table.meetingCode(column)}: a cell between regions has a time"
+                }
+    }
+    return problems
 }
 
 /** The SEO pages' top three of every hub pair, ranked on the regional default matrix, are the published ones. */

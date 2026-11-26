@@ -325,6 +325,8 @@ python3 -B pipeline/busan/sources.py network-input > build/busan-network-input.j
   경로는 화면 경로가 없으므로 시간·환승만 본다. 미지원 출발역(그 구분에 배차가 없는 계통만 타는 역)의 줄은 모두 도달 불가다.
 - 수도권 투영: 구분 12개 행렬과 막차 표를 수도권 축으로 자르면 dev 수도권 파일과 바이트 단위로 같다. SEO 허브 쌍의 상위 3개도
   권역 기본 행렬에서 다시 순위를 매겨 발행된 `seo-pairs.json`과 같다.
+- 막차 메타데이터와 권역 사이 칸: `lastTrainPartialDays`가 수도권 값과 같다(서버가 모든 권역에 이 값을 쓰므로 다르면 수도권 화면의
+  '일부 노선만' 안내가 바뀐다). 권역 사이 막차 칸은 세 요일 모두 확인 필요다.
 - 레지스트리 2판에는 지원 권역(수도권·부산권)의 역만 둡니다. 부산은 부산 네트워크의 역(M1 권역 '부산'), 수도권은 파이프라인과
   역 색인이 이미 쓰는 수도권 좌표 창 안의 역입니다. 대구·대전·광주와 양원(143역, 1판에는 그대로)은 빠지며, 그래프·축·
   `replacedBy`에 하나라도 걸리면 멈춥니다.
@@ -338,7 +340,8 @@ python3 -B pipeline/busan/sources.py network-input > build/busan-network-input.j
   권역 파일 → `regional/manifest.v5.json` → 세대별 manifest 순으로 올린다.
 - `deploy-server.yml`이 서버 설정에 `REGIONAL_ARTIFACTS=true`를 넣고, 후보·공개 스모크가 manifest 5세대, 부산 추천,
   권역이 섞인 추천의 400 `REGION_MISMATCH`를 본다. 포인터가 없으면 `false`이고 스모크는 5세대가 아님을 본다.
-- 웹 역 색인에 `regions`가 생기고, 배포 전 대기(`web/scripts/wait-data-version.sh`)가 서버 manifest가 5세대일 때까지 기다린다.
+- 웹 역 색인에 `regions`가 생긴다. 권역 색인 빌드는 Worker를 공개하기 전에 서버 manifest가 5세대인지 확인한다(`deploy-web.yml`의
+  권역 서버 선행 확인, 웹 먼저·웹 단독 배포에서도). 5세대가 아니면 웹은 나가지 않는다. 수도권 색인(되돌리기)은 확인 없이 나간다.
   `RegionalArtifactsCommittedTest`가 색인의 `regions`와 포인터가 함께 있거나 함께 없는지 본다.
 
 수도권 산출물을 다시 만들면 dataVersion이 바뀌므로 `regional-build`도 다시 돌려야 합니다. 그러지 않으면
