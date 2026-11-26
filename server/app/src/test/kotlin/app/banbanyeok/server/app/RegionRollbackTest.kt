@@ -1,5 +1,6 @@
 package app.banbanyeok.server.app
 
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomError
@@ -40,6 +41,12 @@ class RegionRollbackTest :
 
         it("rejects a join next to an origin code the loaded registry does not have") {
             shouldThrow<RoomException> { joinNextTo(unregistered) }.error shouldBe RoomError.REGION_MISMATCH
+        }
+
+        it("places every origin and meeting station of the metropolitan data in the metropolitan region") {
+            val directory = DevArtifacts.directory
+            directory.originCodes.count(directory::isMeetingStation) shouldBe 127
+            directory.originCodes.map(directory::regionOf).toSet() shouldBe setOf(StationRegion.CAPITAL)
         }
 
         it("keeps metropolitan joins next to metropolitan and legacy hidden origins") {
