@@ -7,6 +7,9 @@ import type { ShareState } from "@/lib/link/codec";
 import { dayAfter, MAX_MEETING_DAYS } from "@/lib/when/dates";
 import { type Band, slotForMeeting, splitSlot, type TimeSlot } from "@/lib/when/time-slot";
 
+/** 사다리 방 만들기 요청에서 이 기기의 시도 키(`recoveryKey`, draw-room-attempt.ts)를 뺀 입력. */
+export type DrawRoomInput = Omit<DrawRoomCreateRequest, "recoveryKey">;
+
 export type DrawRoomMeeting = { meetingDate: string | null; meetingBand: Band | null };
 
 /**
@@ -31,7 +34,7 @@ function participantAt(state: ShareState, index: number): ParticipantInput {
 }
 
 /** [hostIndex]는 결과의 입력 순서에서 "나"의 자리. */
-export function toDrawRoomRequest(state: ShareState, hostIndex: number, today: string): DrawRoomCreateRequest {
+export function toDrawRoomRequest(state: ShareState, hostIndex: number, today: string): DrawRoomInput {
   if (hostIndex < 0 || hostIndex >= state.origins.length) throw new RangeError("hostIndex");
   const { meetingDate, meetingBand } = meetingForSlot(state.timeSlot, today, state.slotDefaulted === true);
   return {

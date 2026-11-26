@@ -52,6 +52,9 @@ internal object RoomsTable : Table("rooms") {
 
     /** 방의 권역(`capital`·`busan`). 방을 만들 때 정하고, 아무도 남지 않은 방에 참여할 때만 바뀐다. */
     val region = text("region")
+
+    /** 채운 사다리 방을 만든 기기의 복구 키 해시(#227). 일반 방은 null. 앱은 만들 때 쓰고 복구할 때 찾기만 한다. */
+    val recoveryHash = binary("recovery_hash").nullable()
     override val primaryKey = PrimaryKey(id)
 }
 

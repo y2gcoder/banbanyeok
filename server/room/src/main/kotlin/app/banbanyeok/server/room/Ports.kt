@@ -61,11 +61,28 @@ public data class RoomChange(
  */
 @Suppress("TooManyFunctions")
 public interface RoomRepository {
-    /** 방과 처음 참여자(방장과 대신 넣은 칸, 입장 순서)를 한 트랜잭션에 넣는다. */
+    /**
+     * 방과 처음 참여자(방장과 대신 넣은 칸, 입장 순서)를 한 트랜잭션에 넣는다. [recoveryHash]는 채운 사다리 방을 만든 기기의 복구 키
+     * 해시다. 같은 해시의 앞선 방은 키를 놓는다(키는 가장 최근 방을 가리킨다).
+     */
     public suspend fun create(
         room: Room,
         participants: List<Participant>,
+        recoveryHash: TokenHash? = null,
     )
+
+    /** [createdAfter] 이후에 [recoveryHash]로 만든 방의 ID. */
+    public suspend fun findByRecovery(
+        recoveryHash: TokenHash,
+        createdAfter: Instant,
+    ): String?
+
+    /** 방장 토큰과 방장 참여자 토큰의 해시를 바꾼다(복구). 방이 없으면 false. 공유 번호·활동 시각은 바꾸지 않는다. */
+    public suspend fun replaceCreatorTokens(
+        roomId: String,
+        hostHash: TokenHash,
+        hostParticipantHash: TokenHash,
+    ): Boolean
 
     public suspend fun find(roomId: String): StoredRoom?
 

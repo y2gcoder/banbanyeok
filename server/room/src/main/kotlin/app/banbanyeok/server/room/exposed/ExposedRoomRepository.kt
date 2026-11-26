@@ -30,6 +30,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -50,7 +51,12 @@ public class ExposedRoomRepository(
     override suspend fun create(
         room: Room,
         participants: List<Participant>,
+        recoveryHash: TokenHash?,
     ) = inTransaction {
+        // 같은 키의 앞선 방(만료돼 되찾을 수 없지만 아직 정리 전)은 키를 놓는다. 키는 늘 가장 최근 방을 가리킨다.
+        if (recoveryHash != null) {
+            RoomsTable.update({ RoomsTable.recoveryHash eq recoveryHash.bytes }) { it[RoomsTable.recoveryHash] = null }
+        }
         RoomsTable.insert {
             it[id] = room.id
             it[hostHash] = room.hostHash.bytes
@@ -69,9 +75,37 @@ public class ExposedRoomRepository(
             it[expiresAt] = room.expiresAt
             it[favorDraw] = room.favorDraw != null
             it[region] = requireNotNull(room.region).name.lowercase()
+            it[RoomsTable.recoveryHash] = recoveryHash?.bytes
         }
         participants.forEach { insertParticipant(room.id, it) }
     }
+
+    override suspend fun findByRecovery(
+        recoveryHash: TokenHash,
+        createdAfter: Instant,
+    ): String? =
+        inTransaction {
+            RoomsTable
+                .select(RoomsTable.id)
+                .where {
+                    (RoomsTable.recoveryHash eq recoveryHash.bytes) and (RoomsTable.createdAt greater createdAfter)
+                }.singleOrNull()
+                ?.get(RoomsTable.id)
+        }
+
+    override suspend fun replaceCreatorTokens(
+        roomId: String,
+        hostHash: TokenHash,
+        hostParticipantHash: TokenHash,
+    ): Boolean =
+        inTransaction {
+            val room = lockedRoom(roomId) ?: return@inTransaction false
+            RoomsTable.update({ RoomsTable.id eq roomId }) { it[RoomsTable.hostHash] = hostHash.bytes }
+            ParticipantsTable.update({
+                (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq room[RoomsTable.hostPid])
+            }) { it[tokenHash] = hostParticipantHash.bytes }
+            true
+        }
 
     // 방 행과 참여자를 따로 SELECT한다. READ COMMITTED면 그 사이에 커밋된 참여가 섞여 있었던 적 없는 번호·인원 조합이 보이고,
     // 미리보기는 그 `?sv=`로 카카오에 오래 캐시된다. 스냅숏 하나에서 읽는다.

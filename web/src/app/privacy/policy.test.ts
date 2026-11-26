@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import type { RoomPreview } from "@/lib/api/types";
 import { sharePath } from "@/lib/result/share-url";
+import { DRAW_ROOM_ATTEMPT_KEY } from "@/lib/room/draw-room-attempt";
 import { roomPath } from "@/lib/room/id";
 import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
@@ -574,6 +575,9 @@ describe("개인정보 처리방침", () => {
     const rights = textOf(POLICY, "rights");
     expect(rights).not.toContain("링크로 공유한 정보");
     expect(rights).toContain("혼자 입력한 결과의 공유 링크(/s?로 시작하는 주소)로 보낸 정보");
+    // 사다리 방 만들기 시도를 기기에 두는 키(#227)는 11항에 그 이름 그대로 있고, 복구 키는 해시만 서버에 둔다고 2항에 적는다.
+    expect(textOf(POLICY, "cookies")).toContain(`${DRAW_ROOM_ATTEMPT_KEY} (로컬 저장소`);
+    expect(textOf(POLICY, "items")).toContain("사다리 방 복구 키는 원문을 서버에 저장하지 않고");
     // 처리방침이 부르는 주소 모양이 실제 링크와 같아야 한다(공유 링크는 /s?…, 방 링크는 /r/…).
     const shared = sharePath({
       origins: ["k3a", "ryf"],

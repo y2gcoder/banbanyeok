@@ -57,6 +57,8 @@ data class DrawRoomCreateRequestDto(
     val others: List<ParticipantInputDto>,
     /** 원래 입력 순서에서 방장의 자리. */
     val hostPosition: Int,
+    /** 만든 기기가 요청 전에 저장해 둔 비밀 값. 같은 값으로 다시 보내면 같은 방의 방장 토큰을 새로 받는다. */
+    val recoveryKey: String,
     val meetingDate: String? = null,
     /** 문자열이 아니거나 모르는 값이면 INVALID_MEETING_BAND. null은 없음. */
     val meetingBand: JsonElement? = null,

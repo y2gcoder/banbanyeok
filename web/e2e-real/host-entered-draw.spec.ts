@@ -341,3 +341,45 @@ test("채운 방 경로를 모르는 옛 서버는 아무것도 저장하지 않
     [],
   );
 });
+
+/** 같은 DB를 쓰는 두 번째 서버 인스턴스(재생 캐시가 비어 있음). 있으면 다시 누른 요청을 그리로 보낸다. */
+const SECOND_SERVER_ORIGIN = process.env.SECOND_SERVER_ORIGIN;
+
+test("서버가 만든 뒤 응답을 잃고 탭을 닫아도, 다시 열어 같은 입력으로 누르면 그 방의 방장이 된다(방은 하나)", async ({
+  page,
+  context,
+}) => {
+  const me = uniqueName();
+  let lostRoomId = "";
+  await page.route(`**${DRAW_ROOMS}`, async (route) => {
+    const response = await route.fetch();
+    lostRoomId = ((await response.json()) as { roomId: string }).roomId;
+    await route.abort("connectionreset");
+  });
+  await page.goto(resultWith(me));
+  await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
+  const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
+  await dialog.getByRole("button", { name: "방 만들고 사다리 타러 가기" }).click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  expect(lostRoomId).toMatch(/^[0-9a-hjkmnp-tv-z]{10}$/);
+  expect(roomsWith(me)).toBe(1);
+  expect(await page.evaluate((id) => window.localStorage.getItem(`bby.room.${id}`), lostRoomId)).toBeNull();
+  await page.close();
+
+  const reopened = await context.newPage();
+  if (SECOND_SERVER_ORIGIN) {
+    await reopened.route(`**${DRAW_ROOMS}`, async (route) => {
+      await route.fulfill({ response: await route.fetch({ url: `${SECOND_SERVER_ORIGIN}/v1/draw-rooms` }) });
+    });
+  }
+  await reopened.goto(resultWith(me));
+  await expect(reopened.getByRole("article").first()).toBeVisible({ timeout: 15000 });
+  await reopened.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
+  await reopened.getByRole("button", { name: "방 만들고 사다리 타러 가기" }).click();
+  await expect(reopened).toHaveURL(new RegExp(`/r/${lostRoomId}$`));
+  await expect(reopened.getByRole("heading", { name: "내가 만든 방" })).toBeVisible({ timeout: 8000 });
+  await expect(reopened.getByRole("button", { name: "사다리 타기" }).first()).toBeVisible();
+  expect(roomsWith(me)).toBe(1);
+  expect(await reopened.evaluate(() => window.localStorage.getItem("bby.draw-room.attempt"))).toBeNull();
+});

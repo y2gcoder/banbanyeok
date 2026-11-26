@@ -155,4 +155,92 @@ class RoomEnteredByHostTest :
                 }
             }
         }
+
+        describe("recovering a filled draw room with the creator's recovery key (#227)") {
+            val key = "k".repeat(40)
+
+            it("returns the same room with fresh creator tokens; the old ones stop working and nothing else changes") {
+                runTest {
+                    val fixture = RoomFixture()
+                    val first =
+                        fixture.service.createDrawRoom(
+                            drawCommand(listOf(minsu, nameless), hostPosition = 1),
+                            key,
+                        )
+                    val before = fixture.rooms.find(first.roomId)!!
+                    val again =
+                        fixture.service.createDrawRoom(
+                            drawCommand(listOf(minsu, nameless), hostPosition = 1),
+                            key,
+                        )
+
+                    again.roomId shouldBe first.roomId
+                    again.participantId shouldBe first.participantId
+                    again.recovered shouldBe true
+                    first.recovered shouldBe false
+                    (again.hostToken == first.hostToken) shouldBe false
+                    (again.participantToken == first.participantToken) shouldBe false
+                    val after = fixture.rooms.find(first.roomId)!!
+                    after.participants.map { it.id to it.enteredByHost } shouldBe
+                        before.participants.map { it.id to it.enteredByHost }
+                    after.room.copy(hostHash = before.room.hostHash) shouldBe before.room
+                    fixture.service
+                        .get(first.roomId, first.participantToken)
+                        .participants
+                        .none { it.isSelf } shouldBe true
+                    fixture.service
+                        .get(first.roomId, again.participantToken)
+                        .participants
+                        .single { it.isSelf }
+                        .id shouldBe again.participantId
+                    shouldThrow<RoomException> { fixture.service.delete(first.roomId, first.hostToken) }
+                    fixture.service.delete(first.roomId, again.hostToken)
+                    fixture.rooms.find(first.roomId) shouldBe null
+                }
+            }
+
+            it("makes a new room for another key, after the recovery window, or once the room is gone") {
+                runTest {
+                    val fixture = RoomFixture()
+                    val first = fixture.service.createDrawRoom(drawCommand(listOf(minsu)), key)
+                    val other = fixture.service.createDrawRoom(drawCommand(listOf(minsu)), "o".repeat(40))
+                    (other.roomId == first.roomId) shouldBe false
+
+                    fixture.clock.advance(java.time.Duration.ofHours(25))
+                    val late = fixture.service.createDrawRoom(drawCommand(listOf(minsu)), key)
+                    (late.roomId == first.roomId) shouldBe false
+                    late.recovered shouldBe false
+                    fixture.service.createDrawRoom(drawCommand(listOf(minsu)), key).roomId shouldBe late.roomId
+
+                    fixture.service.delete(
+                        late.roomId,
+                        fixture.service.createDrawRoom(drawCommand(listOf(minsu)), key).hostToken,
+                    )
+                    val afterDelete = fixture.service.createDrawRoom(drawCommand(listOf(minsu)), key)
+                    (afterDelete.roomId == late.roomId) shouldBe false
+                    afterDelete.recovered shouldBe false
+                }
+            }
+
+            it("does not recover an expired room still waiting for cleanup: the key moves to the new room") {
+                runTest {
+                    val fixture = RoomFixture()
+                    val tonight = LocalDate.parse("2026-11-14")
+                    val first = fixture.service.createDrawRoom(drawCommand(listOf(minsu), meetingDate = tonight), key)
+                    fixture.clock.advance(java.time.Duration.ofHours(23))
+                    val next = fixture.service.createDrawRoom(drawCommand(listOf(minsu)), key)
+                    (next.roomId == first.roomId) shouldBe false
+                    fixture.service.createDrawRoom(drawCommand(listOf(minsu)), key).roomId shouldBe next.roomId
+                }
+            }
+
+            it("keeps plain room creation free of recovery: the same input twice makes two rooms") {
+                runTest {
+                    val fixture = RoomFixture()
+                    val a = fixture.service.create(drawCommand(listOf(minsu)))
+                    val b = fixture.service.create(drawCommand(listOf(minsu)))
+                    (a.roomId == b.roomId) shouldBe false
+                }
+            }
+        }
     })

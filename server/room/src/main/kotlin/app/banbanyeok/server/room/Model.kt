@@ -210,6 +210,8 @@ public data class CreatedRoom(
     val expiresAt: Instant,
     /** 통계용 방 해시([TokenService.roomHash]). 방 ID를 되돌릴 수 없다. */
     val roomHash: String,
+    /** 새로 만들지 않고 복구 키로 이미 만든 방의 토큰을 새로 발급했다(#227). 방 만들기 건수에 세지 않는다. */
+    val recovered: Boolean = false,
 )
 
 public data class JoinedRoom(

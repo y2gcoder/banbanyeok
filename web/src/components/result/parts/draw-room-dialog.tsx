@@ -3,16 +3,16 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
-import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
 import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { roomHashProperty, track } from "@/lib/analytics";
 import { createDrawRoom, deleteRoom } from "@/lib/api/rooms";
-import type { DrawRoomCreateRequest, RoomCreated } from "@/lib/api/types";
+import type { RoomCreated } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import type { ShareState } from "@/lib/link/codec";
-import { meetingForSlot, toDrawRoomRequest } from "@/lib/room/draw-room";
+import { type DrawRoomInput, meetingForSlot, toDrawRoomRequest } from "@/lib/room/draw-room";
+import { beginDrawRoomAttempt, type DrawRoomAttempt, endDrawRoomAttempt } from "@/lib/room/draw-room-attempt";
 import { isDrawRoomUnsupported, isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomPath } from "@/lib/room/id";
 import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
@@ -46,7 +46,6 @@ export function DrawRoomDialog({
 }) {
   const router = useRouter();
   const id = useId();
-  const keys = useIdempotencyKey();
   const [hostIndex, setHostIndex] = useState(0);
   const [today, setToday] = useState("");
   const [storable, setStorable] = useState(true);
@@ -59,6 +58,7 @@ export function DrawRoomDialog({
   const [unsaved, setUnsaved] = useState<RoomCreated | null>(null);
   const [saveRetried, setSaveRetried] = useState(false);
   const [removed, setRemoved] = useState(false);
+  const [attemptBlocked, setAttemptBlocked] = useState(false);
 
   const persist = (created: RoomCreated) =>
     saveRoomRecord(created.roomId, {
@@ -69,7 +69,7 @@ export function DrawRoomDialog({
     });
   const enter = (created: RoomCreated) => {
     setUnsaved(null);
-    keys.renew();
+    endDrawRoomAttempt();
     track("room_created", {
       hidden_used: false,
       ...roomHashProperty({ roomId: created.roomId, roomHash: created.roomHash }),
@@ -78,18 +78,23 @@ export function DrawRoomDialog({
   };
 
   // 응답을 받은 바로 그 자리에서 저장한다. 그 뒤의 화면 처리(onSuccess)가 돌기 전에 탭이 닫혀도 방장 권한은 이 기기에 남는다.
+  // 시도 키는 요청 전에 이 기기에 저장돼 있다(confirm). 응답을 잃은 뒤 다시 누르면(다른 탭·다시 연 화면 포함) 같은 키로 같은 방을 받는다.
   const create = useMutation({
-    mutationFn: async (body: DrawRoomCreateRequest) => {
-      const created = await createDrawRoom(body, keys.keyFor(body));
+    mutationFn: async ({ input, attempt }: { input: DrawRoomInput; attempt: DrawRoomAttempt }) => {
+      const created = await createDrawRoom({ ...input, recoveryKey: attempt.recoveryKey }, attempt.idempotencyKey);
       return { created, saved: persist(created) };
     },
     onMutate: () => setRemoved(false),
+    // 옛 서버의 거절은 아무것도 만들지 않았다는 뜻이라 시도를 끝낸다. 그 밖의 실패(연결 끊김 등)는 방이 생겼을 수 있어 키를 남긴다.
+    onError: (error) => {
+      if (isDrawRoomUnsupported(error)) endDrawRoomAttempt();
+    },
     onSuccess: ({ created, saved }) => {
       if (saved) enter(created);
       else setUnsaved(created);
     },
   });
-  // 지운 방을 같은 Idempotency-Key로 다시 받지 않게, 지운 뒤에는 새 키로 만든다.
+  // 지운 방을 같은 키로 다시 받지 않게, 지운 뒤에는 시도를 끝내 새 키로 만든다. 지웠다는 답을 받기 전에는 시도와 토큰을 그대로 둔다.
   const remove = useMutation({
     mutationFn: async (created: RoomCreated) => {
       try {
@@ -102,7 +107,7 @@ export function DrawRoomDialog({
       setUnsaved(null);
       setSaveRetried(false);
       setRemoved(true);
-      keys.renew();
+      endDrawRoomAttempt();
       create.reset();
     },
   });
@@ -116,9 +121,12 @@ export function DrawRoomDialog({
   const host = people.find((person) => person.index === hostIndex)?.name ?? "";
   const submitted = create.isPending || create.isSuccess;
 
-  const confirm = () => {
+  const confirm = async () => {
     if (!today) return;
-    create.mutate(toDrawRoomRequest(state, hostIndex, today));
+    const input = toDrawRoomRequest(state, hostIndex, today);
+    const attempt = await beginDrawRoomAttempt(input);
+    setAttemptBlocked(attempt === null);
+    if (attempt) create.mutate({ input, attempt });
   };
 
   return (
@@ -179,7 +187,7 @@ export function DrawRoomDialog({
           </ul>
         </section>
 
-        {storable ? null : (
+        {storable && !attemptBlocked ? null : (
           <p role="status" className="text-[13px] text-destructive">
             이 브라우저는 저장 공간을 막아 두어서, 방을 만들어도 이 기기에서 사다리를 탈 수 없어요.
           </p>

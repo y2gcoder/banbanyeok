@@ -54,13 +54,17 @@ function quotaOnRoomRecords() {
   return () => spy.mockRestore();
 }
 
-function renderDialog(onOpenChange = vi.fn()) {
+function renderDialogUnmountable(onOpenChange = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  render(
+  return render(
     <QueryClientProvider client={client}>
       <DrawRoomDialog open onOpenChange={onOpenChange} state={STATE} people={PEOPLE} />
     </QueryClientProvider>,
   );
+}
+
+function renderDialog(onOpenChange = vi.fn()) {
+  renderDialogUnmountable(onOpenChange);
   return onOpenChange;
 }
 
@@ -111,6 +115,7 @@ describe("사다리 방 확인 대화상자", () => {
       hostPosition: 2,
       meetingDate: "2026-11-28",
       meetingBand: "evening",
+      recoveryKey: expect.stringMatching(/^[A-Za-z0-9_-]{32,128}$/),
     });
     expect(push).toHaveBeenCalledWith("/r/abcd1234");
     expect(loadRoomRecord("abcd1234")?.hostToken).toBe("host-token");
@@ -228,7 +233,7 @@ describe("사다리 방 확인 대화상자", () => {
       );
       expect(deleteRoom).not.toHaveBeenCalled();
       expect(push).not.toHaveBeenCalled();
-      expect(window.localStorage.length).toBe(0);
+      expect(Object.keys(window.localStorage)).toEqual([]);
       await user.click(screen.getByRole("button", { name: "취소" }));
       expect(onOpenChange).toHaveBeenCalledWith(false);
     },
@@ -244,5 +249,69 @@ describe("사다리 방 확인 대화상자", () => {
     resolve(CREATED);
     await vi.waitFor(() => expect(loadRoomRecord("abcd1234")?.hostToken).toBe("host-token"));
     expect(push).toHaveBeenCalledWith("/r/abcd1234");
+  });
+
+  describe("서버가 방을 만든 뒤 응답을 잃어도 같은 기기에서 다시 누르면 같은 방을 되찾는다", () => {
+    const ATTEMPT = "bby.draw-room.attempt";
+    const stored = () => JSON.parse(window.localStorage.getItem(ATTEMPT) ?? "null");
+
+    it("요청을 보내기 전에 시도 키를 저장하고, 방장 기록을 저장하면 지운다", async () => {
+      createRoom.mockImplementation(async (body: { recoveryKey: string }, key: string) => {
+        expect(stored()).toMatchObject({ idempotencyKey: key, recoveryKey: body.recoveryKey });
+        expect(stored().input).toMatch(/^[0-9a-f]{64}$/);
+        return CREATED;
+      });
+      const user = userEvent.setup();
+      renderDialog();
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+      expect(push).toHaveBeenCalledWith("/r/abcd1234");
+      expect(window.localStorage.getItem(ATTEMPT)).toBeNull();
+      expect(JSON.stringify(window.localStorage)).not.toContain("민수");
+    });
+
+    it("응답을 잃은 뒤 화면을 새로 열어 같은 입력으로 누르면 같은 두 키를 보낸다(다른 입력은 새 키)", async () => {
+      createRoom.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+      const user = userEvent.setup();
+      const first = renderDialogUnmountable();
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
+      first.unmount();
+
+      createRoom.mockResolvedValueOnce(CREATED);
+      renderDialog();
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+      const [lost, again] = createRoom.mock.calls;
+      expect(again?.[1]).toBe(lost?.[1]);
+      expect(again?.[0].recoveryKey).toBe(lost?.[0].recoveryKey);
+      expect(loadRoomRecord("abcd1234")?.hostToken).toBe("host-token");
+      expect(window.localStorage.getItem(ATTEMPT)).toBeNull();
+    });
+
+    it("다른 사람을 '나'로 고르면(다른 입력) 새 키로 보낸다", async () => {
+      createRoom.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+      createRoom.mockResolvedValueOnce(CREATED);
+      const user = userEvent.setup();
+      renderDialog();
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
+      await user.click(screen.getByRole("radio", { name: "하늘" }));
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+      const [first, second] = createRoom.mock.calls;
+      expect(second?.[0].recoveryKey).not.toBe(first?.[0].recoveryKey);
+      expect(second?.[1]).not.toBe(first?.[1]);
+    });
+
+    it("시도 키를 저장하지 못하는 브라우저에서는 방을 만들지 않는다", async () => {
+      const original = Storage.prototype.setItem;
+      vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+        if (key === ATTEMPT) throw new DOMException("quota", "QuotaExceededError");
+        original.call(this, key, value);
+      });
+      const user = userEvent.setup();
+      renderDialog();
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+      expect(await screen.findByText(/저장 공간을 막아 두어서/)).toBeInTheDocument();
+      expect(createRoom).not.toHaveBeenCalled();
+    });
   });
 });

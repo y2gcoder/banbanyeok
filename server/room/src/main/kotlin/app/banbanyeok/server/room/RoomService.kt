@@ -5,6 +5,7 @@ import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeBand
 import java.security.SecureRandom
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -33,7 +34,43 @@ public class RoomService(
     private val origins = OriginRule(stations)
     private val draws = FavorDrawRule(drawRandom, clock)
 
-    public suspend fun create(command: CreateRoomCommand): CreatedRoom {
+    public suspend fun create(command: CreateRoomCommand): CreatedRoom = create(command, recoveryHash = null)
+
+    /**
+     * 방장이 모두의 칸을 채운 사다리 방(#227, ADR-0011). [recoveryKey]는 만든 기기가 요청 전에 저장해 둔 비밀 값이다. 같은 키로 이미
+     * 만든 방이 있으면(만든 뒤 [RECOVERY_WINDOW] 안) 새 방을 만들지 않고 그 방의 방장 토큰과 방장 참여자 토큰을 새로 발급한다. 서버가 방을
+     * 만든 뒤 응답을 받지 못한 기기가 다른 탭이나 다른 인스턴스로 다시 보내도 같은 방을 되찾게 하려는 것이다. 키의 원문은 저장하지 않는다.
+     */
+    public suspend fun createDrawRoom(
+        command: CreateRoomCommand,
+        recoveryKey: String,
+    ): CreatedRoom {
+        val recoveryHash = tokens.hash(recoveryKey)
+        return recover(recoveryHash) ?: create(command, recoveryHash)
+    }
+
+    private suspend fun recover(recoveryHash: TokenHash): CreatedRoom? {
+        val now = clock.instant()
+        val roomId = rooms.findByRecovery(recoveryHash, now.minus(RECOVERY_WINDOW)) ?: return null
+        val stored = findActive(roomId, now) ?: return null
+        val hostToken = tokens.issue()
+        val participantToken = tokens.issue()
+        if (!rooms.replaceCreatorTokens(roomId, hostToken.hash, participantToken.hash)) return null
+        return CreatedRoom(
+            roomId,
+            hostToken.plain,
+            stored.room.hostParticipantId,
+            participantToken.plain,
+            stored.room.expiresAt,
+            tokens.roomHash(roomId),
+            recovered = true,
+        )
+    }
+
+    private suspend fun create(
+        command: CreateRoomCommand,
+        recoveryHash: TokenHash?,
+    ): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
         checkNewParticipant(command)
@@ -78,7 +115,7 @@ public class RoomService(
             others.map {
                 newParticipant(ids.participantId(), tokens.issue().hash, null, it, now).copy(enteredByHost = true)
             }
-        rooms.create(room, inputOrder(entered, hostEntry, command.hostPosition))
+        rooms.create(room, inputOrder(entered, hostEntry, command.hostPosition), recoveryHash)
         return CreatedRoom(
             roomId,
             hostToken.plain,
@@ -636,5 +673,8 @@ public class RoomService(
     private companion object {
         const val MIN_PEOPLE = 2
         const val MAX_PEOPLE = 4
+
+        /** 복구 키로 방을 되찾을 수 있는 기간(만든 뒤). 응답을 잃은 기기가 다시 시도할 만큼만 둔다. */
+        val RECOVERY_WINDOW: Duration = Duration.ofHours(24)
     }
 }

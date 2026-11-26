@@ -44,6 +44,7 @@ fun activity(
 fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
     describeSpec {
         createAndFind(newRepositories)
+        recoveringCreators(newRepositories)
         addingParticipants(newRepositories)
         storedRegions(newRepositories)
         regionalParticipants(newRepositories)
@@ -112,6 +113,40 @@ private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {
             val stored = rooms.find(room.id).shouldNotBeNull()
             stored.participants shouldBe rows
             stored.room.locked shouldBe true
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.recoveringCreators(repos: () -> RepositoryPair) {
+    describe("creator recovery (#227)") {
+        it(
+            "finds a room by its creator's recovery key within the window, and the newest room takes the key over (#227)",
+        ) {
+            val rooms = repos().rooms
+            val key = hashOf("recovery-${freshId()}")
+            val first = aRoom(freshId())
+            rooms.create(first, listOf(aParticipant("host01")), key)
+            rooms.findByRecovery(key, T0.minusSeconds(1)) shouldBe first.id
+            rooms.findByRecovery(key, T0) shouldBe null
+            rooms.findByRecovery(hashOf("other-${freshId()}"), T0.minusSeconds(1)) shouldBe null
+
+            val next = aRoom(freshId())
+            rooms.create(next, listOf(aParticipant("host01")), key)
+            rooms.findByRecovery(key, T0.minusSeconds(1)) shouldBe next.id
+            rooms.find(first.id).shouldNotBeNull()
+        }
+
+        it("replaces only the creator's two token hashes, leaving every other row and the share number as they were") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            rooms.create(room, listOf(aParticipant("host01"), aParticipant("pid002")), hashOf("recovery-${room.id}"))
+            val before = rooms.find(room.id).shouldNotBeNull()
+            rooms.replaceCreatorTokens(room.id, hashOf("new-host"), hashOf("new-member")) shouldBe true
+            val after = rooms.find(room.id).shouldNotBeNull()
+            after.room shouldBe before.room.copy(hostHash = hashOf("new-host"))
+            after.participants shouldBe
+                listOf(before.participants[0].copy(tokenHash = hashOf("new-member")), before.participants[1])
+            rooms.replaceCreatorTokens(freshId(), hashOf("x"), hashOf("y")) shouldBe false
         }
     }
 }
