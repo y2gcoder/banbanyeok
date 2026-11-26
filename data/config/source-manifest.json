@@ -371,7 +371,7 @@
       "B1": "30397f2aa38835dfc37c2093a02a6e02547eb8a9b635b187f0db4c9e19ec69b7"
     },
     "checks_file": "data/config/busan-last-train-checks.csv",
-    "checks_sha256": "553dc052fc3d9795a597dad2d9f60d0bb8e2cb178938bfa2578df2431dbbde37",
+    "checks_sha256": "d088b1fd619a0095fbe893942e2c57f46616d34c461905e995f0d2143909e7e4",
     "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "effective_date": "2026-08-24",
     "estimated": false,
@@ -391,7 +391,7 @@
       "S6-busan": "965fcf8660d22dd7fd2aa349a1c2fea43867578b68d935186af019027c5a67e3"
     },
     "checks_file": "data/config/busan-last-train-checks.csv",
-    "checks_sha256": "553dc052fc3d9795a597dad2d9f60d0bb8e2cb178938bfa2578df2431dbbde37",
+    "checks_sha256": "d088b1fd619a0095fbe893942e2c57f46616d34c461905e995f0d2143909e7e4",
     "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "effective_date": "2026-09-01",
     "estimated": false,

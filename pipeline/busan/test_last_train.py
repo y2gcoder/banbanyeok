@@ -1,6 +1,6 @@
 import unittest
 
-from last_train import day_fraction, h1_trains, k2_trains, latest, tago_directs, verdict
+from last_train import day_fraction, h1_directs, h1_trains, k2_trains, latest, tago_directs, verdict
 from timetable import DAY_SECONDS
 
 H23 = 23 * 3600
@@ -27,6 +27,10 @@ class BusanLastTrainTest(unittest.TestCase):
         trains = h1_trains({"1호선 평(1회)": sheet, "1호선 역정보": [["x"]]}, codes, ["S2601 양산중앙"])
         self.assertEqual(trains["S2601", "평"], [[("n03", H23), ("n02", H23 + 120), ("n01", H23 + 240)],
                                                 [("n01", H23), ("n02", H23 + 100)]])
+        beyond = [["열차번호", "남산", "노포", "양산중앙"], ["1003", fraction(H23), fraction(H23 + 60), fraction(H23 + 90)]]
+        ends = h1_directs(h1_trains({"1호선 평(1회)": beyond}, codes, ["S2601 양산중앙"])["S2601", "평"])
+        self.assertEqual(ends["n03", "n01"], (H23, "?양산중앙", True), "a train past the last mapped stop keeps its end")
+        self.assertEqual(verdict((H23, "n01", False), (H23, "?양산중앙", False), True), "differs")
         with self.assertRaisesRegex(ValueError, "absent from M1"):
             h1_trains({"1호선 평(1회)": [["열차번호", "서면"], ["1001", fraction(H23)]]}, codes, [])
 

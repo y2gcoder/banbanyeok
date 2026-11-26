@@ -97,7 +97,11 @@ def xlsx_sheets(raw):
 
 
 def h1_trains(sheets, lines, unknown_allowed):
-    """H1 trains by (line, H1 day): each a list of (code, seconds) in time order. One time per station (arrival)."""
+    """H1 trains by (line, H1 day): each a list of (code, seconds) in time order. One time per station (arrival).
+
+    A station of [unknown_allowed] is kept as the code "?<name>": it matches no cell, but a train that ends there
+    has another terminus than the source train that ends before it.
+    """
     result = defaultdict(list)
     unknown = Counter()
     for name, rows in sheets.items():
@@ -126,8 +130,8 @@ def h1_trains(sheets, lines, unknown_allowed):
                     station = station_name(line, station)
                     if station not in codes:
                         unknown[line, station] += 1
-                        continue
-                    stops.append((codes[station], seconds))
+                    # An allowed unknown station stays a stop so that a train ending there keeps another terminus.
+                    stops.append((codes.get(station, f"?{station}"), seconds))
                 if len(stops) >= 2:
                     result[line, day].append(sorted(stops, key=lambda stop: stop[1]))
     extra = {f"{line} {station}" for line, station in unknown} - set(unknown_allowed)
