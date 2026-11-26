@@ -26,6 +26,24 @@ public interface TravelTimeProvider {
     public fun regionOf(code: String): StationRegion? = StationRegion.CAPITAL.takeIf { isOrigin(code) }
 
     /**
+     * [code]에서 [slot]으로 계산할 수 있는가(현재 데이터의 권역별 구분 범위와, 대신 계산하지 않는 구분이면 그 행렬). 아니면 [measure]가
+     * `SCHEDULE_UNAVAILABLE`이다. 방 쓰기도 이 판정으로 저장 여부를 정한다.
+     */
+    public fun departs(
+        code: String,
+        slot: TimeSlot,
+    ): Boolean = true
+
+    /**
+     * [departs]가 [code]의 권역에서 [slot]의 행렬을 읽었는지에 따라 달라지는가. 아니면 행렬을 기다려도 판정이 바뀌지 않는다
+     * (대신 기본 구분으로 계산하는 권역). 방 쓰기는 이 판정이 참일 때만 행렬을 기다린다.
+     */
+    public fun needsSlotMatrix(
+        code: String,
+        slot: TimeSlot,
+    ): Boolean = false
+
+    /**
      * 모든 [origins]가 [isOrigin]이어야 한다. [slot]의 행렬이 없으면(manifest 1세대 데이터) 기본 구분으로 계산하고
      * [TravelMatrix.slot]에 그 사실을 남긴다. 모든 구분은 같은 출발역·후보 축이다.
      */

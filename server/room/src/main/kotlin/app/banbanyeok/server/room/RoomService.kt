@@ -29,14 +29,17 @@ public class RoomService(
 ) {
     private val decisions = DecisionRule(stations)
     private val regions = RoomRegionRule(stations)
+    private val origins = OriginRule(stations)
     private val draws = FavorDrawRule(drawRandom, clock)
 
     public suspend fun create(command: CreateRoomCommand): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
         checkNewParticipant(host)
-        regions.requireMatch(emptyList(), host.originCode, hidden = host.hidden)
         validateCreation(command, now)
+        val meeting = Meeting(command.meetingDate, command.meetingTime, command.meetingBand)
+        stations.awaitSchedule(host.originCode, meeting)
+        origins.requireAllowed(meeting, emptyList(), host.originCode, hidden = host.hidden)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
         val hostToken = tokens.issue()
@@ -85,10 +88,11 @@ public class RoomService(
         val room = loadActive(roomId, now).room
         val participant = validated(input)
         checkNewParticipant(participant)
+        stations.awaitSchedule(participant.originCode, room.meeting)
         val participantId = ids.participantId()
         val token = tokens.issue()
         val participantEntity = newParticipant(participantId, token.hash, anonIdOf(deviceToken, now), participant, now)
-        when (rooms.addParticipant(room.id, participantEntity, activityOf(room, room.meetingDate, now), regions)) {
+        when (rooms.addParticipant(room.id, participantEntity, activityOf(room, room.meetingDate, now), origins)) {
             AddResult.Added -> Unit
             AddResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
             AddResult.Full -> reject(RoomError.ROOM_FULL, "방이 가득 찼습니다")
@@ -172,6 +176,7 @@ public class RoomService(
         // 이미 숨긴 사람만 숨김을 유지할 수 있다. 풀고 나면 다시 숨기지 못한다. 저장할 때도 다시 본다(다른 탭이 그사이 풀었을 수 있다).
         val keepsHidden = value.hidden && newHidden == NewHiddenOrigins.REJECTED
         if (keepsHidden && !stored.participants.first { it.id == participantId }.hidden) rejectNewHidden()
+        stations.awaitSchedule(value.originCode, stored.room.meeting)
         // 저장된 코드가 폐기된 코드여도 정식 코드가 같으면 그대로 쓴다. 출발역이 바뀐 것으로 보면 트리거가 정한 역을 풀기 때문이다.
         val storedOrigin = stored.participants.first { it.id == participantId }.originCode
         val origin = if (stations.canonical(storedOrigin) == value.originCode) storedOrigin else value.originCode
@@ -186,7 +191,7 @@ public class RoomService(
                 onlyIfHidden = keepsHidden,
             )
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
-        if (!rooms.updateParticipant(roomId, participantId, change, activity, regions)) {
+        if (!rooms.updateParticipant(roomId, participantId, change, activity, origins)) {
             val stillThere = rooms.find(roomId)?.participants?.any { it.id == participantId } == true
             if (keepsHidden && stillThere) rejectNewHidden()
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")

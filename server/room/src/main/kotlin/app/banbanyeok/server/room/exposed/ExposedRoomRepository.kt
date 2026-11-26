@@ -12,6 +12,8 @@ import app.banbanyeok.server.room.DrawRequest
 import app.banbanyeok.server.room.DrawResult
 import app.banbanyeok.server.room.FavorDraw
 import app.banbanyeok.server.room.FavorDrawRule
+import app.banbanyeok.server.room.Meeting
+import app.banbanyeok.server.room.OriginRule
 import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
 import app.banbanyeok.server.room.Participant
@@ -19,7 +21,6 @@ import app.banbanyeok.server.room.ParticipantChange
 import app.banbanyeok.server.room.Room
 import app.banbanyeok.server.room.RoomChange
 import app.banbanyeok.server.room.RoomMode
-import app.banbanyeok.server.room.RoomRegionRule
 import app.banbanyeok.server.room.RoomRepository
 import app.banbanyeok.server.room.ShareVersion
 import app.banbanyeok.server.room.StoredRoom
@@ -89,17 +90,11 @@ public class ExposedRoomRepository(
         roomId: String,
         participant: Participant,
         activity: Activity,
-        regions: RoomRegionRule?,
+        origins: OriginRule?,
     ): AddResult =
         inTransaction {
             // 방 행을 잠가 같은 방의 동시 참여를 줄 세운다. 정원 판정이 경쟁 없이 맞다.
-            val room =
-                RoomsTable
-                    .selectAll()
-                    .where { RoomsTable.id eq roomId }
-                    .forUpdate()
-                    .singleOrNull()
-                    ?: return@inTransaction AddResult.RoomNotFound
+            val room = lockedRoom(roomId) ?: return@inTransaction AddResult.RoomNotFound
             val participants = participantsOf(roomId)
             val capacity = minOf(MAX_PARTICIPANTS, room[RoomsTable.expectedCount]?.toInt() ?: MAX_PARTICIPANTS)
             when {
@@ -112,7 +107,12 @@ public class ExposedRoomRepository(
                 }
 
                 else -> {
-                    regions?.requireMatch(participants, participant.originCode, hidden = participant.hidden)
+                    origins?.requireAllowed(
+                        room.meetingOf(),
+                        participants,
+                        participant.originCode,
+                        hidden = participant.hidden,
+                    )
                     insertParticipant(roomId, participant)
                     touch(roomId, activity)
                     AddResult.Added
@@ -125,15 +125,15 @@ public class ExposedRoomRepository(
         participantId: String,
         change: ParticipantChange,
         activity: Activity,
-        regions: RoomRegionRule?,
+        origins: OriginRule?,
     ): Boolean =
         inTransaction {
-            if (!lockRoom(roomId)) return@inTransaction false
-            if (regions != null) {
+            val room = lockedRoom(roomId) ?: return@inTransaction false
+            if (origins != null) {
                 val participants = participantsOf(roomId)
                 val current = participants.firstOrNull { it.id == participantId } ?: return@inTransaction false
                 if (change.onlyIfHidden && !current.hidden) return@inTransaction false
-                regions.requireMatch(participants, change.originCode, participantId, change.hidden)
+                origins.requireAllowed(room.meetingOf(), participants, change.originCode, participantId, change.hidden)
             }
             val updated =
                 ParticipantsTable.update({
@@ -357,6 +357,13 @@ public class ExposedRoomRepository(
             .any()
     }
 
+    private fun lockedRoom(roomId: String): ResultRow? =
+        RoomsTable
+            .selectAll()
+            .where { RoomsTable.id eq roomId }
+            .forUpdate()
+            .singleOrNull()
+
     private fun lockRoom(roomId: String): Boolean =
         RoomsTable
             .select(RoomsTable.id)
@@ -382,6 +389,13 @@ public class ExposedRoomRepository(
                 ParticipantsTable.joinedAt to org.jetbrains.exposed.v1.core.SortOrder.ASC,
                 ParticipantsTable.pid to org.jetbrains.exposed.v1.core.SortOrder.ASC,
             ).map { it.toParticipant() }
+
+    private fun ResultRow.meetingOf() =
+        Meeting(
+            this[RoomsTable.meetingDate],
+            this[RoomsTable.meetingTime],
+            this[RoomsTable.meetingBand]?.let(TimeBand::parseOrNull),
+        )
 
     private fun ResultRow.toRoom() =
         Room(

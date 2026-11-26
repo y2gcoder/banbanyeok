@@ -144,7 +144,7 @@ class TimeSlotHttpTest :
                 val loaded = runBlocking { ArtifactLoader(DevArtifacts.store).load() }
                 val failed = CompletableDeferred<Map<TimeSlot, OdMatrix>>()
                 failed.completeExceptionally(IllegalStateException("구분 행렬 검증 실패(테스트)"))
-                val directory = StationDirectory(loaded.dataSet, BackgroundSlots(failed))
+                val directory = StationDirectory(loaded.dataSet, BackgroundSlots(failed), testTimes)
                 val mocks = MockedServices()
                 val api =
                     apiServices(

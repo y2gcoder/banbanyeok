@@ -99,7 +99,9 @@ object CompositionRoot {
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
             val slots = BackgroundSlots(loaded.slots)
-            val directory = StationDirectory(loaded.dataSet, slots)
+            // 약속 날짜·시각 → 구분 규칙은 한 번만 만들어 방 참가자 검사, 방 결과 계산, 방 응답이 함께 쓴다.
+            val times = TimeSlotResolver(HolidayCalendar.bundled())
+            val directory = StationDirectory(loaded.dataSet, slots, times, slots)
 
             val clock = Clock.systemUTC()
             val ids = SecureRandomIdGenerator()
@@ -108,8 +110,6 @@ object CompositionRoot {
             val anonRepository = ExposedAnonUserRepository(db, ioDispatcher)
             val rooms = RoomService(roomRepository, anonRepository, tokens, ids, directory, clock)
             val recommendation = recommendationService(loaded, directory, slots, clock)
-            // 약속 날짜·시각 → 구분 규칙은 한 번만 만들어 방 결과 계산과 방 응답이 함께 쓴다.
-            val times = TimeSlotResolver(HolidayCalendar.bundled())
             val services =
                 ApiServices(
                     anonUsers = AnonUserService(anonRepository, tokens, ids, clock),

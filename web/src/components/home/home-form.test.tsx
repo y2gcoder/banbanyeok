@@ -21,6 +21,15 @@ describe("입력 화면", () => {
     window.localStorage.clear();
   });
 
+  it("권역이 하나뿐인 데이터(부산권 발행 전)에서는 권역 고르기도 권역 꼬리표도 없다", async () => {
+    const user = userEvent.setup();
+    render(<HomeForm />);
+    expect(screen.queryByRole("group", { name: "어디서 만나요?" })).not.toBeInTheDocument();
+    await user.type(screen.getByRole("combobox", { name: "나의 출발역" }), "시청");
+    const options = await screen.findAllByRole("option");
+    expect(options.map((o) => o.textContent)).not.toContainEqual(expect.stringContaining("권"));
+  });
+
   it("열리면 서버를 미리 깨운다(/api/healthz)", () => {
     render(<HomeForm />);
     expect(fetch).toHaveBeenCalledWith("/api/healthz", expect.objectContaining({ cache: "no-store" }));

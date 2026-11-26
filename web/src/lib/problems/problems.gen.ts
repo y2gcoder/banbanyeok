@@ -215,7 +215,8 @@ export const PROBLEMS = {
       slug: "schedule-unavailable",
       status: 409,
       title: "시간표 미확인",
-      meaning: "요청한 구분 또는 출발역의 시간표를 확인하지 못해 계산할 수 없습니다.",
+      meaning:
+        "요청한 구분 또는 출발역의 시간표를 확인하지 못해 계산할 수 없습니다. 방 만들기·참여·출발역 수정에서는 방의 요일·시간대에 시간표를 확인하지 못한 출발역을 저장하지 않습니다.",
     },
     {
       code: "ROOM_CHANGED",

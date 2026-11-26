@@ -2,10 +2,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LINE_LABELS } from "../../../scripts/station-lines.ts";
-import { EXCLUDED_PLACES, SUPPORTED_LINES, UNSUPPORTED_REASONS, unsupportedReason } from "./coverage";
+import { regionScope, UNSUPPORTED_REASONS, unsupportedReason } from "./coverage";
 import { type Station, searchStations } from "./index";
 import raw from "./index.gen.json";
-import { isCapitalAreaLine } from "./lines";
+import { isServiceLine } from "./lines";
+
+const { lines: SUPPORTED_LINES, excluded: EXCLUDED_PLACES, summary } = regionScope("capital");
 
 /** 범위를 정한 원본(파이프라인 입력). 이유 문구 표가 여기와 어긋나지 않게 본다. */
 const {
@@ -39,7 +41,8 @@ describe("계산 범위", () => {
       "9호선",
     ]);
     expect(SUPPORTED_LINES).not.toContain("인천자기부상");
-    expect(SUPPORTED_LINES.every(isCapitalAreaLine)).toBe(true);
+    expect(SUPPORTED_LINES.every(isServiceLine)).toBe(true);
+    expect(summary).toBe(`수도권 전철 ${SUPPORTED_LINES.length}개 노선을 계산해요`);
   });
 
   it("빠진 곳은 일부 역만 빠진 노선은 역 이름으로, 통째로 빠진 노선은 노선 이름으로", () => {
@@ -85,7 +88,7 @@ describe("계산 범위", () => {
     expect(unsupportedReason({ code: "zzz", lines: ["2호선"], supported: false })).toBe(
       "아직 계산하지 못하는 역이에요",
     );
-    expect(unsupportedReason({ code: "zzz", lines: ["부산1호선"], supported: false })).toBe(
+    expect(unsupportedReason({ code: "zzz", lines: ["대구1호선"], supported: false })).toBe(
       "아직 수도권 전철만 계산해요",
     );
   });

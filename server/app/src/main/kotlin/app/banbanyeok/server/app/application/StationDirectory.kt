@@ -4,10 +4,13 @@ import app.banbanyeok.schema.DataSet
 import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.SlotMatrices
+import app.banbanyeok.server.recommendation.SlotReadiness
 import app.banbanyeok.server.recommendation.StationNames
 import app.banbanyeok.server.recommendation.TravelTimeProvider
 import app.banbanyeok.server.recommendation.mapmiddle.GeoPoint
 import app.banbanyeok.server.recommendation.mapmiddle.StationLocations
+import app.banbanyeok.server.recommendation.time.TimeSlotResolver
+import app.banbanyeok.server.room.Meeting
 import app.banbanyeok.server.room.StationCatalog
 
 /**
@@ -21,6 +24,10 @@ class StationDirectory(
      * 데이터 세트의 행렬.
      */
     slots: SlotMatrices = SlotMatrices { dataSet.odSlots[it] },
+    /** 약속 날짜·시각 → 구분. 방 결과 계산과 같은 규칙이어야 참가자 검사([departs])가 결과와 같은 구분을 본다. */
+    private val times: TimeSlotResolver,
+    /** 방 쓰기가 결과 계산처럼 구분 행렬을 기다린다. 서버는 [slots]와 같은 [BackgroundSlots]. */
+    private val slotsReady: SlotReadiness = SlotReadiness {},
 ) : StationCatalog,
     CanonicalStations,
     StationNames,
@@ -46,6 +53,21 @@ class StationDirectory(
     override fun isOrigin(code: String): Boolean = travelTimes.isOrigin(code)
 
     override fun regionOf(code: String): StationRegion? = regions[code]
+
+    override fun departs(
+        code: String,
+        meeting: Meeting,
+    ): Boolean = travelTimes.departs(code, slotOf(meeting))
+
+    override suspend fun awaitSchedule(
+        code: String,
+        meeting: Meeting,
+    ) {
+        val slot = slotOf(meeting)
+        if (travelTimes.needsSlotMatrix(canonical(code), slot)) slotsReady.await(slot)
+    }
+
+    private fun slotOf(meeting: Meeting) = times.resolve(meeting.date, meeting.time, meeting.band).slot
 
     private val meetingCodes: Set<String> =
         List(dataSet.od.candidateCount) {

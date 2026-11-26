@@ -2,6 +2,7 @@ package app.banbanyeok.server.room
 
 import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.schema.TimeBand
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.describeSpec
 import io.kotest.core.spec.style.scopes.DescribeSpecRootScope
 import io.kotest.matchers.collections.shouldContainExactly
@@ -45,6 +46,7 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
         createAndFind(newRepositories)
         addingParticipants(newRepositories)
         regionalParticipants(newRepositories)
+        meetingOrigins(newRepositories)
         changingParticipants(newRepositories)
         changingRooms(newRepositories)
         favorTargets(newRepositories)
@@ -172,7 +174,7 @@ private fun DescribeSpecRootScope.regionalParticipants(repos: () -> RepositoryPa
                             StationRegion.CAPITAL
                         }
                 }
-            val regions = RoomRegionRule(catalog)
+            val regions = OriginRule(catalog)
             rooms.create(room, aParticipant("host01"))
             val outcomes =
                 coroutineScope {
@@ -202,6 +204,35 @@ private fun DescribeSpecRootScope.regionalParticipants(repos: () -> RepositoryPa
                 .map { catalog.regionOf(it.originCode) }
                 .distinct()
                 .size shouldBe 1
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.meetingOrigins(repos: () -> RepositoryPair) {
+    describe("participant writes on the stored meeting") {
+        it("checks an origin against the room's meeting as stored when the write locks the room") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            val saturday = LocalDate.parse("2026-11-28")
+            val catalog =
+                object : StationCatalog by FakeStationCatalog() {
+                    override fun departs(
+                        code: String,
+                        meeting: Meeting,
+                    ) = !(code == "130" && meeting.date == saturday)
+                }
+            val origins = OriginRule(catalog)
+            rooms.create(room, aParticipant("host01"))
+            rooms.addParticipant(room.id, aParticipant("pid002"), activity(1), origins) shouldBe AddResult.Added
+            rooms.updateRoom(room.id, RoomChange(meetingDate = Change.Set(saturday)), activity(2)) shouldBe true
+
+            val joining = aParticipant("pid003") { it.copy(originCode = "130") }
+            shouldThrow<RoomException> { rooms.addParticipant(room.id, joining, activity(3), origins) }
+                .error shouldBe RoomError.SCHEDULE_UNAVAILABLE
+            val moving = ParticipantChange(null, "130", false, T0.plusSeconds(240))
+            shouldThrow<RoomException> { rooms.updateParticipant(room.id, "pid002", moving, activity(4), origins) }
+                .error shouldBe RoomError.SCHEDULE_UNAVAILABLE
+            rooms.find(room.id)!!.participants.map { it.originCode } shouldContainExactly listOf("03v", "03v")
         }
     }
 }

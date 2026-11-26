@@ -4,7 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowLeftIcon, DicesIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
 import { Button } from "@/components/ui/button";
 import { roomHashProperty, track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
@@ -15,9 +16,11 @@ import { roomErrorMessage } from "@/lib/room/errors";
 import { roomPath } from "@/lib/room/id";
 import { type FavorTargetChoice, type ParticipantFormValue, toCreateRoomRequest } from "@/lib/room/input";
 import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
-import { stationByCode } from "@/lib/stations";
+import { REGIONS_ENABLED, stationByCode } from "@/lib/stations";
+import { blockedReason, type StationScope } from "@/lib/stations/scope";
 import { cn } from "@/lib/utils";
 import { todayInSeoul } from "@/lib/when/dates";
+import { slotForMeeting } from "@/lib/when/time-slot";
 import { keepDayAcrossMidnight, type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
 import { ParticipantFields } from "./participant-fields";
 import { ROOM_MAIN, ROOM_SIDE, RoomShell } from "./room-states";
@@ -61,6 +64,18 @@ export function CreateRoomForm() {
   const [problem, setProblem] = useState<string | null>(null);
   const [storable, setStorable] = useState(true);
   const [today, setToday] = useState("");
+  // 권역(#180): 방의 권역은 방장 출발역의 권역이다. 바꾸면 고른 출발역을 지운다(있으면 먼저 묻는다).
+  const regionChoice = useRegionChoice({
+    picked: host.station !== null,
+    clear: () => setHost((current) => ({ ...current, station: null })),
+  });
+  const { adopt } = regionChoice;
+  // 방이 계산할 구분. 서버와 같은 규칙(contracts/time-slots.json)으로 날짜·시각·시간대에서 정한다.
+  const slot = slotForMeeting(when.day?.date ?? null, when.time || null, when.band);
+  const scope = useMemo<StationScope>(
+    () => (REGIONS_ENABLED ? { region: regionChoice.region, slot } : { region: null, slot: null }),
+    [regionChoice.region, slot],
+  );
 
   useEffect(() => {
     // 서버(Cloud Run min 0)를 미리 깨운다. 입력하는 동안 콜드스타트가 끝난다.
@@ -69,9 +84,11 @@ export function CreateRoomForm() {
     setStorable(canStoreRoomTokens());
     const me = loadRememberedMe();
     const station = me ? stationByCode(me.code) : undefined;
-    if (me && station?.supported)
+    if (me && station?.supported) {
+      adopt(station.region);
       setHost((current) => (current.station ? current : { ...current, nickname: me.nickname, station }));
-  }, []);
+    }
+  }, [adopt]);
 
   // 화면을 연 채로 자정을 넘길 수 있다. 칩을 누를 때·제출할 때·화면으로 돌아올 때·1분마다 서울 날짜를 다시 읽는다.
   const refreshToday = useCallback((): string => {
@@ -119,6 +136,11 @@ export function CreateRoomForm() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const now = refreshToday();
+    const blocked = host.station ? blockedReason(host.station, scope) : null;
+    if (blocked) {
+      setProblem(`${blocked}. 출발역이나 약속 날짜·시간을 바꿔 주세요.`);
+      return;
+    }
     const checked = toCreateRoomRequest(
       {
         host,
@@ -172,8 +194,11 @@ export function CreateRoomForm() {
           "wide:rounded-2xl wide:border wide:border-rule wide:bg-surface wide:p-4 wide:shadow-[0_1px_0_var(--rule)] lg:p-8",
         )}
       >
+        <RegionPicker id={`${id}-region`} choice={regionChoice} />
         <ParticipantFields
           idPrefix={`${id}-host`}
+          scope={scope}
+          onSwitchRegion={regionChoice.request}
           value={host}
           onChange={(patch) => {
             setProblem(null);

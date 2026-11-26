@@ -50,7 +50,7 @@ object DevArtifacts {
      */
     val directory: StationDirectory by lazy {
         runBlocking { loaded.slots.join() }
-        StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots))
+        StationDirectory(loaded.dataSet, BackgroundSlots(loaded.slots), testTimes)
     }
 
     /** manifest의 막차 수집일(`lastTrainAsOf`). */

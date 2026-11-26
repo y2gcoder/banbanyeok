@@ -57,7 +57,7 @@ class MapMiddleConsistencyHttpTest :
             val loaded = ArtifactLoader(DevArtifacts.store).load()
             val complete = loaded.slots.await()
             val loading = CompletableDeferred<Map<TimeSlot, OdMatrix>>()
-            val racing = StationDirectory(loaded.dataSet, BackgroundSlots(loading, 1.milliseconds))
+            val racing = StationDirectory(loaded.dataSet, BackgroundSlots(loading, 1.milliseconds), testTimes)
             val travel = racing.travel
             // 첫 조회가 끝나는 순간 구분 행렬을 공개한다. 두 번째 조회부터는 요청한 구분(토요일 밤)의 행렬이 보인다.
             val controlled =

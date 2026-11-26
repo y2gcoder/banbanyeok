@@ -81,6 +81,15 @@ public data class Room(
     val decision: Decision? = null,
     /** '누구 쪽으로' 뽑기(#172). 방을 만들 때 대상을 뽑기로 정한 방에만 있다. 당첨자는 [favorParticipantId]다. */
     val favorDraw: FavorDraw? = null,
+) {
+    val meeting: Meeting get() = Meeting(meetingDate, meetingTime, meetingBand)
+}
+
+/** 결과를 어느 구분으로 계산할지 정하는 약속 날짜·시각·시간대. */
+public data class Meeting(
+    val date: LocalDate?,
+    val time: LocalTime?,
+    val band: TimeBand?,
 )
 
 /**

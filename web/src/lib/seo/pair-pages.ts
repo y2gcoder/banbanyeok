@@ -9,7 +9,7 @@
  */
 import { stationLabel } from "@/lib/display/korean";
 import { type DisplayAggregate, displayAggregate, minutesFromSeconds } from "@/lib/display/minutes";
-import { type Station, stationByCode } from "@/lib/stations";
+import { DEFAULT_REGION, REGIONS, type RegionId, regionName, type Station, stationByCode } from "@/lib/stations";
 import { MAX_RESULTS_PER_PAIR, type SeoPair, type SeoPairsFile } from "./pairs";
 
 export const PAIR_PATH_PREFIX = "/meet";
@@ -161,4 +161,21 @@ export function groupByStation(
   return [...groups.values()]
     .map((group) => ({ ...group, partners: group.partners.sort((x, y) => byName(x.partner, y.partner)) }))
     .sort((x, y) => byName(x.station, y.station));
+}
+
+type StationGroup = ReturnType<typeof groupByStation>[number];
+
+/**
+ * 허브의 권역별 묶음(#180). 역 묶음을 그 역의 권역 아래로 모은다(권역 순서는 역 인덱스, 수도권이 먼저). 조합이 있는 권역만 돌려주므로
+ * 한 권역뿐이면 묶음도 하나다(화면은 그때 권역 제목 없이 지금처럼 한 목록으로 그린다).
+ */
+export function groupByRegion(
+  groups: readonly StationGroup[],
+): { region: RegionId; name: string; groups: StationGroup[] }[] {
+  const regionOf = (group: StationGroup) => stationByCode(group.station.code)?.region ?? DEFAULT_REGION;
+  return REGIONS.map((region) => ({
+    region,
+    name: regionName(region),
+    groups: groups.filter((group) => regionOf(group) === region),
+  })).filter((r) => r.groups.length > 0);
 }

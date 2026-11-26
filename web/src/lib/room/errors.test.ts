@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { ApiRequestError } from "@/lib/api/client";
 import { CONNECTION_MESSAGE } from "@/lib/api/errors";
-import { errorCode, isClientError, isRoomGone, isStaleRoom, isTokenRejected, roomErrorMessage } from "./errors";
+import {
+  errorCode,
+  isClientError,
+  isRoomGone,
+  isStaleRoom,
+  isTokenRejected,
+  participantErrorMessage,
+  roomErrorMessage,
+} from "./errors";
 
 const err = (status: number, code: string, message = "서버 문구") => new ApiRequestError(status, code, message);
 
@@ -20,6 +28,15 @@ describe("방 오류", () => {
       "출발역 숨기기는 이제 쓸 수 없어요. 숨기기를 끄고 다시 해 주세요.",
     );
     expect(isStaleRoom(err(400, "HIDE_NOT_AVAILABLE"))).toBe(false);
+  });
+
+  it("참여·고치기에서 서버가 방의 요일에 출발할 수 없는 역을 거절하면 요일이 아니라 역을 바꾸라고 한다", () => {
+    expect(participantErrorMessage(err(409, "SCHEDULE_UNAVAILABLE"))).toBe(
+      "이 방의 요일·시간대에는 고른 역의 시간표를 아직 확인하지 못해 고를 수 없어요. 다른 출발역을 골라 주세요.",
+    );
+    expect(roomErrorMessage(err(409, "SCHEDULE_UNAVAILABLE"))).toContain("다른 요일이나 시간대로");
+    expect(participantErrorMessage(err(409, "ROOM_FULL"))).toBe(roomErrorMessage(err(409, "ROOM_FULL")));
+    expect(isStaleRoom(err(409, "SCHEDULE_UNAVAILABLE"))).toBe(false);
   });
 
   it("계약의 오류 모양이 아닌 4xx(빈 본문·HTML)는 'HTTP 403' 같은 값을 보이지 않는다", () => {

@@ -5,6 +5,8 @@ import { personColor } from "@/components/common/person-color";
 import { StationField } from "@/components/common/station-field";
 import { MAX_NICKNAME_CODE_POINTS } from "@/lib/link/codec";
 import type { ParticipantFormValue } from "@/lib/room/input";
+import type { RegionId } from "@/lib/stations";
+import type { StationScope } from "@/lib/stations/scope";
 
 type Props = {
   idPrefix: string;
@@ -21,6 +23,10 @@ type Props = {
    * 저장한 뒤 풀린 사람에게는 다시 보이지 않는다.
    */
   keepHidden?: boolean;
+  /** 출발역 칸이 고를 수 있는 범위(권역·구분). */
+  scope?: StationScope;
+  /** 방 만들기의 "○○권으로 바꾸기". 방 참여·고치기에는 없다(방의 권역을 따른다). */
+  onSwitchRegion?: (region: RegionId) => void;
 };
 
 /**
@@ -29,7 +35,15 @@ type Props = {
  * 테두리 없는 이름 칸이 바로 아래 출발역 칸의 제목처럼 읽히던 문제(W3)를 막는다. 첫 화면의 "나/친구1" 칸과는 다른 화면이다.
  * 출발역 숨기기는 새로 켤 수 없다(ADR-0007). 이미 숨긴 사람([Props.keepHidden])만 지금 상태를 보고 숨김을 풀 수 있다.
  */
-export function ParticipantFields({ idPrefix, value, onChange, personIndex, keepHidden = false }: Props) {
+export function ParticipantFields({
+  idPrefix,
+  value,
+  onChange,
+  personIndex,
+  keepHidden = false,
+  scope,
+  onSwitchRegion,
+}: Props) {
   const nameId = `${idPrefix}-name`;
   const stationId = `${idPrefix}-station`;
   const hiddenId = `${idPrefix}-hidden`;
@@ -67,7 +81,13 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex, keep
             <label htmlFor={stationId} className={FIELD_LABEL}>
               <span className="sr-only">내</span> 출발역
             </label>
-            <StationField id={stationId} value={value.station} onChange={(station) => onChange({ station })} />
+            <StationField
+              id={stationId}
+              value={value.station}
+              onChange={(station) => onChange({ station })}
+              {...(scope ? { scope } : {})}
+              {...(onSwitchRegion ? { onSwitchRegion } : {})}
+            />
           </div>
         </div>
       </div>

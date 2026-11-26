@@ -3,7 +3,12 @@
  *
  * 입력: data/artifacts/dev/{stations.json, od.bin, manifest.json} (형식: contracts/data-format.md §3~5),
  *       data/config/network-rules.json(수도권 좌표 창)
+ *       권역 포인터 data/artifacts/dev/regional/manifest.v5.json이 있으면 그 세대의 레지스트리·od.bin·regionCoverage를 대신 쓴다(§12).
+ *       다른 산출물 폴더로 만들려면 STATION_INDEX_ARTIFACTS=<저장소 기준 경로>, 다른 곳에 쓰려면 STATION_INDEX_OUT=<저장소 기준 경로>.
+ *       pnpm gen:stations는 계약 픽스처(contracts/fixtures, 두 권역)로 regional.fixture.gen.json도 만든다. 권역 화면 테스트가 그것을 읽는다.
  * 출력: src/lib/stations/index.gen.json — 활성 역의 [코드, 이름, 노선 번호들, 별칭들, 출발 가능 여부, 위도, 경도]
+ *       권역 데이터면 `regions`도 쓴다: 권역 순서, 첫 권역이 아닌 역의 코드, 완전하지 않은 구분의 regionCoverage 값.
+ *       권역 데이터가 없으면 `regions`를 쓰지 않아 지금 인덱스와 같다(웹은 권역이 둘 이상일 때만 권역 화면을 켠다).
  *
  * "출발 가능"은 od.bin 출발역 축에 있는 역이다. 서버가 계산할 수 있는 출발역만 고르게 하고,
  * 나머지는 검색에 보이되 고를 수 없고, 이유 문구는 src/lib/stations/coverage.ts가 붙인다.
@@ -13,14 +18,14 @@
  *
  * 사용: pnpm gen:stations  (CI는 재생성 후 git diff로 커밋본과 비교한다)
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stationLineLabels } from "./station-lines.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const artifacts = resolve(root, "data/artifacts/dev");
-const out = resolve(root, "web/src/lib/stations/index.gen.json");
+const artifacts = resolve(root, process.env.STATION_INDEX_ARTIFACTS ?? "data/artifacts/dev");
+const out = resolve(root, process.env.STATION_INDEX_OUT ?? "web/src/lib/stations/index.gen.json");
 
 const ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
 
@@ -34,7 +39,10 @@ type RegistryStation = {
   aliases: string[];
   sources: Record<string, string>;
   replacedBy?: string;
+  region?: string;
 };
+
+type SlotCoverage = { available: boolean; missingServices: string[]; unsupportedOrigins: string[] };
 
 function decodeCode(value: number): string {
   return `${ALPHABET[value >> 10]}${ALPHABET[(value >> 5) & 31]}${ALPHABET[value & 31]}`;
@@ -61,12 +69,36 @@ function round5(value: number): number {
   return Math.round(value * 1e5) / 1e5;
 }
 
-const registry = JSON.parse(readFileSync(resolve(artifacts, "stations.json"), "utf8")) as {
+type Source = { registry: string; od: string; manifest: { dataVersion: string } };
+/** 권역 세대(§12)가 있으면 그 파일들, 없으면 세대 1의 고정 이름 파일. */
+function source(): Source & { coverage: Record<string, Record<string, SlotCoverage>> | null } {
+  const pointer = resolve(artifacts, "regional/manifest.v5.json");
+  if (!existsSync(pointer)) {
+    return { registry: "stations.json", od: "od.bin", manifest: readJson("manifest.json"), coverage: null };
+  }
+  const manifest = readJson(pointer) as {
+    dataVersion: string;
+    files: { registry: { path: string }; od: { path: string } };
+    regionCoverage: Record<string, Record<string, SlotCoverage>>;
+  };
+  return {
+    registry: manifest.files.registry.path,
+    od: manifest.files.od.path,
+    manifest,
+    coverage: manifest.regionCoverage,
+  };
+}
+function readJson(path: string): { dataVersion: string } {
+  return JSON.parse(readFileSync(resolve(artifacts, path), "utf8")) as { dataVersion: string };
+}
+
+const input = source();
+const registry = JSON.parse(readFileSync(resolve(artifacts, input.registry), "utf8")) as {
   registryVersion: number;
   stations: RegistryStation[];
 };
-const manifest = JSON.parse(readFileSync(resolve(artifacts, "manifest.json"), "utf8")) as { dataVersion: string };
-const { origins, candidates } = readOdAxes(readFileSync(resolve(artifacts, "od.bin")));
+const manifest = input.manifest;
+const { origins, candidates } = readOdAxes(readFileSync(resolve(artifacts, input.od)));
 
 const lineTable: string[] = [];
 const unknownLines = new Set<string>();
@@ -125,6 +157,26 @@ const replaced = Object.fromEntries(
     .filter(([, target]) => indexed.has(target as string)),
 );
 
+/**
+ * 권역(§12 regionCoverage의 키 순서, 수도권이 먼저). 첫 권역은 기본이라 역 목록을 싣지 않는다. 구분 값은 완전하지 않은
+ * 것(출발 못 하는 역·빠진 계통이 있거나 available=false)만 싣고, 빠진 구분은 웹이 완전한 것으로 읽는다.
+ */
+function regions(coverage: Record<string, Record<string, SlotCoverage>>) {
+  const ids = Object.keys(coverage).sort((a, b) => Number(b === "capital") - Number(a === "capital"));
+  for (const s of registry.stations)
+    if (indexed.has(s.code) && !ids.includes(s.region ?? "capital"))
+      throw new Error(`regionCoverage에 없는 권역의 역: ${s.code} ${s.region}`);
+  return ids.map((id, i) => {
+    const limits = Object.fromEntries(
+      Object.entries(coverage[id] ?? {}).filter(
+        ([, c]) => !c.available || c.missingServices.length > 0 || c.unsupportedOrigins.length > 0,
+      ),
+    );
+    const codes = registry.stations.filter((s) => indexed.has(s.code) && s.region === id).map((s) => s.code);
+    return { id, ...(i === 0 ? {} : { stations: codes }), coverage: limits };
+  });
+}
+
 const body = {
   "//": "pnpm gen:stations가 만든 파일. 직접 고치지 않는다.",
   registryVersion: registry.registryVersion,
@@ -132,6 +184,7 @@ const body = {
   lines: lineTable,
   stations,
   replaced,
+  ...(input.coverage ? { regions: regions(input.coverage) } : {}),
 };
 writeFileSync(out, `${JSON.stringify(body)}\n`);
 process.stdout.write(
