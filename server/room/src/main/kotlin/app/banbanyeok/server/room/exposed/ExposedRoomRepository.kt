@@ -108,7 +108,14 @@ public class ExposedRoomRepository(
                 }
 
                 else -> {
-                    origins?.requireAllowed(room.toRoom(), participant.originCode, participant.hidden)
+                    val stored = room.toRoom()
+                    val joined = origins?.joined(stored, participants, participant.originCode, participant.hidden)
+                    if (joined != null && joined.region != stored.region) {
+                        RoomsTable.update({ RoomsTable.id eq roomId }) {
+                            it[region] =
+                                requireNotNull(joined.region).name.lowercase()
+                        }
+                    }
                     insertParticipant(roomId, participant)
                     touch(roomId, activity)
                     AddResult.Added

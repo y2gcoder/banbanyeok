@@ -49,8 +49,10 @@ class InMemoryRoomRepository : RoomRepository {
                 }
 
                 else -> {
-                    origins?.requireAllowed(stored.room, participant.originCode, participant.hidden)
-                    write(roomId) { it.copy(participants = it.participants + participant) }
+                    val room =
+                        origins?.joined(stored.room, stored.participants, participant.originCode, participant.hidden)
+                            ?: stored.room
+                    write(roomId) { it.copy(room = room, participants = it.participants + participant) }
                     touch(roomId, activity)
                     AddResult.Added
                 }

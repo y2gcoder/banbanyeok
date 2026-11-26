@@ -47,6 +47,7 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
         addingParticipants(newRepositories)
         storedRegions(newRepositories)
         regionalParticipants(newRepositories)
+        emptyRoomRegions(newRepositories)
         meetingOrigins(newRepositories)
         changingParticipants(newRepositories)
         changingRooms(newRepositories)
@@ -192,20 +193,58 @@ private fun DescribeSpecRootScope.storedRegions(repos: () -> RepositoryPair) {
             }
         }
 
-        it("stores a Busan room's region and takes only Busan stations into it, even with no one left") {
+        it("stores a Busan room's region and lets the room take the next joiner's region once no one is left") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(region = StationRegion.BUSAN) }
             rooms.create(room, aParticipant("host01") { it.copy(originCode = busan) })
             rooms.find(room.id)!!.room.region shouldBe StationRegion.BUSAN
             rooms.removeParticipant(room.id, "host01", activity(1)) shouldBe true
-            shouldThrow<RoomException> { rooms.addParticipant(room.id, aParticipant("pid002"), activity(2), origins) }
-                .error shouldBe RoomError.REGION_MISMATCH
-            rooms.addParticipant(
-                room.id,
-                aParticipant("pid003") { it.copy(originCode = busan) },
-                activity(3),
-                origins,
-            ) shouldBe AddResult.Added
+            rooms.addParticipant(room.id, aParticipant("pid002"), activity(2), origins) shouldBe AddResult.Added
+            rooms.find(room.id)!!.room.region shouldBe StationRegion.CAPITAL
+            shouldThrow<RoomException> {
+                rooms.addParticipant(
+                    room.id,
+                    aParticipant("pid003") { it.copy(originCode = busan) },
+                    activity(3),
+                    origins,
+                )
+            }.error shouldBe RoomError.REGION_MISMATCH
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.emptyRoomRegions(repos: () -> RepositoryPair) {
+    describe("joins into a room no one is left in") {
+        val busan = BUSAN_ORIGIN
+        val catalog = regionalCatalog
+        val origins = OriginRule(catalog)
+
+        it("keeps one region when two people of different regions join a room no one is left in") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            rooms.create(room, aParticipant("host01"))
+            rooms.removeParticipant(room.id, "host01", activity(1)) shouldBe true
+            val outcomes =
+                coroutineScope {
+                    listOf("pid002" to "03v", "pid003" to busan)
+                        .map { (id, code) ->
+                            async {
+                                runCatching {
+                                    rooms.addParticipant(
+                                        room.id,
+                                        aParticipant(id) { it.copy(originCode = code) },
+                                        activity(2),
+                                        origins,
+                                    )
+                                }
+                            }
+                        }.awaitAll()
+                }
+            outcomes.count { it.isSuccess } shouldBe 1
+            (outcomes.single { it.isFailure }.exceptionOrNull() as RoomException).error shouldBe
+                RoomError.REGION_MISMATCH
+            val stored = rooms.find(room.id)!!
+            stored.participants.map { catalog.regionOf(it.originCode) } shouldContainExactly listOf(stored.room.region)
         }
     }
 }

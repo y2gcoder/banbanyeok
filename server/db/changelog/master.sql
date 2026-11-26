@@ -218,7 +218,8 @@ CREATE TRIGGER rooms_draw_state BEFORE UPDATE ON rooms
 --rollback DROP TRIGGER rooms_draw_state ON rooms; DROP FUNCTION rooms_draw_state(); ALTER TABLE rooms DROP CONSTRAINT rooms_draw_complete, DROP CONSTRAINT rooms_draw_only_favor, DROP COLUMN drawn_at, DROP COLUMN draw_roster, DROP COLUMN draw_candidates, DROP COLUMN draw_round, DROP COLUMN draw_generation, DROP COLUMN favor_draw;
 
 --changeset banbanyeok:20261126-room-region
--- 방의 권역(ADR-0008). 방을 만들 때 방장 출발역의 권역으로 정하고 바꾸지 않는다. 참여·출발역 수정·정하기는 이 권역의 역만 받는다.
+-- 방의 권역(ADR-0008). 방을 만들 때 방장 출발역의 권역으로 정한다. 참여·출발역 수정·정하기는 이 권역의 역만 받는다.
+-- 아무도 남지 않은 방만 다음 참여자의 권역으로 바뀐다.
 -- 지금까지의 방은 모두 수도권이다(부산권은 켜진 적이 없다). 기본값은 이 열을 모르는 리비전(배포 중의 이전 리비전)이 만드는 방을 위한
 -- 것이다. 그런 리비전은 수도권 출발역만 받는다.
 ALTER TABLE rooms

@@ -19,4 +19,19 @@ public class OriginRule(
             throw RoomException(RoomError.SCHEDULE_UNAVAILABLE, "이 방의 요일·시간대에 확인된 시간표가 없는 출발역입니다")
         }
     }
+
+    /**
+     * 참여를 받은 뒤의 방. 아무도 남지 않은 방(방장도 나갔다)은 들어오는 사람의 권역을 따른다. 방 응답에 권역이 없어 웹은 빈 방의
+     * 권역을 모르고 어느 권역의 역이든 고르게 하기 때문이다. 참여자가 있으면 저장된 권역 그대로다.
+     */
+    public fun joined(
+        room: Room,
+        participants: List<Participant>,
+        code: String,
+        hidden: Boolean = false,
+    ): Room {
+        val target = if (participants.isEmpty()) room.copy(region = regions.regionFor(code, hidden)) else room
+        requireAllowed(target, code, hidden)
+        return target
+    }
 }
