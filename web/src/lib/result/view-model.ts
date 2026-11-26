@@ -130,7 +130,7 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
         : toLastTrainView(
             result.lastTrainBasis,
             c.lastTrains,
-            { code: c.stationCode, name: c.stationName },
+            { code: c.stationCode, name: c.stationName, region: stationByCode(c.stationCode)?.region },
             people.map((person, i) => {
               const participant = result.participants[i];
               const home = place(person.originCode, person.originName);
