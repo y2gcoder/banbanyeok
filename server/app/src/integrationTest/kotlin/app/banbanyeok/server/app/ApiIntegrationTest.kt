@@ -14,6 +14,9 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -30,6 +33,17 @@ class ProjectConfig : AbstractProjectConfig() {
 private fun JsonElement.str(key: String) = jsonObject.getValue(key).jsonPrimitive.content
 
 private fun parse(body: String): JsonElement = Json.parseToJsonElement(body)
+
+private fun stageTotal(stage: String): Long =
+    TestDatabase.dataSource.connection.use { connection ->
+        connection.prepareStatement("SELECT COALESCE(sum(total), 0) FROM daily_stage_counts WHERE stage = ?").use {
+            it.setString(1, stage)
+            it.executeQuery().use { rows ->
+                rows.next()
+                rows.getLong(1)
+            }
+        }
+    }
 
 /** 새로 숨길 수 없으므로(ADR-0007), ADR-0007 전에 숨긴 채 들어온 참가자는 DB 행을 직접 바꿔 만든다. */
 private fun hideAsBefore(
@@ -260,6 +274,41 @@ class ApiIntegrationTest :
                 }
             }
 
+            it("counts concurrent successful requests regardless of consent and tolerates a missing counter table") {
+                integration { _, origins ->
+                    val body = """{"origins":["${origins[0]}","${origins[1]}"],"mode":"fair"}"""
+
+                    suspend fun recommend() =
+                        client.json(HttpMethod.Post, "/v1/recommend", body) { headers.append("DNT", "1") }
+
+                    TestDatabase.dataSource.connection.use { connection ->
+                        connection.createStatement().use { sql ->
+                            sql
+                                .executeQuery(
+                                    """SELECT column_name FROM information_schema.columns
+                                   WHERE table_schema = 'public' AND table_name = 'daily_stage_counts'
+                                   ORDER BY ordinal_position""",
+                                ).use { rows ->
+                                    buildList { while (rows.next()) add(rows.getString(1)) } shouldContainExactly
+                                        listOf("kst_date", "stage", "total")
+                                }
+                            val before = stageTotal("RECOMMEND")
+                            val responses = coroutineScope { List(8) { async { recommend() } }.awaitAll() }
+                            responses.forEach { it.status shouldBe HttpStatusCode.OK }
+                            stageTotal("RECOMMEND") shouldBe before + 8
+                            sql.execute("ALTER TABLE daily_stage_counts RENAME TO unavailable")
+                            try {
+                                val degraded = recommend()
+                                degraded.status shouldBe HttpStatusCode.OK
+                                degraded.bodyAsText() shouldBe responses.first().bodyAsText()
+                            } finally {
+                                sql.execute("ALTER TABLE unavailable RENAME TO daily_stage_counts")
+                            }
+                        }
+                    }
+                }
+            }
+
             it("answers a stateless recommendation, the manifest and a data file") {
                 integration { api, origins ->
                     val recommend =
@@ -326,6 +375,8 @@ class ApiIntegrationTest :
 
             it("moves the preview from invite to result to decided and refuses a decision from a stale screen") {
                 integration { api, origins ->
+                    val stages = listOf("CREATE_ROOM", "JOIN_ROOM", "DECIDE_STATION")
+                    val before = stages.associateWith(::stageTotal)
                     val (a, b, c) = Triple(origins[0], origins[origins.size / 2], origins.last())
                     val created =
                         parse(
@@ -428,6 +479,7 @@ class ApiIntegrationTest :
                         token = hostPart,
                         expected = HttpStatusCode.OK,
                     )
+                    stages.forEach { stage -> stageTotal(stage) shouldBe before.getValue(stage) + 1 }
                 }
             }
         }

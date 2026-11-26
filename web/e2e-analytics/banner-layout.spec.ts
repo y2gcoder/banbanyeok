@@ -153,7 +153,7 @@ for (const vp of U2_CASES) {
       const firstBox = banner(page).getByRole("checkbox").first();
       const before = { banner: await banner(page).boundingBox(), box: await firstBox.boundingBox() };
       await firstBox.check();
-      await expect(banner(page).getByText("두 가지 모두 체크해야 통계를 모아요.")).toBeVisible();
+      await expect(banner(page).getByText("두 가지 모두 체크해야 PostHog 통계를 모아요.")).toBeVisible();
       const after = { banner: await banner(page).boundingBox(), box: await firstBox.boundingBox() };
       // 안내 줄 자리를 미리 잡아 두므로 하단 고정 배너가 커지며 체크박스를 위로 밀지 않는다.
       expect(after.banner?.height).toBeCloseTo(before.banner?.height ?? -1, 0);
@@ -165,7 +165,7 @@ for (const vp of U2_CASES) {
       expect(reject?.y).toBeCloseTo(save?.y ?? -1, 0);
       await banner(page).getByRole("checkbox").last().check();
       await expect(banner(page).getByRole("button", { name: "동의하고 닫기", exact: true })).toBeVisible();
-      await expect(banner(page).getByText("두 가지 모두 체크해야 통계를 모아요.")).toBeHidden();
+      await expect(banner(page).getByText("두 가지 모두 체크해야 PostHog 통계를 모아요.")).toBeHidden();
     });
 
     test("맨 아래까지 스크롤하면 본문 마지막 줄이 배너에 가려지지 않는다", async ({ page }) => {

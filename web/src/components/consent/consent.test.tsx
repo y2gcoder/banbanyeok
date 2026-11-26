@@ -61,7 +61,7 @@ describe("동의 배너", () => {
     expect(links[0]).toHaveTextContent("언제든 변경");
     expect(collectBox()).not.toBeChecked();
     expect(transferBox()).not.toBeChecked();
-    expect(screen.queryByText("두 가지 모두 체크해야 통계를 모아요.")).toBeNull(); // 하나만 체크했을 때만 보인다
+    expect(screen.queryByText("두 가지 모두 체크해야 PostHog 통계를 모아요.")).toBeNull(); // 하나만 체크했을 때만 보인다
     expect(save()).toHaveTextContent("이대로 닫기");
     expect(save().className).toBe(rejectAll().className);
     expect(save().parentElement).toBe(rejectAll().parentElement);
@@ -109,7 +109,7 @@ describe("동의 배너", () => {
     await user.click(collectBox());
     await user.click(transferBox());
     expect(save()).toHaveTextContent("동의하고 닫기");
-    expect(screen.queryByText("두 가지 모두 체크해야 통계를 모아요.")).toBeNull();
+    expect(screen.queryByText("두 가지 모두 체크해야 PostHog 통계를 모아요.")).toBeNull();
     await user.click(save());
     expect(readScopes()).toEqual(BOTH);
     expect(readChoice()).toBe("granted");
@@ -124,7 +124,7 @@ describe("동의 배너", () => {
     expect(live?.textContent).toBe(""); // 하나만 체크하기 전에는 안내 글자가 없다
 
     await user.click(collectBox()); // 수집·이용만 체크
-    expect(live).toHaveTextContent("두 가지 모두 체크해야 통계를 모아요.");
+    expect(live).toHaveTextContent("두 가지 모두 체크해야 PostHog 통계를 모아요.");
     expect(save()).toHaveTextContent("이대로 닫기");
     await user.click(save());
     expect(readScopes()).toEqual({ collect: true, transfer: false });
@@ -134,7 +134,7 @@ describe("동의 배너", () => {
     window.localStorage.clear();
     render(<ConsentBanner />);
     await user.click(transferBox()); // 국외 이전만 체크
-    expect(screen.getByText("두 가지 모두 체크해야 통계를 모아요.")).toBeInTheDocument();
+    expect(screen.getByText("두 가지 모두 체크해야 PostHog 통계를 모아요.")).toBeInTheDocument();
     await user.click(save());
     expect(readScopes()).toEqual({ collect: false, transfer: true });
     expect(readChoice()).toBe("denied");
@@ -285,14 +285,14 @@ describe("동의 배너", () => {
     expect(hint?.className).toContain("min-h-[17px]");
     expect(hint).toBeEmptyDOMElement();
     await user.click(collectBox());
-    expect(hint).toHaveTextContent("두 가지 모두 체크해야 통계를 모아요.");
+    expect(hint).toHaveTextContent("두 가지 모두 체크해야 PostHog 통계를 모아요.");
     expect(container.querySelector('[aria-live="polite"] > p')).toBe(hint); // 같은 요소를 그대로 쓴다
   });
 
   it("체크를 다시 풀거나 둘 다 체크하면 안내가 사라진다", async () => {
     const user = userEvent.setup();
     render(<ConsentBanner />);
-    const hint = () => screen.queryByText("두 가지 모두 체크해야 통계를 모아요.");
+    const hint = () => screen.queryByText("두 가지 모두 체크해야 PostHog 통계를 모아요.");
     await user.click(collectBox());
     expect(hint()).not.toBeNull();
     await user.click(transferBox());
@@ -419,17 +419,17 @@ describe("통계 설정(/privacy)", () => {
     const switches = screen.getAllByRole("switch");
     expect(switches).toHaveLength(2); // 수집·이용, 국외 이전을 따로 받는다
     for (const toggle of switches) expect(toggle).toHaveAttribute("aria-checked", "false"); // 기본 해제
-    expect(screen.getByText("아직 고르지 않음 — 이용 통계를 모으지 않아요.")).toBeInTheDocument();
+    expect(screen.getByText("아직 고르지 않음 — PostHog 이용 통계를 모으지 않아요.")).toBeInTheDocument();
     const card = document.body;
     for (const text of [
-      "통계에는 출발역과 이름이 들어가지 않아요", // 보내지 않는 것
+      "합계에는 IP·식별자·출발역·이름을 넣지 않아요", // 자체 합계
       "만 14세 이상", // 연령
       "동의하지 않아도 모든 기능을 그대로 쓸 수 있어요", // 거부해도 불이익 없음
       "서비스 개선용 · 기능 이용·오류·속도 기록, 무작위 식별자", // 목적·항목
       "통계 도구 PostHog, Inc. (미국)에", // 국외 이전받는 자·국가
       "이용할 때마다 암호화해 보내 분석하고", // 시기·방법·목적
       "1년 보관", // 보유 기간
-      "하나라도 끄면 바로 통계를 멈추고", // 철회는 한 번에
+      "하나라도 끄면 바로 PostHog 통계를 멈추고", // 철회는 한 번에
       // 세부 고지는 늘 펼쳐 둔다(배너의 '자세히 보기'와 같은 내용): 항목 전체, 이전받는 자의 연락처
       "브라우저·운영체제·기기 종류, 화면 크기, 방문한 페이지와 직전 페이지 주소",
       "PostHog, Inc. · 연락처 privacy@posthog.com",
@@ -439,7 +439,7 @@ describe("통계 설정(/privacy)", () => {
     }
   });
 
-  const collectSwitch = () => screen.getByRole("switch", { name: "이용 통계 수집·이용 동의" });
+  const collectSwitch = () => screen.getByRole("switch", { name: "PostHog 이용 통계 수집·이용 동의" });
   const transferSwitch = () => screen.getByRole("switch", { name: /국외 이전 동의/ });
 
   it("현재 상태를 보이고 두 스위치가 모두 켜져야 동의, 하나라도 끄면 철회된다", async () => {
@@ -456,7 +456,7 @@ describe("통계 설정(/privacy)", () => {
 
     await user.click(transferSwitch());
     expect(readChoice()).toBe("granted");
-    expect(screen.getByText(/모두 동의함 — 이용 통계를 모으고 있어요/)).toBeInTheDocument();
+    expect(screen.getByText(/모두 동의함 — PostHog 이용 통계를 모으고 있어요/)).toBeInTheDocument();
 
     await user.click(transferSwitch()); // 하나만 꺼도 한 번에 철회(확인 단계 없음)
     expect(readChoice()).toBe("denied");
@@ -474,7 +474,7 @@ describe("통계 설정(/privacy)", () => {
     expect(screen.getByRole("textbox", { name: "이 브라우저의 통계 식별자" })).toHaveValue(env.id);
     // 철회 전에 복사해 보내라는 안내(B안): 철회하면 이 기기에서 지워지므로
     expect(
-      screen.getByText(/이미 모은 통계도 지우려면 철회하기 전에 이 값을 복사해 privacy@banbanyeok\.app/),
+      screen.getByText(/이미 모은 PostHog 통계도 지우려면 철회하기 전에 이 값을 복사해 privacy@banbanyeok\.app/),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "복사" }));
     expect(writeText).toHaveBeenCalledWith("01a1d8e0-adf1-7b8b-b68b-16811547a84e");
@@ -517,6 +517,6 @@ describe("통계 설정(/privacy)", () => {
     env.available = false;
     render(<ConsentSettings />);
     expect(collectSwitch()).toBeDisabled();
-    expect(screen.getByText(/지금 이용 통계를 모으지 않아요/)).toBeInTheDocument();
+    expect(screen.getByText(/지금 PostHog 이용 통계를 모으지 않아요/)).toBeInTheDocument();
   });
 });

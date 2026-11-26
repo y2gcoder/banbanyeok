@@ -21,10 +21,12 @@ public data class DatabaseSettings(
 }
 
 public class ConnectedDatabase(
-    public val dataSource: HikariDataSource,
+    private val pool: HikariDataSource,
     public val database: Database,
 ) : AutoCloseable {
-    override fun close() = dataSource.close()
+    public val dataSource: DataSource get() = pool
+
+    override fun close() = pool.close()
 
     /**
      * 첫 연결(TLS·인증 왕복)을 별도 스레드에서 미리 맺어 둔다. 콜드스타트 때 산출물 읽기와 겹쳐 돌아서, 첫 방 요청이 이 비용

@@ -216,3 +216,13 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER rooms_draw_state BEFORE UPDATE ON rooms
     FOR EACH ROW EXECUTE FUNCTION rooms_draw_state();
 --rollback DROP TRIGGER rooms_draw_state ON rooms; DROP FUNCTION rooms_draw_state(); ALTER TABLE rooms DROP CONSTRAINT rooms_draw_complete, DROP CONSTRAINT rooms_draw_only_favor, DROP COLUMN drawn_at, DROP COLUMN draw_roster, DROP COLUMN draw_candidates, DROP COLUMN draw_round, DROP COLUMN draw_generation, DROP COLUMN favor_draw;
+
+--changeset banbanyeok:20261126-daily-stage-counts
+CREATE TABLE daily_stage_counts (
+    kst_date date NOT NULL,
+    stage text NOT NULL CHECK (stage IN ('RECOMMEND', 'CREATE_ROOM', 'JOIN_ROOM', 'DECIDE_STATION')),
+    total bigint NOT NULL CHECK (total > 0),
+    PRIMARY KEY (kst_date, stage)
+);
+ALTER TABLE daily_stage_counts ENABLE ROW LEVEL SECURITY;
+--rollback DROP TABLE daily_stage_counts;

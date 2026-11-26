@@ -94,6 +94,7 @@ fun apiServices(
     directory,
     published,
     testTimes,
+    {},
 )
 
 /** HTTP 계층 테스트용: 서비스는 MockK로 대체하고 라우트·오류 형식·인증 헤더·플러그인만 실제로 돌린다. */

@@ -2,11 +2,11 @@ package app.banbanyeok.server.app.http
 
 import app.banbanyeok.server.app.application.AppException
 import app.banbanyeok.server.app.application.RoomResultService
+import app.banbanyeok.server.app.application.UsageStage
 import app.banbanyeok.server.room.AnonUserService
 import app.banbanyeok.server.room.ErrorKind
 import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
-import app.banbanyeok.server.room.RoomService
 import app.banbanyeok.server.room.RoomView
 import app.banbanyeok.server.room.ShareVersion
 import io.ktor.http.ContentType
@@ -54,9 +54,10 @@ private fun Route.anonRoutes(services: ApiServices) {
 }
 
 private fun Route.roomCreationRoute(
-    rooms: RoomService,
+    services: ApiServices,
     idempotency: IdempotencyCache,
 ) {
+    val rooms = services.rooms
     post("/rooms") {
         // 본문은 재생보다 먼저 읽고 숨김 규칙을 본다: 같은 키의 재시도라도 숨긴 본문에 숨기지 않은 성공을 재생하지 않는다(ADR-0007).
         val command = call.receive<RoomCreateRequestDto>().toCommand(call.bearerToken())
@@ -72,6 +73,7 @@ private fun Route.roomCreationRoute(
             expiresAt?.let { cached.copy(expiresAt = it.toString()) }
         }) {
             val created = rooms.create(command)
+            services.counter.increment(UsageStage.CREATE_ROOM)
             RoomCreatedDto(
                 created.roomId,
                 created.hostToken,
@@ -88,7 +90,7 @@ private fun Route.roomRoutes(
     services: ApiServices,
     idempotency: IdempotencyCache,
 ) {
-    roomCreationRoute(services.rooms, idempotency)
+    roomCreationRoute(services, idempotency)
     route("/rooms/{roomId}") {
         get { call.respondRoom(services, services.rooms.get(call.roomId(), call.bearerToken())) }
         patch {
@@ -111,6 +113,7 @@ private fun Route.roomRoutes(
                     body.stationCode,
                     ShareVersion(body.seenVersion),
                 )
+            if (body.stationCode != null) services.counter.increment(UsageStage.DECIDE_STATION)
             call.respondRoom(services, room)
         }
         // 멱등은 방의 세대·회차로 한다(인스턴스와 상관없음). 메모리 응답 캐시를 쓰지 않으므로 재시도도 늘 방장 확인을 지나고 지금 방을 받는다.
@@ -148,6 +151,7 @@ private fun Route.participantRoutes(
                 cached
             }) {
                 val joined = services.rooms.join(call.roomId(), input, call.bearerToken())
+                services.counter.increment(UsageStage.JOIN_ROOM)
                 JoinedDto(joined.participantId, joined.participantToken)
             }
         }
@@ -203,6 +207,7 @@ private fun Route.resultRoutes(services: ApiServices) {
     post("/recommend") {
         val request = call.receive<RecommendRequestDto>().toStatelessRequest()
         val result = statelessRecommendationErrors { services.stateless.recommend(request) }
+        services.counter.increment(UsageStage.RECOMMEND)
         call.respond(result.toDto(services.stations))
     }
 }

@@ -69,7 +69,7 @@ const transferBox = (page: Page) => banner(page).getByRole("checkbox", { name: /
 const saveButton = (page: Page) => banner(page).getByRole("button", { name: /^(동의하고 닫기|이대로 닫기)$/ });
 /** 둘 다 체크했을 때의 오른쪽 버튼(정확히 "동의하고 닫기"). */
 const agreeButton = (page: Page) => banner(page).getByRole("button", { name: "동의하고 닫기", exact: true });
-const collectSwitch = (page: Page) => page.getByRole("switch", { name: "이용 통계 수집·이용 동의" });
+const collectSwitch = (page: Page) => page.getByRole("switch", { name: "PostHog 이용 통계 수집·이용 동의" });
 const transferSwitch = (page: Page) => page.getByRole("switch", { name: /국외 이전 동의/ });
 
 /** 배너에서 두 항목을 모두 체크하고 저장한다(둘 다 동의해야 통계가 켜진다). */
@@ -294,7 +294,7 @@ test("철회: /privacy에서 끄면 바로 멈추고 저장된 식별자를 지�
   await expect(page).toHaveURL(/\/privacy#analytics-settings$/);
   await expect(collectSwitch(page)).toHaveAttribute("aria-checked", "true");
   await expect(transferSwitch(page)).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByText("모두 동의함 — 이용 통계를 모으고 있어요.")).toBeVisible();
+  await expect(page.getByText("모두 동의함 — PostHog 이용 통계를 모으고 있어요.")).toBeVisible();
 
   await transferSwitch(page).click(); // 어느 항목이든 하나만 꺼도 즉시 멈춘다
   await expect(transferSwitch(page)).toHaveAttribute("aria-checked", "false");
@@ -327,7 +327,7 @@ test("다른 탭에서 철회해도 이 탭의 수집이 멈춘다", async ({ pa
 
   const other = await context.newPage();
   await other.goto("/privacy");
-  await other.getByRole("switch", { name: "이용 통계 수집·이용 동의" }).click();
+  await other.getByRole("switch", { name: "PostHog 이용 통계 수집·이용 동의" }).click();
   await expect.poll(() => analyticsKeys(page)).toEqual([]); // storage 이벤트로 이 탭도 지운다
   const settled = probe.outside.length;
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
@@ -437,7 +437,7 @@ test("분리 동의: 한 항목만 동의하면(수집·이용만, 국외 이전
   await page.goto("/privacy");
   await expect(page.getByText(/일부만 동의함/)).toBeVisible();
   await transferSwitch(page).click();
-  await expect(page.getByText("모두 동의함 — 이용 통계를 모으고 있어요.")).toBeVisible();
+  await expect(page.getByText("모두 동의함 — PostHog 이용 통계를 모으고 있어요.")).toBeVisible();
   await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
 });
 

@@ -68,7 +68,7 @@ test("/privacy에서는 동의 배너를 띄우지 않고, 같은 동의를 고�
   await page.goto("/privacy");
   const card = page.getByRole("region", { name: "통계 설정" });
   await expect(card).toBeVisible();
-  await expect(card.getByRole("switch", { name: "이용 통계 수집·이용 동의" })).toBeVisible();
+  await expect(card.getByRole("switch", { name: "PostHog 이용 통계 수집·이용 동의" })).toBeVisible();
   await expect(banner(page)).toHaveCount(0);
   await page.waitForTimeout(500); // 늦게 뜨는 배너가 없는지(수화 뒤)
   await expect(banner(page)).toHaveCount(0);
@@ -85,7 +85,7 @@ test("다른 화면의 배너 링크는 /privacy의 통계 설정으로 가고, 
   await expect(page.getByRole("heading", { level: 2, name: "통계 설정" })).toBeInViewport();
   await expect(banner(page)).toHaveCount(0);
   // 거기서 고르면 다른 화면에서도 다시 묻지 않는다.
-  await page.getByRole("switch", { name: "이용 통계 수집·이용 동의" }).click();
+  await page.getByRole("switch", { name: "PostHog 이용 통계 수집·이용 동의" }).click();
   await page.goto("/");
   await expect(banner(page)).toHaveCount(0);
 });

@@ -4,6 +4,7 @@ import app.banbanyeok.schema.DayType
 import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundRoutes
 import app.banbanyeok.server.app.application.BackgroundSlots
+import app.banbanyeok.server.app.application.JdbcDailyCounter
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StatelessRecommendation
 import app.banbanyeok.server.app.application.StationDirectory
@@ -95,7 +96,8 @@ object CompositionRoot {
             timeline?.awaitLoggingReady()
             val owned = if (database == null) DatabaseFactory.connect(config.database) else null
             owned?.warmUp { timeline?.mark("database-connection-warm") }
-            val db = (database ?: requireNotNull(owned)).database
+            val connected = database ?: requireNotNull(owned)
+            val db = connected.database
             timeline?.mark("database-pool-created")
             val loaded = loading.await()
             val slots = BackgroundSlots(loaded.slots)
@@ -119,6 +121,7 @@ object CompositionRoot {
                     stations = directory,
                     published = PublishedArtifacts(store, loaded),
                     times = times,
+                    counter = JdbcDailyCounter(connected.dataSource, ioDispatcher),
                 )
             timeline?.mark("services-assembled")
             Components(
