@@ -75,9 +75,10 @@ export default async ({ page, step, expect, db, newPerson, note, viewport }) => 
 
 자주 쓰는 손잡이는 다음과 같다. 문구가 바뀌면 `web/e2e-real/`의 같은 선택자도 함께 바뀌므로 거기서 찾는다.
 
-- 첫 화면에는 `combobox "나의 출발역"`, `combobox "친구1의 출발역"`, `button "만날 역 찾기"`, `link "방 만들어서 각자 입력하기"`가 있다.
+- 첫 화면의 기본 탭 `모두 입력`에는 `combobox "나의 출발역"`, `combobox "친구1의 출발역"`, `button "만날 역 찾기"`가 있다.
+- 첫 화면의 `tab "각자 입력"`을 누르면 같은 주소(`/`)의 `tabpanel "각자 입력"`에 방 만들기 폼이 열린다. `textbox "내 이름 (선택)"`, `combobox "내 출발역"`, `button "방 만들기"`를 쓴다.
 - 결과 화면에는 `tablist "추천 기준"`(`공평하게`·`빨리 만나기`·`누구 쪽으로`)과 1위 `article`(`button /자세히/`), `region "다른 후보"`, `button "카톡으로 보내기"`, `button "링크 복사"`가 있다.
-- 방 화면에는 `textbox "내 이름 (선택)"`, `combobox "내 출발역"`, `button "방 만들기"`, `button "참여하기"`, `region "들어온 사람"`, `region "만날 역 후보"`가 있다.
+- 방 화면에는 참여 폼의 `textbox "내 이름 (선택)"`, `combobox "내 출발역"`, `button "참여하기"`와 `region "들어온 사람"`, `region "만날 역 후보"`가 있다.
 - 첫 입력 전에 `gotoHydrated`로 수화를 기다린다. 화면이 붙으면 웹이 `/api/healthz`로 서버를 깨우고, 그 요청을 본 뒤에 입력한다. next dev는 첫 컴파일이 느려서 바로 입력하면 값이 사라진다.
 
 ## Evidence
