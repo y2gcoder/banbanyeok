@@ -246,7 +246,7 @@ python3 -B pipeline/busan/sources.py network-input > build/busan-network-input.j
 ./gradlew :pipeline:run -q --args='busan-preview build/busan-network-input.json'
 ```
 
-운영자 결정(2026-11-26, ADR-0009)대로 운영사 표는 칸마다 대조하는 데만 씁니다.
+운영자 결정(2026-11-26, ADR-0010)대로 운영사 표는 칸마다 대조하는 데만 씁니다.
 원문은 커밋하지 않습니다. 사람이 아래 두 파일을 공개 페이지에서 받아
 `data/raw/busan-operator/`(Git 추적 제외)에 둡니다. 그다음 운영사 공지에서 그 파일이 가장 새
 판인지 확인하고, `data/config/busan-last-train.json`의 `sha256`과 `reviewedOn`을 고칩니다.

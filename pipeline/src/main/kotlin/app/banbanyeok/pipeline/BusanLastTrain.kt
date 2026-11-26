@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 /*
- * Busan direct last trains (#180, ADR-0009). A check cell is (day type, line, meeting station, home station). Its time
+ * Busan direct last trains (#180, ADR-0010). A check cell is (day type, line, meeting station, home station). Its time
  * comes only from a source we may compute with: B1's numbered trains for 1~4호선, TAGO's rows for 동해선. The operators'
  * tables (H1, K2) are only compared with, by `pipeline/busan/last_train.py checks`, which commits the source's value and
  * a verdict per cell. A cell is shown when its verdict is `agree`, this build computes the same value and its table's
