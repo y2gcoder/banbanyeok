@@ -21,8 +21,9 @@ const ENTRY_OPTIONS = [
   },
 ] as const;
 
+// 탭은 같은 폭을 유지하고, 한 줄에 들어가지 않을 때만 탭 안의 아이콘과 이름이 위아래로 놓인다.
 const TAB_CLASS =
-  "flex min-h-12 min-w-0 items-center justify-center gap-1.5 px-2 py-2 text-sm font-bold whitespace-nowrap text-ink-soft first:rounded-tl-[calc(var(--radius-2xl)-1px)] last:rounded-tr-[calc(var(--radius-2xl)-1px)] hover:bg-platform aria-selected:bg-[#fff3c6] aria-selected:font-extrabold aria-selected:text-ink focus-visible:-outline-offset-4 forced-colors:aria-selected:outline-2 forced-colors:aria-selected:outline-[Highlight] forced-colors:aria-selected:focus-visible:outline-dashed";
+  "flex min-h-12 min-w-0 flex-wrap content-center items-center justify-center gap-x-1.5 gap-y-1 px-0.5 py-2 text-sm font-bold text-ink-soft first:rounded-tl-[calc(var(--radius-2xl)-1px)] last:rounded-tr-[calc(var(--radius-2xl)-1px)] hover:bg-platform aria-selected:bg-[#fff3c6] aria-selected:font-extrabold aria-selected:text-ink focus-visible:-outline-offset-4 forced-colors:aria-selected:outline-2 forced-colors:aria-selected:outline-[Highlight] forced-colors:aria-selected:focus-visible:outline-dashed";
 
 export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
   const [hasOpenedRoom, setHasOpenedRoom] = useState(false);
@@ -46,7 +47,7 @@ export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
             >
               <path d={icon} />
             </svg>
-            <span>{label}</span>
+            <span className="min-w-0 text-center wrap-break-word break-keep">{label}</span>
           </Tabs.Tab>
         ))}
       </Tabs.List>
