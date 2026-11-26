@@ -260,7 +260,8 @@ python3 -B pipeline/busan/sources.py network-input > build/busan-network-input.j
 직행과 운영사 표의 직행을 칸마다 견줍니다. 칸은 (요일 종류, 노선, 만날 역 = 부산 후보 27역,
 집 역)입니다. 결과는 `data/config/busan-last-train-checks.csv`(원천의 시각·행선지와 판정)와
 `source-manifest.json`의 `H1`·`K2` 영수증(파일 해시, 대조 표 해시, 대조한 B1·S6-busan 해시)에
-씁니다. 운영사 값은 대조 표에 적지 않습니다.
+씁니다. 대조 표 해시는 머리줄과 그 표가 맡은 노선의 행만 파일 순서대로 이은 값이라, H1 행이 바뀌어도
+K2 영수증은 그대로입니다. 운영사 값은 대조 표에 적지 않습니다.
 
 | 판정 | 뜻 | 화면 |
 | --- | --- | --- |
@@ -273,7 +274,7 @@ python3 -B pipeline/busan/sources.py network-input > build/busan-network-input.j
 대조 표와 다르면 멈춥니다. 운영사 표마다 아래 중 하나라도 해당하면 그 표가 맡은 노선을
 모두 끕니다. 다른 표와 수도권 막차는 그대로입니다.
 
-- 영수증이 없거나, 다른 파일의 영수증이거나, 대조 표나 계산 원천(B1·S6-busan)이 바뀌었다.
+- 영수증이 없거나, 다른 파일의 영수증이거나, 그 표가 맡은 노선의 대조 행이나 계산 원천(B1·S6-busan)이 바뀌었다.
 - `reviewedOn`이 발행 막차 표의 기준일(`lastTrainAsOf`)보다 이르다.
 - K2: `reviewedOn`과 TAGO 수집일이 14일 넘게 떨어졌거나, K2 시행일이 TAGO 수집일 뒤다.
 

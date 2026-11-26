@@ -3,6 +3,7 @@ package app.banbanyeok.pipeline
 import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainCell
 import app.banbanyeok.schema.LastTrainKind
+import app.banbanyeok.schema.Sha256
 import app.banbanyeok.schema.StationCode
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -57,12 +58,13 @@ internal data class BusanLtConfig(
     val lines: Map<String, BusanLtLine>,
 )
 
-/** The committed evidence: the config, the checks, the receipts, the checks file's digest and the TAGO fetch day. */
+/** The committed evidence: the config, the checks, the receipts, each table's checks digest and the TAGO fetch day. */
 internal data class BusanLtEvidence(
     val config: BusanLtConfig,
     val checks: Map<BusanLtKey, BusanLtCheck>,
     val receipts: Map<String, JsonObject>,
-    val checksSha256: String,
+    /** By table id: [busanLtChecksSha256] of the committed checks file. */
+    val checksSha256: Map<String, String>,
     val tagoFetchedOn: String,
 )
 
@@ -141,6 +143,20 @@ internal fun readBusanLtChecks(text: String): Map<BusanLtKey, BusanLtCheck> {
     return checks.toMap().also { require(it.size == checks.size) { "busan-last-train-checks.csv repeats a cell" } }
 }
 
+/**
+ * The SHA-256 of the checks file [text] cut to its header and the rows of [lines], in file order, each ending in a
+ * newline: what a table's receipt hashes. A changed row so switches off only the table that checks it (ADR-0010).
+ * `table_checks` in `pipeline/busan/last_train.py` cuts the file by the same rule.
+ */
+internal fun busanLtChecksSha256(
+    text: String,
+    lines: Collection<String>,
+): String {
+    val rows = text.split("\n")
+    val kept = listOf(rows.first()) + rows.drop(1).filter { it.split(",").getOrNull(1) in lines }
+    return Sha256.hex(kept.joinToString("") { "$it\n" }.encodeToByteArray())
+}
+
 private fun clock(seconds: Int) =
     String.format(
         Locale.ROOT,
@@ -168,9 +184,8 @@ internal fun busanLtTableReasons(
     val tago = LocalDate.parse(evidence.tagoFetchedOn).takeIf { table.source == BUSAN_TAGO_RECEIPT }
     return listOfNotNull(
         "receipt ${table.id} is of another file".takeIf { receipt.text("sha256") != table.sha256 },
-        "the checks file changed after receipt ${table.id}".takeIf {
-            receipt.text("checks_sha256") !=
-                evidence.checksSha256
+        "${table.id}'s rows of the checks file changed after its receipt".takeIf {
+            receipt["checks_sha256"]?.jsonPrimitive?.content != evidence.checksSha256[table.id]
         },
         "${table.id} was not checked against the current ${table.source}".takeIf {
             against == null || against != evidence.receipts[table.source]?.text("sha256")

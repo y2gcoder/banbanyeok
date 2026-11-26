@@ -303,6 +303,17 @@ def csv_text(rows):
     return out.getvalue()
 
 
+def table_checks(text, lines):
+    """The checks file's header and the rows of `lines` in file order: what a table's receipt hashes.
+
+    Each table's receipt hashes only its own rows, so a changed row switches off only the table that checks it
+    (ADR-0010). `busanLtChecksSha256` in `BusanLastTrain.kt` cuts the file by the same rule.
+    """
+    header, *rows = text.split("\n")
+    kept = [row for row in rows if len(row.split(",")) > 1 and row.split(",")[1] in lines]
+    return "".join(f"{row}\n" for row in [header, *kept])
+
+
 def candidate_codes(root):
     with open(root / CANDIDATES, encoding="utf-8", newline="") as file:
         return {row["code"] for row in csv.DictReader(file)}
@@ -346,7 +357,7 @@ def checks(root):
         "license": rule["license"],
         "use": "check-only; not committed, not a calculation input",
         "checks_file": config["checks"],
-        "checks_sha256": sha256(text.encode()),
+        "checks_sha256": sha256(table_checks(text, rule["lines"]).encode()),
         "checked_against": {rule["source"]: receipts[rule["source"]]["sha256"]},
     } for table, rule in sorted(tables.items())]
     manifest = [receipt for receipt in read_json(root / MANIFEST) if receipt["id"] not in tables] + new

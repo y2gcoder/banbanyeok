@@ -4,7 +4,6 @@ import app.banbanyeok.schema.DayType
 import app.banbanyeok.schema.LastTrainCell
 import app.banbanyeok.schema.LastTrainTable
 import app.banbanyeok.schema.LtBinCodec
-import app.banbanyeok.schema.Sha256
 import app.banbanyeok.schema.Station
 import app.banbanyeok.schema.StationCode
 import kotlinx.serialization.json.Json
@@ -18,7 +17,7 @@ import kotlin.io.path.readText
 /** The committed Busan last-train evidence of [root]: config, checks, receipts. */
 internal fun readBusanLtEvidence(root: Path): BusanLtEvidence {
     val config = parseBusanLtConfig(parseObject(root.resolve(BUSAN_LT_CONFIG).readText()))
-    val checks = root.resolve(config.checks)
+    val checks = root.resolve(config.checks).readText()
     val receipts =
         Json
             .parseToJsonElement(root.resolve("data/config/source-manifest.json").readText())
@@ -27,9 +26,9 @@ internal fun readBusanLtEvidence(root: Path): BusanLtEvidence {
             .associateBy { it.text("id") }
     return BusanLtEvidence(
         config,
-        readBusanLtChecks(checks.readText()),
+        readBusanLtChecks(checks),
         receipts,
-        Sha256.hex(checks.readBytes()),
+        config.tables.mapValues { busanLtChecksSha256(checks, it.value.lines) },
         receipts.getValue(BUSAN_TAGO_RECEIPT).text("fetched_at").take(10),
     )
 }

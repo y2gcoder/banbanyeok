@@ -61,26 +61,45 @@ private fun config() =
 
 private fun receipt(vararg fields: Pair<String, Any?>): JsonObject = obj(*fields)
 
+private fun checksText(checks: Map<BusanLtKey, BusanLtCheck>) =
+    "day,line,meeting,home,time,destination,check\n" +
+        checks.entries.joinToString("") { (key, check) ->
+            "${key.day.id},${key.line},${key.meeting},${key.home},${check.time},${check.destination},${check.verdict}\n"
+        }
+
+private fun digest(
+    checks: Map<BusanLtKey, BusanLtCheck>,
+    table: String,
+) = busanLtChecksSha256(checksText(checks), config().tables.getValue(table).lines)
+
+/** Receipts written when the checks were [h1Checks] (H1) and [k2Checks] (K2), against the [committed] checks. */
 private fun evidence(
     h1: String = "h1sha",
-    checks: String = "csvsha",
     b1: String = "b1sha",
     tagoFetchedOn: String = "2026-11-25",
+    committed: Map<BusanLtKey, BusanLtCheck> = checks(),
+    h1Checks: Map<BusanLtKey, BusanLtCheck> = committed,
+    k2Checks: Map<BusanLtKey, BusanLtCheck> = committed,
 ) = BusanLtEvidence(
     config(),
-    checks(),
+    committed,
     mapOf(
-        "H1" to receipt("sha256" to h1, "checks_sha256" to "csvsha", "checked_against" to obj("B1" to "b1sha")),
+        "H1" to
+            receipt(
+                "sha256" to h1,
+                "checks_sha256" to digest(h1Checks, "H1"),
+                "checked_against" to obj("B1" to "b1sha"),
+            ),
         "K2" to
             receipt(
                 "sha256" to "k2sha",
-                "checks_sha256" to "csvsha",
+                "checks_sha256" to digest(k2Checks, "K2"),
                 "checked_against" to obj("S6-busan" to "tagosha"),
             ),
         "B1" to receipt("sha256" to b1),
         "S6-busan" to receipt("sha256" to "tagosha"),
     ),
-    checks,
+    config().tables.keys.associateWith { digest(committed, it) },
     tagoFetchedOn,
 )
 
@@ -95,10 +114,11 @@ private val computed =
 private fun checks(
     l1: String = "agree",
     l1Time: String = "23:24:10",
+    l2Time: String = "23:45:30",
 ) = mapOf(
     BusanLtKey(DayType.WEEKDAY, "L1", "a01", "a02") to BusanLtCheck(l1Time, "a02", l1),
     BusanLtKey(DayType.WEEKDAY, "L1", "a02", "a01") to BusanLtCheck("", "", "missing"),
-    BusanLtKey(DayType.WEEKDAY, "L2", "a02", "a03") to BusanLtCheck("23:45:30", "a03", "agree"),
+    BusanLtKey(DayType.WEEKDAY, "L2", "a02", "a03") to BusanLtCheck(l2Time, "a03", "agree"),
 )
 
 private fun block(
@@ -220,18 +240,14 @@ class BusanLastTrainTest :
             }
 
             it("switches one operator table's lines off by its evidence, leaving the other table on") {
-                for (stale in listOf(evidence(h1 = "other"), evidence(b1 = "other"), evidence(checks = "other"))) {
-                    val result = block(evidence = stale)
-                    if (stale.checksSha256 == "other") {
-                        assertTrue(result.cells.isEmpty())
-                    } else {
-                        assertEquals(
-                            setOf("a03"),
-                            result.cells.keys
-                                .map { it.second }
-                                .toSet(),
-                        )
-                    }
+                for (stale in listOf(evidence(h1 = "other"), evidence(b1 = "other"))) {
+                    assertEquals(
+                        setOf("a03"),
+                        block(evidence = stale)
+                            .cells.keys
+                            .map { it.second }
+                            .toSet(),
+                    )
                 }
                 assertEquals(
                     setOf("a02"),
@@ -250,7 +266,7 @@ class BusanLastTrainTest :
                                     "H1" to
                                         receipt(
                                             "sha256" to "h1sha",
-                                            "checks_sha256" to "csvsha",
+                                            "checks_sha256" to digest(checks(), "H1"),
                                         )
                                 ),
                         )
@@ -262,6 +278,60 @@ class BusanLastTrainTest :
                         .map { it.second }
                         .toSet(),
                 )
+            }
+
+            it("hashes each table's own rows by the same rule as last_train.py") {
+                val text =
+                    "day,line,meeting,home,time,destination,check\n" +
+                        "weekday,L2,a02,a03,23:45:30,a03,agree\n" +
+                        "weekday,L1,a01,a02,23:24:10,a02,agree\n" +
+                        "weekday,L1,a02,a01,,,missing\n"
+                assertEquals(
+                    "ba2c16c93f6f44fac0c61281804148412f20bff692a857183db908276c6da6dd",
+                    busanLtChecksSha256(text, listOf("L1")),
+                )
+                assertEquals(
+                    "2658fc87e16307cd85a9b83fb9f6498c9ede9dd35ad847204adf79eceead43ad",
+                    busanLtChecksSha256(text, listOf("L2")),
+                )
+            }
+
+            it("switches off only the table whose own checked rows changed after its receipt") {
+                val h1Changed = checks(l1 = "differs")
+
+                fun shownHomes(evidence: BusanLtEvidence) =
+                    block(evidence = evidence, checks = evidence.checks)
+                        .cells.keys
+                        .map { it.second }
+                        .toSet()
+                assertEquals(
+                    setOf("a03"),
+                    shownHomes(evidence(committed = h1Changed, h1Checks = h1Changed, k2Checks = checks())),
+                    "H1's receipt rewritten for an H1 row leaves K2 on",
+                )
+                assertEquals(
+                    setOf("a03"),
+                    shownHomes(evidence(committed = h1Changed, h1Checks = checks(), k2Checks = checks())),
+                    "an H1 row changed after H1's receipt switches only H1 off",
+                )
+                val k2Changed = checks(l2Time = "23:45:31")
+                assertEquals(
+                    setOf("a02"),
+                    shownHomes(evidence(committed = k2Changed, h1Checks = k2Changed, k2Checks = checks())),
+                    "a K2 row changed after K2's receipt switches only K2 off, though the computed value differs",
+                )
+                assertFailsWith<IllegalArgumentException>("K2 rewritten for the changed row is on and disagrees") {
+                    shownHomes(evidence(committed = k2Changed))
+                }
+                val unhashed =
+                    evidence().let {
+                        it.copy(
+                            receipts =
+                                it.receipts +
+                                    ("K2" to JsonObject(it.receipts.getValue("K2") - "checks_sha256")),
+                        )
+                    }
+                assertEquals(setOf("a02"), shownHomes(unhashed), "a receipt without a checks digest is off")
             }
 
             it("stops when its own computation disagrees with the committed checks, unless the table is off") {
@@ -276,7 +346,7 @@ class BusanLastTrainTest :
         describe("the regional table") {
             it("keeps every capital cell byte for byte, whatever the Busan block holds") {
                 val on = regional(block())
-                val off = regional(block(evidence = evidence(checks = "other")))
+                val off = regional(block(asOf = "2026-11-27"))
                 val expected = LtBinCodec.encode(capitalTable)
                 assertTrue(LtBinCodec.encode(projectLastTrains(on, capitalTable)).contentEquals(expected))
                 assertTrue(LtBinCodec.encode(projectLastTrains(off, capitalTable)).contentEquals(expected))
