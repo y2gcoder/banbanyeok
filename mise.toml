@@ -44,11 +44,12 @@ run = [
 ]
 
 [tasks."golden:regen"]
-description = "오라클로 contracts/golden/(expected.ranking, link-vectors)와 contracts/fixtures/ 재생성(diff를 반드시 검토)"
+description = "오라클로 contracts/golden/(expected.ranking, link-vectors, banban-lines)와 contracts/fixtures/ 재생성(diff를 반드시 검토)"
 run = [
   "python3 -B prototype/gen_expected.py",
   "python3 -B prototype/gen_fixtures.py",
   "python3 -B prototype/gen_link_vectors.py",
+  "python3 -B prototype/banban_index.py",
 ]
 
 [tasks."golden:check"]
@@ -57,6 +58,7 @@ run = [
   "python3 -B prototype/gen_expected.py --check",
   "python3 -B prototype/gen_fixtures.py --check",
   "python3 -B prototype/gen_link_vectors.py --check",
+  "python3 -B prototype/banban_index.py --check",
 ]
 
 [tasks."fixtures:hidden-origin"]

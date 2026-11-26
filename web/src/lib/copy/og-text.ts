@@ -108,6 +108,18 @@ export const OG_TEXT = {
   middleMore: " 더 걸려요",
   middleLongest: "가장 오래 걸리는 사람",
   /**
+   * 반반지수(#202, `lib/result/banban-index.ts`). 기본 층 "가장 오래 걸리는 사람도 38분이에요". 강조 층 "걸리는 시간이 두 사람 1분 차이예요",
+   * "걸리는 시간이 모두 4분 차이 안이에요", 0분이면 "걸리는 시간이 모두 같아요". 화면의 분 차이만 말하고 '도착'은 쓰지 않는다.
+   */
+  banbanLongestLead: "가장 오래 걸리는 사람도 ",
+  banbanLongestTail: "이에요",
+  banbanCloseLead: "걸리는 시간이 ",
+  banbanPair: "두 사람 ",
+  banbanGroup: "모두 ",
+  banbanPairTail: " 차이예요",
+  banbanGroupTail: " 차이 안이에요",
+  banbanSame: "같아요",
+  /**
    * 공유 그림의 막차 줄(#62): "막차 23:52"(직행 확정, 분 그대로), "늦어도 23:00"(여유 시각, 10분 단위로 내린 값).
    * 시계 숫자와 쌍점은 `clockChars`로 서브셋에 넣는다.
    */
