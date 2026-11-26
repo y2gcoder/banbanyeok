@@ -69,14 +69,6 @@ function modeText(room: Room): string {
   return room.favorDraw ? `${name} 쪽으로(뽑기)` : `${name} 쪽으로`;
 }
 
-function summary(room: Room): string {
-  const parts = [modeText(room)];
-  // 시간대만 고른 방은 시각이 없다: "11월 21일 (토) 저녁". 시간대를 모르는 옛 서버는 meetingBand를 보내지 않는다.
-  const when = meetingWhenText(room.meetingDate ?? null, room.meetingTime ?? null, room.meetingBand ?? null);
-  if (when) parts.push(`약속 ${when}`);
-  return parts.join(" · ");
-}
-
 /**
  * 방 화면: 링크로 들어온 사람의 첫 화면이자 만든 사람이 돌아오는 화면. 열리자마자 서버를 깨우고(콜드스타트),
  * 이 기기에 저장된 토큰(방별 localStorage)으로 "내 항목"을 찾는다. 토큰은 헤더로만 보내고 화면·주소·통계에 두지 않는다.
@@ -298,6 +290,16 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   );
 
   const draw = shownDraw;
+  const compactDrawIntro = draw !== null && enough;
+  const when = meetingWhenText(room.meetingDate ?? null, room.meetingTime ?? null, room.meetingBand ?? null);
+  const meeting = when ? `약속 ${when}` : null;
+  const roomSummary = meeting ? `${modeText(room)} · ${meeting}` : modeText(room);
+  const joinJump =
+    enough && canJoinHere ? (
+      <JumpButton targetId={JOIN_FORM_ID} focus="input" primary className="wide:hidden">
+        나도 출발역 넣기
+      </JumpButton>
+    ) : null;
   const expectedCount = record?.expectedCount ?? null;
   const playDraw = drawUnseen && !reducedMotion;
   const drawSection = draw ? (
@@ -371,7 +373,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   // 일반 방은 MAIN이 오른쪽 칸 전체를 쓰고, SIDE 셋이 왼쪽 칸에 차례로 쌓인다.
   return (
     <RoomShell split="room">
-      <div className={ROOM_SIDE}>
+      <div className={cn(ROOM_SIDE, compactDrawIntro && "max-wide:gap-2")}>
         <RoomIntro
           title={isHost ? "내가 만든 방" : "함께 정하는 만날 역"}
           brief={enough}
@@ -383,16 +385,17 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
             ) : null
           }
         />
-        <p className="-mt-3 text-[14px] font-semibold text-ink-soft">{summary(room)}</p>
-        {enough ? (
-          canJoinHere ? (
-            <JumpButton targetId={JOIN_FORM_ID} focus="input" primary className="wide:hidden">
-              나도 출발역 넣기
-            </JumpButton>
-          ) : null
-        ) : (
-          share
-        )}
+        <p className={cn("-mt-3 text-[14px] font-semibold text-ink-soft", compactDrawIntro && "hidden wide:block")}>
+          {roomSummary}
+        </p>
+        {/* 폰에서는 바로 아래 사다리 카드가 뽑기 상태를 보여 준다. 약속과 참여 버튼은 폭이 충분하면 같은 줄에 둔다. */}
+        {compactDrawIntro && (meeting || joinJump) ? (
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 wide:hidden">
+            {meeting ? <p className="text-sm font-semibold text-ink-soft">{meeting}</p> : null}
+            {joinJump}
+          </div>
+        ) : null}
+        {enough ? (compactDrawIntro ? null : joinJump) : share}
         {drawSection}
       </div>
 

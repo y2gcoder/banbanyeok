@@ -19,8 +19,8 @@ async function bottomOf(locator: Locator) {
 test.describe("방 첫 화면에 1위", () => {
   test.use({ viewport: PHONE, isMobile: true, hasTouch: true });
 
-  // 뽑기 방(#172)도 같다. 뽑은 뒤 이 기기가 처음 보는 뽑기는 결과 위에서 한 번 재생하고(그동안은 1위가 첫 화면 밖이어도 된다), 끝나면
-  // 한 줄로 접혀 후보 아래로 간다. 이미 본 뽑기와 동작 줄이기는 처음부터 접힌 결과다.
+  // 사다리 방도 같은 첫 화면 기준을 지킨다. 소개·참여 안내 다음에 재생하고, 끝나면 같은 자리에 접힌다(#224).
+  // 이미 본 뽑기와 동작 줄이기는 처음부터 접힌 결과다. 재생 중에는 사다리를 먼저 본다.
   const cases: { scenario: RoomScenario; label: string; draw?: RoomDraw; reduced?: boolean }[] = [
     { scenario: "host-full", label: "방장" },
     { scenario: "hidden-self", label: "출발역을 숨긴 본인" },
@@ -45,12 +45,23 @@ test.describe("방 첫 화면에 1위", () => {
         await expect(page.getByRole("heading", { name: "뽑는 중…" })).toBeInViewport();
       }
       if (draw && draw !== "pending") {
-        // 재생이 끝나면(이미 봤거나 동작 줄이기면 처음부터) 접힌 한 줄이 후보 아래에 있고, 요약 줄과 결과 탭이 당첨자 쪽을 보인다.
-        await expect(page.getByRole("heading", { name: "지연이와 함께 오는 아주 긴 이름 쪽으로!" })).toHaveCount(1, {
-          timeout: 6000,
-        });
+        const drawCard = page.getByRole("region", { name: "지연이와 함께 오는 아주 긴 이름 쪽으로!" });
+        const viewDraw = drawCard.getByRole("button", { name: "사다리 결과 보기", exact: true });
+        await expect(viewDraw).toBeInViewport({ ratio: 1, timeout: 6000 });
+        expect((await viewDraw.boundingBox())?.height).toBeGreaterThanOrEqual(44);
         await expect(page.getByRole("heading", { name: "뽑는 중…" })).toHaveCount(0);
-        await expect(page.getByText("지연이와 함께 오는 아주 긴 이름 쪽으로(뽑기)")).toBeInViewport();
+        const meeting = page.getByText("약속 11월 21일 (토) 19:30", { exact: true });
+        await expect(meeting).toBeInViewport({ ratio: 1 });
+        const topOfDraw = (await drawCard.boundingBox())?.y ?? 0;
+        expect(await bottomOf(meeting)).toBeLessThanOrEqual(topOfDraw);
+        if (scenario === "friend-join") {
+          const join = page.getByRole("button", { name: "나도 출발역 넣기" });
+          await expect(join).toBeInViewport({ ratio: 1 });
+          expect((await join.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+          expect(await bottomOf(join)).toBeLessThanOrEqual(topOfDraw);
+        }
+        const resultTitle = page.getByRole("heading", { name: "만날 역 후보" });
+        expect(await bottomOf(drawCard)).toBeLessThanOrEqual((await resultTitle.boundingBox())?.y ?? 0);
         await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
       }
       const card = topCard(page);

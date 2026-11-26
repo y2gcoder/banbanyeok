@@ -145,6 +145,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
     ? "출발역을 숨긴 사람을 빼면, 다른 사람도 공평 1위보다 15분(또는 그 시간의 절반) 넘게 더 가지 않아요."
     : "다른 사람도 공평 1위보다 15분(또는 그 시간의 절반) 넘게 더 가지 않아요.";
   const title = phase === "playing" ? "뽑는 중…" : winnerName ? `${winnerName} 쪽으로!` : "누구 쪽으로 뽑기 전";
+  const collapsedResult = !expanded && phase === "done";
 
   const drawButton = (compact: boolean) => (
     <Button
@@ -169,6 +170,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
       className={cn(
         "flex flex-col gap-3 rounded-2xl bg-surface",
         expanded ? "p-5" : "px-3 py-1",
+        collapsedResult && "max-wide:py-0.5",
         phase === "done" && expanded ? "border-2 border-ink" : "border border-rule",
       )}
     >
@@ -189,17 +191,20 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
             ref={heading}
             tabIndex={-1}
             className={cn(
-              "leading-tight font-extrabold text-ink outline-none",
+              "leading-tight font-extrabold wrap-anywhere text-ink outline-none",
               expanded ? "text-[22px]" : "text-[15px]",
             )}
           >
             {title}
           </h2>
-          {!expanded && phase === "done" ? (
-            <p className="text-[13px] text-muted-foreground">
-              {draw.round >= 2 ? "다시 뽑음 · " : ""}
-              {by}
-              {draw.drawnAt ? ` · ${clockText(draw.drawnAt)}` : ""}
+          {collapsedResult ? (
+            <p className={cn("text-[13px] text-muted-foreground", draw.round < 2 && "hidden wide:block")}>
+              {draw.round >= 2 ? "다시 뽑음" : null}
+              <span className="hidden wide:inline">
+                {draw.round >= 2 ? " · " : ""}
+                {by}
+                {draw.drawnAt ? ` · ${clockText(draw.drawnAt)}` : ""}
+              </span>
             </p>
           ) : null}
         </div>

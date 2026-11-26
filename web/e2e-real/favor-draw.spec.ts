@@ -55,7 +55,6 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   await joinHiddenAsBefore(request, roomId, { originCode: GANGNAM });
   await page.reload();
   await expect(page.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeVisible();
-  await expect(page.getByText("누구 쪽으로(뽑기 전)")).toBeVisible();
   await page.getByRole("button", { name: "뽑기 자세히 보기" }).click();
   await expect(page.getByText(/출발역을 숨겨서 뽑기에서 빠졌어요/)).toBeVisible();
   await expect(page.getByRole("tab", { name: "공평하게" })).toHaveAttribute("aria-selected", "true");

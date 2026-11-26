@@ -243,16 +243,16 @@ async function expectDrawOrder(page: Page, heading: string) {
   await expect(draw).toBeVisible();
   await expect(page.getByRole("heading", { name: "만날 역 후보" })).toBeVisible();
   const order = await draw.evaluate((card) => {
-    const summary = document.getElementById("room-title")?.closest("section")?.nextElementSibling;
+    const intro = document.getElementById("room-title")?.closest("section");
     const result = document.getElementById("result-title")?.closest("section");
     const people = document.getElementById("people-title")?.closest("section");
-    if (!summary || !result || !people) return null;
+    if (!intro || !result || !people) return null;
     const follows = (first: Element, second: Element) =>
       Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
     return {
-      dom: follows(summary, card) && follows(card, result) && follows(result, people),
+      dom: follows(intro, card) && follows(card, result) && follows(result, people),
       layout:
-        summary.getBoundingClientRect().bottom <= card.getBoundingClientRect().top &&
+        intro.getBoundingClientRect().bottom <= card.getBoundingClientRect().top &&
         card.getBoundingClientRect().bottom <=
           Math.min(result.getBoundingClientRect().top, people.getBoundingClientRect().top),
     };
@@ -308,7 +308,6 @@ test.describe("'누구 쪽으로' 뽑기", () => {
       }),
     );
     await expectDrawOrder(page, "누구 쪽으로 뽑기 전");
-    await expect(page.getByText("누구 쪽으로(뽑기 전)")).toBeVisible();
     await expect(page.getByRole("tab", { name: "공평하게" })).toHaveAttribute("aria-selected", "true");
     await expectTouchTarget(page, "사다리 타기");
     await expectTouchTarget(page, "뽑기 자세히 보기");
@@ -336,7 +335,6 @@ test.describe("'누구 쪽으로' 뽑기", () => {
     await expect(page.getByRole("img", { name: /사다리타기/ })).toHaveCount(0);
     await expect(page.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("button", { name: "지영", pressed: true })).toBeVisible();
-    await expect(page.getByText("지영 쪽으로(뽑기)")).toBeVisible();
     // 공유 칸 안내도 실제 공유(결과를 숨긴 미리보기)와 같다.
     await expect(
       page.getByText(/카톡 미리보기에는 사다리 결과\(누구 쪽인지, 1위 역, 각자 시간\)를 숨기고 이름만 보여요/),

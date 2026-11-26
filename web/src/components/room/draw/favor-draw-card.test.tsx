@@ -137,11 +137,11 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
     vi.useFakeTimers();
     card({ draw: drawn, viewer: "member" });
     expect(screen.getByRole("heading", { name: "지영 쪽으로!" })).toBeTruthy();
-    expect(screen.getByText(/방장이 뽑았어요 · 20:14/)).toBeTruthy();
     expect(screen.queryByRole("img")).toBeNull();
     const open = screen.getByRole("button", { name: "사다리 결과 보기" });
     expect(open).toHaveTextContent(/^사다리 결과 보기$/);
     fireEvent.click(open);
+    expect(screen.getByText(/방장이 뽑았어요 · 20:14/)).toBeVisible();
     expect(screen.getByRole("img").getAttribute("aria-label")).toBe("사다리타기 결과: 지영 쪽으로");
     fireEvent.click(screen.getByRole("button", { name: "다시 보기" }));
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "건너뛰고 결과 보기" }));
@@ -194,7 +194,7 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
   it("다시 뽑은 결과는 모두에게 '다시 뽑음'으로 보이고, 더 뽑을 수 없다", () => {
     reduceMotion(false);
     card({ draw: { ...drawn, round: 2, key: "0:2" } });
-    expect(screen.getByText(/다시 뽑음 · 방장이 한 번 다시 뽑았어요/)).toBeTruthy();
+    expect(screen.getByText("다시 뽑음", { exact: true })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "사다리 결과 보기" }));
     expect(screen.queryByRole("button", { name: /다시 뽑기/ })).toBeNull();
   });
