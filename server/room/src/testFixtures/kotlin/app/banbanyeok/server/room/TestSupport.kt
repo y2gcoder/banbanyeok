@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room
 
+import app.banbanyeok.schema.StationRegion
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -123,6 +124,7 @@ fun aRoom(
         createdAt = createdAt,
         lastActivityAt = createdAt,
         expiresAt = createdAt.plus(ExpiryPolicy.SLIDING),
+        region = StationRegion.CAPITAL,
     ).let(modify)
 
 fun aParticipant(

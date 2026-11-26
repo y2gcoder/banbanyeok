@@ -56,7 +56,7 @@ public class DecisionRule(
     ): DecisionResult {
         val members = participants.map { it.id }
         if (request.actor in members && members.size >= MIN_PEOPLE) {
-            request.decision?.let { regions.requireMatch(participants, it.stationCode) }
+            request.decision?.let { regions.requireMatch(room, it.stationCode) }
         }
         return when {
             request.actor !in members -> DecisionResult.NotMember
