@@ -150,7 +150,7 @@ describe("결과 카드", () => {
         banban={{ kind: "close", text: "걸리는 시간이 두 사람 1분 차이예요" }}
       />,
     );
-    await userEvent.click(screen.getByRole("button", { name: "자세히: 추천 이유" }));
+    await userEvent.click(screen.getByRole("button", { name: "자세히: 추천 이유·막차" }));
     expect(screen.getByText(top.reason)).toBeVisible();
     expect(screen.getAllByText("37분")).toHaveLength(1);
     expect(screen.getByText(/환승 1번/)).toBeVisible();
@@ -174,7 +174,7 @@ describe("결과 카드", () => {
         banban={{ kind: "longest", text: "가장 오래 걸리는 사람도 37분이에요" }}
       />,
     );
-    await userEvent.click(screen.getByRole("button", { name: "자세히: 추천 이유·경로" }));
+    await userEvent.click(screen.getByRole("button", { name: "자세히: 추천 이유·경로·막차" }));
     const widths = (selector: string) =>
       [...document.querySelectorAll<HTMLElement>(selector)].map((el) => el.style.width).sort();
     expect(widths("[data-route=lines] > span")).toHaveLength(top.people.length);

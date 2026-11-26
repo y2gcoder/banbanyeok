@@ -166,10 +166,12 @@ function BanbanSentence({ line }: { line: BanbanLine }) {
 
 const hasRoutes = (candidate: CandidateView) => candidate.people.some((person) => person.route);
 
-/** 반반지수 요약 아래 "자세히"는 펼쳐서 실제로 있는 것만 말한다(경로를 아무도 모르면 경로 막대를 그리지 않는다). */
+/**
+ * 반반지수 요약 아래 "자세히". 경로를 아무도 모르면 경로 막대를 그리지 않으므로 "경로"를 빼고 말한다. "막차"는 막차를 모를 때도 남긴다:
+ * 막차 응답이 있든 없든 막차 칸 밖의 화면은 같아야 한다(e2e-real last-train).
+ */
 function banbanDetailLabel(candidate: CandidateView): string {
-  const parts = ["추천 이유", hasRoutes(candidate) ? "경로" : null, candidate.lastTrain ? "막차" : null];
-  return `자세히: ${parts.filter(Boolean).join("·")}`;
+  return hasRoutes(candidate) ? "자세히: 추천 이유·경로·막차" : "자세히: 추천 이유·막차";
 }
 
 export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle = null, banban = null }: TopProps) {
