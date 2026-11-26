@@ -55,20 +55,28 @@ describe("글꼴에 없는 글자 대체(ogSafeName)", () => {
     expect(ogSafeName("  김  민수 ", "나")).toBe("김 민수");
   });
 
-  it("길면 자르고 말줄임표를 붙인다(코드 포인트 기준)", () => {
-    const long = "가나다라마바사아자차카타";
-    const out = ogSafeName(long, "나");
+  it("길면 가운데를 말줄임표로 줄이고 끝을 남긴다(코드 포인트 기준, 말줄임표 포함 최대 길이 + 1)", () => {
+    const out = ogSafeName("가나다라마바사아자차카타", "나");
+    expect(out).toBe("가나다라마바사아…카타");
     expect(Array.from(out)).toHaveLength(OG_NAME_MAX + 1);
-    expect(out.endsWith("…")).toBe(true);
-    expect(out.startsWith("가나다라마바사아자차")).toBe(true);
     expect(ogSafeName("가나다라마바사아자차", "나")).toBe("가나다라마바사아자차"); // 정확히 최대 길이는 그대로
     expect(ogSafeName("동대문역사문화공원", "나")).toBe("동대문역사문화공원"); // 가장 긴 역 이름은 자르지 않는다
   });
 
-  it("같은 이름에 서버가 붙인 번호는 자르지 않는다(같은 역에서 오는 두 사람이 같은 이름이 되지 않게)", () => {
+  it("앞이 같은 긴 별칭도 다른 이름으로 남는다", () => {
+    expect(ogSafeName("우리회사영업팀막내민지", "나")).not.toBe(ogSafeName("우리회사영업팀막내민수", "나"));
+  });
+
+  it("같은 이름에 서버가 붙인 번호는 길이에서 빼고 남긴다(같은 역에서 오는 두 사람이 같은 이름이 되지 않게)", () => {
     expect(ogSafeName("동대문역사문화공원 2", "나")).toBe("동대문역사문화공원 2");
-    expect(ogSafeName("가나다라마바사아자차카타 12", "나")).toBe("가나다라마바사아자차… 12");
+    expect(ogSafeName("가나다라마바사아자차카타 2", "나")).toBe("가나다라마바사…타 2");
     expect(ogSafeName("가나다라마바사아자차카 1", "나")).not.toBe(ogSafeName("가나다라마바사아자차카 2", "나"));
+  });
+
+  it("사용자가 넣은 긴 숫자는 번호로 보지 않아 길이가 늘지 않는다", () => {
+    const out = ogSafeName("가나다라마바사아자차카 12345678", "나");
+    expect(Array.from(out)).toHaveLength(OG_NAME_MAX + 1);
+    expect(out.endsWith("78")).toBe(true);
   });
 
   it("제어 문자와 한자(서브셋에 없는 글자)도 걸러낸다", () => {

@@ -189,7 +189,7 @@ describe("방 공유 문구", () => {
     ];
     const copy = roomShareCopy(result({ station: { stationCode: "s1q", stationName: "신촌", times } }));
     expect(copy.preview.description).toContain(`${long} 10분`);
-    expect(copy.card?.people.map((p) => p.name)).toEqual(["지연이와 함께 오는…", "참가자 2"]);
+    expect(copy.card?.people.map((p) => p.name)).toEqual(["지연이와 함께…이름", "참가자 2"]);
   });
 
   it("배려 기준이면 그 사람의 노선만 진하게 그린다(정한 역은 기준과 무관하게 모두 같게)", () => {

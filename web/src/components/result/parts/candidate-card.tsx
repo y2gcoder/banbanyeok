@@ -113,26 +113,28 @@ function TimeList({ candidate, meIndex, bars }: { candidate: CandidateView; meIn
   return (
     <ul className={cn("flex flex-col", bars ? "gap-2.5" : "gap-1.5")}>
       {ordered.map((person) => (
-        <li key={person.index} className="flex flex-wrap items-baseline gap-x-2">
-          <span
-            aria-hidden="true"
-            className="h-3.5 w-1.5 shrink-0 self-center rounded-full"
-            style={{ backgroundColor: personColor(person.index) }}
-          />
-          <span className="min-w-0 truncate text-[15px] font-bold text-ink">
-            {person.shortName}
-            {person.index === meIndex ? (
-              <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
-            ) : null}
-          </span>
-          <span className="min-w-0 shrink-[2] truncate text-[13px] text-muted-foreground">
-            {[originNote(person), shownTransferLabel(person)].filter(Boolean).join(" · ")}
-          </span>
-          <span className="tabular ml-auto shrink-0 text-[19px] leading-none font-extrabold text-ink">
-            {formatMinutes(person.minutes)}
-          </span>
+        <li key={person.index} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline gap-2">
+            <span
+              aria-hidden="true"
+              className="h-3.5 w-1.5 shrink-0 self-center rounded-full"
+              style={{ backgroundColor: personColor(person.index) }}
+            />
+            <span className="min-w-0 truncate text-[15px] font-bold text-ink">
+              {person.shortName}
+              {person.index === meIndex ? (
+                <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
+              ) : null}
+            </span>
+            <span className="min-w-0 shrink-[2] truncate text-[13px] text-muted-foreground">
+              {[originNote(person), shownTransferLabel(person)].filter(Boolean).join(" · ")}
+            </span>
+            <span className="tabular ml-auto shrink-0 text-[19px] leading-none font-extrabold text-ink">
+              {formatMinutes(person.minutes)}
+            </span>
+          </div>
           {bars ? (
-            <span aria-hidden="true" data-bar className="mt-1.5 block h-2.5 basis-full rounded-full bg-rule">
+            <span aria-hidden="true" data-bar className="block h-2.5 rounded-full bg-rule">
               <span
                 className="block h-full rounded-full"
                 style={{ width: `${(person.minutes / axis) * 100}%`, backgroundColor: personColor(person.index) }}

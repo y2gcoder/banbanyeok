@@ -13,9 +13,9 @@ function isCovered(char: string): boolean {
 
 /**
  * 글꼴에 없는 글자를 뺀 문자열(공백은 하나로). 남는 글자가 없으면 `fallback`.
- * 이모지·한자 등은 빠지고 "지훈🎂"은 "지훈"이 된다. `OG_NAME_MAX`를 넘으면 자르고 말줄임표를 붙인다.
- * 서버가 같은 이름에 붙인 번호(" 2", contracts/data-format.md §8)는 자르지 않고 길이에서 빼고 센다. 번호까지 자르면 같은 역에서 오는
- * 두 사람("동대문역사문화공원 1", "… 2")이 그림에서 같은 이름이 된다.
+ * 이모지·한자 등은 빠지고 "지훈🎂"은 "지훈"이 된다. `OG_NAME_MAX`를 넘으면 가운데를 말줄임표로 줄이고 끝을 남긴다. 끝을 자르면 앞이 같은
+ * 두 별칭("…막내민지"·"…막내민수")이나 같은 역에서 오는 두 사람("동대문역사문화공원 1"·"… 2")이 그림에서 같은 이름이 된다.
+ * 서버가 같은 이름에 붙인 번호(" 2", contracts/data-format.md §8, 인원이 4명까지라 한두 자리)는 길이에서 빼고 센다.
  */
 export function ogSafeName(text: string, fallback: string): string {
   const kept = Array.from(text)
@@ -24,9 +24,15 @@ export function ogSafeName(text: string, fallback: string): string {
     .replace(/\s+/g, " ")
     .trim();
   if (kept === "") return fallback;
-  const [, base = kept, suffix = ""] = /^(.+?)( \d+)?$/.exec(kept) ?? [];
-  const chars = Array.from(base);
-  return chars.length > OG_NAME_MAX ? `${chars.slice(0, OG_NAME_MAX).join("")}${OG_TEXT.ellipsis}${suffix}` : kept;
+  const numbered = /^(.+) (\d{1,2})$/.exec(kept);
+  const base = Array.from(numbered?.[1] ?? kept);
+  if (base.length <= OG_NAME_MAX) return kept;
+  const chars = Array.from(kept);
+  const tail = numbered ? Array.from(numbered[2] ?? "").length + 2 : 2;
+  return `${chars
+    .slice(0, OG_NAME_MAX - tail)
+    .join("")
+    .trimEnd()}${OG_TEXT.ellipsis}${chars.slice(-tail).join("")}`;
 }
 
 /** 역 이름 같은 신뢰하는 문자열이 글꼴에 다 있는지(없는 글자 목록). 테스트와 빌드 점검용. */

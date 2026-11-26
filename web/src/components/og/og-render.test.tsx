@@ -278,9 +278,16 @@ describe("OG 이미지 그리기(satori)", () => {
         banban: longest,
       };
       const room = { ...scoreboard, middleLine: scoreboard.compareLine, banban: longest };
+      // 반반지수가 꺼진 노선 그림(빨리 만나기 등)의 이름 칸에는 폭 제한이 없어 `ogSafeName`의 길이에만 기댄다.
+      const off = {
+        ...room,
+        banban: null,
+        people: people.map((p, i) => (i === 0 ? { ...p, name: ogSafeName("가나다라마바사아자차카 12345678", "") } : p)),
+      };
       for (const [kind, element] of [
         ["scoreboard", <ScoreboardCard key="scoreboard" data={scoreboard} />],
         ["room", <SharedCard key="room" data={room} />],
+        ["lines", <SharedCard key="lines" data={off} />],
       ] as const) {
         const drawn = await render(element);
         expectPng(drawn);
