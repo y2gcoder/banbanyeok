@@ -47,10 +47,19 @@ data class RoomCreateRequestDto(
     val meetingBand: JsonElement? = null,
     val host: ParticipantInputDto,
     val expectedCount: Int? = null,
-    /** 방장이 대신 넣는 다른 사람 칸(#227). 뽑기 방에서만 받는다. */
-    val others: List<ParticipantInputDto> = emptyList(),
-    /** 입력 순서에서 방장의 자리. */
-    val hostPosition: Int = 0,
+)
+
+/** 방장이 모두의 칸을 채운 사다리 방(#227, `POST /v1/draw-rooms`). 방은 늘 favor·draw이고 예상 인원은 없다. */
+@Serializable
+data class DrawRoomCreateRequestDto(
+    val host: ParticipantInputDto,
+    /** 방장이 대신 넣는 다른 사람 칸(1~3명). */
+    val others: List<ParticipantInputDto>,
+    /** 원래 입력 순서에서 방장의 자리. */
+    val hostPosition: Int,
+    val meetingDate: String? = null,
+    /** 문자열이 아니거나 모르는 값이면 INVALID_MEETING_BAND. null은 없음. */
+    val meetingBand: JsonElement? = null,
 )
 
 @Serializable

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { Room } from "@/lib/api/types";
 import type { ShareState } from "@/lib/link/codec";
 import { slotForMeeting } from "@/lib/when/time-slot";
-import { meetingForSlot, storedAsRequested, toDrawRoomRequest } from "./draw-room";
+import { meetingForSlot, toDrawRoomRequest } from "./draw-room";
 
 const THURSDAY = "2026-11-26";
 
@@ -45,8 +44,6 @@ describe("meetingForSlot", () => {
 describe("toDrawRoomRequest", () => {
   it("makes the chosen person the host and keeps everyone else in input order around them", () => {
     expect(toDrawRoomRequest(state(), 1, THURSDAY)).toEqual({
-      mode: "favor",
-      favorTarget: "draw",
       host: { originCode: "ryf", hidden: false },
       others: [
         { nickname: "민수", originCode: "k3a", hidden: false },
@@ -59,8 +56,6 @@ describe("toDrawRoomRequest", () => {
 
   it("sends no names when the result had none, and carries a weekend date", () => {
     expect(toDrawRoomRequest(state({ nicknames: null, timeSlot: "saturday-day" }), 0, THURSDAY)).toEqual({
-      mode: "favor",
-      favorTarget: "draw",
       host: { originCode: "k3a", hidden: false },
       others: [
         { originCode: "ryf", hidden: false },
@@ -74,31 +69,5 @@ describe("toDrawRoomRequest", () => {
 
   it("rejects a host outside the people in the result", () => {
     expect(() => toDrawRoomRequest(state(), 3, THURSDAY)).toThrow(RangeError);
-  });
-});
-
-describe("storedAsRequested", () => {
-  const room = (locked: boolean, marks: (boolean | undefined)[]) =>
-    ({ locked, participants: marks.map((enteredByHost) => ({ enteredByHost })) }) as unknown as Room;
-  const body = toDrawRoomRequest(
-    {
-      origins: ["k3a", "ryf", "dxy"],
-      mode: "fair",
-      favorIndex: null,
-      nicknames: [null, null, null],
-      timeSlot: "weekday-day",
-    },
-    0,
-    "2026-11-26",
-  );
-
-  it("대신 넣은 칸을 모두 표시한 잠긴 방만 요청대로 만든 방이다", () => {
-    expect(storedAsRequested(room(true, [false, true, true]), body)).toBe(true);
-  });
-
-  it("옛 서버가 others를 버리고 만든 방(방장만, 열림, 표시 없음)은 아니다", () => {
-    expect(storedAsRequested(room(false, [undefined]), body)).toBe(false);
-    expect(storedAsRequested(room(true, [undefined]), body)).toBe(false);
-    expect(storedAsRequested(room(false, [false, true, true]), body)).toBe(false);
   });
 });

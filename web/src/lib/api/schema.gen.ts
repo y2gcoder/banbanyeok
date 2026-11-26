@@ -66,6 +66,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/draw-rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 방장이 모두의 칸을 채운 사다리 방 생성
+         * @description `DrawRoomCreateRequest` 참고. 이 경로를 모르는 옛 서버는 404(또는 405)로 거절하고 아무것도 저장하지 않는다. 웹은 이때 방을 만들 수
+         *     없다고만 알린다(배포는 서버 먼저, 되돌릴 때는 웹 먼저).
+         */
+        post: operations["createDrawRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rooms/{roomId}": {
         parameters: {
             query?: never;
@@ -539,19 +560,33 @@ export interface components {
             meetingBand?: components["schemas"]["MeetingBand"] | null;
             host: components["schemas"]["ParticipantInput"];
             expectedCount?: number;
+        };
+        /**
+         * @description 방장이 모두의 칸을 채운 사다리 방 만들기(#227, ADR-0011). 한 사람이 모두의 출발역을 넣어 본 결과에서, 사다리로 배려 대상을 정하려고
+         *     만든다. 방은 `mode=favor`, `favorTarget=draw`(방장이 뽑는다)이고 예상 인원은 없다. 방과 모든 칸을 같은 트랜잭션에 저장해 일부 칸만
+         *     생기지 않고, 방은 잠긴 채 시작한다(`Room.locked`=true, 방장이 풀 수 있다). `/rooms`와 경로를 나눈 것은 이 경로를 모르는 옛 서버가
+         *     다른 사람 칸을 버린 방을 만들지 않고 아무것도 쓰지 않은 채 거절하게 하려는 것이다.
+         */
+        DrawRoomCreateRequest: {
+            host: components["schemas"]["ParticipantInput"];
             /**
-             * @description 방장이 대신 넣는 다른 사람 칸(#227, ADR-0011). 한 사람이 모두의 출발역을 넣어 본 뒤 사다리로 배려 대상을 정할 때 쓴다.
-             *     `mode=favor`, `favorTarget=draw`일 때만 받고(아니면 400 `INVALID_OTHERS`), 방장을 포함해 2~4명(예상 인원이 있으면 그 안)이다.
-             *     출발역을 숨길 수 없다(`hidden=true`면 400 `HIDE_NOT_AVAILABLE`). 방과 같은 트랜잭션에 저장해 일부 칸만 생기지 않는다.
-             *     칸이 있으면 방은 잠긴 채 시작한다(`Room.locked`=true, 방장이 풀 수 있다). 대신 넣은 칸은 `Participant.enteredByHost`가 true이고
-             *     그 칸의 토큰은 아무에게도 주지 않는다: 본인이 고치거나 지울 수 없고, 방장이 내보낼 수만 있다.
+             * @description 방장이 대신 넣는 다른 사람 칸. 방장을 포함해 2~4명이다(넘으면 400 `INVALID_OTHERS`). 출발역을 숨길 수 없다(`hidden=true`면 400
+             *     `HIDE_NOT_AVAILABLE`). 대신 넣은 칸은 `Participant.enteredByHost`가 true이고 그 칸의 토큰은 아무에게도 주지 않는다: 본인이 고치거나
+             *     지울 수 없고, 방장이 내보낼 수만 있다. 비어 있으면 400 `INVALID_OTHERS`
              */
-            others?: components["schemas"]["ParticipantInput"][];
+            others: components["schemas"]["ParticipantInput"][];
             /**
-             * @description 원래 입력 순서에서 방장의 자리(0이면 맨 앞, 없으면 0). 입장 순서는 `others`에 방장을 이 자리에 끼운 순서이고, 표시 이름의 번호와 뽑기
-             *     대상의 칸 순서가 이 순서를 따른다. `others` 길이를 넘으면 400 `INVALID_OTHERS`
+             * @description 원래 입력 순서에서 방장의 자리(0이면 맨 앞). 입장 순서는 `others`에 방장을 이 자리에 끼운 순서이고, 표시 이름의 번호와 뽑기 대상의
+             *     칸 순서가 이 순서를 따른다. `others` 길이를 넘으면 400 `INVALID_OTHERS`
              */
-            hostPosition?: number;
+            hostPosition: number;
+            /**
+             * Format: date
+             * @description 약속일(선택). `RoomCreateRequest.meetingDate`와 같다
+             */
+            meetingDate?: string;
+            /** @description 약속 시간대(선택). `RoomCreateRequest.meetingBand`와 같다(약속 시각은 받지 않는다) */
+            meetingBand?: components["schemas"]["MeetingBand"] | null;
         };
         RoomCreated: {
             roomId: string;
@@ -1121,6 +1156,43 @@ export interface operations {
             };
             400: components["responses"]["Error"];
             /** @description 고른 약속 구분에 방장 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            429: components["responses"]["Error"];
+        };
+    };
+    createDrawRoom: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DrawRoomCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description 생성됨. 방장 토큰과 방장의 참여자 토큰은 이 응답에서만 받는다. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomCreated"];
+                };
+            };
+            400: components["responses"]["Error"];
+            /** @description 고른 약속 구분에 어느 칸의 출발역도 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`) */
             409: {
                 headers: {
                     [name: string]: unknown;

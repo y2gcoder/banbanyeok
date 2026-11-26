@@ -8,29 +8,17 @@ import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { roomHashProperty, track } from "@/lib/analytics";
-import { createRoom, deleteRoom, getRoom } from "@/lib/api/rooms";
-import type { RoomCreated, RoomCreateRequest } from "@/lib/api/types";
+import { createDrawRoom, deleteRoom } from "@/lib/api/rooms";
+import type { DrawRoomCreateRequest, RoomCreated } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import type { ShareState } from "@/lib/link/codec";
-import { meetingForSlot, storedAsRequested, toDrawRoomRequest } from "@/lib/room/draw-room";
-import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
+import { meetingForSlot, toDrawRoomRequest } from "@/lib/room/draw-room";
+import { isDrawRoomUnsupported, isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomPath } from "@/lib/room/id";
 import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
 import { formatMeetingDay, todayInSeoul } from "@/lib/when/dates";
 
 type Person = { index: number; name: string };
-
-/** 서버가 대신 넣은 칸을 버리고 방을 만들었다(그 필드를 모르는 옛 서버). 만든 방은 지운 뒤 던진다. */
-class DrawRoomUnsupported extends Error {}
-
-/** 만든 방이 요청과 다른지. 확인하지 못하면(연결 오류 등) 막지 않는다: 방 화면이 같은 방을 다시 불러온다. */
-async function droppedOthers(created: RoomCreated, body: RoomCreateRequest): Promise<boolean> {
-  try {
-    return !storedAsRequested(await getRoom(created.roomId, created.participantToken), body);
-  } catch {
-    return false;
-  }
-}
 
 function keepingText(meetingDate: string | null): string {
   return meetingDate
@@ -42,7 +30,7 @@ function keepingText(meetingDate: string | null): string {
  * 혼자 입력한 결과에서 사다리 방을 만들기 전에 묻는다(#227, ADR-0011). 저장되는 것, 링크를 받은 사람에게 보이는 것, 보관 기간을
  * 실제 규칙대로 알리고 "나"를 고르게 한 뒤에만 방을 만든다. 만든 뒤에는 방으로 가서 방장이 사다리를 탄다.
  *
- * 방장 토큰을 이 기기에 저장하지 못하면(저장 공간 부족 등) 방으로 가지 않는다. 가면 방장 권한을 잃어 다른 사람의 정보가 든 방을 지울 수
+ * 방을 만든 응답을 받으면 다른 일(조회·이동)보다 먼저 방장 토큰을 이 기기에 저장한다. 저장하지 못하면(저장 공간 부족 등) 방으로 가지 않는다. 가면 방장 권한을 잃어 다른 사람의 정보가 든 방을 지울 수
  * 없다. 받은 토큰을 이 대화상자에 들고 다시 저장하거나 만든 방을 지우게 하고, 그동안 닫거나 새 방을 만들지 못하게 한다.
  */
 export function DrawRoomDialog({
@@ -89,19 +77,15 @@ export function DrawRoomDialog({
     router.push(roomPath(created.roomId));
   };
 
+  // 응답을 받은 바로 그 자리에서 저장한다. 그 뒤의 화면 처리(onSuccess)가 돌기 전에 탭이 닫혀도 방장 권한은 이 기기에 남는다.
   const create = useMutation({
-    mutationFn: async (body: RoomCreateRequest) => {
-      const created = await createRoom(body, keys.keyFor(body));
-      if (await droppedOthers(created, body)) {
-        await deleteRoom(created.roomId, created.hostToken).catch(() => undefined);
-        keys.renew();
-        throw new DrawRoomUnsupported();
-      }
-      return created;
+    mutationFn: async (body: DrawRoomCreateRequest) => {
+      const created = await createDrawRoom(body, keys.keyFor(body));
+      return { created, saved: persist(created) };
     },
     onMutate: () => setRemoved(false),
-    onSuccess: (created) => {
-      if (persist(created)) enter(created);
+    onSuccess: ({ created, saved }) => {
+      if (saved) enter(created);
       else setUnsaved(created);
     },
   });
@@ -202,8 +186,8 @@ export function DrawRoomDialog({
         )}
         {create.isError ? (
           <p role="alert" className="text-sm font-semibold text-destructive">
-            {create.error instanceof DrawRoomUnsupported
-              ? "지금은 사다리 방을 만들 수 없어요. 만들던 방은 지웠어요. 잠시 뒤에 다시 해 주세요."
+            {isDrawRoomUnsupported(create.error)
+              ? "지금은 사다리 방을 만들 수 없어요. 방은 만들지 않았어요. 잠시 뒤에 다시 해 주세요."
               : roomErrorMessage(create.error)}
           </p>
         ) : null}

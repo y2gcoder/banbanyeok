@@ -76,3 +76,7 @@ export const isTokenRejected = (error: unknown): boolean =>
 /** 다시 시도해도 같은 결과일 오류인지(4xx). 5xx·네트워크 오류만 자동 재시도한다. */
 export const isClientError = (error: unknown): boolean =>
   error instanceof ApiRequestError && error.status >= 400 && error.status < 500;
+
+/** 채운 사다리 방 만들기 경로(`POST /draw-rooms`, #227)를 모르는 옛 서버의 답. 아무것도 저장하지 않고 404나 405로 거절한다. */
+export const isDrawRoomUnsupported = (error: unknown): boolean =>
+  error instanceof ApiRequestError && (error.status === 404 || error.status === 405);

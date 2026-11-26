@@ -4,20 +4,18 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiRequestError } from "@/lib/api/client";
-import type { Room, RoomCreated } from "@/lib/api/types";
+import type { RoomCreated } from "@/lib/api/types";
 import type { ShareState } from "@/lib/link/codec";
 import { loadRoomRecord, ROOM_KEY_PREFIX } from "@/lib/room/tokens";
 import { DrawRoomDialog } from "./draw-room-dialog";
 
 const createRoom = vi.fn();
-const getRoom = vi.fn();
 const deleteRoom = vi.fn();
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("@/lib/api/rooms", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api/rooms")>()),
-  createRoom: (...args: unknown[]) => createRoom(...args),
-  getRoom: (...args: unknown[]) => getRoom(...args),
+  createDrawRoom: (...args: unknown[]) => createRoom(...args),
   deleteRoom: (...args: unknown[]) => deleteRoom(...args),
 }));
 
@@ -43,13 +41,6 @@ const CREATED: RoomCreated = {
   participantToken: "participant-token",
   expiresAt: "2026-11-29T15:00:00Z",
 };
-
-/** 서버가 저장한 방(필요한 필드만). 새 서버는 대신 넣은 두 칸을 표시해 잠근다. */
-const storedRoom = (locked: boolean, entered: number) =>
-  ({
-    locked,
-    participants: [0, 1, 2].map((i) => ({ participantId: `p${i}`, enteredByHost: i < entered })),
-  }) as unknown as Room;
 
 /** 짧은 검사 값은 저장되지만 실제 방 기록은 저장 공간이 모자라 실패하는 브라우저. 끄는 함수를 돌려준다. */
 function quotaOnRoomRecords() {
@@ -77,9 +68,7 @@ describe("사다리 방 확인 대화상자", () => {
   beforeEach(() => {
     window.localStorage.clear();
     createRoom.mockReset();
-    getRoom.mockReset();
     deleteRoom.mockReset();
-    getRoom.mockResolvedValue(storedRoom(true, 2));
     deleteRoom.mockResolvedValue(undefined);
     push.mockReset();
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -114,8 +103,6 @@ describe("사다리 방 확인 대화상자", () => {
 
     expect(createRoom).toHaveBeenCalledTimes(1);
     expect(createRoom.mock.calls[0]?.[0]).toEqual({
-      mode: "favor",
-      favorTarget: "draw",
       host: { nickname: "하늘", originCode: "dxy", hidden: false },
       others: [
         { nickname: "민수", originCode: "k3a", hidden: false },
@@ -207,7 +194,7 @@ describe("사다리 방 확인 대화상자", () => {
     it("지우기가 실패하면 토큰을 들고 그대로 머물러 다시 지우거나 저장할 수 있다(이미 없는 방이면 지운 것으로 본다)", async () => {
       createRoom.mockResolvedValue(CREATED);
       quotaOnRoomRecords();
-      deleteRoom.mockRejectedValueOnce(new Error("network"));
+      deleteRoom.mockRejectedValueOnce(new ApiRequestError(503, "UNAVAILABLE", "잠시 뒤"));
       deleteRoom.mockRejectedValueOnce(new ApiRequestError(404, "ROOM_NOT_FOUND", "없음"));
       const user = userEvent.setup();
       renderDialog();
@@ -215,7 +202,11 @@ describe("사다리 방 확인 대화상자", () => {
       await user.click(await screen.findByRole("button", { name: "만든 방 지우기" }));
 
       expect(await screen.findByText(/방을 지우지 못했어요\./)).toBeInTheDocument();
+      expect(screen.queryByText(/만든 방을 지웠어요/)).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "다시 저장하고 사다리 타러 가기" })).toBeEnabled();
+      expect(screen.queryByRole("button", { name: "방 만들고 사다리 타러 가기" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "닫기" })).not.toBeInTheDocument();
+      expect(createRoom).toHaveBeenCalledTimes(1);
       await user.click(screen.getByRole("button", { name: "만든 방 지우기" }));
       expect(deleteRoom).toHaveBeenCalledTimes(2);
       expect(deleteRoom.mock.calls[1]).toEqual(["abcd1234", "host-token"]);
@@ -224,19 +215,34 @@ describe("사다리 방 확인 대화상자", () => {
     });
   });
 
-  it("대신 넣은 칸을 모르는 옛 서버가 방장만 있는 열린 방을 만들면, 그 방을 지우고 방으로 가지 않는다", async () => {
-    createRoom.mockResolvedValue(CREATED);
-    getRoom.mockResolvedValue(storedRoom(false, 0));
+  it.each([404, 405])(
+    "채운 방 경로를 모르는 옛 서버(%i)는 아무것도 만들지 않았으므로, 지우지 않고 만들 수 없다고만 알린다",
+    async (status) => {
+      createRoom.mockRejectedValue(new ApiRequestError(status, "UNKNOWN", "Not Found"));
+      const user = userEvent.setup();
+      const onOpenChange = renderDialog();
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "지금은 사다리 방을 만들 수 없어요. 방은 만들지 않았어요.",
+      );
+      expect(deleteRoom).not.toHaveBeenCalled();
+      expect(push).not.toHaveBeenCalled();
+      expect(window.localStorage.length).toBe(0);
+      await user.click(screen.getByRole("button", { name: "취소" }));
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    },
+  );
+
+  it("만든 응답을 받으면 화면 처리보다 먼저 방장 기록을 저장한다", async () => {
+    let resolve: (created: RoomCreated) => void = () => undefined;
+    createRoom.mockReturnValue(new Promise<RoomCreated>((r) => (resolve = r)));
     const user = userEvent.setup();
     renderDialog();
     await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "지금은 사다리 방을 만들 수 없어요. 만들던 방은 지웠어요.",
-    );
-    expect(getRoom).toHaveBeenCalledWith("abcd1234", "participant-token");
-    expect(deleteRoom).toHaveBeenCalledWith("abcd1234", "host-token");
-    expect(push).not.toHaveBeenCalled();
     expect(loadRoomRecord("abcd1234")).toBeNull();
+    resolve(CREATED);
+    await vi.waitFor(() => expect(loadRoomRecord("abcd1234")?.hostToken).toBe("host-token"));
+    expect(push).toHaveBeenCalledWith("/r/abcd1234");
   });
 });

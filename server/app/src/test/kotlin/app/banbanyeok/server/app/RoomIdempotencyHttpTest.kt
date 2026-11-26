@@ -24,6 +24,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.time.Clock
 
 private const val ROOMS = "/v1/rooms"
+private const val DRAW_ROOMS = "/v1/draw-rooms"
 private const val HOST_INPUT = """{"mode":"fair","host":{"originCode":"03v"}}"""
 private const val GUEST_INPUT = """{"originCode":"130"}"""
 
@@ -125,20 +126,28 @@ class RoomIdempotencyHttpTest :
 
         describe("creating a draw room with the other people already entered (#227)") {
             val body =
-                """{"mode":"favor","favorTarget":"draw","host":{"nickname":"지연","originCode":"130"},""" +
+                """{"host":{"nickname":"지연","originCode":"130"},""" +
                     """"others":[{"nickname":"민수","originCode":"03v"},{"originCode":"225"}],"hostPosition":1}"""
 
             it("stores every row once, in input order, and a retry with the same key replays the same room") {
                 withRoomApi {
-                    val first = json(HttpMethod.Post, ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    val first =
+                        json(HttpMethod.Post, DRAW_ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
                     first.status shouldBe HttpStatusCode.Created
-                    val retried = json(HttpMethod.Post, ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    OpenApiContract.assertValid(HttpMethod.Post, DRAW_ROOMS, first)
+                    val retried =
+                        json(HttpMethod.Post, DRAW_ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
                     (retried.bodyAsText() == first.bodyAsText()) shouldBe true
                     val path = "$ROOMS/${first.bodyObject().getValue("roomId").jsonPrimitive.content}"
                     val room = json(HttpMethod.Get, path)
                     OpenApiContract.assertValid(HttpMethod.Get, "$ROOMS/{roomId}", room)
                     val roomBody = room.bodyObject()
                     roomBody.getValue("locked").jsonPrimitive.content shouldBe "true"
+                    roomBody.getValue("mode").jsonPrimitive.content shouldBe "favor"
+                    roomBody
+                        .getValue("favorDraw")
+                        .jsonObject["round"]!!
+                        .jsonPrimitive.content shouldBe "0"
                     roomBody.getValue("participants").jsonArray.map {
                         val p = it.jsonObject
                         listOf("label", "isHost", "enteredByHost").map { key -> p.getValue(key).jsonPrimitive.content }
@@ -155,18 +164,51 @@ class RoomIdempotencyHttpTest :
                 withRoomApi {
                     json(
                         HttpMethod.Post,
-                        ROOMS,
+                        DRAW_ROOMS,
                         body,
                     ) { headers.append("Idempotency-Key", "draw-room") }.status shouldBe
                         HttpStatusCode.Created
                     val hidden = body.replace("""{"originCode":"225"}""", """{"originCode":"225","hidden":true}""")
                     val retried =
-                        json(HttpMethod.Post, ROOMS, hidden) { headers.append("Idempotency-Key", "draw-room") }
+                        json(HttpMethod.Post, DRAW_ROOMS, hidden) { headers.append("Idempotency-Key", "draw-room") }
                     retried.status shouldBe HttpStatusCode.BadRequest
                     retried
                         .bodyObject()
                         .getValue("code")
                         .jsonPrimitive.content shouldBe "HIDE_NOT_AVAILABLE"
+                }
+            }
+
+            it("rejects a draw room without other rows: the plain room route makes that one") {
+                withRoomApi {
+                    val empty =
+                        json(
+                            HttpMethod.Post,
+                            DRAW_ROOMS,
+                            """{"host":{"originCode":"130"},"others":[],"hostPosition":0}""",
+                        )
+                    empty.status shouldBe HttpStatusCode.BadRequest
+                    OpenApiContract.assertValid(HttpMethod.Post, DRAW_ROOMS, empty)
+                    empty
+                        .bodyObject()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "INVALID_OTHERS"
+                }
+            }
+
+            it("keeps the plain room route as before: it has no other rows, so it ignores them like an old server") {
+                withRoomApi {
+                    val created =
+                        json(
+                            HttpMethod.Post,
+                            ROOMS,
+                            """{"mode":"favor","favorTarget":"draw",""" + body.drop(1),
+                        )
+                    created.status shouldBe HttpStatusCode.Created
+                    val path = "$ROOMS/${created.bodyObject().getValue("roomId").jsonPrimitive.content}"
+                    val room = json(HttpMethod.Get, path).bodyObject()
+                    room.getValue("locked").jsonPrimitive.content shouldBe "false"
+                    room.getValue("participants").jsonArray.size shouldBe 1
                 }
             }
         }

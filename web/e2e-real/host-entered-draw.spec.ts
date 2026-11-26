@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { type Browser, devices, expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
 
@@ -7,7 +9,29 @@ import { type Browser, devices, expect, type Locator, type Page, type TestInfo, 
  */
 const PHONE = { width: 390, height: 844 };
 const ROOM_URL = /\/r\/([0-9a-hjkmnp-tv-z]{10})$/;
+const DRAW_ROOMS = "/api/v1/draw-rooms";
+const isCreate = (r: { url(): string; request(): { method(): string } }) =>
+  r.url().endsWith(DRAW_ROOMS) && r.request().method() === "POST";
+
+/**
+ * 이 이름이 든 방의 수(개발 DB `scripts/dev.sh db`, 읽기만 한다). 다른 테스트가 같은 DB에 동시에 방을 만들므로 테스트마다 고유한 이름으로 센다.
+ */
+function roomsWith(nickname: string): number {
+  if (!/^[가-힣0-9]+$/.test(nickname)) throw new Error(`이름: ${nickname}`);
+  const sql = `select count(distinct room_id) from participants where nickname = '${nickname}'`;
+  const out = execFileSync(
+    "bash",
+    ["scripts/dev.sh", "db", "exec", "-T", "db", "psql", "-U", "local", "-d", "banbanyeok", "-qtAc", sql],
+    { cwd: resolve(import.meta.dirname, "../.."), encoding: "utf8" },
+  );
+  return Number(out.trim());
+}
+
 const b64 = (text: string) => Buffer.from(text, "utf8").toString("base64url");
+/** 첫 사람(기본 '나')의 이름만 [first]로 바꾼 세 사람 결과. */
+const resultWith = (first: string) =>
+  `/result?v=2&o=k3a.ryf.1qs&m=f&t=saturday-evening&n=${b64(first)}..${b64("하늘")}`;
+const uniqueName = () => `민수${Math.floor(1000 + Math.random() * 9000)}`;
 const RESULT = `/result?v=2&o=k3a.ryf.1qs&m=f&t=saturday-evening&n=${b64("민수")}..${b64("하늘")}`;
 /** 두 사람(민수, 하늘). 한 사람이 더 들어와도 정원(4명)이 차지 않아 잠금만 남는다. */
 const RESULT_TWO = `/result?v=2&o=k3a.1qs&m=f&t=saturday-evening&n=${b64("민수")}.${b64("하늘")}`;
@@ -202,8 +226,29 @@ test("방장 권한을 이 기기에 저장하지 못하면 방으로 가지 않
       original.call(this, key, value);
     };
   });
-  const created = page.waitForResponse((r) => r.url().endsWith("/api/v1/rooms") && r.request().method() === "POST");
-  await page.goto(RESULT);
+  let creates = 0;
+  page.on("request", (r) => {
+    if (r.url().endsWith(DRAW_ROOMS) && r.method() === "POST") creates += 1;
+  });
+  // 첫 삭제는 서버가 잠시 못 받는다(503). 삭제가 확인되기 전에는 지웠다고 하지 않고 토큰과 복구 상태를 지켜야 한다.
+  let deletes = 0;
+  await page.route("**/api/v1/rooms/*", async (route) => {
+    if (route.request().method() !== "DELETE" || deletes++ > 0) return route.fallback();
+    await route.fulfill({
+      status: 503,
+      contentType: "application/problem+json",
+      body: JSON.stringify({
+        type: "about:blank",
+        title: "잠시 뒤",
+        status: 503,
+        detail: "잠시 뒤",
+        code: "UNAVAILABLE",
+      }),
+    });
+  });
+  const me = uniqueName();
+  const created = page.waitForResponse(isCreate);
+  await page.goto(resultWith(me));
   await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
   const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
@@ -213,38 +258,86 @@ test("방장 권한을 이 기기에 저장하지 못하면 방으로 가지 않
   await expect(dialog.getByRole("alert")).toContainText("이 브라우저에 방장 권한을 저장하지 못했어요");
   expect(new URL(page.url()).pathname).toBe("/result");
   expect((await request.get(`/api/v1/rooms/${roomId}`)).status()).toBe(200);
+  expect(roomsWith(me)).toBe(1);
   await page.keyboard.press("Escape");
   await expect(dialog).toBeVisible();
   await expectNoA11yViolations(page);
 
   await dialog.getByRole("button", { name: "만든 방 지우기" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("방을 지우지 못했어요.");
+  await expect(dialog.getByText(/만든 방을 지웠어요/)).toHaveCount(0);
+  expect((await request.get(`/api/v1/rooms/${roomId}`)).status()).toBe(200);
+  await expect(dialog.getByRole("button", { name: "방 만들고 사다리 타러 가기" })).toHaveCount(0);
+
+  await dialog.getByRole("button", { name: "만든 방 지우기" }).click();
   await expect(dialog.getByText("만든 방을 지웠어요. 저장 공간을 비운 뒤 다시 만들 수 있어요.")).toBeVisible();
   expect((await request.get(`/api/v1/rooms/${roomId}`)).status()).toBe(404);
+  expect(deletes).toBe(2);
+  expect(creates).toBe(1);
+  expect(roomsWith(me)).toBe(0);
   await dialog.getByRole("button", { name: "취소" }).click();
   await expect(dialog).toHaveCount(0);
 });
 
-test("대신 넣은 칸을 모르는 옛 서버(others를 버림)가 방장만 있는 열린 방을 만들면, 웹이 그 방을 지우고 방으로 가지 않는다", async ({
+test("만든 응답을 받자마자 방장 권한을 저장해, 방 화면이 뜨기 전에 탭을 닫아도 다시 열면 방장이다", async ({
   page,
-  request,
+  context,
 }) => {
-  // 옛 서버는 모르는 필드를 무시한다. 같은 상황을 만들려고 요청 본문에서 others·hostPosition을 빼고 실제 서버로 보낸다.
-  await page.route("**/api/v1/rooms", async (route) => {
-    if (route.request().method() !== "POST") return route.fallback();
-    const { others: _others, hostPosition: _position, ...body } = route.request().postDataJSON();
-    await route.fallback({ postData: JSON.stringify(body) });
-  });
-  const created = page.waitForResponse((r) => r.url().endsWith("/api/v1/rooms") && r.request().method() === "POST");
-  await page.goto(RESULT);
+  // 방 화면의 방 조회를 붙잡아 둔다(응답하지 않음). 만든 뒤 저장보다 앞서 조회·확인을 기다리면 여기서 멈춰 권한을 잃는다.
+  await page.route("**/api/v1/rooms/*", (route) =>
+    route.request().method() === "GET" ? new Promise<void>(() => undefined) : route.fallback(),
+  );
+  const me = uniqueName();
+  const created = page.waitForResponse(isCreate);
+  await page.goto(resultWith(me));
   await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
   const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
   await dialog.getByRole("button", { name: "방 만들고 사다리 타러 가기" }).click();
-  const response = await created;
-  expect(response.status()).toBe(201);
-  const { roomId } = (await response.json()) as { roomId: string };
+  const { roomId } = (await (await created).json()) as { roomId: string };
+  await expect
+    .poll(() => page.evaluate((key) => window.localStorage.getItem(key) !== null, `bby.room.${roomId}`), {
+      timeout: 3000,
+    })
+    .toBe(true);
+  await page.close();
 
-  await expect(dialog.getByRole("alert")).toContainText("지금은 사다리 방을 만들 수 없어요. 만들던 방은 지웠어요.");
+  const reopened = await context.newPage();
+  await reopened.goto(`/r/${roomId}`);
+  await expect(reopened.getByRole("heading", { name: "내가 만든 방" })).toBeVisible({ timeout: 8000 });
+  await expect(reopened.getByRole("button", { name: "사다리 타기" }).first()).toBeVisible();
+  await expect(reopened.getByRole("button", { name: "방 삭제 방 전체" })).toBeVisible();
+  expect(roomsWith(me)).toBe(1);
+});
+
+/** 채운 방 경로를 모르는 서버. `OLD_SERVER_ORIGIN`(main으로 빌드한 서버)이 있으면 그리로, 없으면 지금 서버의 없는 경로로 보낸다(같은 404). */
+const OLD_SERVER_ORIGIN = process.env.OLD_SERVER_ORIGIN;
+
+test("채운 방 경로를 모르는 옛 서버는 아무것도 저장하지 않고 거절하고, 웹은 지울 것 없이 만들 수 없다고만 알린다", async ({
+  page,
+}) => {
+  await page.route(`**${DRAW_ROOMS}`, async (route) => {
+    const url = OLD_SERVER_ORIGIN ? `${OLD_SERVER_ORIGIN}/v1/draw-rooms` : `${route.request().url()}-unknown`;
+    await route.fulfill({ response: await route.fetch({ url }) });
+  });
+  let deletes = 0;
+  page.on("request", (r) => {
+    if (r.method() === "DELETE") deletes += 1;
+  });
+  const me = uniqueName();
+  const created = page.waitForResponse(isCreate);
+  await page.goto(resultWith(me));
+  await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
+  const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
+  await dialog.getByRole("button", { name: "방 만들고 사다리 타러 가기" }).click();
+  expect((await created).status()).toBe(404);
+
+  await expect(dialog.getByRole("alert")).toContainText("지금은 사다리 방을 만들 수 없어요. 방은 만들지 않았어요.");
   expect(new URL(page.url()).pathname).toBe("/result");
-  expect((await request.get(`/api/v1/rooms/${roomId}`)).status()).toBe(404);
+  expect(roomsWith(me)).toBe(0);
+  expect(deletes).toBe(0);
+  expect(await page.evaluate(() => Object.keys(window.localStorage).filter((k) => k.startsWith("bby.room.")))).toEqual(
+    [],
+  );
 });

@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import type { RoomPreview } from "@/lib/api/types";
+import { sharePath } from "@/lib/result/share-url";
+import { roomPath } from "@/lib/room/id";
 import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
 import {
@@ -565,13 +567,23 @@ describe("개인정보 처리방침", () => {
     // 서버에 저장하지 않는다는 설명은 혼자 입력한 결과와 /s 링크에만 해당하고, /r 방의 정보는 메시지를 지워도 남는다(지우는 방법이 다르다).
     const friends = lineOf(POLICY, "items", "혼자 입력할 때는 함께 만날 친구의");
     expect(friends).toContain(
-      "혼자 입력한 결과와 그 공유 링크(/s/로 시작하는 주소)만 쓸 때는 이 정보를 서버에 저장하지 않습니다",
+      "혼자 입력한 결과와 그 공유 링크(/s?로 시작하는 주소)만 쓸 때는 이 정보를 서버에 저장하지 않습니다",
     );
     expect(friends).toContain("'사다리로 뽑기'로 방을 만들면 이 정보가 방(/r/로 시작하는 주소)에 저장되고");
     expect(friends).not.toMatch(/넣어 주세요\. 이 정보는 서버에 저장하지 않습니다/);
     const rights = textOf(POLICY, "rights");
     expect(rights).not.toContain("링크로 공유한 정보");
-    expect(rights).toContain("혼자 입력한 결과의 공유 링크(/s/로 시작하는 주소)로 보낸 정보");
+    expect(rights).toContain("혼자 입력한 결과의 공유 링크(/s?로 시작하는 주소)로 보낸 정보");
+    // 처리방침이 부르는 주소 모양이 실제 링크와 같아야 한다(공유 링크는 /s?…, 방 링크는 /r/…).
+    const shared = sharePath({
+      origins: ["k3a", "ryf"],
+      mode: "fair",
+      favorIndex: null,
+      nicknames: null,
+      timeSlot: "weekday-day",
+    });
+    expect(shared.startsWith("/s?")).toBe(true);
+    expect(roomPath("qt7yvmsht3").startsWith("/r/")).toBe(true);
     expect(rights).toContain("방 링크(/r/로 시작하는 주소)로 공유한 방의 정보");
     expect(rights).toContain("메시지를 지워도 방에 저장된 정보는 남습니다");
     expect(ladder).toContain(
