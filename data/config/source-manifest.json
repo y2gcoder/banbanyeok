@@ -391,7 +391,7 @@
       "S6-busan": "965fcf8660d22dd7fd2aa349a1c2fea43867578b68d935186af019027c5a67e3"
     },
     "checks_file": "data/config/busan-last-train-checks.csv",
-    "checks_sha256": "2838785b8e1b6d12fcc55df062a09a30e854087405a2a0ec3dbdb4149fca9aa2",
+    "checks_sha256": "4aecb474fb9e6b8e3373b4ace71ce3c055eefff5d73a4df279da7da8b394e693",
     "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "effective_date": "2026-09-01",
     "estimated": false,
