@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { checkLayout, expectColumns, expectSideBesideOrBelowMain, isWide } from "./support/checks";
 import { horizontalOverflow } from "./support/layout";
+import { REGIONAL } from "./support/regions";
 import { prepareRoom, type RoomScenario } from "./support/room-fixture";
 import { SHOT_IDS, SHOT_SCREENS, VIEWPORTS, type ViewportCase } from "./support/viewports";
 
@@ -287,7 +288,22 @@ test.describe("데스크톱 키보드", () => {
   test("Tab으로 차례대로 이동하며 포커스가 보이고, 키보드만으로 입력·제출한다", async ({ page }) => {
     await open(page, screen("home"));
     // 워드마크 → 선택 탭 → 안내가 있는 패널 → 계산 범위 → 이름·역 두 쌍 → 한 명 더 → 요일·시간대.
-    const order = ["A", "BUTTON", "DIV", "BUTTON", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT"];
+    // 부산권 공개 뒤에는 계산 범위 다음에 권역 고르기(수도권 | 부산권) 버튼 둘이 온다.
+    const regions = REGIONAL ? ["BUTTON", "BUTTON"] : [];
+    const order = [
+      "A",
+      "BUTTON",
+      "DIV",
+      "BUTTON",
+      ...regions,
+      "INPUT",
+      "INPUT",
+      "INPUT",
+      "INPUT",
+      "BUTTON",
+      "INPUT",
+      "INPUT",
+    ];
     // 처리방침 변경 공지 기간(공지 시작일 ≤ 오늘 < 시행일, 브라우저 날짜로 판단)에는 맨 위 한 줄 공지의 "자세히" 링크가 먼저 온다.
     // 공지는 하이드레이션 뒤에 그려지므로 입력 칸이 준비된 뒤에 센다.
     await expect(page.getByRole("textbox", { name: "1번째 사람 이름(선택)" })).toBeVisible();
