@@ -14,7 +14,8 @@ export const CLIENT_IP_HEADER = "x-banbanyeok-client-ip";
  * 서버로 넘기지 않는 요청 헤더: 홉 간 헤더, 쿠키(이 서비스는 쿠키를 쓰지 않는다), 프록시 체인·Cloudflare 내부 헤더,
  * `origin`. 브라우저는 같은 출처 POST·PATCH·DELETE에도 Origin을 붙이는데, 서버(Ktor CORS)는 허용 목록 밖의 Origin을 403으로
  * 거절한다. 이 프록시를 지나는 호출은 서버 간 호출이라 CORS가 필요 없고 운영의 허용 목록도 비어 있다(B1: 탭을 바꿔 다시 받는
- * 요청이 모두 403이었다).
+ * 요청이 모두 403이었다). `referer`도 넘기지 않는다: 공유 링크 화면의 전체 주소(이름·출발역이 쿼리에 있다)가 실려 오는데 서버는
+ * 쓰지 않고, 서버 요청 기록에 남을 수 있다(#219).
  */
 const DROPPED_EXACT = new Set([
   "host",
@@ -29,6 +30,7 @@ const DROPPED_EXACT = new Set([
   "content-length",
   "cookie",
   "origin",
+  "referer",
   "x-real-ip",
   "forwarded",
   "true-client-ip",
