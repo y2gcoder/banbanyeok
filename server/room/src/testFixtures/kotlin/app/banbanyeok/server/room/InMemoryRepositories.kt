@@ -49,12 +49,7 @@ class InMemoryRoomRepository : RoomRepository {
                 }
 
                 else -> {
-                    origins?.requireAllowed(
-                        stored.room.meeting,
-                        stored.participants,
-                        participant.originCode,
-                        hidden = participant.hidden,
-                    )
+                    origins?.requireAllowed(stored.room, participant.originCode, participant.hidden)
                     write(roomId) { it.copy(participants = it.participants + participant) }
                     touch(roomId, activity)
                     AddResult.Added
@@ -73,13 +68,7 @@ class InMemoryRoomRepository : RoomRepository {
             val stored = rooms[roomId] ?: return@withLock false
             val current = stored.participants.firstOrNull { it.id == participantId } ?: return@withLock false
             if (change.onlyIfHidden && !current.hidden) return@withLock false
-            origins?.requireAllowed(
-                stored.room.meeting,
-                stored.participants,
-                change.originCode,
-                participantId,
-                change.hidden,
-            )
+            origins?.requireAllowed(stored.room, change.originCode, change.hidden)
             write(roomId) {
                 it.copy(
                     participants =

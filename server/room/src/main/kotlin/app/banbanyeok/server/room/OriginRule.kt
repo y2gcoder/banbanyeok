@@ -1,8 +1,8 @@
 package app.banbanyeok.server.room
 
 /**
- * 참가자의 출발역을 방에 저장해도 되는가. 저장소가 방 행을 잠근 트랜잭션 안에서 잠근 방의 약속과 참가자로 부른다. 그래서 읽은 뒤 방장이
- * 약속을 바꿨어도 바뀐 약속으로 본다. 권역을 먼저 보고 그다음 그 약속의 구분을 본다(다른 권역의 역은 구분과 상관없이 REGION_MISMATCH).
+ * 참가자의 출발역을 방에 저장해도 되는가. 저장소가 방 행을 잠근 트랜잭션 안에서 잠근 방으로 부른다. 그래서 읽은 뒤 방장이 약속을
+ * 바꿨어도 바뀐 약속으로 본다. 권역을 먼저 보고 그다음 그 약속의 구분을 본다(다른 권역의 역은 구분과 상관없이 REGION_MISMATCH).
  */
 public class OriginRule(
     private val stations: StationCatalog,
@@ -10,14 +10,12 @@ public class OriginRule(
     private val regions = RoomRegionRule(stations)
 
     public fun requireAllowed(
-        meeting: Meeting,
-        participants: List<Participant>,
+        room: Room,
         code: String,
-        replacing: String? = null,
         hidden: Boolean = false,
     ) {
-        regions.requireMatch(participants, code, replacing, hidden)
-        if (!stations.departs(stations.canonical(code), meeting)) {
+        regions.requireMatch(room, code, hidden)
+        if (!stations.departs(stations.canonical(code), room.meeting)) {
             throw RoomException(RoomError.SCHEDULE_UNAVAILABLE, "이 방의 요일·시간대에 확인된 시간표가 없는 출발역입니다")
         }
     }
