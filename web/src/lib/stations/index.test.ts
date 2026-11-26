@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { searchStations, stationByCode } from ".";
+
+/** 권역을 켜기 전(수도권만) 색인으로 본다. 커밋된 색인이 부산권을 켜도 이 파일의 뜻은 그대로다(capital.fixture.gen.json, pnpm gen:stations). */
+vi.mock("@/lib/stations/index.gen.json", async () => ({
+  default: (await import("@/lib/stations/capital.fixture.gen.json")).default,
+}));
 
 const names = (query: string) => searchStations(query).map((s) => s.name);
 
