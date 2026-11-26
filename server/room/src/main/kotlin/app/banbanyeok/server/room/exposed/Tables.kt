@@ -65,5 +65,8 @@ internal object ParticipantsTable : Table("participants") {
     val hidden = bool("hidden")
     val joinedAt = timestamp("joined_at")
     val updatedAt = timestamp("updated_at")
+
+    /** 방장이 방을 만들 때 대신 넣은 칸(#227). */
+    val enteredByHost = bool("entered_by_host")
     override val primaryKey = PrimaryKey(roomId, pid)
 }

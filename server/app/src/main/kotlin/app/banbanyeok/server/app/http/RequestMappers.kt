@@ -43,6 +43,8 @@ fun RoomCreateRequestDto.toCommand(deviceToken: String?): CreateRoomCommand {
         deviceToken,
         meetingTime?.takeIf { it !is JsonNull }?.let { parseTime(it.timeText()) },
         meetingBand?.let(::parseBand),
+        others.map { it.toInput() },
+        hostPosition,
     )
 }
 

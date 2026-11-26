@@ -61,7 +61,7 @@ private fun Route.roomCreationRoute(
     post("/rooms") {
         // 본문은 재생보다 먼저 읽고 숨김 규칙을 본다: 같은 키의 재시도라도 숨긴 본문에 숨기지 않은 성공을 재생하지 않는다(ADR-0007).
         val command = call.receive<RoomCreateRequestDto>().toCommand(call.bearerToken())
-        rooms.checkNewParticipant(command.host)
+        rooms.checkNewParticipant(command)
         call.respondCreated<RoomCreatedDto>(idempotency, replay = { cached ->
             val expiresAt =
                 rooms.creationReplayExpiry(

@@ -16,7 +16,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -28,7 +29,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -179,7 +181,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -191,7 +194,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -362,7 +366,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -374,7 +379,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -545,7 +551,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -557,7 +564,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -728,7 +736,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -740,7 +749,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -910,7 +920,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -922,7 +933,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -1057,7 +1069,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -1069,7 +1082,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -1214,7 +1228,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -1226,7 +1241,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -1371,7 +1387,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -1383,7 +1400,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -1534,7 +1552,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -1546,7 +1565,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -1696,7 +1716,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -1708,7 +1729,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -1846,7 +1868,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -1858,7 +1881,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -2016,7 +2040,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -2028,7 +2053,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -2186,7 +2212,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -2198,7 +2225,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -2356,7 +2384,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -2368,7 +2397,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -2525,7 +2555,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -2537,7 +2568,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -2675,7 +2707,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -2687,7 +2720,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -2848,7 +2882,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -2860,7 +2895,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -3021,7 +3057,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -3033,7 +3070,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -3194,7 +3232,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -3206,7 +3245,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -3366,7 +3406,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -3378,7 +3419,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -3390,7 +3432,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -3573,7 +3616,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -3585,7 +3629,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -3597,7 +3642,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -3806,7 +3852,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -3818,7 +3865,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -3830,7 +3878,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -4039,7 +4088,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -4051,7 +4101,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -4063,7 +4114,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -4251,7 +4303,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -4263,7 +4316,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -4275,7 +4329,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -4463,7 +4518,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -4475,7 +4531,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -4487,7 +4544,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -4649,7 +4707,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -4661,7 +4720,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -4673,7 +4733,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -4868,7 +4929,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -4880,7 +4942,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -4892,7 +4955,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -5087,7 +5151,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -5099,7 +5164,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -5111,7 +5177,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -5306,7 +5373,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -5318,7 +5386,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -5330,7 +5399,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -5524,7 +5594,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -5536,7 +5607,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -5548,7 +5620,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -5713,7 +5786,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -5725,7 +5799,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -5737,7 +5812,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -5929,7 +6005,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -5941,7 +6018,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -5953,7 +6031,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -6145,7 +6224,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -6157,7 +6237,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -6169,7 +6250,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -6364,7 +6446,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -6376,7 +6459,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -6388,7 +6472,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -6586,7 +6671,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -6598,7 +6684,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -6610,7 +6697,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -6775,7 +6863,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -6787,7 +6876,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -6799,7 +6889,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -6996,7 +7087,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -7008,7 +7100,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -7020,7 +7113,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -7217,7 +7311,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -7229,7 +7324,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -7241,7 +7337,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -7438,7 +7535,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -7450,7 +7548,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -7462,7 +7561,8 @@
                     "isSelf": false,
                     "label": "김포공항에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "김포공항"
+                    "shortLabel": "김포공항",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -7658,7 +7758,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -7670,7 +7771,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -7682,7 +7784,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -7694,7 +7797,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -7909,7 +8013,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -7921,7 +8026,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -7933,7 +8039,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -7945,7 +8052,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -8195,7 +8303,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -8207,7 +8316,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -8219,7 +8329,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -8231,7 +8342,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -8481,7 +8593,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -8493,7 +8606,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -8505,7 +8619,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -8517,7 +8632,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -8752,7 +8868,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -8764,7 +8881,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -8776,7 +8894,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -8788,7 +8907,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -9047,7 +9167,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -9059,7 +9180,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -9071,7 +9193,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -9083,7 +9206,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -9272,7 +9396,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -9284,7 +9409,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -9296,7 +9422,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -9308,7 +9435,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -9525,7 +9653,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -9537,7 +9666,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -9549,7 +9679,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -9561,7 +9692,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -9778,7 +9910,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -9790,7 +9923,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -9802,7 +9936,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -9814,7 +9949,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -10034,7 +10170,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -10046,7 +10183,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -10058,7 +10196,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -10070,7 +10209,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -10289,7 +10429,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -10301,7 +10442,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -10313,7 +10455,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -10325,7 +10468,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -10517,7 +10661,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -10529,7 +10674,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -10541,7 +10687,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -10553,7 +10700,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -10784,7 +10932,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -10796,7 +10945,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -10808,7 +10958,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -10820,7 +10971,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -11042,7 +11194,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -11054,7 +11207,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -11066,7 +11220,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -11078,7 +11233,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -11314,7 +11470,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -11326,7 +11483,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -11338,7 +11496,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -11350,7 +11509,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -11590,7 +11750,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -11602,7 +11763,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -11614,7 +11776,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -11626,7 +11789,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -11818,7 +11982,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -11830,7 +11995,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -11842,7 +12008,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -11854,7 +12021,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -12085,7 +12253,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -12097,7 +12266,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -12109,7 +12279,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -12121,7 +12292,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -12352,7 +12524,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -12364,7 +12537,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -12376,7 +12550,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -12388,7 +12563,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -12609,7 +12785,8 @@
                     "isSelf": false,
                     "label": "민수",
                     "labelKind": "name",
-                    "shortLabel": "민수"
+                    "shortLabel": "민수",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "1",
@@ -12621,7 +12798,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "2",
@@ -12633,7 +12811,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "3",
@@ -12645,7 +12824,8 @@
                     "isSelf": false,
                     "label": "홍대입구에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "홍대입구"
+                    "shortLabel": "홍대입구",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",

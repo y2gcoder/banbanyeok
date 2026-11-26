@@ -14,11 +14,11 @@ class InMemoryRoomRepository : RoomRepository {
 
     override suspend fun create(
         room: Room,
-        host: Participant,
+        participants: List<Participant>,
     ) = lock.withLock {
         check(room.id !in rooms) { "duplicate room id" }
         rooms[room.id] = StoredRoom(room, emptyList())
-        write(room.id) { it.copy(participants = listOf(host)) }
+        write(room.id) { it.copy(participants = participants) }
     }
 
     override suspend fun find(roomId: String): StoredRoom? =

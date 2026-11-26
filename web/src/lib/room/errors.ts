@@ -15,6 +15,7 @@ const MESSAGES: Readonly<Record<string, string>> = {
   INVALID_NICKNAME: "이름을 확인해 주세요. 20자 이하로 쓸 수 있어요.",
   INVALID_MEETING_DATE: "약속일이 이미 지났어요. 오늘 이후 날짜를 골라 주세요.",
   INVALID_EXPECTED_COUNT: "예상 인원은 2~4명으로 정해 주세요.",
+  INVALID_OTHERS: "사다리 방에 넣을 사람을 다시 확인해 주세요.",
   INVALID_OUTCOME: "답을 보내지 못했어요. 역을 다시 골라 주세요.",
   PARTICIPANT_NOT_FOUND: "이 방에서 빠진 항목이에요. 다시 참여해 주세요.",
   UNAUTHORIZED: "이 기기에서는 고칠 수 없어요. 처음 참여한 기기에서만 고칠 수 있어요.",

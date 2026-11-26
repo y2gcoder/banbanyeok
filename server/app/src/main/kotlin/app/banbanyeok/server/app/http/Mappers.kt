@@ -61,6 +61,7 @@ fun ParticipantView.toDto(
     label = label.text,
     labelKind = label.kind.name.lowercase(),
     shortLabel = label.short,
+    enteredByHost = enteredByHost,
 )
 
 /**
@@ -229,6 +230,7 @@ fun StatelessResult.toDto(stations: StationNames): ResultDto =
                     label = label.text,
                     labelKind = label.kind.name.lowercase(),
                     shortLabel = label.short,
+                    enteredByHost = false,
                 )
             },
         ).copy(mapMiddle = mapMiddle?.toDto(), missingServices = missingServices)

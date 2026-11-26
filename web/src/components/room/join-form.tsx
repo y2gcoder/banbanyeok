@@ -1,12 +1,12 @@
 "use client";
 
 import { type FormEvent, useId, useState } from "react";
+import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
 import { Button } from "@/components/ui/button";
 import type { ParticipantInput, Room } from "@/lib/api/types";
 import { type ParticipantFormValue, toParticipantInput } from "@/lib/room/input";
 import { blockedReason, OPEN_SCOPE, type StationScope } from "@/lib/stations/scope";
 import { ParticipantFields } from "./participant-fields";
-import { slowMessage, useSlowStage } from "./use-slow-hint";
 
 type Props = {
   mode: "join" | "edit";

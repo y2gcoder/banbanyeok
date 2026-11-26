@@ -3,12 +3,13 @@
 import { LockIcon, RotateCwIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
 import { Wordmark } from "@/components/common/wordmark";
 import { Button } from "@/components/ui/button";
+import { withJosa } from "@/lib/display/korean";
 import { NEW_ROOM_PATH } from "@/lib/room/id";
 import { cn } from "@/lib/utils";
 import { ROOM_MAIN, ROOM_SIDE } from "./room-layout";
-import { slowMessage, useSlowStage } from "./use-slow-hint";
 
 const SHELL = "mx-auto grid min-h-dvh w-full max-w-md content-start gap-5 px-gutter pt-5 pb-10";
 
@@ -120,9 +121,25 @@ export function RoomLoadError({ message, onRetry }: { message: string; onRetry: 
   );
 }
 
-/** 새로 들어올 수 없는 방(정원 초과·잠김). 목록과 결과는 계속 볼 수 있다. */
-export function CannotJoin({ reason }: { reason: "full" | "locked" }) {
+/**
+ * 새로 들어올 수 없는 방(정원 초과·잠김). 목록과 결과는 계속 볼 수 있다. [enteredBy]가 있으면 방장이 모두의 출발역을 넣은 사다리 방이다
+ * (#227): 링크를 받은 사람은 이미 목록에 있을 가능성이 크니 들어오라고 하지 않고, 틀린 칸은 방장에게 알리게 한다.
+ */
+export function CannotJoin({ reason, enteredBy = null }: { reason: "full" | "locked"; enteredBy?: string | null }) {
   const Icon = reason === "full" ? UsersIcon : LockIcon;
+  if (enteredBy) {
+    return (
+      <section role="status" className="flex items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
+        <Icon className="mt-0.5 size-5 shrink-0 text-ink-soft" aria-hidden="true" />
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[17px] font-bold text-ink">{withJosa(enteredBy, "이/가")} 모두의 출발역을 넣었어요</h2>
+          <p className="text-[15px] text-ink-soft">
+            따로 들어오지 않아도 돼요. 내 이름이나 출발역이 틀렸으면 {enteredBy}에게 알려 주세요.
+          </p>
+        </div>
+      </section>
+    );
+  }
   return (
     <section role="status" className="flex items-start gap-3 rounded-2xl border border-rule bg-surface p-5">
       <Icon className="mt-0.5 size-5 shrink-0 text-ink-soft" aria-hidden="true" />

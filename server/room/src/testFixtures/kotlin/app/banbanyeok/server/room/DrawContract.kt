@@ -7,7 +7,7 @@ import io.kotest.matchers.shouldBe
 /** host01·pid002·pid003이 있는 뽑기 방(아직 안 뽑음). [hidden]에 든 사람은 출발역을 숨겼다. */
 private suspend fun RoomRepository.drawRoom(hidden: Set<String> = emptySet()): String {
     val room = aRoom(freshId()) { it.copy(mode = RoomMode.FAVOR, favorDraw = FavorDraw.PENDING) }
-    create(room, aParticipant("host01") { it.copy(hidden = "host01" in hidden) })
+    create(room, listOf(aParticipant("host01") { it.copy(hidden = "host01" in hidden) }))
     for ((index, id) in listOf("pid002", "pid003").withIndex()) {
         addParticipant(
             room.id,
@@ -73,7 +73,7 @@ internal fun DescribeSpecRootScope.favorDraws(repos: () -> RepositoryPair) {
         it("refuses a room that is not a draw room, too few candidates, a skipped round and an unknown room") {
             val rooms = repos().rooms
             val plain = aRoom(freshId()) { it.copy(mode = RoomMode.FAVOR, favorParticipantId = "host01") }
-            rooms.create(plain, aParticipant("host01"))
+            rooms.create(plain, listOf(aParticipant("host01")))
             rooms.addParticipant(plain.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
             rooms.draw(plain.id, 1, 5) shouldBe DrawResult.NotAvailable
             val hiddenRoom = rooms.drawRoom(hidden = setOf("pid002", "pid003"))

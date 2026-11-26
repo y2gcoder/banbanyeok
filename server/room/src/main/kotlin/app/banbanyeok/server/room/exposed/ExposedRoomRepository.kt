@@ -49,7 +49,7 @@ public class ExposedRoomRepository(
 ) : RoomRepository {
     override suspend fun create(
         room: Room,
-        host: Participant,
+        participants: List<Participant>,
     ) = inTransaction {
         RoomsTable.insert {
             it[id] = room.id
@@ -70,7 +70,7 @@ public class ExposedRoomRepository(
             it[favorDraw] = room.favorDraw != null
             it[region] = requireNotNull(room.region).name.lowercase()
         }
-        insertParticipant(room.id, host)
+        participants.forEach { insertParticipant(room.id, it) }
     }
 
     // 방 행과 참여자를 따로 SELECT한다. READ COMMITTED면 그 사이에 커밋된 참여가 섞여 있었던 적 없는 번호·인원 조합이 보이고,
@@ -342,6 +342,7 @@ public class ExposedRoomRepository(
             it[hidden] = participant.hidden
             it[joinedAt] = participant.joinedAt
             it[updatedAt] = participant.updatedAt
+            it[enteredByHost] = participant.enteredByHost
         }
     }
 
@@ -454,6 +455,7 @@ public class ExposedRoomRepository(
             hidden = this[ParticipantsTable.hidden],
             joinedAt = this[ParticipantsTable.joinedAt],
             updatedAt = this[ParticipantsTable.updatedAt],
+            enteredByHost = this[ParticipantsTable.enteredByHost],
         )
 
     private fun statusOf(locked: Boolean) = if (locked) LOCKED else OPEN

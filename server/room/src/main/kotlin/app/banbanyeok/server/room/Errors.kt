@@ -16,6 +16,9 @@ public enum class RoomError(
     FAVOR_TARGET_REQUIRED(ErrorKind.INVALID),
     FAVOR_TARGET_UNKNOWN(ErrorKind.INVALID),
 
+    /** 방 만들기의 다른 사람 칸(#227)이 규칙에 맞지 않는다(뽑기 방이 아님, 인원 초과, 방장 자리 범위 밖). */
+    INVALID_OTHERS(ErrorKind.INVALID),
+
     /** 새로 출발역을 숨기려 했다(ADR-0007). 이미 숨긴 참가자의 유지·풀기는 된다. */
     HIDE_NOT_AVAILABLE(ErrorKind.INVALID),
     UNAUTHORIZED(ErrorKind.UNAUTHENTICATED),

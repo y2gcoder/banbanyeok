@@ -369,7 +369,7 @@ export interface components {
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
          *     | 400 | `FAVOR_TARGET_HIDDEN` | 우대 대상이 출발역을 숨긴 참가자인데 그 사람 본인의 요청이 아니다(방 결과) |
          *     | 400 | `HIDE_NOT_AVAILABLE` | 새로 출발역을 숨기려 했다(방 만들기 `host.hidden=true`, 참여 `hidden=true`, 숨기지 않은 참가자의 수정 `hidden=true`). 이미 숨긴 참가자의 유지·풀기는 된다(ADR-0007) |
-         *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
+         *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OTHERS`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 403 | `CORS_REJECTED` | 허용 목록에 없는 출처의 브라우저 요청이거나 허용되지 않는 메서드의 사전 요청(preflight). 출처·메서드 값은 응답에 싣지 않는다 |
@@ -515,6 +515,8 @@ export interface components {
             isHost?: boolean;
             /** @description 요청에 담긴 participantToken의 주인이면 true */
             isSelf?: boolean;
+            /** @description 방장이 방을 만들 때 대신 넣은 칸(#227). 화면은 "방장이 입력"으로 표시한다. 무상태 추천 결과에서는 늘 false이고, 이 필드를 모르는 옛 서버는 보내지 않는다(없으면 false) */
+            enteredByHost?: boolean;
         };
         RoomCreateRequest: {
             mode: components["schemas"]["Mode"];
@@ -537,6 +539,19 @@ export interface components {
             meetingBand?: components["schemas"]["MeetingBand"] | null;
             host: components["schemas"]["ParticipantInput"];
             expectedCount?: number;
+            /**
+             * @description 방장이 대신 넣는 다른 사람 칸(#227, ADR-0011). 한 사람이 모두의 출발역을 넣어 본 뒤 사다리로 배려 대상을 정할 때 쓴다.
+             *     `mode=favor`, `favorTarget=draw`일 때만 받고(아니면 400 `INVALID_OTHERS`), 방장을 포함해 2~4명(예상 인원이 있으면 그 안)이다.
+             *     출발역을 숨길 수 없다(`hidden=true`면 400 `HIDE_NOT_AVAILABLE`). 방과 같은 트랜잭션에 저장해 일부 칸만 생기지 않는다.
+             *     칸이 있으면 방은 잠긴 채 시작한다(`Room.locked`=true, 방장이 풀 수 있다). 대신 넣은 칸은 `Participant.enteredByHost`가 true이고
+             *     그 칸의 토큰은 아무에게도 주지 않는다: 본인이 고치거나 지울 수 없고, 방장이 내보낼 수만 있다.
+             */
+            others?: components["schemas"]["ParticipantInput"][];
+            /**
+             * @description 원래 입력 순서에서 방장의 자리(0이면 맨 앞, 없으면 0). 입장 순서는 `others`에 방장을 이 자리에 끼운 순서이고, 표시 이름의 번호와 뽑기
+             *     대상의 칸 순서가 이 순서를 따른다. `others` 길이를 넘으면 400 `INVALID_OTHERS`
+             */
+            hostPosition?: number;
         };
         RoomCreated: {
             roomId: string;

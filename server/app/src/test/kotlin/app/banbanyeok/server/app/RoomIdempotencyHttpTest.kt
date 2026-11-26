@@ -123,6 +123,54 @@ class RoomIdempotencyHttpTest :
             }
         }
 
+        describe("creating a draw room with the other people already entered (#227)") {
+            val body =
+                """{"mode":"favor","favorTarget":"draw","host":{"nickname":"지연","originCode":"130"},""" +
+                    """"others":[{"nickname":"민수","originCode":"03v"},{"originCode":"225"}],"hostPosition":1}"""
+
+            it("stores every row once, in input order, and a retry with the same key replays the same room") {
+                withRoomApi {
+                    val first = json(HttpMethod.Post, ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    first.status shouldBe HttpStatusCode.Created
+                    val retried = json(HttpMethod.Post, ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    (retried.bodyAsText() == first.bodyAsText()) shouldBe true
+                    val path = "$ROOMS/${first.bodyObject().getValue("roomId").jsonPrimitive.content}"
+                    val room = json(HttpMethod.Get, path)
+                    OpenApiContract.assertValid(HttpMethod.Get, "$ROOMS/{roomId}", room)
+                    val roomBody = room.bodyObject()
+                    roomBody.getValue("locked").jsonPrimitive.content shouldBe "true"
+                    roomBody.getValue("participants").jsonArray.map {
+                        val p = it.jsonObject
+                        listOf("label", "isHost", "enteredByHost").map { key -> p.getValue(key).jsonPrimitive.content }
+                    } shouldBe
+                        listOf(
+                            listOf("민수", "false", "true"),
+                            listOf("지연", "true", "false"),
+                            listOf("참가자 3", "false", "true"),
+                        )
+                }
+            }
+
+            it("rejects a hidden row with the same key before replaying the earlier success") {
+                withRoomApi {
+                    json(
+                        HttpMethod.Post,
+                        ROOMS,
+                        body,
+                    ) { headers.append("Idempotency-Key", "draw-room") }.status shouldBe
+                        HttpStatusCode.Created
+                    val hidden = body.replace("""{"originCode":"225"}""", """{"originCode":"225","hidden":true}""")
+                    val retried =
+                        json(HttpMethod.Post, ROOMS, hidden) { headers.append("Idempotency-Key", "draw-room") }
+                    retried.status shouldBe HttpStatusCode.BadRequest
+                    retried
+                        .bodyObject()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "HIDE_NOT_AVAILABLE"
+                }
+            }
+        }
+
         describe("room participation retries") {
             it("replays the successful response without adding another participant when the room is full") {
                 withRoomApi {

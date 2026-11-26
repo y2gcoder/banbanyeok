@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "@/lib/analytics";
@@ -674,5 +674,46 @@ describe("방 화면", () => {
       });
       expect(track).not.toHaveBeenCalledWith("station_chosen", expect.anything());
     });
+  });
+});
+
+describe("방장이 모두의 출발역을 넣은 사다리 방(#227)", () => {
+  const entered = (id: string, label: string, code: string, name: string) => ({
+    participantId: id,
+    hidden: false,
+    originCode: code,
+    originName: name,
+    label,
+    labelKind: "name" as const,
+    shortLabel: label,
+    isHost: false,
+    isSelf: false,
+    enteredByHost: true,
+  });
+
+  it("링크를 받은 사람에게 대신 넣은 칸을 표시하고, 참여 대신 틀린 칸은 방장에게 알리라고 한다", async () => {
+    vi.mocked(api.getRoom).mockImplementation(async (_id, token) => {
+      const room = roomFor(token);
+      return {
+        ...room,
+        locked: true,
+        participants: [
+          entered("e1", "지연", "130", "신촌"),
+          ...room.participants.slice(0, 1).map((host) => ({ ...host, enteredByHost: false })),
+          entered("e2", "하늘", "ryf", "홍대입구"),
+        ],
+      };
+    });
+    renderScreen();
+    const list = await screen.findByRole("region", { name: "들어온 사람" });
+    expect(within(list).getAllByText("방장이 입력")).toHaveLength(2);
+    expect(within(list).getByText("민수").closest("li")).not.toHaveTextContent("방장이 입력");
+    expect(
+      screen.getByRole("heading", { name: "민수가 모두의 출발역을 넣었어요" }).closest("[role=status]"),
+    ).not.toBeNull();
+    expect(
+      screen.getByText(/따로 들어오지 않아도 돼요\. 내 이름이나 출발역이 틀렸으면 민수에게 알려 주세요\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "나도 출발역 넣기" })).not.toBeInTheDocument();
   });
 });

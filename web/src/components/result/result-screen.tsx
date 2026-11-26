@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeftIcon, RotateCwIcon } from "lucide-react";
+import { ArrowLeftIcon, DicesIcon, RotateCwIcon } from "lucide-react";
 import Link from "next/link";
 import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
-import { useEffect, useId, useMemo, useRef } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Wordmark } from "@/components/common/wordmark";
 import { ShareActions } from "@/components/share/share-actions";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { regionName, regionsOf } from "@/lib/stations";
 import { cn } from "@/lib/utils";
 import { Candidates, LoadingCard, PANEL, RESULT_GRID, SIDE } from "./parts/candidates";
 import type { ChoiceContext } from "./parts/directions";
+import { DrawRoomDialog } from "./parts/draw-room-dialog";
 import { ModeTabs } from "./parts/mode-tabs";
 import { Notices } from "./parts/notices";
 
@@ -77,6 +78,7 @@ export function ResultScreen({
   initialResponseMs?: number | undefined;
 }) {
   const panelId = useId();
+  const [drawOpen, setDrawOpen] = useState(false);
   const [search, setSearch] = useQueryStates(searchParsers, { history: "replace", shallow: true, scroll: false });
   const count = initial.origins.length;
   const current = (search.m ? modeFromParam(search.m, count) : null) ?? {
@@ -137,6 +139,7 @@ export function ResultScreen({
   const favorName = state.favorIndex === null ? null : (people[state.favorIndex]?.name ?? null);
   const message =
     top && view ? shareMessage(top, state.mode, favorName, data?.timeBasis, mapMiddleSentence(view)) : null;
+  const canDraw = variant === "creator" && people.length >= 2;
   const first = view?.people[0];
   const sender = first?.labelKind === "name" ? first.name : null;
 
@@ -182,6 +185,7 @@ export function ResultScreen({
           defaultFavorIndex={longest}
           label={variant === "received" ? "기준 바꿔 보기" : "추천 기준"}
           panelId={panelId}
+          {...(canDraw ? { onDraw: () => setDrawOpen(true) } : {})}
         />
       </div>
 
@@ -216,6 +220,21 @@ export function ResultScreen({
 
       {view && message ? (
         <div className={SIDE}>
+          {canDraw ? (
+            <button
+              type="button"
+              onClick={() => setDrawOpen(true)}
+              className="mb-3 flex w-full flex-col gap-0.5 rounded-xl border border-rule-strong bg-surface px-4 py-3.5 text-left hover:border-ink"
+            >
+              <span className="inline-flex items-center gap-1.5 text-[16px] font-bold text-ink">
+                <DicesIcon className="size-4" aria-hidden="true" />
+                누구 쪽으로 할지 사다리로 정하고 보내기 →
+              </span>
+              <span className="text-[13px] leading-snug text-muted-foreground">
+                사다리로 한 사람을 뽑아, 그 사람이 덜 이동하는 역으로 맞춰요.
+              </span>
+            </button>
+          ) : null}
           {variant === "creator" ? (
             <ShareActions
               path={sharePath(state)}
@@ -232,6 +251,7 @@ export function ResultScreen({
           )}
         </div>
       ) : null}
+      {canDraw ? <DrawRoomDialog open={drawOpen} onOpenChange={setDrawOpen} state={state} people={people} /> : null}
       <TimeBasisNote
         basis={data ? (data.timeBasis ?? null) : undefined}
         requested={state.timeSlot}

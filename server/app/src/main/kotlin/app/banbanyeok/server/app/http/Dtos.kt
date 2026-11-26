@@ -47,6 +47,10 @@ data class RoomCreateRequestDto(
     val meetingBand: JsonElement? = null,
     val host: ParticipantInputDto,
     val expectedCount: Int? = null,
+    /** 방장이 대신 넣는 다른 사람 칸(#227). 뽑기 방에서만 받는다. */
+    val others: List<ParticipantInputDto> = emptyList(),
+    /** 입력 순서에서 방장의 자리. */
+    val hostPosition: Int = 0,
 )
 
 @Serializable
@@ -81,6 +85,8 @@ data class ParticipantDto(
     val labelKind: String,
     /** 좁은 칸용 짧은 이름(출발역이면 "{출발역}", 그 밖에는 label과 같다). */
     val shortLabel: String,
+    /** 방장이 방을 만들 때 대신 넣은 칸(#227). */
+    val enteredByHost: Boolean,
 )
 
 @Serializable

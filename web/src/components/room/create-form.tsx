@@ -5,6 +5,8 @@ import { DicesIcon, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
+import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
+import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
 import { Button } from "@/components/ui/button";
 import { roomHashProperty, track } from "@/lib/analytics";
 import { warmUpServer } from "@/lib/api/client";
@@ -22,8 +24,6 @@ import { todayInSeoul } from "@/lib/when/dates";
 import { slotForMeeting } from "@/lib/when/time-slot";
 import { keepDayAcrossMidnight, type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
 import { ParticipantFields } from "./participant-fields";
-import { useIdempotencyKey } from "./use-idempotency-key";
-import { slowMessage, useSlowStage } from "./use-slow-hint";
 
 const MODE_OPTIONS: readonly { mode: Mode; title: string; hint: string }[] = [
   { mode: "fair", title: "공평하게", hint: "가장 오래 걸리는 사람의 시간을 줄여요" },
