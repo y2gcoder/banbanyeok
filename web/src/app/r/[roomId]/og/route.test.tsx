@@ -59,6 +59,9 @@ const DECIDED: RoomPreview = {
   decidedAt: "2026-11-17T10:00:00Z",
 };
 
+const DAY = "public, max-age=86400, s-maxage=86400";
+const MINUTE = "public, max-age=60, s-maxage=60";
+
 const get = (search: string, roomId = ROOM) =>
   GET(new Request(`https://banbanyeok.app/r/${roomId}/og${search}`), { params: Promise.resolve({ roomId }) });
 
@@ -157,6 +160,7 @@ describe("/r/[roomId]/og", () => {
       version: 9,
       lookup: false,
       text: "가장 오래 걸리는 사람도 16분이에요",
+      cache: DAY,
     },
     {
       label: "공개 양의 배수",
@@ -165,11 +169,29 @@ describe("/r/[roomId]/og", () => {
       version: 9,
       lookup: true,
       text: "걸리는 시간이 두 사람 1분 차이예요",
+      cache: DAY,
     },
-    { label: "옛 숨김 방", seconds: [1200, 1261], hidden: true, version: 9, lookup: true, text: null },
-    { label: "다른 버전", seconds: [1200, 1261], hidden: false, version: 10, lookup: true, text: null },
-    { label: "조회 실패", seconds: [1200, 1261], hidden: false, version: null, lookup: true, text: null },
-  ])("$label 방 그림", async ({ seconds, hidden, version, lookup, text }) => {
+    {
+      label: "1시간 넘는 공개 방",
+      seconds: [3000, 5640],
+      hidden: false,
+      version: 9,
+      lookup: true,
+      text: "가장 오래 걸리는 사람 1시간 34분",
+      cache: DAY,
+    },
+    { label: "옛 숨김 방", seconds: [1200, 1261], hidden: true, version: 9, lookup: true, text: null, cache: DAY },
+    { label: "다른 버전", seconds: [1200, 1261], hidden: false, version: 10, lookup: true, text: null, cache: MINUTE },
+    {
+      label: "조회 실패",
+      seconds: [1200, 1261],
+      hidden: false,
+      version: null,
+      lookup: true,
+      text: null,
+      cache: MINUTE,
+    },
+  ])("$label 방 그림", async ({ seconds, hidden, version, lookup, text, cache }) => {
     const { room, dataVersion, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
     loadRoomPreview.mockResolvedValue({
       stage: "result",
@@ -180,9 +202,37 @@ describe("/r/[roomId]/og", () => {
     });
     if (version === null) getRoom.mockRejectedValue(new Error("offline"));
     else getRoom.mockResolvedValue({ shareVersion: version, participants: [{ hidden }, { hidden: false }] });
-    expect((await get("?sv=9&dv=20261115.8")).status).toBe(200);
+    const response = await get("?sv=9&dv=20261115.8");
+    expect(response.headers.get("content-type")).toBe("image/png");
+    expect(response.headers.get("cache-control")).toBe(cache);
     expect(drawn).toEqual([text ? expect.objectContaining({ text }) : null]);
     if (lookup) expect(getRoom).toHaveBeenCalledWith(ROOM, null, { signal: expect.any(AbortSignal) });
     else expect(getRoom).not.toHaveBeenCalled();
+  });
+
+  it("공개 여부 조회가 늦으면 그 조회만 끊고 반반지수 없는 방 카드를 짧게 캐시한다(사이트 기본 그림이 아니다)", async () => {
+    const { room, dataVersion, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
+    loadRoomPreview.mockResolvedValue({
+      stage: "result",
+      room: { ...room, participantCount: 2 },
+      dataVersion,
+      basis: { mode: "fair", favorLabel: null },
+      station: { ...station, times: [1200, 1261].map((s, i) => ({ label: `참가자 ${i + 1}`, seconds: s })) },
+    });
+    let lookup: AbortSignal | undefined;
+    getRoom.mockImplementation(
+      (_id: string, _token: null, { signal }: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          lookup = signal;
+          signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+        }),
+    );
+    const started = performance.now();
+    const response = await get("?sv=9&dv=20261115.8");
+    expect(lookup?.aborted).toBe(true);
+    expect(performance.now() - started).toBeLessThan(1500);
+    expect(response.headers.get("content-type")).toBe("image/png");
+    expect(response.headers.get("cache-control")).toBe(MINUTE);
+    expect(drawn).toEqual([null]);
   });
 });

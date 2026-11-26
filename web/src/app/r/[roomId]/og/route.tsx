@@ -10,6 +10,9 @@ import { loadRoomPreview } from "@/lib/seo/room-preview";
 // 방 링크별 미리보기 그림. 방 상태마다 달라 요청 때 그린다.
 export const dynamic = "force-dynamic";
 
+/** 공개 여부 조회의 시한. 미리보기 조회와 그리기가 그림 예산(1.5초) 안에 남도록 짧게 둔다. */
+const VISIBILITY_LOOKUP_MS = 400;
+
 /**
  * `sv`(공유 번호)와 `dv`(데이터 버전)가 둘 다 지금 값과 같을 때만 방 카드를 그리고 하루 캐시한다. 주소의 번호와 다른 내용을 그 주소로
  * 캐시하지 않으려는 규칙이다: 오래된 번호·다른 데이터 버전·모으는 중·서버 실패는 사이트 기본 그림(짧은 캐시)이다.
@@ -35,8 +38,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
       times.every((t) => t.seconds !== null) &&
       mayIncludeHidden(times.map((t) => t.seconds))
     ) {
-      // 같은 공유 번호에서 익명으로 확인한 공개 여부만 쓴다. 그림 값은 항상 미리보기에서 만든다.
-      const room = await getRoom(normalizeRoomId(roomId), null, { signal }).catch(() => null);
+      // 같은 공유 번호에서 익명으로 확인한 공개 여부만 쓴다. 그림 값은 항상 미리보기에서 만든다. 이 조회가 늦어도 그림 전체 예산을
+      // 다 쓰지 않게 따로 시한을 둔다: 넘으면 공개 여부를 모르는 방 카드(반반지수 없음, 짧은 캐시)이고 사이트 기본 그림이 아니다.
+      const lookup = AbortSignal.any([signal, AbortSignal.timeout(VISIBILITY_LOOKUP_MS)]);
+      const room = await getRoom(normalizeRoomId(roomId), null, { signal: lookup }).catch(() => null);
       if (room?.shareVersion === sv && room.participants.length === times.length) {
         confirmedPublic = room.participants.every((p) => p.hidden === false);
       } else {

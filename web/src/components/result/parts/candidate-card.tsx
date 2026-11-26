@@ -164,6 +164,14 @@ function BanbanSentence({ line }: { line: BanbanLine }) {
   );
 }
 
+const hasRoutes = (candidate: CandidateView) => candidate.people.some((person) => person.route);
+
+/** 반반지수 요약 아래 "자세히"는 펼쳐서 실제로 있는 것만 말한다(경로를 아무도 모르면 경로 막대를 그리지 않는다). */
+function banbanDetailLabel(candidate: CandidateView): string {
+  const parts = ["추천 이유", hasRoutes(candidate) ? "경로" : null, candidate.lastTrain ? "막차" : null];
+  return `자세히: ${parts.filter(Boolean).join("·")}`;
+}
+
 export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle = null, banban = null }: TopProps) {
   const [open, setOpen] = useState(false);
   const detailId = useId();
@@ -189,14 +197,14 @@ export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle 
         className="-mx-2 -mb-2 flex min-h-11 items-center justify-center gap-1 rounded-md text-[14px] font-semibold text-ink-soft hover:bg-accent"
       >
         {/* 이름은 고정이다(상태는 aria-expanded가 말한다). */}
-        {banban ? "자세히: 추천 이유·경로·막차" : "자세히: 시간 막대·추천 이유·막차"}
+        {banban ? banbanDetailLabel(candidate) : "자세히: 시간 막대·추천 이유·막차"}
         <ChevronDownIcon
           className={cn("size-4 motion-safe:transition-transform", open && "rotate-180")}
           aria-hidden="true"
         />
       </button>
       <div id={detailId} hidden={!open} className="flex flex-col gap-4">
-        {(!banban || candidate.people.some((person) => person.route)) && (
+        {(!banban || hasRoutes(candidate)) && (
           <TimeRails
             people={candidate.people}
             maxMinutes={candidate.aggregate.max}

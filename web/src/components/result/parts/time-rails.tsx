@@ -208,7 +208,8 @@ export function TimeRails({
                 </div>
                 {routesOnly && person.route ? (
                   <span aria-hidden="true" className="relative block h-3.5" data-route="lines">
-                    <RouteFill route={person.route} width="100%" />
+                    {/* 요약 막대와 같은 축이라 길이가 곧 시간이다(꽉 찬 막대가 모두 같은 시간으로 읽히지 않게). */}
+                    <RouteFill route={person.route} width={`${(person.minutes / Math.max(1, maxMinutes)) * 100}%`} />
                   </span>
                 ) : (
                   <Track person={person} end={end} step={step} />

@@ -52,8 +52,9 @@ describe("OG 이미지 그리기(satori)", () => {
     }
   });
 
-  it("두 OG에서 가운데만 다른 별명을 구별한다(공평·빨리 만나기·정한 역)", async () => {
+  it("두 OG에서 가운데만 다른 별명은 처음 갈리는 글자부터 남겨 구별한다(공평·빨리 만나기·정한 역)", async () => {
     const labels = ["우리회사서울영업일팀민지", "우리회사서울영업이팀민지"] as const;
+    const SPLIT = ["…일팀민지", "…이팀민지"];
     const sample = SHARED_CASES.find((c) => c.id === "two-even-middle");
     if (!sample) throw new Error("두 사람 표본 필요");
     const result = structuredClone(sample.result);
@@ -73,15 +74,43 @@ describe("OG 이미지 그리기(satori)", () => {
         ["room", <SharedCard key="room" data={card} />],
       ] as const) {
         const markup = renderToStaticMarkup(element);
-        for (const n of [1, 2]) expect(markup).toContain(`>참가자 ${n}</span>`);
+        for (const name of SPLIT) expect(markup).toContain(`>${name}</span>`);
+        expect(markup).not.toContain("참가자");
         if (screensDir) writeFileSync(join(screensDir, `collision-${id}-${mode}.png`), (await render(element)).bytes);
       }
     }
     const decided = roomShareCopy({ ...room, station, decidedBy: labels[1] }).card;
     if (!decided) throw new Error("정한 역 그림 필요");
     const markup = renderToStaticMarkup(<SharedCard data={decided} />);
-    for (const n of [1, 2]) expect(markup).toContain(`>참가자 ${n}</span>`);
-    expect(markup).toContain("참가자 2가 정했어요");
+    for (const name of SPLIT) expect(markup).toContain(`>${name}</span>`);
+    expect(markup).toContain("…이팀민지가 정했어요");
+  });
+
+  it("4명 칸에서 폭을 맞춘 뒤에만 겹치는 이름도 칸과 문장이 같은 사람을 부른다(누구 쪽으로)", async () => {
+    const labels = ["가나다라마바사아자차", "가나다라마바카아자차"];
+    const sample = SHARED_CASES.find((c) => c.id === "four-fast");
+    if (!sample) throw new Error("4명 표본 필요");
+    const result = structuredClone(sample.result);
+    result.participants.forEach((p, i) => {
+      p.shortLabel = labels[i] ?? p.shortLabel;
+    });
+    const score = scoreboardCardData(toResultView({ ...result, mode: "favor" }), {
+      ...sample.state,
+      mode: "favor",
+      favorIndex: 1,
+    });
+    if (!score) throw new Error("공유 그림 값 필요");
+    expect(score.banban ?? null).toBeNull();
+    const markup = renderToStaticMarkup(<ScoreboardCard data={score} />);
+    expect(markup).toContain(">…사아자차</span>");
+    expect(markup).toContain(">…카아자차</span>");
+    expect(markup).not.toContain("참가자");
+    expect(score.modeLine).toContain("가나다라마바카아자차");
+    if (screensDir)
+      writeFileSync(
+        join(screensDir, "collision-four-favor.png"),
+        (await render(<ScoreboardCard data={score} />)).bytes,
+      );
   });
 
   it("사이트 기본 이미지", async () => {

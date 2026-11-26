@@ -24,11 +24,35 @@ describe("막대 그림의 이름 맞추기(fitName)", () => {
     expect(a.text).not.toBe(b.text);
   });
 
-  it("폭을 맞춘 뒤에 생긴 충돌과 참가자 번호를 닮은 별칭도 구분한다", () => {
-    const names = ["우리회사일팀민지", "우리회사이팀민지", "참가자 1"];
+  it("폭을 맞춘 뒤에 같아진 이름은 처음 갈리는 글자부터 남긴다(앱에 없는 순번을 쓰지 않는다)", () => {
+    const names = ["우리회사영업일팀민지", "우리회사영업이팀민지", "참가자 1"];
     const fitted = fitNames(names, () => 120, 30, 24);
-    expect(fitted.map((f) => f.text)).toEqual(["참가자 1", "참가자 2", "참가자 3"]);
+    expect(fitNames(names, () => 400, 30, 24).map((f) => f.text)).toEqual(names);
+    expect(fitted.map((f) => f.text)).toEqual(["…일팀민지", "…이팀민지", "참가자 1"]);
     expect(fitted.every((f) => emWidth(f.text) * f.size <= 120)).toBe(true);
+  });
+
+  it("갈리는 글자 뒤가 길면 그 글자와 끝을 함께 남긴다", () => {
+    const names = ["가나다라마일바사아자차카타파하", "가나다라마이바사아자차카타파하"];
+    const fitted = fitNames(names, () => 150, 30, 24);
+    expect(fitted.map((f) => f.text)).toEqual([
+      expect.stringMatching(/^…일.*…파하$/),
+      expect.stringMatching(/^…이.*…파하$/),
+    ]);
+    expect(fitted.every((f) => emWidth(f.text) * f.size <= 150)).toBe(true);
+  });
+
+  it("글자가 모두 같으면(글꼴에 없는 글자만 달랐다) 겹친 사람끼리 목록 순서로 번호를 붙인다", () => {
+    expect(fitNames(["지훈", "민수", "지훈"], () => 200, 30, 24).map((f) => f.text)).toEqual([
+      "지훈 1",
+      "민수",
+      "지훈 2",
+    ]);
+    expect(fitNames(["지훈", "지훈 1", "지훈"], () => 200, 30, 24).map((f) => f.text)).toEqual([
+      "지훈 1",
+      "지훈 1 2",
+      "지훈 3",
+    ]);
   });
 
   it("무작위 긴 이름도 폭 안에 들어가고, 다른 이름은 다르게 남는다", () => {
@@ -45,6 +69,12 @@ describe("막대 그림의 이름 맞추기(fitName)", () => {
       const fitted = names.map((name) => fitName(name, width, 30, 22));
       for (const f of fitted) expect(emWidth(f.text) * f.size).toBeLessThanOrEqual(width);
       expect(new Set(fitted.map((f) => f.text)).size).toBe(new Set(names).size);
+      const cut = 1 + (next() % (base.length - 1));
+      const middle = [0, 1, 2].map((k) => `${base.slice(0, cut)}${syllables[k]}${base.slice(cut)}`);
+      const split = fitNames(middle, () => width, 30, 22);
+      for (const f of split) expect(emWidth(f.text) * f.size).toBeLessThanOrEqual(width);
+      expect(new Set(split.map((f) => f.text)).size).toBe(3);
+      expect(split.map((f) => f.text).join("")).not.toContain("참가자");
     }
   });
 });

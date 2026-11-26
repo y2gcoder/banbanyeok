@@ -18,6 +18,7 @@ SEED = 202
 RANDOM_COUNT = 1000
 CLOSE_PAIR = 2
 CLOSE_GROUP = 6
+NOUN_FROM_MINUTES = 60  # 최장이 1시간 이상이면 기본 층을 명사형으로(운영자 결정 14, 2026-11-26)
 
 
 def format_minutes(minutes):
@@ -39,7 +40,10 @@ def banban_line(mode, minutes, hidden):
             return {'kind': 'close', 'text': f'걸리는 시간이 {who}같아요'}
         tail = ' 차이예요' if pair else ' 차이 안이에요'
         return {'kind': 'close', 'text': f'걸리는 시간이 {who}{format_minutes(gap)}{tail}'}
-    return {'kind': 'longest', 'text': f'가장 오래 걸리는 사람도 {format_minutes(max(minutes))}이에요'}
+    longest = max(minutes)
+    if longest < NOUN_FROM_MINUTES:
+        return {'kind': 'longest', 'text': f'가장 오래 걸리는 사람도 {format_minutes(longest)}이에요'}
+    return {'kind': 'longest', 'text': f'가장 오래 걸리는 사람 {format_minutes(longest)}'}
 
 
 FIXED = [
@@ -52,8 +56,11 @@ FIXED = [
     ('group_seven_minutes', 'fair', [27, 28, 21, 22], False, '3명 이상 문턱 밖'),
     ('group_spread', 'fair', [27, 28, 16, 7], False, '4명 차이 21분: 기본 층'),
     ('group_same', 'fair', [49, 49, 49], False, '3명 0분 차이'),
-    ('over_an_hour', 'fair', [46, 53, 94], False, '1시간이 넘는 최장'),
-    ('exactly_an_hour', 'fair', [40, 60], False, '정각 1시간'),
+    ('over_an_hour', 'fair', [46, 53, 94], False, '1시간이 넘는 최장: 명사형'),
+    ('just_under_an_hour', 'fair', [40, 59], False, '59분: 도 형'),
+    ('exactly_an_hour', 'fair', [40, 60], False, '정각 1시간: 명사형'),
+    ('just_over_an_hour', 'fair', [40, 61], False, '1시간 1분: 명사형'),
+    ('close_over_an_hour', 'fair', [93, 94], False, '1시간이 넘어도 차이가 작으면 강조 층'),
     ('origin_is_meeting', 'fair', [0, 31], False, '한 사람이 출발역에서 만난다'),
     ('fast_mode', 'fast', [21, 22], False, '빨리 만나기에는 없다'),
     ('favor_mode', 'favor', [21, 22], False, '누구 쪽으로에는 없다'),
@@ -87,7 +94,8 @@ def build():
         'version': 1,
         'source': 'prototype/banban_index.py',
         'rule': '공평 기준에서 모두 갈 수 있고 숨긴 사람이 없을 때만. 걸리는 시간 차이(최장 − 최단, 화면 분)가 '
-                '2명 2분, 3명 이상 6분 이내면 강조 층(close), 아니면 기본 층(longest)',
+                '2명 2분, 3명 이상 6분 이내면 강조 층(close), 아니면 기본 층(longest). 기본 층은 최장이 60분 미만이면 '
+                '"가장 오래 걸리는 사람도 N분이에요", 60분 이상이면 "가장 오래 걸리는 사람 1시간 N분"',
         'vectors': vectors,
     }
 

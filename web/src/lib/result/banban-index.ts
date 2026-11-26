@@ -1,6 +1,7 @@
 /**
  * 반반지수(#202): 공평 1위가 왜 공평한지 말하는 한 줄. 공평 순위는 가장 오래 걸리는 사람의 시간이 가장 짧은 역을 고르므로(minimax),
- * 기본 층은 늘 그 시간을 말한다("가장 오래 걸리는 사람도 38분이에요"). 걸리는 시간이 고를 때만 그 줄을 강조 층으로 바꾼다
+ * 기본 층은 늘 그 시간을 말한다("가장 오래 걸리는 사람도 38분이에요", 1시간부터는 "가장 오래 걸리는 사람 1시간 34분"). 걸리는 시간이 고를 때만
+ * 그 줄을 강조 층으로 바꾼다
  * ("걸리는 시간이 모두 4분 차이 안이에요"). 점수·비율은 인원에 따라 틀린 인상을 줘서 쓰지 않는다.
  *
  * 값은 화면에 보이는 사람별 분(반올림)에서만 만든다. 결과 1위 카드, 공유 그림(`/s/og`), 방 미리보기(`/r/<id>/og`)가 이 줄과 함께
@@ -16,6 +17,8 @@ export type BanbanLine = { kind: "longest" | "close"; text: string };
 /** 강조 층을 붙이는 걸리는 시간 차이(최장 − 최단, 분) 문턱: 두 사람, 세 사람 이상. */
 const CLOSE_PAIR = 2;
 const CLOSE_GROUP = 6;
+/** 기본 층을 명사형으로 바꾸는 최장 시간(분, 화면 값). 1시간이 넘으면 '도'가 '겨우'처럼 읽힌다(운영자 결정 14, 2026-11-26). */
+const NOUN_FROM_MINUTES = 60;
 
 /** 숨긴 사람의 시간은 남에게 300초의 배수로 간다(ADR-0004, 서버 `HiddenTimes.coarse`). */
 const HIDDEN_STEP_SECONDS = 300;
@@ -43,10 +46,12 @@ export function banbanLine(input: {
   const shown = minutes as readonly number[];
   const close = closeText(shown);
   if (close !== null) return { kind: "close", text: close };
-  return {
-    kind: "longest",
-    text: `${OG_TEXT.banbanLongestLead}${formatMinutes(Math.max(...shown))}${OG_TEXT.banbanLongestTail}`,
-  };
+  const longest = Math.max(...shown);
+  const text =
+    longest < NOUN_FROM_MINUTES
+      ? `${OG_TEXT.banbanLongestLead}${formatMinutes(longest)}${OG_TEXT.banbanLongestTail}`
+      : `${OG_TEXT.banbanLongestNoun}${formatMinutes(longest)}`;
+  return { kind: "longest", text };
 }
 
 /**

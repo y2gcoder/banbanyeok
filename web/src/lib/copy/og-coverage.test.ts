@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import stationIndex from "../stations/index.gen.json";
 import { lineShortLabel } from "../stations/lines";
-import { missingGlyphs, ogSafeName } from "./og-coverage";
+import { missingGlyphs, ogParticipantNames, ogSafeName } from "./og-coverage";
 import { OG_NAME_MAX, ogFixedChars } from "./og-text";
 
 const web = resolve(import.meta.dirname, "../../..");
@@ -82,5 +82,30 @@ describe("글꼴에 없는 글자 대체(ogSafeName)", () => {
   it("제어 문자와 한자(서브셋에 없는 글자)도 걸러낸다", () => {
     expect(ogSafeName("지훈\u0000​", "나")).toBe("지훈");
     expect(ogSafeName("漢字", "나")).toBe("나");
+  });
+});
+
+describe("그림에 그릴 사람 이름들(ogParticipantNames)", () => {
+  it("줄여서 같아진 이름은 처음 갈리는 글자부터 남긴다(앱에서 보는 이름의 일부라 누구인지 이어 볼 수 있다)", () => {
+    expect(ogParticipantNames(["우리회사서울영업일팀민지", "우리회사서울영업이팀민지", "민수"])).toEqual([
+      "…일팀민지",
+      "…이팀민지",
+      "민수",
+    ]);
+    const long = ogParticipantNames([
+      "우리회사서울영업일팀막내민지정말입니다",
+      "우리회사서울영업이팀막내민지정말입니다",
+    ]);
+    expect(long).toEqual(["…일팀막내민지정…니다", "…이팀막내민지정…니다"]);
+    for (const name of long) expect(Array.from(name).length).toBeLessThanOrEqual(OG_NAME_MAX + 1);
+  });
+
+  it("글꼴에 없는 글자만 달랐으면 겹친 사람끼리 목록 순서로 번호를 붙인다", () => {
+    expect(ogParticipantNames(["지훈🎂", "민수", "지훈🎉"])).toEqual(["지훈 1", "민수", "지훈 2"]);
+  });
+
+  it("다른 사람은 늘 다른 이름이고 '참가자 N'은 이름에 남는 글자가 없을 때만 쓴다", () => {
+    expect(ogParticipantNames(["🎂", "참가자 1"])).toEqual(["참가자 1 1", "참가자 1 2"]);
+    expect(ogParticipantNames(["민수", "민지"])).toEqual(["민수", "민지"]);
   });
 });
