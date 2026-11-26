@@ -587,11 +587,12 @@ export interface components {
              */
             meetingDate?: string;
             /**
-             * @description 만든 기기가 요청을 보내기 전에 저장해 둔, 추측할 수 없는 비밀 값(아니면 400 `INVALID_REQUEST`). 서버는 원문을 저장하지 않고 해시만
-             *     방에 둔다. 만든 뒤 24시간 안에 같은 값으로 다시 보내면(응답을 잃은 뒤 다른 탭·다른 인스턴스로 보낸 재시도 포함) 새 방을 만들지 않고
-             *     그 방의 `roomId`·`participantId`와 새로 발급한 `hostToken`·`participantToken`을 돌려준다. 앞서 발급한 두 토큰은 그때부터 통하지
-             *     않는다. 방이 지워졌거나 만료됐거나 24시간이 지났으면 새 방을 만든다(키는 새 방으로 옮겨 간다). 본문의 나머지가 달라도 같은 키면 같은
-             *     방이다(`Idempotency-Key`와 같다)
+             * @description 만든 기기가 요청을 보내기 전에 저장해 둔 비밀 값. 호출자는 암호학적으로 안전한 무작위 값(예: `crypto.randomUUID()`)을 만들어야
+             *     한다. 서버는 형식만 본다(맞지 않으면 400 `INVALID_REQUEST`). 서버는 원문을 저장하지 않고 해시만 방에 둔다.
+             *     만든 뒤 24시간 안에 같은 값으로 다시 보내면(응답을 잃은 뒤 다른 탭·다른 인스턴스로 보낸 재시도, 동시에 보낸 요청 포함) 새 방을 만들지
+             *     않고 처음과 같은 `roomId`·`participantId`·`hostToken`·`participantToken`을 돌려준다. 두 토큰은 이 값과 서버 비밀로 정해져 몇 번을
+             *     받아도, 응답이 어떤 순서로 도착해도 같다. 여러 인스턴스가 같은 값으로 동시에 만들어도 방은 하나다. 방이 지워졌거나 만료됐거나
+             *     24시간이 지났으면 새 방을 만든다(값은 새 방으로 옮겨 간다). 본문의 나머지가 달라도 같은 값이면 같은 방이다(`Idempotency-Key`와 같다)
              */
             recoveryKey: string;
             /** @description 약속 시간대(선택). `RoomCreateRequest.meetingBand`와 같다(약속 시각은 받지 않는다) */

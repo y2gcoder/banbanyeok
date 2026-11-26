@@ -18,6 +18,8 @@ import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
 import app.banbanyeok.server.room.Participant
 import app.banbanyeok.server.room.ParticipantChange
+import app.banbanyeok.server.room.RecoverySlot
+import app.banbanyeok.server.room.RecoveryTaken
 import app.banbanyeok.server.room.Room
 import app.banbanyeok.server.room.RoomChange
 import app.banbanyeok.server.room.RoomMode
@@ -33,6 +35,8 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.lessEq
+import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -51,11 +55,29 @@ public class ExposedRoomRepository(
     override suspend fun create(
         room: Room,
         participants: List<Participant>,
-        recoveryHash: TokenHash?,
-    ) = inTransaction {
-        // 같은 키의 앞선 방(만료돼 되찾을 수 없지만 아직 정리 전)은 키를 놓는다. 키는 늘 가장 최근 방을 가리킨다.
-        if (recoveryHash != null) {
-            RoomsTable.update({ RoomsTable.recoveryHash eq recoveryHash.bytes }) { it[RoomsTable.recoveryHash] = null }
+        recovery: RecoverySlot?,
+    ) = try {
+        inTransaction { insertRoom(room, participants, recovery) }
+    } catch (e: ExposedSQLException) {
+        // 되찾을 수 있는 방이 같은 키를 쥐고 있다(다른 인스턴스가 먼저 만들었거나 만드는 중이었다). 부분 유일 인덱스가 막는다.
+        if (recovery != null && e.sqlState == UNIQUE_VIOLATION) throw RecoveryTaken()
+        throw e
+    }
+
+    private fun insertRoom(
+        room: Room,
+        participants: List<Participant>,
+        recovery: RecoverySlot?,
+    ) {
+        // 되찾을 수 없는 앞선 방(복구 기간이 지났거나 만료돼 정리 전)만 키를 놓는다. 되찾을 수 있는 방의 키는 건드리지 않는다.
+        if (recovery != null) {
+            RoomsTable.update({
+                (RoomsTable.recoveryHash eq recovery.hash.bytes) and
+                    (
+                        (RoomsTable.createdAt lessEq recovery.recoverableAfter) or
+                            (RoomsTable.expiresAt lessEq room.createdAt)
+                    )
+            }) { it[RoomsTable.recoveryHash] = null }
         }
         RoomsTable.insert {
             it[id] = room.id
@@ -75,7 +97,7 @@ public class ExposedRoomRepository(
             it[expiresAt] = room.expiresAt
             it[favorDraw] = room.favorDraw != null
             it[region] = requireNotNull(room.region).name.lowercase()
-            it[RoomsTable.recoveryHash] = recoveryHash?.bytes
+            it[RoomsTable.recoveryHash] = recovery?.hash?.bytes
         }
         participants.forEach { insertParticipant(room.id, it) }
     }
@@ -91,20 +113,6 @@ public class ExposedRoomRepository(
                     (RoomsTable.recoveryHash eq recoveryHash.bytes) and (RoomsTable.createdAt greater createdAfter)
                 }.singleOrNull()
                 ?.get(RoomsTable.id)
-        }
-
-    override suspend fun replaceCreatorTokens(
-        roomId: String,
-        hostHash: TokenHash,
-        hostParticipantHash: TokenHash,
-    ): Boolean =
-        inTransaction {
-            val room = lockedRoom(roomId) ?: return@inTransaction false
-            RoomsTable.update({ RoomsTable.id eq roomId }) { it[RoomsTable.hostHash] = hostHash.bytes }
-            ParticipantsTable.update({
-                (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq room[RoomsTable.hostPid])
-            }) { it[tokenHash] = hostParticipantHash.bytes }
-            true
         }
 
     // 방 행과 참여자를 따로 SELECT한다. READ COMMITTED면 그 사이에 커밋된 참여가 섞여 있었던 적 없는 번호·인원 조합이 보이고,
@@ -498,5 +506,8 @@ public class ExposedRoomRepository(
         const val MAX_PARTICIPANTS = 4
         const val LOCKED = "locked"
         const val OPEN = "open"
+
+        /** Postgres unique_violation. */
+        const val UNIQUE_VIOLATION = "23505"
     }
 }

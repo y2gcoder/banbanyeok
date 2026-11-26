@@ -16,11 +16,18 @@ class InMemoryRoomRepository : RoomRepository {
     override suspend fun create(
         room: Room,
         participants: List<Participant>,
-        recoveryHash: TokenHash?,
+        recovery: RecoverySlot?,
     ) = lock.withLock {
         check(room.id !in rooms) { "duplicate room id" }
+        if (recovery != null) {
+            val holder = recoveries[recovery.hash]?.let { rooms[it]?.room }
+            val live =
+                holder != null && holder.createdAt.isAfter(recovery.recoverableAfter) &&
+                    holder.expiresAt.isAfter(room.createdAt)
+            if (live) throw RecoveryTaken()
+            recoveries[recovery.hash] = room.id
+        }
         rooms[room.id] = StoredRoom(room, emptyList())
-        if (recoveryHash != null) recoveries[recoveryHash] = room.id
         write(room.id) { it.copy(participants = participants) }
     }
 
@@ -30,24 +37,6 @@ class InMemoryRoomRepository : RoomRepository {
     ): String? =
         lock.withLock {
             recoveries[recoveryHash]?.takeIf { id -> rooms[id]?.room?.createdAt?.isAfter(createdAfter) == true }
-        }
-
-    override suspend fun replaceCreatorTokens(
-        roomId: String,
-        hostHash: TokenHash,
-        hostParticipantHash: TokenHash,
-    ): Boolean =
-        lock.withLock {
-            val stored = rooms[roomId] ?: return@withLock false
-            rooms[roomId] =
-                stored.copy(
-                    room = stored.room.copy(hostHash = hostHash),
-                    participants =
-                        stored.participants.map {
-                            if (it.id == stored.room.hostParticipantId) it.copy(tokenHash = hostParticipantHash) else it
-                        },
-                )
-            true
         }
 
     override suspend fun find(roomId: String): StoredRoom? =

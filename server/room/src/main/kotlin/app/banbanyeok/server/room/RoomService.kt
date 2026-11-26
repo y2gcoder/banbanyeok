@@ -34,28 +34,49 @@ public class RoomService(
     private val origins = OriginRule(stations)
     private val draws = FavorDrawRule(drawRandom, clock)
 
-    public suspend fun create(command: CreateRoomCommand): CreatedRoom = create(command, recoveryHash = null)
+    public suspend fun create(command: CreateRoomCommand): CreatedRoom = create(command, recovery = null)
 
     /**
-     * 방장이 모두의 칸을 채운 사다리 방(#227, ADR-0011). [recoveryKey]는 만든 기기가 요청 전에 저장해 둔 비밀 값이다. 같은 키로 이미
-     * 만든 방이 있으면(만든 뒤 [RECOVERY_WINDOW] 안) 새 방을 만들지 않고 그 방의 방장 토큰과 방장 참여자 토큰을 새로 발급한다. 서버가 방을
-     * 만든 뒤 응답을 받지 못한 기기가 다른 탭이나 다른 인스턴스로 다시 보내도 같은 방을 되찾게 하려는 것이다. 키의 원문은 저장하지 않는다.
+     * 방장이 모두의 칸을 채운 사다리 방(#227, ADR-0011). [recoveryKey]는 만든 기기가 요청 전에 저장해 둔 무작위 값이다. 같은 키로 만든
+     * 방이 아직 되찾을 수 있으면(만든 뒤 [RECOVERY_WINDOW] 안, 만료 전) 새 방을 만들지 않고 그 방을 돌려준다. 방장 토큰과 방장 참여자
+     * 토큰은 키와 서버 비밀로 정해지므로([TokenService.creatorToken]) 몇 번을 다시 받아도, 여러 응답이 어떤 순서로 도착해도 같은 값이다.
+     * 여러 인스턴스가 같은 키로 동시에 만들면 저장소가 하나만 넣고([RecoveryTaken]) 나머지는 그 방을 돌려준다. 키의 원문은 저장하지 않는다.
      */
     public suspend fun createDrawRoom(
         command: CreateRoomCommand,
         recoveryKey: String,
     ): CreatedRoom {
-        val recoveryHash = tokens.hash(recoveryKey)
-        return recover(recoveryHash) ?: create(command, recoveryHash)
+        val hash = tokens.hash(recoveryKey)
+        recover(hash, recoveryKey)?.let { return it }
+        return try {
+            create(command, Recovery(hash, recoveryKey))
+        } catch (taken: RecoveryTaken) {
+            recover(hash, recoveryKey) ?: throw taken
+        }
     }
 
-    private suspend fun recover(recoveryHash: TokenHash): CreatedRoom? {
+    private class Recovery(
+        val hash: TokenHash,
+        val key: String,
+    )
+
+    private fun creatorTokens(
+        roomId: String,
+        hostParticipantId: String,
+        recoveryKey: String,
+    ): Pair<IssuedToken, IssuedToken> =
+        tokens.creatorToken("host", roomId, recoveryKey) to
+            tokens.creatorToken("participant", "$roomId/$hostParticipantId", recoveryKey)
+
+    private suspend fun recover(
+        hash: TokenHash,
+        recoveryKey: String,
+    ): CreatedRoom? {
         val now = clock.instant()
-        val roomId = rooms.findByRecovery(recoveryHash, now.minus(RECOVERY_WINDOW)) ?: return null
+        val roomId = rooms.findByRecovery(hash, now.minus(RECOVERY_WINDOW)) ?: return null
         val stored = findActive(roomId, now) ?: return null
-        val hostToken = tokens.issue()
-        val participantToken = tokens.issue()
-        if (!rooms.replaceCreatorTokens(roomId, hostToken.hash, participantToken.hash)) return null
+        val (hostToken, participantToken) = creatorTokens(roomId, stored.room.hostParticipantId, recoveryKey)
+        check(stored.room.hostHash == hostToken.hash) { "복구 키로 만든 방장 토큰이 저장된 해시와 다르다" }
         return CreatedRoom(
             roomId,
             hostToken.plain,
@@ -69,7 +90,7 @@ public class RoomService(
 
     private suspend fun create(
         command: CreateRoomCommand,
-        recoveryHash: TokenHash?,
+        recovery: Recovery?,
     ): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
@@ -82,8 +103,8 @@ public class RoomService(
         val region = regions.regionFor(host.originCode, host.hidden)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
-        val hostToken = tokens.issue()
-        val participantToken = tokens.issue()
+        val (hostToken, participantToken) =
+            recovery?.let { creatorTokens(roomId, hostParticipantId, it.key) } ?: (tokens.issue() to tokens.issue())
         val expiresAt = ExpiryPolicy.expiresAt(now, now, command.meetingDate)
         val anonId = anonIdOf(command.deviceToken, now)
         val drawn = command.mode == RoomMode.FAVOR && command.favorTarget == CreateRoomCommand.DRAW_TARGET
@@ -115,7 +136,11 @@ public class RoomService(
             others.map {
                 newParticipant(ids.participantId(), tokens.issue().hash, null, it, now).copy(enteredByHost = true)
             }
-        rooms.create(room, inputOrder(entered, hostEntry, command.hostPosition), recoveryHash)
+        rooms.create(
+            room,
+            inputOrder(entered, hostEntry, command.hostPosition),
+            recovery?.let { RecoverySlot(it.hash, now.minus(RECOVERY_WINDOW)) },
+        )
         return CreatedRoom(
             roomId,
             hostToken.plain,

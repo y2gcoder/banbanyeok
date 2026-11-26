@@ -119,34 +119,45 @@ private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {
 
 private fun DescribeSpecRootScope.recoveringCreators(repos: () -> RepositoryPair) {
     describe("creator recovery (#227)") {
-        it(
-            "finds a room by its creator's recovery key within the window, and the newest room takes the key over (#227)",
-        ) {
+        it("finds a room by its creator's recovery key only within the window") {
+            val rooms = repos().rooms
+            val key = hashOf("recovery-${freshId()}")
+            val room = aRoom(freshId())
+            rooms.create(room, listOf(aParticipant("host01")), RecoverySlot(key, T0.minusSeconds(60)))
+            rooms.findByRecovery(key, T0.minusSeconds(1)) shouldBe room.id
+            rooms.findByRecovery(key, T0) shouldBe null
+            rooms.findByRecovery(hashOf("other-${freshId()}"), T0.minusSeconds(1)) shouldBe null
+        }
+
+        it("refuses a second room while the key still holds a recoverable room, inserting nothing") {
             val rooms = repos().rooms
             val key = hashOf("recovery-${freshId()}")
             val first = aRoom(freshId())
-            rooms.create(first, listOf(aParticipant("host01")), key)
+            rooms.create(first, listOf(aParticipant("host01")), RecoverySlot(key, T0.minusSeconds(60)))
+            val second = aRoom(freshId())
+            shouldThrow<RecoveryTaken> {
+                rooms.create(second, listOf(aParticipant("host01")), RecoverySlot(key, T0.minusSeconds(60)))
+            }
+            rooms.find(second.id).shouldBeNull()
             rooms.findByRecovery(key, T0.minusSeconds(1)) shouldBe first.id
-            rooms.findByRecovery(key, T0) shouldBe null
-            rooms.findByRecovery(hashOf("other-${freshId()}"), T0.minusSeconds(1)) shouldBe null
-
-            val next = aRoom(freshId())
-            rooms.create(next, listOf(aParticipant("host01")), key)
-            rooms.findByRecovery(key, T0.minusSeconds(1)) shouldBe next.id
-            rooms.find(first.id).shouldNotBeNull()
         }
 
-        it("replaces only the creator's two token hashes, leaving every other row and the share number as they were") {
+        it("lets a newer room take the key from a room that can no longer be recovered (too old or expired)") {
             val rooms = repos().rooms
-            val room = aRoom(freshId())
-            rooms.create(room, listOf(aParticipant("host01"), aParticipant("pid002")), hashOf("recovery-${room.id}"))
-            val before = rooms.find(room.id).shouldNotBeNull()
-            rooms.replaceCreatorTokens(room.id, hashOf("new-host"), hashOf("new-member")) shouldBe true
-            val after = rooms.find(room.id).shouldNotBeNull()
-            after.room shouldBe before.room.copy(hostHash = hashOf("new-host"))
-            after.participants shouldBe
-                listOf(before.participants[0].copy(tokenHash = hashOf("new-member")), before.participants[1])
-            rooms.replaceCreatorTokens(freshId(), hashOf("x"), hashOf("y")) shouldBe false
+            val tooOld = hashOf("recovery-${freshId()}")
+            val old = aRoom(freshId())
+            rooms.create(old, listOf(aParticipant("host01")), RecoverySlot(tooOld, T0.minusSeconds(60)))
+            val later = aRoom(freshId(), createdAt = T0.plusSeconds(3600))
+            rooms.create(later, listOf(aParticipant("host01")), RecoverySlot(tooOld, T0))
+            rooms.findByRecovery(tooOld, T0.minusSeconds(1)) shouldBe later.id
+            rooms.find(old.id).shouldNotBeNull()
+
+            val expiredKey = hashOf("recovery-${freshId()}")
+            val expired = aRoom(freshId()) { it.copy(expiresAt = T0.plusSeconds(60)) }
+            rooms.create(expired, listOf(aParticipant("host01")), RecoverySlot(expiredKey, T0.minusSeconds(60)))
+            val next = aRoom(freshId(), createdAt = T0.plusSeconds(120))
+            rooms.create(next, listOf(aParticipant("host01")), RecoverySlot(expiredKey, T0.minusSeconds(60)))
+            rooms.findByRecovery(expiredKey, T0.minusSeconds(1)) shouldBe next.id
         }
     }
 }

@@ -159,43 +159,56 @@ class RoomEnteredByHostTest :
         describe("recovering a filled draw room with the creator's recovery key (#227)") {
             val key = "k".repeat(40)
 
-            it("returns the same room with fresh creator tokens; the old ones stop working and nothing else changes") {
+            it("returns the same room and the same creator tokens every time, writing nothing") {
                 runTest {
                     val fixture = RoomFixture()
-                    val first =
-                        fixture.service.createDrawRoom(
-                            drawCommand(listOf(minsu, nameless), hostPosition = 1),
-                            key,
-                        )
+                    val command = drawCommand(listOf(minsu, nameless), hostPosition = 1)
+                    val first = fixture.service.createDrawRoom(command, key)
                     val before = fixture.rooms.find(first.roomId)!!
-                    val again =
-                        fixture.service.createDrawRoom(
-                            drawCommand(listOf(minsu, nameless), hostPosition = 1),
-                            key,
-                        )
+                    val again = fixture.service.createDrawRoom(command, key)
+                    val third = fixture.service.createDrawRoom(command, key)
 
-                    again.roomId shouldBe first.roomId
-                    again.participantId shouldBe first.participantId
-                    again.recovered shouldBe true
                     first.recovered shouldBe false
-                    (again.hostToken == first.hostToken) shouldBe false
-                    (again.participantToken == first.participantToken) shouldBe false
-                    val after = fixture.rooms.find(first.roomId)!!
-                    after.participants.map { it.id to it.enteredByHost } shouldBe
-                        before.participants.map { it.id to it.enteredByHost }
-                    after.room.copy(hostHash = before.room.hostHash) shouldBe before.room
+                    listOf(again, third).forEach {
+                        it.recovered shouldBe true
+                        it.copy(recovered = false) shouldBe first
+                    }
+                    fixture.rooms.find(first.roomId) shouldBe before
                     fixture.service
                         .get(first.roomId, first.participantToken)
                         .participants
-                        .none { it.isSelf } shouldBe true
-                    fixture.service
-                        .get(first.roomId, again.participantToken)
-                        .participants
                         .single { it.isSelf }
-                        .id shouldBe again.participantId
-                    shouldThrow<RoomException> { fixture.service.delete(first.roomId, first.hostToken) }
-                    fixture.service.delete(first.roomId, again.hostToken)
+                        .id shouldBe first.participantId
+                    fixture.service.delete(first.roomId, first.hostToken)
                     fixture.rooms.find(first.roomId) shouldBe null
+                }
+            }
+
+            it(
+                "keeps one room when two requests with the same key both miss the lookup (another instance won the insert)",
+            ) {
+                runTest {
+                    val fixture = RoomFixture()
+                    val racing = LookupMisses(fixture.rooms, misses = 2)
+                    val service =
+                        RoomService(
+                            racing,
+                            fixture.anonUsers,
+                            fixture.tokens,
+                            fixture.ids,
+                            fixture.stations,
+                            fixture.clock,
+                        )
+                    val command = drawCommand(listOf(minsu))
+                    val winner = service.createDrawRoom(command, key)
+                    val loser = service.createDrawRoom(command, key)
+
+                    loser.copy(recovered = false) shouldBe winner
+                    loser.recovered shouldBe true
+                    fixture.rooms
+                        .find(winner.roomId)!!
+                        .participants.size shouldBe 2
+                    fixture.rooms.find("room000002") shouldBe null
                 }
             }
 
@@ -244,3 +257,14 @@ class RoomEnteredByHostTest :
             }
         }
     })
+
+/** 다른 인스턴스와 겨룬 것처럼, 복구 키 조회가 처음 [misses]번은 방을 못 찾는다(그사이 다른 요청이 방을 넣었다). */
+private class LookupMisses(
+    private val inner: InMemoryRoomRepository,
+    private var misses: Int,
+) : RoomRepository by inner {
+    override suspend fun findByRecovery(
+        recoveryHash: TokenHash,
+        createdAfter: java.time.Instant,
+    ): String? = if (misses-- > 0) null else inner.findByRecovery(recoveryHash, createdAfter)
+}

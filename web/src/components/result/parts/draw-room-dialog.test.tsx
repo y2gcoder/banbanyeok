@@ -257,8 +257,10 @@ describe("사다리 방 확인 대화상자", () => {
 
     it("요청을 보내기 전에 시도 키를 저장하고, 방장 기록을 저장하면 지운다", async () => {
       createRoom.mockImplementation(async (body: { recoveryKey: string }, key: string) => {
-        expect(stored()).toMatchObject({ idempotencyKey: key, recoveryKey: body.recoveryKey });
-        expect(stored().input).toMatch(/^[0-9a-f]{64}$/);
+        const attempts = Object.entries(stored().attempts);
+        expect(attempts).toHaveLength(1);
+        expect(attempts[0]?.[0]).toMatch(/^[0-9a-f]{64}$/);
+        expect(attempts[0]?.[1]).toMatchObject({ idempotencyKey: key, recoveryKey: body.recoveryKey });
         return CREATED;
       });
       const user = userEvent.setup();
@@ -287,18 +289,28 @@ describe("사다리 방 확인 대화상자", () => {
       expect(window.localStorage.getItem(ATTEMPT)).toBeNull();
     });
 
-    it("다른 사람을 '나'로 고르면(다른 입력) 새 키로 보낸다", async () => {
+    it("다른 사람을 '나'로 고르면(다른 입력) 새 키로 보내고, 그 방을 완성해도 앞서 잃은 시도는 남아 다시 되찾을 수 있다", async () => {
       createRoom.mockRejectedValueOnce(new TypeError("Failed to fetch"));
       createRoom.mockResolvedValueOnce(CREATED);
+      createRoom.mockResolvedValueOnce({ ...CREATED, roomId: "lost000001" });
       const user = userEvent.setup();
-      renderDialog();
+      const first = renderDialogUnmountable();
       await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
       expect(await screen.findByRole("alert")).toBeInTheDocument();
       await user.click(screen.getByRole("radio", { name: "하늘" }));
       await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
-      const [first, second] = createRoom.mock.calls;
-      expect(second?.[0].recoveryKey).not.toBe(first?.[0].recoveryKey);
-      expect(second?.[1]).not.toBe(first?.[1]);
+      const [lost, other] = createRoom.mock.calls;
+      expect(other?.[0].recoveryKey).not.toBe(lost?.[0].recoveryKey);
+      expect(other?.[1]).not.toBe(lost?.[1]);
+      expect(Object.keys(stored().attempts)).toHaveLength(1);
+      first.unmount();
+
+      renderDialog();
+      await user.click(screen.getByRole("button", { name: "방 만들고 사다리 타러 가기" }));
+      const again = createRoom.mock.calls[2];
+      expect(again?.[0].recoveryKey).toBe(lost?.[0].recoveryKey);
+      expect(again?.[1]).toBe(lost?.[1]);
+      expect(window.localStorage.getItem(ATTEMPT)).toBeNull();
     });
 
     it("시도 키를 저장하지 못하는 브라우저에서는 방을 만들지 않는다", async () => {

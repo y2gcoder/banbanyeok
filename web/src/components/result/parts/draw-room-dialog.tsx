@@ -55,7 +55,8 @@ export function DrawRoomDialog({
     setStorable(canStoreRoomTokens());
   }, [open]);
 
-  const [unsaved, setUnsaved] = useState<RoomCreated | null>(null);
+  /** 만들었지만 방장 기록을 저장하지 못한 방과 그 시도. */
+  const [unsaved, setUnsaved] = useState<{ created: RoomCreated; attemptId: string } | null>(null);
   const [saveRetried, setSaveRetried] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [attemptBlocked, setAttemptBlocked] = useState(false);
@@ -67,9 +68,9 @@ export function DrawRoomDialog({
       participantId: created.participantId,
       keepUntil: keepUntilFrom(),
     });
-  const enter = (created: RoomCreated) => {
+  const enter = (created: RoomCreated, attemptId: string) => {
     setUnsaved(null);
-    endDrawRoomAttempt();
+    endDrawRoomAttempt(attemptId);
     track("room_created", {
       hidden_used: false,
       ...roomHashProperty({ roomId: created.roomId, roomHash: created.roomHash }),
@@ -86,34 +87,34 @@ export function DrawRoomDialog({
     },
     onMutate: () => setRemoved(false),
     // 옛 서버의 거절은 아무것도 만들지 않았다는 뜻이라 시도를 끝낸다. 그 밖의 실패(연결 끊김 등)는 방이 생겼을 수 있어 키를 남긴다.
-    onError: (error) => {
-      if (isDrawRoomUnsupported(error)) endDrawRoomAttempt();
+    onError: (error, { attempt }) => {
+      if (isDrawRoomUnsupported(error)) endDrawRoomAttempt(attempt.id);
     },
-    onSuccess: ({ created, saved }) => {
-      if (saved) enter(created);
-      else setUnsaved(created);
+    onSuccess: ({ created, saved }, { attempt }) => {
+      if (saved) enter(created, attempt.id);
+      else setUnsaved({ created, attemptId: attempt.id });
     },
   });
   // 지운 방을 같은 키로 다시 받지 않게, 지운 뒤에는 시도를 끝내 새 키로 만든다. 지웠다는 답을 받기 전에는 시도와 토큰을 그대로 둔다.
   const remove = useMutation({
-    mutationFn: async (created: RoomCreated) => {
+    mutationFn: async ({ created }: { created: RoomCreated; attemptId: string }) => {
       try {
         await deleteRoom(created.roomId, created.hostToken);
       } catch (error) {
         if (!isRoomGone(error)) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, { attemptId }) => {
       setUnsaved(null);
       setSaveRetried(false);
       setRemoved(true);
-      endDrawRoomAttempt();
+      endDrawRoomAttempt(attemptId);
       create.reset();
     },
   });
   const retrySave = () => {
     if (!unsaved) return;
-    if (persist(unsaved)) enter(unsaved);
+    if (persist(unsaved.created)) enter(unsaved.created, unsaved.attemptId);
     else setSaveRetried(true);
   };
   const stage = useSlowStage(create.isPending);

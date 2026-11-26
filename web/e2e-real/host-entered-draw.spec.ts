@@ -383,3 +383,90 @@ test("서버가 만든 뒤 응답을 잃고 탭을 닫아도, 다시 열어 같�
   expect(roomsWith(me)).toBe(1);
   expect(await reopened.evaluate(() => window.localStorage.getItem("bby.draw-room.attempt"))).toBeNull();
 });
+
+/** 같은 입력으로 연 탭에서 확인창을 열어 둔다(누르기 전). [second]면 그 탭의 만들기 요청을 두 번째 인스턴스로 보낸다. */
+async function openDialogTab(page: Page, me: string, second: boolean) {
+  if (second && SECOND_SERVER_ORIGIN) {
+    await page.route(`**${DRAW_ROOMS}`, async (route) => {
+      await route.fulfill({ response: await route.fetch({ url: `${SECOND_SERVER_ORIGIN}/v1/draw-rooms` }) });
+    });
+  }
+  await page.goto(resultWith(me));
+  await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
+  return page.getByRole("button", { name: "방 만들고 사다리 타러 가기" });
+}
+
+/** 다시 연 방 화면에서 방장 권한으로 실제로 바꿀 수 있는지(잠금 풀기 → 서버가 받아들임). */
+async function expectWorkingHost(page: Page, roomId: string) {
+  await page.goto(`/r/${roomId}`);
+  await expect(page.getByRole("heading", { name: "내가 만든 방" })).toBeVisible({ timeout: 8000 });
+  const unlocked = page.waitForResponse(
+    (r) => r.url().endsWith(`/api/v1/rooms/${roomId}`) && r.request().method() === "PATCH",
+  );
+  await page.getByRole("button", { name: "잠금 풀기" }).click();
+  expect((await unlocked).status()).toBe(200);
+  await expect(page.getByRole("button", { name: "참여 잠그기" })).toBeVisible();
+}
+
+test("두 탭이 같은 입력으로 동시에 처음 만들어도 방은 하나이고, 남은 기록으로 방장 일을 할 수 있다", async ({
+  context,
+}) => {
+  const me = uniqueName();
+  const [a, b] = [await context.newPage(), await context.newPage()];
+  // A의 요청은 B의 요청이 나간 뒤에 서버로 보낸다. 두 요청이 함께 서버에 있다(두 번째 인스턴스가 있으면 서로 다른 인스턴스).
+  let bSent: () => void = () => undefined;
+  const bInFlight = new Promise<void>((resolve) => (bSent = resolve));
+  b.on("request", (r) => {
+    if (r.url().endsWith(DRAW_ROOMS)) bSent();
+  });
+  await a.route(`**${DRAW_ROOMS}`, async (route) => {
+    await bInFlight;
+    await route.fallback();
+  });
+  const createA = await openDialogTab(a, me, false);
+  const createB = await openDialogTab(b, me, true);
+  await createA.click();
+  await createB.click();
+  await expect(a).toHaveURL(ROOM_URL);
+  await expect(b).toHaveURL(ROOM_URL);
+  expect(a.url()).toBe(b.url());
+  expect(roomsWith(me)).toBe(1);
+  await expectWorkingHost(await context.newPage(), roomIdOf(a.url()));
+});
+
+test("응답을 잃은 방을 두 탭이 함께 되찾고 응답이 늦게 온 쪽이 나중에 저장해도, 남은 기록으로 방장 일을 할 수 있다", async ({
+  context,
+}) => {
+  const me = uniqueName();
+  const lost = await context.newPage();
+  let roomId = "";
+  await lost.route(`**${DRAW_ROOMS}`, async (route) => {
+    roomId = ((await (await route.fetch()).json()) as { roomId: string }).roomId;
+    await route.abort("connectionreset");
+  });
+  await (await openDialogTab(lost, me, false)).click();
+  await expect(lost.getByRole("dialog").getByRole("alert")).toBeVisible();
+  await lost.close();
+
+  const [slow, fast] = [await context.newPage(), await context.newPage()];
+  // 늦은 탭의 응답은 빠른 탭이 방에 들어가 기록을 저장한 뒤에 전달한다(응답 순서가 뒤바뀜).
+  let fastSaved: () => void = () => undefined;
+  const fastDone = new Promise<void>((resolve) => (fastSaved = resolve));
+  await slow.route(`**${DRAW_ROOMS}`, async (route) => {
+    const response = await route.fetch();
+    await fastDone;
+    await route.fulfill({ response });
+  });
+  const createSlow = await openDialogTab(slow, me, false);
+  const createFast = await openDialogTab(fast, me, true);
+  await createSlow.click();
+  await createFast.click();
+  await expect(fast).toHaveURL(new RegExp(`/r/${roomId}$`));
+  fastSaved();
+  await expect(slow).toHaveURL(new RegExp(`/r/${roomId}$`));
+  expect(roomsWith(me)).toBe(1);
+  await expectWorkingHost(await context.newPage(), roomId);
+});
+
+const roomIdOf = (url: string) => new URL(url).pathname.split("/").pop() ?? "";

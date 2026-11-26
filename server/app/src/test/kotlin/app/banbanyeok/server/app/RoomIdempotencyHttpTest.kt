@@ -199,7 +199,9 @@ class RoomIdempotencyHttpTest :
                 }
             }
 
-            it("gives the creator the same room with new tokens on another instance, counting one creation (#227)") {
+            it(
+                "gives the creator the same room and the same tokens on another instance, counting one creation (#227)",
+            ) {
                 val shared = RouteRoom("130")
                 val stages = mutableListOf<UsageStage>()
                 lateinit var first: JsonObject
@@ -218,9 +220,9 @@ class RoomIdempotencyHttpTest :
                     val second = again.bodyObject()
 
                     fun JsonObject.text(key: String) = getValue(key).jsonPrimitive.content
-                    second.text("roomId") shouldBe first.text("roomId")
-                    second.text("participantId") shouldBe first.text("participantId")
-                    (second.text("hostToken") == first.text("hostToken")) shouldBe false
+                    listOf("roomId", "participantId", "hostToken", "participantToken").forEach {
+                        second.text(it) shouldBe first.text(it)
+                    }
                     val path = "$ROOMS/${first.text("roomId")}"
                     json(HttpMethod.Get, path, token = second.text("participantToken"))
                         .bodyObject()
@@ -232,8 +234,7 @@ class RoomIdempotencyHttpTest :
                                 .jsonPrimitive.content
                         } shouldBe
                         listOf("false", "true", "false")
-                    json(HttpMethod.Delete, path, token = first.text("hostToken")).status.value shouldBe 401
-                    json(HttpMethod.Delete, path, token = second.text("hostToken")).status shouldBe
+                    json(HttpMethod.Delete, path, token = first.text("hostToken")).status shouldBe
                         HttpStatusCode.NoContent
                 }
                 stages.count { it == UsageStage.CREATE_ROOM } shouldBe 1
