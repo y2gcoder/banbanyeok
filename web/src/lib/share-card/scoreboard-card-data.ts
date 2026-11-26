@@ -4,6 +4,7 @@
  */
 
 import type { ShareState } from "@/lib/link/codec";
+import { type BanbanLine, banbanLine } from "@/lib/result/banban-index";
 import { evenTitle, mapMiddleSentence } from "@/lib/result/map-middle";
 import type { ResultView } from "@/lib/result/view-model";
 import { basisText, type SharedCardData, sharedCardData } from "./shared-preview";
@@ -17,6 +18,8 @@ export type ScoreboardCardData = SharedCardData & {
   compareLine: string | null;
   /** 평일 낮이 아닌 기준("토요일 밤 기준"). 비교 문장이 아래 줄을 차지할 때 차이 줄 옆에 둔다. */
   basisLine: string | null;
+  /** 반반지수(#202). 있으면 큰 숫자 칸 대신 사람별 막대를 그리고, 차이·칭호 칩 자리에 이 한 줄을 둔다. */
+  banban: BanbanLine | null;
 };
 
 export function scoreboardCardData(view: ResultView, state: ShareState): ScoreboardCardData | null {
@@ -32,5 +35,6 @@ export function scoreboardCardData(view: ResultView, state: ShareState): Scorebo
     title: spread === null ? null : evenTitle(view.mode, spread, minutes.length),
     compareLine: middle && name ? mapMiddleSentence(view, name) : null,
     basisLine: basisText(view),
+    banban: banbanLine({ mode: view.mode, minutes: base.people.map((p) => p.minutes), hidden: view.anyHidden }),
   };
 }

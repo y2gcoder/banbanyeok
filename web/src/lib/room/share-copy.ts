@@ -9,6 +9,7 @@ import { ogSafeName } from "@/lib/copy/og-coverage";
 import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
+import { banbanLine, mayIncludeHidden } from "@/lib/result/banban-index";
 import { lastTrainCardLine, lastTrainState } from "@/lib/result/last-train";
 import { middleSentence, middleView } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
@@ -107,6 +108,20 @@ function middleLine(preview: Computed, name: (index: number) => string): string 
   return view ? middleSentence(view, name(view.personIndex)) : null;
 }
 
+/**
+ * 1위 단계의 반반지수(#202). 미리보기에는 숨김 표시가 없으므로, 숨긴 사람의 시간처럼 300초의 배수인 시간이 있으면 끈다.
+ * 숨긴 사람의 시간은 남에게 5분 단위로 올라가 본인 화면과 말이 갈리기 때문이다.
+ */
+function banbanOf(preview: Computed) {
+  if (preview.stage !== "result") return null;
+  const seconds = preview.station.times.map((t) => t.seconds);
+  return banbanLine({
+    mode: preview.basis.mode,
+    minutes: seconds.map((s) => (s === null ? null : minutesFromSeconds(s))),
+    hidden: mayIncludeHidden(seconds),
+  });
+}
+
 function card(
   preview: Computed,
   suffix: string,
@@ -117,6 +132,7 @@ function card(
   const comparison = middleLine(preview, (index) => safeName(preview.station.times[index]?.label ?? "", index));
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
   const meeting = { date: preview.room.meetingDate, time: preview.room.meetingTime };
+  const banban = banbanOf(preview);
   return {
     stationCode: preview.station.stationCode,
     stationName: preview.station.stationName,
@@ -134,6 +150,7 @@ function card(
     modeLine,
     ...(footer ? { footer } : {}),
     ...(comparison ? { middleLine: comparison } : {}),
+    ...(banban ? { banban } : {}),
   };
 }
 

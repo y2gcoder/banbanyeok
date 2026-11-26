@@ -7,6 +7,7 @@ import { ogSafeName } from "@/lib/copy/og-coverage";
 import { OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { ShareState } from "@/lib/link/codec";
+import type { BanbanLine } from "@/lib/result/banban-index";
 import { type LastTrainView, lastTrainCardLine } from "@/lib/result/last-train";
 import { mapMiddleSentence } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
@@ -61,6 +62,11 @@ export type SharedCardData = {
   middleLine?: string;
   /** 결과를 숨긴 그림(뽑기 방에서 뽑은 뒤, #172): 이름 옆 시간·노선 강조·역 배지를 그리지 않고 고리 안에 "?"를 둔다. */
   teaser?: boolean;
+  /**
+   * 반반지수(#202). 방 미리보기의 1위 단계에서 공평하게일 때만 있다. 있으면 노선 그림 대신 사람별 막대를 그리고, 왼쪽 아래 큰 줄이
+   * 이 한 줄, 작은 줄이 기준 한 마디다(차이는 막대가 보여 준다).
+   */
+  banban?: BanbanLine | null;
 };
 
 export type SharedPreview = { title: string; description: string };

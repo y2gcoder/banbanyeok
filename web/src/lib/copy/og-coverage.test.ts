@@ -65,6 +65,12 @@ describe("글꼴에 없는 글자 대체(ogSafeName)", () => {
     expect(ogSafeName("동대문역사문화공원", "나")).toBe("동대문역사문화공원"); // 가장 긴 역 이름은 자르지 않는다
   });
 
+  it("같은 이름에 서버가 붙인 번호는 자르지 않는다(같은 역에서 오는 두 사람이 같은 이름이 되지 않게)", () => {
+    expect(ogSafeName("동대문역사문화공원 2", "나")).toBe("동대문역사문화공원 2");
+    expect(ogSafeName("가나다라마바사아자차카타 12", "나")).toBe("가나다라마바사아자차… 12");
+    expect(ogSafeName("가나다라마바사아자차카 1", "나")).not.toBe(ogSafeName("가나다라마바사아자차카 2", "나"));
+  });
+
   it("제어 문자와 한자(서브셋에 없는 글자)도 걸러낸다", () => {
     expect(ogSafeName("지훈\u0000​", "나")).toBe("지훈");
     expect(ogSafeName("漢字", "나")).toBe("나");

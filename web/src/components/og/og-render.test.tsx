@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
-import { missingGlyphs } from "@/lib/copy/og-coverage";
+import { missingGlyphs, ogSafeName } from "@/lib/copy/og-coverage";
 import { OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/copy/og-text";
 import { toResultView } from "@/lib/result/view-model";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
@@ -245,6 +245,47 @@ describe("OG 이미지 그리기(satori)", () => {
       const drawn = await render(<SharedCard data={card} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-${id}-last-train-on.png`), drawn.bytes);
+    }
+  });
+
+  it("반반지수 막대 넘침 표본(#202): 6명, 같은 역의 긴 이름, 막차, 두 줄 지도 문장, 기준 줄, 1시간 넘는 한 줄", async () => {
+    const names = [
+      "동대문역사문화공원 1",
+      "동대문역사문화공원 2",
+      "디지털미디어시티",
+      "우리팀막내생일축하해요 1",
+      "우리팀막내생일축하해요 2",
+      "강남",
+    ];
+    const minutes = [94, 88, 61, 57, 72, 90];
+    for (const count of [4, 6]) {
+      const people = names.slice(0, count).map((name, i) => ({
+        name: ogSafeName(name, `참가자 ${i + 1}`),
+        minutes: minutes[i] ?? 60,
+        favored: false,
+        lastTrain: "늦어도 다음 날 00:00",
+      }));
+      const longest = { kind: "longest" as const, text: "가장 오래 걸리는 사람도 1시간 34분이에요" };
+      const scoreboard = {
+        stationCode: "9k5",
+        stationName: "동대문역사문화공원",
+        people,
+        modeLine: "공평하게 고름 · 일요일·공휴일 저녁 기준",
+        spread: 37,
+        title: null,
+        compareLine: "지도 한가운데인 동대문역사문화공원역이면 가장 오래 걸리는 사람은 1시간 14분 더 걸려요",
+        basisLine: "일요일·공휴일 저녁 기준",
+        banban: longest,
+      };
+      const room = { ...scoreboard, middleLine: scoreboard.compareLine, banban: longest };
+      for (const [kind, element] of [
+        ["scoreboard", <ScoreboardCard key="scoreboard" data={scoreboard} />],
+        ["room", <SharedCard key="room" data={room} />],
+      ] as const) {
+        const drawn = await render(element);
+        expectPng(drawn);
+        if (screensDir) writeFileSync(join(screensDir, `og-banban-stress-${kind}-${String(count)}.png`), drawn.bytes);
+      }
     }
   });
 

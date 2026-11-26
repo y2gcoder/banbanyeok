@@ -6,6 +6,19 @@ vi.mock("@/lib/seo/room-preview", () => ({
   loadRoomPreview: (roomId: string, signal?: AbortSignal) => loadRoomPreview(roomId, signal),
 }));
 
+/** 그린 방 카드의 반반지수 값(#202). 호출부가 숨김 가드를 거친 값을 넘기는지 본다. */
+const drawn: unknown[] = [];
+vi.mock("@/components/og/shared-card", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/components/og/shared-card")>();
+  return {
+    ...original,
+    SharedCard: (props: Parameters<typeof original.SharedCard>[0]) => {
+      drawn.push(props.data.banban ?? null);
+      return original.SharedCard(props);
+    },
+  };
+});
+
 const { GET } = await import("./route");
 
 const ROOM = "qt7yvmsht3";
@@ -49,6 +62,7 @@ const get = (search: string, roomId = ROOM) =>
 afterEach(() => {
   vi.useRealTimers();
   loadRoomPreview.mockReset();
+  drawn.length = 0;
 });
 
 describe("/r/[roomId]/og", () => {
@@ -129,5 +143,24 @@ describe("/r/[roomId]/og", () => {
     const response = await pending;
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
+  });
+
+  it("반반지수(#202): 숨긴 사람이 있을 수 있는 방(300초 배수 시간)이면 빼고, 없으면(21·22분) 막대와 한 줄을 그린다", async () => {
+    const { room, dataVersion, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
+    const resultOf = (seconds: number[]): RoomPreview => ({
+      stage: "result",
+      room,
+      dataVersion,
+      basis: { mode: "fair", favorLabel: null },
+      station: { ...station, times: seconds.map((s, index) => ({ label: `참가자 ${index + 1}`, seconds: s })) },
+    });
+    // 숨긴 참가자의 시간은 남에게 300초의 배수로 간다(20분). 본인 화면은 정확한 시간이라 같은 방에서 말이 갈린다.
+    loadRoomPreview.mockResolvedValue(resultOf([20 * 60, 21 * 60 + 10]));
+    expect((await get("?sv=9&dv=20261115.8")).status).toBe(200);
+    expect(drawn).toEqual([null]);
+    drawn.length = 0;
+    loadRoomPreview.mockResolvedValue(resultOf([21 * 60 + 10, 22 * 60 + 10]));
+    expect((await get("?sv=9&dv=20261115.8")).status).toBe(200);
+    expect(drawn).toEqual([{ kind: "close", text: "걸리는 시간이 두 사람 1분 차이예요" }]);
   });
 });
