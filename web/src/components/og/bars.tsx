@@ -7,9 +7,16 @@ import { personHex } from "./frame";
  * 축은 가장 오래 걸리는 사람이 끝이다: 걸리는 시간이 고르면 막대 끝이 가지런하고, 아니면 벌어진다.
  */
 
-/** 굵은 숫자·한글의 대략의 폭(em). satori는 글자 폭을 알려 주지 않으므로 칸에 맞출 때 이 값으로 어림한다. */
+/** OG Bold의 hmtx 폭(2048 units/em)을 올림한 상한. W는 2046, %는 1966, 숫자는 최대 1352다. */
 export function emWidth(text: string): number {
-  return Array.from(text).reduce((sum, ch) => sum + (/[0-9]/.test(ch) ? 0.62 : ch === " " ? 0.3 : 0.95), 0);
+  let width = 0;
+  for (const ch of text) {
+    if (ch === "W" || ch === "%") width += 1;
+    else if (/[0-9]/.test(ch)) width += 0.67;
+    else if (ch === " " || /[Iijl]/.test(ch)) width += 0.3;
+    else width += 0.95;
+  }
+  return width;
 }
 
 /**

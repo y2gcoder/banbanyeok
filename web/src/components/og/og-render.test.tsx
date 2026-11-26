@@ -2,10 +2,11 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { renderToStaticMarkup } from "react-dom/server";
+import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
 import { missingGlyphs, ogSafeName } from "@/lib/copy/og-coverage";
-import { OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/copy/og-text";
+import { OG_COLORS, OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/copy/og-text";
 import { toResultView } from "@/lib/result/view-model";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { ogFonts } from "@/lib/seo/og-font";
@@ -111,6 +112,47 @@ describe("OG 이미지 그리기(satori)", () => {
         join(screensDir, "collision-four-favor.png"),
         (await render(<ScoreboardCard data={score} />)).bytes,
       );
+  });
+
+  it.each(["fast", "favor"] as const)("4명 %s PNG에서 넓고 좁은 별명이 각 칸 안에 구별되어 그려진다", async (mode) => {
+    const sample = SHARED_CASES.find((c) => c.id === "four-fast");
+    if (!sample) throw new Error("4명 표본 필요");
+    let seed = 202;
+    function mixedName() {
+      return Array.from({ length: 8 }, () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return "WMiIl%"[(seed >>> 16) % 6];
+      }).join("");
+    }
+    for (const prefix of ["WWWWWWWW", mixedName(), mixedName(), mixedName()]) {
+      const labels = [`${prefix}W`, `${prefix}M`, `${mixedName()}i`, `${mixedName()}l`];
+      const result = structuredClone(sample.result);
+      result.participants.forEach((p, i) => {
+        p.shortLabel = labels[i] ?? p.shortLabel;
+      });
+      const score = scoreboardCardData(toResultView({ ...result, mode }), { ...sample.state, mode, favorIndex: 1 });
+      if (!score) throw new Error("공유 그림 값 필요");
+      const { bytes } = await render(<ScoreboardCard data={score} />);
+      const { data, info } = await sharp(bytes).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+      // 숫자판 중간에서 이름만 muted 색이다. 네 칸의 같은 상대 좌표로 잉크 픽셀을 옮겨 비교한다.
+      const ink = Buffer.from(OG_COLORS.muted.slice(1), "hex");
+      const masks = labels.map((_, i) => {
+        const column = 64 + i * 268;
+        const left = column + 32 + (i === 0 ? 0 : 25);
+        const points: number[] = [];
+        for (let y = 190; y < 360; y++) {
+          for (let x = column; x < column + 268; x++) {
+            const offset = (y * info.width + x) * info.channels;
+            if (!data.subarray(offset, offset + 3).equals(ink)) continue;
+            points.push(y * info.width + x - left);
+            if (x < left || x >= left + 206) throw new Error(`이름 칸 밖에 픽셀: ${x}, ${y}`);
+          }
+        }
+        expect(points.length).toBeGreaterThan(0);
+        return points.join(",");
+      });
+      expect(new Set(masks).size).toBe(4);
+    }
   });
 
   it("사이트 기본 이미지", async () => {

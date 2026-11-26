@@ -210,29 +210,36 @@ describe("/r/[roomId]/og", () => {
     else expect(getRoom).not.toHaveBeenCalled();
   });
 
-  it("공개 여부 조회가 늦으면 그 조회만 끊고 반반지수 없는 방 카드를 짧게 캐시한다(사이트 기본 그림이 아니다)", async () => {
-    const { room, dataVersion, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
-    loadRoomPreview.mockResolvedValue({
-      stage: "result",
-      room: { ...room, participantCount: 2 },
-      dataVersion,
-      basis: { mode: "fair", favorLabel: null },
-      station: { ...station, times: [1200, 1261].map((s, i) => ({ label: `참가자 ${i + 1}`, seconds: s })) },
-    });
-    let lookup: AbortSignal | undefined;
-    getRoom.mockImplementation(
-      (_id: string, _token: null, { signal }: { signal: AbortSignal }) =>
-        new Promise((_resolve, reject) => {
-          lookup = signal;
-          signal.addEventListener("abort", () => reject(signal.reason), { once: true });
-        }),
-    );
-    const started = performance.now();
-    const response = await get("?sv=9&dv=20261115.8");
-    expect(lookup?.aborted).toBe(true);
-    expect(performance.now() - started).toBeLessThan(1500);
-    expect(response.headers.get("content-type")).toBe("image/png");
-    expect(response.headers.get("cache-control")).toBe(MINUTE);
-    expect(drawn).toEqual([null]);
-  });
+  it.each([0, 1200])(
+    "미리보기가 %ims 걸리면 남은 예산 안에서만 공개 여부를 조회하고 방 카드를 그린다",
+    async (previewMs) => {
+      const { room, dataVersion, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
+      const preview: RoomPreview = {
+        stage: "result",
+        room: { ...room, participantCount: 2 },
+        dataVersion,
+        basis: { mode: "fair", favorLabel: null },
+        station: { ...station, times: [1200, 1261].map((s, i) => ({ label: `참가자 ${i + 1}`, seconds: s })) },
+      };
+      let lookup: AbortSignal | undefined;
+      getRoom.mockImplementation(
+        (_id: string, _token: null, { signal }: { signal: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            lookup = signal;
+            signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+          }),
+      );
+      vi.useFakeTimers({ toFake: ["performance"] });
+      loadRoomPreview.mockImplementation(async () => {
+        vi.advanceTimersByTime(previewMs);
+        return preview;
+      });
+      const response = await get("?sv=9&dv=20261115.8");
+      if (previewMs === 0) expect(lookup?.aborted).toBe(true);
+      else expect(getRoom).not.toHaveBeenCalled();
+      expect(response.headers.get("content-type")).toBe("image/png");
+      expect(response.headers.get("cache-control")).toBe(MINUTE);
+      expect(drawn).toEqual([null]);
+    },
+  );
 });
