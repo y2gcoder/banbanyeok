@@ -5,10 +5,11 @@
  * 넣을 때만 `ogSafeName`으로 거른다.
  */
 import type { Mode, RoomPreview, TimeBasis } from "@/lib/api/types";
-import { ogSafeName } from "@/lib/copy/og-coverage";
+import { ogParticipantNames, ogSafeName } from "@/lib/copy/og-coverage";
 import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
+import { banbanLine, mayIncludeHidden } from "@/lib/result/banban-index";
 import { lastTrainCardLine, lastTrainState } from "@/lib/result/last-train";
 import { middleSentence, middleView } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
@@ -41,7 +42,7 @@ type Computed = Exclude<RoomPreview, { stage: "collecting" }>;
 export const ROOM_PREVIEW_LAST_TRAIN: boolean = true;
 
 /** `lastTrain`은 그림 값에 막차 줄을 넣을지. 기본은 `ROOM_PREVIEW_LAST_TRAIN`이고, 테스트가 켠 모습과 끈 모습을 둘 다 보려고 받는다. */
-type ShareCopyOptions = { lastTrain?: boolean };
+type ShareCopyOptions = { lastTrain?: boolean; confirmedPublic?: boolean };
 
 /** 모으는 중의 초대. 미리보기를 못 받았을 때(서버 실패·옛 서버·번호가 지금보다 큼)도 이 문구를 쓴다. */
 export const INVITE_COPY: RoomShareCopy = {
@@ -81,14 +82,14 @@ function leadingTitle(station: string, mode: Mode, favorLabel: string | null): s
 }
 
 /** 그림에 그릴 이름. 글꼴에 남는 글자가 없으면 순번("참가자 N", `sharedCardData`와 같은 규칙). */
-const safeName = (label: string, index: number) => ogSafeName(label, `참가자 ${index + 1}`);
+function cardNames(preview: Computed): string[] {
+  return ogParticipantNames(preview.station.times.map((t) => t.label));
+}
 
-/** 배려 대상·정한 사람은 서버가 짧은 이름만 주므로, 그 이름의 줄과 같은 순번으로 그린다. */
+/** 배려 대상과 정한 사람에게도 시간 줄과 같은 이름을 쓴다. */
 function cardName(preview: Computed, label: string): string {
-  return safeName(
-    label,
-    preview.station.times.findIndex((t) => t.label === label),
-  );
+  const i = preview.station.times.findIndex((t) => t.label === label);
+  return cardNames(preview)[i] ?? ogSafeName(label, "참가자");
 }
 
 /**
@@ -107,16 +108,33 @@ function middleLine(preview: Computed, name: (index: number) => string): string 
   return view ? middleSentence(view, name(view.personIndex)) : null;
 }
 
+/**
+ * 1위 단계의 반반지수(#202). 미리보기에는 숨김 표시가 없으므로, 숨긴 사람의 시간처럼 300초의 배수인 시간이 있으면 끈다.
+ * 숨긴 사람의 시간은 남에게 5분 단위로 올라가 본인 화면과 말이 갈리기 때문이다.
+ */
+function banbanOf(preview: Computed, confirmedPublic: boolean) {
+  if (preview.stage !== "result") return null;
+  const seconds = preview.station.times.map((t) => t.seconds);
+  return banbanLine({
+    mode: preview.basis.mode,
+    minutes: seconds.map((s) => (s === null ? null : minutesFromSeconds(s))),
+    hidden: !confirmedPublic && mayIncludeHidden(seconds),
+  });
+}
+
 function card(
   preview: Computed,
   suffix: string,
   modeLine: string,
   showLastTrain: boolean,
   footer?: SharedCardData["footer"],
+  confirmedPublic = false,
 ): SharedCardData {
-  const comparison = middleLine(preview, (index) => safeName(preview.station.times[index]?.label ?? "", index));
+  const names = cardNames(preview);
+  const comparison = middleLine(preview, (index) => names[index] ?? "");
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
   const meeting = { date: preview.room.meetingDate, time: preview.room.meetingTime };
+  const banban = banbanOf(preview, confirmedPublic);
   return {
     stationCode: preview.station.stationCode,
     stationName: preview.station.stationName,
@@ -125,7 +143,7 @@ function card(
       // 출발역을 숨긴 사람은 서버가 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다). 약속보다 먼저 떠나는 열차는 줄을 비운다.
       const lastTrain = showLastTrain ? lastTrainCardLine(lastTrainState(t.lastTrain, meeting), OG_TEXT) : null;
       return {
-        name: safeName(t.label, index),
+        name: names[index] ?? `참가자 ${index + 1}`,
         minutes: t.seconds === null ? null : minutesFromSeconds(t.seconds),
         favored: favored !== null && t.label === favored,
         ...(lastTrain ? { lastTrain } : {}),
@@ -134,6 +152,7 @@ function card(
     modeLine,
     ...(footer ? { footer } : {}),
     ...(comparison ? { middleLine: comparison } : {}),
+    ...(banban ? { banban } : {}),
   };
 }
 
@@ -145,6 +164,7 @@ function card(
 function drawTeaserCopy(preview: Extract<RoomPreview, { stage: "result" }>): RoomShareCopy {
   const title = `${OG_TEXT.drawTeaserHead} ${OG_TEXT.drawTeaserTail} ${OG_TEXT.drawTeaserQuestion}`;
   const names = preview.station.times.map((t) => t.label).join(SEP);
+  const imageNames = cardNames(preview);
   const hint = `사다리 결과는 ${OG_TEXT.drawTeaserHint}`;
   const description = preview.room.canJoin
     ? `아직이면 출발역 넣어 주세요${SEP}${names}${SEP}${hint}`
@@ -156,8 +176,8 @@ function drawTeaserCopy(preview: Extract<RoomPreview, { stage: "result" }>): Roo
     card: {
       stationName: OG_TEXT.drawTeaserHead,
       suffix: OG_TEXT.drawTeaserTail,
-      people: preview.station.times.map((t, index) => ({
-        name: safeName(t.label, index),
+      people: imageNames.map((name) => ({
+        name,
         minutes: null,
         favored: false,
       })),
@@ -168,7 +188,11 @@ function drawTeaserCopy(preview: Extract<RoomPreview, { stage: "result" }>): Roo
   };
 }
 
-function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLastTrain: boolean): RoomShareCopy {
+function resultCopy(
+  preview: Extract<RoomPreview, { stage: "result" }>,
+  showLastTrain: boolean,
+  confirmedPublic: boolean,
+): RoomShareCopy {
   if (preview.basis.mode === "favor" && preview.basis.drawRound !== undefined) return drawTeaserCopy(preview);
   const { stationName } = preview.station;
   const times = timesText(preview);
@@ -192,6 +216,8 @@ function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLast
       OG_TEXT.sharedSuffix,
       modeSentence(preview.basis.mode, favorName) + basisSuffix(preview.room.timeBasis),
       showLastTrain,
+      undefined,
+      confirmedPublic,
     ),
   };
 }
@@ -219,7 +245,7 @@ export function roomShareCopy(preview: RoomPreview, options: ShareCopyOptions = 
     case "collecting":
       return INVITE_COPY;
     case "result":
-      return resultCopy(preview, showLastTrain);
+      return resultCopy(preview, showLastTrain, options.confirmedPublic === true);
     case "decided":
       return decidedCopy(preview, showLastTrain);
   }

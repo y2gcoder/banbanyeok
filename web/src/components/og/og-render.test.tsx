@@ -2,10 +2,11 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { renderToStaticMarkup } from "react-dom/server";
+import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
-import { missingGlyphs } from "@/lib/copy/og-coverage";
-import { OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/copy/og-text";
+import { missingGlyphs, ogSafeName } from "@/lib/copy/og-coverage";
+import { OG_COLORS, OG_HEIGHT, OG_TEXT, OG_WIDTH } from "@/lib/copy/og-text";
 import { toResultView } from "@/lib/result/view-model";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { ogFonts } from "@/lib/seo/og-font";
@@ -49,6 +50,108 @@ describe("OG 이미지 그리기(satori)", () => {
       const drawn = await render(<PairCard page={page} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-pair-${page.slug}.png`), drawn.bytes);
+    }
+  });
+
+  it("두 OG에서 가운데만 다른 별명은 처음 갈리는 글자부터 남겨 구별한다(공평·빨리 만나기·정한 역)", async () => {
+    const labels = ["우리회사서울영업일팀민지", "우리회사서울영업이팀민지"] as const;
+    const SPLIT = ["…일팀민지", "…이팀민지"];
+    const sample = SHARED_CASES.find((c) => c.id === "two-even-middle");
+    if (!sample) throw new Error("두 사람 표본 필요");
+    const result = structuredClone(sample.result);
+    result.participants.forEach((p, i) => {
+      p.shortLabel = labels[i] ?? p.shortLabel;
+    });
+    const room = ROOM_CASES.find((c) => c.id === "room-decided")?.preview;
+    if (room?.stage !== "decided") throw new Error("정한 방 필요");
+    const times = labels.map((label, i) => ({ label, seconds: 1261 + 60 * i }));
+    const station = { ...room.station, times };
+    for (const mode of ["fair", "fast"] as const) {
+      const score = scoreboardCardData(toResultView({ ...result, mode }), sample.state);
+      const card = roomShareCopy({ ...room, station, stage: "result", basis: { mode, favorLabel: null } }).card;
+      if (!score || !card) throw new Error("공유 그림 값 필요");
+      for (const [id, element] of [
+        ["shared", <ScoreboardCard key="shared" data={score} />],
+        ["room", <SharedCard key="room" data={card} />],
+      ] as const) {
+        const markup = renderToStaticMarkup(element);
+        for (const name of SPLIT) expect(markup).toContain(`>${name}</span>`);
+        expect(markup).not.toContain("참가자");
+        if (screensDir) writeFileSync(join(screensDir, `collision-${id}-${mode}.png`), (await render(element)).bytes);
+      }
+    }
+    const decided = roomShareCopy({ ...room, station, decidedBy: labels[1] }).card;
+    if (!decided) throw new Error("정한 역 그림 필요");
+    const markup = renderToStaticMarkup(<SharedCard data={decided} />);
+    for (const name of SPLIT) expect(markup).toContain(`>${name}</span>`);
+    expect(markup).toContain("…이팀민지가 정했어요");
+  });
+
+  it("4명 칸에서 폭을 맞춘 뒤에만 겹치는 이름도 칸과 문장이 같은 사람을 부른다(누구 쪽으로)", async () => {
+    const labels = ["가나다라마바사아자차", "가나다라마바카아자차"];
+    const sample = SHARED_CASES.find((c) => c.id === "four-fast");
+    if (!sample) throw new Error("4명 표본 필요");
+    const result = structuredClone(sample.result);
+    result.participants.forEach((p, i) => {
+      p.shortLabel = labels[i] ?? p.shortLabel;
+    });
+    const score = scoreboardCardData(toResultView({ ...result, mode: "favor" }), {
+      ...sample.state,
+      mode: "favor",
+      favorIndex: 1,
+    });
+    if (!score) throw new Error("공유 그림 값 필요");
+    expect(score.banban ?? null).toBeNull();
+    const markup = renderToStaticMarkup(<ScoreboardCard data={score} />);
+    expect(markup).toContain(">…사아자차</span>");
+    expect(markup).toContain(">…카아자차</span>");
+    expect(markup).not.toContain("참가자");
+    expect(score.modeLine).toContain("가나다라마바카아자차");
+    if (screensDir)
+      writeFileSync(
+        join(screensDir, "collision-four-favor.png"),
+        (await render(<ScoreboardCard data={score} />)).bytes,
+      );
+  });
+
+  it.each(["fast", "favor"] as const)("4명 %s PNG에서 넓고 좁은 별명이 각 칸 안에 구별되어 그려진다", async (mode) => {
+    const sample = SHARED_CASES.find((c) => c.id === "four-fast");
+    if (!sample) throw new Error("4명 표본 필요");
+    let seed = 202;
+    function mixedName() {
+      return Array.from({ length: 8 }, () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return "WMiIl%"[(seed >>> 16) % 6];
+      }).join("");
+    }
+    for (const prefix of ["WWWWWWWW", mixedName(), mixedName(), mixedName()]) {
+      const labels = [`${prefix}W`, `${prefix}M`, `${mixedName()}i`, `${mixedName()}l`];
+      const result = structuredClone(sample.result);
+      result.participants.forEach((p, i) => {
+        p.shortLabel = labels[i] ?? p.shortLabel;
+      });
+      const score = scoreboardCardData(toResultView({ ...result, mode }), { ...sample.state, mode, favorIndex: 1 });
+      if (!score) throw new Error("공유 그림 값 필요");
+      const { bytes } = await render(<ScoreboardCard data={score} />);
+      const { data, info } = await sharp(bytes).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+      // 숫자판 중간에서 이름만 muted 색이다. 네 칸의 같은 상대 좌표로 잉크 픽셀을 옮겨 비교한다.
+      const ink = Buffer.from(OG_COLORS.muted.slice(1), "hex");
+      const masks = labels.map((_, i) => {
+        const column = 64 + i * 268;
+        const left = column + 32 + (i === 0 ? 0 : 25);
+        const points: number[] = [];
+        for (let y = 190; y < 360; y++) {
+          for (let x = column; x < column + 268; x++) {
+            const offset = (y * info.width + x) * info.channels;
+            if (!data.subarray(offset, offset + 3).equals(ink)) continue;
+            points.push(y * info.width + x - left);
+            if (x < left || x >= left + 206) throw new Error(`이름 칸 밖에 픽셀: ${x}, ${y}`);
+          }
+        }
+        expect(points.length).toBeGreaterThan(0);
+        return points.join(",");
+      });
+      expect(new Set(masks).size).toBe(4);
     }
   });
 
@@ -245,6 +348,54 @@ describe("OG 이미지 그리기(satori)", () => {
       const drawn = await render(<SharedCard data={card} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-${id}-last-train-on.png`), drawn.bytes);
+    }
+  });
+
+  it("반반지수 막대 넘침 표본(#202): 6명, 같은 역의 긴 이름, 막차, 두 줄 지도 문장, 기준 줄, 1시간 넘는 한 줄", async () => {
+    const names = [
+      "동대문역사문화공원 1",
+      "동대문역사문화공원 2",
+      "디지털미디어시티",
+      "우리팀막내생일축하해요 1",
+      "우리팀막내생일축하해요 2",
+      "강남",
+    ];
+    const minutes = [94, 88, 61, 57, 72, 90];
+    for (const count of [4, 6]) {
+      const people = names.slice(0, count).map((name, i) => ({
+        name: ogSafeName(name, `참가자 ${i + 1}`),
+        minutes: minutes[i] ?? 60,
+        favored: false,
+        lastTrain: "늦어도 다음 날 00:00",
+      }));
+      const longest = { kind: "longest" as const, text: "가장 오래 걸리는 사람도 1시간 34분이에요" };
+      const scoreboard = {
+        stationCode: "9k5",
+        stationName: "동대문역사문화공원",
+        people,
+        modeLine: "공평하게 고름 · 일요일·공휴일 저녁 기준",
+        spread: 37,
+        title: null,
+        compareLine: "지도 한가운데인 동대문역사문화공원역이면 가장 오래 걸리는 사람은 1시간 14분 더 걸려요",
+        basisLine: "일요일·공휴일 저녁 기준",
+        banban: longest,
+      };
+      const room = { ...scoreboard, middleLine: scoreboard.compareLine, banban: longest };
+      // 반반지수가 꺼진 노선 그림(빨리 만나기 등)의 이름 칸에는 폭 제한이 없어 `ogSafeName`의 길이에만 기댄다.
+      const off = {
+        ...room,
+        banban: null,
+        people: people.map((p, i) => (i === 0 ? { ...p, name: ogSafeName("가나다라마바사아자차카 12345678", "") } : p)),
+      };
+      for (const [kind, element] of [
+        ["scoreboard", <ScoreboardCard key="scoreboard" data={scoreboard} />],
+        ["room", <SharedCard key="room" data={room} />],
+        ["lines", <SharedCard key="lines" data={off} />],
+      ] as const) {
+        const drawn = await render(element);
+        expectPng(drawn);
+        if (screensDir) writeFileSync(join(screensDir, `og-banban-stress-${kind}-${String(count)}.png`), drawn.bytes);
+      }
     }
   });
 

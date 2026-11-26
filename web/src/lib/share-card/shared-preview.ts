@@ -3,10 +3,11 @@
  * 제목은 제안하는 말투("{1위역}에서 볼까?"), 설명은 각자 시간("민수 34분 · 홍대입구 38분 · 공평하게 고름", product-ux 4.4).
  * 이름은 서버 짧은 이름(shortLabel)이다: 미리보기는 좁은 칸이라 "홍대입구에서 오는 분" 대신 "홍대입구"(V1).
  */
-import { ogSafeName } from "@/lib/copy/og-coverage";
+import { ogParticipantNames } from "@/lib/copy/og-coverage";
 import { OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { ShareState } from "@/lib/link/codec";
+import type { BanbanLine } from "@/lib/result/banban-index";
 import { type LastTrainView, lastTrainCardLine } from "@/lib/result/last-train";
 import { mapMiddleSentence } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
@@ -61,6 +62,11 @@ export type SharedCardData = {
   middleLine?: string;
   /** 결과를 숨긴 그림(뽑기 방에서 뽑은 뒤, #172): 이름 옆 시간·노선 강조·역 배지를 그리지 않고 고리 안에 "?"를 둔다. */
   teaser?: boolean;
+  /**
+   * 반반지수(#202). 방 미리보기의 1위 단계에서 공평하게일 때만 있다. 있으면 노선 그림 대신 사람별 막대를 그리고, 왼쪽 아래 큰 줄이
+   * 이 한 줄, 작은 줄이 기준 한 마디다(차이는 막대가 보여 준다).
+   */
+  banban?: BanbanLine | null;
 };
 
 export type SharedPreview = { title: string; description: string };
@@ -90,7 +96,7 @@ function cardLastTrain(lastTrain: LastTrainView | null, index: number): string |
 export function sharedCardData(view: ResultView, state: ShareState): SharedCardData | null {
   const top = view.candidates[0];
   if (!top) return null;
-  const safe = (name: string, index: number) => ogSafeName(name, `참가자 ${index + 1}`);
+  const names = ogParticipantNames(top.people.map((p) => p.shortName));
   const favored = view.mode === "favor" ? state.favorIndex : null;
   return {
     stationCode: top.stationCode,
@@ -98,14 +104,12 @@ export function sharedCardData(view: ResultView, state: ShareState): SharedCardD
     people: top.people.map((p, index) => {
       const lastTrain = cardLastTrain(top.lastTrain, index);
       return {
-        name: safe(p.shortName, index),
+        name: names[index] ?? `참가자 ${index + 1}`,
         minutes: p.minutes,
         favored: index === favored,
         ...(lastTrain ? { lastTrain } : {}),
       };
     }),
-    modeLine:
-      modeSentence(view.mode, favored === null ? null : safe(view.people[favored]?.shortName ?? "", favored)) +
-      basisSuffix(view),
+    modeLine: modeSentence(view.mode, favored === null ? null : (names[favored] ?? null)) + basisSuffix(view),
   };
 }

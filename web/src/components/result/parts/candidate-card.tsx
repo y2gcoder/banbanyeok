@@ -6,6 +6,7 @@ import { LineBadges } from "@/components/common/line-badge";
 import { personColor } from "@/components/common/person-color";
 import type { Mode } from "@/lib/api/types";
 import { formatMinutes } from "@/lib/display/minutes";
+import type { BanbanLine } from "@/lib/result/banban-index";
 import { lastTrainSummary } from "@/lib/result/last-train";
 import type { MapMiddleView } from "@/lib/result/map-middle";
 import type { CandidateView } from "@/lib/result/view-model";
@@ -92,38 +93,54 @@ type TopProps = {
   meIndex?: number | null;
   /** 보여 줄 조건을 모두 만족할 때만 값이 있다(`ResultView.mapMiddle`). 없으면 비교 표가 빠진다. */
   mapMiddle?: MapMiddleView | null;
+  /** 반반지수(#202). 있으면 사람별 막대를 그리고 순위 기준 값 줄 자리에 이 한 줄을 둔다. 없으면 막대 없이 최장·차이. */
+  banban?: BanbanLine | null;
 };
 
 const topCard =
   "@container flex flex-col gap-4 rounded-2xl border border-rule bg-surface p-5 shadow-[0_1px_0_var(--rule)]";
 
-/** 1위 요약의 사람별 시간: 막대 없이 한 사람 한 줄(이름 · 환승 · 분). 내가 누구인지 고른 화면이면 나를 맨 위에. */
-function TimeList({ candidate, meIndex }: { candidate: CandidateView; meIndex: number | null }) {
+/**
+ * 1위 요약의 사람별 시간: 한 사람 한 줄(이름 · 환승 · 분). 내가 누구인지 고른 화면이면 나를 맨 위에.
+ * `bars`면 줄마다 아래에 가장 오래 걸리는 사람을 끝으로 둔 막대를 붙인다(반반지수). 이름과 분이 글자로 있어 색만으로 사람을 가르지 않는다.
+ */
+function TimeList({ candidate, meIndex, bars }: { candidate: CandidateView; meIndex: number | null; bars: boolean }) {
   const ordered =
     meIndex === null
       ? candidate.people
       : [...candidate.people].sort((a, b) => Number(b.index === meIndex) - Number(a.index === meIndex));
+  const axis = Math.max(1, candidate.aggregate.max);
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul className={cn("flex flex-col", bars ? "gap-2.5" : "gap-1.5")}>
       {ordered.map((person) => (
-        <li key={person.index} className="flex items-baseline gap-2">
-          <span
-            aria-hidden="true"
-            className="h-3.5 w-1.5 shrink-0 self-center rounded-full"
-            style={{ backgroundColor: personColor(person.index) }}
-          />
-          <span className="min-w-0 truncate text-[15px] font-bold text-ink">
-            {person.shortName}
-            {person.index === meIndex ? (
-              <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
-            ) : null}
-          </span>
-          <span className="min-w-0 shrink-[2] truncate text-[13px] text-muted-foreground">
-            {[originNote(person), shownTransferLabel(person)].filter(Boolean).join(" · ")}
-          </span>
-          <span className="tabular ml-auto shrink-0 text-[19px] leading-none font-extrabold text-ink">
-            {formatMinutes(person.minutes)}
-          </span>
+        <li key={person.index} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline gap-2">
+            <span
+              aria-hidden="true"
+              className="h-3.5 w-1.5 shrink-0 self-center rounded-full"
+              style={{ backgroundColor: personColor(person.index) }}
+            />
+            <span className="min-w-0 truncate text-[15px] font-bold text-ink">
+              {person.shortName}
+              {person.index === meIndex ? (
+                <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
+              ) : null}
+            </span>
+            <span className="min-w-0 shrink-[2] truncate text-[13px] text-muted-foreground">
+              {[originNote(person), shownTransferLabel(person)].filter(Boolean).join(" · ")}
+            </span>
+            <span className="tabular ml-auto shrink-0 text-[19px] leading-none font-extrabold text-ink">
+              {formatMinutes(person.minutes)}
+            </span>
+          </div>
+          {bars ? (
+            <span aria-hidden="true" data-bar className="block h-2.5 rounded-full bg-rule">
+              <span
+                className="block h-full rounded-full"
+                style={{ width: `${(person.minutes / axis) * 100}%`, backgroundColor: personColor(person.index) }}
+              />
+            </span>
+          ) : null}
         </li>
       ))}
     </ul>
@@ -134,15 +151,38 @@ function TimeList({ candidate, meIndex }: { candidate: CandidateView; meIndex: n
  * 1위 카드(#122). 2·3위처럼 요약이 먼저다: 역 이름, 사람별 분, 순위 기준 값, 가장 이른 막차 한 줄, 정하기·길찾기가 폰 첫 화면에 들어온다.
  * 시간 막대·추천 이유·막차 자세히·지도 한가운데 비교는 "자세히"에서 펼친다. 막차는 접혀 있어도 요약 한 줄(`lastTrainSummary`)이 보인다.
  */
-export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle = null }: TopProps) {
+/** 반반지수 한 줄. 걸리는 시간이 고를 때(강조 층)만 노란 바탕이다. */
+function BanbanSentence({ line }: { line: BanbanLine }) {
+  return (
+    <p className="text-[15px] leading-snug font-bold break-keep text-ink">
+      {line.kind === "close" ? (
+        <span className="rounded-sm bg-safety px-1.5 py-0.5 [box-decoration-break:clone]">{line.text}</span>
+      ) : (
+        line.text
+      )}
+    </p>
+  );
+}
+
+const hasRoutes = (candidate: CandidateView) => candidate.people.some((person) => person.route);
+
+/**
+ * 반반지수 요약 아래 "자세히". 경로를 아무도 모르면 경로 막대를 그리지 않으므로 "경로"를 빼고 말한다. "막차"는 막차를 모를 때도 남긴다:
+ * 막차 응답이 있든 없든 막차 칸 밖의 화면은 같아야 한다(e2e-real last-train).
+ */
+function banbanDetailLabel(candidate: CandidateView): string {
+  return hasRoutes(candidate) ? "자세히: 추천 이유·경로·막차" : "자세히: 추천 이유·막차";
+}
+
+export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle = null, banban = null }: TopProps) {
   const [open, setOpen] = useState(false);
   const detailId = useId();
   return (
     <article aria-labelledby={`cand-${candidate.rank}`} className={topCard}>
       <TopHeader candidate={candidate} />
-      <TimeList candidate={candidate} meIndex={meIndex} />
+      <TimeList candidate={candidate} meIndex={meIndex} bars={banban !== null} />
       <div className="flex flex-col gap-1.5 border-t border-rule pt-3">
-        <StatLine candidate={candidate} mode={choice.mode} />
+        {banban ? <BanbanSentence line={banban} /> : <StatLine candidate={candidate} mode={choice.mode} />}
         {candidate.lastTrain ? (
           <p className="text-[14px] leading-snug break-keep text-ink">
             <span className="mr-1.5 text-ink-soft">막차</span>
@@ -159,20 +199,23 @@ export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle 
         className="-mx-2 -mb-2 flex min-h-11 items-center justify-center gap-1 rounded-md text-[14px] font-semibold text-ink-soft hover:bg-accent"
       >
         {/* 이름은 고정이다(상태는 aria-expanded가 말한다). */}
-        자세히: 시간 막대·추천 이유·막차
+        {banban ? banbanDetailLabel(candidate) : "자세히: 시간 막대·추천 이유·막차"}
         <ChevronDownIcon
           className={cn("size-4 motion-safe:transition-transform", open && "rotate-180")}
           aria-hidden="true"
         />
       </button>
       <div id={detailId} hidden={!open} className="flex flex-col gap-4">
-        <TimeRails
-          people={candidate.people}
-          maxMinutes={candidate.aggregate.max}
-          meIndex={meIndex}
-          size="compact"
-          rank={candidate.rank}
-        />
+        {(!banban || hasRoutes(candidate)) && (
+          <TimeRails
+            people={candidate.people}
+            maxMinutes={candidate.aggregate.max}
+            meIndex={meIndex}
+            size="compact"
+            rank={candidate.rank}
+            routesOnly={banban !== null}
+          />
+        )}
         <Reason text={candidate.reason} />
         {candidate.lastTrain ? <LastTrains view={candidate.lastTrain} meIndex={meIndex} /> : null}
         {mapMiddle ? <MapMiddleCompare candidate={candidate} middle={mapMiddle} /> : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { banbanLine } from "@/lib/result/banban-index";
 import type { ResultView } from "@/lib/result/view-model";
 import { OtherCandidateRow, TopCandidateCard } from "./candidate-card";
 import type { ChoiceContext } from "./directions";
@@ -48,9 +49,10 @@ export function Candidates({
 }) {
   const [top, ...rest] = view.candidates;
   if (!top) return null;
+  const banban = banbanLine({ mode: view.mode, minutes: top.aggregate.minutes, hidden: view.anyHidden });
   return (
     <>
-      <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} mapMiddle={view.mapMiddle} />
+      <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} mapMiddle={view.mapMiddle} banban={banban} />
       {rest.length > 0 ? (
         <section aria-label="다른 후보" className="overflow-hidden rounded-2xl border border-rule bg-surface">
           {rest.map((candidate) => (
