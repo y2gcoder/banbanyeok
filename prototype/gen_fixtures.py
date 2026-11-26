@@ -203,9 +203,19 @@ def build_regional_files():
     regular_od = add('od.bin', od(False))
     saturday_od = add('od-saturday.bin', od(True))
     cells_per_day = len(origins) * len(candidates)
-    unknown_day = b'\xff\xff' * cells_per_day + bytes(cells_per_day) + b'\xff\xff' * cells_per_day
+
+    def last_train_day(cells):
+        # 부산 칸 하나(#180 직행): 집 역 003 · 만날 역 004, 여유 시각(분류 3) 23:24, 003행.
+        minutes, kinds, bounds = [0xFFFF] * cells_per_day, [0] * cells_per_day, [0xFFFF] * cells_per_day
+        for index, (minute, kind, bound) in cells.items():
+            minutes[index], kinds[index], bounds[index] = minute, kind, bound
+        return (struct.pack(f'<{cells_per_day}H', *minutes) + bytes(kinds)
+                + struct.pack(f'<{cells_per_day}H', *bounds))
+
+    busan_cell = {origins.index(3) * len(candidates) + candidates.index(4): (1404, 3, 3)}
     lt = (b'BBLT' + struct.pack('<HHIIIIQ', 1, 32, 0, REGISTRY_VERSION, len(origins), len(candidates), 0)
-          + struct.pack(f'<{len(origins) + len(candidates)}H', *(origins + candidates)) + unknown_day * 3)
+          + struct.pack(f'<{len(origins) + len(candidates)}H', *(origins + candidates))
+          + last_train_day(busan_cell) + last_train_day({}) + last_train_day({}))
     complete = {'available': True, 'missingServices': [], 'unsupportedOrigins': []}
     partial = {'available': True, 'missingServices': ['동해선'], 'unsupportedOrigins': ['005']}
     manifest = {

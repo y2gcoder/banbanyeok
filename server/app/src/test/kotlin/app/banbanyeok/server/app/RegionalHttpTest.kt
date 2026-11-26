@@ -67,6 +67,32 @@ class RegionalHttpTest :
             }
         }
 
+        it("attaches a Busan direct last train from the regional table") {
+            withRegionalApi {
+                val response =
+                    client.json(
+                        HttpMethod.Post,
+                        "/v1/recommend",
+                        recommend("\"003\",\"004\"", "weekday-night"),
+                    )
+                response.status shouldBe HttpStatusCode.OK
+                val result = response.objectBody()
+                result.getValue("lastTrainBasis").jsonObject.text("dayType") shouldBe "weekday"
+                val trains =
+                    result
+                        .getValue(
+                            "candidates",
+                        ).jsonArray
+                        .single()
+                        .jsonObject
+                        .getValue("lastTrains")
+                        .jsonArray
+                val margin = trains.map { train -> train.jsonObject }.single { train -> train.text("kind") == "margin" }
+                margin.text("minute") shouldBe "1404"
+                margin.getValue("boundFor").jsonObject.text("stationCode") shouldBe "003"
+            }
+        }
+
         it("keeps Saturday recommendations on supported lines and reports unknown timetables") {
             withRegionalApi {
                 val supported =
@@ -86,7 +112,8 @@ class RegionalHttpTest :
                     .jsonObject
                     .text("stationCode") shouldBe "004"
                 result.getValue("timeBasis").jsonObject.text("timeSlot") shouldBe "saturday-day"
-                result.containsKey("lastTrainBasis") shouldBe false
+                result.getValue("lastTrainBasis").jsonObject.text("dayType") shouldBe "saturday"
+                lastTrainKinds(result) shouldBe listOf("check", "check")
 
                 val unknown =
                     client.json(
@@ -398,6 +425,13 @@ class RegionalHttpTest :
             }
         }
     })
+
+private fun lastTrainKinds(result: JsonObject) =
+    result
+        .getValue("candidates")
+        .jsonArray
+        .flatMap { it.jsonObject.getValue("lastTrains").jsonArray }
+        .map { it.jsonObject.text("kind") }
 
 private fun recommend(
     origins: String,

@@ -47,7 +47,6 @@ function card(over: Partial<FavorDrawCardProps> = {}) {
     pending: false,
     error: null,
     onDraw: vi.fn(),
-    onSettled: vi.fn(),
     onPlayed: vi.fn(),
     ...over,
   };
@@ -79,15 +78,13 @@ afterEach(() => {
 describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
   it("뽑기 전에는 한 줄로 접혀 있고(방장은 바로 뽑을 수 있음), 펼치면 숨긴 사람이 빠진 이유가 보인다", () => {
     reduceMotion(false);
-    const { props } = card();
+    card();
     expect(screen.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeTruthy();
     const toggle = screen.getByRole("button", { name: "뽑기 자세히 보기" });
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByText(/뽑기에서 빠졌어요/)).toBeNull();
     fireEvent.click(toggle);
     expect(screen.getByText(/참가자 3은 출발역을 숨겨서/)).toBeTruthy();
-    expect(props.onSettled).toHaveBeenCalledTimes(1);
-    expect(props.onSettled).toHaveBeenCalledWith(pending);
   });
 
   it("뽑기를 누르면 초점이 카드 제목에 남고, 서버가 거절하면 오류 안내로 옮긴다", () => {
@@ -118,8 +115,6 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
     fireEvent.click(skip);
     expect(props.onPlayed).toHaveBeenCalledTimes(1);
     expect(props.onPlayed).toHaveBeenCalledWith(true);
-    // 결과 탭은 접힌 카드가 자리 잡을 때 옮긴다(재생 중에는 옮기지 않는다).
-    expect(props.onSettled).not.toHaveBeenCalled();
   });
 
   it("재생은 카드가 끝낸다: 뽑을 때의 대상 중 나간 사람이 있어도 약 3초 뒤 끝난다", () => {
@@ -140,12 +135,13 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
   it("이미 본 뽑기는 접힌 한 줄 결과이고, 펼치면 움직이지 않는 사다리, 다시 보기가 끝나면 제목에 초점이 간다", () => {
     reduceMotion(false);
     vi.useFakeTimers();
-    const { props } = card({ draw: drawn, viewer: "member" });
+    card({ draw: drawn, viewer: "member" });
     expect(screen.getByRole("heading", { name: "지영 쪽으로!" })).toBeTruthy();
-    expect(screen.getByText(/방장이 뽑았어요 · 20:14/)).toBeTruthy();
     expect(screen.queryByRole("img")).toBeNull();
-    expect(props.onSettled).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: "사다리 보기" }));
+    const open = screen.getByRole("button", { name: "사다리 결과 보기" });
+    expect(open).toHaveTextContent(/^사다리 결과 보기$/);
+    fireEvent.click(open);
+    expect(screen.getByText(/방장이 뽑았어요 · 20:14/)).toBeVisible();
     expect(screen.getByRole("img").getAttribute("aria-label")).toBe("사다리타기 결과: 지영 쪽으로");
     fireEvent.click(screen.getByRole("button", { name: "다시 보기" }));
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "건너뛰고 결과 보기" }));
@@ -155,10 +151,18 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "지영 쪽으로!" }));
   });
 
+  it("혼자 남은 방장도 이전 결과를 볼 수 있고 다시 뽑기는 표시되지 않는다", () => {
+    reduceMotion(false);
+    card({ draw: drawn, joinedCount: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "사다리 결과 보기" }));
+    expect(screen.getByRole("img", { name: "사다리타기 결과: 지영 쪽으로" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /다시 뽑기/ })).toBeNull();
+  });
+
   it("방장의 다시 뽑기: 확인으로 초점이 가고, 취소하면 원래 버튼으로, 확정 뒤 서버가 거절하면 오류 안내로 간다", () => {
     reduceMotion(false);
     const { props, rerender } = card({ draw: drawn });
-    fireEvent.click(screen.getByRole("button", { name: "사다리 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "사다리 결과 보기" }));
     fireEvent.click(screen.getByRole("button", { name: "다시 뽑기 (1번 남음)" }));
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "다시 뽑기" }));
     fireEvent.click(screen.getByRole("button", { name: "취소" }));
@@ -182,7 +186,7 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
       ],
     };
     card({ draw: late, hiddenInRoom: true });
-    fireEvent.click(screen.getByRole("button", { name: "사다리 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "사다리 결과 보기" }));
     expect(screen.getByText(/출발역을 숨긴 사람을 빼면, 다른 사람도 공평 1위보다 15분/)).toBeTruthy();
     expect(screen.getByText("서준, 참가자 5가 뽑기 뒤에 들어왔어요. 다시 뽑으면 서준도 함께 들어가요.")).toBeTruthy();
   });
@@ -190,8 +194,8 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
   it("다시 뽑은 결과는 모두에게 '다시 뽑음'으로 보이고, 더 뽑을 수 없다", () => {
     reduceMotion(false);
     card({ draw: { ...drawn, round: 2, key: "0:2" } });
-    expect(screen.getByText(/다시 뽑음 · 방장이 한 번 다시 뽑았어요/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "사다리 보기" }));
+    expect(screen.getByText("다시 뽑음", { exact: true })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "사다리 결과 보기" }));
     expect(screen.queryByRole("button", { name: /다시 뽑기/ })).toBeNull();
   });
 });

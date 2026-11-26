@@ -56,6 +56,7 @@ internal fun busanPreview(
         jsonText(
             obj(
                 "region" to config.text("region"),
+                "lastTrain" to busanLastTrainAudit(root, input, busanSlots.getValue(TimeSlot.DEFAULT).origins),
                 "services" to serviceReport,
                 "regionalRouteGraph" to regionalRouteGraph,
                 "walkAdjustment" to walkAdjustment,
