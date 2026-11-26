@@ -60,16 +60,18 @@ async function newFriend(browser: Browser, testInfo: TestInfo) {
 
 /** 방장이 방을 만든다(이름 "민수", 강남, 숨기지 않음). 방 ID를 돌려준다. */
 async function createRoom(page: Page, options: { shot?: boolean; expectedCount?: number } = {}): Promise<string> {
-  const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
-  await page.goto("/");
+  await Promise.all([page.waitForRequest((req) => req.url().endsWith("/api/healthz")), page.goto("/")]);
   if (options.shot) await shot(page, "0-home");
-  await page.getByRole("link", { name: /방 만들어서 각자 입력하기/ }).click();
-  await expect(page).toHaveURL(/\/r\/new$/);
-  await warmUp; // 방 만들기 화면이 열리면 서버를 깨운다.
+  await Promise.all([
+    page.waitForRequest((req) => req.url().endsWith("/api/healthz")),
+    page.getByRole("tab", { name: "각자 입력" }).click(),
+  ]);
+  await expect(page.getByRole("tabpanel", { name: "각자 입력" })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
   await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
   await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
   if (options.shot) {
-    await page.getByRole("heading", { name: /방 만들기/ }).click(); // 자동완성 목록을 닫고 찍는다
+    await page.getByRole("tab", { name: "각자 입력" }).focus();
     await shot(page, "1-create");
   }
   if (options.expectedCount) {

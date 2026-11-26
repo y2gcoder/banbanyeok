@@ -43,11 +43,11 @@ const SCREENS: readonly Screen[] = [
     path: "/",
     ready: (p) => p.getByRole("heading", { name: /딱 반반일까/ }),
     actions: (p) => [
+      p.getByRole("tab", { name: "모두 입력" }),
+      p.getByRole("tab", { name: "각자 입력" }),
       p.getByRole("combobox").first(),
       p.getByRole("button", { name: /한 명 더/ }),
-      p.getByRole("link", { name: /방 만들어서 각자 입력하기/ }),
     ],
-    columns: (p) => [p.getByRole("heading", { name: /딱 반반일까/ }), p.getByRole("combobox").first()],
   },
   {
     id: "result",
@@ -209,7 +209,7 @@ async function pickStation(page: Page, field: Locator, query: string, option: Re
 test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌어도 상태와 배치가 유지된다", () => {
   test.use({ viewport: FOLDED, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
 
-  test("입력 화면: 입력값·추가한 줄이 남고, 펼치면 두 칸·접으면 한 칸", async ({ page }) => {
+  test("입력 화면: 입력값·추가한 줄이 남고, 탭은 제목 아래 온다", async ({ page }) => {
     await open(page, screen("home"));
     await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
     await pickStation(page, page.getByRole("combobox", { name: "민수의 출발역" }), "강남", /^강남\s?2호선/);
@@ -222,7 +222,9 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
       await expect(page.getByRole("combobox", { name: "민수의 출발역" })).toHaveValue("강남");
       await expect(page.getByRole("textbox", { name: "3번째 사람 이름(선택)" })).toHaveValue("지연");
       expect(await horizontalOverflow(page)).toEqual([]);
-      await expectColumns(page, page.getByRole("heading", { name: /딱 반반일까/ }), page.getByRole("combobox").first());
+      const heading = await page.getByRole("heading", { level: 1 }).boundingBox();
+      const tabs = await page.getByRole("tablist", { name: "출발역 입력 방식" }).boundingBox();
+      expect(tabs?.y).toBeGreaterThanOrEqual((heading?.y ?? 0) + (heading?.height ?? 0));
     }
     expect(await isWide(page)).toBe(true);
 
@@ -284,9 +286,8 @@ test.describe("데스크톱 키보드", () => {
 
   test("Tab으로 차례대로 이동하며 포커스가 보이고, 키보드만으로 입력·제출한다", async ({ page }) => {
     await open(page, screen("home"));
-    // Tab 순서: 워드마크 → 계산 범위 펼침 단추 → 1번째 이름 → 1번째 역 → 2번째 이름 → 2번째 역 → 한 명 더 → 언제(요일) → 언제(시간대)
-    // → (만날 역 찾기는 비활성) → 방 만들기 링크. 라디오 묶음은 묶음마다 한 번 멈추고 방향키로 고른다.
-    const order = ["A", "BUTTON", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT", "A"];
+    // 워드마크 → 선택 탭 → 안내가 있는 패널 → 계산 범위 → 이름·역 두 쌍 → 한 명 더 → 요일·시간대.
+    const order = ["A", "BUTTON", "DIV", "BUTTON", "INPUT", "INPUT", "INPUT", "INPUT", "BUTTON", "INPUT", "INPUT"];
     // 처리방침 변경 공지 기간(공지 시작일 ≤ 오늘 < 시행일, 브라우저 날짜로 판단)에는 맨 위 한 줄 공지의 "자세히" 링크가 먼저 온다.
     // 공지는 하이드레이션 뒤에 그려지므로 입력 칸이 준비된 뒤에 센다.
     await expect(page.getByRole("textbox", { name: "1번째 사람 이름(선택)" })).toBeVisible();
