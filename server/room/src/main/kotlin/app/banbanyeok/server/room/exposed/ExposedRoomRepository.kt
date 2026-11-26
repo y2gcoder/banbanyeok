@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room.exposed
 
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.schema.TimeBand
 import app.banbanyeok.server.room.Activity
 import app.banbanyeok.server.room.AddResult
@@ -12,7 +13,6 @@ import app.banbanyeok.server.room.DrawRequest
 import app.banbanyeok.server.room.DrawResult
 import app.banbanyeok.server.room.FavorDraw
 import app.banbanyeok.server.room.FavorDrawRule
-import app.banbanyeok.server.room.Meeting
 import app.banbanyeok.server.room.OriginRule
 import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
@@ -68,6 +68,7 @@ public class ExposedRoomRepository(
             it[lastActivityAt] = room.lastActivityAt
             it[expiresAt] = room.expiresAt
             it[favorDraw] = room.favorDraw != null
+            it[region] = requireNotNull(room.region).name.lowercase()
         }
         insertParticipant(room.id, host)
     }
@@ -107,12 +108,14 @@ public class ExposedRoomRepository(
                 }
 
                 else -> {
-                    origins?.requireAllowed(
-                        room.meetingOf(),
-                        participants,
-                        participant.originCode,
-                        hidden = participant.hidden,
-                    )
+                    val stored = room.toRoom()
+                    val joined = origins?.joined(stored, participants, participant.originCode, participant.hidden)
+                    if (joined != null && joined.region != stored.region) {
+                        RoomsTable.update({ RoomsTable.id eq roomId }) {
+                            it[region] =
+                                requireNotNull(joined.region).name.lowercase()
+                        }
+                    }
                     insertParticipant(roomId, participant)
                     touch(roomId, activity)
                     AddResult.Added
@@ -133,7 +136,7 @@ public class ExposedRoomRepository(
                 val participants = participantsOf(roomId)
                 val current = participants.firstOrNull { it.id == participantId } ?: return@inTransaction false
                 if (change.onlyIfHidden && !current.hidden) return@inTransaction false
-                origins.requireAllowed(room.meetingOf(), participants, change.originCode, participantId, change.hidden)
+                origins.requireAllowed(room.toRoom(), change.originCode, change.hidden)
             }
             val updated =
                 ParticipantsTable.update({
@@ -390,13 +393,6 @@ public class ExposedRoomRepository(
                 ParticipantsTable.pid to org.jetbrains.exposed.v1.core.SortOrder.ASC,
             ).map { it.toParticipant() }
 
-    private fun ResultRow.meetingOf() =
-        Meeting(
-            this[RoomsTable.meetingDate],
-            this[RoomsTable.meetingTime],
-            this[RoomsTable.meetingBand]?.let(TimeBand::parseOrNull),
-        )
-
     private fun ResultRow.toRoom() =
         Room(
             id = this[RoomsTable.id],
@@ -422,6 +418,8 @@ public class ExposedRoomRepository(
             decisionBasis = ShareVersion(this[RoomsTable.decisionBasisVersion]),
             decision = decisionOf(),
             favorDraw = favorDrawOf(),
+            // 이 서버보다 새 서버가 더한 권역이면 null이다(어떤 역도 받지 않는다).
+            region = StationRegion.entries.firstOrNull { it.name.lowercase() == this[RoomsTable.region] },
         )
 
     /** CHECK rooms_draw_complete가 회차 0 ⇔ 대상·명단·시각 없음을 보장한다. */

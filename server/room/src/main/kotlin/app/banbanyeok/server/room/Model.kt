@@ -1,5 +1,6 @@
 package app.banbanyeok.server.room
 
+import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.schema.TimeBand
 import java.time.Instant
 import java.time.LocalDate
@@ -81,6 +82,11 @@ public data class Room(
     val decision: Decision? = null,
     /** '누구 쪽으로' 뽑기(#172). 방을 만들 때 대상을 뽑기로 정한 방에만 있다. 당첨자는 [favorParticipantId]다. */
     val favorDraw: FavorDraw? = null,
+    /**
+     * 방을 만들 때 방장 출발역의 권역으로 정한다(ADR-0008). 참여·출발역 수정·정하기는 이 권역의 역만 받는다. 아무도 남지 않은 방만
+     * 다음 참여자의 권역으로 바뀐다([OriginRule.joined]). null은 이 서버가 모르는 권역으로 저장된 방이다. 어떤 역도 받지 않는다.
+     */
+    val region: StationRegion?,
 ) {
     val meeting: Meeting get() = Meeting(meetingDate, meetingTime, meetingBand)
 }

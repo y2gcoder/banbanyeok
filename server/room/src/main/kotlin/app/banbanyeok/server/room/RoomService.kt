@@ -39,7 +39,7 @@ public class RoomService(
         validateCreation(command, now)
         val meeting = Meeting(command.meetingDate, command.meetingTime, command.meetingBand)
         stations.awaitSchedule(host.originCode, meeting)
-        origins.requireAllowed(meeting, emptyList(), host.originCode, hidden = host.hidden)
+        val region = regions.regionFor(host.originCode, host.hidden)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
         val hostToken = tokens.issue()
@@ -47,7 +47,7 @@ public class RoomService(
         val expiresAt = ExpiryPolicy.expiresAt(now, now, command.meetingDate)
         val anonId = anonIdOf(command.deviceToken, now)
         val drawn = command.mode == RoomMode.FAVOR && command.favorTarget == CreateRoomCommand.DRAW_TARGET
-        rooms.create(
+        val room =
             Room(
                 id = roomId,
                 hostHash = hostToken.hash,
@@ -66,9 +66,10 @@ public class RoomService(
                 lastActivityAt = now,
                 expiresAt = expiresAt,
                 favorDraw = if (drawn) FavorDraw.PENDING else null,
-            ),
-            newParticipant(hostParticipantId, participantToken.hash, anonId, host, now),
-        )
+                region = region,
+            )
+        origins.requireAllowed(room, host.originCode, host.hidden)
+        rooms.create(room, newParticipant(hostParticipantId, participantToken.hash, anonId, host, now))
         return CreatedRoom(
             roomId,
             hostToken.plain,
@@ -126,7 +127,7 @@ public class RoomService(
         }
         if (stored.room.locked) reject(RoomError.ROOM_LOCKED, "방이 잠겼습니다")
         val origin = stations.canonical(originCode)
-        if (stations.isOrigin(origin)) regions.requireMatch(stored.participants, origin)
+        if (stations.isOrigin(origin)) regions.requireMatch(stored.room, origin)
     }
 
     /** 토큰은 선택이다. 유효한 participantToken이면 본인 항목의 출발역이 숨김이어도 보인다. 잘못된 토큰은 무시한다. */

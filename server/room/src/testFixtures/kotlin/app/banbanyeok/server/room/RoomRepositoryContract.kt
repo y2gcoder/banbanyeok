@@ -45,7 +45,9 @@ fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
     describeSpec {
         createAndFind(newRepositories)
         addingParticipants(newRepositories)
+        storedRegions(newRepositories)
         regionalParticipants(newRepositories)
+        emptyRoomRegions(newRepositories)
         meetingOrigins(newRepositories)
         changingParticipants(newRepositories)
         changingRooms(newRepositories)
@@ -158,23 +160,104 @@ private fun DescribeSpecRootScope.addingParticipants(repos: () -> RepositoryPair
     }
 }
 
+private const val BUSAN_ORIGIN = "130"
+
+private val regionalCatalog =
+    object : StationCatalog by FakeStationCatalog() {
+        override fun regionOf(code: String) = if (code == BUSAN_ORIGIN) StationRegion.BUSAN else StationRegion.CAPITAL
+    }
+
+private fun DescribeSpecRootScope.storedRegions(repos: () -> RepositoryPair) {
+    describe("stored room region") {
+        val busan = BUSAN_ORIGIN
+        val origins = OriginRule(regionalCatalog)
+
+        it("keeps the region a room was created with when its only member moves to another region") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            rooms.create(room, aParticipant("host01"))
+            val moving = ParticipantChange(null, busan, false, T0.plusSeconds(60))
+            shouldThrow<RoomException> { rooms.updateParticipant(room.id, "host01", moving, activity(1), origins) }
+                .error shouldBe RoomError.REGION_MISMATCH
+            shouldThrow<RoomException> {
+                rooms.addParticipant(
+                    room.id,
+                    aParticipant("pid002") { it.copy(originCode = busan) },
+                    activity(2),
+                    origins,
+                )
+            }.error shouldBe RoomError.REGION_MISMATCH
+            rooms.find(room.id)!!.run {
+                this.room.region shouldBe StationRegion.CAPITAL
+                participants.map { it.originCode } shouldContainExactly listOf("03v")
+            }
+        }
+
+        it("stores a Busan room's region and lets the room take the next joiner's region once no one is left") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId()) { it.copy(region = StationRegion.BUSAN) }
+            rooms.create(room, aParticipant("host01") { it.copy(originCode = busan) })
+            rooms.find(room.id)!!.room.region shouldBe StationRegion.BUSAN
+            rooms.removeParticipant(room.id, "host01", activity(1)) shouldBe true
+            rooms.addParticipant(room.id, aParticipant("pid002"), activity(2), origins) shouldBe AddResult.Added
+            rooms.find(room.id)!!.room.region shouldBe StationRegion.CAPITAL
+            shouldThrow<RoomException> {
+                rooms.addParticipant(
+                    room.id,
+                    aParticipant("pid003") { it.copy(originCode = busan) },
+                    activity(3),
+                    origins,
+                )
+            }.error shouldBe RoomError.REGION_MISMATCH
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.emptyRoomRegions(repos: () -> RepositoryPair) {
+    describe("joins into a room no one is left in") {
+        val busan = BUSAN_ORIGIN
+        val catalog = regionalCatalog
+        val origins = OriginRule(catalog)
+
+        it("keeps one region when two people of different regions join a room no one is left in") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId())
+            rooms.create(room, aParticipant("host01"))
+            rooms.removeParticipant(room.id, "host01", activity(1)) shouldBe true
+            val outcomes =
+                coroutineScope {
+                    listOf("pid002" to "03v", "pid003" to busan)
+                        .map { (id, code) ->
+                            async {
+                                runCatching {
+                                    rooms.addParticipant(
+                                        room.id,
+                                        aParticipant(id) { it.copy(originCode = code) },
+                                        activity(2),
+                                        origins,
+                                    )
+                                }
+                            }
+                        }.awaitAll()
+                }
+            outcomes.count { it.isSuccess } shouldBe 1
+            (outcomes.single { it.isFailure }.exceptionOrNull() as RoomException).error shouldBe
+                RoomError.REGION_MISMATCH
+            val stored = rooms.find(room.id)!!
+            stored.participants.map { catalog.regionOf(it.originCode) } shouldContainExactly listOf(stored.room.region)
+        }
+    }
+}
+
 private fun DescribeSpecRootScope.regionalParticipants(repos: () -> RepositoryPair) {
     describe("regional participant writes") {
+        val busan = BUSAN_ORIGIN
+        val catalog = regionalCatalog
+        val origins = OriginRule(catalog)
+
         it("keeps one region when a participant joins while the only member changes region") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            val catalog =
-                object : StationCatalog by FakeStationCatalog() {
-                    override fun regionOf(code: String) =
-                        if (code ==
-                            "130"
-                        ) {
-                            StationRegion.BUSAN
-                        } else {
-                            StationRegion.CAPITAL
-                        }
-                }
-            val regions = OriginRule(catalog)
             rooms.create(room, aParticipant("host01"))
             val outcomes =
                 coroutineScope {
@@ -185,17 +268,17 @@ private fun DescribeSpecRootScope.regionalParticipants(repos: () -> RepositoryPa
                                     room.id,
                                     aParticipant("pid002"),
                                     activity(1),
-                                    regions,
+                                    origins,
                                 )
                             }
                         },
                         async {
-                            val change = ParticipantChange(null, "130", false, T0.plusSeconds(60))
-                            runCatching { rooms.updateParticipant(room.id, "host01", change, activity(1), regions) }
+                            val change = ParticipantChange(null, busan, false, T0.plusSeconds(60))
+                            runCatching { rooms.updateParticipant(room.id, "host01", change, activity(1), origins) }
                         },
                     ).awaitAll()
                 }
-            outcomes.count { it.isSuccess } shouldBe 1
+            outcomes.map { it.isSuccess } shouldContainExactly listOf(true, false)
             val rejected = outcomes.single { it.isFailure }.exceptionOrNull() as RoomException
             rejected.error shouldBe RoomError.REGION_MISMATCH
             rooms

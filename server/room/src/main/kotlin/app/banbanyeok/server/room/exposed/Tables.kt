@@ -49,6 +49,9 @@ internal object RoomsTable : Table("rooms") {
     val drawCandidates = array<String>("draw_candidates").nullable()
     val drawRoster = array<String>("draw_roster").nullable()
     val drawnAt = timestamp("drawn_at").nullable()
+
+    /** 방의 권역(`capital`·`busan`). 방을 만들 때 정하고, 아무도 남지 않은 방에 참여할 때만 바뀐다. */
+    val region = text("region")
     override val primaryKey = PrimaryKey(id)
 }
 

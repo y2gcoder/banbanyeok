@@ -1,6 +1,7 @@
 package app.banbanyeok.server.app.application
 
 import app.banbanyeok.schema.DataSet
+import app.banbanyeok.schema.REGIONAL_REGISTRY_SCHEMA_VERSION
 import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.SlotMatrices
@@ -33,8 +34,15 @@ class StationDirectory(
     StationNames,
     StationLocations {
     private val names: Map<String, String> = dataSet.registry.stations.associate { it.code to it.name }
-    private val regions: Map<String, StationRegion> =
-        dataSet.registry.stations.associate { it.code to (it.region ?: StationRegion.CAPITAL) }
+
+    /**
+     * 권역 레지스트리(2판)만 역마다 권역을 적는다. 1판 산출물의 레지스트리에는 부산 역도 권역 없이 있으므로 null로 두고, OD 출발역만
+     * 수도권으로 본다(1~4세대 OD는 수도권만 담는다). 그 밖의 코드는 권역을 모른다.
+     */
+    private val regions: Map<String, StationRegion>? =
+        dataSet.registry.stations
+            .takeIf { dataSet.registry.schemaVersion == REGIONAL_REGISTRY_SCHEMA_VERSION }
+            ?.associate { it.code to requireNotNull(it.region) }
     private val points: Map<String, GeoPoint> =
         dataSet.registry.stations.associate { it.code to GeoPoint(it.lat, it.lng) }
     private val replacements: Map<String, String> =
@@ -52,7 +60,7 @@ class StationDirectory(
 
     override fun isOrigin(code: String): Boolean = travelTimes.isOrigin(code)
 
-    override fun regionOf(code: String): StationRegion? = regions[code]
+    override fun regionOf(code: String): StationRegion? = travelTimes.regionOf(code)
 
     override fun departs(
         code: String,
