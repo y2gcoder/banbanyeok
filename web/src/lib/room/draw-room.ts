@@ -2,7 +2,7 @@
  * 혼자 입력한 결과(`ShareState`)를 사다리 방 만들기 요청으로 옮긴다(#227, ADR-0011). 고른 사람이 방장이 되고 나머지는 방장이 대신
  * 넣은 칸(`others`)이다. 입력 순서는 `hostPosition`으로 그대로 남는다. 이름이 없는 줄은 이름 없이 보내고, 표시 이름은 서버가 만든다.
  */
-import type { ParticipantInput, RoomCreateRequest } from "@/lib/api/types";
+import type { ParticipantInput, Room, RoomCreateRequest } from "@/lib/api/types";
 import type { ShareState } from "@/lib/link/codec";
 import { dayAfter, MAX_MEETING_DAYS } from "@/lib/when/dates";
 import { type Band, slotForMeeting, splitSlot, type TimeSlot } from "@/lib/when/time-slot";
@@ -46,4 +46,13 @@ export function toDrawRoomRequest(state: ShareState, hostIndex: number, today: s
     ...(meetingDate ? { meetingDate } : {}),
     ...(meetingBand ? { meetingBand } : {}),
   };
+}
+
+/**
+ * 서버가 요청한 대로 대신 넣은 칸을 모두 저장한 잠긴 방을 만들었는지. `others`를 모르는 옛 서버는 그 필드를 버리고 방장만 있는 열린 방을
+ * 201로 만든다(모르는 필드를 무시한다). 새 웹이 옛 서버를 만나는 배포 중간이나 서버만 되돌렸을 때 그런 방을 남기지 않으려고 본다.
+ */
+export function storedAsRequested(room: Room, body: RoomCreateRequest): boolean {
+  const entered = room.participants.filter((p) => p.enteredByHost === true).length;
+  return room.locked && entered === (body.others?.length ?? 0);
 }

@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { devices, expect, type Locator, type Page, test } from "@playwright/test";
+import { type Browser, devices, expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
 
 /**
  * 혼자 입력한 결과에서 사다리 방 만들기(#227) e2e: 실제 서버(Ktor + DB)에서 추천 화면의 진입점 → 확인 대화상자 → 모두의 칸을 채운 잠긴
@@ -9,6 +9,8 @@ const PHONE = { width: 390, height: 844 };
 const ROOM_URL = /\/r\/([0-9a-hjkmnp-tv-z]{10})$/;
 const b64 = (text: string) => Buffer.from(text, "utf8").toString("base64url");
 const RESULT = `/result?v=2&o=k3a.ryf.1qs&m=f&t=saturday-evening&n=${b64("민수")}..${b64("하늘")}`;
+/** 두 사람(민수, 하늘). 한 사람이 더 들어와도 정원(4명)이 차지 않아 잠금만 남는다. */
+const RESULT_TWO = `/result?v=2&o=k3a.1qs&m=f&t=saturday-evening&n=${b64("민수")}.${b64("하늘")}`;
 
 type ApiRoom = {
   locked: boolean;
@@ -129,4 +131,120 @@ test("혼자 입력한 결과 → 확인 → 채운 사다리 방 → 뽑기, �
   await expect(page.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible();
   const again = (await (await request.get(`/api/v1/rooms/${roomId}`)).json()) as ApiRoom;
   expect(again.favorDraw?.winner).toBe(drawn.favorDraw?.winner);
+});
+
+/** 혼자 입력한 결과에서 대화상자로 채운 방을 만든다(하늘이 방장). 만든 방 ID를 돌려준다. */
+async function createFilledRoom(page: Page, result: string): Promise<string> {
+  await page.goto(result);
+  await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
+  const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
+  await dialog.locator("label", { hasText: "하늘" }).click();
+  await dialog.getByRole("button", { name: "방 만들고 사다리 타러 가기" }).click();
+  await expect(page).toHaveURL(ROOM_URL);
+  return new URL(page.url()).pathname.split("/").pop() ?? "";
+}
+
+async function newPerson(browser: Browser, testInfo: TestInfo) {
+  const context = await browser.newContext({
+    ...devices["Pixel 7"],
+    viewport: PHONE,
+    locale: "ko-KR",
+    baseURL: testInfo.project.use.baseURL ?? "http://127.0.0.1:3000",
+  });
+  return { context, page: await context.newPage() };
+}
+
+test("채운 방의 잠금을 풀어 직접 들어온 사람이 생긴 뒤 다시 잠그면, 모두를 방장이 넣었다고 안내하지 않는다", async ({
+  page,
+  browser,
+}, testInfo) => {
+  const roomId = await createFilledRoom(page, RESULT_TWO);
+  await page.getByRole("button", { name: "잠금 풀기" }).click();
+  await expect(page.getByRole("button", { name: "참여 잠그기" })).toBeVisible();
+
+  const joiner = await newPerson(browser, testInfo);
+  await joiner.page.goto(`/r/${roomId}`);
+  const form = joiner.page.getByRole("form", { name: "나도 출발역 넣기" });
+  await form.getByRole("textbox", { name: /이름 \(선택\)/ }).fill("지연");
+  await form.getByRole("combobox", { name: "내 출발역" }).fill("신촌");
+  await joiner.page.getByRole("option", { name: /^신촌\s?2호선/ }).click();
+  await joiner.page.getByRole("button", { name: "참여하기" }).click();
+  await expect(joiner.page.getByRole("heading", { name: "나도 출발역 넣기" })).toHaveCount(0);
+  await joiner.context.close();
+
+  await page.reload();
+  await page.getByRole("button", { name: "참여 잠그기" }).click();
+  await expect(page.getByRole("button", { name: "잠금 풀기" })).toBeVisible();
+  const people = page.getByRole("region", { name: "들어온 사람" });
+  await expect(people.getByText("3/4명")).toBeVisible();
+  await expect(people.getByText("방장이 입력")).toHaveCount(1);
+
+  const visitor = await newPerson(browser, testInfo);
+  await visitor.page.goto(`/r/${roomId}`);
+  await expect(visitor.page.getByRole("heading", { name: "지금은 들어올 수 없는 방이에요" })).toBeVisible();
+  await expect(visitor.page.getByRole("heading", { name: /모두의 출발역을 넣었어요/ })).toHaveCount(0);
+  await expect(visitor.page.getByRole("region", { name: "들어온 사람" }).getByText("방장이 입력")).toHaveCount(1);
+  await visitor.context.close();
+});
+
+test("방장 권한을 이 기기에 저장하지 못하면 방으로 가지 않고, 받은 방장 토큰으로 만든 방을 지운다", async ({
+  page,
+  request,
+}) => {
+  // 짧은 검사 값은 저장되지만 실제 방 기록은 저장 공간이 모자라 실패하는 브라우저.
+  await page.addInitScript(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (key.startsWith("bby.room.") && key !== "bby.room.probe") {
+        throw new DOMException("quota", "QuotaExceededError");
+      }
+      original.call(this, key, value);
+    };
+  });
+  const created = page.waitForResponse((r) => r.url().endsWith("/api/v1/rooms") && r.request().method() === "POST");
+  await page.goto(RESULT);
+  await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
+  const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
+  await dialog.getByRole("button", { name: "방 만들고 사다리 타러 가기" }).click();
+  const { roomId } = (await (await created).json()) as { roomId: string };
+
+  await expect(dialog.getByRole("alert")).toContainText("이 브라우저에 방장 권한을 저장하지 못했어요");
+  expect(new URL(page.url()).pathname).toBe("/result");
+  expect((await request.get(`/api/v1/rooms/${roomId}`)).status()).toBe(200);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  await expectNoA11yViolations(page);
+
+  await dialog.getByRole("button", { name: "만든 방 지우기" }).click();
+  await expect(dialog.getByText("만든 방을 지웠어요. 저장 공간을 비운 뒤 다시 만들 수 있어요.")).toBeVisible();
+  expect((await request.get(`/api/v1/rooms/${roomId}`)).status()).toBe(404);
+  await dialog.getByRole("button", { name: "취소" }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
+test("대신 넣은 칸을 모르는 옛 서버(others를 버림)가 방장만 있는 열린 방을 만들면, 웹이 그 방을 지우고 방으로 가지 않는다", async ({
+  page,
+  request,
+}) => {
+  // 옛 서버는 모르는 필드를 무시한다. 같은 상황을 만들려고 요청 본문에서 others·hostPosition을 빼고 실제 서버로 보낸다.
+  await page.route("**/api/v1/rooms", async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    const { others: _others, hostPosition: _position, ...body } = route.request().postDataJSON();
+    await route.fallback({ postData: JSON.stringify(body) });
+  });
+  const created = page.waitForResponse((r) => r.url().endsWith("/api/v1/rooms") && r.request().method() === "POST");
+  await page.goto(RESULT);
+  await expect(page.getByRole("article").first()).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: /사다리로 정하고 보내기/ }).click();
+  const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
+  await dialog.getByRole("button", { name: "방 만들고 사다리 타러 가기" }).click();
+  const response = await created;
+  expect(response.status()).toBe(201);
+  const { roomId } = (await response.json()) as { roomId: string };
+
+  await expect(dialog.getByRole("alert")).toContainText("지금은 사다리 방을 만들 수 없어요. 만들던 방은 지웠어요.");
+  expect(new URL(page.url()).pathname).toBe("/result");
+  expect((await request.get(`/api/v1/rooms/${roomId}`)).status()).toBe(404);
 });

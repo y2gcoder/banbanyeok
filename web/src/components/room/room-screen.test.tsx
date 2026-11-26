@@ -738,4 +738,24 @@ describe("방장이 모두의 출발역을 넣은 사다리 방(#227)", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "나도 출발역 넣기" })).not.toBeInTheDocument();
   });
+
+  it("잠금을 풀어 직접 들어온 사람이 있는 채로 다시 잠그면, 모두를 방장이 넣었다고 하지 않고 일반 잠긴 방 안내를 보인다", async () => {
+    vi.mocked(api.getRoom).mockImplementation(async (_id, token) => {
+      const room = roomFor(token);
+      return {
+        ...room,
+        locked: true,
+        participants: [
+          entered("e1", "지연", "130", "신촌"),
+          ...room.participants.slice(0, 1).map((host) => ({ ...host, enteredByHost: false })),
+          { ...entered("j1", "하늘", "ryf", "홍대입구"), enteredByHost: false },
+        ],
+      };
+    });
+    renderScreen();
+    const list = await screen.findByRole("region", { name: "들어온 사람" });
+    expect(within(list).getAllByText("방장이 입력")).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: /모두의 출발역을 넣었어요/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "지금은 들어올 수 없는 방이에요" })).toBeInTheDocument();
+  });
 });

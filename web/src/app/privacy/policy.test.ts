@@ -12,6 +12,8 @@ import {
   CHANGE_NOTICE_DAYS,
   CONTACT_EMAIL,
   EARLIER_NOTICES,
+  EARLIER_REVISIONS,
+  earlierNoticesOn,
   HISTORY,
   historyUrl,
   POLICY,
@@ -309,17 +311,20 @@ describe("개인정보 처리방침", () => {
     const preview = sentences.join(" ");
     for (const [key, phrase] of Object.entries(described)) expect(preview, key).toContain(phrase);
     expect(one(sentences, "막차 표 준비 중 표시")).toContain("서버의 상태이고 참여자의 정보가 아닙니다");
-    // 11월 25일 시행판 전부터 응답에 있던 키는 그 판 비교표의 '바뀌기 전'에도 적는다(그 판에 더한 키는 '바뀐 후'). 이 판(#173)은 응답의
-    // 키를 바꾸지 않는다(숨긴 사람이 새로 생기지 않을 뿐이다).
+    // 11월 25일 시행판 전부터 응답에 있던 키는 그 판 비교표의 '바뀌기 전'에도 적는다(그 판에 더한 키는 '바뀐 후'). 이 판(#227)은 응답의
+    // 키를 바꾸지 않는다. 앞선 판의 행은 안내 기간이 끝나면 이 판의 안내에서 빠지므로, 그 판의 행 원본에서 본다.
     expect(CHANGE_NOTICE?.rows.some((r) => !r.item.startsWith("[") && r.item.includes("방 미리보기 응답"))).toBe(false);
-    const row = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("[11월 25일 시행판] 방 미리보기 응답"));
+    const rowsOf = (label: string) => EARLIER_REVISIONS.find((e) => e.label === label)?.rows ?? [];
+    const row = rowsOf("2026년 11월 25일 시행판").find((r) => r.item.startsWith("[11월 25일 시행판] 방 미리보기 응답"));
     for (const [key, phrase] of Object.entries(described)) {
       const added = key === "basis.drawRound";
       expect(added ? row?.after : row?.before, key).toContain(phrase);
       if (added) expect(row?.before, key).not.toContain(phrase);
     }
     // 11월 21일 시행판에 더한 키(지도 한가운데·막차 표 준비 중)는 그 판의 행에서 '바뀐 후'에만 있다.
-    const nov21 = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("[11월 21일 시행판] 방 미리보기 응답"));
+    const nov21 = rowsOf("2026년 11월 21일 시행판").find((r) =>
+      r.item.startsWith("[11월 21일 시행판] 방 미리보기 응답"),
+    );
     for (const [key, phrase] of Object.entries(described)) {
       if (key === "basis.drawRound") continue;
       const added = key.startsWith("mapMiddle.") || key === "lastTrainPending";
@@ -557,6 +562,21 @@ describe("개인정보 처리방침", () => {
     expect(ladder).toContain("그 칸에 '방장이 입력'이 표시되며, 이렇게 만든 방은 잠긴 채 시작한다");
     expect(ladder).toContain("수집하는 정보와 다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 화면에 알립니다");
     expect(ladder).toContain("2026년 11월 26일 시행판은 이 판을 시행한 날 배포 전까지 적용했습니다");
+    // 서버에 저장하지 않는다는 설명은 혼자 입력한 결과와 /s 링크에만 해당하고, /r 방의 정보는 메시지를 지워도 남는다(지우는 방법이 다르다).
+    const friends = lineOf(POLICY, "items", "혼자 입력할 때는 함께 만날 친구의");
+    expect(friends).toContain(
+      "혼자 입력한 결과와 그 공유 링크(/s/로 시작하는 주소)만 쓸 때는 이 정보를 서버에 저장하지 않습니다",
+    );
+    expect(friends).toContain("'사다리로 뽑기'로 방을 만들면 이 정보가 방(/r/로 시작하는 주소)에 저장되고");
+    expect(friends).not.toMatch(/넣어 주세요\. 이 정보는 서버에 저장하지 않습니다/);
+    const rights = textOf(POLICY, "rights");
+    expect(rights).not.toContain("링크로 공유한 정보");
+    expect(rights).toContain("혼자 입력한 결과의 공유 링크(/s/로 시작하는 주소)로 보낸 정보");
+    expect(rights).toContain("방 링크(/r/로 시작하는 주소)로 공유한 방의 정보");
+    expect(rights).toContain("메시지를 지워도 방에 저장된 정보는 남습니다");
+    expect(ladder).toContain(
+      "공유 링크(/s)로 보낸 정보와 방 링크(/r)로 공유한 방의 정보를 지우는 방법도 나누어 적었습니다",
+    );
     const stop = lineOf(POLICY, "changes", "변경 이력: 2026년 11월 25일 개정판은");
     expect(stop).toContain("출발역 숨기기를 더는 새로 제공하지 않도록 바꿨습니다");
     expect(stop).toContain(
@@ -702,6 +722,33 @@ describe("개인정보 처리방침", () => {
     expect(addDays("2026-12-30", 7)).toBe("2027-01-06");
   });
 
+  it.each([
+    [
+      "2026-11-27",
+      [
+        "11월 26일 시행판",
+        "11월 25일 개정판",
+        "11월 25일 시행판",
+        "11월 24일 개정판",
+        "11월 24일 시행판",
+        "11월 21일 시행판",
+      ],
+    ],
+    [
+      "2026-11-28",
+      ["11월 26일 시행판", "11월 25일 개정판", "11월 25일 시행판", "11월 24일 개정판", "11월 24일 시행판"],
+    ],
+    [
+      "2026-11-30",
+      ["11월 26일 시행판", "11월 25일 개정판", "11월 25일 시행판", "11월 24일 개정판", "11월 24일 시행판"],
+    ],
+    ["2026-12-01", ["11월 26일 시행판", "11월 25일 개정판", "11월 25일 시행판"]],
+    ["2026-12-02", ["11월 26일 시행판"]],
+    ["2026-12-03", []],
+  ])("%s에 시행하면 그날 7일 안내 기간이 남은 앞선 판만 함께 싣는다", (date, labels) => {
+    expect(earlierNoticesOn(date).map((e) => e.label.replace("2026년 ", ""))).toEqual(labels);
+  });
+
   it("중요한 변경 안내(CHANGE_NOTICE): 이 판은 수집하는 정보와 보이는 범위가 바뀌어 켜고, 시행일부터 15항의 일수만큼이며 전후 비교가 빠짐없다", () => {
     expect(CHANGE_NOTICE).not.toBeNull();
     expect(changeNoticeProblems(CHANGE_NOTICE, CHANGE_NOTICE_DAYS)).toEqual([]);
@@ -732,6 +779,7 @@ describe("개인정보 처리방침", () => {
       { prefix: "[11월 21일 시행판] ", label: "2026년 11월 21일 시행판", since: "2026-11-21", count: 8 },
     ].filter((e) => addDays(e.since, CHANGE_NOTICE_DAYS - 1) >= REVISION_DATE);
     expect(EARLIER_NOTICES.map((e) => e.label)).toEqual(earlier.map((e) => e.label));
+    expect(EARLIER_NOTICES).toEqual(earlierNoticesOn(REVISION_DATE));
     let at = mine.length;
     for (const e of earlier) {
       const group = rows.slice(at, at + e.count);

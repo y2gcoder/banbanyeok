@@ -91,11 +91,19 @@ export function canStoreRoomTokens(): boolean {
   }
 }
 
-export function saveRoomRecord(roomId: string, record: Omit<RoomRecord, "v">): void {
+/**
+ * 기록을 저장하고, 실제로 저장됐는지 돌려준다. `canStoreRoomTokens`의 짧은 검사를 통과해도 실제 기록은 저장 공간이 모자라
+ * (`QuotaExceededError`) 실패할 수 있다. 저장하지 못해도 던지지 않는다(방은 동작하고 이 기기에서 나중에 고치지 못할 뿐이다).
+ */
+export function saveRoomRecord(roomId: string, record: Omit<RoomRecord, "v">): boolean {
+  const store = storage();
+  if (!store) return false;
+  const value = JSON.stringify({ v: 1, ...record } satisfies RoomRecord);
   try {
-    storage()?.setItem(roomKey(roomId), JSON.stringify({ v: 1, ...record } satisfies RoomRecord));
+    store.setItem(roomKey(roomId), value);
+    return store.getItem(roomKey(roomId)) === value;
   } catch {
-    // 저장하지 못해도 방은 동작한다. 이 기기에서 나중에 고치지 못할 뿐이다.
+    return false;
   }
 }
 
