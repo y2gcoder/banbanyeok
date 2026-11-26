@@ -4,7 +4,7 @@
 
 ## Sub-features
 
-- `room-create` `/r/new`에서 이름(선택)과 출발역으로 방을 만든다. 주소가 `/r/<10자 ID>`가 된다.
+- `room-create` 첫 화면의 `각자 입력` 탭에서 이름(선택)과 출발역으로 방을 만든다. 주소가 `/r/<10자 ID>`가 된다.
 - `room-waiting` 혼자일 때 "내가 만든 방"과 "두 명 이상 들어오면 결과를 볼 수 있어요."가 보인다.
 - `room-link` "링크 복사"로 `/r/<ID>?sv=<번호>&pv=<번호>` 링크를 얻는다. 토큰은 링크에 없다.
 - `room-join` 친구가 링크를 열고 "나도 출발역 넣기"에서 출발역을 넣고 "참여하기"를 누른다.
@@ -12,7 +12,7 @@
 
 ## How to get to it (user POV)
 
-- 첫 화면의 "방 만들어서 각자 입력하기" 링크로 `/r/new`에 간다.
+- 첫 화면(`/`)에서 `각자 입력` 탭을 누르면 같은 화면에 방 만들기 폼이 열린다.
 - `/r/new`를 직접 연다.
 - 친구는 받은 `/r/<ID>?sv=…` 링크로 들어온다.
 
@@ -21,12 +21,12 @@
 Preconditions:
 
 - 기본 전제를 만족한다.
-- `verify.sh drive room-join phone`(바꾼 화면이면 `desktop`도)으로 돌린다.
+- `verify.sh drive room-join phone`과 `verify.sh drive room-join desktop`으로 돌린다.
 
-- **방 만들기 화면.** 첫 화면에서 `link /방 만들어서 각자 입력하기/`를 누른다. 주소가 `/r/new`가 된다.
-- **방장 입력.** `textbox "내 이름 (선택)"`에 `민수`, `combobox "내 출발역"`에 `강남`을 넣고 `option /^강남\s?2호선/`을 누른다.
+- **방 만들기 탭.** `gotoHydrated(page, "/")`로 첫 화면을 연다. `tab "각자 입력"`을 누르면 이 탭의 `/api/healthz` 요청이 나가고 `tabpanel "각자 입력"`이 보인다. 주소는 `/` 그대로다.
+- **방장 입력.** 패널의 `textbox "내 이름 (선택)"`에 `민수`, `combobox "내 출발역"`에 `강남`을 넣고 `option /^강남\s?2호선/`을 누른다.
 - **방 만들기.** `button "방 만들기"`를 누른다. 주소가 `/r/<ID>`가 되고 `heading "내가 만든 방"`과 "두 명 이상 들어오면 결과를 볼 수 있어요."가 보인다.
-- **링크 복사.** `button "링크 복사"`를 누르고 클립보드를 읽는다. `/r/<ID>?sv=<n>&pv=<n>` 꼴이다(`shared-link.txt`).
+- **링크 복사.** `button "링크 복사"`를 눌러 "링크 복사됨"을 확인하고 클립보드를 읽는다. 방장이 만든 로컬 방의 주소에 `?sv=<n>&pv=<n>`이 붙는다(`shared-link.txt`).
 - **친구 참여.** `newPerson()`의 화면으로 링크를 연다. `heading "나도 출발역 넣기"`가 보인다. `combobox "내 출발역"`에 `ㅎㄷㅇㄱ`을 넣고 홍대입구를 고른 뒤 `button "참여하기"`를 누른다. 친구 화면의 `region "만날 역 후보"`에 `article`이 보인다.
 - **방장 화면 갱신.** 새로고침하지 않고 기다린다. 방장 화면 `region "들어온 사람"`의 `listitem`이 30초 안에 2개가 되고 `region "만날 역 후보"`가 나온다.
 - **증거.** `db-participants.tsv`에 그 방의 행 둘이 있다(`민수 k3a f`, 이름 없는 `ryf f`). `network.jsonl`에 `POST /api/v1/rooms` 201과 친구 컨텍스트(`ctx1`)의 `POST /api/v1/rooms/<ID>/participants` 201이 있다.

@@ -3,24 +3,34 @@ import { gotoHydrated, pickStation, ROOM_URL, roomIdOf } from "./lib.mjs";
 // features/room-join.md: 방장이 방을 만들고, 친구가 받은 링크로 참여한다. 방장 화면은 새로고침 없이 갱신된다.
 export default async ({ page, step, expect, db, newPerson, note }) => {
   await step("home", () => gotoHydrated(page, "/"));
-  await step("room-new", async () => {
-    await page.getByRole("link", { name: /방 만들어서 각자 입력하기/ }).click();
-    await expect(page).toHaveURL(/\/r\/new$/);
-    await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
+  const panel = page.getByRole("tabpanel", { name: "각자 입력" });
+  await step("home-room-form", async () => {
+    await Promise.all([
+      page.waitForRequest((req) => req.url().endsWith("/api/healthz")),
+      page.getByRole("tab", { name: "각자 입력" }).click(),
+    ]);
+    await expect(panel).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    await panel.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
     await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
   });
   await step("host-waiting", async () => {
-    await page.getByRole("button", { name: "방 만들기" }).click();
+    await panel.getByRole("button", { name: "방 만들기" }).click();
     await expect(page).toHaveURL(ROOM_URL);
     await expect(page.getByRole("heading", { name: "내가 만든 방" })).toBeVisible();
     await expect(page.getByText("두 명 이상 들어오면 결과를 볼 수 있어요.")).toBeVisible();
   });
   const roomId = roomIdOf(page);
 
-  await page.getByRole("button", { name: "링크 복사" }).click();
+  await step("host-copies-link", async () => {
+    await page.getByRole("button", { name: "링크 복사" }).click();
+    await expect(page.getByRole("button", { name: "링크 복사됨" })).toBeVisible();
+  });
   const link = await page.evaluate(() => navigator.clipboard.readText());
+  const { search } = new URL(link);
+  expect(search).toMatch(/^\?sv=\d+&pv=\d+$/);
+  expect(link).toBe(`${page.url()}${search}`);
   note("shared-link", link);
-  expect(link).toMatch(/\/r\/[0-9a-hjkmnp-tv-z]{10}\?sv=\d+&pv=\d+$/);
 
   const friend = await newPerson();
   await step("friend-opens-link", () => friend.goto(link), { page: friend });
