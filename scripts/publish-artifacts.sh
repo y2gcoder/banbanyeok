@@ -93,9 +93,12 @@ if [[ "${published_same:-}" != 1 ]]; then
   [[ "$expected" == "$actual" ]] || { echo "버전 디렉터리 파일 수가 다릅니다($expected != $actual)" >&2; exit 1; }
   if [[ -f "$stage/$regional" ]]; then
     gcloud storage cat "$dest/$regional" | cmp - "$stage/$regional"
-    expected="$(find "$stage/regional/versions/$version" -type f | wc -l | tr -d ' ')"
-    actual="$(gcloud storage ls "$dest/regional/versions/$version/" | grep -c . || true)"
-    [[ "$expected" == "$actual" ]] || { echo "권역 버전 디렉터리 파일 수가 다릅니다($expected != $actual)" >&2; exit 1; }
+    # 부산만 다시 만들면 dataVersion은 수도권 그대로라 같은 폴더에 새 해시 파일이 옛 것과 함께 놓인다. 수가 아니라 포인터가 가리키는
+    # 파일이 모두 올라갔는지 본다.
+    gcloud storage ls "$dest/regional/versions/$version/" | sed 's#.*/##' | sort > "$tmp/regional-remote.txt"
+    find "$stage/regional/versions/$version" -type f -exec basename {} \; | sort > "$tmp/regional-stage.txt"
+    missing="$(comm -23 "$tmp/regional-stage.txt" "$tmp/regional-remote.txt")"
+    [[ -z "$missing" ]] || { echo "권역 버전 디렉터리에 올라가지 않은 파일이 있습니다: $missing" >&2; exit 1; }
   fi
 fi
 

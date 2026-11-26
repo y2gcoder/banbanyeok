@@ -84,6 +84,18 @@ out="$(publish "$(stage 20261102.1 yes ', "note": 1')")"
 grep -q note "$bucket_dir/regional/manifest.v5.json" || fail "바뀐 권역 포인터가 올라가지 않았다"
 echo "ok 권역 포인터만 바뀌어도 다시 올린다"
 
+# 부산만 다시 만든 세대: 수도권 파일은 같고 권역 파일은 새 해시 이름 하나뿐이다(옛 이름은 stage에 없다).
+rebuilt="$work/stage-rebuilt"
+mkdir -p "$rebuilt/versions/20261102.1" "$rebuilt/regional/versions/20261102.1"
+cp "$work/stage-20261102.1-yes/versions/20261102.1/od.20261102.1.bin" "$rebuilt/versions/20261102.1/"
+cp "$work/stage-20261102.1-yes/manifest.json" "$rebuilt/manifest.json"
+echo "regional od rebuilt" > "$rebuilt/regional/versions/20261102.1/od.rebuilt.bin"
+printf '{"dataVersion": "20261102.1", "schemaVersion": 5, "rebuilt": 1}\n' > "$rebuilt/regional/manifest.v5.json"
+out="$(publish "$rebuilt")"
+[[ -f "$bucket_dir/regional/versions/20261102.1/od.rebuilt.bin" ]] || fail "같은 버전의 새 권역 파일이 올라가지 않았다: $out"
+grep -q rebuilt "$bucket_dir/regional/manifest.v5.json" || fail "같은 버전으로 다시 만든 권역 포인터가 올라가지 않았다"
+echo "ok 부산만 다시 만든 같은 버전의 권역 세대도 발행한다(옛 해시 파일이 함께 있어도)"
+
 before="$(cat "$bucket_dir/regional/manifest.v5.json")"
 out="$(publish "$(stage 20261103.1 no)")"
 [[ "$(cat "$bucket_dir/regional/manifest.v5.json")" == "$before" ]] || fail "권역 없는 발행이 버킷의 권역 포인터를 바꿨다"
