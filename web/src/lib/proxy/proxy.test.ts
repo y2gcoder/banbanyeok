@@ -101,6 +101,32 @@ describe("Origin 헤더", () => {
   });
 });
 
+describe("Referer 헤더", () => {
+  // 공유 링크 화면의 주소에는 이름·출발역이 쿼리로 들어 있다. Referrer-Policy가 strict-origin-when-cross-origin이라 같은 출처 /api/* 요청에는
+  // 그 전체 주소가 Referer로 실린다. 서버는 쓰지 않고 Cloud Run 요청 기록에 남을 수 있으므로 프록시가 넘기지 않는다(#219).
+  const SHARE_URL = "https://banbanyeok.app/meet?o=%EA%B0%95%EB%82%A8&n=%ED%99%8D%EA%B8%B8%EB%8F%99";
+
+  it("서버로 넘기지 않는다", () => {
+    const out = upstreamHeaders(new Headers({ referer: SHARE_URL, "content-type": "application/json" }), {
+      secret: "s",
+      clientIp: "1.2.3.4",
+    });
+    expect(out.get("referer")).toBeNull();
+    expect(out.get("content-type")).toBe("application/json");
+  });
+
+  it("프록시를 지난 요청에도 없다", async () => {
+    const { seen, fetchImpl } = capture();
+    const request = new Request("https://web.test/api/v1/recommend", {
+      method: "POST",
+      headers: { referer: SHARE_URL, "content-type": "application/json" },
+      body: "{}",
+    });
+    await proxyApiRequest(request, { origin: ORIGIN, secret: "s", fetchImpl });
+    expect(seen[0]?.headers.get("referer")).toBeNull();
+  });
+});
+
 describe("withTrustHeaders", () => {
   it("이미 있는 같은 이름 헤더를 덮어쓴다", () => {
     const headers = new Headers({ [PROXY_SECRET_HEADER]: "old" });
