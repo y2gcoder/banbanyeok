@@ -142,6 +142,32 @@ class RegionalHttpTest :
             }
         }
 
+        it("keeps a metropolitan room metropolitan when its only member tries to move to Busan") {
+            withRegionalApi {
+                val created =
+                    client.json(
+                        HttpMethod.Post,
+                        "/v1/rooms",
+                        """{"mode":"fair","host":{"originCode":"002"}}""",
+                    )
+                created.status shouldBe HttpStatusCode.Created
+                val host = created.objectBody()
+                val path = "/v1/rooms/${host.text("roomId")}"
+                client
+                    .json(
+                        HttpMethod.Put,
+                        "$path/participants/${host.text("participantId")}",
+                        """{"originCode":"003"}""",
+                        host.text("participantToken"),
+                    ).assertRegionMismatch()
+                client.json(HttpMethod.Post, "$path/participants", """{"originCode":"004"}""").assertRegionMismatch()
+                client
+                    .json(HttpMethod.Post, "$path/participants", """{"originCode":"001"}""")
+                    .status shouldBe HttpStatusCode.Created
+                client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("002", "001")
+            }
+        }
+
         it("does not store a participant without a timetable for the room's day, so the result stays computable") {
             withRegionalApi {
                 val saturday = ""","meetingDate":"2026-11-28""""
