@@ -48,6 +48,10 @@ jobs:
               - 'mise.toml'
               - 'contracts/**'
               - 'data/registry/**'
+              # pipeline 테스트가 커밋된 산출물·대조 표·역 색인을 읽는다(권역 포인터와 색인이 함께 있는지, 투영이 같은지).
+              - 'data/artifacts/dev/**'
+              - 'data/config/**'
+              - 'web/src/lib/stations/index.gen.json'
               - '.github/workflows/ci.yml'
             oracle:
               - 'prototype/**'
