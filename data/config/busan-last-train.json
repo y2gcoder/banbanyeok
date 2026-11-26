@@ -1,0 +1,73 @@
+{
+  "basis": "부산권 직행 막차(#180, 2026-11-26 운영자 결정, docs/research/busan-last-train.md, ADR-0010). 칸은 (요일 종류, 노선, 만날 역, 집 역)이다. 시각은 이용 조건이 분명한 원천으로만 계산한다: 1~4호선은 B1 열차번호 시각표, 동해선은 TAGO(S6-busan). 운영사 표(H1, K2)는 칸마다 대조해 다르면 끄는 데만 쓰고 원문은 커밋하지 않는다(두 번 계산해 이른 쪽을 고르거나 열차번호로 줄을 잇지 않는다). 1~4호선은 두 원천이 같은 도착 분(계획상 하한)을 여유 시각(분류 3)으로 내고, 막차가 타는 역에서 출발하는 시발역 칸은 끈다. 동해선은 출발 초와 행선지가 K2와 같은 칸을 직행 확정(분류 1)으로 낸다. 환승(1~4호선 내부 6역, 동해선↔1~3호선), 동해선 토요일, 부산김해경전철은 계속 끈다: lines에 없는 노선·요일은 칸이 없고, 갈아타는 길은 계산하지 않는다.",
+  "checks": "data/config/busan-last-train-checks.csv",
+  "operatorTables": {
+    "H1": {
+      "source": "B1",
+      "lines": ["S2601", "S2602", "S2603", "L2604"],
+      "file": "data/raw/busan-operator/H1.xlsx",
+      "sha256": "fa59d93409ac4729a32e4ebc85adc3ba4765e0beb16df747d66d3c78130741dc",
+      "url": "https://www.humetro.busan.kr/homepage/default/board/view.do?board_no=26088C3X3L&conf_no=80&menu_no=1001040101",
+      "title": "[2026. 8. 24.(월)] 도시철도 열차시각표 변경 안내 첨부 1~4호선 열차운행계획(2026.8월 이후, 홈페이지용).xlsx",
+      "effectiveFrom": "2026-08-24",
+      "reviewedOn": "2026-11-26",
+      "license": "부산교통공사 누리집 공지 첨부(사이트 표기 All Rights Reserved, 공공누리 표시 없음). 칸별 대조용으로만 쓰고 커밋하지 않는다(#180 운영자 결정 1)",
+      "unmappedStations": ["S2602 양산중앙"]
+    },
+    "K2": {
+      "source": "S6-busan",
+      "lines": ["I26K6"],
+      "file": "data/raw/busan-operator/K2.xlsx",
+      "sha256": "3c29b97ac0145258f9eff9f86bdca052004c3f707f99b527b59a81b9f666f7e5",
+      "url": "https://www.korail.com/ticket/reserve/train-timeTable",
+      "title": "동해선 전동열차 시각표(2026.9.1.부터)",
+      "effectiveFrom": "2026-09-01",
+      "reviewedOn": "2026-11-26",
+      "license": "코레일 누리집 게시(재사용 조건 불명확: 저작권정책에 공공누리 4유형 문구). 칸별 대조용으로만 쓰고 커밋하지 않는다(#180 운영자 결정 1)",
+      "unmappedStations": []
+    }
+  },
+  "lines": {
+    "S2601": {
+      "check": "H1",
+      "days": {
+        "weekday": {"source": "weekday", "check": "평"},
+        "saturday": {"source": "saturday", "check": "토"},
+        "holiday": {"source": "holiday", "check": "휴"}
+      }
+    },
+    "S2602": {
+      "check": "H1",
+      "days": {
+        "weekday": {"source": "weekday", "check": "평"},
+        "saturday": {"source": "saturday", "check": "토"},
+        "holiday": {"source": "holiday", "check": "휴"}
+      }
+    },
+    "S2603": {
+      "check": "H1",
+      "days": {
+        "weekday": {"source": "weekday", "check": "평"},
+        "saturday": {"source": "saturday", "check": "토"},
+        "holiday": {"source": "holiday", "check": "휴"}
+      }
+    },
+    "L2604": {
+      "check": "H1",
+      "basis": "B1의 4호선 '일요일'은 일·공휴일 표다(운영사 누리집 탭 '일/공휴일', H1 시트 '휴'; 조사 3.4절).",
+      "days": {
+        "weekday": {"source": "weekday", "check": "평"},
+        "saturday": {"source": "saturday", "check": "토"},
+        "holiday": {"source": "sunday", "check": "휴"}
+      }
+    },
+    "I26K6": {
+      "check": "K2",
+      "basis": "TAGO 01·03과 K2 평일·휴일. 토요일은 TAGO 02가 비었고 K2에 토요일 표가 없어 끈다(조사 3.4절).",
+      "days": {
+        "weekday": {"source": "01", "check": "평일"},
+        "holiday": {"source": "03", "check": "휴일"}
+      }
+    }
+  }
+}

@@ -81,8 +81,8 @@
       }
     },
     "lastTrain": {
-      "path": "regional/versions/20261126.1/lt.db3bfa9fcc8b811a.bin",
-      "sha256": "db3bfa9fcc8b811acb2d3761a9e4ea46b01b5ecda94d4fed1f8ecc397b33712e",
+      "path": "regional/versions/20261126.1/lt.86c779f8265c66e5.bin",
+      "sha256": "86c779f8265c66e5de2a9fe7a8f3e62a2fcadf7ea1d3cf620a6d97200d7d6453",
       "bytes": 196
     },
     "routeGraph": {
