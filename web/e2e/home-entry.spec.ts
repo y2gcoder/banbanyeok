@@ -67,6 +67,7 @@ test("홈 탭: 최대 4명과 두 폼의 서로 다른 초안이 유지된다", 
 
 test("기존 기기 폭에서 홈 탭은 같은 폭이고 아이콘과 이름이 한 줄에 보인다", async ({ page }) => {
   await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
   const tabs = page.getByRole("tablist", { name: "출발역 입력 방식" }).getByRole("tab");
   for (const { width, height } of VIEWPORTS) {
     await page.setViewportSize({ width, height });
@@ -74,17 +75,26 @@ test("기존 기기 폭에서 홈 탭은 같은 폭이고 아이콘과 이름이
       elements.map((tab) => {
         const { left, right, width, top } = tab.getBoundingClientRect();
         const icon = tab.querySelector("svg")?.getBoundingClientRect();
-        const label = tab.querySelector("span")?.getBoundingClientRect();
+        const label = tab.querySelector("span");
+        if (!label) throw new Error("탭 이름을 찾지 못했어요");
+        const labelBounds = label.getBoundingClientRect();
+        const text = document.createRange();
+        text.selectNodeContents(label);
         return {
           top,
           width,
-          inline: !!icon && !!label && left <= icon.left && icon.right <= label.left && label.right <= right,
+          labelLines: new Set(Array.from(text.getClientRects(), (line) => line.top)).size,
+          inline: !!icon && left <= icon.left && icon.right <= labelBounds.left && labelBounds.right <= right,
         };
       }),
     );
     expect(positions).toHaveLength(2);
     expect(positions[0]?.width).toBeCloseTo(positions[1]?.width ?? 0);
     expect(positions[0]?.top).toBe(positions[1]?.top);
+    expect(
+      positions.map(({ labelLines }) => labelLines),
+      `${width}×${height} 탭 이름 줄 수`,
+    ).toEqual([1, 1]);
     expect(
       positions.every(({ inline }) => inline),
       `${width}×${height}`,
