@@ -6,7 +6,7 @@ import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomMode
 
 /**
- * 로컬 개발용 예시 방 하나를 만든다(참가자 3명). 새로 출발역을 숨길 수 없으므로(ADR-0007) 모두 공개한다. 현재 산출물의 출발역에서 서로 떨어진 역을 고른다.
+ * 로컬 개발용 예시 방 하나를 만든다(참가자 3명). 새로 출발역을 숨길 수 없으므로(ADR-0007) 모두 공개한다. 현재 산출물의 출발역(권역 데이터면 출발역이 가장 많은 권역)에서 서로 떨어진 역을 고른다.
  * 출력에는 개발 DB에만 있는 로컬 토큰이 들어 있으니 운영 DB에 실행하지 마라(운영 프로필에서는 거부한다).
  */
 class Seeder(
@@ -18,7 +18,14 @@ class Seeder(
         ) { "운영 프로필에서는 seed를 실행하지 않습니다" }
         val services = components.services
         val directory = components.directory
-        val origins = directory.originCodes
+        // 권역 데이터면 한 방에 한 권역만 들어간다(ADR-0008): 출발역이 가장 많은 권역(수도권)에서 고른다.
+        val region =
+            directory.originCodes
+                .groupingBy(directory::regionOf)
+                .eachCount()
+                .maxBy { it.value }
+                .key
+        val origins = directory.originCodes.filter { directory.regionOf(it) == region }
         val picks = listOf(origins.first(), origins[origins.size / 2], origins.last())
         val created =
             services.rooms.create(

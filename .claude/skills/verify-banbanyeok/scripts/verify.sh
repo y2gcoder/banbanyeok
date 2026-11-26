@@ -32,6 +32,9 @@ record() { printf '%s=%q\n' "$1" "$2" >> "$RUN/state.env"; }
 
 # 사용자 셸의 설정(DATABASE_URL, API_ORIGIN, COMPOSE_FILE, 각종 키)이 실행에 새지 않게 환경을 비우고 이 실행의 값만 넣는다.
 # 웹의 키 이름은 빈 값으로 넣는다. Next는 이미 있는 변수를 web/.env* 파일로 덮어쓰지 않는다.
+# 배포와 같은 규칙: 커밋된 권역 포인터가 있으면 서버가 권역 세대를 읽는다(ADR-0008, data/README 권역 세대).
+regional_flag() { if [[ -f "$repo/data/artifacts/dev/regional/manifest.v5.json" ]]; then echo true; else echo false; fi; }
+
 in_run_env() {
   local keep=() v
   for v in PATH HOME USER LOGNAME SHELL TMPDIR LANG LC_ALL LC_CTYPE TERM JAVA_HOME GRADLE_USER_HOME \
@@ -43,7 +46,7 @@ in_run_env() {
     DB_PORT="$DB_PORT" SERVER_PORT="$SERVER_PORT" WEB_PORT="$WEB_PORT" \
     APP_PROFILE=local \
     DATABASE_URL="jdbc:postgresql://127.0.0.1:${DB_PORT}/banbanyeok" DATABASE_USER=local DATABASE_PASSWORD=local-development-only \
-    ARTIFACT_STORE=local ARTIFACT_LOCAL_DIR="$repo/data/artifacts/dev" \
+    ARTIFACT_STORE=local ARTIFACT_LOCAL_DIR="$repo/data/artifacts/dev" REGIONAL_ARTIFACTS="$(regional_flag)" \
     CORS_ALLOWED_ORIGINS="http://localhost:${WEB_PORT},http://127.0.0.1:${WEB_PORT}" \
     RATE_LIMIT_WRITE_BURST=200 RATE_LIMIT_WRITE_PER_MINUTE=200 RATE_LIMIT_CREATE_BURST=100 \
     RATE_LIMIT_GENERAL_BURST=600 RATE_LIMIT_GENERAL_PER_MINUTE=600 \
