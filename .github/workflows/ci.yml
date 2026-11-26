@@ -72,6 +72,8 @@ jobs:
               - 'scripts/release-data-version.sh'
               - 'scripts/create-deploy-release.sh'
               - 'scripts/test-deploy-release.sh'
+              - 'scripts/publish-artifacts.sh'
+              - 'scripts/test-publish-artifacts.sh'
               - '.github/release.yml'
               - 'web/scripts/smoke-deploy.sh'
               - 'web/scripts/test-smoke-deploy.py'
@@ -254,6 +256,8 @@ jobs:
       - run: shellcheck scripts/release-tag.sh scripts/release-data-version.sh scripts/create-deploy-release.sh scripts/test-deploy-release.sh
       - run: bash scripts/test-deploy-release.sh
       - run: bash scripts/test-deploy-plan.sh
+      - run: shellcheck scripts/publish-artifacts.sh scripts/test-publish-artifacts.sh
+      - run: bash scripts/test-publish-artifacts.sh
       - run: bash web/scripts/test-worker-version.sh
         env:
           REQUIRE_REAL_WRANGLER: '1'

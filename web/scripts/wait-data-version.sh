@@ -10,6 +10,9 @@
 # 서버를 불러 /api/v1/recommend가 400이 된다. 그래서 서버 dataVersion이 웹 빌드의 값 이상이 될 때까지 기다린다.
 # 서버가 더 새 버전이면 통과로 본다: 레지스트리는 append-only라(contracts/data-format.md §3) 옛 색인의 코드는 새 서버에서도
 # 같은 역이고(폐기 코드는 replacedBy로 풀림), 더 새 데이터의 웹 배포가 뒤따른다.
+# 웹 빌드의 역 색인이 권역 데이터로 만들어졌으면(index.gen.json에 regions가 있음, ADR-0008) 서버 manifest도 권역 세대(schemaVersion 5)여야
+# 한다: 서버가 권역 데이터를 실은 것을 확인한 뒤에만 웹이 부산권 화면을 연다. 수도권만인 색인은 어느 세대의 서버와도 통과한다(되돌리기에서
+# 웹을 먼저 내릴 때 서버는 아직 권역 세대다). REGIONAL로 덮어쓸 수 있다(true|false).
 # 비밀값은 다루지 않는다. 버전은 YYYYMMDD.N이라 날짜와 N을 숫자로 비교한다(문자열 비교는 .10 < .9가 된다).
 set -uo pipefail
 
@@ -17,6 +20,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 BASE_URL="${BASE_URL:?BASE_URL이 필요합니다}"
 BASE_URL="${BASE_URL%/}"
 EXPECTED="${EXPECTED:-$(jq -r .dataVersion "$here/../src/lib/stations/index.gen.json")}"
+REGIONAL="${REGIONAL:-$(jq -r 'has("regions")' "$here/../src/lib/stations/index.gen.json")}"
 INTERVAL="${INTERVAL:-30}"
 MAX_WAIT="${MAX_WAIT:-1500}"
 pattern='^[0-9]{8}\.[0-9]{1,3}$'
@@ -35,12 +39,15 @@ body="$(mktemp)"
 trap 'rm -f "$body"' EXIT
 start=$SECONDS
 reason="아직 확인 전"
-echo "== 서버 데이터 대기: $BASE_URL/api/v1/manifest 의 dataVersion >= $EXPECTED (최대 ${MAX_WAIT}초)"
+echo "== 서버 데이터 대기: $BASE_URL/api/v1/manifest 의 dataVersion >= $EXPECTED, 권역 세대 필요=$REGIONAL (최대 ${MAX_WAIT}초)"
 while :; do
   status="$(curl -sS --max-time 20 -o "$body" -w '%{http_code}' "$BASE_URL/api/v1/manifest" 2>/dev/null || echo 000)"
   if [ "$status" = "200" ]; then
     served="$(jq -r '.dataVersion // empty' "$body" 2>/dev/null || true)"
-    if [[ "$served" =~ $pattern ]]; then
+    schema="$(jq -r '.schemaVersion // empty' "$body" 2>/dev/null || true)"
+    if [[ "$REGIONAL" == true && "$schema" != 5 ]]; then
+      reason="웹 빌드는 권역 데이터인데 서버 manifest는 schemaVersion '${schema}' (권역 세대 5를 아직 싣지 않음)"
+    elif [[ "$served" =~ $pattern ]]; then
       compare "$served" "$EXPECTED"
       case $? in
         0) echo "ok   서버 dataVersion $served = 웹 빌드"; exit 0 ;;
