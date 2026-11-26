@@ -147,7 +147,12 @@ export type LastTrainView = {
   hiddenOthers: boolean;
   /** 맨 아래 공통 안내(시간표 수집 기준일). 줄이 없는 칸은 null. */
   footnote: string | null;
+  /** 여유 시각이 무엇인지: 부산권 칸은 운영사 시간표와 맞춰 본 도착 분이다(ADR-0010). 그 밖은 대조 전 값이다. */
+  marginBasis: MarginBasis;
 };
+
+/** 여유 시각의 근거. `checked-arrival`은 운영사 시간표와 맞춰 본 도착 분(부산권 1~4호선), `unchecked`는 대조 전 값. */
+export type MarginBasis = "checked-arrival" | "unchecked";
 
 function dayLabel(dayType: Basis["dayType"]): string {
   return DAY_TYPES.find((d) => d.id === dayType)?.label ?? dayType;
@@ -228,11 +233,16 @@ function leadText(rows: readonly LastTrainRow[], anyHidden: boolean): string | n
   return `${earliest.row.name} ${leaveByText(earliest.time)} 전 출발`;
 }
 
-/** 여유 시각 아래의 설명. 갈아타는 길과 열차 한 대로 가는 길(공식 시간표와 맞춰 보기 전)의 말이 다르다. */
-export function marginNote(time: LastTrainTime): string {
+/**
+ * 여유 시각 아래의 설명. 갈아타는 길, 열차 한 대로 가는 길(공식 시간표와 맞춰 보기 전), 운영사 시간표와 맞춰 본 도착 분(부산권)의 말이
+ * 다르다.
+ */
+export function marginNote(time: LastTrainTime, basis: MarginBasis = "unchecked"): string {
   const tail = "실제 막차는 이보다 늦을 수 있어요.";
   if (time.transfer) return `환승 경로라 넉넉히 이르게 잡은 시각. ${tail}`;
   const train = time.bound ? `${time.bound} 직행.` : "직행.";
+  if (basis === "checked-arrival")
+    return `${train} 운영사 시간표와 맞춰 본 도착 시각을 넉넉히 이르게 잡은 시각. ${tail}`;
   return `${train} 시간표 대조 전이라 넉넉히 이르게 잡은 시각. ${tail}`;
 }
 
@@ -258,10 +268,11 @@ export type LastTrainPerson = {
 export function toLastTrainView(
   basis: Basis | undefined,
   entries: readonly (LastTrainEntry & { participantId: string })[] | undefined,
-  station: { code: string; name: string },
+  station: { code: string; name: string; region?: string | undefined },
   people: readonly LastTrainPerson[],
   meeting?: MeetingWhen,
 ): LastTrainView | null {
+  const marginBasis: MarginBasis = station.region === "busan" ? "checked-arrival" : "unchecked";
   if (!basis || !entries) return null;
   const byId = new Map(entries.map((entry) => [entry.participantId, entry]));
   const rows = people.flatMap((person): LastTrainRow[] => {
@@ -285,6 +296,7 @@ export function toLastTrainView(
       partialNote: null,
       hiddenOthers,
       footnote: null,
+      marginBasis,
     };
   }
   const collected = `시간표 수집 기준 ${koreanDate(basis.asOf)}.`;
@@ -301,6 +313,7 @@ export function toLastTrainView(
       partialNote: null,
       hiddenOthers,
       footnote: collected,
+      marginBasis,
     };
   }
   const day = dayLabel(basis.dayType);
@@ -317,6 +330,7 @@ export function toLastTrainView(
     partialNote: basis.partial ? `${withJosa(day, "은/는")} 일부 노선만 막차 표시.` : null,
     hiddenOthers,
     footnote: `${collected} 공사·행사로 달라질 수 있으니 타기 전에 한 번 더 확인하세요. 승강장까지 걷는 시간은 빠져 있어요.`,
+    marginBasis,
   };
 }
 
@@ -335,6 +349,7 @@ export function recalculatingLastTrainView(station: { name: string }): LastTrain
     partialNote: null,
     hiddenOthers: false,
     footnote: null,
+    marginBasis: "unchecked",
   };
 }
 

@@ -126,6 +126,15 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "배포 직전 버전: ${version:-없음(첫 배포)}"
 
+      # 권역 색인(부산권 공개) 빌드는 Worker를 공개하기 전에 서버가 권역 세대(manifest 5세대)를 실었는지 확인한다(ADR-0008:
+      # 서버가 권역 데이터를 실은 뒤에 웹을 켠다). 순서 옵션(wait_server_data, 웹 먼저)과 상관없이 돈다. 웹 단독 재배포나 웹 먼저
+      # 배포에서도 권역 화면이 4세대 서버 앞에 나가지 않게 한다. 실패해도 아직 아무것도 공개하지 않았으므로 되돌릴 것이 없다.
+      # 수도권 색인(되돌리기 포함)은 어느 세대의 서버와도 맞으므로 통과한다. 권역 색인인데 서버 주소가 없으면 공개 전에 실패한다.
+      - name: 권역 서버 선행 확인
+        id: regional_precheck
+        timeout-minutes: 27
+        run: INTERVAL=30 MAX_WAIT=1500 bash scripts/regional-precheck.sh
+
       # 여기부터 새 버전이 나갈 수 있다. 이 표시가 있고 확인(verified)이 없으면 rollback 잡이 돈다.
       - name: 배포 시작 표시
         id: attempt

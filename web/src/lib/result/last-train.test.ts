@@ -267,6 +267,7 @@ describe("막차 칸", () => {
         partialNote: null,
         hiddenOthers: true,
         footnote: null,
+        marginBasis: "unchecked",
       });
     }
     // 사람이 없으면(숨긴 사람도 없으면) 칸이 없다.
@@ -298,6 +299,27 @@ describe("막차 칸", () => {
     expect(marginNote(single)).toBe(
       "김포공항행 직행. 시간표 대조 전이라 넉넉히 이르게 잡은 시각. 실제 막차는 이보다 늦을 수 있어요.",
     );
+    expect(marginNote(single, "checked-arrival")).toBe(
+      "김포공항행 직행. 운영사 시간표와 맞춰 본 도착 시각을 넉넉히 이르게 잡은 시각. 실제 막차는 이보다 늦을 수 있어요.",
+    );
+  });
+
+  it("부산권 만날 역의 여유 시각은 운영사 시간표와 맞춰 본 도착 분이라고 말하고, 수도권은 대조 전이라고 말한다", () => {
+    const margin: LastTrainEntry = {
+      kind: "margin",
+      minute: 1404,
+      transfer: false,
+      boundFor: { stationCode: "0yh", stationName: "부산대" },
+    };
+    const people = [person(0, "민수")];
+    const entries = [{ ...margin, participantId: "0" }];
+    expect(toLastTrainView(weekday, entries, { code: "bqc", name: "서면", region: "busan" }, people)?.marginBasis).toBe(
+      "checked-arrival",
+    );
+    expect(
+      toLastTrainView(weekday, entries, { code: "k3a", name: "강남", region: "capital" }, people)?.marginBasis,
+    ).toBe("unchecked");
+    expect(toLastTrainView(weekday, entries, station, people)?.marginBasis).toBe("unchecked");
   });
 
   it("'손해'·'억울'·'AI'처럼 쓰지 않는 말과, 지킬 수 없는 약속('정확한 막차')이 없다", () => {
@@ -643,6 +665,7 @@ describe("결과를 화면 값으로 바꿀 때의 막차", () => {
       partialNote: null,
       hiddenOthers: false,
       footnote: null,
+      marginBasis: "unchecked",
     });
     // 이전 결과의 시각·요일·행선지가 하나도 남지 않는다.
     expect(JSON.stringify(stale)).not.toMatch(/\d\d:\d\d|전 출발|다음 날|평일|광교|부천/);

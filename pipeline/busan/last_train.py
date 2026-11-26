@@ -263,7 +263,8 @@ def verdict(source, operator, compare_minute):
         return "missing"
     if "ambiguous" in (source, operator):
         return "ambiguous"
-    if compare_minute and (source[2] or operator[2]):
+    # A train that starts at S has no arrival there, so neither table bounds the last moment one can still board.
+    if source[2] or operator[2]:
         return "origin"
     same_time = source[0] // 60 == operator[0] // 60 if compare_minute else source[0] == operator[0]
     return "agree" if same_time and source[1] == operator[1] else "differs"

@@ -29,6 +29,7 @@ bash $V where                     # 마지막 실행 폴더
 2. 실행 폴더 `~/.cache/banbanyeok-verify/<워크트리>-<체크섬>/<run-id>/`에 `state.env`를 쓴 뒤 `latest` 링크를 건다.
 3. 모든 단계를 빈 환경(`env -i`)에서 돌린다. 남기는 것은 `PATH`·`HOME`·로케일·`JAVA_HOME`과 Docker 접속 변수(`DOCKER_HOST`, `DOCKER_CONTEXT`, `DOCKER_CONFIG`, `DOCKER_TLS_VERIFY`, `DOCKER_CERT_PATH`, `DOCKER_API_VERSION`)뿐이다. launch의 `docker info` 확인도 Compose와 같은 이 환경에서 돌린다. 그 위에 이 실행의 값을 넣는다. DB 주소·계정, `API_ORIGIN`(이 서버), `COMPOSE_FILE`(저장소 `compose.yaml`만), CORS, 로컬 요청 제한이 여기에 든다. 사용자 셸의 `DATABASE_URL`, `API_ORIGIN`, `NEXT_PUBLIC_API_MOCKING`, `COMPOSE_*`, 통계·카카오 키, `PROXY_SHARED_SECRET`은 실행에 들어가지 않는다. 웹 키 이름은 빈 값으로 넣어 `web/.env*` 파일도 덮지 못하게 한다.
 4. `dev.sh db`는 새 볼륨으로 Postgres를 띄우고 healthy까지 기다린다. 이어서 `dev.sh migrate`(Liquibase 컨테이너)를 돌린다.
+   커밋된 권역 포인터(`data/artifacts/dev/regional/manifest.v5.json`)가 있으면 배포와 같이 서버를 `REGIONAL_ARTIFACTS=true`로 띄운다. seed는 출발역이 가장 많은 권역(수도권)에서 고른다.
 5. 서버 쪽 파일(`server`, `shared`, `build-logic`, `gradle`, 루트 Gradle 파일, `data/artifacts/dev`)의 지문(HEAD 트리, 미커밋 변경, 추적 안 하는 파일)을 적는다. 그다음 `:server:app:installDist`로 설치본을 만들고 `bin/app seed`로 예시 방 하나를 만든다. 그 방 ID(`SEED_ROOM_ID`)는 이 실행의 DB에만 있다.
 6. 설치본 서버를 띄우고, 포트 주인이 launch가 시작한 리더의 자손이며 `GET /healthz` = `ok`가 될 때까지 기다린다(최대 120초).
 7. `dev.sh web`(`next dev`)을 띄운다. 포트 주인이 리더의 자손이고, 첫 화면 `<title>`에 `반반역`이 있고, 웹 프록시 `GET /api/v1/rooms/<SEED_ROOM_ID>`가 그 방을 돌려줄 때까지 기다린다. 이 셋이 맞아야 "사용 가능"이다. 다른 서버나 모의 서버는 이 방을 모르므로 통과하지 못한다.

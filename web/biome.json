@@ -14,6 +14,7 @@
       "!src/lib/api/schema.gen.ts",
       "!src/lib/stations/index.gen.json",
       "!src/lib/stations/regional.fixture.gen.json",
+      "!src/lib/stations/capital.fixture.gen.json",
       "!next-env.d.ts",
       "!playwright-report",
       "!test-results",

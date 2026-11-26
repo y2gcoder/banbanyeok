@@ -2,6 +2,8 @@
 # 배포된 서버(또는 태그 붙은 후보 리비전)의 스모크 테스트. 사용: bash scripts/smoke-server.sh <base-url> [expected-dataVersion]
 # 확인: /v1/healthz → /v1/manifest(데이터 버전) → 추천 1건 → 구분(토요일 밤) 추천 1건 → 귀갓길 막차(수집일·서울 2호선 직행 확정·신분당 대조 칸)
 #       → DB 읽기(없는 방 404) → 방 생성·조회·삭제 한 번(DB 쓰기·pepper 경로).
+#       EXPECT_REGIONAL=true면 권역 데이터(ADR-0008)도 본다: manifest 5세대, 부산 추천, 권역이 섞인 추천은 400 REGION_MISMATCH.
+#       false(기본)면 manifest가 5세대가 아니어야 한다(권역 파일을 읽지 않는 설정).
 # 방 토큰은 출력하지 않는다. 만든 방은 방장 토큰으로 바로 지운다. 콜드스타트 때문에 첫 /healthz는 재시도한다.
 set -euo pipefail
 
@@ -35,6 +37,12 @@ code="$(http "$tmp/m" "$base/v1/manifest")"
 version="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["dataVersion"])' "$tmp/m")"
 echo "   dataVersion=$version"
 [[ -z "$expected" || "$version" == "$expected" ]] || fail "dataVersion이 기대($expected)와 다름"
+schema="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["schemaVersion"])' "$tmp/m")"
+if [[ "${EXPECT_REGIONAL:-false}" == true ]]; then
+  [[ "$schema" == 5 ]] || fail "권역 데이터를 기대했지만 manifest schemaVersion=$schema"
+else
+  [[ "$schema" != 5 ]] || fail "권역 데이터를 기대하지 않았지만 manifest schemaVersion=5"
+fi
 
 echo "3) 추천 1건 (02f, dd9 / 공평)"
 code="$(http "$tmp/r" -X POST "$base/v1/recommend" -H 'Content-Type: application/json' \
@@ -107,6 +115,37 @@ if [[ "$stale" != stale ]]; then
   # (scripts/smoke_last_train.py). 서버의 데이터 버전이 이 저장소의 것과 다르면 알리기만 한다.
   python3 -I "$root/scripts/smoke_last_train.py" shinbundang "$tmp/k" "$root" "$version" "$expected" ||
     fail "신분당선 막차 칸이 보고서와 다르거나 응답을 읽을 수 없음"
+fi
+
+if [[ "${EXPECT_REGIONAL:-false}" == true ]]; then
+  echo "3e) 부산권 추천 (서면·해운대, 평일 밤): 부산 후보만 나오고 막차 칸이 있어야 한다"
+  last_ok=0
+  for _ in $(seq 1 10); do
+    code="$(http "$tmp/b" -X POST "$base/v1/recommend" -H 'Content-Type: application/json' \
+      -d '{"origins":["bqc","n29"],"mode":"fair","timeSlot":"weekday-night"}')"
+    [[ "$code" == 200 ]] || fail "/v1/recommend(서면·해운대) 상태 $code"
+    if python3 -I -c 'import json,sys; sys.exit(0 if "lastTrainBasis" in json.load(open(sys.argv[1])) else 1)' "$tmp/b"; then
+      last_ok=1; break
+    fi
+    sleep 2
+  done
+  [[ "$last_ok" == 1 ]] || fail "부산 추천 응답에 lastTrainBasis가 없음"
+  python3 -I - "$tmp/b" "$root/data/config/busan-candidates.csv" <<'PY' || fail "부산 추천 응답이 예상과 다름"
+import csv, json, sys
+r = json.load(open(sys.argv[1]))
+busan = {row["code"] for row in csv.DictReader(open(sys.argv[2], encoding="utf-8"))}
+codes = [c["stationCode"] for c in r["candidates"]]
+assert r["status"] == "ok" and codes and set(codes) <= busan, codes
+trains = [t for c in r["candidates"] for t in c["lastTrains"]]
+assert trains and {t["kind"] for t in trains} <= {"direct", "margin", "check"}, trains
+print("   부산 후보 %d개, 1위 %s, 시각이 있는 막차 %d칸" % (
+    len(codes), r["candidates"][0]["stationName"], sum(t["kind"] != "check" for t in trains)))
+PY
+  echo "3f) 권역이 섞인 추천 (서면·강남): 400 REGION_MISMATCH"
+  code="$(http "$tmp/x" -X POST "$base/v1/recommend" -H 'Content-Type: application/json' \
+    -d '{"origins":["bqc","k3a"],"mode":"fair"}')"
+  [[ "$code" == 400 ]] || fail "권역이 섞인 추천 상태 $code (400 기대)"
+  grep -q 'REGION_MISMATCH' "$tmp/x" || fail "권역이 섞인 추천의 본문에 REGION_MISMATCH 없음"
 fi
 
 echo "4) DB 읽기: 없는 방은 404 ROOM_NOT_FOUND여야 한다(DB 연결 실패면 500)"
