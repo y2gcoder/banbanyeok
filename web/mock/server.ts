@@ -5,7 +5,7 @@
  *
  * 환경 변수: MOCK_DELAY_MS(모든 응답 지연), MOCK_COLD_START_MS(첫 요청만 지연, 콜드스타트 흉내).
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { dirname, resolve } from "node:path";
@@ -25,12 +25,18 @@ type IndexFile = {
 
 export function loadMockData(): MockData {
   const index = JSON.parse(readFileSync(resolve(here, "../src/lib/stations/index.gen.json"), "utf8")) as IndexFile;
+  // 권역 포인터가 있으면 역 색인과 같이 그 세대의 후보(수도권 + 부산권)를 쓴다(ADR-0008).
+  const artifacts = resolve(here, "../../data/artifacts/dev");
+  const pointer = resolve(artifacts, "regional/manifest.v5.json");
+  const candidatesPath = existsSync(pointer)
+    ? resolve(
+        artifacts,
+        (JSON.parse(readFileSync(pointer, "utf8")) as { files: { candidates: { path: string } } }).files.candidates
+          .path,
+      )
+    : resolve(artifacts, "candidates.json");
   const candidateCodes = new Set(
-    (
-      JSON.parse(readFileSync(resolve(here, "../../data/artifacts/dev/candidates.json"), "utf8")) as {
-        candidates: string[];
-      }
-    ).candidates,
+    (JSON.parse(readFileSync(candidatesPath, "utf8")) as { candidates: string[] }).candidates,
   );
   const origins = new Map<string, MockStation>();
   const candidates: MockStation[] = [];

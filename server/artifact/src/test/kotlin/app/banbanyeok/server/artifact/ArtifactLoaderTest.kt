@@ -65,6 +65,12 @@ class ArtifactLoaderTest :
                 regionalPublished.manifest.content.toList() shouldBe
                     store.get(ArtifactKey(ManifestNames.REGIONAL))!!.content.toList()
                 regionalPublished.dataFile(regional.dataVersion, graphName) shouldNotBe null
+                // 같은 dataVersion의 수도권 불변 파일도 권역 서버가 계속 내보낸다(regional-build는 수도권 dataVersion을 쓴다).
+                store.put(
+                    ArtifactKey("versions/${regional.dataVersion}/seo-pairs.0123456789abcdef.json"),
+                    "{}".encodeToByteArray(),
+                )
+                regionalPublished.dataFile(regional.dataVersion, "seo-pairs.0123456789abcdef.json") shouldNotBe null
 
                 val legacy = ArtifactLoader(store).load()
                 legacy.dataSet.manifest.schemaVersion shouldBe 4

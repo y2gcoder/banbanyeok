@@ -118,16 +118,22 @@ private fun lastTrainTable(
     cells.map { it.boundFor?.value ?: LastTrainTable.NONE }.toIntArray(),
 )
 
+/** The regional last-train table and what `busan-preview` reports about it. */
+internal class RegionalLastTrains(
+    val table: LastTrainTable,
+    val report: JsonObject,
+)
+
 /**
- * `busan-preview`'s last-train part: the Busan block from [input] (the network input) for the Busan [origins], and the
- * regional table made from it and the dev capital table. The regional table's cells on the capital axes must encode to
- * the dev lt.bin byte for byte, and no cell between the regions may have a time.
+ * The Busan block from [input] (the network input) for the Busan [origins], and the regional table made from it and
+ * the dev capital table. The regional table's cells on the capital axes must encode to the dev lt.bin byte for byte,
+ * and no cell between the regions may have a time.
  */
-internal fun busanLastTrainAudit(
+internal fun regionalLastTrains(
     root: Path,
     input: Path,
     origins: List<Station>,
-): JsonObject {
+): RegionalLastTrains {
     val dev = root.resolve("data/artifacts/dev")
     val dataset = loadDevArtifacts(dev)
     val capital = requireNotNull(loadDevLastTrains(dev, dataset)) { "dev artifacts have no last-train table" }
@@ -174,5 +180,5 @@ internal fun busanLastTrainAudit(
             "capitalCellsUnchanged" to true,
             "crossRegionUnknownCells" to crossRegion,
         )
-    return JsonObject(busan.report + ("regionalTable" to table))
+    return RegionalLastTrains(regional, JsonObject(busan.report + ("regionalTable" to table)))
 }

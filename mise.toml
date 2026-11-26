@@ -118,6 +118,14 @@ run = "bash scripts/fetch-tago.sh"
 description = "dev 산출물을 발행 형식(versions/<버전>/<종류>.<해시16>.<확장자> + manifest)으로 build/release에 만든다. 업로드는 scripts/publish-artifacts.sh"
 run = "./gradlew :pipeline:run --args=\"stage-release build/release\" --console=plain -q"
 
+[tasks."regional:build"]
+description = "권역 세대(수도권+부산권, ADR-0008)를 data/artifacts/dev/regional에 만든다. 원천 캐시만 쓰고 키는 필요 없다. 뒤에 pnpm --filter web gen:stations"
+run = """
+mkdir -p build
+python3 -B pipeline/busan/sources.py network-input > build/busan-network-input.json
+./gradlew :pipeline:run --args="regional-build build/busan-network-input.json" --console=plain -q
+"""
+
 [tasks."db:restore-check"]
 description = "백업 덤프를 임시 로컬 Postgres 17에 복원해 확인한다 (사용: mise run db:restore-check -- <덤프 파일>)"
 run = 'bash scripts/db-restore-check.sh "$@"'

@@ -45,7 +45,9 @@ public class PublishedArtifacts(
             }?.path
         val key = current ?: "$versions/$version/$file"
         val stored =
-            store.get(ArtifactKey(key)) ?: if (regional && current == null && version != loaded.dataVersion) {
+            // 권역 세대는 수도권 세대와 dataVersion이 같을 수 있다(regional-build는 수도권 값을 쓴다). 그때도 수도권의 불변 파일(seo-pairs 등)은
+            // 계속 내보낸다. 이름에 내용 해시가 있어 다른 파일과 섞이지 않는다.
+            store.get(ArtifactKey(key)) ?: if (regional && current == null) {
                 store.get(ArtifactKey("versions/$version/$file"))
             } else {
                 null

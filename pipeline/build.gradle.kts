@@ -17,6 +17,14 @@ dependencies {
     "integrationTestRuntimeOnly"(libs.postgres.jdbc)
 }
 
+// The committed-data tests read these; without them a data-only change would replay a cached test result.
+tasks.named<Test>("test") {
+    inputs.dir(rootProject.file("data/artifacts/dev")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(rootProject.file("data/config")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(rootProject.file("data/registry")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(rootProject.file("web/src/lib/stations/index.gen.json")).withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 tasks.named<Test>("integrationTest") {
     systemProperty("kotest.framework.config.fqn", "app.banbanyeok.pipeline.ProjectConfig")
 }

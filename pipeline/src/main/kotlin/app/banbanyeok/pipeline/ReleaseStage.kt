@@ -105,6 +105,11 @@ internal fun stageRelease(
     verifyStaged(out, published, publishedText)
     val names = writeManifests(out, published, publishedText)
     println("Staged release $version: ${staged.size} files + ${names.joinToString(" + ")}")
+    val capital = loadDevArtifacts(source)
+    val lastTrains = loadDevLastTrains(source, capital)
+    if (lastTrains != null && stageRegional(source, out, capital, lastTrains)) {
+        println("Staged regional release $version + ${ManifestNames.REGIONAL}")
+    }
     return published
 }
 

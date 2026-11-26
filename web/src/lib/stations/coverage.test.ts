@@ -1,11 +1,16 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { LINE_LABELS } from "../../../scripts/station-lines.ts";
 import { regionScope, UNSUPPORTED_REASONS, unsupportedReason } from "./coverage";
 import { type Station, searchStations } from "./index";
 import raw from "./index.gen.json";
 import { isServiceLine } from "./lines";
+
+/** 권역을 켜기 전(수도권만) 색인으로 본다. 커밋된 색인이 부산권을 켜도 이 파일의 뜻은 그대로다(capital.fixture.gen.json, pnpm gen:stations). */
+vi.mock("@/lib/stations/index.gen.json", async () => ({
+  default: (await import("@/lib/stations/capital.fixture.gen.json")).default,
+}));
 
 const { lines: SUPPORTED_LINES, excluded: EXCLUDED_PLACES, summary } = regionScope("capital");
 

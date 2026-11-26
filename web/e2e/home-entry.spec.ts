@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { horizontalOverflow } from "./support/layout";
+import { REGIONAL } from "./support/regions";
 import { VIEWPORTS } from "./support/viewports";
 
 test("홈 탭: 방향키로 선택하고 Tab으로 열린 패널에 들어간다", async ({ page }) => {
@@ -31,8 +32,7 @@ test("홈 탭: 방향키로 선택하고 Tab으로 열린 패널에 들어간다
   await expect(roomLines).toHaveAttribute("aria-expanded", "true");
   await expect(panel.getByText(/인천자기부상은 아직 계산하지 않아요/)).toBeVisible();
   const busan = panel.getByRole("button", { name: "부산권", exact: true });
-  const hasRegionPicker = await busan.isVisible();
-  if (hasRegionPicker) {
+  if (REGIONAL) {
     for (const region of ["수도권", "부산권"]) {
       await page.keyboard.press("Tab");
       await expect(panel.getByRole("button", { name: region, exact: true })).toBeFocused();
@@ -43,7 +43,7 @@ test("홈 탭: 방향키로 선택하고 Tab으로 열린 패널에 들어간다
   await expect(page.getByRole("combobox")).toHaveCount(1);
   await expect(page).toHaveURL(/\/$/);
 
-  if (hasRegionPicker) {
+  if (REGIONAL) {
     await busan.click();
     await expect(panel.getByRole("button", { name: /부산권 전철 \d+개 노선을 계산해요/ })).toHaveAttribute(
       "aria-expanded",
