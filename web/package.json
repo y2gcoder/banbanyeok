@@ -17,7 +17,7 @@
     "gen:icons": "node scripts/build-icons.ts",
     "gen:time-slots": "node scripts/build-time-slots.ts",
     "gen:problems": "node scripts/build-problems.ts",
-    "check:contracts": "pnpm gen && git diff --exit-code -- src/lib/api/schema.gen.ts src/lib/stations/index.gen.json src/lib/stations/regional.fixture.gen.json src/lib/copy/og-glyphs.gen.json public/fonts src/lib/analytics/events.gen.ts src/lib/when/time-slots.gen.ts src/lib/problems/problems.gen.ts",
+    "check:contracts": "pnpm gen && git diff --exit-code -- src/lib/api/schema.gen.ts src/lib/stations/index.gen.json src/lib/stations/regional.fixture.gen.json src/lib/stations/capital.fixture.gen.json src/lib/copy/og-glyphs.gen.json public/fonts src/lib/analytics/events.gen.ts src/lib/when/time-slots.gen.ts src/lib/problems/problems.gen.ts",
     "typecheck": "tsc --noEmit",
     "check:package-cycles": "node scripts/check-package-cycles.ts",
     "lint": "biome check . && eslint . && knip && depcruise src --config .dependency-cruiser.cjs && pnpm check:package-cycles",
