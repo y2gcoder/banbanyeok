@@ -5,6 +5,8 @@
  *       data/config/network-rules.json(수도권 좌표 창)
  *       권역 포인터 data/artifacts/dev/regional/manifest.v5.json이 있으면 그 세대의 레지스트리·od.bin·regionCoverage를 대신 쓴다(§12).
  *       다른 산출물 폴더로 만들려면 STATION_INDEX_ARTIFACTS=<저장소 기준 경로>, 다른 곳에 쓰려면 STATION_INDEX_OUT=<저장소 기준 경로>.
+ *       STATION_INDEX_CAPITAL_ONLY=1이면 권역 포인터가 있어도 세대 1 파일로 만든다. pnpm gen:stations는 이것으로 capital.fixture.gen.json을
+ *       만든다. 권역을 켜기 전(수도권만) 화면을 말하는 테스트가 그것을 읽어, 커밋된 색인이 권역을 켜도 그 뜻을 지킨다.
  *       pnpm gen:stations는 계약 픽스처(contracts/fixtures, 두 권역)로 regional.fixture.gen.json도 만든다. 권역 화면 테스트가 그것을 읽는다.
  * 출력: src/lib/stations/index.gen.json — 활성 역의 [코드, 이름, 노선 번호들, 별칭들, 출발 가능 여부, 위도, 경도]
  *       권역 데이터면 `regions`도 쓴다: 권역 순서, 첫 권역이 아닌 역의 코드, 완전하지 않은 구분의 regionCoverage 값.
@@ -73,7 +75,7 @@ type Source = { registry: string; od: string; manifest: { dataVersion: string } 
 /** 권역 세대(§12)가 있으면 그 파일들, 없으면 세대 1의 고정 이름 파일. */
 function source(): Source & { coverage: Record<string, Record<string, SlotCoverage>> | null } {
   const pointer = resolve(artifacts, "regional/manifest.v5.json");
-  if (!existsSync(pointer)) {
+  if (!existsSync(pointer) || process.env.STATION_INDEX_CAPITAL_ONLY === "1") {
     return { registry: "stations.json", od: "od.bin", manifest: readJson("manifest.json"), coverage: null };
   }
   const manifest = readJson(pointer) as {
