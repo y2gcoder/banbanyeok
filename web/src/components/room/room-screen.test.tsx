@@ -105,6 +105,28 @@ describe("방 화면 배치(#168): 결과가 있으면 폰 첫 화면에 1위가
   const follows = (first: Element, second: Element) =>
     Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
 
+  it("한 명인 사다리 방에서도 소개와 참여자 목록 사이에 뽑기 안내가 있다", async () => {
+    vi.mocked(api.getRoom).mockImplementation(async (_id, token) => ({
+      ...roomFor(token),
+      mode: "favor",
+      favorDraw: {
+        generation: 0,
+        round: 0,
+        maxRounds: 2,
+        candidates: ["h1"],
+        winner: null,
+        drawnAt: null,
+        excluded: [],
+      },
+    }));
+    renderScreen();
+    const draw = await screen.findByRole("heading", { name: "누구 쪽으로 뽑기 전" });
+    expect(follows(screen.getByRole("heading", { level: 1 }), draw)).toBe(true);
+    expect(follows(draw, screen.getByRole("heading", { name: "들어온 사람" }))).toBe(true);
+    expect(screen.queryByRole("heading", { name: "만날 역 후보" })).toBeNull();
+    expect(api.getRoomResult).not.toHaveBeenCalled();
+  });
+
   it("두 명 이상이면 결과가 참여자 목록·참여 폼보다 먼저 오고, 위의 버튼이 아래 칸으로 옮겨 가 포커스를 둔다", async () => {
     members = [{ id: "m1", token: "tok-x" }];
     const user = userEvent.setup();

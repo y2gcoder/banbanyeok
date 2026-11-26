@@ -40,16 +40,8 @@ type Props = {
   onResultSeen: (view: ResultView) => void;
   /** 결과 화면 아래에 붙일 것(예: "실제로 어디서 만났나"). 1위 후보가 있을 때만 그린다. */
   renderAfter?: (view: ResultView) => React.ReactNode;
-  /**
-   * 후보 위에 붙일 '누구 쪽으로' 뽑기 카드(#172). `apply`는 그 뽑기가 화면에 자리 잡았을 때 한 번 부른다: 결과 탭을 당첨자 쪽으로
-   * (뽑기 전이면 공평하게로) 옮긴다.
-   */
-  renderDraw?: (apply: (draw: RoomDraw) => void) => React.ReactNode;
-  /**
-   * 뽑기 카드를 후보 위에 둘지. 뽑기 전(방장은 거기서 뽑는다)과 이 기기가 막 뽑았을 때만 위다. 이미 뽑힌 결과는 접힌 채 후보 아래에 둬
-   * 폰 첫 화면에 1위 카드가 들어오게 한다(#168). 결과 탭과 요약 줄이 이미 당첨자 쪽을 보여 준다.
-   */
-  drawAtTop?: boolean;
+  /** 재생 중이 아닌 뽑기. 새 세대·회차가 자리 잡으면 추천 기준을 맞춘다. */
+  settledDraw?: RoomDraw | null;
 };
 
 type Pick = { mode: Mode; favorId: string | null };
@@ -94,8 +86,7 @@ export function RoomResult({
   onRoomGone,
   onResultSeen,
   renderAfter,
-  renderDraw,
-  drawAtTop = true,
+  settledDraw,
 }: Props) {
   const panelId = useId();
   const queryClient = useQueryClient();
@@ -110,8 +101,12 @@ export function RoomResult({
       ? { mode: "fair", favorId: null }
       : { mode: room.mode, favorId: room.favorTarget ?? null },
   );
-  const applyDraw = (draw: RoomDraw) =>
-    setPick(draw.winnerId ? { mode: "favor", favorId: draw.winnerId } : { mode: "fair", favorId: null });
+  const settledDrawKey = settledDraw?.key;
+  const settledWinnerId = settledDraw?.winnerId;
+  useEffect(() => {
+    if (settledDrawKey === undefined) return;
+    setPick(settledWinnerId ? { mode: "favor", favorId: settledWinnerId } : { mode: "fair", favorId: null });
+  }, [settledDrawKey, settledWinnerId]);
 
   // 배려 대상이 방에서 빠졌으면 첫 사람으로(없는 ID를 서버에 보내지 않는다).
   const favorIndexRaw =
@@ -210,7 +205,6 @@ export function RoomResult({
   return (
     <section aria-labelledby="result-title" className="flex flex-col gap-4">
       <DecisionBanner room={room} undo={undo} />
-      {renderDraw && drawAtTop ? renderDraw(applyDraw) : null}
       {/* 뽑기 재생이 끝나 카드가 접히면 초점이 여기로 온다(1위 카드가 바로 아래, #172). */}
       <h2 id="result-title" tabIndex={-1} className="text-[20px] font-extrabold text-ink">
         만날 역 후보
@@ -251,7 +245,6 @@ export function RoomResult({
           <LoadingCard />
         )}
       </div>
-      {renderDraw && !drawAtTop ? renderDraw(applyDraw) : null}
       <TimeBasisNote basis={data ? (data.timeBasis ?? null) : undefined} requested={null} />
       {view && top && renderAfter ? renderAfter(view) : null}
     </section>

@@ -34,8 +34,6 @@ export type FavorDrawCardProps = {
   error: string | null;
   /** 방장이 뽑는다(지금 세대, `round` = 지금 회차 + 1). */
   onDraw: (generation: number, round: number) => void;
-  /** `summary`가 자리 잡았을 때 한 번(결과 탭을 당첨자 쪽으로, 뽑기 전이면 공평하게로). */
-  onSettled: (draw: RoomDraw) => void;
   /** `play`의 재생이 끝났을 때(건너뛰기 포함). `focusInside`면 초점이 카드 안에 있었다(방 화면이 결과 제목으로 옮긴다). */
   onPlayed?: (focusInside: boolean) => void;
 };
@@ -132,15 +130,6 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
     if (props.error) alert.current?.focus();
   }, [pending, props.error]);
 
-  const settled = useRef(false);
-  const onSettled = useRef(props.onSettled);
-  onSettled.current = props.onSettled;
-  useEffect(() => {
-    if (variant !== "summary" || settled.current) return;
-    settled.current = true;
-    onSettled.current(draw);
-  }, [variant, draw]);
-
   const sendDraw = () => {
     awaiting.current = true;
     setFocus("heading");
@@ -221,11 +210,11 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
             variant="ghost"
             aria-expanded={expanded}
             aria-controls={detailsId}
-            aria-label={expanded ? "뽑기 접기" : phase === "done" ? "사다리 보기" : "뽑기 자세히 보기"}
+            aria-label={expanded ? "뽑기 접기" : phase === "done" ? undefined : "뽑기 자세히 보기"}
             onClick={() => setExpanded((open) => !open)}
             className={cn("h-11 shrink-0 text-[14px] font-semibold", phase === "done" ? "px-2.5" : "w-11 px-0")}
           >
-            {phase === "done" ? (expanded ? "접기" : "사다리 보기") : null}
+            {phase === "done" ? (expanded ? "접기" : "사다리 결과 보기") : null}
             <ChevronDownIcon aria-hidden="true" className={cn("transition-transform", expanded && "rotate-180")} />
           </Button>
         )}
@@ -338,7 +327,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
                   다시 보기
                 </Button>
               )}
-              {viewer === "host" && redrawsLeft > 0 ? (
+              {viewer === "host" && props.joinedCount >= 2 && redrawsLeft > 0 ? (
                 confirming ? (
                   <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
                     <legend className="sr-only">다시 뽑기 확인</legend>

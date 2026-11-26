@@ -45,6 +45,7 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   await page.getByRole("button", { name: "방 만들기" }).click();
   await expect(page).toHaveURL(ROOM_URL);
   const roomId = new URL(page.url()).pathname.split("/").pop() ?? "";
+  await expect(page.getByRole("button", { name: "사다리 타기" })).toBeDisabled();
 
   // 친구 둘: 지영(신촌, 공개)과 출발역을 숨긴 사람(강남, 옛 방처럼).
   const res = await request.post(`/api/v1/rooms/${roomId}/participants`, {
@@ -62,7 +63,7 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
 
   await page.getByRole("button", { name: "사다리 타기" }).first().click();
   await page.getByRole("button", { name: "건너뛰고 결과 보기" }).click();
-  // 재생이 끝나면 카드는 접혀 후보 아래로 가고 초점은 결과 제목(1위 카드 바로 위)에 있다.
+  // 재생이 끝나면 카드는 같은 자리에 접히고 초점은 추천 제목에 있다.
   const heading = page.getByRole("heading", { name: /쪽으로!$/ });
   await expect(heading).toBeVisible();
   await expect(page.getByRole("heading", { name: "만날 역 후보" })).toBeFocused();
@@ -89,7 +90,7 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   await other.goto(`/r/${roomId}`);
   await expect(other.getByRole("heading", { name: "뽑는 중…" })).toBeVisible();
   await expect(other.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible({ timeout: 8000 });
-  await other.getByRole("button", { name: "사다리 보기" }).click();
+  await other.getByRole("button", { name: "사다리 결과 보기" }).click();
   await expect(other.getByRole("img", { name: `사다리타기 결과: ${winnerName} 쪽으로` })).toBeVisible();
   await expect(other.getByRole("button", { name: "사다리 타기" })).toHaveCount(0);
   await friend.close();
@@ -97,6 +98,6 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   // 새로고침해도 같은 결과(서버에 저장), 방장 화면에서 다시 뽑기는 한 번 남았다.
   await page.reload();
   await expect(page.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible();
-  await page.getByRole("button", { name: "사다리 보기" }).click();
+  await page.getByRole("button", { name: "사다리 결과 보기" }).click();
   await expect(page.getByRole("button", { name: "다시 뽑기 (1번 남음)" })).toBeVisible();
 });

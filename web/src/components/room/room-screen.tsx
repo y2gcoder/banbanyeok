@@ -23,6 +23,7 @@ import {
 import { canFavor, hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
 import { OPEN_SCOPE } from "@/lib/stations/scope";
+import { cn } from "@/lib/utils";
 import { isMeetingDayReached, meetingWhenText, todayInSeoul } from "@/lib/when/dates";
 import { FavorDrawCard } from "./draw/favor-draw-card";
 import { useReducedMotion } from "./draw/use-reduced-motion";
@@ -144,11 +145,11 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const [seenDraws, setSeenDraws] = useState<ReadonlySet<string>>(() => new Set());
   // 뽑기 결과 문장(aria-live). 재생하는 카드가 접힌 카드로 바뀌어도 남도록 여기 둔다. 이 화면에서 결과가 나온 그때 한 번 채운다.
   const [drawAnnouncement, setDrawAnnouncement] = useState("");
-  // 뽑기 재생이 끝나 카드가 후보 아래로 접혔을 때 초점을 결과 제목(1위 카드 바로 위)으로 옮긴다. 아래 카드로 옮기면 화면이 1위를 지나쳐 내려간다.
+  // 재생이 끝나 카드 안의 초점이 사라질 때 추천 제목으로 옮긴다. 추천을 볼 인원이 없으면 참여자 목록으로 옮긴다.
   const [focusResults, setFocusResults] = useState(false);
   useEffect(() => {
     if (!focusResults) return;
-    document.getElementById("result-title")?.focus();
+    (document.getElementById("result-title") ?? document.getElementById(PEOPLE_TITLE_ID))?.focus();
     setFocusResults(false);
   }, [focusResults]);
   const markDrawSeen = useCallback(
@@ -298,32 +299,33 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   const draw = shownDraw;
   const expectedCount = record?.expectedCount ?? null;
-  // 이 기기가 처음 보는 뽑기는 결과 위에서 한 번 재생하고, 끝나면 접힌 한 줄이 후보 아래로 간다(1위 카드가 첫 화면에, #168).
   const playDraw = drawUnseen && !reducedMotion;
-  const renderDraw = draw
-    ? (apply: (settled: RoomDraw) => void) => (
-        <FavorDrawCard
-          key={`${draw.key}:${playDraw ? "play" : "summary"}`}
-          variant={playDraw ? "play" : "summary"}
-          roomId={roomId}
-          draw={draw}
-          viewer={isHost ? "host" : draw.selfLate ? "late" : "member"}
-          full={expectedCount === null ? null : room.participants.length >= expectedCount}
-          joinedCount={room.participants.length}
-          expectedCount={expectedCount}
-          hiddenInRoom={room.participants.some((p) => p.hidden)}
-          focusOnMount={playDraw && drawControl.drewKey === draw.key ? "skip" : null}
-          pending={drawControl.pending}
-          error={drawControl.error}
-          onDraw={drawControl.draw}
-          onSettled={apply}
-          onPlayed={(focusInside) => {
-            if (focusInside) setFocusResults(true);
-            markDrawSeen(draw);
-          }}
-        />
-      )
-    : undefined;
+  const drawSection = draw ? (
+    <>
+      <p aria-live="polite" className="sr-only">
+        {drawAnnouncement}
+      </p>
+      <FavorDrawCard
+        key={`${draw.key}:${playDraw ? "play" : "summary"}`}
+        variant={playDraw ? "play" : "summary"}
+        roomId={roomId}
+        draw={draw}
+        viewer={isHost ? "host" : draw.selfLate ? "late" : "member"}
+        full={expectedCount === null ? null : room.participants.length >= expectedCount}
+        joinedCount={room.participants.length}
+        expectedCount={expectedCount}
+        hiddenInRoom={room.participants.some((p) => p.hidden)}
+        focusOnMount={playDraw && drawControl.drewKey === draw.key ? "skip" : null}
+        pending={drawControl.pending}
+        error={drawControl.error}
+        onDraw={drawControl.draw}
+        onPlayed={(focusInside) => {
+          if (focusInside) setFocusResults(true);
+          markDrawSeen(draw);
+        }}
+      />
+    </>
+  ) : null;
 
   const result = (
     <RoomResult
@@ -337,7 +339,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       onResultSeen={() => {
         if (record && !record.resultSeenAt) commit({ ...record, resultSeenAt: new Date().toISOString() });
       }}
-      {...(renderDraw && draw ? { renderDraw, drawAtTop: draw.winner === null || playDraw } : {})}
+      settledDraw={playDraw ? null : draw}
       renderAfter={(view) =>
         joined && token && meetingDay ? (
           <OutcomeCard
@@ -354,13 +356,19 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       }
     />
   );
+  const waitingForPeople = (
+    <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
+      두 명 이상 들어오면 결과를 볼 수 있어요.
+    </section>
+  );
 
   // 배치(#168). 폰(한 칸)은 문서 순서대로 보인다:
   // - 결과 전(1명): 소개 → 링크 보내기 → 참여자·참여 폼 → "두 명 이상…" → 방장 설정
   // - 결과 있음:    소개 → (참여 전) 나도 출발역 넣기 → 결과 → 참여자·참여 폼 → 링크 다시 보내기 → 방장 설정
   // 참여자·참여 폼 묶음은 두 경우 모두 RoomShell 자식 중 같은 자리(소개 묶음·결과 자리 다음)에 둔다. 두 번째 사람이 들어와 결과가 생겨도 이 묶음은
   // 다시 그려지지 않고(넣던 이름·역 검색어·포커스가 그대로) 결과와 안내 칸이 그 앞뒤 자리에 들고 난다. 빈 자리는 null로 둔다.
-  // 두 칸(wide)에서는 MAIN이 오른쪽 칸 전체, SIDE 셋이 왼쪽 칸에 차례로 쌓인다.
+  // 사다리 방은 소개 묶음 끝에 사다리를 둔다. 두 칸(wide)에서도 추천과 참여자는 소개 묶음 다음 행에서 시작한다.
+  // 일반 방은 MAIN이 오른쪽 칸 전체를 쓰고, SIDE 셋이 왼쪽 칸에 차례로 쌓인다.
   return (
     <RoomShell split="room">
       <div className={ROOM_SIDE}>
@@ -385,16 +393,12 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         ) : (
           share
         )}
+        {drawSection}
       </div>
 
-      {enough ? (
-        <div className={ROOM_MAIN}>
-          {draw ? (
-            <p aria-live="polite" className="sr-only">
-              {drawAnnouncement}
-            </p>
-          ) : null}
-          {result}
+      {enough || draw ? (
+        <div className={cn(ROOM_MAIN, draw && "wide:row-start-3 wide:row-span-2")}>
+          {enough ? result : waitingForPeople}
         </div>
       ) : null}
 
@@ -403,13 +407,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         {enough ? share : null}
       </div>
 
-      {enough ? null : (
-        <div className={ROOM_MAIN}>
-          <section role="status" className="rounded-2xl border border-rule bg-surface p-5 text-[15px] text-ink-soft">
-            두 명 이상 들어오면 결과를 볼 수 있어요.
-          </section>
-        </div>
-      )}
+      {enough || draw ? null : <div className={ROOM_MAIN}>{waitingForPeople}</div>}
 
       <div className={ROOM_SIDE}>
         {isHost ? (
