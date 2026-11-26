@@ -42,7 +42,7 @@ public class RecommendationService(
      */
     public suspend fun evaluate(requested: RecommendRequest): Evaluation {
         val request = requested.withParticipants(requested.participants.toList())
-        val region = validate(request)
+        validate(request)
         slotsReady.await(request.time.slot)
         val matrix = travelTimes.measure(request.participants.map { it.originCode }, request.time.slot)
         val timeBasis = computedBasis(request, matrix)
@@ -52,12 +52,7 @@ public class RecommendationService(
                 request.viewerId,
             )
         // 막차 표는 여기서 한 번 읽는다. 순위·시간·이유에는 쓰이지 않고, 순위를 다 정한 뒤 카드에 붙는다.
-        val lookup =
-            if (region == StationRegion.BUSAN) {
-                LastTrainAttacher.Lookup(null, pending = false)
-            } else {
-                lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
-            }
+        val lookup = lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
         val attached = lookup.attached
         val ranked =
             ranking
