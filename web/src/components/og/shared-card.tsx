@@ -1,7 +1,7 @@
 import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { SharedCardData } from "@/lib/share-card/shared-preview";
-import { BarTrack, emWidth, fitName, Words } from "./bars";
+import { BarTrack, emWidth, fitNames, Words } from "./bars";
 import { Dot, OgFrame, personHex } from "./frame";
 import { OgLineBadges } from "./line-badges";
 
@@ -168,6 +168,13 @@ function Bars({ people }: { people: SharedCardData["people"] }) {
   const scale = Math.min(1, AREA.height / (people.length * unit + (people.length - 1) * BAR_UNIT.gap));
   const axis = Math.max(...people.map((p) => p.minutes ?? 0));
   const minutesSize = Math.floor(38 * scale);
+  const dot = Math.floor(22 * scale);
+  const names = fitNames(
+    people.map((p) => p.name),
+    (i) => AREA.width - dot - 28 - Math.ceil(emWidth(minutesText(people[i]?.minutes ?? null)) * minutesSize),
+    Math.floor(32 * scale),
+    Math.floor(24 * scale),
+  );
   return (
     <div
       style={{
@@ -181,9 +188,7 @@ function Bars({ people }: { people: SharedCardData["people"] }) {
     >
       {people.map((person, i) => {
         const minutes = minutesText(person.minutes);
-        const dot = Math.floor(22 * scale);
-        const nameRoom = AREA.width - dot - 12 - Math.ceil(emWidth(minutes) * minutesSize) - 16;
-        const name = fitName(person.name, nameRoom, Math.floor(32 * scale), Math.floor(24 * scale));
+        const name = names[i] ?? { text: person.name, size: Math.floor(24 * scale) };
         return (
           <div
             key={`bar-${String(i)}`}

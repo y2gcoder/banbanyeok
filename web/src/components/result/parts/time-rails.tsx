@@ -159,11 +159,13 @@ export function TimeRails({
   maxMinutes,
   meIndex = null,
   size = "large",
+  routesOnly = false,
   rank,
 }: {
   people: readonly PersonTimeView[];
   maxMinutes: number;
   meIndex?: number | null;
+  routesOnly?: boolean;
   size?: "large" | "compact";
   /** 몇 위 카드의 막대인가(길찾기 이벤트의 `rank`). */
   rank?: number;
@@ -174,39 +176,49 @@ export function TimeRails({
   return (
     <div className="flex flex-col gap-2.5">
       <ul className="flex flex-col gap-3.5">
-        {ordered.map((person) => {
-          const note = originNote(person);
-          return (
-            <li key={person.index} className="flex flex-col gap-1.5">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-                  <span className="text-[15px] font-bold break-all text-ink">
-                    {person.shortName}
-                    {person.index === meIndex ? (
-                      <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
-                    ) : null}
+        {ordered
+          .filter((person) => !routesOnly || person.route)
+          .map((person) => {
+            const note = originNote(person);
+            return (
+              <li key={person.index} className="flex flex-col gap-1.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+                    <span className="text-[15px] font-bold break-all text-ink">
+                      {person.shortName}
+                      {person.index === meIndex ? (
+                        <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
+                      ) : null}
+                    </span>
+                    <span className="text-[13px] text-muted-foreground">
+                      {[note, shownTransferLabel(person)].filter(Boolean).join(" · ")}
+                    </span>
+                  </p>
+                  {!routesOnly && (
+                    <span
+                      className={
+                        size === "large"
+                          ? "tabular shrink-0 text-[22px] leading-none font-extrabold tracking-tight text-ink"
+                          : "tabular shrink-0 text-[17px] leading-none font-bold text-ink"
+                      }
+                    >
+                      {formatMinutes(person.minutes)}
+                    </span>
+                  )}
+                </div>
+                {routesOnly && person.route ? (
+                  <span aria-hidden="true" className="relative block h-3.5" data-route="lines">
+                    <RouteFill route={person.route} width="100%" />
                   </span>
-                  <span className="text-[13px] text-muted-foreground">
-                    {[note, shownTransferLabel(person)].filter(Boolean).join(" · ")}
-                  </span>
-                </p>
-                <span
-                  className={
-                    size === "large"
-                      ? "tabular shrink-0 text-[22px] leading-none font-extrabold tracking-tight text-ink"
-                      : "tabular shrink-0 text-[17px] leading-none font-bold text-ink"
-                  }
-                >
-                  {formatMinutes(person.minutes)}
-                </span>
-              </div>
-              <Track person={person} end={end} step={step} />
-              <RouteLine person={person} rank={rank} />
-            </li>
-          );
-        })}
+                ) : (
+                  <Track person={person} end={end} step={step} />
+                )}
+                <RouteLine person={person} rank={rank} />
+              </li>
+            );
+          })}
       </ul>
-      <Axis end={end} step={step} />
+      {!routesOnly && <Axis end={end} step={step} />}
       {ordered.some((person) => person.route) ? (
         <p className="text-[12px] leading-snug break-keep text-muted-foreground">
           막대 색은 타는 노선, 회색은 기다리거나 갈아타는 시간이에요. 열차 시각은 카카오맵 길찾기에서 확인해요.

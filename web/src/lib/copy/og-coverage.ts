@@ -35,6 +35,18 @@ export function ogSafeName(text: string, fallback: string): string {
     .trimEnd()}${OG_TEXT.ellipsis}${chars.slice(-tail).join("")}`;
 }
 
+/** 글꼴 필터나 폭 맞춤으로 같아진 이름은 참가 순번으로 구별한다.
+ * 원래 별칭이 대체 이름("참가자 1")과 겹치는 경우에도 같은 번호 체계를 적용한다. */
+export function distinctNames(names: string[]): string[] {
+  const ordinal = (i: number) => `참가자 ${i + 1}`;
+  const result = names.map((name, i) => (names.indexOf(name) === names.lastIndexOf(name) ? name : ordinal(i)));
+  return new Set(result).size === result.length ? result : names.map((_, i) => ordinal(i));
+}
+
+export function ogParticipantNames(labels: string[]): string[] {
+  return distinctNames(labels.map((label, i) => ogSafeName(label, `참가자 ${i + 1}`)));
+}
+
 /** 역 이름 같은 신뢰하는 문자열이 글꼴에 다 있는지(없는 글자 목록). 테스트와 빌드 점검용. */
 export function missingGlyphs(text: string): string[] {
   return [...new Set(Array.from(text).filter((ch) => !isCovered(ch)))];

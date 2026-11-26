@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RoomPreview } from "@/lib/api/types";
 
+const getRoom = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/api/rooms", () => ({ getRoom }));
+
 const loadRoomPreview = vi.fn<(roomId: string, signal: AbortSignal | undefined) => Promise<RoomPreview | null>>();
 vi.mock("@/lib/seo/room-preview", () => ({
   loadRoomPreview: (roomId: string, signal?: AbortSignal) => loadRoomPreview(roomId, signal),
@@ -62,6 +65,7 @@ const get = (search: string, roomId = ROOM) =>
 afterEach(() => {
   vi.useRealTimers();
   loadRoomPreview.mockReset();
+  getRoom.mockReset();
   drawn.length = 0;
 });
 
@@ -145,22 +149,40 @@ describe("/r/[roomId]/og", () => {
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
   });
 
-  it("반반지수(#202): 숨긴 사람이 있을 수 있는 방(300초 배수 시간)이면 빼고, 없으면(21·22분) 막대와 한 줄을 그린다", async () => {
+  it.each([
+    {
+      label: "공개 0초",
+      seconds: [0, 981],
+      hidden: false,
+      version: 9,
+      lookup: false,
+      text: "가장 오래 걸리는 사람도 16분이에요",
+    },
+    {
+      label: "공개 양의 배수",
+      seconds: [1200, 1261],
+      hidden: false,
+      version: 9,
+      lookup: true,
+      text: "걸리는 시간이 두 사람 1분 차이예요",
+    },
+    { label: "옛 숨김 방", seconds: [1200, 1261], hidden: true, version: 9, lookup: true, text: null },
+    { label: "다른 버전", seconds: [1200, 1261], hidden: false, version: 10, lookup: true, text: null },
+    { label: "조회 실패", seconds: [1200, 1261], hidden: false, version: null, lookup: true, text: null },
+  ])("$label 방 그림", async ({ seconds, hidden, version, lookup, text }) => {
     const { room, dataVersion, station } = DECIDED as Extract<RoomPreview, { stage: "decided" }>;
-    const resultOf = (seconds: number[]): RoomPreview => ({
+    loadRoomPreview.mockResolvedValue({
       stage: "result",
-      room,
+      room: { ...room, participantCount: 2 },
       dataVersion,
       basis: { mode: "fair", favorLabel: null },
       station: { ...station, times: seconds.map((s, index) => ({ label: `참가자 ${index + 1}`, seconds: s })) },
     });
-    // 숨긴 참가자의 시간은 남에게 300초의 배수로 간다(20분). 본인 화면은 정확한 시간이라 같은 방에서 말이 갈린다.
-    loadRoomPreview.mockResolvedValue(resultOf([20 * 60, 21 * 60 + 10]));
+    if (version === null) getRoom.mockRejectedValue(new Error("offline"));
+    else getRoom.mockResolvedValue({ shareVersion: version, participants: [{ hidden }, { hidden: false }] });
     expect((await get("?sv=9&dv=20261115.8")).status).toBe(200);
-    expect(drawn).toEqual([null]);
-    drawn.length = 0;
-    loadRoomPreview.mockResolvedValue(resultOf([21 * 60 + 10, 22 * 60 + 10]));
-    expect((await get("?sv=9&dv=20261115.8")).status).toBe(200);
-    expect(drawn).toEqual([{ kind: "close", text: "걸리는 시간이 두 사람 1분 차이예요" }]);
+    expect(drawn).toEqual([text ? expect.objectContaining({ text }) : null]);
+    if (lookup) expect(getRoom).toHaveBeenCalledWith(ROOM, null, { signal: expect.any(AbortSignal) });
+    else expect(getRoom).not.toHaveBeenCalled();
   });
 });

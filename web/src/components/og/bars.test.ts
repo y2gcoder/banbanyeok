@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emWidth, fitName } from "./bars";
+import { emWidth, fitName, fitNames } from "./bars";
 
 describe("막대 그림의 이름 맞추기(fitName)", () => {
   it("들어가면 그대로, 크기만 줄여서 들어가면 줄인다", () => {
@@ -22,6 +22,13 @@ describe("막대 그림의 이름 맞추기(fitName)", () => {
     const b = fitName("우리회사영업팀막내B", 150, 30, 24);
     expect(a.text.endsWith("내A")).toBe(true);
     expect(a.text).not.toBe(b.text);
+  });
+
+  it("폭을 맞춘 뒤에 생긴 충돌과 참가자 번호를 닮은 별칭도 구분한다", () => {
+    const names = ["우리회사일팀민지", "우리회사이팀민지", "참가자 1"];
+    const fitted = fitNames(names, () => 120, 30, 24);
+    expect(fitted.map((f) => f.text)).toEqual(["참가자 1", "참가자 2", "참가자 3"]);
+    expect(fitted.every((f) => emWidth(f.text) * f.size <= 120)).toBe(true);
   });
 
   it("무작위 긴 이름도 폭 안에 들어가고, 다른 이름은 다르게 남는다", () => {

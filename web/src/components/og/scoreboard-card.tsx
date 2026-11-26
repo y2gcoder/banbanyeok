@@ -2,7 +2,7 @@ import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { formatMinutes } from "@/lib/display/minutes";
 import type { BanbanLine } from "@/lib/result/banban-index";
 import type { ScoreboardCardData } from "@/lib/share-card/scoreboard-card-data";
-import { BarTrack, emWidth, fitName } from "./bars";
+import { BarTrack, emWidth, fitNames } from "./bars";
 import { Dot, OgFrame, personHex } from "./frame";
 import { OgLineBadges } from "./line-badges";
 
@@ -90,13 +90,19 @@ function Bars({ people }: { people: ScoreboardCardData["people"] }) {
   );
   const dot = Math.min(22, Math.floor(row * 0.45));
   const nameWidth = Math.min(BAR_NAME_MAX_WIDTH, Math.ceil(Math.max(...people.map((p) => emWidth(p.name))) * name));
+  const fittedNames = fitNames(
+    people.map((p) => p.name),
+    () => nameWidth,
+    name,
+    Math.max(18, name - 6),
+  );
   const lastTrainWidth = people.some((p) => p.lastTrain)
     ? Math.ceil(Math.max(...people.map((p) => emWidth(p.lastTrain ?? ""))) * lastTrain) + 8
     : 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap }}>
       {people.map((person, i) => {
-        const fitted = fitName(person.name, nameWidth, name, Math.max(18, name - 6));
+        const fitted = fittedNames[i] ?? { text: person.name, size: name };
         return (
           <div key={`bar-${String(i)}`} style={{ display: "flex", alignItems: "center", height: row, gap: BAR_GAP }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, width: nameWidth + dot + 10 }}>
@@ -172,6 +178,12 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
   const hasLastTrain = data.people.some((p) => p.lastTrain);
   const layout = hasLastTrain ? WITH_LAST_TRAIN : WITHOUT_LAST_TRAIN;
   const size = numberSize(texts, count, layout.numberScale);
+  const columnNames = fitNames(
+    data.people.map((p) => p.name),
+    () => column - COLUMN_PADDING - 40,
+    count <= 2 ? 30 : 26,
+    22,
+  );
   const bottom = data.compareLine ?? data.modeLine;
   // 막대 배치는 맨 아래 문장 자리를 한 줄만 잡는다. 두 줄이 될 만큼 길면 한 줄에 들어가게 줄인다.
   const bottomSize = data.banban ? Math.min(30, Math.floor(INNER_WIDTH / emWidth(bottom))) : 30;
@@ -203,7 +215,7 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
                   <Dot color={personHex(i)} size={22} />
                   <span
                     style={{
-                      fontSize: count <= 2 ? 30 : 26,
+                      fontSize: columnNames[i]?.size ?? 22,
                       color: OG_COLORS.muted,
                       maxWidth: column - COLUMN_PADDING - 40,
                       overflow: "hidden",
@@ -211,7 +223,7 @@ export function ScoreboardCard({ data }: { data: ScoreboardCardData }) {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {person.name}
+                    {columnNames[i]?.text ?? person.name}
                   </span>
                 </div>
                 <span style={{ fontSize: size, letterSpacing: -4, lineHeight: 1.1 }}>{texts[i]}</span>

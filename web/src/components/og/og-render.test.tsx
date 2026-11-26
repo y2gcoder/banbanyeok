@@ -52,6 +52,38 @@ describe("OG 이미지 그리기(satori)", () => {
     }
   });
 
+  it("두 OG에서 가운데만 다른 별명을 구별한다(공평·빨리 만나기·정한 역)", async () => {
+    const labels = ["우리회사서울영업일팀민지", "우리회사서울영업이팀민지"] as const;
+    const sample = SHARED_CASES.find((c) => c.id === "two-even-middle");
+    if (!sample) throw new Error("두 사람 표본 필요");
+    const result = structuredClone(sample.result);
+    result.participants.forEach((p, i) => {
+      p.shortLabel = labels[i] ?? p.shortLabel;
+    });
+    const room = ROOM_CASES.find((c) => c.id === "room-decided")?.preview;
+    if (room?.stage !== "decided") throw new Error("정한 방 필요");
+    const times = labels.map((label, i) => ({ label, seconds: 1261 + 60 * i }));
+    const station = { ...room.station, times };
+    for (const mode of ["fair", "fast"] as const) {
+      const score = scoreboardCardData(toResultView({ ...result, mode }), sample.state);
+      const card = roomShareCopy({ ...room, station, stage: "result", basis: { mode, favorLabel: null } }).card;
+      if (!score || !card) throw new Error("공유 그림 값 필요");
+      for (const [id, element] of [
+        ["shared", <ScoreboardCard key="shared" data={score} />],
+        ["room", <SharedCard key="room" data={card} />],
+      ] as const) {
+        const markup = renderToStaticMarkup(element);
+        for (const n of [1, 2]) expect(markup).toContain(`>참가자 ${n}</span>`);
+        if (screensDir) writeFileSync(join(screensDir, `collision-${id}-${mode}.png`), (await render(element)).bytes);
+      }
+    }
+    const decided = roomShareCopy({ ...room, station, decidedBy: labels[1] }).card;
+    if (!decided) throw new Error("정한 역 그림 필요");
+    const markup = renderToStaticMarkup(<SharedCard data={decided} />);
+    for (const n of [1, 2]) expect(markup).toContain(`>참가자 ${n}</span>`);
+    expect(markup).toContain("참가자 2가 정했어요");
+  });
+
   it("사이트 기본 이미지", async () => {
     const drawn = await render(<SiteCard />);
     expectPng(drawn);

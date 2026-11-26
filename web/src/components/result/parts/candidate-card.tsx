@@ -189,20 +189,23 @@ export function TopCandidateCard({ candidate, choice, meIndex = null, mapMiddle 
         className="-mx-2 -mb-2 flex min-h-11 items-center justify-center gap-1 rounded-md text-[14px] font-semibold text-ink-soft hover:bg-accent"
       >
         {/* 이름은 고정이다(상태는 aria-expanded가 말한다). */}
-        자세히: 시간 막대·추천 이유·막차
+        {banban ? "자세히: 추천 이유·경로·막차" : "자세히: 시간 막대·추천 이유·막차"}
         <ChevronDownIcon
           className={cn("size-4 motion-safe:transition-transform", open && "rotate-180")}
           aria-hidden="true"
         />
       </button>
       <div id={detailId} hidden={!open} className="flex flex-col gap-4">
-        <TimeRails
-          people={candidate.people}
-          maxMinutes={candidate.aggregate.max}
-          meIndex={meIndex}
-          size="compact"
-          rank={candidate.rank}
-        />
+        {(!banban || candidate.people.some((person) => person.route)) && (
+          <TimeRails
+            people={candidate.people}
+            maxMinutes={candidate.aggregate.max}
+            meIndex={meIndex}
+            size="compact"
+            rank={candidate.rank}
+            routesOnly={banban !== null}
+          />
+        )}
         <Reason text={candidate.reason} />
         {candidate.lastTrain ? <LastTrains view={candidate.lastTrain} meIndex={meIndex} /> : null}
         {mapMiddle ? <MapMiddleCompare candidate={candidate} middle={mapMiddle} /> : null}

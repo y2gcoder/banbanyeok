@@ -1,5 +1,7 @@
 import { ogImageResponse } from "@/components/og/og-response";
 import { SharedCard } from "@/components/og/shared-card";
+import { getRoom } from "@/lib/api/rooms";
+import { mayIncludeHidden } from "@/lib/result/banban-index";
 import { isRoomId, normalizeRoomId } from "@/lib/room/id";
 import { ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { parseDataVersion, parseShareVersion, SHARE_VERSION_PARAM } from "@/lib/room/share-link";
@@ -24,9 +26,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
     const preview = await loadRoomPreview(normalizeRoomId(roomId), signal);
     if (!preview || preview.stage === "collecting") return null;
     if (preview.room.shareVersion !== sv || preview.dataVersion !== dv) return null;
-    const card = roomShareCopy(preview).card;
+    let confirmedPublic = false;
+    let visibilityUnknown = false;
+    const times = preview.station.times;
+    if (
+      preview.stage === "result" &&
+      preview.basis.mode === "fair" &&
+      times.every((t) => t.seconds !== null) &&
+      mayIncludeHidden(times.map((t) => t.seconds))
+    ) {
+      // 같은 공유 번호에서 익명으로 확인한 공개 여부만 쓴다. 그림 값은 항상 미리보기에서 만든다.
+      const room = await getRoom(normalizeRoomId(roomId), null, { signal }).catch(() => null);
+      if (room?.shareVersion === sv && room.participants.length === times.length) {
+        confirmedPublic = room.participants.every((p) => p.hidden === false);
+      } else {
+        visibilityUnknown = true;
+      }
+    }
+    const card = roomShareCopy(preview, { confirmedPublic }).card;
     if (!card) return null;
-    const provisional = ROOM_PREVIEW_LAST_TRAIN && preview.lastTrainPending === true;
+    const provisional = visibilityUnknown || (ROOM_PREVIEW_LAST_TRAIN && preview.lastTrainPending === true);
     return { element: <SharedCard data={card} />, provisional };
   });
 }

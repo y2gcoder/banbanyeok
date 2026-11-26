@@ -1,3 +1,4 @@
+import { distinctNames } from "@/lib/copy/og-coverage";
 import { OG_COLORS, OG_TEXT } from "@/lib/copy/og-text";
 import { personHex } from "./frame";
 
@@ -29,6 +30,11 @@ export function fitName(name: string, width: number, max: number, min: number): 
     if (emWidth(text) * min <= width) return { text, size: min };
   }
   return { text: `${chars[0] ?? ""}${OG_TEXT.ellipsis}${tail}`, size: min };
+}
+
+export function fitNames(names: string[], width: (i: number) => number, max: number, min: number) {
+  const fitted = names.map((name, i) => fitName(name, width(i), max, min));
+  return distinctNames(fitted.map((name) => name.text)).map((text, i) => fitName(text, width(i), max, min));
 }
 
 /**

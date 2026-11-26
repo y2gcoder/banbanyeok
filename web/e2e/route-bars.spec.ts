@@ -48,18 +48,13 @@ test("폰: 1위 '자세히'의 막대가 노선 색으로 나뉘고, 경로 글�
   await shot(page, "stateless-detail");
 });
 
-test("경로를 모르는 사람(가짜 서버가 갈아탈 역을 못 찾음)은 중립색 막대로 남는다", async ({ page }) => {
+test("공평 1위의 자세히에는 경로 구간이 있는 사람만 막대를 남긴다", async ({ page }) => {
   // 잠실 + 판교 → 1위 모란: 판교(신분당선)는 가짜 서버가 수인분당선으로 갈아탈 역을 찾지 못해 경로가 없다.
   await page.goto(`/result?v=2&o=${code("잠실")}.${code("판교")}&m=f&t=weekday-day`);
   const top = page.getByRole("article").first();
   await top.getByRole("button", { name: /자세히/ }).click();
   const tracks = top.locator("[data-route]");
   const kinds = await tracks.evaluateAll((nodes) => nodes.map((n) => n.getAttribute("data-route")));
-  // 사람마다 막대는 하나이고, 경로 글은 경로가 있는 사람 수만큼이다.
-  expect(kinds.length).toBe(2);
-  // 경로를 아는 사람과 모르는 사람이 함께 있다(둘 다 실제로 그려진다).
-  expect(kinds.filter((k) => k === "neutral").length).toBeGreaterThanOrEqual(1);
-  expect(kinds.filter((k) => k === "lines").length).toBeGreaterThanOrEqual(1);
-  expect(await top.getByText(/경로: .+/).count()).toBe(kinds.filter((k) => k === "lines").length);
-  await expect(top.locator('[data-route="neutral"] [data-segment]')).toHaveCount(0);
+  expect(kinds).toEqual(["lines"]);
+  await expect(top.getByText(/경로: .+/)).toHaveCount(1);
 });

@@ -51,8 +51,8 @@ export function banbanLine(input: {
 
 /**
  * 방 미리보기에는 숨김 표시가 없다. 숨긴 사람의 시간은 300초의 배수로 오므로, 그런 시간이 하나라도 있으면 숨긴 사람이 있을 수 있다고
- * 본다. 숨기지 않은 사람의 시간이 우연히 300초의 배수여도 꺼지지만, 반반지수를 빼는 쪽으로만 틀린다.
+ * 본다. 숨긴 0초도 300초가 되므로 0초는 공개 시간이다.
  */
 export function mayIncludeHidden(seconds: readonly (number | null)[]): boolean {
-  return seconds.some((s) => s !== null && s % HIDDEN_STEP_SECONDS === 0);
+  return seconds.some((s) => s !== null && s > 0 && s % HIDDEN_STEP_SECONDS === 0);
 }
