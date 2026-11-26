@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { horizontalOverflow } from "./support/layout";
+import { REGIONAL } from "./support/regions";
 import { VIEWPORTS } from "./support/viewports";
 
 test("홈 탭: 방향키로 선택하고 Tab으로 열린 패널에 들어간다", async ({ page }) => {
@@ -19,6 +20,13 @@ test("홈 탭: 방향키로 선택하고 Tab으로 열린 패널에 들어간다
   const panel = page.getByRole("tabpanel", { name: "각자 입력" });
   await expect(panel).toBeFocused();
   await expect(panel).toContainText("초대 링크로 각자 출발역을 넣어요.");
+  if (REGIONAL) {
+    // 부산권 공개 뒤에는 패널 안에서 권역(수도권 | 부산권)을 먼저 고른다.
+    for (const region of ["수도권", "부산권"]) {
+      await page.keyboard.press("Tab");
+      await expect(panel.getByRole("button", { name: region, exact: true })).toBeFocused();
+    }
+  }
   await page.keyboard.press("Tab");
   await expect(panel.getByRole("textbox", { name: "내 이름 (선택)" })).toBeFocused();
   await expect(page.getByRole("combobox")).toHaveCount(1);
