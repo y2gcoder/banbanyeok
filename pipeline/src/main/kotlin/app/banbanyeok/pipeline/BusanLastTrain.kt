@@ -172,8 +172,8 @@ internal fun busanLtTableReasons(
             receipt.text("checks_sha256") !=
                 evidence.checksSha256
         },
-        "${table.id} was checked against another ${table.source}".takeIf {
-            against != evidence.receipts[table.source]?.text("sha256")
+        "${table.id} was not checked against the current ${table.source}".takeIf {
+            against == null || against != evidence.receipts[table.source]?.text("sha256")
         },
         "${table.id} takes effect $effective, after it was reviewed on $reviewed".takeIf { effective > reviewed },
         "${table.id} was reviewed on $reviewed, before the last-train date $asOf".takeIf {

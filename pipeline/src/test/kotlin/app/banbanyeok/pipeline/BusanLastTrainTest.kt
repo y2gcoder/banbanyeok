@@ -242,6 +242,26 @@ class BusanLastTrainTest :
                         }.toSet(),
                 )
                 assertTrue(block(asOf = "2026-11-27").cells.isEmpty())
+                val unbound =
+                    evidence().let {
+                        it.copy(
+                            receipts =
+                                it.receipts - "B1" + (
+                                    "H1" to
+                                        receipt(
+                                            "sha256" to "h1sha",
+                                            "checks_sha256" to "csvsha",
+                                        )
+                                ),
+                        )
+                    }
+                assertEquals(
+                    setOf("a03"),
+                    block(evidence = unbound)
+                        .cells.keys
+                        .map { it.second }
+                        .toSet(),
+                )
             }
 
             it("stops when its own computation disagrees with the committed checks, unless the table is off") {
