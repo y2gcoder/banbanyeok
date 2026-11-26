@@ -61,10 +61,13 @@ function png(bytes: ArrayBuffer, cache: string): Response {
  * 링크별 미리보기 그림 응답. `card`는 링크의 그림(서버 응답을 받아 만든 요소)이고, 그릴 것이 없으면(잘못된 링크·서버 실패·오래된 번호) null이다.
  * 링크 그림은 하루 캐시, 준비 중인 값이 빠진 그림(`provisional`)은 1분. 그 뒤는 사이트 기본 그림(짧은 캐시), 마지막은 정적 기본 이미지로 302.
  */
-export async function ogImageResponse(card: (signal: AbortSignal) => Promise<LinkCard | null>): Promise<Response> {
+export async function ogImageResponse(
+  card: (signal: AbortSignal, deadline: number) => Promise<LinkCard | null>,
+): Promise<Response> {
   try {
+    const deadline = performance.now() + LINK_BUDGET_MS;
     const linked = await withinBudget(LINK_BUDGET_MS, async (signal) => {
-      const found = await card(signal);
+      const found = await card(signal, deadline);
       signal.throwIfAborted();
       return found ? { bytes: await draw(found.element, signal), provisional: found.provisional === true } : null;
     });

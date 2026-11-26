@@ -1,8 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeftIcon, DicesIcon, UserIcon } from "lucide-react";
-import Link from "next/link";
+import { DicesIcon, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
@@ -23,7 +22,6 @@ import { todayInSeoul } from "@/lib/when/dates";
 import { slotForMeeting } from "@/lib/when/time-slot";
 import { keepDayAcrossMidnight, type MeetingWhen, MeetingWhenFields, NO_MEETING_WHEN } from "./meeting-when-fields";
 import { ParticipantFields } from "./participant-fields";
-import { ROOM_MAIN, ROOM_SIDE, RoomShell } from "./room-states";
 import { useIdempotencyKey } from "./use-idempotency-key";
 import { slowMessage, useSlowStage } from "./use-slow-hint";
 
@@ -52,7 +50,7 @@ const FAVOR_TARGETS: readonly { target: FavorTargetChoice; label: string; hint: 
 const COUNTS = [2, 3, 4] as const;
 
 /** 방 만들기(방장). 만들면 방장 토큰·참여자 토큰을 이 기기에 저장하고 방 화면으로 간다. */
-export function CreateRoomForm() {
+export function CreateRoomForm({ className }: { className?: string }) {
   const router = useRouter();
   const id = useId();
   const keys = useIdempotencyKey();
@@ -163,172 +161,141 @@ export function CreateRoomForm() {
 
   const submitted = create.isPending || create.isSuccess;
   return (
-    <RoomShell split="form">
-      <div className={ROOM_SIDE}>
-        <nav>
-          <Link
-            href="/"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-[15px] font-semibold text-ink-soft hover:text-ink"
-          >
-            <ArrowLeftIcon className="size-4" aria-hidden="true" />
-            혼자 입력하기
-          </Link>
-        </nav>
-        <section aria-labelledby={`${id}-title`} className="flex flex-col gap-2">
-          <h1
-            id={`${id}-title`}
-            className="text-[28px] leading-[1.2] font-extrabold tracking-[-0.02em] text-ink lg:text-[40px] wide:text-[32px]"
-          >
-            친구가 각자 입력하는 방 만들기
-          </h1>
-          <p className="text-[15px] text-ink-soft">
-            내 출발역만 넣고 링크를 보내면, 친구들이 들어와서 자기 출발역을 직접 넣어요.
-          </p>
-        </section>
-      </div>
-      <form
-        onSubmit={submit}
-        noValidate
-        className={cn(
-          ROOM_MAIN,
-          "wide:rounded-2xl wide:border wide:border-rule wide:bg-surface wide:p-4 wide:shadow-[0_1px_0_var(--rule)] lg:p-8",
-        )}
-      >
-        <RegionPicker id={`${id}-region`} choice={regionChoice} />
-        <ParticipantFields
-          idPrefix={`${id}-host`}
-          scope={scope}
-          onSwitchRegion={regionChoice.request}
-          value={host}
-          onChange={(patch) => {
-            setProblem(null);
-            setHost((current) => ({ ...current, ...patch }));
-          }}
-          personIndex={0}
-        />
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[15px] font-bold text-ink">추천 기준</legend>
-          {MODE_OPTIONS.map((option) => {
-            const favor = option.mode === "favor";
-            const hint = favor ? (FAVOR_TARGETS.find((t) => t.target === favorTarget)?.hint ?? "") : option.hint;
-            return (
-              <div
-                key={option.mode}
-                className={cn(
-                  "flex flex-col rounded-xl border bg-surface",
-                  mode === option.mode ? "border-ink ring-1 ring-ink" : "border-rule",
-                )}
-              >
-                <label className="flex cursor-pointer items-start gap-3 p-3.5">
-                  <input
-                    type="radio"
-                    name={`${id}-mode`}
-                    value={option.mode}
-                    checked={mode === option.mode}
-                    onChange={() => setMode(option.mode)}
-                    className="mt-1 size-4 shrink-0 accent-[var(--ink)]"
-                  />
-                  <span className="flex flex-col gap-0.5">
-                    <span className="text-[15px] font-bold text-ink">{option.title}</span>
-                    <span className="text-[13px] leading-snug text-muted-foreground">{hint}</span>
-                  </span>
-                </label>
-                {favor && mode === "favor" ? (
-                  <>
-                    <fieldset className="-mt-1 flex flex-wrap gap-2 pr-3.5 pb-3.5 pl-10.5">
-                      <legend className="sr-only">누구 쪽으로 할지</legend>
-                      {FAVOR_TARGETS.map(({ target, label, Icon }) => (
-                        <button
-                          key={target}
-                          type="button"
-                          aria-pressed={favorTarget === target}
-                          onClick={() => setFavorTarget(target)}
-                          className={cn(
-                            "inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-[15px] font-semibold",
-                            favorTarget === target
-                              ? "border-ink bg-ink text-primary-foreground"
-                              : "border-rule-strong bg-surface text-ink",
-                          )}
-                        >
-                          <Icon className="size-4" aria-hidden="true" />
-                          {label}
-                        </button>
-                      ))}
-                    </fieldset>
-                    {favorTarget === "draw" ? (
-                      <p className="-mt-1.5 pr-3.5 pb-3.5 pl-10.5 text-[13px] leading-snug text-muted-foreground">
-                        뽑기 전까지 결과는 공평하게로 보여요.
-                      </p>
-                    ) : null}
-                  </>
-                ) : null}
-              </div>
-            );
-          })}
-        </fieldset>
-        <MeetingWhenFields
-          id={`${id}-when`}
-          today={today}
-          value={when}
-          onChange={(update) => {
-            setProblem(null);
-            const fresh = todayInSeoul();
-            setToday(fresh);
-            setWhen((current) => keepDayAcrossMidnight(update(current), fresh));
-          }}
-        />
-        <details className="rounded-xl border border-rule bg-surface p-3.5">
-          <summary className="-my-3 cursor-pointer py-3 text-[15px] font-bold text-ink">인원 정하기 (선택)</summary>
-          <div className="mt-3 flex flex-col gap-4">
-            <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1 text-[15px] font-semibold text-ink">예상 인원</legend>
-              <div className="flex flex-wrap gap-2">
-                {[null, ...COUNTS].map((count) => (
-                  <button
-                    key={count ?? "none"}
-                    type="button"
-                    aria-pressed={expectedCount === count}
-                    onClick={() => setExpectedCount(count)}
-                    className={cn(
-                      "h-11 rounded-full border px-4 text-[15px] font-semibold",
-                      expectedCount === count
-                        ? "border-ink bg-ink text-primary-foreground"
-                        : "border-rule-strong bg-surface text-ink",
-                    )}
-                  >
-                    {count === null ? "정하지 않음" : `${count}명`}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[13px] text-muted-foreground">
-                정한 인원이 다 들어오면 방이 자동으로 닫혀요. 최대 4명이에요.
-              </p>
-            </fieldset>
-          </div>
-        </details>
-        {storable ? null : (
-          <p role="status" className="text-[13px] text-destructive">
-            이 브라우저는 저장 공간을 막아 두어서, 만든 뒤에 이 기기에서 방을 관리할 수 없어요. 링크는 그대로 보낼 수
-            있어요.
-          </p>
-        )}
-        {problem || create.isError ? (
-          <p role="alert" className="text-sm font-semibold text-destructive">
-            {problem ?? roomErrorMessage(create.error)}
-          </p>
-        ) : null}
-        <Button type="submit" disabled={!host.station || submitted} className="h-14 rounded-xl text-[17px] font-bold">
-          {submitted ? "방을 만드는 중…" : "방 만들기"}
-        </Button>
-        {create.isPending && stage > 0 ? (
-          <p role="status" className="text-center text-[13px] text-ink-soft">
-            {slowMessage(stage, "방 만들기")}
-          </p>
-        ) : null}
-        <p className="text-center text-[13px] leading-snug text-muted-foreground">
-          약속일을 정하면 약속 다음 날, 안 정하면 마지막 변경 후 7일 뒤에 방이 사라져요(만든 뒤 최대 30일).
+    <form onSubmit={submit} noValidate className={cn("flex min-w-0 flex-col gap-5", className)}>
+      <RegionPicker id={`${id}-region`} choice={regionChoice} />
+      <ParticipantFields
+        idPrefix={`${id}-host`}
+        scope={scope}
+        onSwitchRegion={regionChoice.request}
+        value={host}
+        onChange={(patch) => {
+          setProblem(null);
+          setHost((current) => ({ ...current, ...patch }));
+        }}
+        personIndex={0}
+      />
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-[15px] font-bold text-ink">추천 기준</legend>
+        {MODE_OPTIONS.map((option) => {
+          const favor = option.mode === "favor";
+          const hint = favor ? (FAVOR_TARGETS.find((t) => t.target === favorTarget)?.hint ?? "") : option.hint;
+          return (
+            <div
+              key={option.mode}
+              className={cn(
+                "flex flex-col rounded-xl border bg-surface",
+                mode === option.mode ? "border-ink ring-1 ring-ink" : "border-rule",
+              )}
+            >
+              <label className="flex cursor-pointer items-start gap-3 p-3.5">
+                <input
+                  type="radio"
+                  name={`${id}-mode`}
+                  value={option.mode}
+                  checked={mode === option.mode}
+                  onChange={() => setMode(option.mode)}
+                  className="mt-1 size-4 shrink-0 accent-[var(--ink)]"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[15px] font-bold text-ink">{option.title}</span>
+                  <span className="text-[13px] leading-snug text-muted-foreground">{hint}</span>
+                </span>
+              </label>
+              {favor && mode === "favor" ? (
+                <>
+                  <fieldset className="-mt-1 flex flex-wrap gap-2 pr-3.5 pb-3.5 pl-10.5">
+                    <legend className="sr-only">누구 쪽으로 할지</legend>
+                    {FAVOR_TARGETS.map(({ target, label, Icon }) => (
+                      <button
+                        key={target}
+                        type="button"
+                        aria-pressed={favorTarget === target}
+                        onClick={() => setFavorTarget(target)}
+                        className={cn(
+                          "inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-[15px] font-semibold",
+                          favorTarget === target
+                            ? "border-ink bg-ink text-primary-foreground"
+                            : "border-rule-strong bg-surface text-ink",
+                        )}
+                      >
+                        <Icon className="size-4" aria-hidden="true" />
+                        {label}
+                      </button>
+                    ))}
+                  </fieldset>
+                  {favorTarget === "draw" ? (
+                    <p className="-mt-1.5 pr-3.5 pb-3.5 pl-10.5 text-[13px] leading-snug text-muted-foreground">
+                      뽑기 전까지 결과는 공평하게로 보여요.
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          );
+        })}
+      </fieldset>
+      <MeetingWhenFields
+        id={`${id}-when`}
+        today={today}
+        value={when}
+        onChange={(update) => {
+          setProblem(null);
+          const fresh = todayInSeoul();
+          setToday(fresh);
+          setWhen((current) => keepDayAcrossMidnight(update(current), fresh));
+        }}
+      />
+      <details className="rounded-xl border border-rule bg-surface p-3.5">
+        <summary className="-my-3 cursor-pointer py-3 text-[15px] font-bold text-ink">인원 정하기 (선택)</summary>
+        <div className="mt-3 flex flex-col gap-4">
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1 text-[15px] font-semibold text-ink">예상 인원</legend>
+            <div className="flex flex-wrap gap-2">
+              {[null, ...COUNTS].map((count) => (
+                <button
+                  key={count ?? "none"}
+                  type="button"
+                  aria-pressed={expectedCount === count}
+                  onClick={() => setExpectedCount(count)}
+                  className={cn(
+                    "h-11 rounded-full border px-4 text-[15px] font-semibold",
+                    expectedCount === count
+                      ? "border-ink bg-ink text-primary-foreground"
+                      : "border-rule-strong bg-surface text-ink",
+                  )}
+                >
+                  {count === null ? "정하지 않음" : `${count}명`}
+                </button>
+              ))}
+            </div>
+            <p className="text-[13px] text-muted-foreground">
+              정한 인원이 다 들어오면 방이 자동으로 닫혀요. 최대 4명이에요.
+            </p>
+          </fieldset>
+        </div>
+      </details>
+      {storable ? null : (
+        <p role="status" className="text-[13px] text-destructive">
+          이 브라우저는 저장 공간을 막아 두어서, 만든 뒤에 이 기기에서 방을 관리할 수 없어요. 링크는 그대로 보낼 수
+          있어요.
         </p>
-      </form>
-    </RoomShell>
+      )}
+      {problem || create.isError ? (
+        <p role="alert" className="text-sm font-semibold text-destructive">
+          {problem ?? roomErrorMessage(create.error)}
+        </p>
+      ) : null}
+      <Button type="submit" disabled={!host.station || submitted} className="h-14 rounded-xl text-[17px] font-bold">
+        {submitted ? "방을 만드는 중…" : "방 만들기"}
+      </Button>
+      {create.isPending && stage > 0 ? (
+        <p role="status" className="text-center text-[13px] text-ink-soft">
+          {slowMessage(stage, "방 만들기")}
+        </p>
+      ) : null}
+      <p className="text-center text-[13px] leading-snug text-muted-foreground">
+        약속일을 정하면 약속 다음 날, 안 정하면 마지막 변경 후 7일 뒤에 방이 사라져요(만든 뒤 최대 30일).
+      </p>
+    </form>
   );
 }

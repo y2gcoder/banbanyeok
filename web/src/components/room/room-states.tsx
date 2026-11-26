@@ -5,7 +5,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Wordmark } from "@/components/common/wordmark";
 import { Button } from "@/components/ui/button";
+import { NEW_ROOM_PATH } from "@/lib/room/id";
 import { cn } from "@/lib/utils";
+import { ROOM_MAIN, ROOM_SIDE } from "./room-layout";
 import { slowMessage, useSlowStage } from "./use-slow-hint";
 
 const SHELL = "mx-auto grid min-h-dvh w-full max-w-md content-start gap-5 px-gutter pt-5 pb-10";
@@ -20,11 +22,6 @@ const SPLIT = {
   room: "hinge-split wide:max-w-6xl wide:grid-cols-2 wide:grid-rows-[auto_auto_auto_1fr] wide:gap-x-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-x-12",
   form: "hinge-split wide:max-w-6xl wide:grid-cols-2 wide:grid-rows-[auto_auto_1fr] wide:gap-x-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-x-16",
 } as const;
-
-/** 왼쪽 칸 묶음(머리 아래). */
-export const ROOM_SIDE = "flex min-w-0 flex-col gap-5 wide:col-start-1";
-/** 오른쪽 칸 묶음. */
-export const ROOM_MAIN = "flex min-w-0 flex-col gap-5 wide:col-start-2 wide:row-span-full";
 
 /** 방 화면 공통 틀. 폭·여백은 다른 화면과 같다. `split`이면 두 칸 폭에서 칸을 나눈다. */
 export function RoomShell({ children, split }: { children: ReactNode; split?: keyof typeof SPLIT }) {
@@ -92,7 +89,7 @@ export function RoomGone() {
         </p>
         <div className="flex flex-col gap-2 pt-1">
           <Link
-            href="/r/new"
+            href={NEW_ROOM_PATH}
             className="inline-flex h-12 items-center justify-center rounded-xl bg-primary text-[16px] font-bold text-primary-foreground"
           >
             새 방 만들기

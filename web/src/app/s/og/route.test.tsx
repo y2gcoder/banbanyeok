@@ -21,6 +21,18 @@ vi.mock("@/components/og/site-card", async (importActual) => {
   };
 });
 
+/** 그린 숫자판의 반반지수 값(#202). 호출부가 숨김 가드를 거친 값을 넘기는지 본다. */
+const drawn: unknown[] = [];
+vi.mock("@/components/og/scoreboard-card", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/components/og/scoreboard-card")>();
+  return {
+    ScoreboardCard: (props: Parameters<typeof original.ScoreboardCard>[0]) => {
+      drawn.push(props.data.banban);
+      return original.ScoreboardCard(props);
+    },
+  };
+});
+
 const { GET } = await import("./route");
 const URL_OK = "https://banbanyeok.app/s/og?v=2&o=ryf.4q3&m=f&t=weekday-day&dv=20261115.8";
 
@@ -28,6 +40,7 @@ afterEach(() => {
   vi.useRealTimers();
   loadSharedView.mockReset();
   siteCard.broken = false;
+  drawn.length = 0;
 });
 
 describe("/s/og", () => {
@@ -105,5 +118,23 @@ describe("/s/og", () => {
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toMatch(/\/opengraph-image\?v=[0-9a-f]{8}$/);
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
+  });
+
+  it("반반지수(#202): 출발역을 숨긴 사람이 있으면 빼고, 없으면 막대와 한 줄을 그린다", async () => {
+    const sample = SHARED_CASES.find((c) => c.id === "four-fair");
+    if (!sample) throw new Error("표본 없음");
+    loadSharedView.mockResolvedValue(toResultView(sample.result));
+    expect((await GET(new Request(URL_OK))).status).toBe(200);
+    expect(drawn).toEqual([
+      expect.objectContaining({ text: expect.stringMatching(/^가장 오래 걸리는 사람도|^걸리는 시간이/) }),
+    ]);
+    drawn.length = 0;
+    const hidden = {
+      ...sample.result,
+      participants: sample.result.participants.map((p, i) => (i === 1 ? { ...p, hidden: true } : p)),
+    };
+    loadSharedView.mockResolvedValue(toResultView(hidden));
+    expect((await GET(new Request(URL_OK))).status).toBe(200);
+    expect(drawn).toEqual([null]);
   });
 });

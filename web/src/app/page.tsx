@@ -1,47 +1,36 @@
-import { RegionProvider } from "@/components/common/region-choice";
-import { SupportedLinesDisclosure } from "@/components/common/supported-lines";
 import { Wordmark } from "@/components/common/wordmark";
-import { HomeForm } from "@/components/home/home-form";
+import { HomeEntry } from "@/components/home/home-entry";
+import { CreateRoomForm } from "@/components/room/create-form";
 import { CHANGE_NOTICE, UPCOMING_POLICY } from "./privacy/policy";
 import { PolicyChangeStrip, PolicyNoticeStrip } from "./privacy/policy-notice-strip";
 
 /**
- * 입력 화면. 폰에서는 한 칸(제목 → 계산 범위 한 줄 → 입력), 두 칸 폭(wide, 640px~)부터는 왼쪽에 제목, 오른쪽에 입력 카드를 나란히 둔다.
- * 높이가 충분하면(tall) 왼쪽 제목이 입력 카드 옆에 붙어 있는다.
- * 처리방침 예정 판이 공지 기간이거나 중요한 변경의 안내 기간이면 맨 위에 한 줄 공지가 붙는다. 날짜는 브라우저가 판단해서 이 페이지는
- * 정적 그대로다. 입력 카드에서 고른 권역을 왼쪽의 계산 범위 한 줄이 따라간다(RegionProvider).
+ * 제목 아래에서 입력 방식을 고른다. 경첩으로 나뉜 화면에서는 제목과 입력 카드를 각각 한 조각에 둔다.
+ * 처리방침 공지 기간은 브라우저가 판단하므로 홈은 정적 페이지로 유지된다.
  */
 export default function HomePage() {
   return (
-    <RegionProvider>
-      <main className="hinge-split mx-auto grid min-h-dvh w-full max-w-md content-start gap-8 px-gutter pt-5 pb-10 wide:max-w-6xl wide:grid-cols-2 wide:gap-x-6 wide:pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-x-16">
-        <div className="flex flex-col gap-8 wide:gap-12 tall:wide:sticky tall:wide:top-8 tall:wide:self-start">
-          <header className="flex flex-col items-start gap-3">
-            {UPCOMING_POLICY ? (
-              <PolicyNoticeStrip
-                noticeFrom={UPCOMING_POLICY.noticeFrom}
-                effectiveDate={UPCOMING_POLICY.effectiveDate}
-              />
-            ) : null}
-            {CHANGE_NOTICE ? <PolicyChangeStrip since={CHANGE_NOTICE.since} until={CHANGE_NOTICE.until} /> : null}
-            <Wordmark />
-          </header>
-          <section aria-labelledby="home-title" className="flex flex-col gap-2 wide:gap-4">
-            <h1
-              id="home-title"
-              className="text-[32px] leading-[1.18] font-extrabold tracking-[-0.03em] text-ink lg:text-[52px] wide:text-[40px]"
-            >
-              우리 어디서 만나면
-              <br />딱 반반일까?
-            </h1>
-            <p className="text-[17px] text-ink-soft wide:text-[19px]">각자 지하철 시간으로 계산해요</p>
-            <SupportedLinesDisclosure />
-          </section>
-        </div>
-        <div className="wide:rounded-2xl wide:border wide:border-rule wide:bg-surface wide:p-4 wide:shadow-[0_1px_0_var(--rule)] lg:p-8">
-          <HomeForm />
-        </div>
-      </main>
-    </RegionProvider>
+    <main className="hinge-split mx-auto grid min-h-dvh w-full max-w-md content-start gap-5 px-gutter pt-5 pb-10 wide:max-w-2xl wide:pt-8">
+      <div className="flex min-w-0 flex-col gap-5">
+        <header className="flex flex-col items-start gap-3">
+          {UPCOMING_POLICY ? (
+            <PolicyNoticeStrip noticeFrom={UPCOMING_POLICY.noticeFrom} effectiveDate={UPCOMING_POLICY.effectiveDate} />
+          ) : null}
+          {CHANGE_NOTICE ? <PolicyChangeStrip since={CHANGE_NOTICE.since} until={CHANGE_NOTICE.until} /> : null}
+          <Wordmark />
+        </header>
+        <section aria-labelledby="home-title" className="flex flex-col gap-2">
+          <h1
+            id="home-title"
+            className="text-[32px] leading-[1.18] font-extrabold tracking-[-0.03em] text-ink wide:text-[40px]"
+          >
+            우리 어디서 만나면
+            <br />딱 반반일까?
+          </h1>
+          <p className="text-[17px] text-ink-soft wide:text-[19px]">각자 지하철 시간으로 계산해요</p>
+        </section>
+      </div>
+      <HomeEntry roomForm={<CreateRoomForm />} />
+    </main>
   );
 }

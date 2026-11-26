@@ -142,6 +142,7 @@ jobs:
           python3 -B prototype/gen_expected.py --check
           python3 -B prototype/gen_fixtures.py --check
           python3 -B prototype/gen_link_vectors.py --check
+          python3 -B prototype/banban_index.py --check
 
   # 웹(web/): 타입 검사 → 린트(Biome·ESLint 타입 규칙·Knip·dependency-cruiser) → 단위·컴포넌트 테스트
   # → 계약 동기화(openapi 타입·역 인덱스 재생성 후 diff) → 모바일 e2e(가짜 서버) → OpenNext Cloudflare 빌드(배포 없음).

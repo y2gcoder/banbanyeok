@@ -139,6 +139,48 @@ describe("결과 카드", () => {
     expect(panel).not.toBeVisible();
   });
 
+  it("요약에 막대가 있으면 자세히에서 시간을 반복하지 않고, 경로를 아무도 모르면 경로를 말하지 않는다", async () => {
+    const top = view.candidates[0];
+    if (!top) throw new Error("후보 없음");
+    expect(top.people.every((person) => person.route === null)).toBe(true);
+    render(
+      <TopCandidateCard
+        candidate={top}
+        choice={choice}
+        banban={{ kind: "close", text: "걸리는 시간이 두 사람 1분 차이예요" }}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "자세히: 추천 이유·막차" }));
+    expect(screen.getByText(top.reason)).toBeVisible();
+    expect(screen.getAllByText("37분")).toHaveLength(1);
+    expect(screen.getByText(/환승 1번/)).toBeVisible();
+    expect(document.querySelector("[data-route=lines]")).toBeNull();
+  });
+
+  it("경로가 있으면 자세히가 경로를 말하고, 경로 막대는 요약 막대와 같은 축(가장 오래 걸리는 사람이 끝)이다", async () => {
+    const top = view.candidates[0];
+    if (!top) throw new Error("후보 없음");
+    const route = (seconds: number) => ({
+      lines: ["2호선"],
+      transfers: [],
+      segments: [{ kind: "ride" as const, line: "2호선", seconds }],
+      description: "2호선",
+    });
+    const routed = { ...top, people: top.people.map((person) => ({ ...person, route: route(person.minutes * 60) })) };
+    render(
+      <TopCandidateCard
+        candidate={routed}
+        choice={choice}
+        banban={{ kind: "longest", text: "가장 오래 걸리는 사람도 37분이에요" }}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "자세히: 추천 이유·경로·막차" }));
+    const widths = (selector: string) =>
+      [...document.querySelectorAll<HTMLElement>(selector)].map((el) => el.style.width).sort();
+    expect(widths("[data-route=lines] > span")).toHaveLength(top.people.length);
+    expect(widths("[data-route=lines] > span")).toEqual(widths("[data-bar] > span"));
+  });
+
   it("고른 사람이 없으면 (나)를 붙이지 않는다", () => {
     const [top] = view.candidates;
     if (!top) throw new Error("후보 없음");

@@ -43,14 +43,17 @@ export async function createRoom(
   throw failure(result.response.status, result.error);
 }
 
-/** 방 상태. 참여자 토큰이 있으면 본인 항목(출발역이 숨김이어도)과 `isSelf`가 채워진다. */
+/**
+ * 방 상태. 참여자 토큰이 있으면 본인 항목(출발역이 숨김이어도)과 `isSelf`가 채워진다. 서버(방 미리보기 그림 경로)에서 부르면 신뢰 헤더를
+ * 붙인다: 없으면 서버가 모든 호출을 Worker 한 곳에서 온 것으로 세어 메신저가 여러 방을 한꺼번에 읽을 때 429가 난다.
+ */
 export async function getRoom(
   roomId: string,
   participantToken: string | null,
   { signal }: Options = {},
 ): Promise<Room> {
   const headers = optionalBearer(participantToken);
-  const result = await client().GET("/rooms/{roomId}", {
+  const result = await client(await trustedServerHeaders()).GET("/rooms/{roomId}", {
     params: { path: { roomId } },
     cache: "no-store",
     ...(headers ? { headers } : {}),

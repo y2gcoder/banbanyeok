@@ -2,6 +2,7 @@
  * 방 API 호출이 계약대로(경로·메서드·헤더) 나가는지. 토큰은 `Authorization` 헤더에만 있고 URL·본문에는 없어야 한다.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CLIENT_IP_HEADER, PROXY_SECRET_HEADER } from "@/lib/proxy/headers";
 import { ApiRequestError } from "./client";
 import {
   answerOutcome,
@@ -16,6 +17,9 @@ import {
   updateParticipant,
   updateRoom,
 } from "./rooms";
+
+const incoming = vi.hoisted(() => new Headers());
+vi.mock("next/headers", () => ({ headers: async () => incoming }));
 
 const ROOM = "qt7yvmsht3";
 const SECRET = "tok_SECRET_value_123";
@@ -65,6 +69,25 @@ describe("방 API 호출", () => {
     expect(sent[0]?.headers.get("authorization")).toBe(`Bearer ${SECRET}`);
     expect(sent[1]?.headers.get("authorization")).toBeNull();
     for (const call of sent) expect(call.url.toString()).not.toContain(SECRET);
+  });
+
+  it("서버에서 부르면 방 조회와 미리보기에 신뢰 헤더(비밀·방문자 IP)를 붙이고, 참여자 토큰도 그대로 보낸다", async () => {
+    vi.stubEnv("PROXY_SHARED_SECRET", "proxy-secret-value");
+    incoming.set("cf-connecting-ip", "203.0.113.7");
+    try {
+      respond = json(200, { roomId: ROOM, participants: [] });
+      await getRoom(ROOM, null);
+      await getRoom(ROOM, SECRET);
+      await getRoomPreview(ROOM);
+    } finally {
+      vi.unstubAllEnvs();
+      incoming.delete("cf-connecting-ip");
+    }
+    for (const call of sent) {
+      expect(call.headers.get(PROXY_SECRET_HEADER)).toBe("proxy-secret-value");
+      expect(call.headers.get(CLIENT_IP_HEADER)).toBe("203.0.113.7");
+    }
+    expect(sent.map((c) => c.headers.get("authorization"))).toEqual([null, `Bearer ${SECRET}`, null]);
   });
 
   it("참여: POST /rooms/{id}/participants, Idempotency-Key, 본문에 토큰 없음", async () => {

@@ -1,7 +1,6 @@
 "use client";
 
 import { PlusIcon, XIcon } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { personColor } from "@/components/common/person-color";
@@ -17,7 +16,6 @@ import { parsePrefill, parseRestore } from "@/lib/form/prefill";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_NICKNAME_CODE_POINTS, MAX_PEOPLE, MIN_PEOPLE } from "@/lib/link/codec";
 import { resultPath } from "@/lib/result/share-url";
-import { NEW_ROOM_PATH } from "@/lib/room/id";
 import { REGIONS_ENABLED, type Station, stationByCode } from "@/lib/stations";
 import { blockedReason, type StationScope } from "@/lib/stations/scope";
 import { DEFAULT_SLOT, slotNow, type TimeSlot } from "@/lib/when/time-slot";
@@ -269,15 +267,6 @@ export function HomeForm() {
       <Button type="submit" disabled={filled < MIN_PEOPLE || pending} className="h-14 rounded-xl text-[17px] font-bold">
         {pending ? "찾는 중…" : "만날 역 찾기"}
       </Button>
-      <Link
-        href={NEW_ROOM_PATH}
-        className="flex flex-col gap-0.5 rounded-xl border border-rule-strong bg-surface px-4 py-3.5 hover:border-ink"
-      >
-        <span className="text-[16px] font-bold text-ink">방 만들어서 각자 입력하기 →</span>
-        <span className="text-[13px] leading-snug text-muted-foreground">
-          링크를 보내면 친구가 자기 출발역을 직접 넣어요.
-        </span>
-      </Link>
     </form>
   );
 }
