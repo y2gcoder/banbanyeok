@@ -13,9 +13,11 @@ public class RoomRegionRule(
         hidden: Boolean = false,
     ) {
         val selected = stations.regionOf(stations.canonical(code))
-        val others = participants.filterNot { it.id == replacing }.map(::regionOf)
-        // 권역을 모르는 출발역(권역 파일을 읽지 않는 서버의 부산 역 등)은 어느 권역과도 같지 않다고 본다.
-        if ((hidden && selected != StationRegion.CAPITAL) || others.any { it == null || it != selected }) {
+        val regions =
+            participants.filterNot { it.id == replacing }.map(::regionOf) + selected +
+                listOfNotNull(StationRegion.CAPITAL.takeIf { hidden })
+        // 권역을 모르는 역(권역 파일을 읽지 않는 서버의 부산 역 등)은 어느 권역과도 같지 않다고 본다.
+        if (null in regions || regions.toSet().size > 1) {
             throw RoomException(RoomError.REGION_MISMATCH, "방과 추천은 한 권역 안에서 계산합니다")
         }
     }
