@@ -1,3 +1,5 @@
+const stationAndNameNotice = "통계에는 출발역과 이름이 들어가지 않아요.";
+
 /**
  * 통계 동의 문구. 배너와 /privacy 설정이 같은 문구를 쓴다(방침 web/src/app/privacy/policy.ts 2·3·4·7·11항과 일치해야 한다).
  *
@@ -20,10 +22,11 @@
  * 줄바꿈: 한글 바로 앞에 붙는 괄호는 쓰지 않는다(공백 없이 이어진 긴 덩어리는 keep-all 아래에서 `overflow-wrap: anywhere`로 아무 데서나 끊긴다).
  */
 export const CONSENT_COPY = {
+  stationAndNameNotice,
   question: "서비스 개선을 위해 PostHog 이용 통계를 모아도 될까요?",
   /** 질문 바로 아래의 안심할 사실. 둘 다 코드로 확인한 사실이다(통계 속성 계약의 금지 이름, 동의 전 PostHog 미로딩). */
   reassure: [
-    "통계에는 출발역과 이름이 들어가지 않아요. 통계와 별도로 서버는 기능별 하루 건수를 세요.",
+    `${stationAndNameNotice} 통계와 별도로 서버는 기능별 하루 건수를 세요.`,
     "동의하지 않아도 모든 기능을 그대로 쓸 수 있어요.",
   ],
   dailyTotal:
