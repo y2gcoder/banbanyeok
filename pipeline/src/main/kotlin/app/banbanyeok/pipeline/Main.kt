@@ -12,13 +12,22 @@ private fun fetchOrStage(
     when {
         args.firstOrNull() == "stage-release" -> {
             // 발행 디렉터리(기본 build/release). 업로드는 scripts/publish-artifacts.sh.
-            require(args.size <= 2) { "Usage: stage-release [outDir]" }
-            stageRelease(root.resolve("data/artifacts/dev"), root.resolve(args.getOrElse(1) { "build/release" }))
+            require(args.size <= 3) { "Usage: stage-release [outDir] [sourceDir]" }
+            stageRelease(
+                root.resolve(args.getOrElse(2) { "data/artifacts/dev" }),
+                root.resolve(args.getOrElse(1) { "build/release" }),
+            )
         }
 
         args.firstOrNull() == "busan-preview" -> {
             require(args.size == 2) { "Usage: busan-preview <network-input.json>" }
             busanPreview(root, root.resolve(args[1]))
+        }
+
+        // The regional generation (ADR-0008) next to the dev capital set; no fetch, no key.
+        args.firstOrNull() == "regional-build" -> {
+            require(args.size in 2..3) { "Usage: regional-build <network-input.json> [outDir]" }
+            regionalBuild(root, root.resolve(args[1]), root.resolve(args.getOrElse(2) { "data/artifacts/dev" }))
         }
 
         args.firstOrNull() == "tago-fetch" -> {
