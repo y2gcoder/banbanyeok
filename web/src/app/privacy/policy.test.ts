@@ -540,7 +540,7 @@ describe("개인정보 처리방침", () => {
     expect(rules[1]).toContain("수집하는 정보, 다른 사람에게 보이는 범위, 외부로 보내는 정보가 바뀌는 중요한 변경은");
     expect(rules[1]).toContain(`시행일부터 ${CHANGE_NOTICE_DAYS}일 동안 서비스 첫 화면과 이 처리방침 맨 위에`);
     // CONSENT_VERSION을 올리면 낡은 기록이 무효가 되어 다시 동의할 때까지 통계를 켜지 않는다(lib/analytics/consent.ts).
-    expect(rules[2]).toContain("동의를 다시 받습니다. 다시 동의하기 전에는 이용 통계를 모으지 않습니다.");
+    expect(rules[2]).toContain("동의를 다시 받습니다. 다시 동의하기 전에는 PostHog 이용 통계를 모으지 않습니다.");
     const text = textOf(POLICY, "changes");
     expect(text).not.toContain("시행 7일 전부터 서비스 화면에 알리고");
     expect(text).not.toContain("설명 보완·표현 정리: ");
@@ -549,10 +549,8 @@ describe("개인정보 처리방침", () => {
   it("15항 변경 이력: 7일 전 알림 없이 바로 시행했다는 것과 그 이유, 11월 28일 예정 판을 시행하지 않는다는 것을 정직하게 적는다", () => {
     const text = textOf(POLICY, "changes");
     const day = koreanDate(REVISION_DATE, { year: true });
-    // 이 판(#173): 출발역 숨기기를 새로 제공하지 않는다. 11월 25일 시행판과 같은 날이면 '개정판', 그 뒤면 그날의 '시행판'이다.
-    expect(REVISION_DATE >= "2026-11-25").toBe(true);
-    const sameDay = REVISION_DATE === "2026-11-25";
-    const stop = lineOf(POLICY, "changes", `변경 이력: ${day} ${sameDay ? "개정판" : "시행판"}은`);
+    expect(lineOf(POLICY, "changes", `변경 이력: ${day} 시행판은`)).toContain("자체 합계를 도입");
+    const stop = lineOf(POLICY, "changes", "변경 이력: 2026년 11월 25일 개정판은");
     expect(stop).toContain("출발역 숨기기를 더는 새로 제공하지 않도록 바꿨습니다");
     expect(stop).toContain(
       "방을 만들거나 참여할 때 출발역을 숨길 수 없고, 출발역을 공개한 사람이 나중에 숨길 수도 없으며",
@@ -560,12 +558,10 @@ describe("개인정보 처리방침", () => {
     expect(stop).toContain("그 방이 지워질 때까지(만든 뒤 최대 30일) 숨김과 그 규칙");
     expect(stop).toContain("본인이 숨김을 풀 수 있지만 풀면 다시 숨길 수 없다");
     expect(stop).toContain("다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 화면에 알립니다");
-    expect(stop).toContain(
-      `2026년 11월 25일 시행판은 ${sameDay ? "같은 날 이 판을 시행하기 전까지" : "이 판을 시행한 날 배포 전까지"} 적용했습니다`,
-    );
+    expect(stop).toContain(`2026년 11월 25일 시행판은 같은 날 이 판을 시행하기 전까지 적용했습니다`);
     expect(stop).toContain("수집하는 정보, 처리 목적, 보유 기간, 처리 위탁과 국외 이전, 이용 통계는 바뀌지 않았습니다");
     const stopItem = lineOf(POLICY, "third-party", "출발역 숨기기는");
-    expect(stopItem).toContain(`${day}부터 새로 제공하지 않습니다`);
+    expect(stopItem).toContain(`2026년 11월 25일부터 새로 제공하지 않습니다`);
     expect(stopItem).toContain("풀면 다시 숨길 수 없습니다");
     expect(textOf(POLICY, "rights")).toContain("고치기, 지우기(이미 숨긴 출발역은 숨김 풀기)");
     expect(textOf(POLICY, "rights")).not.toContain("고치기, 숨기기, 지우기");
@@ -652,7 +648,7 @@ describe("개인정보 처리방침", () => {
       expect(existsSync(resolve(legal, url.split("/docs/legal/")[1] ?? "")), url).toBe(true);
     }
     const versions = text.split("\n").filter((l) => l.startsWith("["));
-    expect(versions).toHaveLength(9);
+    expect(versions).toHaveLength(10);
     expect(versions.map((l) => [...l.matchAll(/\]\(https:/g)].length)).toEqual(versions.map(() => 1));
     expect(text).toContain(
       "세 번째 개정판](https://github.com/y2gcoder/banbanyeok/blob/ecd3a47/docs/legal/privacy-policy.md): 2026년 11월 17일부터 2026년 11월 21일 시행판 시행 전까지 적용했습니다.",
@@ -667,11 +663,7 @@ describe("개인정보 처리방침", () => {
       "11월 24일 개정판](https://github.com/y2gcoder/banbanyeok/blob/26dc73e/docs/legal/privacy-policy.md): 2026년 11월 24일부터 2026년 11월 25일 시행판 시행 전까지 적용했습니다.",
     );
     expect(text).toContain(
-      `11월 25일 시행판](https://github.com/y2gcoder/banbanyeok/blob/a7bc5d8/docs/legal/privacy-policy.md): ${
-        REVISION_DATE === "2026-11-25"
-          ? "2026년 11월 25일 하루, 이 판 시행 전까지 적용했습니다."
-          : `2026년 11월 25일부터 ${koreanDate(REVISION_DATE, { year: true })} 이 판 시행 전까지 적용했습니다.`
-      }`,
+      "11월 25일 시행판](https://github.com/y2gcoder/banbanyeok/blob/a7bc5d8/docs/legal/privacy-policy.md): 2026년 11월 25일 하루, 2026년 11월 25일 개정판 시행 전까지 적용했습니다.",
     );
     expect(text).toContain("2026년 11월 21일부터 알렸으나 시행하지 않았습니다.");
   });
@@ -693,24 +685,19 @@ describe("개인정보 처리방침", () => {
     expect(CHANGE_NOTICE).not.toBeNull();
     expect(changeNoticeProblems(CHANGE_NOTICE, CHANGE_NOTICE_DAYS)).toEqual([]);
     expect(CHANGE_NOTICE?.since).toBe(REVISION_DATE);
-    // 직전 판은 11월 25일 시행판(#172)이다.
     expect(CHANGE_NOTICE?.previous.url).toBe(
-      "https://github.com/y2gcoder/banbanyeok/blob/a7bc5d8/docs/legal/privacy-policy.md",
+      "https://github.com/y2gcoder/banbanyeok/blob/f15d4a3/docs/legal/privacy-policy.md",
     );
-    expect(CHANGE_NOTICE?.previous.label).toBe("2026년 11월 25일 시행판");
+    expect(CHANGE_NOTICE?.previous.label).toBe("2026년 11월 25일 개정판");
     const rows = CHANGE_NOTICE?.rows ?? [];
-    // 이 판의 행(#173)이 맨 앞이다: 6항(숨기기를 새로 제공하지 않음), 8항(권리 행사).
     const mine = rows.filter((r) => !r.item.startsWith("["));
-    expect(mine.map((r) => r.item)).toEqual(["출발역 숨기기 (6항)", "권리 행사: 방에 넣은 내 정보 (8항)"]);
-    expect(rows.slice(0, mine.length)).toEqual(mine);
-    expect(mine[0]?.before).toContain("출발역 이름을 숨길 수 있음");
-    expect(mine[0]?.after).toContain("새로 숨길 수 없음(방 만들기·참여·고치기 모두)");
-    expect(mine[0]?.after).toContain("그 방이 지워질 때까지(만든 뒤 최대 30일) 숨김과 그 규칙이 그대로");
-    expect(mine[0]?.after).toContain("풀면 다시 숨길 수 없음");
-    expect(CHANGE_NOTICE?.summary).toContain("출발역 숨기기를 더는 새로 제공하지 않습니다");
+    expect(mine.map((r) => r.item)).toEqual(["기능별 하루 요청 건수"]);
+    expect(rows[0]?.after).toContain("한국 날짜와 단계별로");
+    expect(CHANGE_NOTICE?.summary).toContain("동의 여부와 관계없이");
     expect(CHANGE_NOTICE?.summary).not.toMatch(/\d+일까지/);
     // 앞선 판 중 이 판 시행일에 7일 안내 기간이 남은 판만, 새 판부터 머리말을 붙여 뒤에 싣는다(15항의 7일 약속을 끊지 않는다).
     const earlier = [
+      { prefix: "[11월 25일 개정판] ", label: "2026년 11월 25일 개정판", since: "2026-11-25", count: 2 },
       { prefix: "[11월 25일 시행판] ", label: "2026년 11월 25일 시행판", since: "2026-11-25", count: 5 },
       { prefix: "[11월 24일 개정판] ", label: "2026년 11월 24일 개정판", since: "2026-11-24", count: 2 },
       { prefix: "[11월 24일 시행판] ", label: "2026년 11월 24일 시행판", since: "2026-11-24", count: 1 },

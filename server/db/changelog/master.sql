@@ -225,3 +225,13 @@ CREATE TRIGGER rooms_draw_state BEFORE UPDATE ON rooms
 ALTER TABLE rooms
     ADD COLUMN region text NOT NULL DEFAULT 'capital' CONSTRAINT rooms_region_check CHECK (region IN ('capital', 'busan'));
 --rollback ALTER TABLE rooms DROP COLUMN region;
+
+--changeset banbanyeok:20261126-daily-stage-counts
+CREATE TABLE daily_stage_counts (
+    kst_date date NOT NULL,
+    stage text NOT NULL CHECK (stage IN ('RECOMMEND', 'CREATE_ROOM', 'JOIN_ROOM', 'DECIDE_STATION')),
+    total bigint NOT NULL CHECK (total > 0),
+    PRIMARY KEY (kst_date, stage)
+);
+ALTER TABLE daily_stage_counts ENABLE ROW LEVEL SECURITY;
+--rollback DROP TABLE daily_stage_counts;

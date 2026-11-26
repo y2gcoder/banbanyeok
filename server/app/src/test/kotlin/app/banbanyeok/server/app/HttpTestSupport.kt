@@ -5,6 +5,7 @@ package app.banbanyeok.server.app
 import app.banbanyeok.server.app.application.BackgroundLastTrains
 import app.banbanyeok.server.app.application.BackgroundRoutes
 import app.banbanyeok.server.app.application.BackgroundSlots
+import app.banbanyeok.server.app.application.DailyCounter
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.application.StatelessRecommendation
 import app.banbanyeok.server.app.application.StationDirectory
@@ -86,6 +87,7 @@ fun apiServices(
     recommendation: RecommendationService,
     directory: StationDirectory,
     published: PublishedArtifacts = DevArtifacts.published,
+    counter: DailyCounter = DailyCounter {},
 ) = ApiServices(
     anon,
     rooms,
@@ -94,6 +96,7 @@ fun apiServices(
     directory,
     published,
     testTimes,
+    counter,
 )
 
 /** HTTP 계층 테스트용: 서비스는 MockK로 대체하고 라우트·오류 형식·인증 헤더·플러그인만 실제로 돌린다. */

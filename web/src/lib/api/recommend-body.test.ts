@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { decodeShareQuery } from "@/lib/link/codec";
-import { recommendBody } from "./client";
+import { recommend, recommendBody } from "./client";
 import { recommendQueryOptions } from "./queries";
 
 function stateOf(query: string) {
@@ -36,4 +36,15 @@ describe("추천 요청 본문의 구분(timeSlot)", () => {
     const chosen = recommendQueryOptions(stateOf("v=2&o=03v.130&m=f&t=weekday-day")).queryKey;
     expect(legacy).not.toEqual(chosen);
   });
+});
+
+it("공유 미리보기만 합성 요청 헤더를 보낸다", async () => {
+  const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({}));
+  const query = stateOf("v=1&o=03v.130&m=f");
+  await recommend(query);
+  await recommend(query, undefined, "preview");
+  expect(fetch.mock.calls.map(([request]) => (request as Request).headers.get("x-banbanyeok-synthetic"))).toEqual([
+    null,
+    "1",
+  ]);
 });
