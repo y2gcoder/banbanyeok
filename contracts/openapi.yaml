@@ -1556,3 +1556,5 @@ components:
               properties:
                 stationCode: {$ref: '#/components/schemas/StationCode'}
                 stationName: {type: string}
+
+# Temporary comment for the OpenAPI Actions smoke check.
