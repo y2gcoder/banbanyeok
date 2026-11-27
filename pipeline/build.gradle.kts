@@ -24,6 +24,7 @@ tasks.named<Test>("test") {
     inputs.dir(rootProject.file("data/config")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(rootProject.file("data/registry")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.file(rootProject.file("web/src/lib/stations/index.gen.json")).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(rootProject.file("web/src/lib/stations/lines.ts")).withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 tasks.named<Test>("integrationTest") {
