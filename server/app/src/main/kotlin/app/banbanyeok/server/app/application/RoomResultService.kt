@@ -82,7 +82,7 @@ class RoomResultService(
         // 싣지 않는다.
         val withheld = room.enteredByHost
         val labels = previewLabels(request, ranked, withheld)
-        val lastTrainBasis = ranked.lastTrainBasis
+        val lastTrainBasis = ranked.lastTrainBasis.takeUnless { withheld }
         val lastTrainPending = ranked.lastTrainPending && !withheld
         val drawRound = view.favorDraw?.round?.takeIf { it > 0 && request.mode == RecommendMode.FAVOR }
         val basis = PreviewBasis(request.mode, request.favorId?.let(labels::getValue), drawRound)
@@ -92,7 +92,7 @@ class RoomResultService(
             seconds: List<Int?>,
             lastTrains: List<ParticipantLastTrain>?,
         ): PreviewStation {
-            val trains = lastTrains.orEmpty().associateBy { it.participantId }
+            val trains = lastTrains.takeUnless { withheld }.orEmpty().associateBy { it.participantId }
             return PreviewStation(
                 code,
                 request.participants.zip(seconds) { p, s ->
