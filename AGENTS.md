@@ -27,8 +27,15 @@
 
 - 전체: `mise run test`(Gradle 빌드·테스트와 Python 오라클 테스트). 정적 검사는 `./gradlew check`(ktlint, detekt, Konsist 아키텍처 규칙), Docker가 필요한 통합 테스트는 `./gradlew integrationTest`.
 - 웹: `web/package.json`의 스크립트(`typecheck`, `lint`, `test`, `check:package-cycles`, `check:contracts`, `e2e`)를 쓴다.
+- 사용자 화면 흐름을 바꾸면 같은 PR에서 [검증 스킬](.claude/skills/verify-banbanyeok/SKILL.md)의 [기능 지도](.claude/skills/verify-banbanyeok/features/README.md)와 관련 여정 스크립트를 확인한다. 진입 경로나 선택자가 바뀌면 함께 고치고, 해당 여정을 폰과 데스크톱에서 검증한다.
 - 추천 알고리즘이나 골든 데이터를 바꾸면 `mise run golden:regen`으로 다시 만들고 diff를 사용자가 검토하게 한다. 확인만 할 때는 `mise run golden:check`.
 - 웹-서버 계약의 원본은 `contracts/openapi.yaml`이다. 계약을 바꾸면 양쪽 생성물(`pnpm --filter web gen:api` 등)을 함께 갱신한다.
+
+## 스킬
+
+- 먼저 호출 범위를 정한다. 이 저장소에 의존하는 스킬은 여기에 둔다. 여러 개인 저장소에서 같은 작업을 직접 호출해야 하면 홈 레포에서 원본을 관리하고 실제로 쓰는 에이전트의 사용자 경로에 설치한다.
+- Claude Code용 스킬은 `.claude/skills/<name>/`, Codex용 스킬은 `.agents/skills/<name>/`에 둔다. 맥의 사용자 경로는 각각 `~/.claude/skills/`, `~/.agents/skills/`다. 호출 조건, 작업 절차, 완료 기준을 두 에이전트에서 같이 쓸 수 있으면 원본 경로 한 곳을 정하고 다른 쪽에서 원본을 가리키는 상대 심볼릭 링크를 둘 수 있다. 기존 원본이 있으면 그 위치를 우선한다.
+- 한 에이전트에서만 필요한 절차는 해당 경로에 둔다. 두 에이전트의 도구·훅·권한이나 결과를 만드는 절차가 달라지면 각 경로에 독립적인 `SKILL.md`를 두고 공통 스크립트나 자료는 공유한다. 같은 결과를 여는 방식만 다르면 공통 스킬 안에 도구별 안내를 둔다.
 
 ## 기록
 
@@ -73,3 +80,4 @@
 - Claude Code 작업자는 pstack의 poteto-mode(`/pstack:poteto-mode`)로 일한다. Codex 작업자는 pstack을 쓰지 못하므로 이 줄과 다음 줄은 해당 없다.
 - Claude Code 작업자는 PR을 올리기 전에 변경 크기에 맞는 pstack 자기 점검을 한다. 작은 변경은 `blast-radius`, 동작·계약·보안이 걸린 변경은 `interrogate`. 결과는 PR 본문 '사전 점검' 절에 짧게 적는다.
 - 자기 점검은 다른 계열 모델의 독립 검토를 대신하지 않는다. 목적은 그 검토에서 막는 지적이 되풀이되는 것을 PR 전에 줄이는 것이다.
+- poteto-mode로 Claude Code 작업자를 띄우는 코디네이터는 [작업자 시작 절차](README.md#에이전트-작업자코디네이터용)를 따른다.
