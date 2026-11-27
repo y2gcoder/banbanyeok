@@ -95,5 +95,9 @@ class HiddenRetiredMigrationTest :
             execute(url, "ALTER TABLE participants DROP CONSTRAINT participants_hidden_retired")
             execute(url, "ALTER TABLE participants ADD CONSTRAINT participants_hidden_retired CHECK (true)")
             guardFailure(url).orEmpty() shouldContain "unexpected definition"
+
+            execute(url, "ALTER TABLE participants DROP CONSTRAINT participants_hidden_retired")
+            execute(url, "ALTER TABLE participants ADD CONSTRAINT participants_hidden_retired UNIQUE (room_id, pid)")
+            guardFailure(url).orEmpty() shouldContain "is not a CHECK constraint"
         }
     })
