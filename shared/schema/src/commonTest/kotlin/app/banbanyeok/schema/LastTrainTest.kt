@@ -99,7 +99,22 @@ class LastTrainTest {
         assertFailsWith<SchemaException> { table({ minutes, _, _ -> minutes[1] = 1620 }) }
         assertFailsWith<SchemaException> { table({ _, _, bounds -> bounds[1] = none }) }
         assertFailsWith<SchemaException> { table({ _, _, bounds -> bounds[2 * cells + meetings.size] = homes[0] }) }
-        assertFailsWith<SchemaException> { table({ _, kinds, _ -> kinds[1] = 4 }) }
+        assertFailsWith<SchemaException> { table({ _, kinds, _ -> kinds[1] = 5 }) }
+    }
+
+    @Test
+    fun keepsScheduledDirectsWithTheirTerminus() {
+        val scheduled = table({ _, kinds, _ -> kinds[1] = LastTrainKind.SCHEDULED_DIRECT.raw })
+        assertEquals(
+            LastTrainCell(LastTrainKind.SCHEDULED_DIRECT, 1443, StationCode.ofValue(homes[0])),
+            LtBinCodec.decode(LtBinCodec.encode(scheduled)).cell(DayType.WEEKDAY, 0, 1),
+        )
+        assertFailsWith<SchemaException> {
+            table({ _, kinds, bounds ->
+                kinds[1] = LastTrainKind.SCHEDULED_DIRECT.raw
+                bounds[1] = none
+            })
+        }
     }
 
     @Test

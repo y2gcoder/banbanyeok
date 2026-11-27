@@ -233,12 +233,13 @@ fun StatelessResult.toDto(stations: StationNames): ResultDto =
             },
         ).copy(mapMiddle = mapMiddle?.toDto(), missingServices = missingServices)
 
-/** 응답에 쓰는 막차 종류 이름(openapi `LastTrain.kind`): 직행 확정 / 여유 시각 / 확인 필요. */
+/** 응답에 쓰는 막차 종류 이름(openapi `LastTrain.kind`): 직행 확정 / 여유 시각 / 출발 예정 / 확인 필요. */
 internal val LastTrainKind.wire: String
     get() =
         when (this) {
             LastTrainKind.DIRECT -> "direct"
             LastTrainKind.MARGIN_TRANSFER, LastTrainKind.MARGIN_DIRECT -> "margin"
+            LastTrainKind.SCHEDULED_DIRECT -> "scheduled"
             LastTrainKind.UNKNOWN -> "check"
         }
 

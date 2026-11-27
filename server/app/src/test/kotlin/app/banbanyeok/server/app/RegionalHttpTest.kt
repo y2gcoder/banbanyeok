@@ -93,6 +93,33 @@ class RegionalHttpTest :
             }
         }
 
+        it("sends a 동해선 departure minute later than its planned arrival as scheduled, with its terminus") {
+            withRegionalApi {
+                val response =
+                    client.json(
+                        HttpMethod.Post,
+                        "/v1/recommend",
+                        recommend("\"003\",\"005\"", "weekday-night"),
+                    )
+                response.status shouldBe HttpStatusCode.OK
+                val trains =
+                    response
+                        .objectBody()
+                        .getValue("candidates")
+                        .jsonArray
+                        .single()
+                        .jsonObject
+                        .getValue("lastTrains")
+                        .jsonArray
+                        .map { train -> train.jsonObject }
+                trains.map { train -> train.text("kind") }.sorted() shouldBe listOf("margin", "scheduled")
+                val scheduled = trains.single { train -> train.text("kind") == "scheduled" }
+                scheduled.text("minute") shouldBe "1413"
+                scheduled.containsKey("transfer") shouldBe false
+                scheduled.getValue("boundFor").jsonObject.text("stationCode") shouldBe "005"
+            }
+        }
+
         it("keeps Saturday recommendations on supported lines and reports unknown timetables") {
             withRegionalApi {
                 val supported =

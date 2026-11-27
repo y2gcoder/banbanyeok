@@ -10,6 +10,7 @@ import {
   type LastTrainView,
   lastTrainSummary,
   marginNote,
+  scheduledNote,
 } from "@/lib/result/last-train";
 import { parenSafe } from "@/lib/text/paren-safe";
 import { cn } from "@/lib/utils";
@@ -90,6 +91,20 @@ function Detail({ row, view }: { row: LastTrainRow; view: LastTrainView }) {
       </>
     );
   }
+  if (state.kind === "scheduled") {
+    return (
+      <>
+        <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[15px] font-semibold text-ink">
+          <span>막차</span>
+          <Clock time={state} />
+          {state.nextDay ? <NextDay /> : null}
+          <span>출발 예정</span>
+          {state.bound ? <span className="break-keep">· {parenSafe(state.bound)}</span> : null}
+        </p>
+        <p className={note}>{parenSafe(scheduledNote(view.stationName))}</p>
+      </>
+    );
+  }
   return (
     <>
       <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[15px] font-semibold text-ink">
@@ -107,7 +122,7 @@ function Detail({ row, view }: { row: LastTrainRow; view: LastTrainView }) {
 /**
  * 후보 카드 안의 "집에 가는 막차" 칸(#62). 가는 길(사람별 시간 막대)과 섞지 않고 따로 둔다: 이 칸은 돌아오는 길이다.
  * 맨 위 한 줄은 공개된 시각 가운데 가장 이른 것이고(계산하지 못한 응답이면 그 이유), 사람마다 직행 확정(분 그대로) / 여유 시각(10분 단위로
- * 내린 값) / 확인 필요(시각 없이 이유) / 약속 전에 떠남으로 보인다. 사람 색은 막대에만 쓰고 글자는 ink/muted만 쓴다(globals.css 규칙).
+ * 내린 값) / 출발 예정(분 그대로, 맨 위 한 줄에는 넣지 않는다) / 확인 필요(시각 없이 이유) / 약속 전에 떠남으로 보인다. 사람 색은 막대에만 쓰고 글자는 ink/muted만 쓴다(globals.css 규칙).
  *
  * 제목 버튼으로 접고 편다(aria-expanded). 접혀 있어도 요약 한 줄(`lastTrainSummary`: 가장 이른 시각·경고·계산하지 못한 이유)은 보인다:
  * 막차는 숨기지 않는다(#122). 영역 이름에는 역 이름을 넣는다("금정역 집에 가는 막차"): 후보를 여러 개 펼쳐도 영역이 서로 구분된다.

@@ -9,8 +9,8 @@
     },
     "lastTrain": {
       "bytes": 1849940,
-      "path": "regional/versions/20261123.1/lt.43a526164ffa4c1c.bin",
-      "sha256": "43a526164ffa4c1c5b4f919081e50003dc0cedaf7ba9b504f2e9c2652ec13e92"
+      "path": "regional/versions/20261123.1/lt.9d3e6048153dea09.bin",
+      "sha256": "9d3e6048153dea09c24079771dda2b95544d301d064e900236e6b2fedbaeeba7"
     },
     "od": {
       "bytes": 371540,
@@ -87,7 +87,7 @@
   },
   "generatedAt": "2026-11-23T13:16:25Z",
   "lastTrainAsOf": "2026-11-16",
-  "lastTrainModel": "numbered-v1+walk2x5m+source3m+busan-direct-1",
+  "lastTrainModel": "numbered-v1+walk2x5m+source3m+busan-direct-2",
   "lastTrainPartialDays": [
     "weekday",
     "saturday"
