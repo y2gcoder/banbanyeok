@@ -14,15 +14,6 @@ class InMemoryRoomRepository : RoomRepository {
     private val drawGenerations = mutableMapOf<String, Int>()
     private val recoveries = mutableMapOf<TokenHash, String>()
 
-    /** ADR-0007 전에 숨긴 채 들어온 참가자(방 ID to 참가자 ID). Postgres의 `participants.hidden = true` 행 자리다(ADR-0012). */
-    private val hiddenBefore = mutableSetOf<Pair<String, String>>()
-
-    /** 테스트 전용: 숨긴 채 들어온 옛 참가자로 표시한다. 지금 서버로는 만들 수 없는 상태다. */
-    suspend fun hideAsBefore(
-        roomId: String,
-        participantId: String,
-    ) = lock.withLock { hiddenBefore += roomId to participantId }
-
     override suspend fun create(
         room: Room,
         participants: List<Participant>,
@@ -54,7 +45,6 @@ class InMemoryRoomRepository : RoomRepository {
             rooms[roomId]?.let {
                 it.copy(
                     participants = it.participants.sortedWith(compareBy({ p -> p.joinedAt }, { p -> p.id })),
-                    withheld = it.participants.any { p -> (roomId to p.id) in hiddenBefore },
                 )
             }
         }

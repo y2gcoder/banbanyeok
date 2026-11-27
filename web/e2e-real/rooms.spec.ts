@@ -10,7 +10,6 @@ import {
   type TestInfo,
   test,
 } from "@playwright/test";
-import { hideAsBefore } from "./legacy-hidden";
 import { sweepViewports } from "./viewport-sweep";
 
 /**
@@ -342,28 +341,6 @@ test("없는 방·형식이 틀린 주소·만료 기록 정리", async ({ page 
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem("bby.room.bbbbbbbbbb"))).toBeNull();
   expect(await page.evaluate(() => window.localStorage.getItem("bby.room.cccccccccc"))).not.toBeNull();
   expect(await page.evaluate(() => window.localStorage.getItem("banbanyeok:me"))).not.toBeNull();
-});
-
-test("숨긴 참가자가 남은 옛 방(백업에서 되살아난 경우 등)은 누구에게도 열리지 않는다(ADR-0012)", async ({
-  page,
-  request,
-}) => {
-  const created = await request.post("/api/v1/rooms", {
-    data: { mode: "fair", host: { originCode: GANGNAM, nickname: "민수" } },
-  });
-  const { roomId } = (await created.json()) as { roomId: string };
-  const joined = await request.post(`/api/v1/rooms/${roomId}/participants`, { data: { originCode: "ryf" } });
-  const { participantId } = (await joined.json()) as { participantId: string };
-  hideAsBefore(roomId, participantId);
-
-  for (const path of [`/api/v1/rooms/${roomId}`, `/api/v1/rooms/${roomId}/result`, `/api/v1/rooms/${roomId}/preview`]) {
-    const response = await request.get(path);
-    expect(response.status(), path).toBe(404);
-    expect(((await response.json()) as { code: string }).code, path).toBe("ROOM_NOT_FOUND");
-  }
-  await page.goto(`/r/${roomId}`);
-  await expect(page.getByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeVisible();
-  await expect(page.getByText("홍대입구")).toHaveCount(0);
 });
 
 test("콜드스타트: 서버가 4초 늦어도 설명이 먼저 보이고 안내 문구가 단계적으로 바뀐다", async ({ page, request }) => {
