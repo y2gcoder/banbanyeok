@@ -172,11 +172,6 @@ async function attach(
   return probe;
 }
 
-async function pickStation(page: Page, field: string, query: string, option: RegExp) {
-  await page.getByRole("combobox", { name: field }).fill(query);
-  await page.getByRole("option", { name: option }).click();
-}
-
 /** 공유 칸이 첫 화면 밖이면, 화면이 다 떠도 카카오로 아무것도 가지 않는다. 칸까지 내린다. */
 async function expectNothingUntilShown(page: Page, button: Locator, probe: Probe) {
   await page.waitForLoadState("networkidle");
@@ -270,12 +265,7 @@ test("혼자 입력한 결과도 첫 누름에 곧바로 카카오톡 공유 API
   baseURL,
 }) => {
   const probe = await attach(context, page);
-  await page.goto("/");
-  await page.getByRole("tab", { name: "모두 입력" }).click();
-  await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
-  await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
-  await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
+  await page.goto("/result?v=2&o=k3a.ryf&m=f&t=weekday-day&n=66-87IiY.");
   const button = page.getByRole("button", { name: "카톡으로 보내기" });
   await expect(button).toBeAttached();
   const pageUrl = page.url();

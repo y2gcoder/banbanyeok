@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render as renderComponent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RegionProvider } from "@/components/common/region-choice";
 import { SupportedLinesDisclosure } from "@/components/common/supported-lines";
@@ -10,9 +12,18 @@ import { HomeForm } from "./home-form";
 vi.mock("@/lib/stations/index.gen.json", async () => ({
   default: (await import("@/lib/stations/regional.fixture.gen.json")).default,
 }));
-vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
+vi.mock("@/lib/analytics", () => ({ track: vi.fn(), roomHashProperty: () => ({}) }));
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+const createFilledRoom = vi.fn();
+vi.mock("@/lib/api/rooms", async (original) => ({
+  ...(await original<typeof import("@/lib/api/rooms")>()),
+  createFilledRoom: (...args: unknown[]) => createFilledRoom(...args),
+}));
+function render(element: ReactElement) {
+  const client = new QueryClient();
+  return renderComponent(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
+}
 
 function HomePage() {
   return (
@@ -31,6 +42,13 @@ const pick = async (user: ReturnType<typeof userEvent.setup>, field: string, que
 describe("입력 화면: 권역이 둘인 데이터", () => {
   beforeEach(() => {
     push.mockReset();
+    createFilledRoom.mockReset().mockResolvedValue({
+      roomId: "abcd123456",
+      hostToken: "synthetic-host",
+      participantId: "own-entry",
+      participantToken: "synthetic-participant",
+      expiresAt: "2026-11-30T15:00:00Z",
+    });
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve(new Response("ok"))),
@@ -99,7 +117,7 @@ describe("입력 화면: 권역이 둘인 데이터", () => {
     await pick(user, "친구1의 출발역", "부산가", /^부산가/);
     await user.click(screen.getByRole("radio", { name: "토요일" }));
     expect(screen.getByText("토요일 동해선 시간표를 아직 확인하지 못해 고를 수 없어요")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "만날 역 찾기" }));
+    await user.click(screen.getByRole("button", { name: "방 만들기" }));
     expect(push).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent("출발역이나 요일·시간대를 바꿔 주세요");
   });

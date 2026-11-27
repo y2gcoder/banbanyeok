@@ -53,4 +53,13 @@ export default async ({ page, step, expect, db, newPerson, note }) => {
     ["민수", "k3a", "f"],
     ["", "ryf", "f"],
   ]);
+  await step("same-room-draw-and-decide", async () => {
+    await page.getByRole("button", { name: "사다리로 정하기" }).click();
+    await page.getByRole("button", { name: "사다리 타기" }).first().click();
+    await page.getByRole("button", { name: "건너뛰고 결과 보기" }).click();
+    await expect(page.getByRole("heading", { name: /쪽으로!$/ })).toBeVisible();
+    await page.getByRole("button", { name: "이 역으로 정했어요" }).first().click();
+    await expect(page.getByRole("region", { name: /에서 만나요$/ })).toBeVisible();
+    expect(roomIdOf(page)).toBe(roomId);
+  });
 };

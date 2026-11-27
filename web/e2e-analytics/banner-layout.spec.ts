@@ -168,9 +168,11 @@ for (const vp of U2_CASES) {
       await expect(banner(page).getByText("두 가지 모두 체크해야 PostHog 통계를 모아요.")).toBeHidden();
     });
 
-    test("맨 아래까지 스크롤하면 만날 역 찾기 버튼을 배너에 가리지 않고 누를 수 있다", async ({ page }) => {
+    test("맨 아래까지 스크롤하면 방 만들기 버튼을 배너에 가리지 않고 누를 수 있다", async ({ page }) => {
       await page.goto("/?o=k3a.ryf"); // 강남·홍대입구를 미리 채워 제출 버튼을 활성화한다.
-      const submit = page.getByRole("button", { name: "만날 역 찾기", exact: true });
+      const submit = page
+        .getByRole("tabpanel", { name: "방장이 입력" })
+        .getByRole("button", { name: "방 만들기", exact: true });
       const consentBanner = banner(page);
       await expect(submit).toBeEnabled();
       await expect(consentBanner).toBeVisible();

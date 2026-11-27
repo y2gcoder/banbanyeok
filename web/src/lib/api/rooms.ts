@@ -6,6 +6,7 @@ import { client, failure, LAST_TRAIN_KINDS, trustedServerHeaders } from "./clien
 import type {
   DecisionRequest,
   DrawRoomCreateRequest,
+  FilledRoomCreateRequest,
   JoinedRoom,
   Mode,
   OutcomeAnswer,
@@ -58,6 +59,17 @@ export async function createDrawRoom(
     params: { header: { "Idempotency-Key": idempotencyKey } },
     cache: "no-store",
     ...(signal ? { signal } : {}),
+  });
+  if (result.data !== undefined) return result.data;
+  throw failure(result.response.status, result.error);
+}
+
+/** 일반 추천부터 보는 채운 방. 이전 서버에 다른 생성 경로로 재시도하지 않는다. */
+export async function createFilledRoom(body: FilledRoomCreateRequest, idempotencyKey: string): Promise<RoomCreated> {
+  const result = await client().POST("/filled-rooms", {
+    body,
+    params: { header: { "Idempotency-Key": idempotencyKey } },
+    cache: "no-store",
   });
   if (result.data !== undefined) return result.data;
   throw failure(result.response.status, result.error);
@@ -130,6 +142,17 @@ export async function updateRoom(roomId: string, hostToken: string, patch: RoomP
     params: { path: { roomId } },
     headers: bearer(hostToken),
     body: patch,
+    cache: "no-store",
+  });
+  if (result.data !== undefined) return result.data;
+  throw failure(result.response.status, result.error);
+}
+
+export async function startFavorDraw(roomId: string, hostToken: string, seenVersion: number): Promise<Room> {
+  const result = await client().POST("/rooms/{roomId}/favor-draw/start", {
+    params: { path: { roomId } },
+    headers: bearer(hostToken),
+    body: { seenVersion },
     cache: "no-store",
   });
   if (result.data !== undefined) return result.data;

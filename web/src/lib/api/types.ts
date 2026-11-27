@@ -16,6 +16,7 @@ export type RoomParticipant = Schemas["Participant"];
 export type RoomCreated = Schemas["RoomCreated"];
 export type RoomCreateRequest = Schemas["RoomCreateRequest"];
 export type DrawRoomCreateRequest = Schemas["DrawRoomCreateRequest"];
+export type FilledRoomCreateRequest = Schemas["FilledRoomCreateRequest"];
 export type RoomPatch = Schemas["RoomPatch"];
 export type DecisionRequest = Schemas["DecisionRequest"];
 export type RoomPreview = Schemas["RoomPreview"];

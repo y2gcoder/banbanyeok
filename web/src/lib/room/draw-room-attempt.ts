@@ -28,8 +28,9 @@ function storage(): Storage | null {
   }
 }
 
-async function fingerprint(input: DrawRoomInput): Promise<string> {
-  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(input)));
+async function fingerprint(input: DrawRoomInput, kind: "draw" | "filled"): Promise<string> {
+  const value = JSON.stringify(kind === "filled" ? { kind, input } : input);
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -75,10 +76,11 @@ function write(store: Storage, attempts: Record<string, Saved>): boolean {
 export async function beginDrawRoomAttempt(
   input: DrawRoomInput,
   now: number = Date.now(),
+  kind: "draw" | "filled" = "draw",
 ): Promise<DrawRoomAttempt | null> {
   const store = storage();
   if (!store) return null;
-  const id = await fingerprint(input);
+  const id = await fingerprint(input, kind);
   return acrossTabs(() => takeAttempt(store, id, now));
 }
 

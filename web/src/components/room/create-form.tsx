@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { DicesIcon, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { preventImplicitRoomSubmit } from "@/components/common/prevent-implicit-room-submit";
 import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
 import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
 import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
@@ -120,7 +121,7 @@ export function CreateRoomForm({ className }: { className?: string }) {
         ...(body.expectedCount ? { expectedCount: body.expectedCount } : {}),
       });
       keys.renew();
-      if (host.station) saveRememberedMe({ code: host.station.code, nickname: host.nickname.trim() });
+      saveRememberedMe({ code: body.host.originCode, nickname: body.host.nickname ?? "" });
       track("room_created", {
         hidden_used: body.host.hidden === true,
         ...roomHashProperty({ roomId: created.roomId, roomHash: created.roomHash }),
@@ -161,7 +162,13 @@ export function CreateRoomForm({ className }: { className?: string }) {
 
   const submitted = create.isPending || create.isSuccess;
   return (
-    <form onSubmit={submit} noValidate className={cn("flex min-w-0 flex-col gap-5", className)}>
+    <form
+      onSubmit={submit}
+      onKeyDown={preventImplicitRoomSubmit}
+      method="post"
+      noValidate
+      className={cn("flex min-w-0 flex-col gap-5", className)}
+    >
       <RegionPicker id={`${id}-region`} choice={regionChoice} />
       <ParticipantFields
         idPrefix={`${id}-host`}
@@ -285,7 +292,15 @@ export function CreateRoomForm({ className }: { className?: string }) {
           {problem ?? roomErrorMessage(create.error)}
         </p>
       ) : null}
-      <Button type="submit" disabled={!host.station || submitted} className="h-14 rounded-xl text-[17px] font-bold">
+      <p id={`${id}-storage`} className="text-sm leading-relaxed text-ink-soft">
+        내 이름(선택)과 출발역이 저장되고 방 링크를 가진 사람이 방에서 볼 수 있어요. 방장은 언제든 방을 지울 수 있어요.
+      </p>
+      <Button
+        type="submit"
+        aria-describedby={`${id}-storage`}
+        disabled={!host.station || submitted}
+        className="h-14 rounded-xl text-[17px] font-bold"
+      >
         {submitted ? "방을 만드는 중…" : "방 만들기"}
       </Button>
       {create.isPending && stage > 0 ? (

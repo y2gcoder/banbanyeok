@@ -2,13 +2,15 @@
  * 혼자 입력한 결과(`ShareState`)를 사다리 방 만들기 요청으로 옮긴다(#227, ADR-0011). 고른 사람이 방장이 되고 나머지는 방장이 대신
  * 넣은 칸(`others`)이다. 입력 순서는 `hostPosition`으로 그대로 남는다. 이름이 없는 줄은 이름 없이 보내고, 표시 이름은 서버가 만든다.
  */
-import type { DrawRoomCreateRequest, ParticipantInput } from "@/lib/api/types";
+import type { DrawRoomCreateRequest, FilledRoomCreateRequest, ParticipantInput } from "@/lib/api/types";
 import type { ShareState } from "@/lib/link/codec";
 import { dayAfter, MAX_MEETING_DAYS } from "@/lib/when/dates";
 import { type Band, slotForMeeting, splitSlot, type TimeSlot } from "@/lib/when/time-slot";
 
 /** 사다리 방 만들기 요청에서 이 기기의 시도 키(`recoveryKey`, draw-room-attempt.ts)를 뺀 입력. */
 export type DrawRoomInput = Omit<DrawRoomCreateRequest, "recoveryKey">;
+
+export type FilledRoomInput = Omit<FilledRoomCreateRequest, "recoveryKey">;
 
 export type DrawRoomMeeting = { meetingDate: string | null; meetingBand: Band | null };
 
@@ -46,5 +48,14 @@ export function toDrawRoomRequest(state: ShareState, hostIndex: number, today: s
     hostPosition: hostIndex,
     ...(meetingDate ? { meetingDate } : {}),
     ...(meetingBand ? { meetingBand } : {}),
+  };
+}
+
+/** 기존 결과의 기준을 이어 가는 채운 방. 기본 입력은 공평한 결과에서 시작한다. */
+export function toFilledRoomRequest(state: ShareState, hostIndex: number, today: string): FilledRoomInput {
+  return {
+    ...toDrawRoomRequest(state, hostIndex, today),
+    mode: state.mode,
+    ...(state.favorIndex === null ? {} : { favorPosition: state.favorIndex }),
   };
 }

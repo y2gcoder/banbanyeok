@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
-import { drawFavorTarget } from "@/lib/api/rooms";
+import { drawFavorTarget, startFavorDraw } from "@/lib/api/rooms";
 import { roomErrorMessage } from "@/lib/room/errors";
 
 export type FavorDrawControl = {
@@ -14,6 +14,8 @@ export type FavorDrawControl = {
   /** 이 기기가 마지막으로 뽑은 뽑기(`RoomDraw.key`). 그 그림이 시작되면 초점을 옮긴다. */
   drewKey: string | null;
   draw: (generation: number, round: number) => void;
+  start: (seenVersion: number) => void;
+  started: boolean;
 };
 
 /**
@@ -32,6 +34,7 @@ export function useFavorDraw({
   const keys = useIdempotencyKey();
   const [error, setError] = useState<string | null>(null);
   const [drewKey, setDrewKey] = useState<string | null>(null);
+  const [started, setStarted] = useState(false);
   const reload = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ["room", roomId] }),
@@ -39,14 +42,19 @@ export function useFavorDraw({
       queryClient.invalidateQueries({ queryKey: ["room-preview", roomId] }),
     ]);
   const mutation = useMutation({
-    mutationFn: ({ generation, round }: { generation: number; round: number }) => {
+    mutationFn: (request: { generation: number; round: number } | { seenVersion: number }) => {
       if (!hostToken) throw new Error("no host token");
-      return drawFavorTarget(roomId, hostToken, generation, round, keys.keyFor({ generation, round }));
+      if ("seenVersion" in request) return startFavorDraw(roomId, hostToken, request.seenVersion);
+      const { generation, round } = request;
+      return drawFavorTarget(roomId, hostToken, generation, round, keys.keyFor(request));
     },
     onMutate: () => setError(null),
-    onSuccess: async (_room, { generation, round }) => {
-      keys.renew();
-      setDrewKey(`${generation}:${round}`);
+    onSuccess: async (_room, request) => {
+      if ("seenVersion" in request) setStarted(true);
+      else {
+        keys.renew();
+        setDrewKey(`${request.generation}:${request.round}`);
+      }
       await reload();
     },
     onError: (failure) => {
@@ -58,6 +66,8 @@ export function useFavorDraw({
     pending: mutation.isPending,
     error,
     drewKey,
+    started,
+    start: (seenVersion) => mutation.mutate({ seenVersion }),
     draw: (generation, round) => mutation.mutate({ generation, round }),
   };
 }

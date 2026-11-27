@@ -16,14 +16,9 @@ async function expectAccessible(page: Page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 }
 
-async function pickStation(page: Page, field: string, query: string, option: RegExp) {
-  await page.getByRole("combobox", { name: field }).fill(query);
-  await page.getByRole("option", { name: option }).click();
-}
-
 test("입력 4명이 차면 '한 명 더' 대신 눈에 덜 띄는 안내 버튼이 있고, 누르면 안내만 보인다", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   await page.getByRole("button", { name: /한 명 더/ }).click();
   await page.getByRole("button", { name: /한 명 더/ }).click();
   await expect(page.getByRole("combobox")).toHaveCount(4);
@@ -47,24 +42,8 @@ test("입력 4명이 차면 '한 명 더' 대신 눈에 덜 띄는 안내 버튼
 test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크 열기", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  // 화면 1: 입력. 열리자마자 서버를 미리 깨운다.
-  const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
-  await page.goto("/");
-  await warmUp;
-  await page.getByRole("tab", { name: "모두 입력" }).click();
-  await expect(page.getByRole("heading", { name: /딱 반반일까/ })).toBeVisible();
-  await expectAccessible(page);
-  await shot(page, "1-home");
-
-  await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
-  await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
-  await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
-
-  // 화면 2: 결과
-  await expect(page).toHaveURL(
-    /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=/,
-  );
+  // 이전 결과 링크로 들어와 기존 무상태 결과와 공유 흐름을 사용한다.
+  await page.goto("/result?v=2&o=k3a.ryf&m=f&t=weekday-day&n=66-87IiY.");
   const top = page.getByRole("article").first();
   await expect(top.getByText("1위")).toBeVisible();
   await expect(top.getByText(/^\d+분$|^\d+시간( \d+분)?$/).first()).toBeVisible();

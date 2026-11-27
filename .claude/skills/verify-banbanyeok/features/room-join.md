@@ -31,6 +31,8 @@ Preconditions:
 - **방장 화면 갱신.** 새로고침하지 않고 기다린다. 방장 화면 `region "들어온 사람"`의 `listitem`이 30초 안에 2개가 되고 `region "만날 역 후보"`가 나온다.
 - **증거.** `db-participants.tsv`에 그 방의 행 둘이 있다(`민수 k3a f`, 이름 없는 `ryf f`). `network.jsonl`에 `POST /api/v1/rooms` 201과 친구 컨텍스트(`ctx1`)의 `POST /api/v1/rooms/<ID>/participants` 201이 있다.
 
+- **같은 방에서 사다리와 역 정하기.** 방장이 `button "사다리로 정하기"`, `button "사다리 타기"`, `button "건너뛰고 결과 보기"`를 누른다. 추천의 `button "이 역으로 정했어요"`로 정한 역과 처음과 같은 방 주소를 확인한다.
+
 ## Gotchas
 
 - 방장 토큰은 방장 브라우저 저장소(`bby.room.<ID>`)에만 있다. 친구를 같은 컨텍스트에서 열면 방장으로 보이므로 반드시 `newPerson()`을 쓴다.

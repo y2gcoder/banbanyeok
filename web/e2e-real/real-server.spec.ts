@@ -11,25 +11,9 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: resolve(shotsDir, `${name}.png`), fullPage: true });
 }
 
-async function pickStation(page: Page, field: string, query: string, option: RegExp) {
-  await page.getByRole("combobox", { name: field }).fill(query);
-  await page.getByRole("option", { name: option }).click();
-}
-
 test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 받은 링크에서 친구 고르기", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  // 입력 화면이 수화된 뒤(서버 미리 깨우기 요청이 effect에서 나간다) 입력한다. next dev는 첫 수화가 느리다.
-  const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
-  await page.goto("/");
-  await warmUp;
-  await page.getByRole("tab", { name: "모두 입력" }).click();
-  await pickStation(page, "나의 출발역", "강남", /^강남\s?2호선/);
-  await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
-
-  await expect(page).toHaveURL(
-    /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)$/,
-  );
+  await page.goto("/result?v=2&o=k3a.ryf&m=f&t=weekday-day");
   const top = page.getByRole("article").first();
   // 시간 행은 서버 짧은 이름(shortLabel), 추천 이유 문장은 label("…에서 오는 분")이다.
   // 이름은 1위 요약의 시간 줄에 먼저 나오고, "자세히" 안의 시간 막대·막차 칸에도 나온다.

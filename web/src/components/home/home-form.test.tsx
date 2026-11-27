@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render as renderComponent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "@/lib/analytics";
 import { HomeForm } from "./home-form";
@@ -10,14 +12,30 @@ vi.mock("@/lib/stations/index.gen.json", async () => ({
   default: (await import("@/lib/stations/capital.fixture.gen.json")).default,
 }));
 
-vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
+vi.mock("@/lib/analytics", () => ({ track: vi.fn(), roomHashProperty: () => ({}) }));
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+const createFilledRoom = vi.fn();
+vi.mock("@/lib/api/rooms", async (original) => ({
+  ...(await original<typeof import("@/lib/api/rooms")>()),
+  createFilledRoom: (...args: unknown[]) => createFilledRoom(...args),
+}));
+function render(element: ReactElement) {
+  const client = new QueryClient();
+  return renderComponent(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
+}
 
 describe("입력 화면", () => {
   beforeEach(() => {
     push.mockReset();
+    createFilledRoom.mockReset().mockResolvedValue({
+      roomId: "abcd123456",
+      hostToken: "synthetic-host",
+      participantId: "own-entry",
+      participantToken: "synthetic-participant",
+      expiresAt: "2026-11-30T15:00:00Z",
+    });
     vi.mocked(track).mockClear();
     vi.stubGlobal(
       "fetch",
@@ -40,11 +58,10 @@ describe("입력 화면", () => {
     expect(fetch).toHaveBeenCalledWith("/api/healthz", expect.objectContaining({ cache: "no-store" }));
   });
 
-  it("두 역을 고르면 버튼이 켜지고 결과 링크로 간다(별칭 포함)", async () => {
+  it("방 만들기를 누를 때만 표시되는 안내대로 방을 만들고, 고른 내 칸을 방장으로 보낸다", async () => {
     const user = userEvent.setup();
     render(<HomeForm />);
-    const button = screen.getByRole("button", { name: "만날 역 찾기" });
-    expect(button).toBeDisabled();
+    const button = screen.getByRole("button", { name: "방 만들기" });
 
     await user.type(screen.getByRole("textbox", { name: "1번째 사람 이름(선택)" }), "민수");
     await user.type(screen.getByRole("combobox", { name: "민수의 출발역" }), "강남");
@@ -52,16 +69,25 @@ describe("입력 화면", () => {
     await user.type(screen.getByRole("combobox", { name: "친구1의 출발역" }), "ㅎㄷㅇㄱ");
     await user.click(await screen.findByRole("option", { name: /^홍대입구\s?2호선/ }));
 
-    expect(button).toBeEnabled();
+    expect(screen.getByText(/친구의 출발역과 이름\(선택\)이 저장돼요/)).toBeVisible();
+    await user.click(screen.getByRole("radio", { name: "2번" }));
+    await user.type(screen.getByRole("textbox", { name: "2번째 사람 이름(선택)" }), "{Enter}");
+    expect(createFilledRoom).not.toHaveBeenCalled();
     await user.click(button);
-    expect(push).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(weekday|saturday|holiday)-(morning|day|evening|night)&n=66-87IiY\.$/,
-      ),
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/r/abcd123456"));
+    expect(createFilledRoom).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "fair",
+        host: { originCode: "ryf", hidden: false },
+        hostPosition: 1,
+        others: [{ nickname: "민수", originCode: "k3a", hidden: false }],
+        recoveryKey: expect.any(String),
+      }),
+      expect.any(String),
     );
   });
 
-  it("언제 만나요?는 지금(서울) 시각으로 골라 두고, 고른 요일·시간대를 링크에 담는다", async () => {
+  it("언제 만나요?는 지금(서울) 시각으로 골라 두고, 고른 요일·시간대를 방의 약속일과 시간대로 보낸다", async () => {
     vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-11-18T03:00:00Z") }); // 서울 수요일 12:00
     try {
       const user = userEvent.setup();
@@ -77,8 +103,16 @@ describe("입력 화면", () => {
       await user.click(await screen.findByRole("option", { name: /^강남\s?2호선/ }));
       await user.type(screen.getByRole("combobox", { name: "친구1의 출발역" }), "잠실");
       await user.click(await screen.findByRole("option", { name: /^잠실\s?2호선/ }));
-      await user.click(screen.getByRole("button", { name: "만날 역 찾기" }));
-      expect(push).toHaveBeenCalledWith(expect.stringMatching(/&m=f&t=saturday-night$/));
+      await user.click(screen.getByRole("button", { name: "방 만들기" }));
+      await waitFor(() =>
+        expect(createFilledRoom).toHaveBeenCalledWith(
+          expect.objectContaining({
+            meetingDate: "2026-11-21",
+            meetingBand: "night",
+          }),
+          expect.any(String),
+        ),
+      );
     } finally {
       vi.useRealTimers();
     }

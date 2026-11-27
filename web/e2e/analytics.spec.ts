@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { submitFilledRoom } from "./support/room-fixture";
 
 // 통계(PostHog) 키 없이 빌드한 앱(playwright.config.ts가 키를 비워 빌드한다)은 완전히 꺼져 있어야 한다:
 // 입력 → 결과 → 모드 → 정했어요 → 공유 → 받은 링크 → SEO 페이지까지 써 보며 같은 출처 밖으로 나가는 요청이 0건인지,
@@ -24,14 +25,15 @@ test("키가 없으면 어떤 화면에서도 외부 네트워크 요청이 0건
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
   await page.goto("/");
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   // 통계 키가 없는 빌드는 동의를 묻지도 않는다(수집이 없으니 동의할 것도 없다).
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByRole("region", { name: /이용 통계/ })).toHaveCount(0);
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
+  await submitFilledRoom(page);
+  await page.goto("/result?v=2&o=k3a.ryf&m=f&t=weekday-day&n=66-87IiY.");
   await expect(page.getByRole("article").first().getByText("1위")).toBeVisible();
 
   await page.getByRole("tab", { name: "빨리 만나기" }).click();
