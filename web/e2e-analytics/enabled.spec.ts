@@ -333,6 +333,7 @@ test("다른 탭에서 철회해도 이 탭의 수집이 멈춘다", async ({ pa
   await other.getByRole("switch", { name: "PostHog 이용 통계 수집·이용 동의" }).click();
   await expect.poll(() => analyticsKeys(page)).toEqual([]); // storage 이벤트로 이 탭도 지운다
   const settled = probe.outside.length;
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
