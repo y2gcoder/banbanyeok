@@ -30,7 +30,8 @@ jobs:
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
-          filters: |
+          predicate-quantifier: &change-filter-quantifier some
+          filters: &change-filters |
             kotlin:
               - 'architecture/**'
               - 'config/**'
@@ -91,6 +92,11 @@ jobs:
               - 'pnpm-lock.yaml'
               - '.github/workflows/deploy*.yml'
               - '.github/workflows/ci.yml'
+      - name: Check Kotlin CI coverage of pipeline test inputs
+        env:
+          CHANGE_FILTERS: *change-filters
+          CHANGE_FILTER_QUANTIFIER: *change-filter-quantifier
+        run: python3 -B scripts/check-kotlin-ci-inputs.py
 
   # Kotlin: ./gradlew build = 컴파일 + jvm 테스트(shared 모듈은 commonTest를 jvm으로 실행) + commonMain 순수성 검사
   unit:
