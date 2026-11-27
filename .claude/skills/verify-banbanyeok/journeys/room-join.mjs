@@ -12,7 +12,9 @@ export default async ({ page, step, expect, db, newPerson, note }) => {
     await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
   });
   await step("host-waiting", async () => {
-    await panel.getByRole("button", { name: "방 만들기" }).click();
+    const create = panel.getByRole("button", { name: "방 만들기" });
+    if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await create.tap();
+    else await create.click();
     await expect(page).toHaveURL(ROOM_URL);
     await expect(page.getByRole("heading", { name: "내가 만든 방" })).toBeVisible();
     await expect(page.getByText("두 명 이상 들어오면 결과를 볼 수 있어요.")).toBeVisible();
@@ -53,4 +55,13 @@ export default async ({ page, step, expect, db, newPerson, note }) => {
     ["민수", "k3a", "f"],
     ["", "ryf", "f"],
   ]);
+  await step("same-room-draw-and-decide", async () => {
+    await page.getByRole("button", { name: "사다리로 정하기" }).click();
+    await page.getByRole("button", { name: "사다리 타기" }).first().click();
+    await page.getByRole("button", { name: "건너뛰고 결과 보기" }).click();
+    await expect(page.getByRole("heading", { name: /쪽으로!$/ })).toBeVisible();
+    await page.getByRole("button", { name: "이 역으로 정했어요" }).first().click();
+    await expect(page.getByRole("region", { name: /에서 만나요$/ })).toBeVisible();
+    expect(roomIdOf(page)).toBe(roomId);
+  });
 };

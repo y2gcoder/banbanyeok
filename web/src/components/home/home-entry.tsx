@@ -17,21 +17,21 @@ const ENTRY_OPTIONS = [
   },
   {
     value: "all",
-    label: "모두 입력",
+    label: "방장이 입력",
     icon: "M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z",
   },
 ] as const;
 
 // 탭은 같은 폭을 유지하고, 한 줄에 들어가지 않을 때만 탭 안의 아이콘과 이름이 위아래로 놓인다.
 const TAB_CLASS =
-  "flex min-h-12 min-w-0 flex-wrap content-center items-center justify-center gap-x-1.5 gap-y-1 px-0.5 py-2 text-sm font-bold text-ink-soft first:rounded-tl-[calc(var(--radius-2xl)-1px)] last:rounded-tr-[calc(var(--radius-2xl)-1px)] hover:bg-platform aria-selected:bg-[#fff3c6] aria-selected:font-extrabold aria-selected:text-ink focus-visible:-outline-offset-4 forced-colors:aria-selected:outline-2 forced-colors:aria-selected:outline-[Highlight] forced-colors:aria-selected:focus-visible:outline-dashed";
+  "relative flex min-h-12 min-w-0 flex-wrap content-center items-center justify-center gap-x-1.5 gap-y-1 px-0.5 py-2 text-sm font-bold text-ink-soft first:rounded-tl-[calc(var(--radius-2xl)-1px)] last:rounded-tr-[calc(var(--radius-2xl)-1px)] hover:bg-platform aria-selected:bg-[#fff3c6] aria-selected:after:absolute aria-selected:after:inset-x-0 aria-selected:after:bottom-0 aria-selected:after:border-b-2 aria-selected:after:border-ink aria-selected:text-ink focus-visible:-outline-offset-4 forced-colors:aria-selected:outline-2 forced-colors:aria-selected:outline-[Highlight] forced-colors:aria-selected:focus-visible:outline-dashed";
 
 export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
   const [tab, setTab] = useState<"room" | "all">("room");
   const [hasOpenedAll, setHasOpenedAll] = useState(false);
 
   useEffect(() => {
-    // 정적 홈을 유지하면서 출발역이 담긴 링크와 결과의 ‘다시 입력’만 모두 입력으로 연다.
+    // 정적 홈을 유지하면서 출발역이 담긴 링크와 결과의 ‘다시 입력’만 방장이 입력으로 연다.
     const search = window.location.search;
     if (parseRestore(search) || parsePrefill(search).length > 0) {
       setTab("all");
@@ -68,7 +68,13 @@ export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
         ))}
       </Tabs.List>
 
-      <Tabs.Panel value="room" keepMounted className="rounded-b-2xl focus-visible:-outline-offset-2">
+      <Tabs.Panel
+        value="room"
+        keepMounted
+        inert={tab !== "room"}
+        aria-hidden={tab !== "room" || undefined}
+        className="rounded-b-2xl focus-visible:-outline-offset-2"
+      >
         <div className="flex flex-col gap-3 p-4 wide:p-5">
           <p className="text-sm text-ink-soft">초대 링크로 각자 출발역을 넣어요.</p>
           <RegionProvider>
@@ -78,9 +84,15 @@ export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
         </div>
       </Tabs.Panel>
 
-      <Tabs.Panel value="all" keepMounted className="rounded-b-2xl focus-visible:-outline-offset-2">
+      <Tabs.Panel
+        value="all"
+        keepMounted
+        inert={tab !== "all"}
+        aria-hidden={tab !== "all" || undefined}
+        className="rounded-b-2xl focus-visible:-outline-offset-2"
+      >
         <div className="flex flex-col gap-3 p-4 wide:p-5">
-          <p className="text-sm text-ink-soft">바로 추천받고 결과 링크를 보내요.</p>
+          <p className="text-sm text-ink-soft">내 출발역과 친구의 출발역을 함께 넣어요.</p>
           <RegionProvider>
             <SupportedLinesDisclosure />
             {hasOpenedAll ? <HomeForm /> : null}

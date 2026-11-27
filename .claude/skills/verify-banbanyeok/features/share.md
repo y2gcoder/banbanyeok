@@ -11,7 +11,7 @@
 
 ## How to get to it (user POV)
 
-- 첫 화면의 "모두 입력" 탭에서 결과를 만든 뒤 결과 화면의 "카톡으로 보내기"나 "링크 복사"를 누른다.
+- 기존 `/result?…` 주소에서 결과 화면의 "카톡으로 보내기"나 "링크 복사"를 누른다.
 - 친구는 메신저로 받은 `/s?…` 링크를 연다.
 
 ## Driving it with verify.sh
@@ -21,7 +21,7 @@ Preconditions:
 - 기본 전제를 만족한다.
 - `verify.sh drive share-link phone`(바꾼 화면이면 `desktop`도)으로 돌린다.
 
-- **결과 만들기.** 첫 화면에서 `tab "모두 입력"`을 누르고 강남·홍대입구를 골라 `button "만날 역 찾기"`를 누른다. 1위 `article`과 `button "카톡으로 보내기"`가 보인다.
+- **기존 결과 열기.** `/result?v=2&o=k3a.ryf&m=f&t=weekday-day`를 연다. 1위 `article`과 `button "카톡으로 보내기"`가 보인다.
 - **링크 복사.** `button "링크 복사"`를 누르고 클립보드를 읽는다. `/s?v=2&o=k3a.ryf&m=f&t=…` 꼴이다(`shared-link.txt`).
 - **받은 링크 열기.** `newPerson()`의 화면으로 링크를 연다. `heading "친구가 보낸 만날 역 후보"`가 보인다.
 - **나 고르기.** `group "나는 누구?"` 안의 `button "홍대입구"`(exact)를 누른다. 주소에 `me=1`이 붙고 1위 카드에 `홍대입구(나)`가 보인다.

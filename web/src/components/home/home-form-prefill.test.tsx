@@ -1,20 +1,38 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render as renderComponent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prefillHref, restoreHref } from "@/lib/form/prefill";
-import { encodeShareQuery, type ShareState } from "@/lib/link/codec";
+import type { ShareState } from "@/lib/link/codec";
 import { searchStations } from "@/lib/stations";
 import { HomeForm } from "./home-form";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+const createFilledRoom = vi.fn();
+vi.mock("@/lib/api/rooms", async (original) => ({
+  ...(await original<typeof import("@/lib/api/rooms")>()),
+  createFilledRoom: (...args: unknown[]) => createFilledRoom(...args),
+}));
+function render(element: ReactElement) {
+  const client = new QueryClient();
+  return renderComponent(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
+}
 
 const code = (name: string) => searchStations(name).find((s) => s.name === name && s.supported)?.code ?? "";
 
 describe("입력 화면 미리 채우기(SEO 페이지의 '다른 역으로 다시 찾기')", () => {
   beforeEach(() => {
     push.mockReset();
+    createFilledRoom.mockReset().mockResolvedValue({
+      roomId: "abcd123456",
+      hostToken: "synthetic-host",
+      participantId: "own-entry",
+      participantToken: "synthetic-participant",
+      expiresAt: "2026-11-30T15:00:00Z",
+    });
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve(new Response("ok"))),
@@ -27,7 +45,7 @@ describe("입력 화면 미리 채우기(SEO 페이지의 '다른 역으로 다�
     render(<HomeForm />);
     expect(screen.getByRole("combobox", { name: "나의 출발역" })).toHaveValue("강남");
     expect(screen.getByRole("combobox", { name: "친구1의 출발역" })).toHaveValue("홍대입구");
-    expect(screen.getByRole("button", { name: "만날 역 찾기" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "방 만들기" })).toBeEnabled();
   });
 
   it("기억해 둔 '나'보다 미리 채운 역이 우선한다", () => {
@@ -47,7 +65,8 @@ describe("입력 화면 미리 채우기(SEO 페이지의 '다른 역으로 다�
   it("알 수 없는 코드만 있으면 평소처럼 빈 입력", () => {
     window.history.replaceState(null, "", "/?o=zzz.yyy");
     render(<HomeForm />);
-    expect(screen.getByRole("button", { name: "만날 역 찾기" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "나의 출발역" })).toHaveValue("");
+    expect(createFilledRoom).not.toHaveBeenCalled();
   });
 
   it("'다시 입력'으로 돌아오면 모든 줄의 이름·역, 구분, 모드가 그대로다(기억해 둔 '나'와 무관)", async () => {
@@ -69,8 +88,16 @@ describe("입력 화면 미리 채우기(SEO 페이지의 '다른 역으로 다�
     expect(screen.getByRole("radio", { name: /^밤/ })).toBeChecked();
     expect(screen.queryByText(/지금 시각으로 골라 뒀어요/)).toBeNull();
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "만날 역 찾기" }));
-    // 아무것도 안 바꾸고 다시 제출하면 똑같은 결과 링크로 간다(모드·배려하던 사람 포함).
-    expect(push).toHaveBeenCalledWith(`/result?${encodeShareQuery(state)}`);
+    await userEvent.setup().click(screen.getByRole("button", { name: "방 만들기" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/r/abcd123456"));
+    expect(createFilledRoom).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "favor",
+        favorPosition: 2,
+        meetingBand: "night",
+        host: expect.objectContaining({ nickname: "민수", originCode: state.origins[0] }),
+      }),
+      expect.any(String),
+    );
   });
 });

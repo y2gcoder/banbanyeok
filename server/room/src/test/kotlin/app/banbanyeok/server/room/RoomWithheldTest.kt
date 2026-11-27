@@ -60,6 +60,9 @@ class RoomWithheldTest :
                         withClue("token=$token") {
                             shouldFailWith(RoomError.ROOM_NOT_FOUND) { fixture.service.get(roomId, token) }
                             shouldFailWith(RoomError.ROOM_NOT_FOUND) { fixture.service.loadForResult(roomId, token) }
+                            shouldFailWith(RoomError.ROOM_NOT_FOUND) {
+                                fixture.service.startFavorDraw(roomId, token, ShareVersion(99))
+                            }
                             shouldFailWith(RoomError.ROOM_NOT_FOUND) { fixture.service.delete(roomId, token) }
                             shouldFailWith(RoomError.ROOM_NOT_FOUND) {
                                 fixture.service.removeParticipant(roomId, friendId, token)
@@ -86,6 +89,9 @@ class RoomWithheldTest :
                                 service.decide(roomId, token, "225", ShareVersion(99))
                             }
                             shouldFailWith(RoomError.ROOM_WITHHELD) { service.drawFavor(roomId, token, 0, 1) }
+                            shouldFailWith(RoomError.ROOM_WITHHELD) {
+                                service.startFavorDraw(roomId, token, ShareVersion(99))
+                            }
                             shouldFailWith(RoomError.ROOM_WITHHELD) {
                                 service.recordOutcome(roomId, token, Outcome(OutcomeKind.TOP1, null))
                             }

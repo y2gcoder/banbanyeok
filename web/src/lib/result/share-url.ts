@@ -17,10 +17,6 @@ export function sharedImagePath(state: ShareState, dataVersion: string): string 
   return `${SHARED_OG_PATH}?${encodeShareQuery(state)}&dv=${encodeURIComponent(dataVersion)}&iv=${SHARED_OG_IMAGE_VERSION}`;
 }
 
-export function resultPath(state: ShareState): string {
-  return `/result?${encodeShareQuery(state)}`;
-}
-
 /** 서버 컴포넌트의 searchParams를 원래 쿼리 문자열로 되돌린다(디코더가 퍼센트 디코딩을 직접 한다). */
 export function toQueryString(params: Record<string, string | string[] | undefined>): string {
   const parts: string[] = [];

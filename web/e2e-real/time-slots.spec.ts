@@ -72,12 +72,12 @@ test("옛 공유 링크(v=1)는 평일 낮으로 계산해 v=2 평일 낮과 같
   expect(await textWithoutLastTrain(page)).toBe(legacyText);
 });
 
-test("입력 화면에서 고른 요일·시간대가 결과·공유 링크에 담긴다", async ({ page, context }) => {
+test("방장이 입력에서 고른 요일·시간대가 같은 방의 결과와 만료에 반영된다", async ({ page, context, request }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"), { timeout: 90_000 });
   await page.goto("/");
   await warmUp;
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   const when = page.getByRole("group", { name: "언제 만나요?" });
   await expect(when.getByRole("radio", { checked: true })).toHaveCount(2); // 기본값(지금 시각)이 처음부터 골라져 있다
   await page.getByRole("combobox", { name: "나의 출발역" }).fill("혜화");
@@ -87,14 +87,19 @@ test("입력 화면에서 고른 요일·시간대가 결과·공유 링크에 �
   await when.getByRole("radio", { name: "일요일·공휴일" }).click();
   await when.getByRole("radio", { name: /^아침/ }).click();
   await shot(page, "0-home-when");
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
-  await expect(page).toHaveURL(/&t=holiday-morning$/);
+  await page.getByRole("button", { name: "방 만들기" }).click();
+  await expect(page).toHaveURL(/\/r\/[0-9a-hjkmnp-tv-z]{10}$/);
+  const roomId = new URL(page.url()).pathname.split("/").pop();
+  const res = await request.get(`/api/v1/rooms/${roomId}`);
+  expect(res.status()).toBe(200);
+  const room = await res.json();
+  expect(room.timeBasis).toMatchObject({ timeSlot: "holiday-morning" });
+  expect(room.meetingDate).toEqual(expect.any(String));
+  expect(Date.parse(room.expiresAt) - Date.parse(`${room.meetingDate}T00:00:00+09:00`)).toBe(86_400_000);
   await topCard(page);
   await expect(page.getByText("역에서 역까지, 일요일·공휴일 아침 기준 시간.")).toBeVisible();
   await page.getByRole("button", { name: "링크 복사" }).click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
-    /\/s\?v=2&o=2je\.k3a&m=f&t=holiday-morning$/,
-  );
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(`/r/${roomId}?`);
 });
 
 test("방은 약속 날짜·시각으로 구분을 정한다(토요일 22:00 → 토요일 밤)", async ({

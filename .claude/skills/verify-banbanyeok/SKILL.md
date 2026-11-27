@@ -67,7 +67,7 @@ import { gotoHydrated, pickStation } from "./lib.mjs";
 
 export default async ({ page, step, expect, db, newPerson, note, viewport }) => {
   await step("home", () => gotoHydrated(page, "/"));            // 동작 후 NN-home.png + NN-home.aria.yml
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   await pickStation(page, "나의 출발역", "강남", /^강남\s?2호선/);   // 자동완성 combobox → option
   const friend = await newPerson();                              // 저장소·쿠키가 분리된 두 번째 사람
   await step("friend", () => friend.goto("/r/…"), { page: friend });

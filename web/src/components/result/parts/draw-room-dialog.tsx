@@ -1,21 +1,15 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
-import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
+import { useRecoverableRoom } from "@/components/common/use-recoverable-room";
+import { slowMessage } from "@/components/common/use-slow-hint";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { roomHashProperty, track } from "@/lib/analytics";
-import { createDrawRoom, deleteRoom } from "@/lib/api/rooms";
-import type { RoomCreated } from "@/lib/api/types";
 import { withJosa } from "@/lib/display/korean";
 import type { ShareState } from "@/lib/link/codec";
-import { type DrawRoomInput, meetingForSlot, toDrawRoomRequest } from "@/lib/room/draw-room";
-import { beginDrawRoomAttempt, type DrawRoomAttempt, endDrawRoomAttempt } from "@/lib/room/draw-room-attempt";
-import { isDrawRoomUnsupported, isRoomGone, roomErrorMessage } from "@/lib/room/errors";
-import { roomPath } from "@/lib/room/id";
-import { canStoreRoomTokens, keepUntilFrom, saveRoomRecord } from "@/lib/room/tokens";
+import { meetingForSlot, toDrawRoomRequest } from "@/lib/room/draw-room";
+import { isDrawRoomUnsupported, roomErrorMessage } from "@/lib/room/errors";
+import { canStoreRoomTokens } from "@/lib/room/tokens";
 import { formatMeetingDay, todayInSeoul } from "@/lib/when/dates";
 
 type Person = { index: number; name: string };
@@ -44,7 +38,6 @@ export function DrawRoomDialog({
   state: ShareState;
   people: readonly Person[];
 }) {
-  const router = useRouter();
   const id = useId();
   const [hostIndex, setHostIndex] = useState(0);
   const [today, setToday] = useState("");
@@ -55,79 +48,13 @@ export function DrawRoomDialog({
     setStorable(canStoreRoomTokens());
   }, [open]);
 
-  /** 만들었지만 방장 기록을 저장하지 못한 방과 그 시도. */
-  const [unsaved, setUnsaved] = useState<{ created: RoomCreated; attemptId: string } | null>(null);
-  const [saveRetried, setSaveRetried] = useState(false);
-  const [removed, setRemoved] = useState(false);
-  const [attemptBlocked, setAttemptBlocked] = useState(false);
-
-  const persist = (created: RoomCreated) =>
-    saveRoomRecord(created.roomId, {
-      hostToken: created.hostToken,
-      participantToken: created.participantToken,
-      participantId: created.participantId,
-      keepUntil: keepUntilFrom(),
-    });
-  const enter = (created: RoomCreated, attemptId: string) => {
-    setUnsaved(null);
-    endDrawRoomAttempt(attemptId);
-    track("room_created", {
-      hidden_used: false,
-      ...roomHashProperty({ roomId: created.roomId, roomHash: created.roomHash }),
-    });
-    router.push(roomPath(created.roomId));
-  };
-
-  // 응답을 받은 바로 그 자리에서 저장한다. 그 뒤의 화면 처리(onSuccess)가 돌기 전에 탭이 닫혀도 방장 권한은 이 기기에 남는다.
-  // 시도 키는 요청 전에 이 기기에 저장돼 있다(confirm). 응답을 잃은 뒤 다시 누르면(다른 탭·다시 연 화면 포함) 같은 키로 같은 방을 받는다.
-  const create = useMutation({
-    mutationFn: async ({ input, attempt }: { input: DrawRoomInput; attempt: DrawRoomAttempt }) => {
-      const created = await createDrawRoom({ ...input, recoveryKey: attempt.recoveryKey }, attempt.idempotencyKey);
-      return { created, saved: persist(created) };
-    },
-    onMutate: () => setRemoved(false),
-    // 옛 서버의 거절은 아무것도 만들지 않았다는 뜻이라 시도를 끝낸다. 그 밖의 실패(연결 끊김 등)는 방이 생겼을 수 있어 키를 남긴다.
-    onError: (error, { attempt }) => {
-      if (isDrawRoomUnsupported(error)) endDrawRoomAttempt(attempt.id);
-    },
-    onSuccess: ({ created, saved }, { attempt }) => {
-      if (saved) enter(created, attempt.id);
-      else setUnsaved({ created, attemptId: attempt.id });
-    },
-  });
-  // 지운 방을 같은 키로 다시 받지 않게, 지운 뒤에는 시도를 끝내 새 키로 만든다. 지웠다는 답을 받기 전에는 시도와 토큰을 그대로 둔다.
-  const remove = useMutation({
-    mutationFn: async ({ created }: { created: RoomCreated; attemptId: string }) => {
-      try {
-        await deleteRoom(created.roomId, created.hostToken);
-      } catch (error) {
-        if (!isRoomGone(error)) throw error;
-      }
-    },
-    onSuccess: (_, { attemptId }) => {
-      setUnsaved(null);
-      setSaveRetried(false);
-      setRemoved(true);
-      endDrawRoomAttempt(attemptId);
-      create.reset();
-    },
-  });
-  const retrySave = () => {
-    if (!unsaved) return;
-    if (persist(unsaved.created)) enter(unsaved.created, unsaved.attemptId);
-    else setSaveRetried(true);
-  };
-  const stage = useSlowStage(create.isPending);
+  const creation = useRecoverableRoom("draw");
   const meeting = today ? meetingForSlot(state.timeSlot, today, state.slotDefaulted === true) : null;
   const host = people.find((person) => person.index === hostIndex)?.name ?? "";
-  const submitted = create.isPending || create.isSuccess;
+  const { submitted, unsaved, retrySave } = creation;
 
-  const confirm = async () => {
-    if (!today) return;
-    const input = toDrawRoomRequest(state, hostIndex, today);
-    const attempt = await beginDrawRoomAttempt(input);
-    setAttemptBlocked(attempt === null);
-    if (attempt) create.mutate({ input, attempt });
+  const confirm = () => {
+    if (today) void creation.submit(toDrawRoomRequest(state, hostIndex, today));
   };
 
   return (
@@ -191,16 +118,16 @@ export function DrawRoomDialog({
           </ul>
         </section>
 
-        {storable && !attemptBlocked ? null : (
+        {storable && !creation.attemptBlocked ? null : (
           <p role="status" className="text-[13px] text-destructive">
             이 브라우저는 저장 공간을 막아 두어서, 방을 만들어도 이 기기에서 사다리를 탈 수 없어요.
           </p>
         )}
-        {create.isError ? (
+        {creation.error ? (
           <p role="alert" className="text-sm font-semibold text-destructive">
-            {isDrawRoomUnsupported(create.error)
+            {isDrawRoomUnsupported(creation.error)
               ? "지금은 사다리 방을 만들 수 없어요. 방은 만들지 않았어요. 잠시 뒤에 다시 해 주세요."
-              : roomErrorMessage(create.error)}
+              : roomErrorMessage(creation.error)}
           </p>
         ) : null}
         {unsaved ? (
@@ -209,24 +136,24 @@ export function DrawRoomDialog({
               방은 만들었지만 이 브라우저에 방장 권한을 저장하지 못했어요(저장 공간이 모자랄 수 있어요). 이대로 나가면
               이 기기에서 사다리를 타거나 방을 지울 수 없어요. 다시 저장해 보거나 만든 방을 지워 주세요.
             </p>
-            {saveRetried ? <p>아직 저장하지 못했어요.</p> : null}
-            {remove.isError ? <p>방을 지우지 못했어요. {roomErrorMessage(remove.error)}</p> : null}
+            {creation.saveRetried ? <p>아직 저장하지 못했어요.</p> : null}
+            {creation.removeError ? <p>방을 지우지 못했어요. {roomErrorMessage(creation.removeError)}</p> : null}
           </div>
         ) : null}
-        {removed ? (
+        {creation.removed ? (
           <p role="status" className="text-[13px] text-ink">
             만든 방을 지웠어요. 저장 공간을 비운 뒤 다시 만들 수 있어요.
           </p>
         ) : null}
         <p aria-live="polite" className="text-[13px] text-muted-foreground empty:hidden">
-          {create.isPending ? slowMessage(stage, "방 만들기") : null}
+          {creation.pending ? slowMessage(creation.stage, "방 만들기") : null}
         </p>
 
         <div className="flex flex-col gap-2">
           <Button
             type="button"
             onClick={unsaved ? retrySave : confirm}
-            disabled={unsaved ? remove.isPending : submitted || !storable || !today}
+            disabled={unsaved ? creation.removePending : submitted || !storable || !today}
             className="h-12 rounded-xl text-base font-bold"
           >
             {unsaved ? "다시 저장하고 사다리 타러 가기" : submitted ? "방 만드는 중…" : "방 만들고 사다리 타러 가기"}
@@ -234,11 +161,11 @@ export function DrawRoomDialog({
           <Button
             type="button"
             variant="ghost"
-            onClick={() => (unsaved ? remove.mutate(unsaved) : onOpenChange(false))}
-            disabled={unsaved ? remove.isPending : submitted}
+            onClick={() => (unsaved ? creation.removeCreated() : onOpenChange(false))}
+            disabled={unsaved ? creation.removePending : submitted}
             className="h-11 text-[15px] font-semibold"
           >
-            {unsaved ? (remove.isPending ? "지우는 중…" : "만든 방 지우기") : "취소"}
+            {unsaved ? (creation.removePending ? "지우는 중…" : "만든 방 지우기") : "취소"}
           </Button>
         </div>
       </DialogContent>

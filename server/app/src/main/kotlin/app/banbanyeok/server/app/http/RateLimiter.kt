@@ -143,6 +143,6 @@ class RateLimiting(
     ): Long? = if (method == "POST" && path in CREATION_PATHS) creation.tryAcquire(key) else null
 
     private companion object {
-        val CREATION_PATHS = setOf("/v1/anon", "/v1/rooms", "/v1/draw-rooms")
+        val CREATION_PATHS = setOf("/v1/anon", "/v1/rooms", "/v1/draw-rooms", "/v1/filled-rooms")
     }
 }

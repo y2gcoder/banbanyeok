@@ -1,6 +1,7 @@
 import { gunzipSync } from "node:zlib";
 import AxeBuilder from "@axe-core/playwright";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { submitFilledRoom } from "../e2e/support/room-fixture";
 
 // 통계 키를 박아 빌드한 앱(playwright.analytics.config.ts)에서의 동의(옵트인)와 실제 전송 내용.
 // 동의 전·거부·철회 뒤에는 PostHog로 가는 요청이 0건이고, 동의한 뒤에는 수집 주소(`/e/`) 하나로만, 계약의 이벤트만, 출발역·이름·쿼리
@@ -85,13 +86,15 @@ async function pickStation(page: Page, field: string, query: string, option: Reg
 }
 
 /** 입력 → 결과 → 모드 → 정했어요를 쓴다(배너가 떠 있어도 막히지 않아야 한다). */
-async function useApp(page: Page) {
+async function useApp(page: Page, waitForAnalytics = false) {
   await page.goto("/");
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
+  await submitFilledRoom(page);
+  if (waitForAnalytics) await page.waitForTimeout(BATCH_WAIT_MS);
+  await page.goto("/result?v=2&o=k3a.ryf&m=f&t=weekday-day&n=66-87IiY.");
   await expect(page).toHaveURL(/\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}/);
   await expect(page.getByRole("article").first().getByText("1위")).toBeVisible();
   await page.getByRole("tab", { name: "빨리 만나기" }).click();
@@ -167,7 +170,7 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
   await expect(banner(page)).toHaveCount(0);
   // 동의 이벤트가 나간 뒤에 페이지를 옮긴다(전체 새로 불러오기 직전의 마지막 이벤트는 배치 전송이 못 나갈 수 있다).
   await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
-  await useApp(page);
+  await useApp(page, true);
   await expect(page).toHaveURL(/\/result\?/);
   const originCodes = new URL(page.url()).searchParams.get("o")?.split(".") ?? [];
   expect(originCodes).toHaveLength(2);
@@ -194,6 +197,7 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
     new Set([
       "analytics_consent_changed",
       "input_completed",
+      "room_created",
       "result_viewed",
       "mode_switched",
       "station_chosen",
@@ -224,7 +228,7 @@ test("동의: 그때부터 수집 주소로만, 계약의 이벤트만, 출발�
   }
   const viewed = probe.events.filter((e) => e.event === "result_viewed");
   expect(viewed.length).toBeGreaterThanOrEqual(2);
-  expect(viewed[0]?.properties).toMatchObject({
+  expect(viewed.find((event) => event.properties.response_time_bucket === "0-300")?.properties).toMatchObject({
     participant_count: 2,
     candidate_count: 3,
     response_time_bucket: "0-300",
@@ -251,7 +255,7 @@ test("인원 상한: 동의 전에는 안내 버튼을 눌러도 요청 0건, �
   const limitButton = page.getByRole("button", { name: "4명까지 돼요 · 더 필요해요?" });
 
   await page.goto("/");
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   await fillToLimit();
   await limitButton.click();
   await limitButton.click();
@@ -263,7 +267,7 @@ test("인원 상한: 동의 전에는 안내 버튼을 눌러도 요청 0건, �
   await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
   // 동의 전에 누른 화면에서는 이미 지나간 일이라 보내지 않는다. 새 화면(새로 연 페이지)에서 누르면 그때부터 센다.
   await page.goto("/");
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   await expect(banner(page)).toHaveCount(0);
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await fillToLimit();
@@ -333,11 +337,11 @@ test("다른 탭에서 철회해도 이 탭의 수집이 멈춘다", async ({ pa
   await other.getByRole("switch", { name: "PostHog 이용 통계 수집·이용 동의" }).click();
   await expect.poll(() => analyticsKeys(page)).toEqual([]); // storage 이벤트로 이 탭도 지운다
   const settled = probe.outside.length;
-  await page.getByRole("tab", { name: "모두 입력" }).click();
+  await page.getByRole("tab", { name: "방장이 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
+  await submitFilledRoom(page);
   await expect(page.getByRole("article").first()).toBeVisible();
   await page.waitForTimeout(BATCH_WAIT_MS);
   expect(probe.outside.length).toBe(settled);
@@ -771,15 +775,9 @@ test("유입 태그·평문 오류(#116 검토 재현): 공유 링크에 utm_ter
   test.setTimeout(90_000);
   const probe = await attachProbe(context, baseURL ?? "");
   const NICK = "검토별명";
-  // 별명과 출발역 두 개가 든 정상 공유 링크를 만든다(동의 전이라 요청 0건).
-  await page.goto("/");
-  await page.getByRole("tab", { name: "모두 입력" }).click();
-  await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill(NICK);
-  await pickStation(page, `${NICK}의 출발역`, "강남", /^강남\s?2호선/);
-  await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
-  await page.getByRole("button", { name: "만날 역 찾기" }).click();
-  await expect(page).toHaveURL(/\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}/);
-  const shared = new URL(page.url().replace("/result", "/s"));
+  // 별명과 출발역 두 개가 든 기존 공유 링크(동의 전이라 요청 0건).
+  const shared = new URL(`/s?v=2&o=k3a.ryf&m=f&t=weekday-day&n=${Buffer.from(NICK).toString("base64url")}.`, baseURL);
+  await page.goto(shared.toString());
   const o = shared.searchParams.get("o") ?? "";
   const codes = o.split(".");
   expect(codes).toHaveLength(2);

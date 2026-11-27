@@ -3,6 +3,12 @@ package app.banbanyeok.server.room
 import java.time.Clock
 import java.util.random.RandomGenerator
 
+public enum class DrawStartResult {
+    Ready,
+    Stale,
+    RoomNotFound,
+}
+
 /** 뽑기 쓰기의 결과. 저장소가 방 행을 잠근 채 [FavorDrawRule.verdict]로 정한다. */
 public sealed interface DrawResult {
     /** 뽑았다. 저장소가 [winner]를 배려 대상으로, [draw]를 뽑기 칸에 쓴다. */

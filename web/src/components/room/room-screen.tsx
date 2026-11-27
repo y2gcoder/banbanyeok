@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
+import { Button } from "@/components/ui/button";
 import { roomHashProperty, track } from "@/lib/analytics";
 import { getRoom } from "@/lib/api/rooms";
 import type { Room } from "@/lib/api/types";
@@ -377,7 +378,13 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         joinedCount={room.participants.length}
         expectedCount={expectedCount}
         hiddenInRoom={room.participants.some((p) => p.hidden)}
-        focusOnMount={playDraw && drawControl.drewKey === draw.key ? "skip" : null}
+        focusOnMount={
+          playDraw && drawControl.drewKey === draw.key
+            ? "skip"
+            : draw.round === 0 && drawControl.started
+              ? "heading"
+              : null
+        }
         pending={drawControl.pending}
         error={drawControl.error}
         onDraw={drawControl.draw}
@@ -457,6 +464,26 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         ) : null}
         {enough ? (compactDrawIntro ? null : joinJump) : share}
         {drawSection}
+        {!draw && isHost && enough && room.shareVersion !== undefined ? (
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-12"
+              disabled={drawControl.pending}
+              onClick={() => {
+                if (room.shareVersion !== undefined) drawControl.start(room.shareVersion);
+              }}
+            >
+              {drawControl.pending ? "사다리 준비 중…" : "사다리로 정하기"}
+            </Button>
+            {drawControl.error ? (
+              <p role="alert" className="mt-2 text-sm text-destructive">
+                {drawControl.error}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {enough || draw ? (

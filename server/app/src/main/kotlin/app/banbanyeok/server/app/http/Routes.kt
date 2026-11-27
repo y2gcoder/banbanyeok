@@ -68,8 +68,14 @@ private fun Route.roomCreationRoute(
     post("/draw-rooms") {
         val body = call.receive<DrawRoomCreateRequestDto>()
         val command = body.toCommand()
-        val recoveryKey = body.recoveryKey()
+        val recoveryKey = requireRoomRecoveryKey(body.recoveryKey)
         call.createRoom(services, idempotency) { services.rooms.createDrawRoom(command, recoveryKey) }
+    }
+    post("/filled-rooms") {
+        val body = call.receive<FilledRoomCreateRequestDto>()
+        val command = body.toCommand()
+        val recoveryKey = requireRoomRecoveryKey(body.recoveryKey)
+        call.createRoom(services, idempotency) { services.rooms.createFilledRoom(command, recoveryKey) }
     }
 }
 
@@ -119,18 +125,22 @@ private fun Route.roomRoutes(
         }
         put("/decision") {
             val body = call.receive<DecisionRequestDto>()
-            if (body.seenVersion < 0) {
-                throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "seenVersion은 0 이상이어야 합니다")
-            }
             val room =
                 services.rooms.decide(
                     call.roomId(),
                     call.bearerToken(),
                     body.stationCode,
-                    ShareVersion(body.seenVersion),
+                    requireSeenVersion(body.seenVersion),
                 )
             if (body.stationCode != null) call.count(services, UsageStage.DECIDE_STATION)
             call.respondRoom(services, room)
+        }
+        post("/favor-draw/start") {
+            val body = call.receive<StartFavorDrawRequestDto>()
+            call.respondRoom(
+                services,
+                services.rooms.startFavorDraw(call.roomId(), call.bearerToken(), requireSeenVersion(body.seenVersion)),
+            )
         }
         // 멱등은 방의 세대·회차로 한다(인스턴스와 상관없음). 메모리 응답 캐시를 쓰지 않으므로 재시도도 늘 방장 확인을 지나고 지금 방을 받는다.
         post("/favor-draw") {
@@ -268,6 +278,11 @@ private suspend fun ApplicationCall.respondRoom(
 ) = respond(room.toDto(services.stations, services.times.resolve(room.meetingDate, room.meetingTime, room.meetingBand)))
 
 private fun ApplicationCall.lastTrainReader() = LastTrainReader.parse(request.queryParameters["lastTrainKinds"])
+
+private fun requireSeenVersion(value: Long): ShareVersion {
+    if (value < 0) throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "seenVersion은 0 이상이어야 합니다")
+    return ShareVersion(value)
+}
 
 private fun ApplicationCall.roomId(): String = requireNotNull(parameters["roomId"])
 

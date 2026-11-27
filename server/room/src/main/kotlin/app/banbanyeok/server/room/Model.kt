@@ -181,10 +181,12 @@ public data class CreateRoomCommand(
     val meetingTime: LocalTime? = null,
     /** 약속 시간대(선택). [meetingTime]과 같이 오면 그 시각의 시간대와 같아야 한다(다르면 INVALID_MEETING_BAND). */
     val meetingBand: TimeBand? = null,
-    /** 방장이 대신 넣는 다른 사람 칸(#227). 뽑기 방에서만 받고, 있으면 방은 잠긴 채 시작한다. */
+    /** 방장이 대신 넣는 다른 사람 칸. 있으면 방은 잠긴 채 시작한다. */
     val others: List<ParticipantInput> = emptyList(),
     /** 입력 순서에서 방장의 자리(0이면 맨 앞). 입장 순서는 [others]에 방장을 이 자리에 끼운 순서다. */
     val hostPosition: Int = 0,
+    /** 이전 추천에서 다시 입력할 때 입력 순서상 원래 배려 대상. 채운 방에서만 쓴다. */
+    val initialFavorPosition: Int? = null,
 ) {
     public companion object {
         public const val HOST_TARGET: String = "host"

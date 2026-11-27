@@ -217,7 +217,7 @@ jobs:
         run: |
           pnpm build
           nohup pnpm start --port 3000 > ../web.log 2>&1 &
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright install --with-deps chromium webkit
         working-directory: web
       - name: 서버·웹 대기
         run: |

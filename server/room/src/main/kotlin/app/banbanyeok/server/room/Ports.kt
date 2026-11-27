@@ -125,6 +125,13 @@ public interface RoomRepository {
         rule: DecisionRule,
     ): DecisionResult
 
+    /** 공유 번호 [seen]의 방에 뽑기를 켠다. 이미 켜져 있으면 아무것도 쓰지 않는다. */
+    public suspend fun startFavorDraw(
+        roomId: String,
+        seen: ShareVersion,
+        activity: Activity,
+    ): DrawStartResult
+
     /**
      * 방 행을 잠그고(정하기와 같은 FOR UPDATE) [rule]로 판정해 [DrawResult.Drawn]일 때만 당첨자·뽑기 칸·활동 시각을 쓴다.
      * 운은 [rule]이 잠근 뒤의 대상으로 뽑는다.

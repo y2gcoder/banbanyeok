@@ -360,3 +360,29 @@ export async function prepareRoom(
   });
   return `/r/${FAKE_ROOM_ID}`;
 }
+
+/** 가짜 서버가 방 쓰기를 제공하지 않는 화면 테스트에서 제출과 응답만 잇는다. */
+export async function submitFilledRoom(
+  page: Page,
+  submit = () => page.getByRole("button", { name: "방 만들기" }).click(),
+): Promise<unknown> {
+  await prepareRoom(page, "host-full");
+  await page.route("**/api/v1/filled-rooms", (route) =>
+    route.fulfill(
+      json(201, {
+        roomId: FAKE_ROOM_ID,
+        hostToken: HOST_TOKEN,
+        participantToken: HOST_PARTICIPANT_TOKEN,
+        participantId: "h1",
+        expiresAt: "2999-01-01T00:00:00.000Z",
+      }),
+    ),
+  );
+  const request = page.waitForRequest(
+    (candidate) => candidate.url().endsWith("/api/v1/filled-rooms") && candidate.method() === "POST",
+  );
+  await submit();
+  const submitted = await request;
+  await page.waitForURL(`**/r/${FAKE_ROOM_ID}`);
+  return submitted.postDataJSON();
+}

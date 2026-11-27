@@ -7,7 +7,7 @@ import app.banbanyeok.server.room.ErrorKind
 private val RECOVERY_KEY = Regex("^[A-Za-z0-9_-]{32,128}$")
 
 /** 복구 키는 추측할 수 없는 값이어야 한다(방장 권한을 되찾는 데 쓰인다). */
-fun DrawRoomCreateRequestDto.recoveryKey(): String {
+fun requireRoomRecoveryKey(recoveryKey: String): String {
     if (!RECOVERY_KEY.matches(recoveryKey)) {
         throw AppException(ErrorKind.INVALID, "INVALID_REQUEST", "recoveryKey는 32~128자의 영문·숫자·_·-여야 합니다")
     }
@@ -34,5 +34,23 @@ fun DrawRoomCreateRequestDto.toCommand(): CreateRoomCommand {
                 it.toInput("다른 사람 칸은 출발역을 숨길 수 없습니다")
             },
         hostPosition = hostPosition,
+    )
+}
+
+/** 같은 명단 입력 규칙을 쓰되 뽑기 상태를 만들지 않는다. 이전 결과에서 돌아오면 추천 기준도 이어 간다. */
+fun FilledRoomCreateRequestDto.toCommand(): CreateRoomCommand {
+    if (others.isEmpty()) throw AppException(ErrorKind.INVALID, "INVALID_OTHERS", "others는 1명 이상이어야 합니다")
+    val room =
+        RoomCreateRequestDto(
+            mode = mode,
+            favorTarget = if (mode == "favor") CreateRoomCommand.HOST_TARGET else null,
+            meetingDate = meetingDate,
+            meetingBand = meetingBand,
+            host = host,
+        )
+    return room.toCommand(deviceToken = null).copy(
+        others = others.map { it.toInput() },
+        hostPosition = hostPosition,
+        initialFavorPosition = favorPosition,
     )
 }

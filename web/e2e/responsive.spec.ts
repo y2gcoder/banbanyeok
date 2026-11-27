@@ -4,7 +4,7 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 import { checkLayout, expectColumns, expectSideBesideOrBelowMain, isWide } from "./support/checks";
 import { horizontalOverflow } from "./support/layout";
 import { REGIONAL } from "./support/regions";
-import { prepareRoom, type RoomScenario } from "./support/room-fixture";
+import { prepareRoom, type RoomScenario, submitFilledRoom } from "./support/room-fixture";
 import { SHOT_IDS, SHOT_SCREENS, VIEWPORTS, type ViewportCase } from "./support/viewports";
 
 /**
@@ -44,7 +44,7 @@ const SCREENS: readonly Screen[] = [
     path: "/",
     ready: (p) => p.getByRole("heading", { name: /딱 반반일까/ }),
     actions: (p) => [
-      p.getByRole("tab", { name: "모두 입력" }),
+      p.getByRole("tab", { name: "방장이 입력" }),
       p.getByRole("tab", { name: "각자 입력" }),
       p.getByRole("combobox", { name: "내 출발역" }),
       p.getByText("인원 정하기 (선택)", { exact: true }),
@@ -212,7 +212,7 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
 
   test("입력 화면: 입력값·추가한 줄이 남고, 탭은 제목 아래 온다", async ({ page }) => {
     await open(page, screen("home"));
-    await page.getByRole("tab", { name: "모두 입력" }).click();
+    await page.getByRole("tab", { name: "방장이 입력" }).click();
     await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
     await pickStation(page, page.getByRole("combobox", { name: "민수의 출발역" }), "강남", /^강남\s?2호선/);
     await page.getByRole("button", { name: /한 명 더/ }).click();
@@ -232,10 +232,11 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
 
     // 펼친 채로 이어서 입력하고 제출할 수 있다.
     await pickStation(page, page.getByRole("combobox", { name: "친구1의 출발역" }), "홍대입구", /^홍대입구\s?2호선/);
-    await page.getByRole("button", { name: "만날 역 찾기" }).click();
-    await expect(page).toHaveURL(
-      /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=/,
-    );
+    const created = await submitFilledRoom(page);
+    expect(created).toMatchObject({
+      host: { nickname: "민수", originCode: "k3a" },
+      others: [{ originCode: "ryf", hidden: false }],
+    });
   });
 
   test("결과 화면: 고른 기준·펼친 후보·스크롤 위치가 남는다", async ({ page }) => {
@@ -328,7 +329,7 @@ test.describe("데스크톱 키보드", () => {
       if (i === firstTabIndex) {
         await expect(page.getByRole("tab", { name: "각자 입력" })).toBeFocused();
         await page.keyboard.press("ArrowRight");
-        await expect(page.getByRole("tab", { name: "모두 입력" })).toBeFocused();
+        await expect(page.getByRole("tab", { name: "방장이 입력" })).toBeFocused();
       }
     }
     expect(visited).toEqual(expected);
@@ -347,11 +348,14 @@ test.describe("데스크톱 키보드", () => {
     await expect(page.getByRole("option", { name: /^홍대입구\s?2호선/ })).toBeVisible();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("combobox", { name: "친구1의 출발역" })).toHaveValue("홍대입구");
-    // 목록이 닫힌 역 칸에서 한 번 더 Enter를 누르면 폼이 제출된다.
+    // 역 칸의 Enter는 선택만 한다. 제출 버튼까지 Tab으로 가서 Enter를 누른다.
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(
-      /\/result\?v=2&o=[0-9a-z]{3}\.[0-9a-z]{3}&m=f&t=(?:weekday|saturday|holiday)-(?:morning|day|evening|night)&n=/,
-    );
+    await expect(page).toHaveURL(/\/$/);
+    await submitFilledRoom(page, async () => {
+      for (let tab = 0; tab < 5; tab += 1) await page.keyboard.press("Tab");
+      await expect(page.getByRole("button", { name: "방 만들기" })).toBeFocused();
+      await page.keyboard.press("Enter");
+    });
 
     // 결과: 기준 탭은 화살표 키로 옮긴다.
     await page.getByRole("tab", { name: "공평하게" }).focus();

@@ -6,15 +6,15 @@ import { VIEWPORTS } from "./support/viewports";
 test("홈 탭: 각자 입력으로 열리고 방향키로 두 탭을 오갈 수 있다", async ({ page }) => {
   await page.goto("/");
   const list = page.getByRole("tablist", { name: "출발역 입력 방식" });
-  const all = list.getByRole("tab", { name: "모두 입력" });
+  const all = list.getByRole("tab", { name: "방장이 입력" });
   const room = list.getByRole("tab", { name: "각자 입력" });
-  await expect(list.getByRole("tab")).toHaveText(["각자 입력", "모두 입력"]);
+  await expect(list.getByRole("tab")).toHaveText(["각자 입력", "방장이 입력"]);
   await expect(room).toHaveAttribute("aria-selected", "true");
   await expect(all).toHaveAttribute("aria-selected", "false");
   const panel = page.getByRole("tabpanel", { name: "각자 입력" });
   await expect(panel.getByRole("button", { name: "방 만들기" })).toBeVisible();
   const supportedLines = /수도권 전철 \d+개 노선을 계산해요/;
-  const allPanel = page.getByRole("tabpanel", { name: "모두 입력" });
+  const allPanel = page.getByRole("tabpanel", { name: "방장이 입력" });
   await room.focus();
   await page.keyboard.press("ArrowRight");
   await expect(all).toBeFocused();
@@ -62,9 +62,9 @@ test("홈 탭: 각자 입력으로 열리고 방향키로 두 탭을 오갈 수 
 
 test("홈 탭: 최대 4명과 두 폼의 서로 다른 초안이 유지된다", async ({ page }) => {
   await page.goto("/");
-  const allTab = page.getByRole("tab", { name: "모두 입력" });
+  const allTab = page.getByRole("tab", { name: "방장이 입력" });
   const roomTab = page.getByRole("tab", { name: "각자 입력" });
-  const all = page.getByRole("tabpanel", { name: "모두 입력" });
+  const all = page.getByRole("tabpanel", { name: "방장이 입력" });
   const room = page.getByRole("tabpanel", { name: "각자 입력" });
   await allTab.click();
   await all.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
@@ -91,7 +91,7 @@ test("홈 탭: 최대 4명과 두 폼의 서로 다른 초안이 유지된다", 
 
   await allTab.click();
   await expect(page.getByRole("tabpanel")).toHaveCount(1);
-  await expect(all).toContainText("바로 추천받고 결과 링크를 보내요.");
+  await expect(all).toContainText("내 출발역과 친구의 출발역을 함께 넣어요.");
   await expect(all.getByRole("combobox", { name: "민수의 출발역" })).toHaveValue("강남");
   await expect(all.getByRole("textbox", { name: "4번째 사람 이름(선택)" })).toHaveValue("서연");
   await roomTab.click();
@@ -152,7 +152,7 @@ test("320 CSS px에서 기본 글자를 두 배로 키워도 홈 탭 이름과 �
   await page.evaluate(() => document.fonts.ready);
 
   const list = page.getByRole("tablist", { name: "출발역 입력 방식" });
-  const all = list.getByRole("tab", { name: "모두 입력" });
+  const all = list.getByRole("tab", { name: "방장이 입력" });
   const room = list.getByRole("tab", { name: "각자 입력" });
   const expectTabsFit = async () => {
     expect(await horizontalOverflow(page)).toEqual([]);
@@ -195,5 +195,5 @@ test("320 CSS px에서 기본 글자를 두 배로 키워도 홈 탭 이름과 �
   await page.keyboard.press("ArrowRight");
   await expect(all).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("tabpanel", { name: "모두 입력" })).toBeFocused();
+  await expect(page.getByRole("tabpanel", { name: "방장이 입력" })).toBeFocused();
 });
