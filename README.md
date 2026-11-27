@@ -50,9 +50,9 @@ mise run test                      # 위 둘을 함께
 
 ### 에이전트 작업자(코디네이터용)
 
-Claude Code 작업자는 poteto-mode로 일합니다([AGENTS.md](AGENTS.md) '작업 관례'). 개인 홈 레포 체크아웃이 있는 코디네이터는 그 레포의 `.claude/skills/orca-poteto-worker/SKILL.md`를 열고 `start.sh`로 작업자를 띄웁니다. 작업할 반반역 워크트리에서 실행하고 처음에는 `--dry-run`으로 대상과 명령을 확인합니다.
+Claude Code 작업자는 poteto-mode로 일합니다([AGENTS.md](AGENTS.md) '작업 관례'). 개인 `home` 레포 체크아웃이 있는 코디네이터는 그 레포의 `.claude/skills/orca-poteto-worker/SKILL.md`를 열고 `start.sh`로 작업자를 띄웁니다. 작업할 반반역 워크트리에서 실행하고 처음에는 `--dry-run`으로 대상과 명령을 확인합니다.
 
-직접 띄울 때는 Orca에서 Claude Code를 터미널(`--surface terminal`)로 열고, 첫 입력에 `/pstack:poteto-mode <대기 지시>`를 보냅니다. 대기 지시에는 작업을 시작하지 말고 다음 메시지를 기다리라고 적습니다. 그 터미널이 `tui-idle`이 된 후 같은 핸들을 `orca orchestration worker-start --terminal`에 넘겨 작업 지시를 보냅니다.
+직접 띄울 때는 Orca에서 Claude Code를 `--surface terminal --json`으로 열고, 첫 입력에 `/pstack:poteto-mode <대기 지시>`를 보냅니다. 대기 지시에는 다음 메시지를 기다리라고 적습니다. Orca는 작업 지시서 앞에 안내문을 붙이므로 poteto-mode는 첫 터미널 입력에서 켜야 합니다. `--json` 응답에서 받은 핸들의 터미널이 `tui-idle`이 된 후, 같은 핸들을 `orca orchestration worker-start --terminal`에 넘겨 작업 지시를 보냅니다.
 
 ## 라이선스
 
