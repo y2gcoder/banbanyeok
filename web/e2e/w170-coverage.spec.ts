@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
+import { REGIONAL } from "./support/regions";
 
 /**
  * #170 계산 범위 안내: 첫 화면에서 지원 노선을 바로 알 수 있고, 역 검색에서 결과가 없거나 계산하지 않는 역이면 이유를 알려 준다.
@@ -45,13 +46,24 @@ test("첫 화면: 계산 범위 한 줄을 펼치면 노선 배지와 빠진 곳
 test("수도권 밖 역 이름을 치면 오타 안내 대신 계산 범위와 노선 배지를 보여 준다", async ({ page }) => {
   await page.goto("/");
   const field = page.getByRole("combobox", { name: "나의 출발역" });
-  await field.fill("서면");
+  // 수도권 단독일 때는 부산 역(서면)이, 부산권 공개 뒤에는 어느 권역에도 없는 역(동대구)이 계산 범위 밖이다.
+  await field.fill(REGIONAL ? "동대구" : "서면");
   const empty = page.getByRole("status").filter({ hasText: "찾는 역이 없어요" });
   await expect(empty).toBeVisible();
   await expect(empty).toContainText(/아직 수도권 전철 \d+개 노선만 계산해요\. 이름이 맞는지도 확인해 주세요\./);
   await expect(empty.getByText("2호선", { exact: true })).toBeAttached();
   await expect(page.getByRole("option")).toHaveCount(0);
   await expectAccessible(page, true);
+});
+
+test("부산권 공개 뒤에는 수도권에서 부산 역 이름을 치면 부산권으로 바꾸라고 알린다", async ({ page }) => {
+  test.skip(!REGIONAL, "부산권 공개 전(수도권 단독)에는 위 테스트가 서면을 계산 범위 밖으로 본다");
+  await page.goto("/");
+  await page.getByRole("combobox", { name: "나의 출발역" }).fill("서면");
+  const elsewhere = page.getByRole("status").filter({ hasText: "부산권에 서면이 있어요" });
+  await expect(elsewhere).toBeVisible();
+  await expect(elsewhere.getByRole("button", { name: "부산권으로 바꾸기" })).toBeVisible();
+  await expect(page.getByRole("option")).toHaveCount(0);
 });
 
 for (const [query, reason] of [

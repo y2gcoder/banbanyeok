@@ -56,6 +56,7 @@ class BusanLastTrainTest(unittest.TestCase):
         self.assertEqual(verdict(b1, (H23 + 60, "n04", False), True), "differs")
         self.assertEqual(verdict(b1, (H23 + 60, "n03", True), True), "origin")
         self.assertEqual(verdict(b1, (H23 + 61, "n03", False), False), "differs")
+        self.assertEqual(verdict(b1, (H23 + 60, "n03", True), False), "origin", "a 동해선 train K2 starts at S")
         self.assertEqual(verdict(b1, None, True), "missing")
         self.assertEqual(verdict("ambiguous", b1, True), "ambiguous")
 

@@ -22,17 +22,7 @@ internal fun busanRouteAudit(
 ): JsonObject {
     val metropolitan = loadDevArtifacts(capital.root.resolve("data/artifacts/dev"))
     val combined = busanSlots.mapValues { (slot, busan) -> combineRegions(capital.slots.getValue(slot), busan) }
-    val metroGroups =
-        capital.input.tago
-            ?.lines
-            ?.groups
-            .orEmpty()
-    val labels = services.associate { it.id to it.label }
-    val graph =
-        routeGraph(combined, RouteGraphCodec.REGIONAL_FORMAT_VERSION) { service ->
-            labels[service] ?: metroGroups[service] ?: service.take(1)
-        }
-    val bytes = RouteGraphCodec.encode(graph)
+    val bytes = RouteGraphCodec.encode(regionalRouteGraph(capital, combined, services))
     val decoded = RouteGraphCodec.decode(bytes)
     require(RouteGraphCodec.encode(decoded).contentEquals(bytes)) { "Regional graph does not round trip" }
     val slots =
@@ -55,7 +45,24 @@ internal fun busanRouteAudit(
     )
 }
 
-private fun verifyMetropolitanProjection(
+/** The rg.bin 2판 of the [combined] networks: Busan services are named by their label, the capital's as in rg.bin 1판. */
+internal fun regionalRouteGraph(
+    capital: StageContext,
+    combined: Map<TimeSlot, Network>,
+    services: List<BusanService>,
+): RouteGraph {
+    val metroGroups =
+        capital.input.tago
+            ?.lines
+            ?.groups
+            .orEmpty()
+    val labels = services.associate { it.id to it.label }
+    return routeGraph(combined, RouteGraphCodec.REGIONAL_FORMAT_VERSION) { service ->
+        labels[service] ?: metroGroups[service] ?: service.take(1)
+    }
+}
+
+internal fun verifyMetropolitanProjection(
     metropolitan: DataSet,
     search: RouteSearch,
     matrix: OdMatrix,

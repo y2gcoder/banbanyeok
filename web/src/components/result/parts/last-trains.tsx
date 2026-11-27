@@ -98,7 +98,7 @@ function Detail({ row, view }: { row: LastTrainRow; view: LastTrainView }) {
         <Clock time={state} />
         <span>출발</span>
       </p>
-      <p className={note}>{parenSafe(marginNote(state))}</p>
+      <p className={note}>{parenSafe(marginNote(state, view.marginBasis))}</p>
       <MapLink row={row} />
     </>
   );

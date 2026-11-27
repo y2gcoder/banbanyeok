@@ -118,10 +118,18 @@ jobs:
           gcloud run jobs execute migrate --region "$REGION" --wait
 
       # 산출물: 해시 이름 파일을 먼저, manifest를 마지막에 올린다. 서버는 시작할 때 manifest를 읽는다.
+      # 커밋된 dev 산출물에 권역 포인터(data/artifacts/dev/regional/manifest.v5.json)가 있으면 stage-release가 그 세대를 검증해
+      # 함께 싣고, 서버는 REGIONAL_ARTIFACTS=true로 그것을 읽는다(ADR-0008). 포인터가 없으면 false다. 켜고 끄는 일은 포인터를
+      # 커밋하거나 지우는 PR이 한다(웹 역 색인도 같은 포인터로 권역 화면을 켠다).
       - name: 산출물 발행(GCS)
         run: |
           ./gradlew :pipeline:run --args="stage-release build/release" --console=plain -q
           echo "DATA_VERSION=$(jq -r .dataVersion build/release/manifest.json)" >> "$GITHUB_ENV"
+          regional=false
+          if [[ -f build/release/regional/manifest.v5.json ]]; then regional=true; fi
+          echo "EXPECT_REGIONAL=${regional}" >> "$GITHUB_ENV"
+          jq --arg regional "$regional" '. + {REGIONAL_ARTIFACTS: $regional}' build/server-env.json > build/server-env.next.json
+          mv build/server-env.next.json build/server-env.json
           bash scripts/publish-artifacts.sh "$ARTIFACT_BUCKET" build/release 10
 
       # 후보 리비전: 트래픽 0, 태그 URL로만 접근. 스모크가 통과해야 전환한다.

@@ -12,7 +12,7 @@ import { mockRecommend } from "../../../mock/recommend";
 import { loadMockData, problem, validateRecommend } from "../../../mock/server";
 import { PROBLEM_DOCS, problemType } from "../problems/problems";
 import { type CreateRoomForm, toCreateRoomRequest, toOutcomeAnswer, toParticipantInput } from "../room/input";
-import { searchStations } from "../stations";
+import { DEFAULT_REGION, searchStations, stationByCode } from "../stations";
 import { recommendBody } from "./client";
 
 type ResponseObject = { content?: Record<string, unknown> } & { $ref?: string };
@@ -37,7 +37,8 @@ const requestSchema = ajv.compile(
 );
 
 const data = loadMockData();
-const supported = [...data.origins.keys()];
+// 한 계산에는 한 권역만 들어간다(ADR-0008). 권역을 켠 색인에서도 같은 권역의 출발역으로 사람을 고른다.
+const supported = [...data.origins.keys()].filter((code) => stationByCode(code)?.region === DEFAULT_REGION);
 let people: string[][] = [];
 
 beforeAll(() => {

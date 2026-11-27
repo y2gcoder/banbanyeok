@@ -48,6 +48,10 @@ jobs:
               - 'mise.toml'
               - 'contracts/**'
               - 'data/registry/**'
+              # pipeline 테스트가 커밋된 산출물·대조 표·역 색인을 읽는다(권역 포인터와 색인이 함께 있는지, 투영이 같은지).
+              - 'data/artifacts/dev/**'
+              - 'data/config/**'
+              - 'web/src/lib/stations/index.gen.json'
               - '.github/workflows/ci.yml'
             oracle:
               - 'prototype/**'
@@ -72,9 +76,14 @@ jobs:
               - 'scripts/release-data-version.sh'
               - 'scripts/create-deploy-release.sh'
               - 'scripts/test-deploy-release.sh'
+              - 'scripts/publish-artifacts.sh'
+              - 'scripts/test-publish-artifacts.sh'
               - '.github/release.yml'
               - 'web/scripts/smoke-deploy.sh'
               - 'web/scripts/test-smoke-deploy.py'
+              - 'web/scripts/wait-data-version.sh'
+              - 'web/scripts/regional-precheck.sh'
+              - 'web/scripts/test-regional-precheck.sh'
               - 'web/scripts/worker-version.sh'
               - 'web/scripts/test-worker-version.sh'
               - 'web/scripts/test-worker-version-api.py'
@@ -247,6 +256,8 @@ jobs:
       - run: bash -n web/scripts/smoke-deploy.sh
       - run: shellcheck -S warning web/scripts/smoke-deploy.sh
       - run: python3 -B web/scripts/test-smoke-deploy.py
+      - run: shellcheck -S warning web/scripts/wait-data-version.sh web/scripts/regional-precheck.sh web/scripts/test-regional-precheck.sh
+      - run: bash web/scripts/test-regional-precheck.sh
       - run: |
           for script in scripts/release-tag.sh scripts/release-data-version.sh scripts/create-deploy-release.sh scripts/test-deploy-release.sh; do
             bash -n "$script"
@@ -254,6 +265,8 @@ jobs:
       - run: shellcheck scripts/release-tag.sh scripts/release-data-version.sh scripts/create-deploy-release.sh scripts/test-deploy-release.sh
       - run: bash scripts/test-deploy-release.sh
       - run: bash scripts/test-deploy-plan.sh
+      - run: shellcheck scripts/publish-artifacts.sh scripts/test-publish-artifacts.sh
+      - run: bash scripts/test-publish-artifacts.sh
       - run: bash web/scripts/test-worker-version.sh
         env:
           REQUIRE_REAL_WRANGLER: '1'
