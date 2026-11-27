@@ -137,8 +137,8 @@ busan = {row["code"] for row in csv.DictReader(open(sys.argv[2], encoding="utf-8
 codes = [c["stationCode"] for c in r["candidates"]]
 assert r["status"] == "ok" and codes and set(codes) <= busan, codes
 trains = [t for c in r["candidates"] for t in c["lastTrains"]]
-# 부산권에는 출발 예정(scheduled, 동해선의 계획 도착보다 늦은 출발 분, ADR-0010)도 있다. 수도권 검사(smoke_last_train.py)는 모른다.
-assert trains and {t["kind"] for t in trains} <= {"direct", "margin", "scheduled", "check"}, trains
+# lastTrainKinds를 보내지 않은 요청(옛 웹과 같다)에는 출발 예정(scheduled, ADR-0010)이 오면 안 된다. 서버가 check로 준다.
+assert trains and {t["kind"] for t in trains} <= {"direct", "margin", "check"}, trains
 print("   부산 후보 %d개, 1위 %s, 시각이 있는 막차 %d칸" % (
     len(codes), r["candidates"][0]["stationName"], sum(t["kind"] != "check" for t in trains)))
 PY
