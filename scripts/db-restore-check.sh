@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # 백업 덤프가 실제로 복원되는지 임시 로컬 Postgres 17에 복원해 확인한다(운영 DB는 건드리지 않는다).
 # 사용: bash scripts/db-restore-check.sh <덤프 파일>
-# 확인: 테이블 존재, 행 수(값은 출력하지 않는다), Liquibase 이력(changeset 수)과 현재 운영 버전의 status/validate, 그리고 같은 migrate(update)가
-# 이 덤프에서 통과하는지(예: 숨긴 참가자 행이 남은 옛 덤프는 ADR-0012 3단계 CHECK에서 실패한다), 그 뒤 실제 카탈로그에 검증된 가드 제약이
-# 있는지(scripts/db-guard-check.sql, 이력만 있고 제약이 없거나 검증되지 않은 덤프를 잡는다). 끝나면 임시 컨테이너를 지운다.
+# 확인: 테이블·행 수(값은 출력하지 않는다)·Liquibase 이력과 배포와 같은 migrate(status/validate/update).
+# ADR-0012 3단계 CHECK는 숨긴 참가자 행을 거절하고, 4단계는 실제 CHECK를 확인한 뒤 열을 지운다.
+# update 뒤 카탈로그에서 public.participants 테이블이 있고 hidden 열은 없는지 확인하고 임시 컨테이너를 지운다.
 set -euo pipefail
 
 dump="${1:?usage: db-restore-check.sh <덤프 파일>}"

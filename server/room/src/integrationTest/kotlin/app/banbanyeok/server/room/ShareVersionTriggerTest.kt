@@ -3,8 +3,6 @@
 package app.banbanyeok.server.room
 
 import app.banbanyeok.server.room.exposed.ExposedRoomRepository
-import com.zaxxer.hikari.HikariDataSource
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
@@ -15,21 +13,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import org.postgresql.util.PSQLException
 import java.time.Instant
 import java.util.concurrent.Executors
 
 private fun sql(
     statement: String,
     vararg args: Any,
-): Int = sqlOn(TestDatabase.dataSource, statement, *args)
-
-private fun sqlOn(
-    pool: HikariDataSource,
-    statement: String,
-    vararg args: Any,
 ): Int =
-    pool.connection.use { connection ->
+    TestDatabase.dataSource.connection.use { connection ->
         connection.prepareStatement(statement).use { ps ->
             args.forEachIndexed { i, arg -> ps.setObject(i + 1, arg) }
             ps.executeUpdate()
@@ -41,8 +32,7 @@ class ShareVersionTriggerTest :
     DescribeSpec({
         val rooms = ExposedRoomRepository(TestDatabase.database, UnconfinedTestDispatcher())
 
-        suspend fun decidedRoom(repository: ExposedRoomRepository? = null): String {
-            val rooms = repository ?: rooms
+        suspend fun decidedRoom(): String {
             val room = aRoom(freshId())
             rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
@@ -86,31 +76,14 @@ class ShareVersionTriggerTest :
                 val start = state(roomId)
                 sql("UPDATE participants SET nickname = '지연' WHERE room_id = ? AND pid = 'pid002'", roomId)
                 sql(
-                    "UPDATE participants SET nickname = '지연', hidden = false WHERE room_id = ? AND pid = 'pid002'",
+                    "UPDATE participants SET nickname = '지연', origin_code = origin_code WHERE room_id = ? AND pid = 'pid002'",
                     roomId,
                 )
+                sql("UPDATE participants SET updated_at = now() WHERE room_id = ? AND pid = 'pid002'", roomId)
                 val after = state(roomId)
                 after.shareVersion.value shouldBe start.shareVersion.value + 1
                 after.decision shouldBe start.decision
                 after.decisionBasis shouldBe start.decisionBasis
-            }
-
-            it("refuse a hidden participant from an old server and leave the room as it was (ADR-0012)") {
-                val roomId = decidedRoom()
-                val start = state(roomId)
-                val refused =
-                    shouldThrow<PSQLException> {
-                        sql("UPDATE participants SET hidden = true WHERE room_id = ? AND pid = 'pid002'", roomId)
-                    }
-                refused.serverErrorMessage?.constraint shouldBe "participants_hidden_retired"
-                shouldThrow<PSQLException> {
-                    sql(
-                        "INSERT INTO participants (room_id, pid, token_hash, origin_code, hidden, joined_at, " +
-                            "updated_at) VALUES (?, 'pid003', '\\x00'::bytea, '03v', true, now(), now())",
-                        roomId,
-                    )
-                }
-                state(roomId) shouldBe start
             }
 
             it("count a raw room update once, never take a version from the app, and never go down") {
@@ -125,31 +98,6 @@ class ShareVersionTriggerTest :
                 sql("UPDATE rooms SET last_activity_at = now(), outcome = 'none' WHERE id = ?", roomId)
                 state(roomId).shareVersion.value shouldBe start + 2
                 state(roomId).decision.shouldNotBeNull()
-            }
-        }
-
-        describe("the step 4 shape (no hidden column, trigger on nickname and origin only)") {
-            val step4 = ExposedRoomRepository(TestDatabase.step4Database, UnconfinedTestDispatcher())
-
-            it("bump without releasing on a raw nickname update, and bump and release on a raw origin update") {
-                val roomId = decidedRoom(step4)
-                val start = step4.find(roomId).shouldNotBeNull().room
-                sqlOn(
-                    TestDatabase.step4DataSource,
-                    "UPDATE participants SET nickname = '지연' WHERE room_id = ? AND pid = 'pid002'",
-                    roomId,
-                )
-                val renamed = step4.find(roomId).shouldNotBeNull().room
-                renamed.shareVersion.value shouldBe start.shareVersion.value + 1
-                renamed.decision shouldBe start.decision
-                sqlOn(
-                    TestDatabase.step4DataSource,
-                    "UPDATE participants SET origin_code = '225' WHERE room_id = ? AND pid = 'pid002'",
-                    roomId,
-                )
-                val moved = step4.find(roomId).shouldNotBeNull().room
-                moved.shareVersion.value shouldBe start.shareVersion.value + 2
-                moved.decision.shouldBeNull()
             }
         }
 

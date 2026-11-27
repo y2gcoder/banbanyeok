@@ -50,10 +50,10 @@ export default async ({ page, step, expect, db, newPerson, note }) => {
     await expect(page.getByRole("region", { name: "만날 역 후보" }).getByRole("article").first()).toBeVisible();
   });
 
-  const rows = db("participants", `select nickname, origin_code, hidden from participants where room_id = '${roomId}' order by joined_at`);
+  const rows = db("participants", `select nickname, origin_code from participants where room_id = '${roomId}' order by joined_at`);
   expect(rows).toEqual([
-    ["민수", "k3a", "f"],
-    ["", "ryf", "f"],
+    ["민수", "k3a"],
+    ["", "ryf"],
   ]);
   await step("same-room-draw-and-decide", async () => {
     await page.getByRole("button", { name: "사다리로 정하기" }).click();

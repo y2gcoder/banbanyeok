@@ -2,6 +2,7 @@ package app.banbanyeok.server.app
 
 import app.banbanyeok.server.room.TestDatabase
 import app.banbanyeok.server.room.exposed.ConnectedDatabase
+import app.banbanyeok.server.room.exposed.DatabaseFactory
 import com.zaxxer.hikari.HikariDataSource
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.style.DescribeSpec
@@ -71,13 +72,39 @@ class ApiIntegrationTest :
     DescribeSpec({
         include(coreFlows(TestDatabase.dataSource, TestDatabase.database))
         include(sharingFlows(TestDatabase.dataSource, TestDatabase.database))
-    })
 
-/** ADR-0012 3단계 서버가 participants.hidden을 지운 4단계 모양에서도 같은 흐름을 통과하는지(열을 SQL에서 참조하지 않는지). */
-class ApiIntegrationWithoutHiddenColumnTest :
-    DescribeSpec({
-        include(coreFlows(TestDatabase.step4DataSource, TestDatabase.step4Database))
-        include(sharingFlows(TestDatabase.step4DataSource, TestDatabase.step4Database))
+        it("keeps serving the same room without restarting across the hidden column migration") {
+            val url = TestDatabase.createDatabase("api_hidden_migration")
+            TestDatabase.migrate(url, TestDatabase.changesetsBefore(TestDatabase.DROP_HIDDEN_CHANGESET))
+            val pool = TestDatabase.pool(url)
+            integration(pool, DatabaseFactory.connect(pool)) { api, origins ->
+                val created =
+                    parse(
+                        api
+                            .call(
+                                HttpMethod.Post,
+                                "/v1/rooms",
+                                """{"mode":"fair","host":{"originCode":"${origins.first()}"}}""",
+                                expected = HttpStatusCode.Created,
+                            ).bodyAsText(),
+                    )
+                val room = "/v1/rooms/${created.str("roomId")}"
+                val before = parse(api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK).bodyAsText())
+
+                TestDatabase.migrate(url)
+
+                parse(api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK).bodyAsText()) shouldBe before
+                api.call(
+                    HttpMethod.Post,
+                    "$room/participants",
+                    """{"originCode":"${origins.last()}"}""",
+                    expected = HttpStatusCode.Created,
+                )
+                parse(
+                    api.call(HttpMethod.Get, "$room/result", expected = HttpStatusCode.OK).bodyAsText(),
+                ).str("status") shouldBe "ok"
+            }
+        }
     })
 
 // 호출이 끝난 뒤에는 방 하나에 쓰는 도구(요청 보조)
