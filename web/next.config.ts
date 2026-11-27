@@ -44,4 +44,6 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 
 // `next dev`에서 Cloudflare 바인딩을 흉내 낸다(OpenNext 권장 설정). 배포는 하지 않는다.
-void initOpenNextCloudflareForDev();
+// vinext 비교 실험(#254, spikes/vinext)은 next.config를 자기 프로세스에서 읽으므로 이 호출이 wrangler.jsonc(OpenNext Worker)로
+// 플랫폼 프록시를 띄우지 않게 끈다. OpenNext 경로(next dev·cf:build)는 VINEXT를 두지 않으므로 그대로다.
+if (process.env.VINEXT !== "1") void initOpenNextCloudflareForDev();

@@ -1,0 +1,24 @@
+== 대기: http://localhost:18788
+ok   /
+ok   /privacy
+ok   /meet
+FAIL /sitemap.xml status=500
+FAIL sitemap.xml에 조합 주소가 없습니다
+ok   /r/new HTML에 localhost 없음
+ok   /r/new og:image가 정식 주소
+ok   /r/abcdefghjk HTML에 localhost 없음
+ok   /r/abcdefghjk og:image가 정식 주소
+ok   홈 og:image에 그림 버전이 있음(/opengraph-image?v=a5ba6de0)
+ok   사이트 기본 그림 /opengraph-image?v=a5ba6de0
+ok   허브 og:image가 사이트 기본 그림(/opengraph-image?v=a5ba6de0)
+ok   robots.txt(색인 허용)
+ok   /favicon.ico
+FAIL /manifest.webmanifest status=200
+ok   apple-touch-icon /apple-icon.png?82f63669dd083a82
+ok   헤더 content-security-policy
+ok   헤더 x-content-type-options: nosniff
+ok   헤더 referrer-policy
+ok   헤더 x-frame-options
+ok   /api/healthz → 서버 ok
+warn 카카오톡 공유 확인 건너뜀(KAKAO_JS_KEY 없음)
+ok   첫 화면에 네이버 소유 확인 메타가 있음

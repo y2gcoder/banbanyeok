@@ -1,0 +1,25 @@
+
+Running 21 tests using 1 worker
+
+[1/21] [mobile-chrome] › e2e-real/host-entered-draw.spec.ts:97:1 › 혼자 입력한 결과 → 확인 → 채운 사다리 방 → 뽑기, 다른 기기와 새로고침에서 같은 사람
+[2/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 2명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[3/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 3명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[4/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 4명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[5/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 한 사람의 출발역이 1위: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[6/21] [mobile-chrome] › e2e-real/real-server.spec.ts:14:1 › 이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 받은 링크에서 친구 고르기
+[7/21] [mobile-chrome] › e2e-real/room-share.spec.ts:92:1 › 방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오래된 화면의 정하기·풀기는 409로 막힌다
+[8/21] [mobile-chrome] › e2e-real/host-entered-draw.spec.ts:97:1 › 혼자 입력한 결과 → 확인 → 채운 사다리 방 → 뽑기, 다른 기기와 새로고침에서 같은 사람
+[9/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 2명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[10/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 3명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[11/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 4명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[12/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 한 사람의 출발역이 1위: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[13/21] [mobile-chrome] › e2e-real/real-server.spec.ts:14:1 › 이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 받은 링크에서 친구 고르기
+[14/21] [mobile-chrome] › e2e-real/room-share.spec.ts:92:1 › 방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오래된 화면의 정하기·풀기는 409로 막힌다
+[15/21] [mobile-chrome] › e2e-real/host-entered-draw.spec.ts:97:1 › 혼자 입력한 결과 → 확인 → 채운 사다리 방 → 뽑기, 다른 기기와 새로고침에서 같은 사람
+[16/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 2명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[17/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 3명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[18/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 4명: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[19/21] [mobile-chrome] › e2e-real/modes.spec.ts:47:3 › 한 사람의 출발역이 1위: 결과 화면에서 세 모드를 오가도 결과가 나온다
+[20/21] [mobile-chrome] › e2e-real/real-server.spec.ts:14:1 › 이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 받은 링크에서 친구 고르기
+[21/21] [mobile-chrome] › e2e-real/room-share.spec.ts:92:1 › 방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오래된 화면의 정하기·풀기는 409로 막힌다
+  21 passed (36.3s)
