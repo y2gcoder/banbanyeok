@@ -17,6 +17,20 @@ pnpm = "12.16.1"
 gitleaks = "8.30.1"
 lefthook = "2.2.2"
 
+# oasdiff 1.39.0은 2026-11-17에 게시됐다(2026-11-28 확인).
+# https://github.com/oasdiff/oasdiff/releases/tag/v1.39.0
+[tools."github:oasdiff/oasdiff"]
+version = "1.39.0"
+asset_pattern = "oasdiff_*.tar.gz"
+
+[tools."github:oasdiff/oasdiff".platforms]
+linux-x64 = { asset_pattern = "oasdiff_*_linux_amd64.tar.gz", checksum = "sha256:71a85930728f367a2086077b7ae1411319421549d18473a3e8258b6451520433" }
+linux-arm64 = { asset_pattern = "oasdiff_*_linux_arm64.tar.gz", checksum = "sha256:481db7d891d916f13df277b2ef8bbb95477702827710e49fe22cef69c359c780" }
+macos-arm64 = { asset_pattern = "oasdiff_*_darwin_all.tar.gz", checksum = "sha256:fe88d9950324d3b0ebeaf8e0d3a210b64cb099a0f55fce5ee5a22b276df0eac4" }
+macos-x64 = { asset_pattern = "oasdiff_*_darwin_all.tar.gz", checksum = "sha256:fe88d9950324d3b0ebeaf8e0d3a210b64cb099a0f55fce5ee5a22b276df0eac4" }
+windows-x64 = { asset_pattern = "oasdiff_*_windows_amd64.tar.gz", checksum = "sha256:956a73df88e03efdf3fcc5f327446cc176fefe4adcea1978b0fef464a1ee8901" }
+windows-arm64 = { asset_pattern = "oasdiff_*_windows_arm64.tar.gz", checksum = "sha256:5699ac9dc74b432f78990cd369ff2bec3a79302c58e923c1ec823e47a86ddb82" }
+
 # OP_ACCOUNT는 비밀이 아니지만 개인 계정 주소를 퍼블릭 레포에 올리지 않으려고 mise.local.toml(gitignore)에 둔다.
 # 예시는 mise.local.toml.example.
 

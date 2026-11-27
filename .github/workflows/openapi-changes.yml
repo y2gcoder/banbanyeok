@@ -1,0 +1,53 @@
+name: openapi-changes
+
+on:
+  pull_request:
+    paths: ['contracts/openapi.yaml']
+
+permissions:
+  contents: read
+
+# 관찰 단계에는 ci-ok 의존성이나 브랜치 보호 필수 검사에 추가하지 않는다.
+jobs:
+  openapi-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2 # 테스트 병합 커밋과 첫 부모(이벤트의 base SHA)
+          persist-credentials: false
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
+        with:
+          install_args: github:oasdiff/oasdiff
+          minimum_release_age: 7d
+          cache: false
+      - name: OpenAPI 변경 보고
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$(git rev-parse "${GITHUB_SHA}^1")" != "$BASE_SHA" ]; then
+            echo "::error::PR base SHA does not match the merge commit's first parent"
+            exit 1
+          fi
+
+          spec_path=contracts/openapi.yaml
+          work_dir=$(mktemp -d)
+          trap 'rm -rf "$work_dir"' EXIT
+          git show "$BASE_SHA:$spec_path" > "$work_dir/base.yaml"
+          git show "$GITHUB_SHA:$spec_path" > "$work_dir/candidate.yaml"
+          cd "$work_dir"
+          printf '{}\n' > config.yaml
+
+          printf '## OpenAPI changelog\n\nBase %s → merge candidate %s\n\n' \
+            "$BASE_SHA" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          # --fail-on을 지정하지 않아 발견 결과(INFO/WARN/ERR)는 모두 성공으로 보고한다.
+          if oasdiff changelog base.yaml candidate.yaml --config config.yaml \
+            --allow-external-refs=false --open=false --format text --color never > report.txt 2> error.txt; then
+            sed 's/^/    /' report.txt >> "$GITHUB_STEP_SUMMARY"
+          else
+            status=$?
+            printf 'oasdiff failed (exit %s).\n\n' "$status" >> "$GITHUB_STEP_SUMMARY"
+            sed 's/^/    /' error.txt >> "$GITHUB_STEP_SUMMARY"
+            exit "$status"
+          fi
