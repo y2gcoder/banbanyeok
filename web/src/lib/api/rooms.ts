@@ -5,6 +5,7 @@
 import { client, failure, trustedServerHeaders } from "./client";
 import type {
   DecisionRequest,
+  DrawRoomCreateRequest,
   JoinedRoom,
   Mode,
   OutcomeAnswer,
@@ -34,6 +35,25 @@ export async function createRoom(
   { signal }: Options = {},
 ): Promise<RoomCreated> {
   const result = await client().POST("/rooms", {
+    body,
+    params: { header: { "Idempotency-Key": idempotencyKey } },
+    cache: "no-store",
+    ...(signal ? { signal } : {}),
+  });
+  if (result.data !== undefined) return result.data;
+  throw failure(result.response.status, result.error);
+}
+
+/**
+ * 방장이 모두의 칸을 채운 사다리 방(#227). 이 경로를 모르는 옛 서버는 아무것도 저장하지 않고 404(또는 405)로 거절한다
+ * (`isDrawRoomUnsupported`).
+ */
+export async function createDrawRoom(
+  body: DrawRoomCreateRequest,
+  idempotencyKey: string,
+  { signal }: Options = {},
+): Promise<RoomCreated> {
+  const result = await client().POST("/draw-rooms", {
     body,
     params: { header: { "Idempotency-Key": idempotencyKey } },
     cache: "no-store",

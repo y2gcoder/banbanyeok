@@ -18,6 +18,8 @@ import app.banbanyeok.server.room.Outcome
 import app.banbanyeok.server.room.OutcomeKind
 import app.banbanyeok.server.room.Participant
 import app.banbanyeok.server.room.ParticipantChange
+import app.banbanyeok.server.room.RecoverySlot
+import app.banbanyeok.server.room.RecoveryTaken
 import app.banbanyeok.server.room.Room
 import app.banbanyeok.server.room.RoomChange
 import app.banbanyeok.server.room.RoomMode
@@ -30,8 +32,11 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.lessEq
+import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -49,8 +54,31 @@ public class ExposedRoomRepository(
 ) : RoomRepository {
     override suspend fun create(
         room: Room,
-        host: Participant,
-    ) = inTransaction {
+        participants: List<Participant>,
+        recovery: RecoverySlot?,
+    ) = try {
+        inTransaction { insertRoom(room, participants, recovery) }
+    } catch (e: ExposedSQLException) {
+        // 되찾을 수 있는 방이 같은 키를 쥐고 있다(다른 인스턴스가 먼저 만들었거나 만드는 중이었다). 부분 유일 인덱스가 막는다.
+        if (recovery != null && e.sqlState == UNIQUE_VIOLATION) throw RecoveryTaken()
+        throw e
+    }
+
+    private fun insertRoom(
+        room: Room,
+        participants: List<Participant>,
+        recovery: RecoverySlot?,
+    ) {
+        // 되찾을 수 없는 앞선 방(복구 기간이 지났거나 만료돼 정리 전)만 키를 놓는다. 되찾을 수 있는 방의 키는 건드리지 않는다.
+        if (recovery != null) {
+            RoomsTable.update({
+                (RoomsTable.recoveryHash eq recovery.hash.bytes) and
+                    (
+                        (RoomsTable.createdAt lessEq recovery.recoverableAfter) or
+                            (RoomsTable.expiresAt lessEq room.createdAt)
+                    )
+            }) { it[RoomsTable.recoveryHash] = null }
+        }
         RoomsTable.insert {
             it[id] = room.id
             it[hostHash] = room.hostHash.bytes
@@ -69,9 +97,23 @@ public class ExposedRoomRepository(
             it[expiresAt] = room.expiresAt
             it[favorDraw] = room.favorDraw != null
             it[region] = requireNotNull(room.region).name.lowercase()
+            it[RoomsTable.recoveryHash] = recovery?.hash?.bytes
         }
-        insertParticipant(room.id, host)
+        participants.forEach { insertParticipant(room.id, it) }
     }
+
+    override suspend fun findByRecovery(
+        recoveryHash: TokenHash,
+        createdAfter: Instant,
+    ): String? =
+        inTransaction {
+            RoomsTable
+                .select(RoomsTable.id)
+                .where {
+                    (RoomsTable.recoveryHash eq recoveryHash.bytes) and (RoomsTable.createdAt greater createdAfter)
+                }.singleOrNull()
+                ?.get(RoomsTable.id)
+        }
 
     // 방 행과 참여자를 따로 SELECT한다. READ COMMITTED면 그 사이에 커밋된 참여가 섞여 있었던 적 없는 번호·인원 조합이 보이고,
     // 미리보기는 그 `?sv=`로 카카오에 오래 캐시된다. 스냅숏 하나에서 읽는다.
@@ -342,6 +384,7 @@ public class ExposedRoomRepository(
             it[hidden] = participant.hidden
             it[joinedAt] = participant.joinedAt
             it[updatedAt] = participant.updatedAt
+            it[enteredByHost] = participant.enteredByHost
         }
     }
 
@@ -454,6 +497,7 @@ public class ExposedRoomRepository(
             hidden = this[ParticipantsTable.hidden],
             joinedAt = this[ParticipantsTable.joinedAt],
             updatedAt = this[ParticipantsTable.updatedAt],
+            enteredByHost = this[ParticipantsTable.enteredByHost],
         )
 
     private fun statusOf(locked: Boolean) = if (locked) LOCKED else OPEN
@@ -462,5 +506,8 @@ public class ExposedRoomRepository(
         const val MAX_PARTICIPANTS = 4
         const val LOCKED = "locked"
         const val OPEN = "open"
+
+        /** Postgres unique_violation. */
+        const val UNIQUE_VIOLATION = "23505"
     }
 }

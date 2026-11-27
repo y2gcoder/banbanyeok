@@ -235,3 +235,16 @@ CREATE TABLE daily_stage_counts (
 );
 ALTER TABLE daily_stage_counts ENABLE ROW LEVEL SECURITY;
 --rollback DROP TABLE daily_stage_counts;
+
+--changeset banbanyeok:20261126-participants-entered-by-host
+-- 방장이 방을 만들 때 대신 넣은 칸(#227, ADR-0011). 사다리로 배려 대상을 뽑는 방에서만 생기고, 그 칸의 토큰은 아무에게도 주지 않는다.
+-- 기본값은 이 열을 모르는 리비전(배포 중의 이전 리비전)이 넣는 참가자를 위한 것이다. 그런 리비전은 본인 칸만 만든다.
+ALTER TABLE participants ADD COLUMN entered_by_host boolean NOT NULL DEFAULT false;
+--rollback ALTER TABLE participants DROP COLUMN entered_by_host;
+
+--changeset banbanyeok:20261127-rooms-recovery-hash
+-- 채운 사다리 방(#227, ADR-0011)을 만든 기기가 보낸 복구 키의 해시(HMAC, 토큰 해시와 같은 키). 응답을 받지 못한 기기가 같은 키로 다시
+-- 보내면 새 방을 만들지 않고 이 방의 방장 토큰을 새로 발급한다(만든 뒤 24시간까지). 원문은 저장하지 않는다. 일반 방은 null이다.
+ALTER TABLE rooms ADD COLUMN recovery_hash bytea;
+CREATE UNIQUE INDEX rooms_recovery_hash ON rooms (recovery_hash) WHERE recovery_hash IS NOT NULL;
+--rollback DROP INDEX rooms_recovery_hash; ALTER TABLE rooms DROP COLUMN recovery_hash;

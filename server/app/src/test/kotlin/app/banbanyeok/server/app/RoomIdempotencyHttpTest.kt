@@ -18,20 +18,24 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.time.Clock
 
 private const val ROOMS = "/v1/rooms"
+private const val DRAW_ROOMS = "/v1/draw-rooms"
+private const val RECOVERY_KEY = "recovery-key-of-the-creating-browser-0001"
 private const val HOST_INPUT = """{"mode":"fair","host":{"originCode":"03v"}}"""
 private const val GUEST_INPUT = """{"originCode":"130"}"""
 
 private fun withRoomApi(
     counter: DailyCounter = DailyCounter {},
+    room: RouteRoom = RouteRoom("130"),
     block: suspend HttpClient.() -> Unit,
 ) {
-    val room = RouteRoom("130")
     testApplication {
         application {
             apiModule(
@@ -119,6 +123,235 @@ class RoomIdempotencyHttpTest :
                         (replacement.getValue(field) != original.getValue(field)) shouldBe true
                     }
                     (createRoom().bodyObject() == replacement) shouldBe true
+                }
+            }
+        }
+
+        describe("creating a draw room with the other people already entered (#227)") {
+            val body =
+                """{"host":{"nickname":"지연","originCode":"130"},""" +
+                    """"others":[{"nickname":"민수","originCode":"03v"},{"originCode":"225"}],"hostPosition":1,""" +
+                    """"recoveryKey":"$RECOVERY_KEY"}"""
+
+            it("stores every row once, in input order, and a retry with the same key replays the same room") {
+                withRoomApi {
+                    val first =
+                        json(HttpMethod.Post, DRAW_ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    first.status shouldBe HttpStatusCode.Created
+                    OpenApiContract.assertValid(HttpMethod.Post, DRAW_ROOMS, first)
+                    val retried =
+                        json(HttpMethod.Post, DRAW_ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    (retried.bodyAsText() == first.bodyAsText()) shouldBe true
+                    val path = "$ROOMS/${first.bodyObject().getValue("roomId").jsonPrimitive.content}"
+                    val room = json(HttpMethod.Get, path)
+                    OpenApiContract.assertValid(HttpMethod.Get, "$ROOMS/{roomId}", room)
+                    val roomBody = room.bodyObject()
+                    roomBody.getValue("locked").jsonPrimitive.content shouldBe "true"
+                    roomBody.getValue("mode").jsonPrimitive.content shouldBe "favor"
+                    roomBody
+                        .getValue("favorDraw")
+                        .jsonObject["round"]!!
+                        .jsonPrimitive.content shouldBe "0"
+                    roomBody.getValue("participants").jsonArray.map {
+                        val p = it.jsonObject
+                        listOf("label", "isHost", "enteredByHost").map { key -> p.getValue(key).jsonPrimitive.content }
+                    } shouldBe
+                        listOf(
+                            listOf("민수", "false", "true"),
+                            listOf("지연", "true", "false"),
+                            listOf("참가자 3", "false", "true"),
+                        )
+                }
+            }
+
+            it("rejects a hidden row with the same key before replaying the earlier success") {
+                withRoomApi {
+                    json(
+                        HttpMethod.Post,
+                        DRAW_ROOMS,
+                        body,
+                    ) { headers.append("Idempotency-Key", "draw-room") }.status shouldBe
+                        HttpStatusCode.Created
+                    val hidden = body.replace("""{"originCode":"225"}""", """{"originCode":"225","hidden":true}""")
+                    val retried =
+                        json(HttpMethod.Post, DRAW_ROOMS, hidden) { headers.append("Idempotency-Key", "draw-room") }
+                    retried.status shouldBe HttpStatusCode.BadRequest
+                    retried
+                        .bodyObject()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "HIDE_NOT_AVAILABLE"
+                }
+            }
+
+            it("rejects a draw room without other rows: the plain room route makes that one") {
+                withRoomApi {
+                    val empty =
+                        json(
+                            HttpMethod.Post,
+                            DRAW_ROOMS,
+                            """{"host":{"originCode":"130"},"others":[],"hostPosition":0,"recoveryKey":"$RECOVERY_KEY"}""",
+                        )
+                    empty.status shouldBe HttpStatusCode.BadRequest
+                    OpenApiContract.assertValid(HttpMethod.Post, DRAW_ROOMS, empty)
+                    empty
+                        .bodyObject()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "INVALID_OTHERS"
+                }
+            }
+
+            it(
+                "gives the creator the same room and the same tokens on another instance, counting one creation (#227)",
+            ) {
+                val shared = RouteRoom("130")
+                val stages = mutableListOf<UsageStage>()
+                lateinit var first: JsonObject
+                withRoomApi(DailyCounter { stages += it }, shared) {
+                    val created =
+                        json(HttpMethod.Post, DRAW_ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    created.status shouldBe HttpStatusCode.Created
+                    first = created.bodyObject()
+                }
+                // 응답을 잃은 기기가 다른 인스턴스(빈 재생 캐시)로 같은 키를 다시 보낸다.
+                withRoomApi(DailyCounter { stages += it }, shared) {
+                    val again =
+                        json(HttpMethod.Post, DRAW_ROOMS, body) { headers.append("Idempotency-Key", "draw-room") }
+                    again.status shouldBe HttpStatusCode.Created
+                    OpenApiContract.assertValid(HttpMethod.Post, DRAW_ROOMS, again)
+                    val second = again.bodyObject()
+
+                    fun JsonObject.text(key: String) = getValue(key).jsonPrimitive.content
+                    listOf("roomId", "participantId", "hostToken", "participantToken").forEach {
+                        second.text(it) shouldBe first.text(it)
+                    }
+                    val path = "$ROOMS/${first.text("roomId")}"
+                    json(HttpMethod.Get, path, token = second.text("participantToken"))
+                        .bodyObject()
+                        .getValue("participants")
+                        .jsonArray
+                        .map {
+                            it.jsonObject
+                                .getValue("isSelf")
+                                .jsonPrimitive.content
+                        } shouldBe
+                        listOf("false", "true", "false")
+                    json(HttpMethod.Delete, path, token = first.text("hostToken")).status shouldBe
+                        HttpStatusCode.NoContent
+                }
+                stages.count { it == UsageStage.CREATE_ROOM } shouldBe 1
+            }
+
+            it("keeps names, times and origins out of the link preview before and after the draw and once decided") {
+                withRoomApi {
+                    val dated = body.replace(""""hostPosition":1""", """"hostPosition":1,"meetingDate":"2026-11-27"""")
+                    val created = json(HttpMethod.Post, DRAW_ROOMS, dated).bodyObject()
+
+                    fun JsonObject.text(key: String) = getValue(key).jsonPrimitive.content
+                    val path = "$ROOMS/${created.text("roomId")}"
+                    val personal =
+                        json(HttpMethod.Get, path)
+                            .bodyObject()
+                            .getValue("participants")
+                            .jsonArray
+                            .mapNotNull { it.jsonObject["nickname"]?.jsonPrimitive?.contentOrNull }
+                    personal shouldBe listOf("민수", "지연")
+                    val before = json(HttpMethod.Get, "$path/preview")
+                    json(
+                        HttpMethod.Post,
+                        "$path/favor-draw",
+                        """{"generation":0,"round":1}""",
+                        created.text("hostToken"),
+                    ).status shouldBe HttpStatusCode.OK
+                    val drawn = json(HttpMethod.Get, "$path/preview")
+                    val station =
+                        drawn
+                            .bodyObject()
+                            .getValue("station")
+                            .jsonObject
+                            .text("stationCode")
+                    val seen = json(HttpMethod.Get, path).bodyObject().text("shareVersion")
+                    json(
+                        HttpMethod.Put,
+                        "$path/decision",
+                        """{"stationCode":"$station","seenVersion":$seen}""",
+                        created.text("participantToken"),
+                    ).status shouldBe HttpStatusCode.OK
+                    val decided = json(HttpMethod.Get, "$path/preview")
+                    listOf(before, drawn, decided).map { it.bodyObject().text("stage") } shouldBe
+                        listOf("result", "result", "decided")
+                    listOf(before, drawn, decided).forEach { response ->
+                        OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/{roomId}/preview", response)
+                        val text = response.bodyAsText()
+                        personal.filter { it in text } shouldBe emptyList()
+                        ("lastTrain" in text) shouldBe false
+                        ("mapMiddle" in text) shouldBe false
+                        val preview = response.bodyObject()
+                        preview.getValue("room").jsonObject.text("enteredByHost") shouldBe "true"
+                        preview.getValue("station").jsonObject.getValue("times").jsonArray.map {
+                            it.jsonObject.text("label") to
+                                it.jsonObject
+                                    .getValue("seconds")
+                                    .jsonPrimitive.contentOrNull
+                        } shouldBe listOf("참가자 1" to null, "참가자 2" to null, "참가자 3" to null)
+                    }
+                    drawn
+                        .bodyObject()
+                        .getValue("basis")
+                        .jsonObject
+                        .text("drawRound") shouldBe "1"
+                    decided.bodyObject().text("decidedBy") shouldBe "참가자 2"
+                    json(HttpMethod.Get, "$path/result").bodyAsText().let { result ->
+                        ("민수" in result) shouldBe true
+                        Regex(""""seconds":\d+""").containsMatchIn(result) shouldBe true
+                    }
+                }
+            }
+
+            it("leaves the preview of a room where everyone entered themselves as before") {
+                withRoomApi {
+                    val created = createRoom().bodyObject()
+                    val path = "$ROOMS/${created.getValue("roomId").jsonPrimitive.content}"
+                    joinRoom(path)
+                    val preview = json(HttpMethod.Get, "$path/preview").bodyObject()
+                    ("enteredByHost" in preview.getValue("room").jsonObject) shouldBe false
+                    preview
+                        .getValue("station")
+                        .jsonObject
+                        .getValue("times")
+                        .jsonArray
+                        .none {
+                            it.jsonObject
+                                .getValue("label")
+                                .jsonPrimitive.content
+                                .startsWith("참가자")
+                        } shouldBe true
+                }
+            }
+
+            it("rejects a guessable recovery key before storing anything") {
+                withRoomApi {
+                    val weak = json(HttpMethod.Post, DRAW_ROOMS, body.replace(RECOVERY_KEY, "short"))
+                    weak.status shouldBe HttpStatusCode.BadRequest
+                    weak
+                        .bodyObject()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "INVALID_REQUEST"
+                }
+            }
+
+            it("keeps the plain room route as before: it has no other rows, so it ignores them like an old server") {
+                withRoomApi {
+                    val created =
+                        json(
+                            HttpMethod.Post,
+                            ROOMS,
+                            """{"mode":"favor","favorTarget":"draw",""" + body.drop(1),
+                        )
+                    created.status shouldBe HttpStatusCode.Created
+                    val path = "$ROOMS/${created.bodyObject().getValue("roomId").jsonPrimitive.content}"
+                    val room = json(HttpMethod.Get, path).bodyObject()
+                    room.getValue("locked").jsonPrimitive.content shouldBe "false"
+                    room.getValue("participants").jsonArray.size shouldBe 1
                 }
             }
         }

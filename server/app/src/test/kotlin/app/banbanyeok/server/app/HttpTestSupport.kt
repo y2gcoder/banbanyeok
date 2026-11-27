@@ -18,6 +18,8 @@ import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.time.HolidayCalendar
 import app.banbanyeok.server.recommendation.time.TimeSlotResolver
 import app.banbanyeok.server.room.AnonUserService
+import app.banbanyeok.server.room.CreateRoomCommand
+import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomService
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
@@ -105,7 +107,8 @@ class MockedServices {
     val rooms =
         mockk<RoomService>().also {
             // 라우트가 본문을 읽자마자 부르는 숨김 규칙(ADR-0007). 규칙 자체는 RoomService 테스트가 본다.
-            every { it.checkNewParticipant(any()) } just Runs
+            every { it.checkNewParticipant(any<ParticipantInput>()) } just Runs
+            every { it.checkNewParticipant(any<CreateRoomCommand>()) } just Runs
         }
     val results = mockk<RoomResultService>()
     val recommendation = mockk<RecommendationService>()

@@ -34,7 +34,7 @@ class ShareVersionTriggerTest :
 
         suspend fun decidedRoom(): String {
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
             val seen = rooms.find(room.id)!!.room.shareVersion
             rooms.writeDecision(

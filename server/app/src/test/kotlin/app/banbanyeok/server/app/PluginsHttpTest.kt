@@ -139,6 +139,8 @@ class PluginsHttpTest :
                             .IssuedAnonUser("u_x", "t")
                     repeat(2) { client.json(HttpMethod.Post, "/v1/anon").status shouldBe HttpStatusCode.Created }
                     client.json(HttpMethod.Post, "/v1/anon").status shouldBe HttpStatusCode.TooManyRequests
+                    // 채운 사다리 방 만들기(#227)도 같은 방 만들기 한도를 쓴다.
+                    client.json(HttpMethod.Post, "/v1/draw-rooms", "{}").status shouldBe HttpStatusCode.TooManyRequests
                     client.json(HttpMethod.Get, "/v1/manifest").status shouldBe HttpStatusCode.OK
                 }
             }

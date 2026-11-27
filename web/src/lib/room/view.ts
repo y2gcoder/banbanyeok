@@ -12,6 +12,8 @@ export type RoomPerson = {
   isSelf: boolean;
   isHost: boolean;
   hidden: boolean;
+  /** 방장이 방을 만들 때 대신 넣은 칸(#227). */
+  enteredByHost: boolean;
 };
 
 export function roomPeople(room: Room): RoomPerson[] {
@@ -26,6 +28,7 @@ export function roomPeople(room: Room): RoomPerson[] {
     isSelf: p.isSelf === true,
     isHost: p.isHost === true,
     hidden: p.hidden,
+    enteredByHost: p.enteredByHost === true,
   }));
 }
 

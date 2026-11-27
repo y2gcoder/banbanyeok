@@ -44,6 +44,7 @@ fun activity(
 fun roomRepositoryContract(newRepositories: () -> RepositoryPair) =
     describeSpec {
         createAndFind(newRepositories)
+        recoveringCreators(newRepositories)
         addingParticipants(newRepositories)
         storedRegions(newRepositories)
         regionalParticipants(newRepositories)
@@ -81,7 +82,7 @@ private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {
                     )
                 }
             val host = aParticipant("host01") { it.copy(nickname = "민수", hidden = true, originCode = "130") }
-            rooms.create(room, host)
+            rooms.create(room, listOf(host))
             val stored = rooms.find(room.id).shouldNotBeNull()
             // 방장 참여도 참여라서 트리거가 번호를 1로 올린다.
             stored.room shouldBe room.copy(shareVersion = ShareVersion(1), decisionBasis = ShareVersion(1))
@@ -91,10 +92,72 @@ private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {
         it("returns participants in join order") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01", T0))
+            rooms.create(room, listOf(aParticipant("host01", T0)))
             rooms.addParticipant(room.id, aParticipant("zzzzzz", T0.plusSeconds(1)), activity(1))
             rooms.addParticipant(room.id, aParticipant("aaaaaa", T0.plusSeconds(2)), activity(2))
             rooms.find(room.id)!!.participants.map { it.id } shouldContainExactly listOf("host01", "zzzzzz", "aaaaaa")
+        }
+
+        it("stores the rows the host entered with the room, in input order a microsecond apart, still marked") {
+            val rooms = repos().rooms
+            val room = aRoom(freshId()) { it.copy(locked = true) }
+            val micro = java.time.Duration.ofNanos(1_000)
+            val entered = { id: String, at: Instant -> aParticipant(id, at) { it.copy(enteredByHost = true) } }
+            val rows =
+                listOf(
+                    entered("zzzzzz", T0),
+                    aParticipant("host01", T0.plus(micro)),
+                    entered("aaaaaa", T0.plus(micro.multipliedBy(2))),
+                )
+            rooms.create(room, rows)
+            val stored = rooms.find(room.id).shouldNotBeNull()
+            stored.participants shouldBe rows
+            stored.room.locked shouldBe true
+        }
+    }
+}
+
+private fun DescribeSpecRootScope.recoveringCreators(repos: () -> RepositoryPair) {
+    describe("creator recovery (#227)") {
+        it("finds a room by its creator's recovery key only within the window") {
+            val rooms = repos().rooms
+            val key = hashOf("recovery-${freshId()}")
+            val room = aRoom(freshId())
+            rooms.create(room, listOf(aParticipant("host01")), RecoverySlot(key, T0.minusSeconds(60)))
+            rooms.findByRecovery(key, T0.minusSeconds(1)) shouldBe room.id
+            rooms.findByRecovery(key, T0) shouldBe null
+            rooms.findByRecovery(hashOf("other-${freshId()}"), T0.minusSeconds(1)) shouldBe null
+        }
+
+        it("refuses a second room while the key still holds a recoverable room, inserting nothing") {
+            val rooms = repos().rooms
+            val key = hashOf("recovery-${freshId()}")
+            val first = aRoom(freshId())
+            rooms.create(first, listOf(aParticipant("host01")), RecoverySlot(key, T0.minusSeconds(60)))
+            val second = aRoom(freshId())
+            shouldThrow<RecoveryTaken> {
+                rooms.create(second, listOf(aParticipant("host01")), RecoverySlot(key, T0.minusSeconds(60)))
+            }
+            rooms.find(second.id).shouldBeNull()
+            rooms.findByRecovery(key, T0.minusSeconds(1)) shouldBe first.id
+        }
+
+        it("lets a newer room take the key from a room that can no longer be recovered (too old or expired)") {
+            val rooms = repos().rooms
+            val tooOld = hashOf("recovery-${freshId()}")
+            val old = aRoom(freshId())
+            rooms.create(old, listOf(aParticipant("host01")), RecoverySlot(tooOld, T0.minusSeconds(60)))
+            val later = aRoom(freshId(), createdAt = T0.plusSeconds(3600))
+            rooms.create(later, listOf(aParticipant("host01")), RecoverySlot(tooOld, T0))
+            rooms.findByRecovery(tooOld, T0.minusSeconds(1)) shouldBe later.id
+            rooms.find(old.id).shouldNotBeNull()
+
+            val expiredKey = hashOf("recovery-${freshId()}")
+            val expired = aRoom(freshId()) { it.copy(expiresAt = T0.plusSeconds(60)) }
+            rooms.create(expired, listOf(aParticipant("host01")), RecoverySlot(expiredKey, T0.minusSeconds(60)))
+            val next = aRoom(freshId(), createdAt = T0.plusSeconds(120))
+            rooms.create(next, listOf(aParticipant("host01")), RecoverySlot(expiredKey, T0.minusSeconds(60)))
+            rooms.findByRecovery(expiredKey, T0.minusSeconds(1)) shouldBe next.id
         }
     }
 }
@@ -104,7 +167,7 @@ private fun DescribeSpecRootScope.addingParticipants(repos: () -> RepositoryPair
         it("adds a participant and records the activity") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002"), activity(30)) shouldBe AddResult.Added
             val stored = rooms.find(room.id)!!
             stored.participants.map { it.id } shouldContainExactly listOf("host01", "pid002")
@@ -119,7 +182,7 @@ private fun DescribeSpecRootScope.addingParticipants(repos: () -> RepositoryPair
         it("refuses the fifth participant") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             for (n in 2..4) {
                 rooms.addParticipant(room.id, aParticipant("pid00$n"), activity(n.toLong())) shouldBe AddResult.Added
             }
@@ -130,7 +193,7 @@ private fun DescribeSpecRootScope.addingParticipants(repos: () -> RepositoryPair
         it("stops at expectedCount when it is below four") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(expectedCount = 2) }
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002"), activity(1)) shouldBe AddResult.Added
             rooms.addParticipant(room.id, aParticipant("pid003"), activity(2)) shouldBe AddResult.Full
         }
@@ -138,14 +201,14 @@ private fun DescribeSpecRootScope.addingParticipants(repos: () -> RepositoryPair
         it("refuses a locked room") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(locked = true) }
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002"), activity(1)) shouldBe AddResult.Locked
         }
 
         it("lets only as many concurrent joiners in as there is capacity") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             val results =
                 coroutineScope {
                     (2..9)
@@ -175,7 +238,7 @@ private fun DescribeSpecRootScope.storedRegions(repos: () -> RepositoryPair) {
         it("keeps the region a room was created with when its only member moves to another region") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             val moving = ParticipantChange(null, busan, false, T0.plusSeconds(60))
             shouldThrow<RoomException> { rooms.updateParticipant(room.id, "host01", moving, activity(1), origins) }
                 .error shouldBe RoomError.REGION_MISMATCH
@@ -196,7 +259,7 @@ private fun DescribeSpecRootScope.storedRegions(repos: () -> RepositoryPair) {
         it("stores a Busan room's region and lets the room take the next joiner's region once no one is left") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(region = StationRegion.BUSAN) }
-            rooms.create(room, aParticipant("host01") { it.copy(originCode = busan) })
+            rooms.create(room, listOf(aParticipant("host01") { it.copy(originCode = busan) }))
             rooms.find(room.id)!!.room.region shouldBe StationRegion.BUSAN
             rooms.removeParticipant(room.id, "host01", activity(1)) shouldBe true
             rooms.addParticipant(room.id, aParticipant("pid002"), activity(2), origins) shouldBe AddResult.Added
@@ -222,7 +285,7 @@ private fun DescribeSpecRootScope.emptyRoomRegions(repos: () -> RepositoryPair) 
         it("keeps one region when two people of different regions join a room no one is left in") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.removeParticipant(room.id, "host01", activity(1)) shouldBe true
             val outcomes =
                 coroutineScope {
@@ -258,7 +321,7 @@ private fun DescribeSpecRootScope.regionalParticipants(repos: () -> RepositoryPa
         it("keeps one region when a participant joins while the only member changes region") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             val outcomes =
                 coroutineScope {
                     listOf(
@@ -305,7 +368,7 @@ private fun DescribeSpecRootScope.meetingOrigins(repos: () -> RepositoryPair) {
                     ) = !(code == "130" && meeting.date == saturday)
                 }
             val origins = OriginRule(catalog)
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002"), activity(1), origins) shouldBe AddResult.Added
             rooms.updateRoom(room.id, RoomChange(meetingDate = Change.Set(saturday)), activity(2)) shouldBe true
 
@@ -325,7 +388,7 @@ private fun DescribeSpecRootScope.changingParticipants(repos: () -> RepositoryPa
         it("updates nickname, origin and hidden") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             val change = ParticipantChange("지연", "225", true, T0.plusSeconds(60))
             rooms.updateParticipant(room.id, "host01", change, activity(1)) shouldBe true
             val updated = rooms.find(room.id)!!.participants.single()
@@ -339,7 +402,7 @@ private fun DescribeSpecRootScope.changingParticipants(repos: () -> RepositoryPa
         it("keeps a hide only for someone still hidden when saving (ADR-0007)") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01") { it.copy(hidden = true) })
+            rooms.create(room, listOf(aParticipant("host01") { it.copy(hidden = true) }))
             rooms.addParticipant(room.id, aParticipant("pid002"), activity(1))
             val keep = ParticipantChange("지연", "225", true, T0.plusSeconds(60), onlyIfHidden = true)
             // 숨기지 않은 사람에게는 쓰지 않는다(새로 숨기지 않는다).
@@ -359,7 +422,7 @@ private fun DescribeSpecRootScope.changingParticipants(repos: () -> RepositoryPa
         it("removes a participant and clears the favor target when it was the target") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(favorParticipantId = "pid002") }
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002"), activity(1))
             rooms.removeParticipant(room.id, "pid002", activity(2)) shouldBe true
             val stored = rooms.find(room.id)!!
@@ -375,7 +438,7 @@ private fun DescribeSpecRootScope.changingRooms(repos: () -> RepositoryPair) {
         it("changes only the given fields and applies the new expiry") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             val change =
                 RoomChange(
                     mode = RoomMode.FAVOR,
@@ -419,7 +482,7 @@ private fun DescribeSpecRootScope.changingRooms(repos: () -> RepositoryPair) {
         it("records the latest outcome") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.recordOutcome(room.id, Outcome(OutcomeKind.OTHER, "130"), activity(5)) shouldBe true
             val outcome =
                 rooms
@@ -438,7 +501,7 @@ private fun DescribeSpecRootScope.meetingBands(repos: () -> RepositoryPair) {
         it("stores a band-only meeting and clears it") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(meetingBand = TimeBand.EVENING) }
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.find(room.id)!!.room.meetingBand shouldBe TimeBand.EVENING
             rooms.updateRoom(room.id, RoomChange(locked = true), activity(5)) shouldBe true
             rooms.find(room.id)!!.room.meetingBand shouldBe TimeBand.EVENING
@@ -458,7 +521,7 @@ private fun DescribeSpecRootScope.meetingBands(repos: () -> RepositoryPair) {
         it("changes a band only while the room has no meeting time when asked to") {
             val rooms = repos().rooms
             val room = aRoom(freshId()) { it.copy(meetingTime = java.time.LocalTime.of(19, 0)) }
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             val bandOnly = RoomChange(meetingBand = Change.Set(TimeBand.NIGHT), onlyWithoutMeetingTime = true)
             rooms.updateRoom(room.id, bandOnly, activity(5)) shouldBe false
             rooms
@@ -478,7 +541,7 @@ private fun DescribeSpecRootScope.removingRooms(repos: () -> RepositoryPair) {
         it("deletes a room together with its participants") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.delete(room.id) shouldBe true
             rooms.find(room.id).shouldBeNull()
             rooms.delete(room.id) shouldBe false
@@ -489,7 +552,7 @@ private fun DescribeSpecRootScope.removingRooms(repos: () -> RepositoryPair) {
             val expired = aRoom(freshId()) { it.copy(expiresAt = T0.plusSeconds(100)) }
             val boundary = aRoom(freshId()) { it.copy(expiresAt = T0.plusSeconds(200)) }
             val alive = aRoom(freshId()) { it.copy(expiresAt = T0.plusSeconds(300)) }
-            listOf(expired, boundary, alive).forEach { rooms.create(it, aParticipant("host01")) }
+            listOf(expired, boundary, alive).forEach { rooms.create(it, listOf(aParticipant("host01"))) }
             val deleted = rooms.deleteExpired(T0.plusSeconds(200))
             (deleted >= 2) shouldBe true
             rooms.find(expired.id).shouldBeNull()
@@ -517,7 +580,10 @@ private fun DescribeSpecRootScope.anonUsers(repos: () -> RepositoryPair) {
             val referenced = AnonUser("u_" + freshId(), hashOf("d-" + freshId()), T0, T0)
             val fresh = AnonUser("u_" + freshId(), hashOf("d-" + freshId()), T0, T0.plus(Duration.ofDays(100)))
             listOf(stale, referenced, fresh).forEach { repositories.anonUsers.create(it) }
-            repositories.rooms.create(aRoom(freshId()) { it.copy(hostAnonId = referenced.id) }, aParticipant("host01"))
+            repositories.rooms.create(
+                aRoom(freshId()) { it.copy(hostAnonId = referenced.id) },
+                listOf(aParticipant("host01")),
+            )
             val cutoff = T0.plus(Duration.ofDays(90))
             (repositories.anonUsers.deleteInactive(cutoff) >= 1) shouldBe true
             repositories.anonUsers.findByDeviceHash(stale.deviceHash).shouldBeNull()
@@ -532,7 +598,7 @@ private fun DescribeSpecRootScope.favorTargets(repos: () -> RepositoryPair) {
         it("refuses a favor target who is not in the room and leaves the room as it was") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
             rooms.removeParticipant(room.id, "pid002", activity(2))
             val before = rooms.find(room.id)

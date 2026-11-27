@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { track } from "@/lib/analytics";
@@ -696,5 +696,69 @@ describe("방 화면", () => {
       });
       expect(track).not.toHaveBeenCalledWith("station_chosen", expect.anything());
     });
+  });
+});
+
+describe("방장이 모두의 출발역을 넣은 사다리 방(#227)", () => {
+  const entered = (id: string, label: string, code: string, name: string) => ({
+    participantId: id,
+    hidden: false,
+    originCode: code,
+    originName: name,
+    label,
+    labelKind: "name" as const,
+    shortLabel: label,
+    isHost: false,
+    isSelf: false,
+    enteredByHost: true,
+  });
+
+  it("링크를 받은 사람에게 대신 넣은 칸을 표시하고, 참여 대신 틀린 칸은 방장에게 알리라고 한다", async () => {
+    vi.mocked(api.getRoom).mockImplementation(async (_id, token) => {
+      const room = roomFor(token);
+      return {
+        ...room,
+        locked: true,
+        participants: [
+          entered("e1", "지연", "130", "신촌"),
+          ...room.participants.slice(0, 1).map((host) => ({ ...host, enteredByHost: false })),
+          entered("e2", "하늘", "ryf", "홍대입구"),
+        ],
+      };
+    });
+    renderScreen();
+    const list = await screen.findByRole("region", { name: "들어온 사람" });
+    expect(within(list).getAllByText("방장이 입력")).toHaveLength(2);
+    expect(within(list).getByText("민수").closest("li")).not.toHaveTextContent("방장이 입력");
+    expect(
+      screen.getByRole("heading", { name: "민수가 모두의 출발역을 넣었어요" }).closest("[role=status]"),
+    ).not.toBeNull();
+    expect(
+      screen.getByText(
+        /내 칸이 틀렸거나 빼고 싶으면 민수에게 알려 주세요\. 방장은 그 칸을 고칠 수는 없고, 내보내거나 방을 지울 수 있어요\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "개인정보 처리방침의 연락처" })).toHaveAttribute("href", "/privacy#rights");
+    expect(screen.queryByRole("heading", { name: "나도 출발역 넣기" })).not.toBeInTheDocument();
+  });
+
+  it("잠금을 풀어 직접 들어온 사람이 있는 채로 다시 잠그면, 모두를 방장이 넣었다고 하지 않고 일반 잠긴 방 안내를 보인다", async () => {
+    vi.mocked(api.getRoom).mockImplementation(async (_id, token) => {
+      const room = roomFor(token);
+      return {
+        ...room,
+        locked: true,
+        participants: [
+          entered("e1", "지연", "130", "신촌"),
+          ...room.participants.slice(0, 1).map((host) => ({ ...host, enteredByHost: false })),
+          { ...entered("j1", "하늘", "ryf", "홍대입구"), enteredByHost: false },
+        ],
+      };
+    });
+    renderScreen();
+    const list = await screen.findByRole("region", { name: "들어온 사람" });
+    expect(within(list).getAllByText("방장이 입력")).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: /모두의 출발역을 넣었어요/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "지금은 들어올 수 없는 방이에요" })).toBeInTheDocument();
   });
 });

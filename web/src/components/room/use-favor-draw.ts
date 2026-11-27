@@ -2,9 +2,9 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
 import { drawFavorTarget } from "@/lib/api/rooms";
 import { roomErrorMessage } from "@/lib/room/errors";
-import { useIdempotencyKey } from "./use-idempotency-key";
 
 export type FavorDrawControl = {
   /** 요청이 가는 중이거나, 받은 뒤 방을 다시 불러오는 중. */

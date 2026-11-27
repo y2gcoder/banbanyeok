@@ -33,7 +33,7 @@ class ConcurrentRoomTest :
         it("reads the room and its participants from one snapshot while someone joins") {
             repeat(RACES) { n ->
                 val room = aRoom(freshId())
-                rooms.create(room, aParticipant("host01"))
+                rooms.create(room, listOf(aParticipant("host01")))
                 rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
                 rooms.writeDecision(
                     room.id,
@@ -76,7 +76,7 @@ class ConcurrentRoomTest :
         it("never leaves the favor target pointing at someone who left") {
             repeat(RACES) { n ->
                 val room = aRoom(freshId())
-                rooms.create(room, aParticipant("host01"))
+                rooms.create(room, listOf(aParticipant("host01")))
                 rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
                 val toLeaver = RoomChange(mode = RoomMode.FAVOR, favorParticipantId = Change.Set("pid002"))
                 coroutineScope {

@@ -5,7 +5,7 @@ import { parseDataVersion, parseShareVersion, roomImagePath, roomShareLink, SHAR
 describe("방 공유 링크", () => {
   it("공유 번호를 sv로, 보이는 범위 정책 버전을 pv로 붙인다(방 ID는 소문자)", () => {
     expect(roomShareLink("QT7YVMSHT3", 12)).toBe(`/r/qt7yvmsht3?sv=12&pv=${ROOM_SHARE_POLICY_VERSION}`);
-    expect(ROOM_SHARE_POLICY_VERSION).toBe(3);
+    expect(ROOM_SHARE_POLICY_VERSION).toBe(4);
     expect(SHARE_VERSION_PARAM).toBe("sv");
   });
 
@@ -44,7 +44,7 @@ describe("방 공유 링크", () => {
   it("정책 2 → 3(#162: 기본 기준이 숨긴 사람 쪽인 방은 남에게 공평하게)도 배포 전 캐시를 받지 않는다", () => {
     // 그런 방을 배포 전(정책 2)에 공유해 캐시 → 방을 고치지 않고 배포 → 다시 공유: 링크와 그림 주소가 달라야 한다.
     expect(roomShareLink("qt7yvmsht3", 6, 2)).toBe("/r/qt7yvmsht3?sv=6&pv=2");
-    expect(roomShareLink("qt7yvmsht3", 6)).toBe("/r/qt7yvmsht3?sv=6&pv=3");
+    expect(roomShareLink("qt7yvmsht3", 6)).toBe("/r/qt7yvmsht3?sv=6&pv=4");
     expect(roomImagePath("qt7yvmsht3", 6, "20261120.1")).not.toBe(roomImagePath("qt7yvmsht3", 6, "20261120.1", 2));
   });
 

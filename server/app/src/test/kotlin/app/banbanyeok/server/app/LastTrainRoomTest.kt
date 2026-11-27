@@ -110,6 +110,72 @@ private fun JsonObject.lastTrainIds(): List<List<String>> =
 
 class LastTrainRoomTest :
     DescribeSpec({
+        describe("the link preview of a room the host filled in (#227)") {
+            it(
+                "carries no times or last trains before and after the draw and once decided, while the room keeps them",
+            ) {
+                runTest {
+                    val fixture =
+                        RoomFixture(stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "31a", "4xz")))
+                    val recommendation =
+                        RecommendationService(
+                            OdTravelTimeProvider(sampleOd, "20261120.1", TimeSlot.ALL.associateWith { sampleOd }),
+                            codeNames,
+                            lastTrains = LastTrainSource { LastTrainData(sampleLastTrains, sampleLastTrainAsOf) },
+                            clock = fixture.clock,
+                        )
+                    val results = RoomResultService(fixture.service, recommendation, testTimes)
+                    val created =
+                        fixture.service.create(
+                            CreateRoomCommand(
+                                RoomMode.FAVOR,
+                                CreateRoomCommand.DRAW_TARGET,
+                                friday,
+                                ParticipantInput("민수", "03v", false),
+                                null,
+                                null,
+                                others =
+                                    listOf(
+                                        ParticipantInput("지연", "31a", false),
+                                        ParticipantInput(null, "130", false),
+                                    ),
+                            ),
+                        )
+                    val roomId = created.roomId
+                    results
+                        .result(roomId, null, null, null)
+                        .recommendation.candidates
+                        .first()
+                        .lastTrains
+                        .shouldNotBeNull()
+                        .size shouldBe 3
+
+                    fun RoomPreview.assertWithheld() {
+                        room.enteredByHost shouldBe true
+                        val (station, basis) =
+                            when (this) {
+                                is RoomPreview.Result -> station to lastTrainBasis
+                                is RoomPreview.Decided -> station to lastTrainBasis
+                                is RoomPreview.Collecting -> error("결과가 있어야 한다")
+                            }
+                        basis.shouldBeNull()
+                        station.times.map { Triple(it.label, it.seconds, it.lastTrain) } shouldBe
+                            (1..3).map { Triple("참가자 $it", null, null) }
+                        previewJson(this).toString().let {
+                            it shouldNotContain "lastTrain"
+                            it shouldNotContain "민수"
+                        }
+                    }
+                    results.preview(roomId).shouldBeInstanceOf<RoomPreview.Result>().assertWithheld()
+                    fixture.service.drawFavor(roomId, created.hostToken, 0, 1)
+                    results.preview(roomId).shouldBeInstanceOf<RoomPreview.Result>().assertWithheld()
+                    val seen = results.result(roomId, null, null, null).shareVersion
+                    fixture.service.decide(roomId, created.participantToken, "4xz", seen)
+                    results.preview(roomId).shouldBeInstanceOf<RoomPreview.Decided>().assertWithheld()
+                }
+            }
+        }
+
         describe("last trains in a room's result") {
             it("gives the hidden participant's last train to that participant only") {
                 runTest {

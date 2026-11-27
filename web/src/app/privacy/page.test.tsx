@@ -56,7 +56,7 @@ describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
     const box = document.getElementById("policy-change");
     expect(box).not.toBeNull();
     expect(box).toHaveTextContent(`개인정보 처리방침이 ${koreanDate(REVISION_DATE, { year: true })}부터 바뀌었습니다`);
-    expect(box).toHaveTextContent("방 미리보기 응답: 방 ID만 있으면 누구나 받는 값 (6항)");
+    expect(box).toHaveTextContent("혼자 입력한 결과의 저장 (2항)");
     expect(box?.querySelector("a")?.getAttribute("href")).toBe(CHANGE_NOTICE?.previous.url);
     expect(document.getElementById("policy-notice")).toBeNull();
     const main = screen.getByRole("main");
@@ -90,6 +90,7 @@ describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
       "2026년 11월 24일 개정판",
       "2026년 11월 25일 시행판",
       "2026년 11월 25일 개정판",
+      "2026년 11월 26일 시행판",
     ]);
     expect(links[4]?.getAttribute("href")).toBe(historyUrl(HISTORY.withdrawn.file));
     expect(changes).not.toHaveTextContent("](https://");

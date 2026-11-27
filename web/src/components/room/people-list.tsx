@@ -22,7 +22,7 @@ type Props = {
 
 /**
  * 현재 참여자 목록(노선도처럼 사람마다 색 점). 이름은 서버 label 그대로이고 본인 줄에만 "(나)"를 붙인다.
- * 출발역을 가린 사람은 "출발역 비공개"로 보인다(본인에게만 자기 출발역이 보인다).
+ * 출발역을 가린 사람은 "출발역 비공개"로 보인다(본인에게만 자기 출발역이 보인다). 방장이 대신 넣은 칸에는 "방장이 입력"을 붙인다(#227).
  */
 export function PeopleList({ people, maxPeople, canKick, editing, busy, onEditSelf, onRemoveSelf, onKick }: Props) {
   return (
@@ -53,6 +53,11 @@ export function PeopleList({ people, maxPeople, canKick, editing, busy, onEditSe
                 {person.isSelf ? <span className="text-xs font-semibold text-muted-foreground">(나)</span> : null}
                 {person.isHost ? (
                   <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[11px] font-bold text-ink-soft">방장</span>
+                ) : null}
+                {person.enteredByHost ? (
+                  <span className="rounded-sm border border-rule-strong px-1.5 py-0.5 text-[11px] font-bold text-ink-soft">
+                    방장이 입력
+                  </span>
                 ) : null}
               </p>
               <p className="text-[14px] text-muted-foreground">{person.originText}</p>

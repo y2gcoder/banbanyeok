@@ -4,6 +4,9 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import type { RoomPreview } from "@/lib/api/types";
+import { sharePath } from "@/lib/result/share-url";
+import { DRAW_ROOM_ATTEMPT_KEY } from "@/lib/room/draw-room-attempt";
+import { roomPath } from "@/lib/room/id";
 import { INVITE_COPY, ROOM_PREVIEW_LAST_TRAIN, roomShareCopy } from "@/lib/room/share-copy";
 import { policyMarkdown } from "./markdown";
 import {
@@ -12,6 +15,8 @@ import {
   CHANGE_NOTICE_DAYS,
   CONTACT_EMAIL,
   EARLIER_NOTICES,
+  EARLIER_REVISIONS,
+  earlierNoticesOn,
   HISTORY,
   historyUrl,
   POLICY,
@@ -301,6 +306,8 @@ describe("개인정보 처리방침", () => {
       lastTrainPending: "막차 표 준비 중 표시",
       // 11월 25일 시행판(#172)에 더한 키.
       "basis.drawRound": "배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지",
+      // 이 판(#227)에 더한 키.
+      "room.enteredByHost": "방장이 대신 넣은 칸이 있는 방인지",
     };
     expect(leaves.sort()).toEqual(Object.keys(described).sort());
     const sentences = previewSentences(POLICY);
@@ -309,19 +316,24 @@ describe("개인정보 처리방침", () => {
     const preview = sentences.join(" ");
     for (const [key, phrase] of Object.entries(described)) expect(preview, key).toContain(phrase);
     expect(one(sentences, "막차 표 준비 중 표시")).toContain("서버의 상태이고 참여자의 정보가 아닙니다");
-    // 11월 25일 시행판 전부터 응답에 있던 키는 그 판 비교표의 '바뀌기 전'에도 적는다(그 판에 더한 키는 '바뀐 후'). 이 판(#173)은 응답의
-    // 키를 바꾸지 않는다(숨긴 사람이 새로 생기지 않을 뿐이다).
-    expect(CHANGE_NOTICE?.rows.some((r) => !r.item.startsWith("[") && r.item.includes("방 미리보기 응답"))).toBe(false);
-    const row = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("[11월 25일 시행판] 방 미리보기 응답"));
-    for (const [key, phrase] of Object.entries(described)) {
+    // 11월 25일 시행판 전부터 응답에 있던 키는 그 판 비교표의 '바뀌기 전'에도 적는다(그 판에 더한 키는 '바뀐 후'). 이 판(#227)에 더한
+    // 키는 이 판의 비교표 '바뀐 후'에 있다. 앞선 판의 행은 안내 기간이 끝나면 이 판의 안내에서 빠지므로, 그 판의 행 원본에서 본다.
+    const thisRevision = ["room.enteredByHost"];
+    const mine = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("방 링크 미리보기: 방장이 대신 넣은 칸이 있는 방"));
+    for (const key of thisRevision) expect(mine?.after, key).toContain(described[key]);
+    const rowsOf = (label: string) => EARLIER_REVISIONS.find((e) => e.label === label)?.rows ?? [];
+    const row = rowsOf("2026년 11월 25일 시행판").find((r) => r.item.startsWith("[11월 25일 시행판] 방 미리보기 응답"));
+    for (const [key, phrase] of Object.entries(described).filter(([key]) => !thisRevision.includes(key))) {
       const added = key === "basis.drawRound";
       expect(added ? row?.after : row?.before, key).toContain(phrase);
       if (added) expect(row?.before, key).not.toContain(phrase);
     }
     // 11월 21일 시행판에 더한 키(지도 한가운데·막차 표 준비 중)는 그 판의 행에서 '바뀐 후'에만 있다.
-    const nov21 = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("[11월 21일 시행판] 방 미리보기 응답"));
+    const nov21 = rowsOf("2026년 11월 21일 시행판").find((r) =>
+      r.item.startsWith("[11월 21일 시행판] 방 미리보기 응답"),
+    );
     for (const [key, phrase] of Object.entries(described)) {
-      if (key === "basis.drawRound") continue;
+      if (key === "basis.drawRound" || thisRevision.includes(key)) continue;
       const added = key.startsWith("mapMiddle.") || key === "lastTrainPending";
       expect(added ? nov21?.after : nov21?.before, key).toContain(phrase);
       if (added) expect(nov21?.before, key).not.toContain(phrase);
@@ -549,7 +561,42 @@ describe("개인정보 처리방침", () => {
   it("15항 변경 이력: 7일 전 알림 없이 바로 시행했다는 것과 그 이유, 11월 28일 예정 판을 시행하지 않는다는 것을 정직하게 적는다", () => {
     const text = textOf(POLICY, "changes");
     const day = koreanDate(REVISION_DATE, { year: true });
-    expect(lineOf(POLICY, "changes", `변경 이력: ${day} 시행판은`)).toContain("자체 합계를 도입");
+    expect(lineOf(POLICY, "changes", "변경 이력: 2026년 11월 26일 시행판은")).toContain("자체 합계를 도입");
+    // 이 판(#227): 혼자 입력한 결과로 사다리 방을 만들면 저장하고, 대신 넣은 사람도 방 링크로 보인다.
+    const ladder = lineOf(POLICY, "changes", `변경 이력: ${day} 시행판은`);
+    expect(ladder).toContain("혼자 입력한 결과에서 '누구 쪽으로' 대상을 사다리로 뽑는 방을 만드는 기능을 더했습니다");
+    expect(ladder).toContain("입력한 사람 모두의 이름(넣은 경우)과 출발역, 약속 요일·시간대");
+    expect(ladder).toContain("그 칸에 '방장이 입력'이 표시되며, 이렇게 만든 방은 잠긴 채 시작한다");
+    expect(ladder).toContain("수집하는 정보와 다른 사람에게 보이는 범위가 바뀌는 중요한 변경이라 화면에 알립니다");
+    expect(ladder).toContain("2026년 11월 26일 시행판은 이 판을 시행한 날 배포 전까지 적용했습니다");
+    // 서버에 저장하지 않는다는 설명은 혼자 입력한 결과와 /s 링크에만 해당하고, /r 방의 정보는 메시지를 지워도 남는다(지우는 방법이 다르다).
+    const friends = lineOf(POLICY, "items", "혼자 입력할 때는 함께 만날 친구의");
+    expect(friends).toContain(
+      "혼자 입력한 결과와 그 공유 링크(/s?로 시작하는 주소)만 쓸 때는 이 정보를 서버에 저장하지 않습니다",
+    );
+    expect(friends).toContain("'사다리로 뽑기'로 방을 만들면 이 정보가 방(/r/로 시작하는 주소)에 저장되고");
+    expect(friends).not.toMatch(/넣어 주세요\. 이 정보는 서버에 저장하지 않습니다/);
+    const rights = textOf(POLICY, "rights");
+    expect(rights).not.toContain("링크로 공유한 정보");
+    expect(rights).toContain("혼자 입력한 결과의 공유 링크(/s?로 시작하는 주소)로 보낸 정보");
+    // 사다리 방 만들기 시도를 기기에 두는 키(#227)는 11항에 그 이름 그대로 있고, 복구 키는 해시만 서버에 둔다고 2항에 적는다.
+    expect(textOf(POLICY, "cookies")).toContain(`${DRAW_ROOM_ATTEMPT_KEY} (로컬 저장소`);
+    expect(textOf(POLICY, "items")).toContain("사다리 방 복구 키는 원문을 서버에 저장하지 않고");
+    // 처리방침이 부르는 주소 모양이 실제 링크와 같아야 한다(공유 링크는 /s?…, 방 링크는 /r/…).
+    const shared = sharePath({
+      origins: ["k3a", "ryf"],
+      mode: "fair",
+      favorIndex: null,
+      nicknames: null,
+      timeSlot: "weekday-day",
+    });
+    expect(shared.startsWith("/s?")).toBe(true);
+    expect(roomPath("qt7yvmsht3").startsWith("/r/")).toBe(true);
+    expect(rights).toContain("방 링크(/r/로 시작하는 주소)로 공유한 방의 정보");
+    expect(rights).toContain("메시지를 지워도 방에 저장된 정보는 남습니다");
+    expect(ladder).toContain(
+      "공유 링크(/s)로 보낸 정보와 방 링크(/r)로 공유한 방의 정보를 지우는 방법도 나누어 적었습니다",
+    );
     const stop = lineOf(POLICY, "changes", "변경 이력: 2026년 11월 25일 개정판은");
     expect(stop).toContain("출발역 숨기기를 더는 새로 제공하지 않도록 바꿨습니다");
     expect(stop).toContain(
@@ -635,7 +682,18 @@ describe("개인정보 처리방침", () => {
       label,
       url,
     }));
-    for (const commit of ["57a068a", "267cda0", "bd083b5", "ecd3a47", "44631a9", "5b0e704", "26dc73e", "a7bc5d8"]) {
+    for (const commit of [
+      "57a068a",
+      "267cda0",
+      "bd083b5",
+      "ecd3a47",
+      "44631a9",
+      "5b0e704",
+      "26dc73e",
+      "a7bc5d8",
+      "f15d4a3",
+      "ed2b8f2",
+    ]) {
       expect(links.map((l) => l.url)).toContain(
         `https://github.com/y2gcoder/banbanyeok/blob/${commit}/docs/legal/privacy-policy.md`,
       );
@@ -648,7 +706,7 @@ describe("개인정보 처리방침", () => {
       expect(existsSync(resolve(legal, url.split("/docs/legal/")[1] ?? "")), url).toBe(true);
     }
     const versions = text.split("\n").filter((l) => l.startsWith("["));
-    expect(versions).toHaveLength(10);
+    expect(versions).toHaveLength(11);
     expect(versions.map((l) => [...l.matchAll(/\]\(https:/g)].length)).toEqual(versions.map(() => 1));
     expect(text).toContain(
       "세 번째 개정판](https://github.com/y2gcoder/banbanyeok/blob/ecd3a47/docs/legal/privacy-policy.md): 2026년 11월 17일부터 2026년 11월 21일 시행판 시행 전까지 적용했습니다.",
@@ -664,6 +722,9 @@ describe("개인정보 처리방침", () => {
     );
     expect(text).toContain(
       "11월 25일 시행판](https://github.com/y2gcoder/banbanyeok/blob/a7bc5d8/docs/legal/privacy-policy.md): 2026년 11월 25일 하루, 2026년 11월 25일 개정판 시행 전까지 적용했습니다.",
+    );
+    expect(text).toContain(
+      "11월 25일 개정판](https://github.com/y2gcoder/banbanyeok/blob/f15d4a3/docs/legal/privacy-policy.md): 2026년 11월 25일부터 2026년 11월 26일 시행판 시행 전까지 적용했습니다.",
     );
     expect(text).toContain("2026년 11월 21일부터 알렸으나 시행하지 않았습니다.");
   });
@@ -681,22 +742,57 @@ describe("개인정보 처리방침", () => {
     expect(addDays("2026-12-30", 7)).toBe("2027-01-06");
   });
 
+  it.each([
+    [
+      "2026-11-27",
+      [
+        "11월 26일 시행판",
+        "11월 25일 개정판",
+        "11월 25일 시행판",
+        "11월 24일 개정판",
+        "11월 24일 시행판",
+        "11월 21일 시행판",
+      ],
+    ],
+    [
+      "2026-11-28",
+      ["11월 26일 시행판", "11월 25일 개정판", "11월 25일 시행판", "11월 24일 개정판", "11월 24일 시행판"],
+    ],
+    [
+      "2026-11-30",
+      ["11월 26일 시행판", "11월 25일 개정판", "11월 25일 시행판", "11월 24일 개정판", "11월 24일 시행판"],
+    ],
+    ["2026-12-01", ["11월 26일 시행판", "11월 25일 개정판", "11월 25일 시행판"]],
+    ["2026-12-02", ["11월 26일 시행판"]],
+    ["2026-12-03", []],
+  ])("%s에 시행하면 그날 7일 안내 기간이 남은 앞선 판만 함께 싣는다", (date, labels) => {
+    expect(earlierNoticesOn(date).map((e) => e.label.replace("2026년 ", ""))).toEqual(labels);
+  });
+
   it("중요한 변경 안내(CHANGE_NOTICE): 이 판은 수집하는 정보와 보이는 범위가 바뀌어 켜고, 시행일부터 15항의 일수만큼이며 전후 비교가 빠짐없다", () => {
     expect(CHANGE_NOTICE).not.toBeNull();
     expect(changeNoticeProblems(CHANGE_NOTICE, CHANGE_NOTICE_DAYS)).toEqual([]);
     expect(CHANGE_NOTICE?.since).toBe(REVISION_DATE);
     expect(CHANGE_NOTICE?.previous.url).toBe(
-      "https://github.com/y2gcoder/banbanyeok/blob/f15d4a3/docs/legal/privacy-policy.md",
+      "https://github.com/y2gcoder/banbanyeok/blob/ed2b8f2/docs/legal/privacy-policy.md",
     );
-    expect(CHANGE_NOTICE?.previous.label).toBe("2026년 11월 25일 개정판");
+    expect(CHANGE_NOTICE?.previous.label).toBe("2026년 11월 26일 시행판");
     const rows = CHANGE_NOTICE?.rows ?? [];
     const mine = rows.filter((r) => !r.item.startsWith("["));
-    expect(mine.map((r) => r.item)).toEqual(["기능별 하루 요청 건수"]);
-    expect(rows[0]?.after).toContain("한국 날짜와 단계별로");
-    expect(CHANGE_NOTICE?.summary).toContain("동의 여부와 관계없이");
+    expect(mine.map((r) => r.item)).toEqual([
+      "혼자 입력한 결과의 저장 (2항)",
+      "방 정보 (2항)",
+      "방 화면 (6항)",
+      "방 링크 미리보기: 방장이 대신 넣은 칸이 있는 방 (6항)",
+      "권리 행사: 방장이 대신 넣은 내 정보 (8항)",
+    ]);
+    expect(rows[0]?.after).toContain("'사다리로 뽑기'를 골라 확인하면");
+    expect(rows[2]?.after).toContain("'방장이 입력'이 표시됨");
+    expect(CHANGE_NOTICE?.summary).toContain("입력한 사람 모두의 이름과 출발역이 그 방에 저장되고");
     expect(CHANGE_NOTICE?.summary).not.toMatch(/\d+일까지/);
     // 앞선 판 중 이 판 시행일에 7일 안내 기간이 남은 판만, 새 판부터 머리말을 붙여 뒤에 싣는다(15항의 7일 약속을 끊지 않는다).
     const earlier = [
+      { prefix: "[11월 26일 시행판] ", label: "2026년 11월 26일 시행판", since: "2026-11-26", count: 1 },
       { prefix: "[11월 25일 개정판] ", label: "2026년 11월 25일 개정판", since: "2026-11-25", count: 2 },
       { prefix: "[11월 25일 시행판] ", label: "2026년 11월 25일 시행판", since: "2026-11-25", count: 5 },
       { prefix: "[11월 24일 개정판] ", label: "2026년 11월 24일 개정판", since: "2026-11-24", count: 2 },
@@ -704,6 +800,7 @@ describe("개인정보 처리방침", () => {
       { prefix: "[11월 21일 시행판] ", label: "2026년 11월 21일 시행판", since: "2026-11-21", count: 8 },
     ].filter((e) => addDays(e.since, CHANGE_NOTICE_DAYS - 1) >= REVISION_DATE);
     expect(EARLIER_NOTICES.map((e) => e.label)).toEqual(earlier.map((e) => e.label));
+    expect(EARLIER_NOTICES).toEqual(earlierNoticesOn(REVISION_DATE));
     let at = mine.length;
     for (const e of earlier) {
       const group = rows.slice(at, at + e.count);

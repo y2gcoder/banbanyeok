@@ -11,15 +11,33 @@ import java.time.Instant
 class InMemoryRoomRepository : RoomRepository {
     private val lock = Mutex()
     private val rooms = LinkedHashMap<String, StoredRoom>()
+    private val recoveries = mutableMapOf<TokenHash, String>()
 
     override suspend fun create(
         room: Room,
-        host: Participant,
+        participants: List<Participant>,
+        recovery: RecoverySlot?,
     ) = lock.withLock {
         check(room.id !in rooms) { "duplicate room id" }
+        if (recovery != null) {
+            val holder = recoveries[recovery.hash]?.let { rooms[it]?.room }
+            val live =
+                holder != null && holder.createdAt.isAfter(recovery.recoverableAfter) &&
+                    holder.expiresAt.isAfter(room.createdAt)
+            if (live) throw RecoveryTaken()
+            recoveries[recovery.hash] = room.id
+        }
         rooms[room.id] = StoredRoom(room, emptyList())
-        write(room.id) { it.copy(participants = listOf(host)) }
+        write(room.id) { it.copy(participants = participants) }
     }
+
+    override suspend fun findByRecovery(
+        recoveryHash: TokenHash,
+        createdAfter: Instant,
+    ): String? =
+        lock.withLock {
+            recoveries[recoveryHash]?.takeIf { id -> rooms[id]?.room?.createdAt?.isAfter(createdAfter) == true }
+        }
 
     override suspend fun find(roomId: String): StoredRoom? =
         lock.withLock {

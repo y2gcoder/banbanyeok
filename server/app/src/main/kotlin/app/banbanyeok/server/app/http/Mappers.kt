@@ -61,6 +61,7 @@ fun ParticipantView.toDto(
     label = label.text,
     labelKind = label.kind.name.lowercase(),
     shortLabel = label.short,
+    enteredByHost = enteredByHost,
 )
 
 /**
@@ -134,6 +135,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
             meetingTime = room.meetingTime?.wire(),
             meetingBand = room.meetingBand?.id,
             timeBasis = room.timeBasis.toDto(requested = room.timeBasis.slot),
+            enteredByHost = true.takeIf { room.enteredByHost },
         )
 
     fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel, drawRound)
@@ -229,6 +231,7 @@ fun StatelessResult.toDto(stations: StationNames): ResultDto =
                     label = label.text,
                     labelKind = label.kind.name.lowercase(),
                     shortLabel = label.short,
+                    enteredByHost = false,
                 )
             },
         ).copy(mapMiddle = mapMiddle?.toDto(), missingServices = missingServices)

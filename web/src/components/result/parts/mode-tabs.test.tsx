@@ -80,4 +80,38 @@ describe("모드 탭", () => {
     await userEvent.keyboard("{ArrowRight}");
     expect(screen.getByRole("tab", { name: "빨리 만나기" })).toHaveFocus();
   });
+  it("만든 사람 화면에서는 배려 대상 줄 끝에 '사다리로 뽑기'를 두고, 누르면 대상이 아니라 뽑기를 연다", async () => {
+    const onChange = vi.fn();
+    const onDraw = vi.fn();
+    render(
+      <ModeTabs
+        mode="favor"
+        favorIndex={0}
+        people={people}
+        onChange={onChange}
+        defaultFavorIndex={1}
+        label="추천 기준"
+        panelId="p"
+        onDraw={onDraw}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "사다리로 뽑기" }));
+    expect(onDraw).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("뽑기를 넘기지 않으면(받은 링크) '사다리로 뽑기'가 없다", () => {
+    render(
+      <ModeTabs
+        mode="favor"
+        favorIndex={0}
+        people={people}
+        onChange={vi.fn()}
+        defaultFavorIndex={1}
+        label="기준 바꿔 보기"
+        panelId="p"
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "사다리로 뽑기" })).not.toBeInTheDocument();
+  });
 });
