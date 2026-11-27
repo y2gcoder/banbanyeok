@@ -58,7 +58,7 @@ bash $V where                     # 마지막 실행 폴더
 - 주소는 `http://localhost:<WEB_PORT>`다. `127.0.0.1`로 열면 Next 16 dev가 개발 리소스(`/_next/hmr`)를 막아 화면이 수화되지 않고 입력이 먹지 않는다.
 - 로케일은 `ko-KR`, 시간대는 `Asia/Seoul`이고 클립보드 권한이 있다. "링크 복사" 결과를 읽을 수 있다.
 
-준비된 여정은 `features/README.md`에 지도로 있다. 지금은 `home-search`, `room-join`, `favor-draw`, `share-link`, `last-train`이다. 새 확인이 필요하면 여정 파일을 하나 쓰고 경로로 넘긴다(`bash $V drive path/to/x.mjs desktop`, 저장소 루트 기준 상대 경로). 스크래치 여정은 저장소 밖에 둔다. 여정은 아래 도구를 받는 기본 내보내기 함수다.
+실행할 여정과 검증할 화면은 [기능 지도](features/README.md)에서 고른다. 새 확인이 필요하면 여정 파일을 하나 쓰고 경로로 넘긴다(`bash $V drive path/to/x.mjs desktop`, 저장소 루트 기준 상대 경로). 스크래치 여정은 저장소 밖에 둔다. 여정은 아래 도구를 받는 기본 내보내기 함수다.
 
 ```js
 // journeys/ 안의 여정 기준. 저장소 밖 스크래치 여정은 lib.mjs를 절대 경로로 가져온다.
@@ -74,13 +74,7 @@ export default async ({ page, step, expect, db, newPerson, note, viewport }) => 
 };
 ```
 
-자주 쓰는 손잡이는 다음과 같다. 문구가 바뀌면 `web/e2e-real/`의 같은 선택자도 함께 바뀌므로 거기서 찾는다.
-
-- 첫 화면의 기본 탭 `모두 입력`에는 `combobox "나의 출발역"`, `combobox "친구1의 출발역"`, `button "만날 역 찾기"`가 있다.
-- 첫 화면의 `tab "각자 입력"`을 누르면 같은 주소(`/`)의 `tabpanel "각자 입력"`에 방 만들기 폼이 열린다. `textbox "내 이름 (선택)"`, `combobox "내 출발역"`, `button "방 만들기"`를 쓴다.
-- 결과 화면에는 `tablist "추천 기준"`(`공평하게`·`빨리 만나기`·`누구 쪽으로`)과 1위 `article`(`button /자세히/`), `region "다른 후보"`, `button "카톡으로 보내기"`, `button "링크 복사"`가 있다.
-- 방 화면에는 참여 폼의 `textbox "내 이름 (선택)"`, `combobox "내 출발역"`, `button "참여하기"`와 `region "들어온 사람"`, `region "만날 역 후보"`가 있다.
-- 첫 입력 전에 `gotoHydrated`로 수화를 기다린다. 화면이 붙으면 웹이 `/api/healthz`로 서버를 깨우고, 그 요청을 본 뒤에 입력한다. next dev는 첫 컴파일이 느려서 바로 입력하면 값이 사라진다.
+화면의 접근성 역할과 이름은 기능 지도가 가리키는 각 기능 문서에서 찾는다. 문구가 바뀌면 `web/e2e-real/`의 선택자도 확인한다. 첫 입력 전에는 `gotoHydrated`로 수화를 기다린다. 화면이 붙으면 웹이 `/api/healthz`로 서버를 깨운다.
 
 ## Evidence
 
