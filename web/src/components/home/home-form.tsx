@@ -1,9 +1,8 @@
 "use client";
 
 import { PlusIcon, XIcon } from "lucide-react";
-import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { personColor } from "@/components/common/person-color";
-import { preventImplicitRoomSubmit } from "@/components/common/prevent-implicit-room-submit";
 import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
 import { StationField } from "@/components/common/station-field";
 import { useRecoverableRoom } from "@/components/common/use-recoverable-room";
@@ -148,8 +147,7 @@ export function HomeForm() {
     track("people_limit_hit", { surface: "home", attempted: MAX_PEOPLE + 1 });
   };
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
+  const submit = () => {
     const blocked = rows.map((row) => (row.station ? blockedReason(row.station, scope) : null)).find(Boolean);
     if (blocked) {
       setError(`${blocked}. 출발역이나 요일·시간대를 바꿔 주세요.`);
@@ -185,13 +183,8 @@ export function HomeForm() {
   };
 
   return (
-    <form
-      onSubmit={submit}
-      onKeyDown={preventImplicitRoomSubmit}
-      method="post"
-      noValidate
-      className="flex flex-col gap-4"
-    >
+    // 방 만들기 버튼을 활성화했을 때만 저장한다. 입력 중 발생하는 브라우저의 폼 제출은 취소한다.
+    <form onSubmit={(event) => event.preventDefault()} method="post" noValidate className="flex flex-col gap-4">
       <fieldset disabled={creation.submitted} className="flex min-w-0 flex-col gap-5">
         <legend className="sr-only">출발역과 약속 정하기</legend>
         <RegionPicker id={`${formId}-region`} choice={regionChoice} />
@@ -356,7 +349,8 @@ export function HomeForm() {
         </>
       ) : (
         <Button
-          type="submit"
+          type="button"
+          onClick={submit}
           aria-describedby={`${formId}-storage`}
           disabled={creation.submitted || !today}
           className="h-14 rounded-xl text-[17px] font-bold"

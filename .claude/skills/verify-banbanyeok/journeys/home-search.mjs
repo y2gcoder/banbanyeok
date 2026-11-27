@@ -45,7 +45,9 @@ export default async ({ page, step, expect, db, newPerson }) => {
     expect(countRooms("rooms-after-draft")).toBe(before);
   });
   await step("filled-room-result", async () => {
-    await page.getByRole("button", { name: "방 만들기" }).click();
+    const create = page.getByRole("button", { name: "방 만들기" });
+    if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await create.tap();
+    else await create.click();
     await expect(page).toHaveURL(ROOM_URL);
     await expect(page.getByRole("region", { name: "만날 역 후보" }).getByRole("article").first()).toBeVisible();
     await expect(page.getByRole("tab", { name: "공평하게" })).toHaveAttribute("aria-selected", "true");

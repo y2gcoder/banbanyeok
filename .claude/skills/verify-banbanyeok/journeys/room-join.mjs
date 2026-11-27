@@ -12,7 +12,9 @@ export default async ({ page, step, expect, db, newPerson, note }) => {
     await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
   });
   await step("host-waiting", async () => {
-    await panel.getByRole("button", { name: "방 만들기" }).click();
+    const create = panel.getByRole("button", { name: "방 만들기" });
+    if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await create.tap();
+    else await create.click();
     await expect(page).toHaveURL(ROOM_URL);
     await expect(page.getByRole("heading", { name: "내가 만든 방" })).toBeVisible();
     await expect(page.getByText("두 명 이상 들어오면 결과를 볼 수 있어요.")).toBeVisible();

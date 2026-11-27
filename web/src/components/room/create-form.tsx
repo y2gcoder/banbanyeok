@@ -3,8 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { DicesIcon, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useCallback, useEffect, useId, useMemo, useState } from "react";
-import { preventImplicitRoomSubmit } from "@/components/common/prevent-implicit-room-submit";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
 import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
 import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
@@ -132,8 +131,7 @@ export function CreateRoomForm({ className }: { className?: string }) {
   });
   const stage = useSlowStage(create.isPending);
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
+  const submit = () => {
     const now = refreshToday();
     const blocked = host.station ? blockedReason(host.station, scope) : null;
     if (blocked) {
@@ -162,9 +160,9 @@ export function CreateRoomForm({ className }: { className?: string }) {
 
   const submitted = create.isPending || create.isSuccess;
   return (
+    // 방 만들기 버튼을 활성화했을 때만 저장한다. 입력 중 발생하는 브라우저의 폼 제출은 취소한다.
     <form
-      onSubmit={submit}
-      onKeyDown={preventImplicitRoomSubmit}
+      onSubmit={(event) => event.preventDefault()}
       method="post"
       noValidate
       className={cn("flex min-w-0 flex-col gap-5", className)}
@@ -296,7 +294,8 @@ export function CreateRoomForm({ className }: { className?: string }) {
         내 이름(선택)과 출발역이 저장되고 방 링크를 가진 사람이 방에서 볼 수 있어요. 방장은 언제든 방을 지울 수 있어요.
       </p>
       <Button
-        type="submit"
+        type="button"
+        onClick={submit}
         aria-describedby={`${id}-storage`}
         disabled={!host.station || submitted}
         className="h-14 rounded-xl text-[17px] font-bold"

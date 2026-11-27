@@ -14,5 +14,12 @@ export default defineConfig({
     locale: "ko-KR",
     trace: "retain-on-failure",
   },
-  projects: [{ name: "mobile-chrome", use: { ...devices["Pixel 7"] } }],
+  projects: [
+    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
+    {
+      name: "desktop-webkit",
+      testMatch: "**/room-explicit-submit.spec.ts",
+      use: { ...devices["Desktop Safari"] },
+    },
+  ],
 });
