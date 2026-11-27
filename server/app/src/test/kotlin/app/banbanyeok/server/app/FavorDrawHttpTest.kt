@@ -61,7 +61,7 @@ private fun JsonObject.ranking(): JsonObject =
     JsonObject(listOf("mode", "baselineStationCode", "status", "candidates").associateWith(::getValue))
 
 /** 방장 03v, 130(공개), 31a가 있는 방. 운은 처음 뽑기에 첫 대상, 다시 뽑기에 둘째 대상이다. */
-private suspend fun drawRoom(): RouteRoom = RouteRoom("130", hidden = false).open(RoomMode.FAVOR, "draw")
+private suspend fun drawRoom(): RouteRoom = RouteRoom("130").open(RoomMode.FAVOR, "draw")
 
 class FavorDrawHttpTest :
     DescribeSpec({
@@ -79,7 +79,7 @@ class FavorDrawHttpTest :
                         null,
                         room.managementToken,
                         room.hostToken,
-                        room.hiddenToken,
+                        room.guestToken,
                         room.thirdToken,
                     )) {
                         val seen = json(HttpMethod.Get, "/v1/rooms/${room.roomId}", token = token)
@@ -92,7 +92,7 @@ class FavorDrawHttpTest :
                     }
                     val redrawn = draw(room, 2).body().getValue("favorDraw").jsonObject
                     redrawn.getValue("round").jsonPrimitive.content shouldBe "2"
-                    redrawn.getValue("winner").jsonPrimitive.content shouldBe room.hiddenId
+                    redrawn.getValue("winner").jsonPrimitive.content shouldBe room.guestId
                     val limit = draw(room, 3)
                     limit.status.value shouldBe 409
                     OpenApiContract.assertValid(HttpMethod.Post, DRAW_PATH, limit)
@@ -188,7 +188,7 @@ class FavorDrawHttpTest :
                     draw(room, 1).status.value shouldBe 200
                     // 당첨자(방장)가 아닌 지연(thirdId)이 나간다.
                     room.fixture.service.removeParticipant(room.roomId, room.thirdId, room.thirdToken)
-                    for (token in listOf(null, room.managementToken, room.hostToken, room.hiddenToken)) {
+                    for (token in listOf(null, room.managementToken, room.hostToken, room.guestToken)) {
                         val path = "/v1/rooms/${room.roomId}"
                         for (endpoint in listOf("", "/preview", "/result")) {
                             withClue("token=$token endpoint=$endpoint") {
@@ -203,7 +203,7 @@ class FavorDrawHttpTest :
                     }
                     val draw = json(HttpMethod.Get, "/v1/rooms/${room.roomId}").body().getValue("favorDraw").jsonObject
                     draw.getValue("candidates").jsonArray.map { it.jsonPrimitive.content } shouldBe
-                        listOf(room.hostId, room.hiddenId, "~2")
+                        listOf(room.hostId, room.guestId, "~2")
                     OpenApiContract.assertValid(
                         HttpMethod.Get,
                         "/v1/rooms/{roomId}",
@@ -213,10 +213,11 @@ class FavorDrawHttpTest :
             }
 
             it("refuses a room made without the draw and a room with fewer than two candidates") {
-                val plain = RouteRoom("130", hidden = false).open(RoomMode.FAVOR, "host")
+                val plain = RouteRoom("130").open(RoomMode.FAVOR, "host")
                 plain.withApi { draw(plain, 1).body().code() shouldBe "DRAW_NOT_AVAILABLE" }
                 val room = RouteRoom("130").open(RoomMode.FAVOR, "draw")
                 room.fixture.service.removeParticipant(room.roomId, room.thirdId, room.managementToken)
+                room.fixture.service.removeParticipant(room.roomId, room.guestId, room.managementToken)
                 room.withApi {
                     val tooFew = draw(room, 1)
                     tooFew.status.value shouldBe 409
@@ -251,10 +252,10 @@ class FavorDrawHttpTest :
 
             it("rank every tab exactly like a room whose favor target was set directly (#148)") {
                 val drawn = drawRoom()
-                val plain = RouteRoom("130", hidden = false).open(RoomMode.FAVOR, "host")
+                val plain = RouteRoom("130").open(RoomMode.FAVOR, "host")
                 val tabs =
                     listOf("?mode=fair", "?mode=fast") +
-                        listOf(plain.hostId, plain.hiddenId, plain.thirdId).map { "?mode=favor&favor=$it" }
+                        listOf(plain.hostId, plain.guestId, plain.thirdId).map { "?mode=favor&favor=$it" }
                 val expected = mutableMapOf<String, JsonObject>()
                 plain.withApi {
                     for (tab in tabs + "") {

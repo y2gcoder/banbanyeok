@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { withJosa } from "@/lib/display/korean";
 import { NEW_ROOM_PATH } from "@/lib/room/id";
 import { cn } from "@/lib/utils";
+import { ConfirmAction } from "./confirm-action";
 import { ROOM_MAIN, ROOM_SIDE } from "./room-layout";
 
 const SHELL = "mx-auto grid min-h-dvh w-full max-w-md content-start gap-5 px-gutter pt-5 pb-10";
@@ -102,6 +103,79 @@ export function RoomGone() {
             혼자 입력해서 찾기
           </Link>
         </div>
+      </section>
+    </RoomShell>
+  );
+}
+
+/**
+ * 숨긴 참가자가 남은 옛 방에 이 방의 기기로 왔다(ADR-0012). 방의 내용은 보여 주지 않고, 이 기기에 있는 자격으로 할 수 있는 지우기만 둔다.
+ * 기기 기록은 그대로다(서버를 이전 판으로 되돌려도 같은 기록으로 열 수 있게). 지울 자격이 없으면 처리방침 8항의 연락처로 안내한다.
+ */
+export function RoomWithheld({
+  canDeleteRoom,
+  canRemoveSelf,
+  busy,
+  error,
+  onDeleteRoom,
+  onRemoveSelf,
+}: {
+  canDeleteRoom: boolean;
+  canRemoveSelf: boolean;
+  busy: boolean;
+  error: string | null;
+  onDeleteRoom: () => void;
+  onRemoveSelf: () => void;
+}) {
+  return (
+    <RoomShell>
+      <section role="alert" className="flex flex-col gap-3 rounded-2xl border border-rule bg-surface p-5">
+        <h1 className="text-[22px] font-extrabold text-ink">지금은 열 수 없는 방이에요</h1>
+        <p className="text-[15px] text-ink-soft">
+          출발역 숨기기를 그만두기 전에 출발역을 숨긴 채 들어온 사람이 아직 남아 있어서, 이 방의 내용을 보여 주지
+          않아요. 이 기기의 방 기록은 그대로 두었어요.
+        </p>
+        {canRemoveSelf || canDeleteRoom ? (
+          <div className="flex flex-col gap-2 border-t border-rule pt-3">
+            <p className="text-[15px] text-ink-soft">이 방에 넣은 정보는 이 기기에서 지울 수 있어요.</p>
+            {canRemoveSelf ? (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[14px] text-ink-soft">내가 넣은 출발역과 이름</span>
+                <ConfirmAction
+                  label="삭제"
+                  target="내 항목"
+                  question="내 항목을 지울까요?"
+                  confirmLabel="지우기"
+                  tone="danger"
+                  pending={busy}
+                  onConfirm={onRemoveSelf}
+                />
+              </div>
+            ) : null}
+            {canDeleteRoom ? (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[14px] text-ink-soft">방장: 방 전체(모든 사람의 입력)</span>
+                <ConfirmAction
+                  label="방 삭제"
+                  target="방 전체"
+                  question="방을 지울까요?"
+                  confirmLabel="방 지우기"
+                  tone="danger"
+                  pending={busy}
+                  onConfirm={onDeleteRoom}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        <p className="text-[15px] text-ink-soft">
+          지우기가 안 되면{" "}
+          <Link href="/privacy#rights" className="font-semibold text-ink underline underline-offset-2">
+            개인정보 처리방침의 연락처
+          </Link>
+          로 방 링크와 함께 요청해 주세요.
+        </p>
+        {error ? <p className="text-sm font-semibold text-destructive">{error}</p> : null}
       </section>
     </RoomShell>
   );

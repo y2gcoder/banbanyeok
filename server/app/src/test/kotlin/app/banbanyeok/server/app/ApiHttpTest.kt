@@ -64,12 +64,11 @@ private fun view(vararg participants: ParticipantView) =
 
 private fun person(
     id: String = "p00001",
-    origin: String? = origin1,
-    hidden: Boolean = false,
+    origin: String = origin1,
     host: Boolean = true,
     self: Boolean = false,
     nickname: String? = "민수",
-) = ParticipantView(id, nickname, hidden, origin, host, self)
+) = ParticipantView(id, nickname, origin, host, self)
 
 private fun errorCode(body: String) =
     Json
@@ -142,7 +141,7 @@ class ApiHttpTest :
                         .parseToJsonElement(response.bodyAsText())
                         .jsonObject["roomHash"]!!
                         .jsonPrimitive.content shouldBe ROOM_HASH
-                    command.captured.host shouldBe ParticipantInput("민수", origin1, false)
+                    command.captured.host shouldBe ParticipantInput("민수", origin1)
                 }
             }
 
@@ -213,7 +212,7 @@ class ApiHttpTest :
                 withMockedApi { services ->
                     val token = slot<String?>()
                     coEvery { services.rooms.get(ROOM_ID, captureNullable(token)) } returns
-                        view(person(), person("p00002", origin = null, hidden = true, host = false))
+                        view(person(), person("p00002", origin = origin2, host = false))
                     val response = client.json(HttpMethod.Get, "/v1/rooms/$ROOM_ID", token = "part-tok")
                     response.status shouldBe HttpStatusCode.OK
                     OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/$ROOM_ID", response)
@@ -224,8 +223,10 @@ class ApiHttpTest :
                                 response.bodyAsText(),
                             ).jsonObject["participants"]
                             .toString()
-                    participants shouldContain "\"originCode\":null"
-                    participants shouldContain "\"originName\":null"
+                    // 계약의 호환 필드(ADR-0007, #182): 이 서버는 숨긴 참가자를 내보내지 않는다.
+                    participants shouldContain "\"hidden\":false"
+                    participants shouldNotContain "\"hidden\":true"
+                    participants shouldNotContain "\"originCode\":null"
                     response.headers[HttpHeaders.CacheControl] shouldBe "no-store"
                     // 통계용 방 해시와 생성 시각(웹이 room_hash·seconds_since_room_created에 쓴다)
                     val room = Json.parseToJsonElement(response.bodyAsText()).jsonObject
@@ -240,14 +241,7 @@ class ApiHttpTest :
                         view(
                             person(nickname = null),
                             person("p00002", origin = origin1, host = false, nickname = null),
-                            person(
-                                "p00003",
-                                origin = origin2,
-                                hidden = true,
-                                host = false,
-                                self = true,
-                                nickname = null,
-                            ),
+                            person("p00003", origin = origin2, host = false, self = true, nickname = null),
                             person("p00004", origin = origin2, host = false, nickname = "  지연 "),
                         )
                     val response = client.json(HttpMethod.Get, "/v1/rooms/$ROOM_ID", token = "part-tok")
@@ -255,13 +249,14 @@ class ApiHttpTest :
                     val participants =
                         Json.parseToJsonElement(response.bodyAsText()).jsonObject["participants"]!!.jsonArray
                     val originName = DevArtifacts.directory.displayName(origin1)
+                    val otherName = DevArtifacts.directory.displayName(origin2)
                     participants.map { it.jsonObject["label"]!!.jsonPrimitive.content } shouldBe
-                        listOf("${originName}에서 오는 분 1", "${originName}에서 오는 분 2", "참가자 3", "지연")
+                        listOf("${originName}에서 오는 분 1", "${originName}에서 오는 분 2", "${otherName}에서 오는 분", "지연")
                     participants.map { it.jsonObject["labelKind"]!!.jsonPrimitive.content } shouldBe
-                        listOf("origin", "origin", "ordinal", "name")
-                    // 짧은 이름: 출발역이면 "{역} N", 숨긴 사람은 출발역 없이 "참가자 N"(숨긴 역이 드러나지 않는다)
+                        listOf("origin", "origin", "origin", "name")
+                    // 짧은 이름: 출발역이면 "{역} N"(같은 역이 하나면 번호 없이 역 이름)
                     participants.map { it.jsonObject["shortLabel"]!!.jsonPrimitive.content } shouldBe
-                        listOf("$originName 1", "$originName 2", "참가자 3", "지연")
+                        listOf("$originName 1", "$originName 2", "$otherName", "지연")
                 }
             }
 
@@ -416,19 +411,18 @@ class ApiHttpTest :
                         client.json(
                             HttpMethod.Post,
                             "/v1/rooms/$ROOM_ID/participants",
-                            """{"nickname":"지연","originCode":"$origin2","hidden":true}""",
+                            """{"nickname":"지연","originCode":"$origin2","hidden":false}""",
                             token = "device-tok",
                         )
                     response.status shouldBe HttpStatusCode.Created
                     OpenApiContract.assertValid(HttpMethod.Post, "/v1/rooms/$ROOM_ID/participants", response)
-                    input.captured shouldBe ParticipantInput("지연", origin2, true)
+                    input.captured shouldBe ParticipantInput("지연", origin2)
                 }
             }
 
             it("updates a participant and removes one with no content") {
                 withMockedApi { services ->
-                    val updatedPerson =
-                        person("p00002", origin2, hidden = true, host = false, self = true, nickname = null)
+                    val updatedPerson = person("p00002", origin2, host = false, self = true, nickname = null)
                     coEvery { services.rooms.updateParticipant(ROOM_ID, "p00002", "part-tok", any()) } returns
                         updatedPerson
                     coEvery { services.rooms.get(ROOM_ID, "part-tok") } returns view(person(), updatedPerson)
@@ -437,15 +431,15 @@ class ApiHttpTest :
                         client.json(
                             HttpMethod.Put,
                             path,
-                            """{"originCode":"$origin2","hidden":true}""",
+                            """{"originCode":"$origin2"}""",
                             token = "part-tok",
                         )
                     updated.status shouldBe HttpStatusCode.OK
                     OpenApiContract.assertValid(HttpMethod.Put, path, updated)
-                    // 본인이 숨겼으면 본인에게도 "참가자 N"(순번은 방 안 순서)
-                    updated.bodyAsText() shouldContain "\"label\":\"참가자 2\""
-                    updated.bodyAsText() shouldContain "\"labelKind\":\"ordinal\""
-                    updated.bodyAsText() shouldContain "\"shortLabel\":\"참가자 2\""
+                    val otherName = DevArtifacts.directory.displayName(origin2)
+                    updated.bodyAsText() shouldContain "\"label\":\"${otherName}에서 오는 분\""
+                    updated.bodyAsText() shouldContain "\"labelKind\":\"origin\""
+                    updated.bodyAsText() shouldContain "\"hidden\":false"
 
                     coEvery { services.rooms.removeParticipant(ROOM_ID, "p00002", "part-tok") } returns Unit
                     val removed = client.json(HttpMethod.Delete, path, token = "part-tok")

@@ -1003,7 +1003,7 @@
             }
         }
     },
-    "friday-evening-hidden preview": {
+    "friday-evening preview": {
         "status": 200,
         "body": {
             "stage": "result",
@@ -1046,8 +1046,16 @@
                         }
                     },
                     {
-                        "label": "참가자 2",
-                        "seconds": 1800
+                        "label": "강남",
+                        "seconds": 1708,
+                        "lastTrain": {
+                            "kind": "direct",
+                            "minute": 1467,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
+                            }
+                        }
                     },
                     {
                         "label": "친구1",
@@ -1064,400 +1072,28 @@
                 "dayType": "weekday",
                 "asOf": "2026-11-16",
                 "partial": true
-            }
-        }
-    },
-    "friday-evening-hidden result anonymous": {
-        "status": 200,
-        "body": {
-            "status": "ok",
-            "mode": "fair",
-            "dataVersion": "20261123.1",
-            "participants": [
-                {
-                    "participantId": "pid004",
-                    "nickname": "방장",
-                    "hidden": false,
-                    "originCode": "ep4",
-                    "originName": "합정",
-                    "isHost": true,
-                    "isSelf": false,
-                    "label": "방장",
-                    "labelKind": "name",
-                    "shortLabel": "방장",
-                    "enteredByHost": false
-                },
-                {
-                    "participantId": "pid005",
-                    "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
-                    "isHost": false,
-                    "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
-                    "enteredByHost": false
-                },
-                {
-                    "participantId": "pid006",
-                    "nickname": "친구1",
-                    "hidden": false,
-                    "originCode": "7sw",
-                    "originName": "김포공항",
-                    "isHost": false,
-                    "isSelf": false,
-                    "label": "친구1",
-                    "labelKind": "name",
-                    "shortLabel": "친구1",
-                    "enteredByHost": false
-                }
-            ],
-            "baselineStationCode": "eza",
-            "candidates": [
-                {
-                    "rank": 1,
-                    "stationCode": "eza",
-                    "stationName": "신도림",
-                    "times": [
-                        {
-                            "participantId": "pid004",
-                            "seconds": 658,
-                            "transfers": 0
-                        },
-                        {
-                            "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
-                        },
-                        {
-                            "participantId": "pid006",
-                            "seconds": 1741,
-                            "transfers": 1
-                        }
-                    ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 1142,
-                    "totalSeconds": 4199,
-                    "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
-                    "lastTrains": [
-                        {
-                            "participantId": "pid004",
-                            "kind": "direct",
-                            "minute": 1489,
-                            "boundFor": {
-                                "stationCode": "ryf",
-                                "stationName": "홍대입구"
-                            }
-                        },
-                        {
-                            "participantId": "pid006",
-                            "kind": "margin",
-                            "minute": 1454,
-                            "transfer": true
-                        }
-                    ]
-                },
-                {
-                    "rank": 2,
-                    "stationCode": "ep2",
-                    "stationName": "서울역",
-                    "times": [
-                        {
-                            "participantId": "pid004",
-                            "seconds": 1156,
-                            "transfers": 1
-                        },
-                        {
-                            "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
-                        },
-                        {
-                            "participantId": "pid006",
-                            "seconds": 1492,
-                            "transfers": 0
-                        }
-                    ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 644,
-                    "totalSeconds": 4448,
-                    "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
-                    "lastTrains": [
-                        {
-                            "participantId": "pid004",
-                            "kind": "margin",
-                            "minute": 1462,
-                            "transfer": true
-                        },
-                        {
-                            "participantId": "pid006",
-                            "kind": "margin",
-                            "minute": 1444,
-                            "transfer": true
-                        }
-                    ]
-                },
-                {
-                    "rank": 3,
-                    "stationCode": "s1r",
-                    "stationName": "여의도",
-                    "times": [
-                        {
-                            "participantId": "pid004",
-                            "seconds": 777,
-                            "transfers": 1
-                        },
-                        {
-                            "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
-                        },
-                        {
-                            "participantId": "pid006",
-                            "seconds": 1811,
-                            "transfers": 0
-                        }
-                    ],
-                    "maxSeconds": 1811,
-                    "spreadSeconds": 1034,
-                    "totalSeconds": 4388,
-                    "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
-                    "lastTrains": [
-                        {
-                            "participantId": "pid004",
-                            "kind": "margin",
-                            "minute": 1468,
-                            "transfer": true
-                        },
-                        {
-                            "participantId": "pid006",
-                            "kind": "direct",
-                            "minute": 1468,
-                            "boundFor": {
-                                "stationCode": "pjy",
-                                "stationName": "방화"
-                            }
-                        }
-                    ]
-                }
-            ],
-            "timeBasis": {
-                "timeSlot": "weekday-evening",
-                "requestedTimeSlot": "weekday-evening",
-                "dayType": "weekday",
-                "band": "evening",
-                "label": "평일 저녁",
-                "holidayName": null
             },
-            "shareVersion": 3,
-            "lastTrainBasis": {
-                "dayType": "weekday",
-                "asOf": "2026-11-16",
-                "partial": true
+            "mapMiddle": {
+                "stationCode": "mkh",
+                "stationName": "당산",
+                "times": [
+                    {
+                        "label": "방장",
+                        "seconds": 298
+                    },
+                    {
+                        "label": "강남",
+                        "seconds": 2048
+                    },
+                    {
+                        "label": "친구1",
+                        "seconds": 1536
+                    }
+                ]
             }
         }
     },
-    "friday-evening-hidden result as #0": {
-        "status": 200,
-        "body": {
-            "status": "ok",
-            "mode": "fair",
-            "dataVersion": "20261123.1",
-            "participants": [
-                {
-                    "participantId": "pid004",
-                    "nickname": "방장",
-                    "hidden": false,
-                    "originCode": "ep4",
-                    "originName": "합정",
-                    "isHost": true,
-                    "isSelf": true,
-                    "label": "방장",
-                    "labelKind": "name",
-                    "shortLabel": "방장",
-                    "enteredByHost": false
-                },
-                {
-                    "participantId": "pid005",
-                    "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
-                    "isHost": false,
-                    "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
-                    "enteredByHost": false
-                },
-                {
-                    "participantId": "pid006",
-                    "nickname": "친구1",
-                    "hidden": false,
-                    "originCode": "7sw",
-                    "originName": "김포공항",
-                    "isHost": false,
-                    "isSelf": false,
-                    "label": "친구1",
-                    "labelKind": "name",
-                    "shortLabel": "친구1",
-                    "enteredByHost": false
-                }
-            ],
-            "baselineStationCode": "eza",
-            "candidates": [
-                {
-                    "rank": 1,
-                    "stationCode": "eza",
-                    "stationName": "신도림",
-                    "times": [
-                        {
-                            "participantId": "pid004",
-                            "seconds": 658,
-                            "transfers": 0
-                        },
-                        {
-                            "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
-                        },
-                        {
-                            "participantId": "pid006",
-                            "seconds": 1741,
-                            "transfers": 1
-                        }
-                    ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 1142,
-                    "totalSeconds": 4199,
-                    "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
-                    "lastTrains": [
-                        {
-                            "participantId": "pid004",
-                            "kind": "direct",
-                            "minute": 1489,
-                            "boundFor": {
-                                "stationCode": "ryf",
-                                "stationName": "홍대입구"
-                            }
-                        },
-                        {
-                            "participantId": "pid006",
-                            "kind": "margin",
-                            "minute": 1454,
-                            "transfer": true
-                        }
-                    ]
-                },
-                {
-                    "rank": 2,
-                    "stationCode": "ep2",
-                    "stationName": "서울역",
-                    "times": [
-                        {
-                            "participantId": "pid004",
-                            "seconds": 1156,
-                            "transfers": 1
-                        },
-                        {
-                            "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
-                        },
-                        {
-                            "participantId": "pid006",
-                            "seconds": 1492,
-                            "transfers": 0
-                        }
-                    ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 644,
-                    "totalSeconds": 4448,
-                    "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
-                    "lastTrains": [
-                        {
-                            "participantId": "pid004",
-                            "kind": "margin",
-                            "minute": 1462,
-                            "transfer": true
-                        },
-                        {
-                            "participantId": "pid006",
-                            "kind": "margin",
-                            "minute": 1444,
-                            "transfer": true
-                        }
-                    ]
-                },
-                {
-                    "rank": 3,
-                    "stationCode": "s1r",
-                    "stationName": "여의도",
-                    "times": [
-                        {
-                            "participantId": "pid004",
-                            "seconds": 777,
-                            "transfers": 1
-                        },
-                        {
-                            "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
-                        },
-                        {
-                            "participantId": "pid006",
-                            "seconds": 1811,
-                            "transfers": 0
-                        }
-                    ],
-                    "maxSeconds": 1811,
-                    "spreadSeconds": 1034,
-                    "totalSeconds": 4388,
-                    "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
-                    "lastTrains": [
-                        {
-                            "participantId": "pid004",
-                            "kind": "margin",
-                            "minute": 1468,
-                            "transfer": true
-                        },
-                        {
-                            "participantId": "pid006",
-                            "kind": "direct",
-                            "minute": 1468,
-                            "boundFor": {
-                                "stationCode": "pjy",
-                                "stationName": "방화"
-                            }
-                        }
-                    ]
-                }
-            ],
-            "timeBasis": {
-                "timeSlot": "weekday-evening",
-                "requestedTimeSlot": "weekday-evening",
-                "dayType": "weekday",
-                "band": "evening",
-                "label": "평일 저녁",
-                "holidayName": null
-            },
-            "shareVersion": 3,
-            "lastTrainBasis": {
-                "dayType": "weekday",
-                "asOf": "2026-11-16",
-                "partial": true
-            }
-        }
-    },
-    "friday-evening-hidden result as #1": {
+    "friday-evening result anonymous": {
         "status": 200,
         "body": {
             "status": "ok",
@@ -1480,14 +1116,14 @@
                 {
                     "participantId": "pid005",
                     "nickname": null,
-                    "hidden": true,
+                    "hidden": false,
                     "originCode": "k3a",
                     "originName": "강남",
                     "isHost": false,
-                    "isSelf": true,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "isSelf": false,
+                    "label": "강남에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "강남",
                     "enteredByHost": false
                 },
                 {
@@ -1673,7 +1309,223 @@
             }
         }
     },
-    "friday-evening-hidden result as #2": {
+    "friday-evening result as #0": {
+        "status": 200,
+        "body": {
+            "status": "ok",
+            "mode": "fair",
+            "dataVersion": "20261123.1",
+            "participants": [
+                {
+                    "participantId": "pid004",
+                    "nickname": "방장",
+                    "hidden": false,
+                    "originCode": "ep4",
+                    "originName": "합정",
+                    "isHost": true,
+                    "isSelf": true,
+                    "label": "방장",
+                    "labelKind": "name",
+                    "shortLabel": "방장",
+                    "enteredByHost": false
+                },
+                {
+                    "participantId": "pid005",
+                    "nickname": null,
+                    "hidden": false,
+                    "originCode": "k3a",
+                    "originName": "강남",
+                    "isHost": false,
+                    "isSelf": false,
+                    "label": "강남에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "강남",
+                    "enteredByHost": false
+                },
+                {
+                    "participantId": "pid006",
+                    "nickname": "친구1",
+                    "hidden": false,
+                    "originCode": "7sw",
+                    "originName": "김포공항",
+                    "isHost": false,
+                    "isSelf": false,
+                    "label": "친구1",
+                    "labelKind": "name",
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
+                }
+            ],
+            "baselineStationCode": "eza",
+            "candidates": [
+                {
+                    "rank": 1,
+                    "stationCode": "eza",
+                    "stationName": "신도림",
+                    "times": [
+                        {
+                            "participantId": "pid004",
+                            "seconds": 658,
+                            "transfers": 0
+                        },
+                        {
+                            "participantId": "pid005",
+                            "seconds": 1708,
+                            "transfers": 0
+                        },
+                        {
+                            "participantId": "pid006",
+                            "seconds": 1741,
+                            "transfers": 1
+                        }
+                    ],
+                    "maxSeconds": 1741,
+                    "spreadSeconds": 1083,
+                    "totalSeconds": 4107,
+                    "reasonCode": "FAIR_MINIMAX",
+                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+                    "lastTrains": [
+                        {
+                            "participantId": "pid004",
+                            "kind": "direct",
+                            "minute": 1489,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1467,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
+                            }
+                        },
+                        {
+                            "participantId": "pid006",
+                            "kind": "margin",
+                            "minute": 1454,
+                            "transfer": true
+                        }
+                    ]
+                },
+                {
+                    "rank": 2,
+                    "stationCode": "ep2",
+                    "stationName": "서울역",
+                    "times": [
+                        {
+                            "participantId": "pid004",
+                            "seconds": 1156,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid005",
+                            "seconds": 1798,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid006",
+                            "seconds": 1492,
+                            "transfers": 0
+                        }
+                    ],
+                    "maxSeconds": 1798,
+                    "spreadSeconds": 642,
+                    "totalSeconds": 4446,
+                    "reasonCode": "FAIR_ALTERNATIVE",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "lastTrains": [
+                        {
+                            "participantId": "pid004",
+                            "kind": "margin",
+                            "minute": 1462,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1454,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid006",
+                            "kind": "margin",
+                            "minute": 1444,
+                            "transfer": true
+                        }
+                    ]
+                },
+                {
+                    "rank": 3,
+                    "stationCode": "s1r",
+                    "stationName": "여의도",
+                    "times": [
+                        {
+                            "participantId": "pid004",
+                            "seconds": 777,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid005",
+                            "seconds": 1778,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid006",
+                            "seconds": 1811,
+                            "transfers": 0
+                        }
+                    ],
+                    "maxSeconds": 1811,
+                    "spreadSeconds": 1034,
+                    "totalSeconds": 4366,
+                    "reasonCode": "FAIR_ALTERNATIVE",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+                    "lastTrains": [
+                        {
+                            "participantId": "pid004",
+                            "kind": "margin",
+                            "minute": 1468,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1441,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid006",
+                            "kind": "direct",
+                            "minute": 1468,
+                            "boundFor": {
+                                "stationCode": "pjy",
+                                "stationName": "방화"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "timeBasis": {
+                "timeSlot": "weekday-evening",
+                "requestedTimeSlot": "weekday-evening",
+                "dayType": "weekday",
+                "band": "evening",
+                "label": "평일 저녁",
+                "holidayName": null
+            },
+            "shareVersion": 3,
+            "lastTrainBasis": {
+                "dayType": "weekday",
+                "asOf": "2026-11-16",
+                "partial": true
+            }
+        }
+    },
+    "friday-evening result as #1": {
         "status": 200,
         "body": {
             "status": "ok",
@@ -1696,14 +1548,230 @@
                 {
                     "participantId": "pid005",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "k3a",
+                    "originName": "강남",
+                    "isHost": false,
+                    "isSelf": true,
+                    "label": "강남에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "강남",
+                    "enteredByHost": false
+                },
+                {
+                    "participantId": "pid006",
+                    "nickname": "친구1",
+                    "hidden": false,
+                    "originCode": "7sw",
+                    "originName": "김포공항",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "친구1",
+                    "labelKind": "name",
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
+                }
+            ],
+            "baselineStationCode": "eza",
+            "candidates": [
+                {
+                    "rank": 1,
+                    "stationCode": "eza",
+                    "stationName": "신도림",
+                    "times": [
+                        {
+                            "participantId": "pid004",
+                            "seconds": 658,
+                            "transfers": 0
+                        },
+                        {
+                            "participantId": "pid005",
+                            "seconds": 1708,
+                            "transfers": 0
+                        },
+                        {
+                            "participantId": "pid006",
+                            "seconds": 1741,
+                            "transfers": 1
+                        }
+                    ],
+                    "maxSeconds": 1741,
+                    "spreadSeconds": 1083,
+                    "totalSeconds": 4107,
+                    "reasonCode": "FAIR_MINIMAX",
+                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
+                    "lastTrains": [
+                        {
+                            "participantId": "pid004",
+                            "kind": "direct",
+                            "minute": 1489,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1467,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
+                            }
+                        },
+                        {
+                            "participantId": "pid006",
+                            "kind": "margin",
+                            "minute": 1454,
+                            "transfer": true
+                        }
+                    ]
+                },
+                {
+                    "rank": 2,
+                    "stationCode": "ep2",
+                    "stationName": "서울역",
+                    "times": [
+                        {
+                            "participantId": "pid004",
+                            "seconds": 1156,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid005",
+                            "seconds": 1798,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid006",
+                            "seconds": 1492,
+                            "transfers": 0
+                        }
+                    ],
+                    "maxSeconds": 1798,
+                    "spreadSeconds": 642,
+                    "totalSeconds": 4446,
+                    "reasonCode": "FAIR_ALTERNATIVE",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
+                    "lastTrains": [
+                        {
+                            "participantId": "pid004",
+                            "kind": "margin",
+                            "minute": 1462,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1454,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid006",
+                            "kind": "margin",
+                            "minute": 1444,
+                            "transfer": true
+                        }
+                    ]
+                },
+                {
+                    "rank": 3,
+                    "stationCode": "s1r",
+                    "stationName": "여의도",
+                    "times": [
+                        {
+                            "participantId": "pid004",
+                            "seconds": 777,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid005",
+                            "seconds": 1778,
+                            "transfers": 1
+                        },
+                        {
+                            "participantId": "pid006",
+                            "seconds": 1811,
+                            "transfers": 0
+                        }
+                    ],
+                    "maxSeconds": 1811,
+                    "spreadSeconds": 1034,
+                    "totalSeconds": 4366,
+                    "reasonCode": "FAIR_ALTERNATIVE",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
+                    "lastTrains": [
+                        {
+                            "participantId": "pid004",
+                            "kind": "margin",
+                            "minute": 1468,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1441,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid006",
+                            "kind": "direct",
+                            "minute": 1468,
+                            "boundFor": {
+                                "stationCode": "pjy",
+                                "stationName": "방화"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "timeBasis": {
+                "timeSlot": "weekday-evening",
+                "requestedTimeSlot": "weekday-evening",
+                "dayType": "weekday",
+                "band": "evening",
+                "label": "평일 저녁",
+                "holidayName": null
+            },
+            "shareVersion": 3,
+            "lastTrainBasis": {
+                "dayType": "weekday",
+                "asOf": "2026-11-16",
+                "partial": true
+            }
+        }
+    },
+    "friday-evening result as #2": {
+        "status": 200,
+        "body": {
+            "status": "ok",
+            "mode": "fair",
+            "dataVersion": "20261123.1",
+            "participants": [
+                {
+                    "participantId": "pid004",
+                    "nickname": "방장",
+                    "hidden": false,
+                    "originCode": "ep4",
+                    "originName": "합정",
+                    "isHost": true,
+                    "isSelf": false,
+                    "label": "방장",
+                    "labelKind": "name",
+                    "shortLabel": "방장",
+                    "enteredByHost": false
+                },
+                {
+                    "participantId": "pid005",
+                    "nickname": null,
+                    "hidden": false,
+                    "originCode": "k3a",
+                    "originName": "강남",
+                    "isHost": false,
+                    "isSelf": false,
+                    "label": "강남에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "강남",
                     "enteredByHost": false
                 },
                 {
@@ -1734,8 +1802,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
+                            "seconds": 1708,
+                            "transfers": 0
                         },
                         {
                             "participantId": "pid006",
@@ -1743,11 +1811,11 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 1142,
-                    "totalSeconds": 4199,
+                    "maxSeconds": 1741,
+                    "spreadSeconds": 1083,
+                    "totalSeconds": 4107,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
+                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1756,6 +1824,15 @@
                             "boundFor": {
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
+                            }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1467,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
                             }
                         },
                         {
@@ -1778,8 +1855,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
+                            "seconds": 1798,
+                            "transfers": 1
                         },
                         {
                             "participantId": "pid006",
@@ -1787,16 +1864,22 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 644,
-                    "totalSeconds": 4448,
+                    "maxSeconds": 1798,
+                    "spreadSeconds": 642,
+                    "totalSeconds": 4446,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
                             "kind": "margin",
                             "minute": 1462,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1454,
                             "transfer": true
                         },
                         {
@@ -1819,8 +1902,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
+                            "seconds": 1778,
+                            "transfers": 1
                         },
                         {
                             "participantId": "pid006",
@@ -1830,14 +1913,20 @@
                     ],
                     "maxSeconds": 1811,
                     "spreadSeconds": 1034,
-                    "totalSeconds": 4388,
+                    "totalSeconds": 4366,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
                             "kind": "margin",
                             "minute": 1468,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1441,
                             "transfer": true
                         },
                         {
@@ -1868,7 +1957,7 @@
             }
         }
     },
-    "friday-evening-hidden result mode=fair": {
+    "friday-evening result mode=fair": {
         "status": 200,
         "body": {
             "status": "ok",
@@ -1891,14 +1980,14 @@
                 {
                     "participantId": "pid005",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "k3a",
+                    "originName": "강남",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "강남에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "강남",
                     "enteredByHost": false
                 },
                 {
@@ -1929,8 +2018,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
+                            "seconds": 1708,
+                            "transfers": 0
                         },
                         {
                             "participantId": "pid006",
@@ -1938,11 +2027,11 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 1142,
-                    "totalSeconds": 4199,
+                    "maxSeconds": 1741,
+                    "spreadSeconds": 1083,
+                    "totalSeconds": 4107,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 30분, 3명 모두 11~30분 사이예요. 2위 서울역과 최장 시간과 차이가 같고, 합계가 4분 더 짧아요.",
+                    "reason": "가장 오래 걸리는 친구1도 29분, 3명 모두 11~29분 사이예요. 2위 서울역보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -1951,6 +2040,15 @@
                             "boundFor": {
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
+                            }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1467,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
                             }
                         },
                         {
@@ -1973,8 +2071,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
+                            "seconds": 1798,
+                            "transfers": 1
                         },
                         {
                             "participantId": "pid006",
@@ -1982,16 +2080,22 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1800,
-                    "spreadSeconds": 644,
-                    "totalSeconds": 4448,
+                    "maxSeconds": 1798,
+                    "spreadSeconds": 642,
+                    "totalSeconds": 4446,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
                             "kind": "margin",
                             "minute": 1462,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1454,
                             "transfer": true
                         },
                         {
@@ -2014,8 +2118,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 1800,
-                            "transfers": null
+                            "seconds": 1778,
+                            "transfers": 1
                         },
                         {
                             "participantId": "pid006",
@@ -2025,14 +2129,20 @@
                     ],
                     "maxSeconds": 1811,
                     "spreadSeconds": 1034,
-                    "totalSeconds": 4388,
+                    "totalSeconds": 4366,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신도림과 최장 시간은 같아요. 시간 차이는 2분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신도림보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 1분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
                             "kind": "margin",
                             "minute": 1468,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1441,
                             "transfer": true
                         },
                         {
@@ -2063,7 +2173,7 @@
             }
         }
     },
-    "friday-evening-hidden result mode=fast": {
+    "friday-evening result mode=fast": {
         "status": 200,
         "body": {
             "status": "ok",
@@ -2086,14 +2196,14 @@
                 {
                     "participantId": "pid005",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "k3a",
+                    "originName": "강남",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "강남에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "강남",
                     "enteredByHost": false
                 },
                 {
@@ -2124,8 +2234,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 2368,
+                            "transfers": 0
                         },
                         {
                             "participantId": "pid006",
@@ -2133,11 +2243,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2400,
-                    "spreadSeconds": 2162,
-                    "totalSeconds": 3650,
+                    "maxSeconds": 2368,
+                    "spreadSeconds": 2130,
+                    "totalSeconds": 3618,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "3명 모두 합쳐 1시간 1분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 참가자 2는 40분이에요.",
+                    "reason": "3명 모두 합쳐 1시간, 후보 중 가장 짧아요. 가장 오래 걸리는 강남에서 오는 분은 39분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -2146,6 +2256,15 @@
                             "boundFor": {
                                 "stationCode": "eza",
                                 "stationName": "신도림"
+                            }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1455,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
                             }
                         },
                         {
@@ -2168,8 +2287,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 2248,
+                            "transfers": 0
                         },
                         {
                             "participantId": "pid006",
@@ -2177,15 +2296,24 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 2400,
-                    "spreadSeconds": 2400,
-                    "totalSeconds": 3936,
+                    "maxSeconds": 2248,
+                    "spreadSeconds": 2248,
+                    "totalSeconds": 3784,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 5분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 2분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
                             "kind": "check"
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1457,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
+                            }
                         },
                         {
                             "participantId": "pid006",
@@ -2207,8 +2335,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2100,
-                            "transfers": null
+                            "seconds": 1948,
+                            "transfers": 0
                         },
                         {
                             "participantId": "pid006",
@@ -2216,11 +2344,11 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2100,
-                    "spreadSeconds": 1682,
-                    "totalSeconds": 3997,
+                    "maxSeconds": 1948,
+                    "spreadSeconds": 1530,
+                    "totalSeconds": 3845,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 6분 더 걸려요. 대신 가장 오래 걸리는 사람은 5분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 홍대입구보다 합쳐서 4분 더 걸려요. 대신 가장 오래 걸리는 사람은 7분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
@@ -2229,6 +2357,15 @@
                             "boundFor": {
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
+                            }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1462,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
                             }
                         },
                         {
@@ -2259,7 +2396,7 @@
             }
         }
     },
-    "friday-evening-hidden result mode=favor": {
+    "friday-evening result mode=favor": {
         "status": 400,
         "body": {
             "type": "https://banbanyeok.app/problems/favor-target-required",
@@ -2269,7 +2406,7 @@
             "code": "FAVOR_TARGET_REQUIRED"
         }
     },
-    "friday-evening-hidden result favor=host": {
+    "friday-evening result favor=host": {
         "status": 200,
         "body": {
             "status": "ok",
@@ -2292,14 +2429,14 @@
                 {
                     "participantId": "pid005",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "k3a",
+                    "originName": "강남",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "강남에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "강남",
                     "enteredByHost": false
                 },
                 {
@@ -2330,8 +2467,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 2248,
+                            "transfers": 0
                         },
                         {
                             "participantId": "pid006",
@@ -2339,16 +2476,25 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 2400,
-                    "spreadSeconds": 2400,
-                    "totalSeconds": 3936,
+                    "maxSeconds": 2248,
+                    "spreadSeconds": 2248,
+                    "totalSeconds": 3784,
                     "favoredSeconds": 0,
                     "reasonCode": "FAVOR_CAPPED",
-                    "reason": "방장은 0분, 환승 없이 와요. 가장 많이 맞춰 주는 참가자 2는 공평하게보다 10분 더 걸려요 (40분). 나머지도 상한 안이에요.",
+                    "reason": "방장은 0분, 환승 없이 와요. 가장 많이 맞춰 주는 강남에서 오는 분은 공평하게보다 9분 더 걸려요 (37분, 상한 +15분). 나머지도 상한 안이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid004",
                             "kind": "check"
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1457,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
+                            }
                         },
                         {
                             "participantId": "pid006",
@@ -2370,8 +2516,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 2368,
+                            "transfers": 0
                         },
                         {
                             "participantId": "pid006",
@@ -2379,9 +2525,9 @@
                             "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2400,
-                    "spreadSeconds": 2162,
-                    "totalSeconds": 3650,
+                    "maxSeconds": 2368,
+                    "spreadSeconds": 2130,
+                    "totalSeconds": 3618,
                     "favoredSeconds": 238,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 합정보다 방장은 4분 더 걸려요 (4분).",
@@ -2393,6 +2539,15 @@
                             "boundFor": {
                                 "stationCode": "eza",
                                 "stationName": "신도림"
+                            }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "direct",
+                            "minute": 1455,
+                            "boundFor": {
+                                "stationCode": "9k5",
+                                "stationName": "삼성"
                             }
                         },
                         {
@@ -2415,8 +2570,8 @@
                         },
                         {
                             "participantId": "pid005",
-                            "seconds": 2700,
-                            "transfers": null
+                            "seconds": 2436,
+                            "transfers": 2
                         },
                         {
                             "participantId": "pid006",
@@ -2424,9 +2579,9 @@
                             "transfers": 1
                         }
                     ],
-                    "maxSeconds": 2700,
-                    "spreadSeconds": 2411,
-                    "totalSeconds": 4625,
+                    "maxSeconds": 2436,
+                    "spreadSeconds": 2147,
+                    "totalSeconds": 4361,
                     "favoredSeconds": 289,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 합정보다 방장은 5분 더 걸려요 (5분).",
@@ -2439,6 +2594,12 @@
                                 "stationCode": "mt4",
                                 "stationName": "새절"
                             }
+                        },
+                        {
+                            "participantId": "pid005",
+                            "kind": "margin",
+                            "minute": 1442,
+                            "transfer": true
                         },
                         {
                             "participantId": "pid006",
@@ -2523,7 +2684,15 @@
                     },
                     {
                         "label": "친구2",
-                        "seconds": 600
+                        "seconds": 517,
+                        "lastTrain": {
+                            "kind": "direct",
+                            "minute": 1436,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
+                        }
                     }
                 ]
             },
@@ -2583,9 +2752,9 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "ryf",
+                    "originName": "홍대입구",
                     "isHost": false,
                     "isSelf": false,
                     "label": "친구2",
@@ -2618,15 +2787,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 600,
-                            "transfers": null
+                            "seconds": 517,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7950,
+                    "totalSeconds": 7867,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2643,6 +2812,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1436,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -2669,15 +2847,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 997,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 2816,
-                    "totalSeconds": 8200,
+                    "spreadSeconds": 3019,
+                    "totalSeconds": 7997,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2697,6 +2875,15 @@
                             "kind": "margin",
                             "minute": 1397,
                             "transfer": true
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1427,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
                         }
                     ]
                 },
@@ -2722,15 +2909,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 300,
-                            "transfers": null
+                            "seconds": 0,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 4837,
-                    "totalSeconds": 8421,
+                    "spreadSeconds": 5137,
+                    "totalSeconds": 8121,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2753,6 +2940,10 @@
                                 "stationCode": "bvq",
                                 "stationName": "성수"
                             }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "check"
                         }
                     ]
                 }
@@ -2822,9 +3013,9 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "ryf",
+                    "originName": "홍대입구",
                     "isHost": false,
                     "isSelf": false,
                     "label": "친구2",
@@ -2857,15 +3048,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 600,
-                            "transfers": null
+                            "seconds": 517,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7950,
+                    "totalSeconds": 7867,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2882,6 +3073,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1436,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -2908,15 +3108,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 997,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 2816,
-                    "totalSeconds": 8200,
+                    "spreadSeconds": 3019,
+                    "totalSeconds": 7997,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2936,6 +3136,15 @@
                             "kind": "margin",
                             "minute": 1397,
                             "transfer": true
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1427,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
                         }
                     ]
                 },
@@ -2961,15 +3170,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 300,
-                            "transfers": null
+                            "seconds": 0,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 4837,
-                    "totalSeconds": 8421,
+                    "spreadSeconds": 5137,
+                    "totalSeconds": 8121,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -2992,6 +3201,10 @@
                                 "stationCode": "bvq",
                                 "stationName": "성수"
                             }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "check"
                         }
                     ]
                 }
@@ -3061,9 +3274,9 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "ryf",
+                    "originName": "홍대입구",
                     "isHost": false,
                     "isSelf": false,
                     "label": "친구2",
@@ -3096,15 +3309,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 600,
-                            "transfers": null
+                            "seconds": 517,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7950,
+                    "totalSeconds": 7867,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3121,6 +3334,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1436,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -3147,15 +3369,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 997,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 2816,
-                    "totalSeconds": 8200,
+                    "spreadSeconds": 3019,
+                    "totalSeconds": 7997,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3175,6 +3397,15 @@
                             "kind": "margin",
                             "minute": 1397,
                             "transfer": true
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1427,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
                         }
                     ]
                 },
@@ -3200,15 +3431,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 300,
-                            "transfers": null
+                            "seconds": 0,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 4837,
-                    "totalSeconds": 8421,
+                    "spreadSeconds": 5137,
+                    "totalSeconds": 8121,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3231,6 +3462,10 @@
                                 "stationCode": "bvq",
                                 "stationName": "성수"
                             }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "check"
                         }
                     ]
                 }
@@ -3300,9 +3535,9 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "ryf",
+                    "originName": "홍대입구",
                     "isHost": false,
                     "isSelf": false,
                     "label": "친구2",
@@ -3335,15 +3570,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 600,
-                            "transfers": null
+                            "seconds": 517,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7950,
+                    "totalSeconds": 7867,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3360,6 +3595,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1436,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -3386,15 +3630,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 997,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 2816,
-                    "totalSeconds": 8200,
+                    "spreadSeconds": 3019,
+                    "totalSeconds": 7997,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3414,6 +3658,15 @@
                             "kind": "margin",
                             "minute": 1397,
                             "transfer": true
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1427,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
                         }
                     ]
                 },
@@ -3439,15 +3692,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 300,
-                            "transfers": null
+                            "seconds": 0,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 4837,
-                    "totalSeconds": 8421,
+                    "spreadSeconds": 5137,
+                    "totalSeconds": 8121,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3470,6 +3723,10 @@
                                 "stationCode": "bvq",
                                 "stationName": "성수"
                             }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "check"
                         }
                     ]
                 }
@@ -3539,7 +3796,7 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
+                    "hidden": false,
                     "originCode": "ryf",
                     "originName": "홍대입구",
                     "isHost": false,
@@ -3800,9 +4057,9 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "ryf",
+                    "originName": "홍대입구",
                     "isHost": false,
                     "isSelf": false,
                     "label": "친구2",
@@ -3835,15 +4092,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2700,
-                            "transfers": null
+                            "seconds": 2467,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2700,
-                    "spreadSeconds": 1793,
-                    "totalSeconds": 8395,
+                    "maxSeconds": 2621,
+                    "spreadSeconds": 1714,
+                    "totalSeconds": 8162,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 친구2도 45분, 4명 모두 15~45분 사이예요. 2위 신논현과 거의 같아요.",
+                    "reason": "가장 오래 걸리는 방장도 44분, 4명 모두 15~44분 사이예요. 2위 신논현보다 가장 오래 걸리는 사람이 1분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3865,6 +4122,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1404,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -3891,15 +4157,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 2379,
+                            "transfers": 1
                         }
                     ],
                     "maxSeconds": 2725,
                     "spreadSeconds": 1346,
-                    "totalSeconds": 8278,
+                    "totalSeconds": 8257,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 강남과 최장 시간은 같아요. 시간 차이는 8분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 강남보다 가장 오래 걸리는 사람이 1분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3911,6 +4177,10 @@
                         },
                         {
                             "participantId": "pid009",
+                            "kind": "check"
+                        },
+                        {
+                            "participantId": "pid010",
                             "kind": "check"
                         }
                     ]
@@ -3937,15 +4207,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 3000,
-                            "transfers": null
+                            "seconds": 2804,
+                            "transfers": 1
                         }
                     ],
-                    "maxSeconds": 3000,
-                    "spreadSeconds": 1512,
-                    "totalSeconds": 9261,
+                    "maxSeconds": 2804,
+                    "spreadSeconds": 1316,
+                    "totalSeconds": 9065,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 강남보다 가장 오래 걸리는 사람이 5분 더 걸려요. 대신 시간 차이는 5분 더 작아요.",
+                    "reason": "공평 모드 대안이에요. 1위 강남보다 가장 오래 걸리는 사람이 3분 더 걸려요. 대신 시간 차이는 7분 더 작아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -3961,6 +4231,12 @@
                             "participantId": "pid009",
                             "kind": "margin",
                             "minute": 1401,
+                            "transfer": true
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "margin",
+                            "minute": 1391,
                             "transfer": true
                         }
                     ]
@@ -4031,9 +4307,9 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "ryf",
+                    "originName": "홍대입구",
                     "isHost": false,
                     "isSelf": false,
                     "label": "친구2",
@@ -4066,15 +4342,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 600,
-                            "transfers": null
+                            "seconds": 517,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4583,
                     "spreadSeconds": 4583,
-                    "totalSeconds": 7950,
+                    "totalSeconds": 7867,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "4명 모두 합쳐 2시간 12분, 후보 중 가장 짧은 편이에요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
+                    "reason": "4명 모두 합쳐 2시간 11분, 후보 중 가장 짧아요. 가장 오래 걸리는 방장은 1시간 16분이에요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -4091,6 +4367,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1436,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -4117,15 +4402,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 997,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 4016,
-                    "spreadSeconds": 2816,
-                    "totalSeconds": 8200,
+                    "spreadSeconds": 3019,
+                    "totalSeconds": 7997,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 9분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -4145,6 +4430,15 @@
                             "kind": "margin",
                             "minute": 1397,
                             "transfer": true
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1427,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
                         }
                     ]
                 },
@@ -4170,15 +4464,15 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 300,
-                            "transfers": null
+                            "seconds": 0,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 5137,
-                    "spreadSeconds": 4837,
-                    "totalSeconds": 8421,
+                    "spreadSeconds": 5137,
+                    "totalSeconds": 8121,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 9분 더 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 당산보다 합쳐서 5분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid007",
@@ -4201,6 +4495,10 @@
                                 "stationCode": "bvq",
                                 "stationName": "성수"
                             }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "check"
                         }
                     ]
                 }
@@ -4280,9 +4578,9 @@
                 {
                     "participantId": "pid010",
                     "nickname": "친구2",
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "ryf",
+                    "originName": "홍대입구",
                     "isHost": false,
                     "isSelf": false,
                     "label": "친구2",
@@ -4315,13 +4613,13 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2700,
-                            "transfers": null
+                            "seconds": 2467,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2700,
-                    "spreadSeconds": 1793,
-                    "totalSeconds": 8395,
+                    "maxSeconds": 2621,
+                    "spreadSeconds": 1714,
+                    "totalSeconds": 8162,
                     "favoredSeconds": 2621,
                     "reasonCode": "FAVOR_CAPPED",
                     "reason": "방장은 44분, 환승 없이 와요. 다른 3명은 공평하게보다 더 걸리지 않아요. 방장 쪽에 더 가까운 역은 다른 사람 상한을 넘어서 뺐어요.",
@@ -4346,6 +4644,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1404,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -4372,13 +4679,13 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 2347,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 3058,
                     "spreadSeconds": 2031,
-                    "totalSeconds": 8521,
+                    "totalSeconds": 8468,
                     "favoredSeconds": 3058,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 강남보다 방장은 7분 더 걸려요 (51분).",
@@ -4403,6 +4710,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1406,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -4429,13 +4745,13 @@
                         },
                         {
                             "participantId": "pid010",
-                            "seconds": 2700,
-                            "transfers": null
+                            "seconds": 2557,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 3106,
                     "spreadSeconds": 2289,
-                    "totalSeconds": 8880,
+                    "totalSeconds": 8737,
                     "favoredSeconds": 3106,
                     "reasonCode": "FAVOR_ALTERNATIVE",
                     "reason": "방장 쪽 대안이에요. 1위 강남보다 방장은 8분 더 걸려요 (52분).",
@@ -4460,6 +4776,15 @@
                             "boundFor": {
                                 "stationCode": "bvq",
                                 "stationName": "성수"
+                            }
+                        },
+                        {
+                            "participantId": "pid010",
+                            "kind": "direct",
+                            "minute": 1403,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
                             }
                         }
                     ]
@@ -6347,12 +6672,17 @@
                         }
                     },
                     {
-                        "label": "참가자 2",
-                        "seconds": 3900
+                        "label": "잠실",
+                        "seconds": 3745,
+                        "lastTrain": {
+                            "kind": "margin",
+                            "minute": 1357,
+                            "transfer": true
+                        }
                     }
                 ]
             },
-            "decidedBy": "참가자 2",
+            "decidedBy": "잠실",
             "decidedAt": "2026-11-14T03:00:00Z",
             "lastTrainBasis": {
                 "dayType": "holiday",
@@ -6383,14 +6713,14 @@
                 {
                     "participantId": "pid015",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "dxy",
+                    "originName": "잠실",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "잠실에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "잠실",
                     "enteredByHost": false
                 }
             ],
@@ -6408,15 +6738,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1500,
-                            "transfers": null
+                            "seconds": 1297,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1500,
-                    "spreadSeconds": 233,
-                    "totalSeconds": 2767,
+                    "maxSeconds": 1297,
+                    "spreadSeconds": 30,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 25분이에요. 2위 동대문역사문화공원과 최장 시간은 같지만, 시간 차이가 더 작아요 (4분 vs 6분).",
+                    "reason": "가장 오래 걸리는 잠실에서 오는 분도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6426,6 +6756,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1403,
+                            "transfer": true
                         }
                     ]
                 },
@@ -6441,15 +6777,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1500,
-                            "transfers": null
+                            "seconds": 1417,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1500,
-                    "spreadSeconds": 353,
-                    "totalSeconds": 2647,
+                    "maxSeconds": 1417,
+                    "spreadSeconds": 270,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 같아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6459,6 +6795,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1401,
+                            "transfer": true
                         }
                     ]
                 },
@@ -6474,15 +6816,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 1117,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 1447,
-                    "spreadSeconds": 247,
-                    "totalSeconds": 2647,
+                    "spreadSeconds": 330,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 거의 같아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6492,6 +6834,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1406,
+                            "transfer": true
                         }
                     ]
                 }
@@ -6534,14 +6882,14 @@
                 {
                     "participantId": "pid015",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "dxy",
+                    "originName": "잠실",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "잠실에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "잠실",
                     "enteredByHost": false
                 }
             ],
@@ -6559,15 +6907,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1500,
-                            "transfers": null
+                            "seconds": 1297,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1500,
-                    "spreadSeconds": 233,
-                    "totalSeconds": 2767,
+                    "maxSeconds": 1297,
+                    "spreadSeconds": 30,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 25분이에요. 2위 동대문역사문화공원과 최장 시간은 같지만, 시간 차이가 더 작아요 (4분 vs 6분).",
+                    "reason": "가장 오래 걸리는 잠실에서 오는 분도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6577,6 +6925,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1403,
+                            "transfer": true
                         }
                     ]
                 },
@@ -6592,15 +6946,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1500,
-                            "transfers": null
+                            "seconds": 1417,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1500,
-                    "spreadSeconds": 353,
-                    "totalSeconds": 2647,
+                    "maxSeconds": 1417,
+                    "spreadSeconds": 270,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 같아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6610,6 +6964,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1401,
+                            "transfer": true
                         }
                     ]
                 },
@@ -6625,15 +6985,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 1117,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 1447,
-                    "spreadSeconds": 247,
-                    "totalSeconds": 2647,
+                    "spreadSeconds": 330,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 거의 같아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6643,6 +7003,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1406,
+                            "transfer": true
                         }
                     ]
                 }
@@ -6685,14 +7051,14 @@
                 {
                     "participantId": "pid015",
                     "nickname": null,
-                    "hidden": true,
+                    "hidden": false,
                     "originCode": "dxy",
                     "originName": "잠실",
                     "isHost": false,
                     "isSelf": true,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "잠실에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "잠실",
                     "enteredByHost": false
                 }
             ],
@@ -6718,7 +7084,7 @@
                     "spreadSeconds": 30,
                     "totalSeconds": 2564,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
+                    "reason": "가장 오래 걸리는 잠실에서 오는 분도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6854,14 +7220,14 @@
                 {
                     "participantId": "pid015",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "dxy",
+                    "originName": "잠실",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "잠실에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "잠실",
                     "enteredByHost": false
                 }
             ],
@@ -6879,15 +7245,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1500,
-                            "transfers": null
+                            "seconds": 1297,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1500,
-                    "spreadSeconds": 233,
-                    "totalSeconds": 2767,
+                    "maxSeconds": 1297,
+                    "spreadSeconds": 30,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_MINIMAX",
-                    "reason": "가장 오래 걸리는 참가자 2도 25분이에요. 2위 동대문역사문화공원과 최장 시간은 같지만, 시간 차이가 더 작아요 (4분 vs 6분).",
+                    "reason": "가장 오래 걸리는 잠실에서 오는 분도 22분이에요. 2위 동대문역사문화공원보다 가장 오래 걸리는 사람이 2분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6897,6 +7263,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1403,
+                            "transfer": true
                         }
                     ]
                 },
@@ -6912,15 +7284,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1500,
-                            "transfers": null
+                            "seconds": 1417,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1500,
-                    "spreadSeconds": 353,
-                    "totalSeconds": 2647,
+                    "maxSeconds": 1417,
+                    "spreadSeconds": 270,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 같아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6930,6 +7302,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1401,
+                            "transfer": true
                         }
                     ]
                 },
@@ -6945,15 +7323,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1200,
-                            "transfers": null
+                            "seconds": 1117,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 1447,
-                    "spreadSeconds": 247,
-                    "totalSeconds": 2647,
+                    "spreadSeconds": 330,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAIR_ALTERNATIVE",
-                    "reason": "공평 모드 대안이에요. 1위 신당과 최장 시간은 거의 같아요.",
+                    "reason": "공평 모드 대안이에요. 1위 신당보다 가장 오래 걸리는 사람이 2분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -6963,6 +7341,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1406,
+                            "transfer": true
                         }
                     ]
                 }
@@ -7005,14 +7389,14 @@
                 {
                     "participantId": "pid015",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "dxy",
+                    "originName": "잠실",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "잠실에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "잠실",
                     "enteredByHost": false
                 }
             ],
@@ -7030,15 +7414,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 300,
-                            "transfers": null
+                            "seconds": 0,
+                            "transfers": 0
                         }
                     ],
                     "maxSeconds": 2407,
-                    "spreadSeconds": 2107,
-                    "totalSeconds": 2707,
+                    "spreadSeconds": 2407,
+                    "totalSeconds": 2407,
                     "reasonCode": "FAST_TOTAL",
-                    "reason": "둘이 합쳐 45분, 후보 중 가장 짧은 편이에요. 대신 방장이 참가자 2보다 35분 더 걸려요.",
+                    "reason": "둘이 합쳐 40분, 후보 중 가장 짧아요. 대신 방장이 잠실에서 오는 분보다 40분 더 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -7048,6 +7432,10 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "check"
                         }
                     ]
                 },
@@ -7063,19 +7451,28 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 2407,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2400,
-                    "spreadSeconds": 2400,
-                    "totalSeconds": 2400,
+                    "maxSeconds": 2407,
+                    "spreadSeconds": 2407,
+                    "totalSeconds": 2407,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 합계는 1위 잠실과 거의 같아요.",
+                    "reason": "빠른 만남 대안이에요. 합계는 1위 잠실과 같아요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
                             "kind": "check"
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "direct",
+                            "minute": 1381,
+                            "boundFor": {
+                                "stationCode": "bvq",
+                                "stationName": "성수"
+                            }
                         }
                     ]
                 },
@@ -7091,15 +7488,15 @@
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 1500,
-                            "transfers": null
+                            "seconds": 1297,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 1500,
-                    "spreadSeconds": 233,
-                    "totalSeconds": 2767,
+                    "maxSeconds": 1297,
+                    "spreadSeconds": 30,
+                    "totalSeconds": 2564,
                     "reasonCode": "FAST_ALTERNATIVE",
-                    "reason": "빠른 만남 대안이에요. 1위 잠실보다 합쳐서 1분 더 걸려요. 대신 가장 오래 걸리는 사람은 15분 덜 걸려요.",
+                    "reason": "빠른 만남 대안이에요. 1위 잠실보다 합쳐서 3분 더 걸려요. 대신 가장 오래 걸리는 사람은 18분 덜 걸려요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
@@ -7109,6 +7506,12 @@
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1403,
+                            "transfer": true
                         }
                     ]
                 }
@@ -7161,14 +7564,14 @@
                 {
                     "participantId": "pid015",
                     "nickname": null,
-                    "hidden": true,
-                    "originCode": null,
-                    "originName": null,
+                    "hidden": false,
+                    "originCode": "dxy",
+                    "originName": "잠실",
                     "isHost": false,
                     "isSelf": false,
-                    "label": "참가자 2",
-                    "labelKind": "ordinal",
-                    "shortLabel": "참가자 2",
+                    "label": "잠실에서 오는 분",
+                    "labelKind": "origin",
+                    "shortLabel": "잠실",
                     "enteredByHost": false
                 }
             ],
@@ -7176,98 +7579,121 @@
             "candidates": [
                 {
                     "rank": 1,
-                    "stationCode": "ryf",
-                    "stationName": "홍대입구",
+                    "stationCode": "gf9",
+                    "stationName": "시청",
                     "times": [
                         {
                             "participantId": "pid014",
-                            "seconds": 0,
+                            "seconds": 727,
                             "transfers": 0
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 1837,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2400,
-                    "spreadSeconds": 2400,
-                    "totalSeconds": 2400,
-                    "favoredSeconds": 0,
+                    "maxSeconds": 1837,
+                    "spreadSeconds": 1110,
+                    "totalSeconds": 2564,
+                    "favoredSeconds": 727,
                     "reasonCode": "FAVOR_CAPPED",
-                    "reason": "방장은 0분, 환승 없이 와요. 참가자 2는 공평하게보다 15분 더 걸려요 (40분).",
+                    "reason": "방장은 12분, 환승 없이 와요. 잠실에서 오는 분은 공평하게보다 9분 더 걸려요 (31분, 상한 +10분). 방장 쪽에 더 가까운 역은 다른 사람 상한을 넘어서 뺐어요.",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
-                            "kind": "check"
+                            "kind": "direct",
+                            "minute": 1431,
+                            "boundFor": {
+                                "stationCode": "ryf",
+                                "stationName": "홍대입구"
+                            }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1394,
+                            "transfer": true
                         }
                     ]
                 },
                 {
                     "rank": 2,
-                    "stationCode": "ep4",
-                    "stationName": "합정",
+                    "stationCode": "j3y",
+                    "stationName": "을지로입구",
                     "times": [
                         {
                             "participantId": "pid014",
-                            "seconds": 277,
+                            "seconds": 847,
                             "transfers": 0
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 2700,
-                            "transfers": null
+                            "seconds": 1717,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2700,
-                    "spreadSeconds": 2423,
-                    "totalSeconds": 2977,
-                    "favoredSeconds": 277,
+                    "maxSeconds": 1717,
+                    "spreadSeconds": 870,
+                    "totalSeconds": 2564,
+                    "favoredSeconds": 847,
                     "reasonCode": "FAVOR_ALTERNATIVE",
-                    "reason": "방장 쪽 대안이에요. 1위 홍대입구보다 방장은 5분 더 걸려요 (5분).",
+                    "reason": "방장 쪽 대안이에요. 1위 시청보다 방장은 2분 더 걸려요 (14분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
                             "kind": "direct",
-                            "minute": 1438,
+                            "minute": 1428,
                             "boundFor": {
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1396,
+                            "transfer": true
                         }
                     ]
                 },
                 {
                     "rank": 3,
-                    "stationCode": "1qs",
-                    "stationName": "신촌",
+                    "stationCode": "wym",
+                    "stationName": "을지로3가",
                     "times": [
                         {
                             "participantId": "pid014",
-                            "seconds": 307,
+                            "seconds": 937,
                             "transfers": 0
                         },
                         {
                             "participantId": "pid015",
-                            "seconds": 2400,
-                            "transfers": null
+                            "seconds": 1627,
+                            "transfers": 0
                         }
                     ],
-                    "maxSeconds": 2400,
-                    "spreadSeconds": 2093,
-                    "totalSeconds": 2707,
-                    "favoredSeconds": 307,
+                    "maxSeconds": 1627,
+                    "spreadSeconds": 690,
+                    "totalSeconds": 2564,
+                    "favoredSeconds": 937,
                     "reasonCode": "FAVOR_ALTERNATIVE",
-                    "reason": "방장 쪽 대안이에요. 1위 홍대입구보다 방장은 5분 더 걸려요 (5분).",
+                    "reason": "방장 쪽 대안이에요. 1위 시청보다 방장은 4분 더 걸려요 (16분).",
                     "lastTrains": [
                         {
                             "participantId": "pid014",
                             "kind": "direct",
-                            "minute": 1438,
+                            "minute": 1427,
                             "boundFor": {
                                 "stationCode": "ryf",
                                 "stationName": "홍대입구"
                             }
+                        },
+                        {
+                            "participantId": "pid015",
+                            "kind": "margin",
+                            "minute": 1397,
+                            "transfer": true
                         }
                     ]
                 }

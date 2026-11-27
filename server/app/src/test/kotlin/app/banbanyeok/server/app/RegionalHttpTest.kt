@@ -19,7 +19,6 @@ import app.banbanyeok.server.room.Activity
 import app.banbanyeok.server.room.Change
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.MutableClock
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomError
 import app.banbanyeok.server.room.RoomException
@@ -335,7 +334,7 @@ class RegionalHttpTest :
         it("checks the room's current day when the host changes it between a participant's read and write") {
             withRegionalApi { fixture ->
                 val host = fixture.service.create(command("003"))
-                val member = fixture.service.join(host.roomId, ParticipantInput(null, "004", false), null)
+                val member = fixture.service.join(host.roomId, ParticipantInput(null, "004"), null)
                 var changeDayOnRead = false
                 val racing =
                     object : RoomRepository by fixture.rooms {
@@ -357,7 +356,7 @@ class RegionalHttpTest :
 
                 changeDayOnRead = true
                 shouldThrow<RoomException> {
-                    service.join(host.roomId, ParticipantInput(null, "005", false), null)
+                    service.join(host.roomId, ParticipantInput(null, "005"), null)
                 }.error shouldBe RoomError.SCHEDULE_UNAVAILABLE
                 client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("003", "004")
 
@@ -368,7 +367,7 @@ class RegionalHttpTest :
                         host.roomId,
                         member.participantId,
                         member.participantToken,
-                        ParticipantInput(null, "005", false),
+                        ParticipantInput(null, "005"),
                     )
                 }.error shouldBe RoomError.SCHEDULE_UNAVAILABLE
                 client.json(HttpMethod.Get, path).participantCodes() shouldBe listOf("003", "004")
@@ -466,39 +465,6 @@ class RegionalHttpTest :
                 client.json(HttpMethod.Get, "/v1/rooms/${room.roomId}/preview").assertRegionMismatch()
             }
         }
-
-        it("keeps a legacy hidden station and its region out of public room data and mixed errors") {
-            withRegionalApi { fixture ->
-                val legacy =
-                    RoomService(
-                        fixture.rooms,
-                        fixture.anonUsers,
-                        fixture.tokens,
-                        fixture.ids,
-                        fixture.stations,
-                        fixture.clock,
-                        newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
-                    )
-                val responses =
-                    listOf("001", "002").map { code ->
-                        val created = legacy.create(command(code, hidden = true))
-                        val path = "/v1/rooms/${created.roomId}"
-                        val state = client.json(HttpMethod.Get, path).objectBody()
-                        val hidden =
-                            state
-                                .getValue("participants")
-                                .jsonArray
-                                .single()
-                                .jsonObject
-                        hidden["originCode"] shouldBe JsonNull
-                        hidden.containsKey("region") shouldBe false
-                        val mismatch = client.json(HttpMethod.Post, "$path/participants", """{"originCode":"003"}""")
-                        mismatch.assertRegionMismatch()
-                        mismatch.bodyAsText()
-                    }
-                responses.distinct().size shouldBe 1
-            }
-        }
     })
 
 private fun lastTrainKinds(result: JsonObject) =
@@ -516,10 +482,8 @@ private fun recommend(
     return """{"origins":[$origins],"mode":"fair"$time}"""
 }
 
-private fun command(
-    code: String,
-    hidden: Boolean = false,
-) = CreateRoomCommand(RoomMode.FAIR, null, null, ParticipantInput(null, code, hidden), null, null)
+private fun command(code: String) =
+    CreateRoomCommand(RoomMode.FAIR, null, null, ParticipantInput(null, code), null, null)
 
 private suspend fun HttpResponse.objectBody() = Json.parseToJsonElement(bodyAsText()).jsonObject
 

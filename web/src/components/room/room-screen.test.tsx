@@ -260,6 +260,47 @@ describe("방 화면", () => {
     await waitFor(() => expect(window.localStorage.getItem(`bby.room.${ROOM}`)).toBeNull());
   });
 
+  it("숨긴 참가자가 남은 옛 방(ROOM_WITHHELD)이면 기기 기록을 지우지 않고, 이 기기의 자격으로 지우기만 보인다(ADR-0012)", async () => {
+    const record = {
+      v: 1,
+      hostToken: "host-tok",
+      participantToken: "tok-1",
+      participantId: "m1",
+      keepUntil: "2999-01-01T00:00:00Z",
+    };
+    window.localStorage.setItem(`bby.room.${ROOM}`, JSON.stringify(record));
+    vi.mocked(api.getRoom).mockRejectedValue(new ApiRequestError(403, "ROOM_WITHHELD", "지금은 열 수 없는 방입니다"));
+    vi.mocked(api.removeParticipant).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderScreen();
+    expect(await screen.findByRole("heading", { name: "지금은 열 수 없는 방이에요" })).toBeInTheDocument();
+    expect(screen.queryByText("(나)")).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null")).toEqual(record);
+    expect(screen.getByRole("button", { name: /방 삭제/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /삭제 내 항목/ }));
+    await user.click(screen.getByRole("button", { name: "지우기" }));
+    await waitFor(() => expect(api.removeParticipant).toHaveBeenCalledWith(ROOM, "m1", "tok-1"));
+    // 내 항목만 빠지고 방장 자격은 남는다(방은 아직 열 수 없으니 방장은 방을 지울 수 있어야 한다).
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null")).toMatchObject({
+        hostToken: "host-tok",
+      }),
+    );
+    expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null").participantToken).toBeUndefined();
+  });
+
+  it("참여자 토큰이 없는 방장 기기는 방을 읽을 때 방장 토큰을 실어, 숨긴 참가자가 남은 방에서도 기록을 잃지 않는다", async () => {
+    const record = { v: 1, hostToken: "host-tok", keepUntil: "2999-01-01T00:00:00Z" };
+    window.localStorage.setItem(`bby.room.${ROOM}`, JSON.stringify(record));
+    vi.mocked(api.getRoom).mockRejectedValue(new ApiRequestError(403, "ROOM_WITHHELD", "지금은 열 수 없는 방입니다"));
+    renderScreen();
+    expect(await screen.findByRole("heading", { name: "지금은 열 수 없는 방이에요" })).toBeInTheDocument();
+    expect(vi.mocked(api.getRoom).mock.calls[0]?.[1]).toBe("host-tok");
+    expect(screen.queryByRole("button", { name: /삭제 내 항목/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /방 삭제/ })).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null")).toEqual(record);
+  });
+
   it("방을 보는 중에 방 쿼리가 404를 받으면(방장이 지움) 이전 화면을 남기지 않고 방 없음 안내로 바꾼다", async () => {
     const { ApiRequestError } = await import("@/lib/api/client");
     window.localStorage.setItem(
@@ -291,6 +332,79 @@ describe("방 화면", () => {
     expect(await screen.findByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "다시 시도" })).not.toBeInTheDocument();
     await waitFor(() => expect(window.localStorage.getItem(`bby.room.${ROOM}`)).toBeNull());
+  });
+
+  describe("참여자 토큰으로 받은 404는 방장 토큰으로 다시 확인한다(#244 재검토)", () => {
+    const KEY = `bby.room.${ROOM}`;
+    const both = {
+      v: 1,
+      hostToken: "host-tok",
+      participantToken: "tok-1",
+      participantId: "m1",
+      keepUntil: "2999-01-01T00:00:00Z",
+    };
+    const hostOnly = { v: 1, hostToken: "host-tok", keepUntil: "2999-01-01T00:00:00Z" };
+    const stored = () => JSON.parse(window.localStorage.getItem(KEY) ?? "null");
+    const answerByToken = (byToken: Record<string, () => Promise<Room>>) =>
+      vi.mocked(api.getRoom).mockImplementation(async (_id, token) => {
+        const answer = byToken[token ?? "none"];
+        if (!answer) throw new ApiRequestError(404, "ROOM_NOT_FOUND", "없음");
+        return answer();
+      });
+    const withheld = async (): Promise<Room> => {
+      throw new ApiRequestError(403, "ROOM_WITHHELD", "지금은 열 수 없는 방입니다");
+    };
+
+    it("지워진 참여자 토큰의 404는 방장 토큰으로 확인해(403) 방장 기록과 방 삭제를 남기고 참여자 토큰만 지운다", async () => {
+      window.localStorage.setItem(KEY, JSON.stringify(both));
+      answerByToken({ "host-tok": withheld });
+      renderScreen();
+      expect(await screen.findByRole("heading", { name: "지금은 열 수 없는 방이에요" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /방 삭제/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /삭제 내 항목/ })).not.toBeInTheDocument();
+      expect(stored()).toEqual(hostOnly);
+    });
+
+    it("다른 탭이 방장의 자기 항목을 지운 뒤 이 탭에 늦게 온 404는 저장소의 방장 기록을 지우지 않는다", async () => {
+      window.localStorage.setItem(KEY, JSON.stringify(both));
+      members = [{ id: "m1", token: "tok-1" }];
+      const { client } = renderScreen();
+      expect(await screen.findByText("(나)")).toBeInTheDocument();
+      // 다른 탭: 방장이 자기 항목을 지워 저장소에는 방장 토큰만 남았다. 방에는 숨긴 사람이 남아 방장 토큰은 403이다.
+      window.localStorage.setItem(KEY, JSON.stringify(hostOnly));
+      answerByToken({ "host-tok": withheld });
+      await client.invalidateQueries({ queryKey: ["room", ROOM] });
+      expect(await screen.findByRole("heading", { name: "지금은 열 수 없는 방이에요" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /방 삭제/ })).toBeInTheDocument();
+      expect(stored()).toEqual(hostOnly);
+    });
+
+    it("결과 쿼리만 404를 받아도 방장 토큰으로 방이 열리면(200) 방장 기록을 남긴다", async () => {
+      window.localStorage.setItem(KEY, JSON.stringify(both));
+      members = [
+        { id: "m1", token: "tok-1" },
+        { id: "m2", token: "tok-2" },
+      ];
+      vi.mocked(api.getRoomResult).mockImplementation(async (_id, _query, token) => {
+        if (token === "tok-1") throw new ApiRequestError(404, "ROOM_NOT_FOUND", "없음");
+        return new Promise(() => {});
+      });
+      renderScreen();
+      await waitFor(() => expect(stored()).toEqual(hostOnly));
+      await waitFor(() =>
+        expect(api.getRoomResult).toHaveBeenLastCalledWith(ROOM, expect.anything(), "host-tok", expect.anything()),
+      );
+      expect(stored()).toEqual(hostOnly);
+      expect(screen.queryByRole("heading", { name: "찾을 수 없는 방이에요" })).not.toBeInTheDocument();
+    });
+
+    it("방장 토큰으로도 404면 방 없음 안내를 보이고 기록을 지운다", async () => {
+      window.localStorage.setItem(KEY, JSON.stringify(both));
+      answerByToken({});
+      renderScreen();
+      expect(await screen.findByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeInTheDocument();
+      await waitFor(() => expect(window.localStorage.getItem(KEY)).toBeNull());
+    });
   });
 
   it("5xx 같은 다른 오류는 이전 방 화면을 그대로 둔다", async () => {

@@ -53,8 +53,8 @@ private fun room(
     dataVersion = "20261112.6",
     participants =
         listOf(
-            ParticipantView("p00001", "민수", false, station, isHost = true, isSelf = true),
-            ParticipantView("p00002", null, true, null, isHost = false, isSelf = false),
+            ParticipantView("p00001", "민수", station, isHost = true, isSelf = true),
+            ParticipantView("p00002", null, otherStation, isHost = false, isSelf = false),
         ),
     roomHash = "0123456789abcdef",
     createdAt = Instant.parse("2026-11-17T00:00:00Z"),

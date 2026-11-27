@@ -14,15 +14,10 @@ import java.time.LocalTime
 
 private fun roomTest(body: suspend RoomFixture.() -> Unit) = runTest { RoomFixture().body() }
 
-/** 숨긴 채 들어온 참가자가 있는 옛 방(ADR-0007 전). 그 방의 규칙은 방이 사라질 때까지 그대로다. */
-private fun legacyRoomTest(body: suspend RoomFixture.() -> Unit) =
-    runTest { RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE).body() }
-
 private fun host(
     origin: String = "03v",
     nickname: String? = "민수",
-    hidden: Boolean = false,
-) = ParticipantInput(nickname, origin, hidden)
+) = ParticipantInput(nickname, origin)
 
 private fun command(
     mode: RoomMode = RoomMode.FAIR,
@@ -236,35 +231,15 @@ class RoomServiceTest :
             }
         }
 
-        describe("hiding the origin") {
-            it("masks only the origin name of hidden participants for everyone but themselves") {
-                legacyRoomTest {
-                    val created = service.create(command(hostInput = host("03v", "민수", hidden = true)))
-                    val friend = service.join(created.roomId, host("130", "지연", hidden = true), null)
-                    service.join(created.roomId, host("225", "서준"), null)
-
-                    val anonymous = service.get(created.roomId, null).participants
-                    anonymous.map { it.originCode } shouldContainExactly listOf(null, null, "225")
-                    anonymous.map { it.hidden } shouldContainExactly listOf(true, true, false)
-                    anonymous.map { it.nickname } shouldContainExactly listOf("민수", "지연", "서준")
-
-                    val asFriend = service.get(created.roomId, friend.participantToken).participants
-                    asFriend.map { it.originCode } shouldContainExactly listOf(null, "130", "225")
-                    asFriend.map { it.isSelf } shouldContainExactly listOf(false, true, false)
-
-                    val asHostOnly = service.get(created.roomId, created.hostToken).participants
-                    asHostOnly.map { it.originCode } shouldContainExactly listOf(null, null, "225")
-                    asHostOnly.map { it.isHost } shouldContainExactly listOf(true, false, false)
-
-                    service.get(created.roomId, "garbage-token").participants.map { it.originCode } shouldContainExactly
-                        listOf(null, null, "225")
-                }
-            }
-
-            it("keeps real origins in the compute context so results can use hidden times") {
-                legacyRoomTest {
-                    val created = service.create(command(hostInput = host("03v", "민수", hidden = true)))
-                    service.join(created.roomId, host("130", "지연"), null)
+        describe("origins (ADR-0007: nobody hides an origin)") {
+            it("shows every participant's origin to everyone and keeps the same origins for results") {
+                roomTest {
+                    val created = service.create(command(hostInput = host("03v", "민수")))
+                    val friend = service.join(created.roomId, host("130", "지연"), null)
+                    for (token in listOf(null, friend.participantToken, created.hostToken, "garbage-token")) {
+                        service.get(created.roomId, token).participants.map { it.originCode } shouldContainExactly
+                            listOf("03v", "130")
+                    }
                     service
                         .loadForResult(
                             created.roomId,
@@ -272,117 +247,6 @@ class RoomServiceTest :
                         ).computeParticipants
                         .map { it.originCode } shouldContainExactly
                         listOf("03v", "130")
-                }
-            }
-        }
-
-        describe("no new hiding (ADR-0007)") {
-            it("refuses to create a room whose host hides their origin") {
-                roomTest {
-                    shouldFailWith(RoomError.HIDE_NOT_AVAILABLE) {
-                        service.create(command(hostInput = host(hidden = true)))
-                    }
-                }
-            }
-
-            it("refuses to join with a hidden origin and adds nobody") {
-                roomTest {
-                    val created = service.create(command())
-                    shouldFailWith(RoomError.HIDE_NOT_AVAILABLE) {
-                        service.join(created.roomId, host("130", "지연", hidden = true), null)
-                    }
-                    service.get(created.roomId, null).participants.map { it.id } shouldContainExactly
-                        listOf(created.participantId)
-                }
-            }
-
-            it("refuses to start hiding when editing, and keeps the entry as it was") {
-                roomTest {
-                    val created = service.create(command())
-                    val friend = service.join(created.roomId, host("130", "지연"), null)
-                    shouldFailWith(RoomError.HIDE_NOT_AVAILABLE) {
-                        service.updateParticipant(
-                            created.roomId,
-                            friend.participantId,
-                            friend.participantToken,
-                            host("225", "서준", hidden = true),
-                        )
-                    }
-                    val stored = service.get(created.roomId, null).participants.single { it.id == friend.participantId }
-                    stored.hidden shouldBe false
-                    stored.nickname shouldBe "지연"
-                    stored.originCode shouldBe "130"
-                }
-            }
-
-            it("lets someone who already hid keep it or show their origin, but not hide again") {
-                runTest {
-                    val legacy = RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
-                    val created = legacy.service.create(command())
-                    val friend = legacy.service.join(created.roomId, host("130", "지연", hidden = true), null)
-                    // 같은 방을 지금 서버(새 숨김 거절)가 다룬다.
-                    val now = RoomFixture(rooms = legacy.rooms, clock = legacy.clock)
-                    val id = friend.participantId
-                    val token = friend.participantToken
-                    now.service.updateParticipant(created.roomId, id, token, host("225", "수진", hidden = true)).run {
-                        hidden shouldBe true
-                        nickname shouldBe "수진"
-                        originCode shouldBe "225"
-                    }
-                    now.service
-                        .get(created.roomId, null)
-                        .participants
-                        .single { it.id == id }
-                        .originCode
-                        .shouldBeNull()
-                    now.service.updateParticipant(created.roomId, id, token, host("225", "수진")).hidden shouldBe false
-                    shouldFailWith(RoomError.HIDE_NOT_AVAILABLE) {
-                        now.service.updateParticipant(created.roomId, id, token, host("225", "수진", hidden = true))
-                    }
-                    now.service.get(created.roomId, null).participants.single { it.id == id }.run {
-                        hidden shouldBe false
-                        originCode shouldBe "225"
-                    }
-                }
-            }
-        }
-
-        describe("hide races (ADR-0007)") {
-            it("refuses keeping a hide when another tab showed the origin after it was read, and stays shown") {
-                runTest {
-                    val legacy = RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
-                    val created = legacy.service.create(command())
-                    val friend = legacy.service.join(created.roomId, host("130", "지연", hidden = true), null)
-                    val now = RoomFixture(rooms = legacy.rooms, clock = legacy.clock)
-                    // 서비스가 방을 읽은 뒤(아직 숨김), 저장하기 전에 다른 탭이 숨김을 풀었다.
-                    val racing =
-                        object : RoomRepository by legacy.rooms {
-                            override suspend fun updateParticipant(
-                                roomId: String,
-                                participantId: String,
-                                change: ParticipantChange,
-                                activity: Activity,
-                                origins: OriginRule?,
-                            ): Boolean {
-                                val shown = ParticipantChange("지연", "130", false, now.clock.instant())
-                                legacy.rooms.updateParticipant(roomId, participantId, shown, activity)
-                                return legacy.rooms.updateParticipant(roomId, participantId, change, activity, origins)
-                            }
-                        }
-                    val raced = RoomService(racing, now.anonUsers, now.tokens, now.ids, now.stations, now.clock)
-                    shouldFailWith(RoomError.HIDE_NOT_AVAILABLE) {
-                        raced.updateParticipant(
-                            created.roomId,
-                            friend.participantId,
-                            friend.participantToken,
-                            host("225", "수진", hidden = true),
-                        )
-                    }
-                    now.service.get(created.roomId, null).participants.single { it.id == friend.participantId }.run {
-                        hidden shouldBe false
-                        originCode shouldBe "130"
-                        nickname shouldBe "지연"
-                    }
                 }
             }
         }

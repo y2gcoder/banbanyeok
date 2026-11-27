@@ -125,9 +125,21 @@ public class ExposedRoomRepository(
                     .where { RoomsTable.id eq roomId }
                     .singleOrNull()
                     ?.toRoom()
-                    ?.let { StoredRoom(it, participantsOf(roomId)) }
+                    ?.let { StoredRoom(it, participantsOf(roomId), withheld = hasHiddenParticipant(roomId)) }
             }
         }
+
+    /**
+     * ADR-0007 전에 출발역을 숨긴 채 들어온 참가자가 지금도 남아 있는 방인지([StoredRoom.withheld]). 앱은 더는 숨김을 가리지 않으므로,
+     * 이런 행이 남아 있거나(예상 밖) 백업에서 되살아나도 서비스가 그 방의 내용을 내보내지 않는다. 앱 코드가 `participants.hidden`을 이름으로
+     * 읽는 곳은 여기뿐이다(`ParticipantsTable` 정의 때문에 `selectAll`도 이 열을 SQL에 싣는다). 열을 지우는 순서는 ADR-0012.
+     */
+    private fun hasHiddenParticipant(roomId: String): Boolean =
+        !ParticipantsTable
+            .select(ParticipantsTable.pid)
+            .where { (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.hidden eq true) }
+            .limit(1)
+            .empty()
 
     override suspend fun addParticipant(
         roomId: String,
@@ -151,7 +163,7 @@ public class ExposedRoomRepository(
 
                 else -> {
                     val stored = room.toRoom()
-                    val joined = origins?.joined(stored, participants, participant.originCode, participant.hidden)
+                    val joined = origins?.joined(stored, participants, participant.originCode)
                     if (joined != null && joined.region != stored.region) {
                         RoomsTable.update({ RoomsTable.id eq roomId }) {
                             it[region] =
@@ -175,30 +187,17 @@ public class ExposedRoomRepository(
         inTransaction {
             val room = lockedRoom(roomId) ?: return@inTransaction false
             if (origins != null) {
-                val participants = participantsOf(roomId)
-                val current = participants.firstOrNull { it.id == participantId } ?: return@inTransaction false
-                if (change.onlyIfHidden && !current.hidden) return@inTransaction false
-                origins.requireAllowed(room.toRoom(), change.originCode, change.hidden)
+                if (participantsOf(roomId).none { it.id == participantId }) return@inTransaction false
+                origins.requireAllowed(room.toRoom(), change.originCode)
             }
             val updated =
                 ParticipantsTable.update({
-                    val target = (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq participantId)
-                    if (change.onlyIfHidden) target and (ParticipantsTable.hidden eq true) else target
+                    (ParticipantsTable.roomId eq roomId) and (ParticipantsTable.pid eq participantId)
                 }) {
                     it[nickname] = change.nickname
                     it[originCode] = change.originCode
-                    it[hidden] = change.hidden
                     it[updatedAt] = change.updatedAt
                 }
-            if (updated > 0 && change.releasesDrawWin) {
-                // 당첨자가 대상이 될 수 없게 됐다(숨겼다). 당첨자를 비우면 트리거가 뽑기 전으로 돌린다.
-                RoomsTable.update({
-                    (RoomsTable.id eq roomId) and (RoomsTable.favorDraw eq true) and
-                        (RoomsTable.favorPid eq participantId)
-                }) {
-                    it[favorPid] = null
-                }
-            }
             if (updated > 0) touch(roomId, activity)
             updated > 0
         }
@@ -333,7 +332,7 @@ public class ExposedRoomRepository(
         rule: FavorDrawRule,
     ): DrawResult =
         inTransaction {
-            // 정하기와 같은 잠금: 참여·나가기·숨기기(트리거가 방 행을 고친다)와 줄을 서므로 대상이 뽑는 순간의 방과 같다.
+            // 정하기와 같은 잠금: 참여·나가기(트리거가 방 행을 고친다)와 줄을 서므로 대상이 뽑는 순간의 방과 같다.
             val room =
                 RoomsTable
                     .selectAll()
@@ -381,7 +380,6 @@ public class ExposedRoomRepository(
             it[tokenHash] = participant.tokenHash.bytes
             it[nickname] = participant.nickname
             it[originCode] = participant.originCode
-            it[hidden] = participant.hidden
             it[joinedAt] = participant.joinedAt
             it[updatedAt] = participant.updatedAt
             it[enteredByHost] = participant.enteredByHost
@@ -494,7 +492,6 @@ public class ExposedRoomRepository(
             anonId = this[ParticipantsTable.anonId],
             nickname = this[ParticipantsTable.nickname],
             originCode = this[ParticipantsTable.originCode],
-            hidden = this[ParticipantsTable.hidden],
             joinedAt = this[ParticipantsTable.joinedAt],
             updatedAt = this[ParticipantsTable.updatedAt],
             enteredByHost = this[ParticipantsTable.enteredByHost],

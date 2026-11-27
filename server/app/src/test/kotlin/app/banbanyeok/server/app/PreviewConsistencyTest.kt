@@ -51,7 +51,7 @@ private suspend fun decidedOutsideTop(
     val results = RoomResultService(fixture.service, recommendation, testTimes)
     val created =
         fixture.service.create(
-            CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v", false), null, null, time),
+            CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v"), null, null, time),
         )
     val friend = fixture.service.join(created.roomId, ParticipantInput("지연", "130"), null)
     val seen = fixture.service.get(created.roomId, null).shareVersion

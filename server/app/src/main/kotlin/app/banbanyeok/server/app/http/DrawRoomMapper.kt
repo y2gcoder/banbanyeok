@@ -28,5 +28,11 @@ fun DrawRoomCreateRequestDto.toCommand(): CreateRoomCommand {
             meetingBand = meetingBand,
             host = host,
         )
-    return room.toCommand(deviceToken = null).copy(others = others.map { it.toInput() }, hostPosition = hostPosition)
+    return room.toCommand(deviceToken = null).copy(
+        others =
+            others.map {
+                it.toInput("다른 사람 칸은 출발역을 숨길 수 없습니다")
+            },
+        hostPosition = hostPosition,
+    )
 }

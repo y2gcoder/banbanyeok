@@ -26,7 +26,7 @@ class AppException(
 
 class RoomResult(
     val recommendation: Recommendation,
-    /** 요청자에게 보이는 참여자(숨긴 참가자의 출발역은 가려져 있다). */
+    /** 요청자에게 보이는 참여자. */
     val participants: List<ParticipantView>,
     /** 이 결과를 계산한 방 읽기의 공유 번호. 결과 카드에서 정할 때 보내는 `seenVersion`이다. */
     val shareVersion: ShareVersion,
@@ -35,7 +35,6 @@ class RoomResult(
 
 /**
  * 방의 결과를 계산한다: room 모듈에서 참여자를 읽고 recommendation 모듈에 계산을 맡긴다. 두 모듈은 서로 모르므로 여기서 잇는다.
- * 숨긴 참가자의 실제 출발역은 계산에만 쓰이고 응답의 참여자 목록에는 마스킹된 뷰가 나간다.
  * 추천이 요청을 거절하면 [app.banbanyeok.server.recommendation.RecommendationException]을 그대로 던진다: 방 경로의 오류 코드는
  * HTTP 계층(http/Errors.kt)의 방 표가 정한다.
  */
@@ -194,24 +193,16 @@ class RoomResultService(
     ): RecommendRequest {
         val view = context.view
         val time = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand)
-        // 토큰으로 확인한 본인. 숨긴 사람의 막차는 본인 요청에만 붙는다(미리보기는 토큰 없이 읽으므로 늘 null이다).
+        // 토큰으로 확인한 본인(미리보기는 토큰 없이 읽으므로 늘 null이다).
         val viewerId = view.participants.firstOrNull { it.isSelf }?.id
-        val participants =
-            context.computeParticipants.map {
-                RecommendParticipant(it.id, it.nickname, it.originCode, it.hidden)
-            }
+        val participants = context.computeParticipants.map { RecommendParticipant(it.id, it.nickname, it.originCode) }
         // 뽑기 방에서 아직 안 뽑았으면 방의 기본 기준은 공평하게다(#172). 첫 참가자 우대로 떨어지지 않게 한다.
         val drawPending = view.favorDraw?.let { it.winner == null } == true
         val requestedMode = mode ?: if (drawPending) RecommendMode.FAIR else view.mode.toRecommendMode()
-        val target = favorTarget(requestedMode, favorId, view, roomDefault = mode == null)
-        // 방의 기본 기준이 숨긴 사람 쪽인데 본인이 아니면(미리보기 포함) 공평하게로 계산한다(#162). 웹 결과 화면도 같은 규칙이다.
-        // 요청에 모드가 있으면 바꾸지 않는다: 추천이 FAVOR_TARGET_HIDDEN으로 거절한다.
-        val hiddenDefault =
-            mode == null && target != null && participants.any { it.id == target && it.hidden && it.id != viewerId }
         return RecommendRequest(
             participants = participants,
-            mode = if (hiddenDefault) RecommendMode.FAIR else requestedMode,
-            favorId = if (hiddenDefault) null else target,
+            mode = requestedMode,
+            favorId = favorTarget(requestedMode, favorId, view, roomDefault = mode == null),
             time = time,
             dayCertainty = times.certainty(view.meetingDate, view.meetingTime),
             viewerId = viewerId,

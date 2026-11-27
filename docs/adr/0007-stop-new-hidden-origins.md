@@ -1,6 +1,6 @@
 # ADR-0007: 출발역 숨기기를 새로 받지 않는다
 
-- 상태: accepted (운영자 결정, 2026-11-25, #173)
+- 상태: accepted (운영자 결정, 2026-11-25, #173). '이미 숨긴 사람은 방이 사라질 때까지 지금 규칙'은 superseded by [ADR-0012](0012-retire-hidden-origins-in-steps.md)
 - 바꾸는 결정: docs/01-synthesis.md '숨기기', [ADR-0004](0004-hidden-origin-times-coarsened.md)(숨긴 사람의 시간은 5분 단위로),
   [ADR-0005](0005-favor-without-hidden-origin.md)(다른 사람에게 숨긴 사람을 기준에서 뺀다), [ADR-0006](0006-favor-draw.md)의 '숨긴 사람은 뽑기 대상에서 뺀다'
 

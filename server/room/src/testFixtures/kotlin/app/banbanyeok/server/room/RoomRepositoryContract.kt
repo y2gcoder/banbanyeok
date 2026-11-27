@@ -81,7 +81,7 @@ private fun DescribeSpecRootScope.createAndFind(repos: () -> RepositoryPair) {
                         meetingTime = java.time.LocalTime.of(19, 30),
                     )
                 }
-            val host = aParticipant("host01") { it.copy(nickname = "민수", hidden = true, originCode = "130") }
+            val host = aParticipant("host01") { it.copy(nickname = "민수", originCode = "130") }
             rooms.create(room, listOf(host))
             val stored = rooms.find(room.id).shouldNotBeNull()
             // 방장 참여도 참여라서 트리거가 번호를 1로 올린다.
@@ -239,7 +239,7 @@ private fun DescribeSpecRootScope.storedRegions(repos: () -> RepositoryPair) {
             val rooms = repos().rooms
             val room = aRoom(freshId())
             rooms.create(room, listOf(aParticipant("host01")))
-            val moving = ParticipantChange(null, busan, false, T0.plusSeconds(60))
+            val moving = ParticipantChange(null, busan, T0.plusSeconds(60))
             shouldThrow<RoomException> { rooms.updateParticipant(room.id, "host01", moving, activity(1), origins) }
                 .error shouldBe RoomError.REGION_MISMATCH
             shouldThrow<RoomException> {
@@ -336,7 +336,7 @@ private fun DescribeSpecRootScope.regionalParticipants(repos: () -> RepositoryPa
                             }
                         },
                         async {
-                            val change = ParticipantChange(null, busan, false, T0.plusSeconds(60))
+                            val change = ParticipantChange(null, busan, T0.plusSeconds(60))
                             runCatching { rooms.updateParticipant(room.id, "host01", change, activity(1), origins) }
                         },
                     ).awaitAll()
@@ -375,7 +375,7 @@ private fun DescribeSpecRootScope.meetingOrigins(repos: () -> RepositoryPair) {
             val joining = aParticipant("pid003") { it.copy(originCode = "130") }
             shouldThrow<RoomException> { rooms.addParticipant(room.id, joining, activity(3), origins) }
                 .error shouldBe RoomError.SCHEDULE_UNAVAILABLE
-            val moving = ParticipantChange(null, "130", false, T0.plusSeconds(240))
+            val moving = ParticipantChange(null, "130", T0.plusSeconds(240))
             shouldThrow<RoomException> { rooms.updateParticipant(room.id, "pid002", moving, activity(4), origins) }
                 .error shouldBe RoomError.SCHEDULE_UNAVAILABLE
             rooms.find(room.id)!!.participants.map { it.originCode } shouldContainExactly listOf("03v", "03v")
@@ -385,38 +385,17 @@ private fun DescribeSpecRootScope.meetingOrigins(repos: () -> RepositoryPair) {
 
 private fun DescribeSpecRootScope.changingParticipants(repos: () -> RepositoryPair) {
     describe("updateParticipant and removeParticipant") {
-        it("updates nickname, origin and hidden") {
+        it("updates nickname and origin") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
             rooms.create(room, listOf(aParticipant("host01")))
-            val change = ParticipantChange("지연", "225", true, T0.plusSeconds(60))
+            val change = ParticipantChange("지연", "225", T0.plusSeconds(60))
             rooms.updateParticipant(room.id, "host01", change, activity(1)) shouldBe true
             val updated = rooms.find(room.id)!!.participants.single()
             updated.nickname shouldBe "지연"
             updated.originCode shouldBe "225"
-            updated.hidden shouldBe true
             updated.updatedAt shouldBe T0.plusSeconds(60)
             rooms.updateParticipant(room.id, "nobody", change, activity(2)) shouldBe false
-        }
-
-        it("keeps a hide only for someone still hidden when saving (ADR-0007)") {
-            val rooms = repos().rooms
-            val room = aRoom(freshId())
-            rooms.create(room, listOf(aParticipant("host01") { it.copy(hidden = true) }))
-            rooms.addParticipant(room.id, aParticipant("pid002"), activity(1))
-            val keep = ParticipantChange("지연", "225", true, T0.plusSeconds(60), onlyIfHidden = true)
-            // 숨기지 않은 사람에게는 쓰지 않는다(새로 숨기지 않는다).
-            rooms.updateParticipant(room.id, "pid002", keep, activity(2)) shouldBe false
-            rooms.find(room.id)!!.participants.single { it.id == "pid002" }.run {
-                hidden shouldBe false
-                nickname shouldBe null
-            }
-            // 이미 숨긴 사람은 유지하며 고친다.
-            rooms.updateParticipant(room.id, "host01", keep, activity(3)) shouldBe true
-            rooms.find(room.id)!!.participants.single { it.id == "host01" }.run {
-                hidden shouldBe true
-                nickname shouldBe "지연"
-            }
         }
 
         it("removes a participant and clears the favor target when it was the target") {

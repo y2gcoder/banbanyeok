@@ -9,7 +9,6 @@ import {
   type TestInfo,
   test,
 } from "@playwright/test";
-import { hideAsBefore } from "./legacy-hidden";
 
 /**
  * 방 공유 번호와 정한 역(#51) e2e: 실제 서버(Ktor + DB)에 붙은 웹에서 링크 번호(`?sv=`)가 단계마다 오르고, 크롤러가 받는 미리보기
@@ -120,8 +119,7 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   expect(plain.title).toBe(INVITE_TITLE);
   expect(plain.description).toBe(collecting.description);
 
-  // 친구는 받은 링크(번호 포함)로 들어와 참여하고, 옛 방처럼 출발역을 숨긴 사람이 된다(새로 숨길 수 없다, ADR-0007).
-  // 세 번째 사람(지연·신촌)은 API로 넣는다.
+  // 친구는 받은 링크(번호 포함)로 이름 없이 참여한다(숨기기 칸은 없다, ADR-0007). 세 번째 사람(지연·신촌)은 API로 넣는다.
   const friend = await newFriend(browser, testInfo);
   await friend.page.goto(`/r/${roomId}?sv=${collectingVersion}`);
   await pickStation(friend.page, "내 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
@@ -129,28 +127,21 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   await friend.page.getByRole("button", { name: "참여하기" }).click();
   const people = friend.page.getByRole("region", { name: "들어온 사람" });
   await expect(people.getByText("(나)", { exact: true })).toBeVisible();
-  const friendId = await friend.page.evaluate(
-    (id) =>
-      (JSON.parse(window.localStorage.getItem(`bby.room.${id}`) ?? "{}") as { participantId?: string }).participantId,
-    roomId,
-  );
-  hideAsBefore(roomId, friendId ?? "");
-  await friend.page.reload();
-  await expect(friend.page.getByText("홍대입구 · 나에게만 보여요")).toBeVisible();
+  await expect(people.getByText("홍대입구에서 오는 분")).toBeVisible();
+  // 옛 화면처럼 hidden: false를 실어도 받는다.
   const third = await request.post(`/api/v1/rooms/${roomId}/participants`, {
     data: { originCode: SINCHON, hidden: false, nickname: "지연" },
   });
   expect(third.status()).toBe(201);
 
-  // 결과 단계: 링크 번호가 오르고, 미리보기는 지금 1위와 각자 시간(숨긴 사람은 "참가자 2", 숨긴 출발역 없음).
+  // 결과 단계: 링크 번호가 오르고, 미리보기는 지금 1위와 각자 시간(이름 없는 사람은 출발역 이름).
   await page.reload();
   await expect(page.getByRole("button", { name: "카톡으로 결과 보내기" })).toBeVisible();
   const resultVersion = await sharedVersion(page, roomId);
   expect(resultVersion).toBeGreaterThan(collectingVersion);
   const result = await scrape(request, `/r/${roomId}?sv=${resultVersion}`);
   expect(result.title).toMatch(/^지금은 .+(이|가) 제일 공평해요 \| 반반역$/);
-  expect(result.description).toMatch(/^아직이면 출발역 넣어 주세요 · 민수 \d+분 · 참가자 2 \d+분 · 지연 \d+분$/);
-  expect(result.html).not.toContain("홍대입구");
+  expect(result.description).toMatch(/^아직이면 출발역 넣어 주세요 · 민수 \d+분 · 홍대입구 \d+분 · 지연 \d+분$/);
   expect(result.image).toContain(`/r/${roomId}/og?sv=${resultVersion}&dv=`);
   // 그림 버전(iv)도 실린다: 방 내용이 그대로여도(번호가 같아도) 그리는 코드가 바뀌면 그림 주소가 달라진다.
   expect(result.image).toMatch(/&iv=[0-9a-f]{8}$/);
@@ -204,14 +195,13 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   await banner.getByRole("button", { name: "정한 역 풀기" }).click();
   await expect(page.getByRole("alert").filter({ hasText: ROOM_CHANGED })).toBeVisible();
   await expect(page.getByRole("heading", { name: replacedHeading })).toBeVisible();
-  await expect(page.getByText("참가자 2가 정했어요")).toBeVisible();
+  await expect(page.getByText("홍대입구에서 오는 분이 정했어요")).toBeVisible();
   await expect(page.getByRole("button", { name: "카톡으로 정한 역 알리기" })).toBeVisible();
   const decidedVersion = await sharedVersion(page, roomId);
   expect(decidedVersion).toBeGreaterThan(resultVersion);
   const decided = await scrape(request, `/r/${roomId}?sv=${decidedVersion}`);
   expect(decided.title).toBe(`${replacedHeading} | 반반역`);
-  expect(decided.description).toMatch(/^참가자 2가 정했어요 · 민수 \d+분 · 참가자 2 \d+분 · 지연 \d+분$/);
-  expect(decided.html).not.toContain("홍대입구");
+  expect(decided.description).toMatch(/^홍대입구가 정했어요 · 민수 \d+분 · 홍대입구 \d+분 · 지연 \d+분$/);
   expect(await fetchImage(request, decided.image, "decided")).toBe("public, max-age=86400, s-maxage=86400");
   await shots(page, "3-decided-host");
   await shots(friend.page, "3-decided-friend");
