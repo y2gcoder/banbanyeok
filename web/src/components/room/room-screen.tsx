@@ -4,11 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
 import { roomHashProperty, track } from "@/lib/analytics";
+import { getRoom } from "@/lib/api/rooms";
 import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
 import { type RoomDraw, roomDraw } from "@/lib/room/draw";
 import { isRoomGone, isRoomWithheld, roomErrorMessage } from "@/lib/room/errors";
+import { type HostProbe, settleRoomNotFound } from "@/lib/room/gone";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
 import { roomQueryOptions } from "@/lib/room/queries";
@@ -17,7 +19,6 @@ import {
   canStoreRoomTokens,
   loadRoomRecord,
   type RoomRecord,
-  removeRoomRecord,
   withoutParticipant,
   writeRoomRecord,
 } from "@/lib/room/tokens";
@@ -82,6 +83,9 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   const [storable, setStorable] = useState(true);
   // 결과 쿼리가 방 없음(404)을 먼저 받았을 때(방 쿼리는 이전 data를 유지한다). 방이 지워지면 되살릴 수 없다.
   const [resultGone, setResultGone] = useState(false);
+  // 404를 확정한 결과(settleRoomNotFound): 방이 없다(gone), 확인하지 못했다(unknown), 아직 확인하지 않았다(null).
+  const [notFoundVerdict, setNotFoundVerdict] = useState<"gone" | "unknown" | null>(null);
+  const settling = useRef(false);
 
   // 화면의 기록(상태)과 기기 저장소를 같이 바꾼다. 저장소가 막혀 있어도 상태에는 남아 이번 방문 동안은 방금 받은 토큰을 쓴다
   // (참여는 성공했는데 실패처럼 보여 다시 제출하면 중복 참가자가 생기는 일을 막는다).
@@ -97,6 +101,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     // 방 조회는 이 효과 다음 렌더에서 바로 나간다(그 요청이 서버를 깨운다). 따로 미리 깨우지 않는다.
     setRecord(loadRoomRecord(roomId));
     setResultGone(false);
+    setNotFoundVerdict(null);
     setJoinValue(rememberedValue());
     setStorable(canStoreRoomTokens());
   }, [roomId]);
@@ -114,25 +119,47 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   });
   const room = query.data;
   // TanStack은 다시 불러오기가 실패해도 이전 data를 유지한다. 방이 없다는 답은 이전 화면을 남기지 않고 곧바로 안내로 바꾼다.
-  const gone = resultGone || (query.isError && isRoomGone(query.error));
-  const withheld = !gone && query.isError && isRoomWithheld(query.error);
+  const notFound = resultGone || (query.isError && isRoomGone(query.error));
+  const gone = notFoundVerdict === "gone";
+  const withheld = !notFound && query.isError && isRoomWithheld(query.error);
 
-  // 방 응답으로 기기 기록을 맞춘다: 서버가 방이 없다고 하면 기록 삭제, 내보내졌으면 참여자 토큰 정리.
-  // 저장해 둔 시각만 보고 지우지 않는다(서버는 활동마다 만료를 미룬다).
+  // 방 응답으로 기기 기록을 맞춘다: 내보내졌으면 참여자 토큰 정리. 저장해 둔 시각만 보고 지우지 않는다(서버는 활동마다 만료를 미룬다).
   useEffect(() => {
-    if (record === undefined) return;
-    if (gone) {
-      removeRoomRecord(roomId);
-      return;
-    }
+    if (record === undefined || notFound) return;
     if (!room || query.isPlaceholderData || !record) return;
     if (hasStaleParticipantToken(room, record)) {
       commit(withoutParticipant(record));
       keys.renew(); // 같은 입력으로 다시 참여할 때 지난 응답(죽은 토큰)을 재생받지 않게
     }
-  }, [record, room, gone, query.isPlaceholderData, roomId, commit, keys]);
+  }, [record, room, notFound, query.isPlaceholderData, commit, keys]);
 
   const actions = useRoomActions({ roomId, room, record, commit, keys });
+
+  // 404는 그 요청에 실은 토큰에 대한 답이다. 지워진 참여자 토큰이나 숨긴 참가자가 남은 방이면 방은 있어도 404라서, 방장 토큰으로
+  // 다시 확인하고 그사이 다른 탭이 바꾼 기록은 지우지 않는다(lib/room/gone.ts). 방이 없다고 확정될 때만 기록을 지운다.
+  useEffect(() => {
+    if (!notFound || record === undefined || notFoundVerdict !== null || settling.current) return;
+    settling.current = true;
+    const probeHost: HostProbe = async (hostToken) => {
+      try {
+        await getRoom(roomId, hostToken);
+        return "exists";
+      } catch (error) {
+        if (isRoomWithheld(error)) return "exists";
+        return isRoomGone(error) ? "gone" : "unknown";
+      }
+    };
+    void settleRoomNotFound(roomId, record, probeHost).then((verdict) => {
+      settling.current = false;
+      if (verdict.kind !== "kept") {
+        setNotFoundVerdict(verdict.kind);
+        return;
+      }
+      setResultGone(false);
+      setRecord(verdict.record);
+      actions.refresh();
+    });
+  });
 
   const decisionControl = useRoomDecision({ roomId, participantToken: token, participantId, refresh: actions.refresh });
   const drawControl = useFavorDraw({ roomId, hostToken: record?.hostToken });
@@ -194,6 +221,18 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   if (record === undefined || (query.isPending && !room)) return <RoomLoading />;
   if (gone) return <RoomGone />;
+  if (notFoundVerdict === "unknown") {
+    return (
+      <RoomLoadError
+        message={roomErrorMessage(query.error)}
+        onRetry={() => {
+          setNotFoundVerdict(null);
+          actions.refresh();
+        }}
+      />
+    );
+  }
+  if (notFound) return <RoomLoading />;
   if (withheld) {
     return (
       <RoomWithheld

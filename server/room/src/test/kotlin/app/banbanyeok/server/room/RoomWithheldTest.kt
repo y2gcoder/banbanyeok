@@ -131,6 +131,30 @@ class RoomWithheldTest :
                 }
             }
 
+            it("stays withheld until the last hidden participant's entry is deleted") {
+                runTest {
+                    val fixture = RoomFixture()
+                    val service = fixture.service
+                    val created =
+                        service.create(
+                            CreateRoomCommand(RoomMode.FAIR, null, null, ParticipantInput("민수", "03v"), null, null),
+                        )
+                    val hidden =
+                        listOf(
+                            "130",
+                            "225",
+                        ).map { service.join(created.roomId, ParticipantInput(null, it), null) }
+                    hidden.forEach { fixture.rooms.hideAsBefore(created.roomId, it.participantId) }
+                    service.removeParticipant(created.roomId, hidden[0].participantId, hidden[0].participantToken)
+                    shouldFailWith(RoomError.ROOM_WITHHELD) { service.get(created.roomId, created.participantToken) }
+                    service.removeParticipant(created.roomId, hidden[1].participantId, hidden[1].participantToken)
+                    service
+                        .get(created.roomId, created.participantToken)
+                        .participants
+                        .map { it.id } shouldContainExactly listOf(created.participantId)
+                }
+            }
+
             it("does not hand a withheld room back to a creation retry") {
                 withheldRoom {
                     fixture.service.creationReplayExpiry(roomId, hostToken, hostId, hostPart).shouldBeNull()
