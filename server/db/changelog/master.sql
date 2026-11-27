@@ -248,3 +248,11 @@ ALTER TABLE participants ADD COLUMN entered_by_host boolean NOT NULL DEFAULT fal
 ALTER TABLE rooms ADD COLUMN recovery_hash bytea;
 CREATE UNIQUE INDEX rooms_recovery_hash ON rooms (recovery_hash) WHERE recovery_hash IS NOT NULL;
 --rollback DROP INDEX rooms_recovery_hash; ALTER TABLE rooms DROP COLUMN recovery_hash;
+
+--changeset banbanyeok:20261128-participants-hidden-retired
+-- 숨긴 참가자 행이 DB에 있을 수 없게 한다(#182, ADR-0012 3단계). 검증된 CHECK라 추가할 때 모든 행을 확인한다. 숨긴 행이 남은 DB(예:
+-- 숨김을 받던 때의 백업을 되살린 DB)에서는 이 changeset이 실패하고 migrate가 멈춘다. 배포는 migrate가 성공해야 후보를 만들므로 그 DB는
+-- 숨김을 모르는 서버의 트래픽을 받지 못한다. 실패해도 데이터는 바뀌지 않는다(트랜잭션). 행을 고쳐 통과시키지 않는다: 만료 정리로 그 방이
+-- 지워진 뒤 다시 돌린다(docs/setup/p8a-notes.md 복원 절차). 이 제약이 있는 DB는 새 숨김 행도 받지 않는다. 열을 지우면(4단계) 같이 지워진다.
+ALTER TABLE participants ADD CONSTRAINT participants_hidden_retired CHECK (hidden IS NOT TRUE);
+--rollback ALTER TABLE participants DROP CONSTRAINT participants_hidden_retired;

@@ -137,10 +137,15 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
 
 **복원 절차**
 1. 백업 고르기: `gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/`, 받기: `gcloud storage cp gs://banbanyeok-7eoxn-backups/db/<파일> .`
-2. 로컬 검증(운영 DB를 건드리지 않음): `mise run db:restore-check -- <파일>` — 임시 Postgres 17 컨테이너에 복원하고 테이블·행 수(값은 출력하지 않음)·Liquibase 이력·트리거를 확인한 뒤 컨테이너를 지운다.
-3. 실제 복구(새 DB 또는 비운 DB에): `pg_restore --no-owner --no-privileges --exit-on-error -d "<연결>" <파일>`. 대상에 이미 `public` 스키마가 있으면 `CREATE SCHEMA public` 한 건만 실패하므로 `--exit-on-error`를 빼거나 빈 `public`을 먼저 `DROP SCHEMA public`한다. 복구 뒤 서버의 `DATABASE_URL`·`DATABASE_USER`(저장소 변수)와 비밀번호(Secret Manager)를 새 DB로 바꾸고 재배포한다. Liquibase 이력 테이블이 같이 복원되므로 `migrate`는 변경 없이 끝난다.
-4. **복원한 뒤 반드시**: (a) `gcloud run jobs execute cleanup --region asia-northeast3 --wait`로 만료된 방·익명 사용자를 다시 지운다(백업 시점에는 살아 있던 방이 이미 만료됐을 수 있다). (b) **백업 시점 이후에 들어온 삭제 요청(privacy@ 메일)을 다시 처리한다**: 복원은 그 사이의 삭제를 되돌리므로, 백업 시점 이후 접수·처리한 삭제 요청 목록을 확인해 같은 방·참여자를 다시 삭제한다(방침의 "요청하면 지체 없이 삭제" 약속 유지). 처리 전에는 서비스를 열지 않는다.
-5. 부분 복구(방 하나 등)는 로컬에 복원한 뒤 필요한 행을 `COPY`/`INSERT`로 옮긴다(이때도 4의 (b)를 확인한다).
+2. 로컬 검증(운영 DB를 건드리지 않음): `mise run db:restore-check -- <파일>` — 임시 Postgres 17 컨테이너에 복원하고 테이블·행 수(값은 출력하지 않음)·Liquibase 이력·트리거를 확인하고, 배포와 같은 migrate(`update`)가 통과하는지 본 뒤 컨테이너를 지운다. migrate가 실패하면 4의 (c)를 따른다.
+3. 실제 복구는 **격리된 새 DB**에 한다. 운영 중인 DB에 덤프나 스키마를 덮어쓰지 않는다: `pg_restore --no-owner --no-privileges --exit-on-error -d "<새 DB 연결>" <파일>`. 대상에 이미 `public` 스키마가 있으면 `CREATE SCHEMA public` 한 건만 실패하므로 `--exit-on-error`를 빼거나 빈 `public`을 먼저 `DROP SCHEMA public`한다. 이 단계에서는 서버의 변수·비밀과 Job 설정을 바꾸지 않는다(운영 트래픽은 지금 DB에 남는다).
+4. **운영에 연결하기 전에, 새 DB에서 차례로**(2026-11-28 개정, #182·ADR-0012 3단계):
+   (a) 만료된 방·익명 사용자를 지운다. 같은 서버 이미지의 `cleanup` 명령을 새 DB 연결로 실행한다(로컬이면 `server/app/build/install/app/bin/app cleanup`에 새 DB의 `DATABASE_URL`·`DATABASE_USER`·`DATABASE_PASSWORD`). 백업 시점에는 살아 있던 방이 이미 만료됐을 수 있다.
+   (b) **백업 시점 이후에 들어온 삭제 요청(privacy@ 메일)을 다시 처리한다**: 복원은 그 사이의 삭제를 되돌리므로, 백업 시점 이후 접수·처리한 삭제 요청 목록을 확인해 같은 방·참여자를 다시 삭제한다(방침의 "요청하면 지체 없이 삭제" 약속 유지).
+   (c) 배포와 **같은 migrate**(마이그레이션 이미지 `server/db/Dockerfile`, 명령 `update`)를 새 DB에 돌린다. 이 migrate가 통과해야 운영에 연결한다. 숨김을 받던 때(ADR-0007 이전)의 백업이라 숨긴 참가자 행이 남아 있으면 ADR-0012 3단계의 `participants_hidden_retired` 제약에서 실패한다. 실패는 트랜잭션이라 데이터·이력은 그대로이고, 오류에는 제약 이름만 나온다. 이때 행을 고치거나 지워 통과시키지 않는다. 연결하지 않고, 그 방이 만료돼 (a)가 지운 뒤 다시 돌린다. `mise run db:restore-check`도 임시 DB에서 같은 migrate를 돌려 미리 알려 준다.
+   (a)~(c)를 마치기 전에는 서비스를 열지 않는다.
+   (d) 그 뒤 서버의 `DATABASE_URL`·`DATABASE_USER`(저장소 변수)와 비밀번호(Secret Manager)를 새 DB로 바꾸고 재배포한다. 배포 Job이 다시 migrate를 돌리고(변경 없이 끝난다) 그 성공 뒤에만 후보 리비전을 만든다.
+5. 부분 복구(방 하나 등)는 로컬에 복원한 뒤 필요한 행을 `COPY`/`INSERT`로 옮긴다(이때도 4의 (b)를 확인한다). 숨긴 참가자 행은 운영 DB의 `participants_hidden_retired` 제약이 거절하므로 옮기지 않는다.
 
 **개인정보 방침과의 관계**: main의 방침은 4항에 "데이터베이스 백업: 백업한 날부터 30일. 백업에 남은 정보는 보존 기간이 지나면 차례로 지워집니다"를 적었고 구현(수명 주기 30일)과 맞는다. DB에서 지운(만료·삭제 요청) 정보가 백업에는 최대 30일 남고, 방은 최대 30일 + 정리 5일 이내 삭제이므로 DB 밖 보관은 가장 긴 경우 약 65일이다. 방침의 GitHub 행(백업 수탁)은 위 "바뀐 사실"대로 지울 수 있다(별도 방침 작업에서 처리).
 

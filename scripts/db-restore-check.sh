@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # 백업 덤프가 실제로 복원되는지 임시 로컬 Postgres 17에 복원해 확인한다(운영 DB는 건드리지 않는다).
 # 사용: bash scripts/db-restore-check.sh <덤프 파일>
-# 확인: 테이블 존재, 행 수(값은 출력하지 않는다), Liquibase 이력(changeset 수)과 현재 운영 버전의 status/validate. 끝나면 임시 컨테이너를 지운다.
+# 확인: 테이블 존재, 행 수(값은 출력하지 않는다), Liquibase 이력(changeset 수)과 현재 운영 버전의 status/validate, 그리고 같은 migrate(update)가
+# 이 덤프에서 통과하는지(예: 숨긴 참가자 행이 남은 옛 덤프는 ADR-0012 3단계 CHECK에서 실패한다). 끝나면 임시 컨테이너를 지운다.
 set -euo pipefail
 
 dump="${1:?usage: db-restore-check.sh <덤프 파일>}"
@@ -36,9 +37,12 @@ docker exec "$container" psql -U postgres -d restore -At -c \
   "SELECT 'trigger participants_limit: ' || count(*) FROM pg_trigger WHERE tgname = 'participants_limit'" | sed 's/^/  /'
 # 운영·compose와 같은 Liquibase 5.0.4 + PostgreSQL JDBC 이미지로 복원 이력을 검증한다.
 docker build -q -f "$repo_root/server/db/Dockerfile" -t "$migration_image" "$repo_root" >/dev/null
-for command in status validate; do
-  docker run --rm --network "container:$container" "$migration_image" \
+for command in status validate update; do
+  if ! docker run --rm --network "container:$container" "$migration_image" \
     --search-path=/liquibase/changelog --changelog-file=master.sql \
-    --url=jdbc:postgresql://localhost:5432/restore --username=postgres --password=restore-check-only "$command"
+    --url=jdbc:postgresql://localhost:5432/restore --username=postgres --password=restore-check-only "$command"; then
+    echo "migrate $command 실패: 이 덤프를 되살린 DB는 운영에 연결하지 않는다(docs/setup/p8a-notes.md 복원 절차)" >&2
+    exit 1
+  fi
 done
 echo "검증 통과"
