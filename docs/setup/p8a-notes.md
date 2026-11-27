@@ -81,16 +81,21 @@ Cloud Scheduler db-backup-weekly (월 03:17 KST) ─▶ Cloud Run Job db-backup 
 
 ### 3.3 배포 흐름과 롤백
 
-`deploy-server.yml`: 인증 → 서버 이미지(AppCDS 학습 포함)·마이그레이션 이미지 빌드·푸시 → `migrate` Job 갱신·실행·대기 → 산출물 발행 → **후보 리비전을 트래픽 0·태그 `candidate`로 배포** → 후보 URL에서 스모크(`scripts/smoke-server.sh`: `/v1/healthz`(아래 참고), manifest 버전, 추천 1건, 없는 방 404로 DB 읽기, 방 생성·조회·삭제로 DB 쓰기·pepper) → 트래픽 전환 → 공개 URL 재확인 → `cleanup` Job 갱신. 후보 스모크가 실패하면 트래픽이 바뀌지 않는다. 전환 뒤 확인이 실패하면 직전 리비전으로 되돌린다. 사람이 리비전을 골라 되돌릴 때는 [ADR-0011](../adr/0011-host-entered-draw-room.md)의 제약을 지킨다: 방장이 대신 넣은 방이 하나라도 만들어진 뒤에는 링크 미리보기 가림(#227)이 없는 리비전으로 되돌리지 않는다(마지막 그런 방이 만료·정리될 때까지, 최대 35일). 동시 실행은 `concurrency: deploy-server`(대기, 취소 없음)로 막는다. main push 때는 `deploy.yml`이 웹과의 순서를 맞춰 이 워크플로를 부른다([d104-notes.md](d104-notes.md)).
+`deploy-server.yml`: 인증 → 서버 이미지(AppCDS 학습 포함)·마이그레이션 이미지 빌드·푸시 → `migrate` Job 갱신·실행·대기 → 산출물 발행 → **후보 리비전을 트래픽 0·태그 `candidate`로 배포** → 후보 URL에서 스모크(`scripts/smoke-server.sh`: `/v1/healthz`(아래 참고), manifest 버전, 추천 1건, 없는 방 404로 DB 읽기, 방 생성·조회·삭제로 DB 쓰기·pepper) → 트래픽 전환 → 공개 URL 재확인 → `cleanup` Job 갱신. 후보 스모크가 실패하면 트래픽이 바뀌지 않는다. 전환 뒤 확인이 실패하면 직전 리비전으로 되돌린다. 사람이 리비전을 골라 되돌릴 때는 아래 [수동 서버 롤백 대상 확인](#수동-서버-롤백-대상-확인)을 따른다. 동시 실행은 `concurrency: deploy-server`(대기, 취소 없음)로 막는다. main push 때는 `deploy.yml`이 웹과의 순서를 맞춰 이 워크플로를 부른다([d104-notes.md](d104-notes.md)).
 
 트리거: `workflow_dispatch` + main 푸시 중 `server/**`(changelog 포함)·`contracts/**`·`shared/**`·`build-logic/**`·`gradle/**`·`data/artifacts/dev/**`·발행 스크립트·워크플로 자신. 새 데이터 발행은 새 리비전을 낸다(P3 8절 권고 1: 리비전이 곧 데이터 버전).
 
 주의: 산출물을 발행(manifest 교체)한 뒤 배포가 실패하면, **이전 리비전의 새 인스턴스**가 새 manifest를 읽을 수 있다(시작 때 manifest를 읽기 때문). 형식 호환(`schemaVersion`)은 서버가 검증하고 실패하면 시작하지 않는다. 스모크 전에 발행하는 순서라서 생기는 틈이며, 위험이 작다고 보고 두었다 → 결정 필요 5.
 
+#### 수동 서버 롤백 대상 확인
+
+- **`participants.hidden` 제거 후에는** 실제 배포 커밋이 #247 병합 `b14a0e7d5a017254295720968e1042aa299fabfd`이거나 그 이후의 열 미참조 호환 리비전임을 확인한 뒤에만 트래픽을 돌린다. 2단계 #244·#246 서버는 숨긴 참가자 가드와 Exposed `selectAll()`로 `participants.hidden`을 읽기 때문에 열이 없는 DB에서 방 조회가 실패한다. [ADR-0012](../adr/0012-retire-hidden-origins-in-steps.md)
+- [6절의 수동 롤백 명령](#서버-트래픽-수동-롤백)으로 대상 리비전의 `commit-sha` 라벨과 서버 이미지 참조를 읽는다. 배포 실행의 이미지 기록과 대조해 실제 커밋을 확인하고, `git merge-base --is-ancestor`로 #247 하한을 확인한다. 이후 커밋은 격리된 4단계 DB에서 그 커밋의 서버로 방 읽기·쓰기를 검증한 결과를 확인한다. [#252의 격리 DB 검증](https://github.com/y2gcoder/banbanyeok/pull/252)이 검증 범위의 기준이다. 커밋이나 호환성을 확인할 수 없으면 전환을 보류한다.
+- [ADR-0011](../adr/0011-host-entered-draw-room.md)의 링크 미리보기 가림(#229) 조건도 지킨다. 방장이 대신 넣은 방이 하나라도 만들어진 뒤에는 가림이 없는 리비전으로 되돌리지 않는다(마지막 그런 방이 만료·정리될 때까지, 최대 35일).
+
 #### 리비전 롤백과 `meeting_band`(W3, changeset `20261116-meeting-band`)
 
-마이그레이션은 앞으로만 적용하고, 문제가 생기면 **리비전만** 이전으로 돌린다(아래 6절 명령). 이 changeset 뒤에 이전 리비전(W3 이전 서버)으로 돌리면
-이전 서버는 `rooms.meeting_band`를 모르므로 다음이 생긴다. 데이터는 그대로 남아 있어 새 리비전으로 다시 올리면 원래대로 돌아온다.
+마이그레이션은 앞으로만 적용하고, 문제가 생기면 위 조건으로 고른 **리비전만** 이전으로 돌린다(아래 6절 명령). W3 이전 서버는 `rooms.meeting_band`를 모르므로, 당시 그런 리비전으로 되돌릴 때 예상한 영향은 다음과 같다. 데이터는 그대로 남아 있어 새 리비전으로 다시 올리면 원래대로 돌아온다.
 
 1. **시간대만 고른 방**(`meeting_time` null, `meeting_band` 있음)을 이전 서버는 시간대 없이 읽어 **낮**으로 계산한다. 방 응답에도 `meetingBand`가 없어
    웹 요약은 날짜만 보인다.
@@ -149,11 +154,11 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
    - 기존 DB를 읽을 수 없거나 그 "없음"을 삭제로 믿을 수 없으면: 앱에서 직접 지운 건은 지금 관측할 수 있는 자료로 대조할 수 없다. 서버 코드는 지운 방·참여자 ID를 따로 기록하지 않고, 통계는 건수뿐이다. 플랫폼의 요청 로그에 경로가 남을 수는 있지만 이 절차에서 확인한 자료가 아니고 보존 기간·접근 권한에 묶인다. 이때는 삭제 요청 목록만 다시 처리할 수 있다. 이 한계를 기록하고 연결을 보류하며, 연결 여부는 운영자의 별도 승인으로 정한다.
    (e) **전환 경계(쓰기 중단)**: 후보 URL(배포 Job이 만드는 태그 URL)이 열리기 전에 (d)의 마지막 대조가 0으로 끝나야 한다. 그 뒤 트래픽 전환까지 기존 DB가 쓰기를 받으면 다시 공백이 생기므로, 마지막 대조 전에 기존 DB의 쓰기 주체를 모두 멈춘다. 서비스가 새 요청을 받지 않고 진행 중이던 요청이 끝난 상태, 정기 정리(Scheduler `cleanup-daily` → Job `cleanup`)가 멈춘 상태, 그 밖에 기존 DB에 쓰는 수동 작업이 없는 상태다. 이 저장소에는 쓰기만 멈추는 기능이 없고 서비스 중단은 운영자의 결정이므로, 그 승인 없이 공백을 둔 채 전환하지 않는다. 쓰기를 멈춘 동안 들어온 삭제 요청(privacy@)은 보류 목록에 쌓았다가 새 DB에 처리하고(기존 DB가 다시 쓰일 수 있으면 양쪽에), 그다음 마지막 대조가 0이고 (c)가 다시 통과하면 (f)로 간다. 정기 정리는 전환 뒤 새 DB를 가리키게 된 다음에 다시 켠다.
    (f) **자격(비밀) 유지와 재배포**: 지금 배포의 서버·migrate·cleanup·db-backup은 모두 Secret Manager `database-password:latest`를 쓴다. Cloud Run은 인스턴스가 시작될 때 그 값을 읽으므로, `latest`를 새 DB의 비밀번호로 바꾸면 이전 리비전의 새 인스턴스(재시작·확장)와 배포 실패 때의 자동 롤백(트래픽만 이전 리비전으로 돌림)도 새 비밀번호로 기존 DB에 붙으려다 실패한다. `DATABASE_URL`·`DATABASE_USER`는 리비전마다 고정이라 롤백하면 기존 DB를 가리킨다.
-   - 보통 전환(이 워크플로)은 새 DB가 기존 DB와 **같은 비밀번호**로 접속될 때만 한다(사용자 이름은 달라도 된다). 그러면 Secret은 바꾸지 않고 저장소 변수 `DATABASE_URL`(필요하면 `DATABASE_USER`)만 새 DB로 바꿔 main 배포를 돌린다. 배포 Job이 migrate(변경 없음)를 돌리고 그 성공 뒤에만 후보를 만들고, 스모크가 통과해야 트래픽을 옮긴다. 기존 DB와 그 자격은 롤백이 더 필요 없다고 판단할 때까지 그대로 둔다.
+   - 보통 전환(이 워크플로)은 새 DB가 기존 DB와 **같은 비밀번호**로 접속될 때만 한다(사용자 이름은 달라도 된다). 그러면 Secret은 바꾸지 않고 저장소 변수 `DATABASE_URL`(필요하면 `DATABASE_USER`)만 새 DB로 바꿔 main 배포를 돌린다. 배포 Job이 migrate(변경 없음)를 돌리고 그 성공 뒤에만 후보를 만들고, 스모크가 통과해야 트래픽을 옮긴다. 기존 DB와 그 자격은 롤백이 더 필요 없다고 판단할 때까지 그대로 둔다. 트래픽을 되돌릴 리비전을 직접 고를 때는 [3.3절의 조건](#수동-서버-롤백-대상-확인)을 확인한다.
    - 비밀번호가 다르면 공통 `latest` 흐름으로는 전환과 롤백 동안 두 DB의 자격을 함께 유지할 수 없다. 보통 전환으로 진행하지 않는다. 버전을 고정한 비밀 참조나 DB별 비밀을 쓰는 별도 전환(워크플로 변경 포함)을 따로 검토·준비한 뒤에 한다. 기존 비밀 버전을 끄거나 지우는 일은 롤백 창이 닫힌 뒤에 한다.
    (a)~(e)를 마치기 전에는 새 DB로 서비스를 열지 않는다(후보 URL도 만들지 않는다).
 5. 부분 복구(방 하나 등)도 3의 격리 복원과 4(a)~(c)를 마친 새 DB에서 고른 행만 옮긴다. 옛 덤프에서 `hidden` 열만 빼고 복사하면 숨겼던 출발역이 보일 수 있으므로, 격리 DB의 migrate가 실패한 경우 옮기지 않는다. 운영 대상 DB도 4(c)의 가드 확인이 통과해야 하고, 승인된 `INSERT`는 한 트랜잭션으로 한다. 부분 복구는 "운영 DB에 없음"이 삭제인지 유실인지 구별할 수 없다. 옮길 행마다 백업 이후 삭제 요청 목록과 대조하고, 앱에서 직접 지운 행인지는 4(d)의 한계대로 확인할 수 없음을 기록해 별도 승인을 받은 뒤 옮긴다.
-6. **4단계 이후 되돌리기**. 열 삭제는 순방향 전용이다. 열이 없는 DB에는 #247을 포함한 3단계 이후 리비전만 연결한다. 서버 배포를 되돌릴 때는 해당 서버 리비전으로 트래픽을 돌린다. 이전 덤프를 다시 써야 하면 위 격리 복원 절차를 처음부터 적용한다.
+6. **4단계 이후 되돌리기**. 열 삭제는 순방향 전용이다. 열이 없는 DB로 트래픽을 돌릴 때는 [수동 서버 롤백 대상 확인](#수동-서버-롤백-대상-확인)에 따라 #247 이후 열 미참조 호환 리비전의 실제 배포 커밋을 확인한다. 이전 덤프를 다시 써야 하면 위 격리 복원 절차를 처음부터 적용한다.
 
 **개인정보 방침과의 관계**: main의 방침은 4항에 "데이터베이스 백업: 백업한 날부터 30일. 백업에 남은 정보는 보존 기간이 지나면 차례로 지워집니다"를 적었고 구현(수명 주기 30일)과 맞는다. DB에서 지운(만료·삭제 요청) 정보가 백업에는 최대 30일 남고, 방은 최대 30일 + 정리 5일 이내 삭제이므로 DB 밖 보관은 가장 긴 경우 약 65일이다. 방침의 GitHub 행(백업 수탁)은 위 "바뀐 사실"대로 지울 수 있다(별도 방침 작업에서 처리).
 
@@ -284,10 +289,28 @@ gcloud run jobs execute migrate --region asia-northeast3 --wait
 # 백업 수동 실행(Job 실행) / 목록
 gcloud run jobs execute db-backup --region asia-northeast3 --wait   # 또는 gh workflow run db-backup.yml
 gcloud storage ls -l gs://banbanyeok-7eoxn-backups/db/
-# 이전 리비전으로 즉시 롤백(스키마는 그대로 둔다. W3 meeting_band 뒤의 롤백 영향은 3.3절)
-gcloud run revisions list --service server --region asia-northeast3
-gcloud run services update-traffic server --region asia-northeast3 --to-revisions <리비전>=100
 # 데이터 롤백(이전 manifest 재발행): 이전 커밋에서 stage-release 후 FORCE=1 bash scripts/publish-artifacts.sh <버킷>
+```
+
+### 서버 트래픽 수동 롤백
+
+스키마는 그대로 둔다. 대상의 실제 배포 커밋과 이미지 참조를 확인한다.
+
+```sh
+gcloud run revisions list --service server --region asia-northeast3
+rollback_revision='확인할-리비전-이름'
+rollback_metadata=$(gcloud run revisions describe "$rollback_revision" --region asia-northeast3 --format=json)
+printf '%s\n' "$rollback_metadata" | jq -r '.spec.containers[0].image'
+rollback_sha=$(printf '%s\n' "$rollback_metadata" | jq -er '.metadata.labels["commit-sha"] | strings | select(test("^[0-9a-f]{40}$"))')
+git fetch origin main
+git merge-base --is-ancestor b14a0e7d5a017254295720968e1042aa299fabfd "$rollback_sha"
+```
+
+**`participants.hidden` 제거 후에는** 확인한 실제 배포 커밋이 #247 병합 `b14a0e7d5a017254295720968e1042aa299fabfd` 또는 그 이후의 열 미참조 호환 판이고, [3.3절의 롤백 조건](#수동-서버-롤백-대상-확인)과 #229 가림 조건을 모두 충족할 때만 아래 명령을 실행한다.
+
+```sh
+git merge-base --is-ancestor b14a0e7d5a017254295720968e1042aa299fabfd "$rollback_sha" &&
+  gcloud run services update-traffic server --region asia-northeast3 --to-revisions "$rollback_revision=100"
 ```
 
 ### 6.1 모니터링 (Cloud Monitoring, 코디네이터가 콘솔/REST로 설정 — `bootstrap.sh` 밖)
