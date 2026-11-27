@@ -52,7 +52,7 @@ ADR-0007의 2단계를 시작할 조건이 찼다. 2026-11-27 운영 DB 읽기 �
    `ParticipantsTable`에 `hidden` 열 정의가 남아 있어 `participantsOf()`의 `selectAll()`이 SQL로 그 열을 가져온다. DB의 공유 번호
    트리거(`participants_share_version`)도 `OLD.hidden`/`NEW.hidden`을 비교하고 `UPDATE OF ... hidden`에 걸린다. 그래서 이 판은 열이
    있어야 돈다. 마이그레이션은 없다. 되돌릴 대상은 #229(대신 넣은 방의 가림)가 들어간 main 이후 판이다(ADR-0011).
-3. **열 참조 없는 호환 서버와 숨긴 행 거절 제약(별도 PR #247)**: 서버는 가드와 `withheld`·`ROOM_WITHHELD`를 지우고, `ParticipantsTable`에서
+3. **열 참조 없는 호환 서버와 숨긴 행 거절 제약(#247, 배포됨)**: 서버는 가드와 `withheld`·`ROOM_WITHHELD`를 지우고, `ParticipantsTable`에서
    `hidden` 열 정의를 지워 `selectAll()`도 그 열을 싣지 않게 한다. 같은 PR의 changeset(`20261128-participants-hidden-retired`)이 검증된
    `CHECK (hidden IS NOT TRUE)`를 더한다. 이 판의 서버는 숨긴 행을 알지 못하므로, 그 서버가 숨긴 행이 있는 DB의 트래픽을 받지 않게 하는 것은
    이 제약이다.
@@ -72,8 +72,8 @@ ADR-0007의 2단계를 시작할 조건이 찼다. 2026-11-27 운영 DB 읽기 �
      받는 1단계 이전 판이 트래픽을 받거나 다시 뜨지 않는다(2026-11-28 운영 100%는 #246 `be6f9cb`). (c) 배포 Job의 migrate·후보 스모크가
      통과한다. (a)가 그 사이에 깨지면 (c)에서 멈춘다. (d) 이 PR의 병합 승인은 따로 받는다.
    - 백업 복원(docs/setup/p8a-notes.md 3.6절): 지금 트래픽을 받는 운영 DB는 복원 대상이 아니다. 격리된 새 DB에 오류 즉시 중단·한
-     트랜잭션으로 복원하고, 만료 정리 → 같은 migrate → 가드 확인 → 삭제 대조를 마친 뒤에만 운영에 연결한다. 가드 확인은 migrate 성공이나
-     Liquibase 이력이 아니라 `pg_catalog`에서 그 제약이 검증된 CHECK로 실제로 있고 숨긴 행이 0인지를 본다(`scripts/db-guard-check.sql`).
+     트랜잭션으로 복원하고, 만료 정리 → 같은 migrate → 가드 확인 → 삭제 대조를 마친 뒤에만 운영에 연결한다. 3단계 당시의 가드 확인은
+     migrate 성공이나 Liquibase 이력 대신 `pg_catalog`에서 검증된 CHECK의 존재와 숨긴 행 0건을 확인했다.
      이력만 있고 제약이 없거나 검증되지 않은 덤프를 걸러 내기 위해서다.
      삭제 대조는 읽기 전용이다(`scripts/db-restore-reconcile.sh`): 두 DB를 읽기만 해서 백업 뒤 기존 DB에서 사라진 행의 건수만 내고, 아무것도 지우지
      않는다. 원본이 불명·불완전하거나 입력이 실패하거나 사라진 행이 남으면 후보 공개를 보류한다. 확정된 삭제만 승인된 기존 절차(삭제 요청
@@ -85,16 +85,20 @@ ADR-0007의 2단계를 시작할 조건이 찼다. 2026-11-27 운영 DB 읽기 �
      전환으로 한다.
    - 되돌리기: 3단계에서 2단계 서버로는 되돌릴 수 있다(열이 있고 제약이 있어도 2단계 서버가 정상으로 쓴다). 제약까지 빼야 하면 그 changeset의
      rollback(`DROP CONSTRAINT`)을 쓴다. 숨김을 받는 1단계 이전 판으로는 되돌리지 않는다(숨김 쓰기가 DB에서 거절된다).
-   - 이 판의 통합 테스트는 지금 스키마(제약 포함)와, 4단계 모양(트리거에서 `hidden`을 뺀 뒤 열을 지운 DB,
-     `TestDatabase.step4DataSource`) 둘 다에서 돈다. 4단계 PR은 그 SQL을 changeset으로 옮기고 테스트용 모양을 지운다.
+   - #247은 3단계 스키마와 테스트용 4단계 모양에서 통합 테스트를 돌렸다. 4단계는 테스트용 SQL을 실제 changeset으로 옮겨 같은 changelog를 쓴다.
    - 이 판의 서버는 `ROOM_WITHHELD`를 내지 않지만, 계약(`contracts/openapi.yaml`의 설명, `contracts/problems.json`과 `ProblemTypes`의
      코드)과 웹의 처리, 처리방침의 해당 문구는 남긴다. 제약이 있는 DB에는 그런 방이 없어 보이는 동작은 같고, 이 정리는 계약·웹 변경이라
-     4단계 뒤에 한다. 검증 여정 `journeys/room-join.mjs`가 `hidden`을 읽어 새 참가자가 숨기지 않았는지 보므로 4단계 PR에서 함께 고친다.
-4. **트리거 교체와 열 삭제(별도 PR, 별도 배포)**: Liquibase changeset으로 공유 번호 트리거 함수에서 `hidden` 비교를 빼고 트리거를
-   `UPDATE OF nickname, origin_code`로 다시 만든 뒤 `participants.hidden`을 DROP한다(3단계의 제약도 열과 함께 지워진다. 그래서 4단계 PR은
-   복원 가드 확인 `scripts/db-guard-check.sql`·`db-restore-check.sh`와 p8a 3.6절을 "`participants`에 `hidden` 열이 없다"로 바꾼다). 이 migrate는 3단계 서버가 트래픽을 받는 동안 돌고,
-   3단계 서버는 열을 참조하지 않으므로 깨지지 않는다. 이 뒤로는 3단계 이후 판으로만 되돌린다(2단계 이전 판은 `selectAll()`과 숨김 처리가
-   열을 참조해 깨진다). 계약 호환 필드·웹·추천·shared의 숨김 코드 정리도 이 뒤에 한다.
+     4단계 뒤에 한다. 4단계의 검증 여정 `journeys/room-join.mjs`는 참여자가 저장한 별칭과 출발역을 확인한다.
+4. **트리거 교체와 열 삭제(별도 배포)**. 시작 기준은 [#247 배포](https://github.com/y2gcoder/banbanyeok/actions/runs/46060267195)의
+   3단계 서버가 운영 트래픽을 100% 받고, 실제 검증된 CHECK와 숨긴 행 0건을 확인한 상태다. `20261128-drop-participants-hidden`은
+   `participants`에 배타 잠금을 얻고 검증된 3단계 CHECK와 0건을 다시 확인한다. 이력만 있는 복원 DB에서 가드를 건너뛰지 않는다.
+   같은 트랜잭션에서 공유 번호 함수의 `hidden` 비교를 빼고, 트리거를 `INSERT`, `DELETE`, `UPDATE OF nickname, origin_code`로
+   교체한 뒤 `participants.hidden`을 DROP한다. CHECK도 열과 함께 지워진다. 별칭 변경은 공유 번호만 올리고, 참여·이탈·출발역 변경은
+   정한 역을 풀고 결정 기준 번호도 갱신한다. 잠금 획득이 5초 안에 끝나지 않으면 migrate가 실패하고 기존 리비전이 트래픽을 계속 받는다.
+   - 배포는 3단계 서버가 같은 DB로 동작하는 동안 migrate → 후보 → 스모크 → 트래픽 전환 순서를 따른다. 열을 삭제한 뒤 서버를
+     되돌릴 때는 #247을 포함한 3단계 이후 리비전만 쓴다. 2단계 이전 서버의 SQL은 삭제된 열을 요구한다. 열 삭제에는 Liquibase 역방향
+     changeset이 없다. 복원은 [p8a 3.6절](../setup/p8a-notes.md)에 따라 옛 덤프에도 3·4단계 migrate를 적용하고 실제 열 부재를 확인한다.
+   - 계약 호환 필드·웹·추천·shared·처리방침의 숨김 정리는 4단계 운영 적용 이후 별도 PR에서 한다.
 
 배포가 섞이는 구간(이 PR):
 

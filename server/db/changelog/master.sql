@@ -2,7 +2,7 @@
 
 -- Append immutable changesets below as:
 -- Syntax: "changeset team:YYYYMMDD-description" after the SQL comment prefix.
--- Add a rollback directive with the reverse operation.
+-- Add a rollback directive with the reverse operation, or document why a change is forward-only.
 -- Never edit an applied changeset; append a compensating changeset instead.
 
 --changeset banbanyeok:20261114-initial-schema
@@ -256,3 +256,62 @@ CREATE UNIQUE INDEX rooms_recovery_hash ON rooms (recovery_hash) WHERE recovery_
 -- 지워진 뒤 다시 돌린다(docs/setup/p8a-notes.md 복원 절차). 이 제약이 있는 DB는 새 숨김 행도 받지 않는다. 열을 지우면(4단계) 같이 지워진다.
 ALTER TABLE participants ADD CONSTRAINT participants_hidden_retired CHECK (hidden IS NOT TRUE);
 --rollback ALTER TABLE participants DROP CONSTRAINT participants_hidden_retired;
+
+--changeset banbanyeok:20261128-drop-participants-hidden splitStatements:false
+-- #182, ADR-0012 4단계. 잠금을 얻지 못하면 배포를 멈추고 나중에 다시 시도한다.
+-- 복원된 Liquibase 이력만 믿지 않는다. 공유 번호 트리거 교체와 열 삭제까지 한 트랜잭션으로 한다.
+SET LOCAL lock_timeout = '5s';
+LOCK TABLE public.participants IN ACCESS EXCLUSIVE MODE;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_catalog.pg_constraint AS c
+        WHERE c.conrelid = 'public.participants'::regclass
+          AND c.conname = 'participants_hidden_retired'
+          AND c.contype = 'c'
+          AND c.convalidated
+          AND pg_catalog.pg_get_constraintdef(c.oid) = 'CHECK ((hidden IS NOT TRUE))'
+    ) THEN
+        RAISE EXCEPTION 'drop participants.hidden requires the verified participants_hidden_retired CHECK';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.participants WHERE hidden IS TRUE) THEN
+        RAISE EXCEPTION 'drop participants.hidden refused: hidden participants remain';
+    END IF;
+END;
+$$;
+
+-- 참여·이탈·출발역 변경은 정한 역을 풀고, 별칭만 바뀌면 공유 번호만 올린다.
+CREATE OR REPLACE FUNCTION public.participants_share_version() RETURNS trigger AS $$
+DECLARE
+    rid      text;
+    releases boolean;
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        IF (NEW.nickname, NEW.origin_code) IS NOT DISTINCT FROM (OLD.nickname, OLD.origin_code) THEN
+            RETURN NULL;
+        END IF;
+        rid := NEW.room_id;
+        releases := NEW.origin_code IS DISTINCT FROM OLD.origin_code;
+    ELSIF TG_OP = 'INSERT' THEN
+        rid := NEW.room_id;
+        releases := true;
+    ELSE
+        rid := OLD.room_id;
+        releases := true;
+    END IF;
+    UPDATE public.rooms SET
+        share_version          = share_version + 1,
+        decision_basis_version = decision_basis_version + CASE WHEN releases THEN 1 ELSE 0 END,
+        decided_station        = CASE WHEN releases THEN NULL ELSE decided_station END,
+        decided_by_pid         = CASE WHEN releases THEN NULL ELSE decided_by_pid END,
+        decided_at             = CASE WHEN releases THEN NULL ELSE decided_at END
+    WHERE id = rid;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER participants_share_version
+    AFTER INSERT OR DELETE OR UPDATE OF nickname, origin_code ON public.participants
+    FOR EACH ROW EXECUTE FUNCTION public.participants_share_version();
+ALTER TABLE public.participants DROP COLUMN hidden;
+-- 열 삭제는 순방향 전용이다. 배포를 되돌릴 때는 열을 참조하지 않는 3단계 이후 서버로만 트래픽을 돌린다.
