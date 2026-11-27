@@ -7,7 +7,7 @@ import { decodeShareQuery, encodeShareQuery, isStationCode, MAX_PEOPLE, type Sha
 import { type Station, stationByCode } from "@/lib/stations";
 import type { TimeSlot } from "@/lib/when/time-slot";
 
-export function prefillHref(codes: readonly string[]): string {
+export function prefillHref(codes: readonly string[]): `/?o=${string}` {
   return `/?o=${codes.join(".")}`;
 }
 
@@ -27,7 +27,7 @@ export function parsePrefill(search: string): Station[] {
  * 결과 화면의 "다시 입력"이 가는 주소: 결과 링크와 같은 쿼리(`/?v=2&o=…&m=…&t=…&n=…`). 출발역·이름·모드·구분을 그대로 싣는다.
  * 기기에 저장하지 않고 주소에만 담으므로 "나" 한 칸만 기억하는 저장소와 무관하게 모든 줄이 돌아온다.
  */
-export function restoreHref(state: ShareState): string {
+export function restoreHref(state: ShareState): `/?${string}` {
   return `/?${encodeShareQuery(state)}`;
 }
 
