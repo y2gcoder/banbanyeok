@@ -38,6 +38,16 @@ describe("추천 요청 본문의 구분(timeSlot)", () => {
   });
 });
 
+it("추천은 출발 예정을 읽을 줄 안다고 밝힌다(밝히지 않는 옛 웹에는 서버가 확인 필요로 준다, ADR-0010)", async () => {
+  const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({}));
+  await recommend(stateOf("v=2&o=03v.130&m=f&t=weekday-night"));
+  await recommend(stateOf("v=2&o=03v.130&m=f&t=weekday-night"), undefined, "preview");
+  expect(fetch.mock.calls.map(([request]) => new URL((request as Request).url).search)).toEqual([
+    "?lastTrainKinds=scheduled",
+    "?lastTrainKinds=scheduled",
+  ]);
+});
+
 it("공유 미리보기만 합성 요청 헤더를 보낸다", async () => {
   const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({}));
   const query = stateOf("v=1&o=03v.130&m=f");

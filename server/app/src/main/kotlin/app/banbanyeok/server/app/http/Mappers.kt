@@ -3,6 +3,7 @@ package app.banbanyeok.server.app.http
 import app.banbanyeok.applogic.ParticipantLabel
 import app.banbanyeok.applogic.ParticipantLabels
 import app.banbanyeok.applogic.PersonRef
+import app.banbanyeok.schema.LastTrainCell
 import app.banbanyeok.schema.LastTrainKind
 import app.banbanyeok.schema.TimeSlot
 import app.banbanyeok.server.app.application.AppException
@@ -123,7 +124,10 @@ private fun StationNames.stationName(code: String): String = nameOf(code) ?: cod
 
 private fun LocalTime.wire(): String = "%02d:%02d".format(java.util.Locale.ROOT, hour, minute)
 
-fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
+fun RoomPreview.toDto(
+    stations: StationNames,
+    reader: LastTrainReader = LastTrainReader.BASE,
+): RoomPreviewDto {
     val header =
         PreviewRoomDto(
             roomId = room.roomId,
@@ -142,7 +146,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
         PreviewStationDto(
             stationCode,
             stations.stationName(stationCode),
-            times.map { PreviewTimeDto(it.label, it.seconds, it.lastTrain?.toDto(withParticipant = false)) },
+            times.map { PreviewTimeDto(it.label, it.seconds, it.lastTrain?.toDto(withParticipant = false, reader)) },
         )
 
     return when (this) {
@@ -194,26 +198,36 @@ private fun TimeBasis.toDto(requested: TimeSlot) =
         holidayName = holidayName,
     )
 
-private fun Recommendation.toDto(participants: List<ParticipantDto>) =
-    ResultDto(
-        status = status,
-        mode = mode.wire(),
-        dataVersion = dataVersion,
-        participants = participants,
-        baselineStationCode = baselineStationCode,
-        candidates = candidates.map { it.toDto() },
-        timeBasis = timeBasis.toDto(requested = requestedSlot),
-        lastTrainBasis = lastTrainBasis?.toDto(),
-        lastTrainPending = true.takeIf { lastTrainPending },
-    )
+private fun Recommendation.toDto(
+    participants: List<ParticipantDto>,
+    reader: LastTrainReader,
+) = ResultDto(
+    status = status,
+    mode = mode.wire(),
+    dataVersion = dataVersion,
+    participants = participants,
+    baselineStationCode = baselineStationCode,
+    candidates = candidates.map { it.toDto(reader) },
+    timeBasis = timeBasis.toDto(requested = requestedSlot),
+    lastTrainBasis = lastTrainBasis?.toDto(),
+    lastTrainPending = true.takeIf { lastTrainPending },
+)
 
-fun RoomResult.toDto(stations: StationNames): ResultDto =
+fun RoomResult.toDto(
+    stations: StationNames,
+    reader: LastTrainReader = LastTrainReader.BASE,
+): ResultDto =
     recommendation
-        .toDto(participants.zip(recommendation.labels) { participant, label -> participant.toDto(stations, label) })
-        .copy(shareVersion = shareVersion.value, missingServices = missingServices)
+        .toDto(
+            participants.zip(recommendation.labels) { participant, label -> participant.toDto(stations, label) },
+            reader,
+        ).copy(shareVersion = shareVersion.value, missingServices = missingServices)
 
 /** 무상태 추천: 참가자는 입력 순서의 인덱스 문자열("0", "1", …)로 구분한다. */
-fun StatelessResult.toDto(stations: StationNames): ResultDto =
+fun StatelessResult.toDto(
+    stations: StationNames,
+    reader: LastTrainReader = LastTrainReader.BASE,
+): ResultDto =
     recommendation
         .toDto(
             origins.mapIndexed { index, code ->
@@ -231,6 +245,7 @@ fun StatelessResult.toDto(stations: StationNames): ResultDto =
                     shortLabel = label.short,
                 )
             },
+            reader,
         ).copy(mapMiddle = mapMiddle?.toDto(), missingServices = missingServices)
 
 /** 응답에 쓰는 막차 종류 이름(openapi `LastTrain.kind`): 직행 확정 / 여유 시각 / 출발 예정 / 확인 필요. */
@@ -245,7 +260,7 @@ internal val LastTrainKind.wire: String
 
 private fun ParticipantTime.toDto() = ParticipantTimeDto(participantId, seconds, transfers)
 
-private fun RecommendedStation.toDto() =
+private fun RecommendedStation.toDto(reader: LastTrainReader) =
     CandidateDto(
         rank = rank,
         stationCode = stationCode,
@@ -257,7 +272,7 @@ private fun RecommendedStation.toDto() =
         favoredSeconds = favoredSeconds,
         reasonCode = reasonCode,
         reason = reason,
-        lastTrains = lastTrains?.map { it.toDto(withParticipant = true) },
+        lastTrains = lastTrains?.map { it.toDto(withParticipant = true, reader) },
         routes = routes?.map { it.toDto() },
     )
 
@@ -271,16 +286,37 @@ private fun RouteStop.toDto() = RouteStopDto(stationCode, stationName)
 
 private fun MapMiddle.toDto() = MapMiddleDto(stationCode, stationName, times.map { it.toDto() })
 
+/**
+ * 요청이 읽을 줄 안다고 밝힌 추가 막차 분류(쿼리 `lastTrainKinds`, openapi). 지금은 출발 예정(`scheduled`)뿐이다. 밝히지 않은
+ * 요청(그 분류를 모르는 옛 웹)에는 출발 예정 칸을 확인 필요로 준다. 옛 웹은 모르는 분류를 여유 시각처럼 10분 내려 "늦어도 … 출발"과
+ * 공유 그림에 쓰기 때문이다(ADR-0010). 서버 우선 배포와 웹 우선 되돌림 동안 새 서버와 옛 웹이 같이 떠 있다.
+ */
+class LastTrainReader private constructor(
+    val scheduled: Boolean,
+) {
+    companion object {
+        val BASE = LastTrainReader(scheduled = false)
+
+        /** 쉼표로 나눈 값. 모르는 값은 무시한다. */
+        fun parse(value: String?): LastTrainReader =
+            LastTrainReader(value.orEmpty().split(',').any { it.trim() == LastTrainKind.SCHEDULED_DIRECT.wire })
+    }
+}
+
 /** 막차 한 건. [withParticipant]가 거짓이면 사람 구분을 싣지 않는다(미리보기는 한 역의 한 사람 줄에 붙는다). */
-private fun ParticipantLastTrain.toDto(withParticipant: Boolean): LastTrainDto {
-    val kind = cell.kind
+private fun ParticipantLastTrain.toDto(
+    withParticipant: Boolean,
+    reader: LastTrainReader,
+): LastTrainDto {
+    val shown = if (cell.kind == LastTrainKind.SCHEDULED_DIRECT && !reader.scheduled) LastTrainCell.UNKNOWN else cell
+    val kind = shown.kind
     val margin = kind == LastTrainKind.MARGIN_TRANSFER || kind == LastTrainKind.MARGIN_DIRECT
     return LastTrainDto(
         participantId = participantId.takeIf { withParticipant },
         kind = kind.wire,
-        minute = cell.minute,
+        minute = shown.minute,
         transfer = (kind == LastTrainKind.MARGIN_TRANSFER).takeIf { margin },
-        boundFor = cell.boundFor?.let { code -> BoundForDto(code.toString(), boundName ?: code.toString()) },
+        boundFor = shown.boundFor?.let { code -> BoundForDto(code.toString(), boundName ?: code.toString()) },
     )
 }
 

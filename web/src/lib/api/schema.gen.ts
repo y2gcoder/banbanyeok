@@ -716,7 +716,8 @@ export interface components {
          *     - `scheduled` 출발 예정: 열차 한 대로 가고 운영사 공식표 대조도 통과했지만, `minute`이 그 역의 **계획 도착보다 늦은 계획 출발
          *       분**이다(부산권 동해선의 `:00`초 출발. 계획 도착은 30초 앞이다, ADR-0010). 탈 수 있는 마지막 순간의 하한이 아니다. 클라이언트는
          *       `minute`을 그대로 "출발 예정"으로 그 사람의 줄에만 보이고, "늦어도 나갈 시각"·"전 출발" 요약과 공유 그림에는 쓰지 않는다.
-         *       약속 시각까지 떠나는지(같은 분 포함)는 `direct`와 같이 판정한다. 권역 세대(manifest 5세대)의 부산권 칸에만 있다.
+         *       약속 시각까지 떠나는지(같은 분 포함)는 `direct`와 같이 판정한다. 권역 세대(manifest 5세대)의 부산권 칸에만 있고,
+         *       요청의 `lastTrainKinds`에 `scheduled`가 있을 때만 준다. 없으면 같은 칸을 `check`로 준다.
          *     - `check` 확인 필요: 시각이 없다. 열차 번호가 있는 시간표(와 운영사 표로 칸마다 대조한 직행)만으로는 길을 찾지 못했거나
          *       (열차 번호 없는 시간표뿐인 노선을 지나는 길은 시각을 내지 않는다), `lastTrainBasis.unavailable`이 있다. 클라이언트는 시각
          *       없이 지도 앱으로 가는 버튼만 보인다.
@@ -728,7 +729,7 @@ export interface components {
          *     | 직행 확정 | `kind=direct` |
          *     | 여유 시각: 갈아타는 길 | `kind=margin`, `transfer=true` |
          *     | 여유 시각: 공식표 대조 전 노선의 직행 | `kind=margin`, `transfer=false` |
-         *     | 출발 예정: 계획 도착보다 늦은 계획 출발 분 | `kind=scheduled` |
+         *     | 출발 예정: 계획 도착보다 늦은 계획 출발 분 | `kind=scheduled`(요청에 `lastTrainKinds=scheduled`가 있을 때만, 없으면 `kind=check`) |
          *     | 확인 필요: 요일을 모름 | `lastTrainBasis.unavailable=day_unknown` |
          *     | 확인 필요: 공휴일 목록 밖의 약속일 | `lastTrainBasis.unavailable=date_out_of_range` |
          *     | 확인 필요: 시간표가 120일보다 오래됨 | `lastTrainBasis.unavailable=stale` |
@@ -1023,6 +1024,12 @@ export interface components {
         /** @description 10자 Crockford base32 무작위 ID */
         RoomId: string;
         ParticipantId: string;
+        /**
+         * @description 이 클라이언트가 읽을 줄 아는 추가 막차 분류(쉼표로 구분, ADR-0010). 지금은 `scheduled`뿐이다. 이 값이 있으면 출발 예정 칸을
+         *     `kind=scheduled`로 준다. 없거나 모르는 값뿐이면 그 칸을 `kind=check`(시각·행선지 없음)로 준다. `scheduled`를 모르는 클라이언트는
+         *     그 시각을 여유 시각처럼 읽을 수 있기 때문이다. 다른 분류와 순위는 이 값과 상관없이 같다.
+         */
+        LastTrainKinds: string;
         IdempotencyKey: string;
     };
     requestBodies: never;
@@ -1406,6 +1413,12 @@ export interface operations {
                 mode?: components["schemas"]["Mode"];
                 /** @description `mode=favor`일 때 우대할 참가자의 participantId. 출발역을 숨긴 참가자는 본인 요청에서만 고를 수 있다(아니면 400 `FAVOR_TARGET_HIDDEN`) */
                 favor?: string;
+                /**
+                 * @description 이 클라이언트가 읽을 줄 아는 추가 막차 분류(쉼표로 구분, ADR-0010). 지금은 `scheduled`뿐이다. 이 값이 있으면 출발 예정 칸을
+                 *     `kind=scheduled`로 준다. 없거나 모르는 값뿐이면 그 칸을 `kind=check`(시각·행선지 없음)로 준다. `scheduled`를 모르는 클라이언트는
+                 *     그 시각을 여유 시각처럼 읽을 수 있기 때문이다. 다른 분류와 순위는 이 값과 상관없이 같다.
+                 */
+                lastTrainKinds?: components["parameters"]["LastTrainKinds"];
             };
             header?: never;
             path: {
@@ -1443,7 +1456,14 @@ export interface operations {
     };
     getRoomPreview: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description 이 클라이언트가 읽을 줄 아는 추가 막차 분류(쉼표로 구분, ADR-0010). 지금은 `scheduled`뿐이다. 이 값이 있으면 출발 예정 칸을
+                 *     `kind=scheduled`로 준다. 없거나 모르는 값뿐이면 그 칸을 `kind=check`(시각·행선지 없음)로 준다. `scheduled`를 모르는 클라이언트는
+                 *     그 시각을 여유 시각처럼 읽을 수 있기 때문이다. 다른 분류와 순위는 이 값과 상관없이 같다.
+                 */
+                lastTrainKinds?: components["parameters"]["LastTrainKinds"];
+            };
             header?: never;
             path: {
                 /** @description 10자 Crockford base32 무작위 ID */
@@ -1511,7 +1531,14 @@ export interface operations {
     };
     recommend: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description 이 클라이언트가 읽을 줄 아는 추가 막차 분류(쉼표로 구분, ADR-0010). 지금은 `scheduled`뿐이다. 이 값이 있으면 출발 예정 칸을
+                 *     `kind=scheduled`로 준다. 없거나 모르는 값뿐이면 그 칸을 `kind=check`(시각·행선지 없음)로 준다. `scheduled`를 모르는 클라이언트는
+                 *     그 시각을 여유 시각처럼 읽을 수 있기 때문이다. 다른 분류와 순위는 이 값과 상관없이 같다.
+                 */
+                lastTrainKinds?: components["parameters"]["LastTrainKinds"];
+            };
             header?: never;
             path?: never;
             cookie?: never;

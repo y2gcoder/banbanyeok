@@ -19,6 +19,12 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * 이 웹이 읽을 줄 아는 추가 막차 분류(openapi `lastTrainKinds`). 출발 예정(`scheduled`)은 `lib/result/last-train.ts`가 줄에만 보이고
+ * 요약·공유 그림에서 뺀다. 이 값을 보내지 않는 옛 웹에는 서버가 그 칸을 확인 필요로 준다(ADR-0010). 막차를 싣는 요청은 모두 보낸다.
+ */
+export const LAST_TRAIN_KINDS = "scheduled";
+
 /** openapi-fetch 클라이언트(이 폴더 안에서만 쓴다). */
 export function client(headers?: Headers) {
   return createClient<paths>({ baseUrl: apiBaseUrl(), ...(headers ? { headers } : {}) });
@@ -79,6 +85,7 @@ export async function recommend(
 ): Promise<RecommendResult> {
   const body = recommendBody(query);
   const result = await client(await trustedServerHeaders()).POST("/recommend", {
+    params: { query: { lastTrainKinds: LAST_TRAIN_KINDS } },
     body,
     ...(purpose === "preview" ? { headers: { [SYNTHETIC_HEADER]: "1" } } : {}),
     cache: "no-store",

@@ -2,7 +2,7 @@
  * 방 API 호출. 미리보기(`getRoomPreview`)만 서버(메타데이터·그림 경로)에서도 부르고, 나머지는 브라우저 전용이다. 토큰은 `Authorization: Bearer` 헤더로만 보내고 URL·본문·로그에 넣지 않는다.
  * 계약: contracts/openapi.yaml(rooms·participants·result·outcome). 오류는 [ApiRequestError]로 던진다(code로 분기).
  */
-import { client, failure, trustedServerHeaders } from "./client";
+import { client, failure, LAST_TRAIN_KINDS, trustedServerHeaders } from "./client";
 import type {
   DecisionRequest,
   JoinedRoom,
@@ -155,7 +155,10 @@ export async function getRoomResult(
 ): Promise<RecommendResult> {
   const headers = optionalBearer(participantToken);
   const result = await client().GET("/rooms/{roomId}/result", {
-    params: { path: { roomId }, query: { mode: query.mode, ...(query.favor ? { favor: query.favor } : {}) } },
+    params: {
+      path: { roomId },
+      query: { mode: query.mode, ...(query.favor ? { favor: query.favor } : {}), lastTrainKinds: LAST_TRAIN_KINDS },
+    },
     cache: "no-store",
     ...(headers ? { headers } : {}),
     ...(signal ? { signal } : {}),
@@ -194,7 +197,7 @@ export async function setDecision(roomId: string, participantToken: string, body
  */
 export async function getRoomPreview(roomId: string, { signal }: Options = {}): Promise<RoomPreview> {
   const result = await client(await trustedServerHeaders()).GET("/rooms/{roomId}/preview", {
-    params: { path: { roomId } },
+    params: { path: { roomId }, query: { lastTrainKinds: LAST_TRAIN_KINDS } },
     cache: "no-store",
     ...(signal ? { signal } : {}),
   });
