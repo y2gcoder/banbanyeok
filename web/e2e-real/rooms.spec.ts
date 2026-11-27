@@ -62,10 +62,7 @@ async function newFriend(browser: Browser, testInfo: TestInfo) {
 async function createRoom(page: Page, options: { shot?: boolean; expectedCount?: number } = {}): Promise<string> {
   await Promise.all([page.waitForRequest((req) => req.url().endsWith("/api/healthz")), page.goto("/")]);
   if (options.shot) await shot(page, "0-home");
-  await Promise.all([
-    page.waitForRequest((req) => req.url().endsWith("/api/healthz")),
-    page.getByRole("tab", { name: "각자 입력" }).click(),
-  ]);
+  await expect(page.getByRole("tab", { name: "각자 입력" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tabpanel", { name: "각자 입력" })).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");

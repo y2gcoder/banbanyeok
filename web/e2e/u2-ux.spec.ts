@@ -34,6 +34,7 @@ async function pickStation(page: Page, field: Locator, query: string, option: Re
 /** 혜화 + 강남, 토요일 밤으로 결과까지 간다(운영 QA 재현 순서). */
 async function reachResult(page: Page) {
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, page.getByRole("combobox", { name: "민수의 출발역" }), "혜화", /^혜화\s?4호선/);
   await pickStation(page, page.getByRole("combobox", { name: "친구1의 출발역" }), "강남", /^강남\s?2호선/);
@@ -49,6 +50,7 @@ test.describe("다시 입력: 입력이 모두 되돌아온다", () => {
     await reachResult(page);
     await page.getByRole("link", { name: "다시 입력" }).click();
     await expect(page).toHaveURL(/\/\?v=2&o=/);
+    await expect(page.getByRole("tab", { name: "모두 입력" })).toHaveAttribute("aria-selected", "true");
 
     await expect(page.getByRole("textbox", { name: "1번째 사람 이름(선택)" })).toHaveValue("민수");
     await expect(page.getByRole("combobox", { name: "민수의 출발역" })).toHaveValue("혜화");
@@ -86,6 +88,7 @@ test.describe("다시 입력: 입력이 모두 되돌아온다", () => {
 test.describe("역 자동완성 키보드", () => {
   test("'강남': 정확 일치가 첫 후보이고, 하이라이트된 항목을 Enter가 고른다", async ({ page }) => {
     await page.goto("/");
+    await page.getByRole("tab", { name: "모두 입력" }).click();
     const field = page.getByRole("combobox", { name: "나의 출발역" });
     await field.fill("강남");
     const options = page.getByRole("option");
@@ -104,6 +107,7 @@ test.describe("역 자동완성 키보드", () => {
     page,
   }) => {
     await page.goto("/");
+    await page.getByRole("tab", { name: "모두 입력" }).click();
     const field = page.getByRole("combobox", { name: "나의 출발역" });
     await field.fill("강남");
     const options = page.getByRole("option");
@@ -121,6 +125,7 @@ test.describe("역 자동완성 키보드", () => {
 
   test("이미 역을 고른 칸에 다른 이름을 새로 쳐도 고른 역이 첫 후보에 끼어들지 않는다", async ({ page }) => {
     await page.goto("/");
+    await page.getByRole("tab", { name: "모두 입력" }).click();
     const field = page.getByRole("combobox", { name: "나의 출발역" });
     await pickStation(page, field, "혜화", /^혜화\s?4호선/);
     await field.press("ControlOrMeta+a");

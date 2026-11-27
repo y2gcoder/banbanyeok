@@ -5,6 +5,7 @@ export default async ({ page, step, expect, db }) => {
   const [[roomsBefore]] = db("rooms-before", "select count(*) as rooms from rooms");
 
   await step("home", () => gotoHydrated(page, "/"));
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await expect(page.getByRole("button", { name: "만날 역 찾기" })).toBeVisible();
 
   await step("origins-picked", async () => {

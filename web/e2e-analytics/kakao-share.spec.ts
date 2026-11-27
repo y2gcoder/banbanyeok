@@ -271,6 +271,7 @@ test("혼자 입력한 결과도 첫 누름에 곧바로 카카오톡 공유 API
 }) => {
   const probe = await attach(context, page);
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);

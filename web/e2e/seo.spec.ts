@@ -75,6 +75,7 @@ test("허브 → 조합 페이지: 후보 3곳, 메타데이터, 정적 OG 이�
   // "다른 역으로 다시 찾기": 입력 화면이 두 역으로 채워진다.
   await page.getByRole("link", { name: "다른 역으로 다시 찾기" }).click();
   await expect(page).toHaveURL(/\/\?o=[0-9a-z]{3}\.[0-9a-z]{3}$/);
+  await expect(page.getByRole("tab", { name: "모두 입력" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("combobox", { name: "나의 출발역" })).not.toHaveValue("");
   await expect(page.getByRole("combobox", { name: "친구1의 출발역" })).not.toHaveValue("");
   await expect(page.getByRole("button", { name: "만날 역 찾기" })).toBeEnabled();

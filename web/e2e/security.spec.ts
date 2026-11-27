@@ -59,6 +59,7 @@ test("모든 응답에 보안 헤더가 붙고 CSP가 외부 스크립트·프�
 test("핵심 흐름(입력 → 결과 → SEO 페이지)에서 CSP 위반이 없다", async ({ page }) => {
   const violations = await collectCspViolations(page);
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);

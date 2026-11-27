@@ -45,6 +45,7 @@ test("첫 화면: 계산 범위 한 줄을 펼치면 노선 배지와 빠진 곳
 
 test("수도권 밖 역 이름을 치면 오타 안내 대신 계산 범위와 노선 배지를 보여 준다", async ({ page }) => {
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   const field = page.getByRole("combobox", { name: "나의 출발역" });
   // 수도권 단독일 때는 부산 역(서면)이, 부산권 공개 뒤에는 어느 권역에도 없는 역(동대구)이 계산 범위 밖이다.
   await field.fill(REGIONAL ? "동대구" : "서면");
@@ -59,6 +60,7 @@ test("수도권 밖 역 이름을 치면 오타 안내 대신 계산 범위와 �
 test("부산권 공개 뒤에는 수도권에서 부산 역 이름을 치면 부산권으로 바꾸라고 알린다", async ({ page }) => {
   test.skip(!REGIONAL, "부산권 공개 전(수도권 단독)에는 위 테스트가 서면을 계산 범위 밖으로 본다");
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("combobox", { name: "나의 출발역" }).fill("서면");
   const elsewhere = page.getByRole("status").filter({ hasText: "부산권에 서면이 있어요" });
   await expect(elsewhere).toBeVisible();
@@ -72,6 +74,7 @@ for (const [query, reason] of [
 ] as const) {
   test(`계산하지 않는 역(${query})은 보이되 고를 수 없고 이유가 붙는다`, async ({ page }) => {
     await page.goto("/");
+    await page.getByRole("tab", { name: "모두 입력" }).click();
     const field = page.getByRole("combobox", { name: "나의 출발역" });
     await field.fill(query);
     const option = page.getByRole("option", { name: new RegExp(`^${query}.*${reason}`) });

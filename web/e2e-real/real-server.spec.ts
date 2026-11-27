@@ -22,6 +22,7 @@ test("이름 없는 2인: 입력 → 결과(서버 label) → 링크 복사 → 
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
   await page.goto("/");
   await warmUp;
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await pickStation(page, "나의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
   await page.getByRole("button", { name: "만날 역 찾기" }).click();

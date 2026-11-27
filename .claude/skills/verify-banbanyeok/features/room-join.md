@@ -12,7 +12,7 @@
 
 ## How to get to it (user POV)
 
-- 첫 화면(`/`)에서 `각자 입력` 탭을 누르면 같은 화면에 방 만들기 폼이 열린다.
+- 첫 화면(`/`)은 `각자 입력`으로 열리고 방 만들기 폼이 바로 보인다.
 - `/r/new`를 직접 연다.
 - 친구는 받은 `/r/<ID>?sv=…` 링크로 들어온다.
 
@@ -23,7 +23,7 @@ Preconditions:
 - 기본 전제를 만족한다.
 - `verify.sh drive room-join phone`과 `verify.sh drive room-join desktop`으로 돌린다.
 
-- **방 만들기 탭.** `gotoHydrated(page, "/")`로 첫 화면을 연다. `tab "각자 입력"`을 누르면 이 탭의 `/api/healthz` 요청이 나가고 `tabpanel "각자 입력"`이 보인다. 주소는 `/` 그대로다.
+- **방 만들기 탭.** `gotoHydrated(page, "/")`로 첫 화면을 연다. `tab "각자 입력"`의 `aria-selected`가 `true`이고 `tabpanel "각자 입력"`이 보인다. 주소는 `/` 그대로다.
 - **방장 입력.** 패널의 `textbox "내 이름 (선택)"`에 `민수`, `combobox "내 출발역"`에 `강남`을 넣고 `option /^강남\s?2호선/`을 누른다.
 - **방 만들기.** `button "방 만들기"`를 누른다. 주소가 `/r/<ID>`가 되고 `heading "내가 만든 방"`과 "두 명 이상 들어오면 결과를 볼 수 있어요."가 보인다.
 - **링크 복사.** `button "링크 복사"`를 눌러 "링크 복사됨"을 확인하고 클립보드를 읽는다. 방장이 만든 로컬 방의 주소에 `?sv=<n>&pv=<n>`이 붙는다(`shared-link.txt`).

@@ -3,25 +3,30 @@ import { horizontalOverflow } from "./support/layout";
 import { REGIONAL } from "./support/regions";
 import { VIEWPORTS } from "./support/viewports";
 
-test("홈 탭: 방향키로 선택하고 Tab으로 열린 패널에 들어간다", async ({ page }) => {
+test("홈 탭: 각자 입력으로 열리고 방향키로 두 탭을 오갈 수 있다", async ({ page }) => {
   await page.goto("/");
   const list = page.getByRole("tablist", { name: "출발역 입력 방식" });
   const all = list.getByRole("tab", { name: "모두 입력" });
   const room = list.getByRole("tab", { name: "각자 입력" });
   await expect(list.getByRole("tab")).toHaveText(["각자 입력", "모두 입력"]);
-  await expect(all).toHaveAttribute("aria-selected", "true");
+  await expect(room).toHaveAttribute("aria-selected", "true");
+  await expect(all).toHaveAttribute("aria-selected", "false");
+  const panel = page.getByRole("tabpanel", { name: "각자 입력" });
+  await expect(panel.getByRole("button", { name: "방 만들기" })).toBeVisible();
   const supportedLines = /수도권 전철 \d+개 노선을 계산해요/;
   const allPanel = page.getByRole("tabpanel", { name: "모두 입력" });
+  await room.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(all).toBeFocused();
+  await expect(all).toHaveAttribute("aria-selected", "true");
   await expect(allPanel).toBeVisible();
   await expect(allPanel.getByRole("button", { name: supportedLines })).toHaveAttribute("aria-expanded", "false");
-  await all.focus();
   await page.keyboard.press("ArrowLeft");
   await expect(room).toBeFocused();
   await expect(room).toHaveAttribute("aria-selected", "true");
   await expect(all).toHaveAttribute("aria-selected", "false");
   await expect(room).toHaveCSS("outline-width", "2px");
   await page.keyboard.press("Tab");
-  const panel = page.getByRole("tabpanel", { name: "각자 입력" });
   await expect(panel).toBeFocused();
   await expect(panel).toContainText("초대 링크로 각자 출발역을 넣어요.");
   await page.keyboard.press("Tab");
@@ -61,6 +66,7 @@ test("홈 탭: 최대 4명과 두 폼의 서로 다른 초안이 유지된다", 
   const roomTab = page.getByRole("tab", { name: "각자 입력" });
   const all = page.getByRole("tabpanel", { name: "모두 입력" });
   const room = page.getByRole("tabpanel", { name: "각자 입력" });
+  await allTab.click();
   await all.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await all.getByRole("combobox", { name: "민수의 출발역" }).fill("강남");
   await page.getByRole("option", { name: /^강남\s?2호선/ }).click();
@@ -130,7 +136,7 @@ test("기존 기기 폭에서 홈 탭은 같은 폭이고 아이콘과 이름이
       `${width}×${height}`,
     ).toBe(true);
   }
-  const selected = tabs.filter({ hasText: "모두 입력" });
+  const selected = tabs.filter({ hasText: "각자 입력" });
   await expect(selected).toHaveAttribute("aria-selected", "true");
   await expect(selected).toHaveCSS("background-color", "rgb(255, 243, 198)");
   await expect(selected).toHaveCSS("color", "rgb(22, 32, 27)");
@@ -181,8 +187,7 @@ test("320 CSS px에서 기본 글자를 두 배로 키워도 홈 탭 이름과 �
   };
 
   await expectTabsFit();
-  await all.focus();
-  await page.keyboard.press("ArrowLeft");
+  await room.focus();
   await expect(room).toBeFocused();
   await expect(room).toHaveAttribute("aria-selected", "true");
   await expect(room).toHaveCSS("outline-style", "solid");
