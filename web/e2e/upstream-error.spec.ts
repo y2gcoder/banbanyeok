@@ -3,6 +3,7 @@ import { problemBody } from "../src/lib/problems/problems";
 
 // 프록시(worker.ts)가 서버 오류·시간 초과를 서버와 같은 `application/problem+json`(502/503/504)으로 돌려줄 때 사용자에게 보이는 처리.
 // 브라우저의 /api/v1/recommend 호출만 가로채 같은 응답을 흉내 낸다(프록시 자체는 src/lib/proxy 단위 테스트가 본다).
+// 웹은 늘 쿼리(`lastTrainKinds`)를 붙인다.
 for (const [status, code] of [
   [504, "UPSTREAM_TIMEOUT"],
   [502, "UPSTREAM_UNAVAILABLE"],
@@ -12,7 +13,7 @@ for (const [status, code] of [
     await page.goto("/result?v=1&o=1qs.2je&m=f");
     await expect(page.getByRole("article").first().getByText("1위")).toBeVisible();
 
-    await page.route("**/api/v1/recommend", (route) =>
+    await page.route("**/api/v1/recommend?*", (route) =>
       route.fulfill({
         status,
         contentType: "application/problem+json; charset=utf-8",
@@ -31,7 +32,7 @@ test("계약 밖의 403(빈 HTML 본문)이어도 짧은 안내 문구가 보이
   await page.goto("/result?v=1&o=1qs.2je&m=f");
   await expect(page.getByRole("article").first().getByText("1위")).toBeVisible();
 
-  await page.route("**/api/v1/recommend", (route) =>
+  await page.route("**/api/v1/recommend?*", (route) =>
     route.fulfill({ status: 403, contentType: "text/html", body: "" }),
   );
   await page.getByRole("tab", { name: "빨리 만나기" }).click();

@@ -26,7 +26,9 @@ async function shot(page: Page, name: string) {
  * 실패한 호출도 "결과가 보인다"로 통과한다.
  */
 async function switchAndSettle(page: Page, action: () => Promise<void>) {
-  const settled = page.waitForResponse((r) => r.url().endsWith("/api/v1/recommend") && r.request().method() === "POST");
+  const settled = page.waitForResponse(
+    (r) => new URL(r.url()).pathname === "/api/v1/recommend" && r.request().method() === "POST",
+  );
   await action();
   expect((await settled).status()).toBe(200);
   await expect(page.getByRole("tabpanel")).toHaveAttribute("aria-busy", "false");
@@ -45,7 +47,7 @@ for (const scenario of SCENARIOS) {
   test(`${scenario.name}: 결과 화면에서 세 모드를 오가도 결과가 나온다`, async ({ page }) => {
     const requests: { status: number; body: string }[] = [];
     page.on("response", async (response) => {
-      if (response.url().endsWith("/api/v1/recommend") && response.request().method() === "POST") {
+      if (new URL(response.url()).pathname === "/api/v1/recommend" && response.request().method() === "POST") {
         requests.push({ status: response.status(), body: response.request().postData() ?? "" });
       }
     });
