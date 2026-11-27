@@ -111,14 +111,15 @@ class RegionalHttpTest :
 
                 val scheduled = recommended("?lastTrainKinds=scheduled")
                 kinds(scheduled) shouldBe listOf("margin", "scheduled")
-                val train = scheduled.single { it.text("kind") == "scheduled" }
+                val train = scheduled.single { entry -> entry.text("kind") == "scheduled" }
                 train.text("minute") shouldBe "1413"
                 train.containsKey("transfer") shouldBe false
                 train.getValue("boundFor").jsonObject.text("stationCode") shouldBe "005"
                 for (query in listOf("", "?lastTrainKinds=", "?lastTrainKinds=later", "?lastTrainKinds=check")) {
                     val trains = recommended(query)
                     kinds(trains) shouldBe listOf("check", "margin")
-                    trains.single { it.text("kind") == "check" }.keys shouldBe setOf("participantId", "kind")
+                    trains.single { entry -> entry.text("kind") == "check" }.keys shouldBe
+                        setOf("participantId", "kind")
                 }
                 kinds(recommended("?lastTrainKinds=later,scheduled")) shouldBe listOf("margin", "scheduled")
 
@@ -146,7 +147,7 @@ class RegionalHttpTest :
                             .jsonObject
                             .getValue("lastTrains")
                             .jsonArray
-                            .map { it.jsonObject },
+                            .map { entry -> entry.jsonObject },
                     )
 
                 suspend fun previewKinds(query: String) =
@@ -158,7 +159,7 @@ class RegionalHttpTest :
                             .jsonObject
                             .getValue("times")
                             .jsonArray
-                            .map { it.jsonObject.getValue("lastTrain").jsonObject },
+                            .map { time -> time.jsonObject.getValue("lastTrain").jsonObject },
                     )
                 roomKinds("?lastTrainKinds=scheduled") shouldBe listOf("margin", "scheduled")
                 roomKinds("") shouldBe listOf("check", "margin")
