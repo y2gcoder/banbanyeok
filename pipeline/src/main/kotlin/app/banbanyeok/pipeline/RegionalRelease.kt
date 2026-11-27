@@ -48,7 +48,7 @@ import kotlin.io.path.writeText
  */
 
 private const val HASH_PREFIX_LENGTH = 16
-private const val REGIONAL_LAST_TRAIN_MODEL = "busan-direct-1"
+private const val REGIONAL_LAST_TRAIN_MODEL = "busan-direct-2"
 
 /** A file of the regional set: its published path (`regional/versions/<dataVersion>/<kind>.<hash16>.<ext>`) and bytes. */
 private class RegionalFile(

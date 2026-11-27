@@ -215,19 +215,20 @@ private fun Route.resultRoutes(services: ApiServices) {
                     call.request.queryParameters["favor"],
                 )
             }
-        call.respond(result.toDto(services.stations))
+        call.respond(result.toDto(services.stations, call.lastTrainReader()))
     }
     // 토큰을 읽지 않는다. 미리보기는 누가 묻든 같은 값이어야 한다(본인이 숨긴 출발역도 가린다).
     get("/rooms/{roomId}/preview") {
         val preview: RoomPreviewDto =
-            roomRecommendationErrors { services.results.preview(call.roomId()) }.toDto(services.stations)
+            roomRecommendationErrors { services.results.preview(call.roomId()) }
+                .toDto(services.stations, call.lastTrainReader())
         call.respond(preview)
     }
     post("/recommend") {
         val request = call.receive<RecommendRequestDto>().toStatelessRequest()
         val result = statelessRecommendationErrors { services.stateless.recommend(request) }
         call.count(services, UsageStage.RECOMMEND)
-        call.respond(result.toDto(services.stations))
+        call.respond(result.toDto(services.stations, call.lastTrainReader()))
     }
 }
 
@@ -270,6 +271,8 @@ private suspend fun ApplicationCall.respondRoom(
     services: ApiServices,
     room: RoomView,
 ) = respond(room.toDto(services.stations, services.times.resolve(room.meetingDate, room.meetingTime, room.meetingBand)))
+
+private fun ApplicationCall.lastTrainReader() = LastTrainReader.parse(request.queryParameters["lastTrainKinds"])
 
 private fun ApplicationCall.roomId(): String = requireNotNull(parameters["roomId"])
 

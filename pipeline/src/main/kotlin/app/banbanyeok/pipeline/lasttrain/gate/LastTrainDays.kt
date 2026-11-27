@@ -226,13 +226,16 @@ private fun coverageJson(
     }
 
     fun scope(inside: Boolean) =
-        JsonObject(LastTrainKind.entries.associate { it.name.lowercase() to jsonValue(counts[inside to it.raw] ?: 0) })
+        JsonObject(CAPITAL_KINDS.associate { it.name.lowercase() to jsonValue(counts[inside to it.raw] ?: 0) })
     return obj("bothOnNumberedLines" to scope(true), "other" to scope(false))
 }
 
+/** The kinds a capital cell can have. 출발 예정 is Busan's alone (ADR-0010), so the report keeps its keys. */
+private val CAPITAL_KINDS = LastTrainKind.entries - LastTrainKind.SCHEDULED_DIRECT
+
 private fun cellsJson(result: LtDayResult): JsonObject {
     val kinds = result.cells.groupingBy { it.kind }.eachCount()
-    return JsonObject(LastTrainKind.entries.associate { it.name.lowercase() to jsonValue(kinds[it.raw] ?: 0) })
+    return JsonObject(CAPITAL_KINDS.associate { it.name.lowercase() to jsonValue(kinds[it.raw] ?: 0) })
 }
 
 /**

@@ -93,6 +93,81 @@ class RegionalHttpTest :
             }
         }
 
+        it("sends 출발 예정 as scheduled only to a reader that asks for it, and as check to any other") {
+            withRegionalApi {
+                fun kinds(trains: List<JsonObject>) = trains.map { train -> train.text("kind") }.sorted()
+
+                suspend fun recommended(query: String) =
+                    client
+                        .json(HttpMethod.Post, "/v1/recommend$query", recommend("\"003\",\"005\"", "weekday-night"))
+                        .objectBody()
+                        .getValue("candidates")
+                        .jsonArray
+                        .single()
+                        .jsonObject
+                        .getValue("lastTrains")
+                        .jsonArray
+                        .map { train -> train.jsonObject }
+
+                val scheduled = recommended("?lastTrainKinds=scheduled")
+                kinds(scheduled) shouldBe listOf("margin", "scheduled")
+                val train = scheduled.single { entry -> entry.text("kind") == "scheduled" }
+                train.text("minute") shouldBe "1413"
+                train.containsKey("transfer") shouldBe false
+                train.getValue("boundFor").jsonObject.text("stationCode") shouldBe "005"
+                for (query in listOf("", "?lastTrainKinds=", "?lastTrainKinds=later", "?lastTrainKinds=check")) {
+                    val trains = recommended(query)
+                    kinds(trains) shouldBe listOf("check", "margin")
+                    trains.single { entry -> entry.text("kind") == "check" }.keys shouldBe
+                        setOf("participantId", "kind")
+                }
+                kinds(recommended("?lastTrainKinds=later,scheduled")) shouldBe listOf("margin", "scheduled")
+
+                val weekday = ""","meetingDate":"2026-11-27","meetingTime":"21:00""""
+                val host =
+                    client.json(
+                        HttpMethod.Post,
+                        "/v1/rooms",
+                        """{"mode":"fair","host":{"originCode":"003"}$weekday}""",
+                    )
+                host.status shouldBe HttpStatusCode.Created
+                val path = "/v1/rooms/${host.objectBody().text("roomId")}"
+                client
+                    .json(HttpMethod.Post, "$path/participants", """{"originCode":"005"}""")
+                    .status shouldBe HttpStatusCode.Created
+
+                suspend fun roomKinds(query: String) =
+                    kinds(
+                        client
+                            .json(HttpMethod.Get, "$path/result$query")
+                            .objectBody()
+                            .getValue("candidates")
+                            .jsonArray
+                            .single()
+                            .jsonObject
+                            .getValue("lastTrains")
+                            .jsonArray
+                            .map { entry -> entry.jsonObject },
+                    )
+
+                suspend fun previewKinds(query: String) =
+                    kinds(
+                        client
+                            .json(HttpMethod.Get, "$path/preview$query")
+                            .objectBody()
+                            .getValue("station")
+                            .jsonObject
+                            .getValue("times")
+                            .jsonArray
+                            .map { time -> time.jsonObject.getValue("lastTrain").jsonObject },
+                    )
+                roomKinds("?lastTrainKinds=scheduled") shouldBe listOf("margin", "scheduled")
+                roomKinds("") shouldBe listOf("check", "margin")
+                previewKinds("?lastTrainKinds=scheduled") shouldBe listOf("margin", "scheduled")
+                previewKinds("") shouldBe listOf("check", "margin")
+            }
+        }
+
         it("keeps Saturday recommendations on supported lines and reports unknown timetables") {
             withRegionalApi {
                 val supported =

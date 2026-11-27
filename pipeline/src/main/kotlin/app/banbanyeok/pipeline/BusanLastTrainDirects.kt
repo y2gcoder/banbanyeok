@@ -9,6 +9,15 @@ internal data class BusanLtTrain(
     val destination: String,
     /** The train starts at the meeting station. */
     val origin: Boolean,
+    /** TAGO's planned arrival at the meeting station, the lower bound of boarding its departure ([seconds]). B1: null. */
+    val arrival: Int? = null,
+)
+
+/** One TAGO row at a station: its departure, its terminus's code and its planned arrival (null where TAGO has none). */
+internal data class BusanTagoDeparture(
+    val departure: Int,
+    val end: String,
+    val arrival: Int?,
 )
 
 /** The train boarding last at a meeting station that stops at a home station, unless trains boarding together differ. */
@@ -56,7 +65,7 @@ internal fun numberedBusanDirects(
  */
 internal fun tagoBusanDirects(
     order: List<String>,
-    rows: Map<String, Set<Pair<Int, String>>>,
+    rows: Map<String, Set<BusanTagoDeparture>>,
 ): BusanLtDirects {
     val position = order.withIndex().associate { it.value to it.index }
     return rows
@@ -64,15 +73,15 @@ internal fun tagoBusanDirects(
             order.filter { it != meeting }.mapNotNull { home ->
                 val forward = position.getValue(home) > position.getValue(meeting)
                 val reach =
-                    departures.filter { (_, end) ->
-                        val at = position.getValue(end)
+                    departures.filter { row ->
+                        val at = position.getValue(row.end)
                         if (forward) at >= position.getValue(home) else at <= position.getValue(home)
                     }
                 if (reach.isEmpty()) {
                     null
                 } else {
                     (meeting to home) to
-                        latest(reach.map { (departure, end) -> departure to BusanLtTrain(departure, end, false) })
+                        latest(reach.map { it.departure to BusanLtTrain(it.departure, it.end, false, it.arrival) })
                 }
             }
         }.toMap()
@@ -84,7 +93,7 @@ internal fun busanTagoRows(
     tago: TagoSnapshot,
     prefix: String,
     day: DayType,
-): Map<String, Set<Pair<Int, String>>> {
+): Map<String, Set<BusanTagoDeparture>> {
     fun nameKey(value: String) = value.substringBefore('(').filterNot { it in ".· " }
 
     val byName = line.stations.associate { nameKey(it.name) to it.code }
@@ -101,12 +110,9 @@ internal fun busanTagoRows(
                 .values
                 .flatten()
                 .mapNotNull { train ->
-                    train.departure?.let { departure ->
-                        train.end?.let(codes::get)?.let {
-                            departure to
-                                it
-                        }
-                    }
+                    val departure = train.departure ?: return@mapNotNull null
+                    val end = train.end?.let(codes::get) ?: return@mapNotNull null
+                    BusanTagoDeparture(departure, end, train.arrival)
                 }.toSet()
     }
 }

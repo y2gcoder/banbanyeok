@@ -3,6 +3,7 @@ package app.banbanyeok.schema
 /**
  * 귀갓길 막차의 분류(contracts/data-format.md §10). 값([LastTrainCell.minute])을 화면에서 어떻게 다루는지를 정한다:
  * [DIRECT]는 분 단위 그대로, [MARGIN_TRANSFER]·[MARGIN_DIRECT]는 10분 단위로 내려 "늦어도"로 보인다(내림은 클라이언트가 한다).
+ * [SCHEDULED_DIRECT]는 분 그대로 "출발 예정"으로만 보이고, "늦어도 나갈 시각" 요약과 공유 그림에는 쓰지 않는다.
  */
 public enum class LastTrainKind(
     public val raw: Int,
@@ -18,6 +19,12 @@ public enum class LastTrainKind(
 
     /** 여유 시각: 열차 한 대로 가지만 그 노선은 아직 공식표 대조 전이거나, 부산권 1~4호선처럼 도착 분만 대조했다. */
     MARGIN_DIRECT(3),
+
+    /**
+     * 출발 예정: 열차 한 대로 가고 공식표 대조도 통과했지만, 분이 그 역의 계획 도착보다 늦은 계획 출발 분이다(동해선의 `:00`초 출발,
+     * ADR-0010). 탈 수 있는 마지막 순간의 하한이 아니다. 권역 세대(manifest 5세대)의 부산권 칸에만 있다.
+     */
+    SCHEDULED_DIRECT(4),
     ;
 
     public companion object {
@@ -79,7 +86,7 @@ public class LastTrainTable(
             return
         }
         schemaCheck(minute in MIN_MINUTE..MAX_MINUTE) { "칸 $i: 시각 $minute 은 $MIN_MINUTE..$MAX_MINUTE 이어야 합니다" }
-        val direct = kind == LastTrainKind.DIRECT || kind == LastTrainKind.MARGIN_DIRECT
+        val direct = kind != LastTrainKind.MARGIN_TRANSFER
         schemaCheck(if (direct) bound in 0 until StationCode.CAPACITY else bound == NONE) {
             "칸 $i: 종착역은 직행 칸에만, 직행 칸에는 반드시 있어야 합니다 (분류 $kind, 종착역 $bound)"
         }

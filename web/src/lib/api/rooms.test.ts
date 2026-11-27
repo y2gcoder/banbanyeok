@@ -118,7 +118,7 @@ describe("방 API 호출", () => {
       `DELETE /v1/rooms/${ROOM}/participants/pid`,
       `PATCH /v1/rooms/${ROOM}`,
       `DELETE /v1/rooms/${ROOM}`,
-      `GET /v1/rooms/${ROOM}/result?mode=favor&favor=pid`,
+      `GET /v1/rooms/${ROOM}/result?mode=favor&favor=pid&lastTrainKinds=scheduled`,
       `POST /v1/rooms/${ROOM}/outcome`,
     ]);
     for (const call of sent) {
@@ -151,10 +151,12 @@ describe("방 API 호출", () => {
     });
   });
 
-  it("미리보기: GET /rooms/{id}/preview, 토큰을 보내지 않는다", async () => {
+  it("미리보기: GET /rooms/{id}/preview, 토큰을 보내지 않고 출발 예정을 읽을 줄 안다고 밝힌다", async () => {
     respond = json(200, { stage: "collecting", room: {} });
     await getRoomPreview(ROOM);
-    expect(sent.map((c) => `${c.method} ${c.url.pathname}`)).toEqual([`GET /v1/rooms/${ROOM}/preview`]);
+    expect(sent.map((c) => `${c.method} ${c.url.pathname}${c.url.search}`)).toEqual([
+      `GET /v1/rooms/${ROOM}/preview?lastTrainKinds=scheduled`,
+    ]);
     expect(sent[0]?.headers.get("authorization")).toBeNull();
   });
 

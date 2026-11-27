@@ -205,14 +205,16 @@ def build_regional_files():
     cells_per_day = len(origins) * len(candidates)
 
     def last_train_day(cells):
-        # 부산 칸 하나(#180 직행): 집 역 003 · 만날 역 004, 여유 시각(분류 3) 23:24, 003행.
+        # 부산 칸 둘(#180 직행, 평일): 집 역 003 · 만날 역 004, 여유 시각(분류 3) 23:24, 003행.
+        # 집 역 005 · 만날 역 004, 출발 예정(분류 4, 동해선의 계획 도착보다 늦은 :00초 출발 분) 23:33, 005행.
         minutes, kinds, bounds = [0xFFFF] * cells_per_day, [0] * cells_per_day, [0xFFFF] * cells_per_day
         for index, (minute, kind, bound) in cells.items():
             minutes[index], kinds[index], bounds[index] = minute, kind, bound
         return (struct.pack(f'<{cells_per_day}H', *minutes) + bytes(kinds)
                 + struct.pack(f'<{cells_per_day}H', *bounds))
 
-    busan_cell = {origins.index(3) * len(candidates) + candidates.index(4): (1404, 3, 3)}
+    busan_cell = {origins.index(3) * len(candidates) + candidates.index(4): (1404, 3, 3),
+                  origins.index(5) * len(candidates) + candidates.index(4): (1413, 4, 5)}
     lt = (b'BBLT' + struct.pack('<HHIIIIQ', 1, 32, 0, REGISTRY_VERSION, len(origins), len(candidates), 0)
           + struct.pack(f'<{len(origins) + len(candidates)}H', *(origins + candidates))
           + last_train_day(busan_cell) + last_train_day({}) + last_train_day({}))

@@ -272,3 +272,49 @@ describe("집에 가는 막차 칸", () => {
     expect(screen.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeVisible();
   });
 });
+
+describe("부산권 출발 예정 줄(ADR-0010)", () => {
+  const gyodae = { code: "6k4", name: "교대", region: "busan" };
+  const scheduled: LastTrainEntry = {
+    kind: "scheduled",
+    minute: 1413,
+    boundFor: { stationCode: "kf5", stationName: "망양" },
+  };
+
+  function busan(entries: LastTrainEntry[], people: LastTrainPerson[]) {
+    const found = toLastTrainView(
+      weekday,
+      entries.map((entry, i) => ({ ...entry, participantId: people[i]?.participantId ?? "" })),
+      gyodae,
+      people,
+    );
+    if (!found) throw new Error("막차 칸 없음");
+    return found;
+  }
+
+  it("줄에는 '막차 23:33 출발 예정 · 망양행'과 조금 일찍 타라는 말, 맨 위 줄은 그 분을 뺐다고 밝힌다", async () => {
+    const people = [person(0, "민수"), person(1, "지연")];
+    render(<LastTrains view={busan([scheduled, single], people)} />);
+    const section = screen.getByRole("region", { name: "교대역 집에 가는 막차" });
+    expect(within(section).getByText("출발 예정인 분 빼고 가장 이름: 지연 23:40")).toBeInTheDocument();
+    const rows = within(section).getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent(
+      "민수막차23:33출발 예정· 망양행교대역에서 이 시각에 떠날 예정이에요. 조금 일찍 타세요.",
+    );
+    expect(rows[0]).not.toHaveTextContent("늦어도");
+    expect(within(rows[0] as HTMLElement).queryByRole("link")).toBeNull();
+    expect(rows[1]).toHaveTextContent("늦어도23:40출발");
+
+    await userEvent.click(within(section).getByRole("button", { name: /집에 가는 막차/ }));
+    expect(within(section).getByRole("button", { name: /집에 가는 막차/ })).toHaveTextContent(
+      "출발 예정인 분 빼고 가장 이름: 지연 23:40",
+    );
+  });
+
+  it("모두 출발 예정이면 접힌 줄도 나갈 시각 없이 '출발 예정 시각만'이라고 말한다", () => {
+    render(<LastTrains view={busan([scheduled], [person(0, "민수")])} defaultOpen={false} />);
+    const heading = screen.getByRole("button", { name: /집에 가는 막차/ });
+    expect(heading).toHaveTextContent("막차는 출발 예정 시각만 있어요");
+    expect(heading).not.toHaveTextContent(/전 출발|23:33/);
+  });
+});

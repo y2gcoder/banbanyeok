@@ -8,6 +8,9 @@ import app.banbanyeok.schema.LtBinCodec
 import app.banbanyeok.schema.StationCode
 import io.kotest.core.spec.style.DescribeSpec
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -105,10 +108,13 @@ private fun evidence(
 
 private val stations = mapOf("L1" to listOf("a01", "a02"), "L2" to listOf("a02", "a03"))
 
-private val computed =
+/** K2's 동해선 train: departing 23:45:30, its planned arrival 23:45:00 (a departure minute no later than the arrival). */
+private val l2Train = BusanLtTrain(H23 + 2730, "a03", false, H23 + 2700)
+
+private fun computed(l2: BusanLtTrain = l2Train) =
     mapOf(
         "L1" to mapOf(("a01" to "a02") to BusanLtDirect.Train(BusanLtTrain(H23 + 1450, "a02", false))),
-        "L2" to mapOf(("a02" to "a03") to BusanLtDirect.Train(BusanLtTrain(H23 + 2730, "a03", false))),
+        "L2" to mapOf(("a02" to "a03") to BusanLtDirect.Train(l2)),
     )
 
 private fun checks(
@@ -127,9 +133,10 @@ private fun block(
     checks: Map<BusanLtKey, BusanLtCheck> = checks(),
     homes: Set<String> = setOf("a01", "a02", "a03"),
     asOf: String = "2026-11-16",
+    l2: BusanLtTrain = l2Train,
 ) = busanLastTrains(
     evidence.copy(config = config, checks = checks),
-    BusanLtNetwork({ line, _ -> computed.getValue(line) }, stations::getValue, setOf("a01", "a02"), homes),
+    BusanLtNetwork({ line, _ -> computed(l2).getValue(line) }, stations::getValue, setOf("a01", "a02"), homes),
     asOf,
 )
 
@@ -196,10 +203,21 @@ class BusanLastTrainTest :
 
             it("take the TAGO departure last whose terminus is at or beyond home, in either direction") {
                 val order = listOf("d01", "d02", "d03", "d04")
-                val rows = mapOf("d02" to setOf(H23 to "d04", H23 + 600 to "d03", H23 + 900 to "d01"))
+                val rows =
+                    mapOf(
+                        "d02" to
+                            setOf(
+                                BusanTagoDeparture(H23, "d04", H23 - 30),
+                                BusanTagoDeparture(H23 + 600, "d03", H23 + 570),
+                                BusanTagoDeparture(H23 + 900, "d01", null),
+                            ),
+                    )
                 val directs = tagoBusanDirects(order, rows)
-                assertEquals(BusanLtDirect.Train(BusanLtTrain(H23, "d04", false)), directs["d02" to "d04"])
-                assertEquals(BusanLtDirect.Train(BusanLtTrain(H23 + 600, "d03", false)), directs["d02" to "d03"])
+                assertEquals(BusanLtDirect.Train(BusanLtTrain(H23, "d04", false, H23 - 30)), directs["d02" to "d04"])
+                assertEquals(
+                    BusanLtDirect.Train(BusanLtTrain(H23 + 600, "d03", false, H23 + 570)),
+                    directs["d02" to "d03"],
+                )
                 assertEquals(BusanLtDirect.Train(BusanLtTrain(H23 + 900, "d01", false)), directs["d02" to "d01"])
             }
         }
@@ -213,6 +231,57 @@ class BusanLastTrainTest :
                 )
                 assertEquals(cell(LastTrainKind.DIRECT, 1425, "a03"), cells[Triple(DayType.WEEKDAY, "a03", "a02")])
                 assertEquals(2, cells.size)
+            }
+
+            it("shows a 동해선 departure minute later than its planned arrival as 출발 예정, and none without an arrival") {
+                val onTheMinute = checks(l2Time = "23:45:00")
+                val at = Triple(DayType.WEEKDAY, "a03", "a02")
+
+                fun shown(l2: BusanLtTrain) =
+                    block(evidence = evidence(committed = onTheMinute), checks = onTheMinute, l2 = l2)
+
+                val scheduled = shown(BusanLtTrain(H23 + 2700, "a03", false, H23 + 2670))
+                assertEquals(cell(LastTrainKind.SCHEDULED_DIRECT, 1425, "a03"), scheduled.cells[at])
+                val perDay = scheduled.report.getValue("scheduledCells").jsonObject
+                assertEquals(1, perDay.getValue("weekday").jsonPrimitive.int)
+                assertEquals(
+                    cell(LastTrainKind.DIRECT, 1425, "a03"),
+                    shown(BusanLtTrain(H23 + 2700, "a03", false, H23 + 2700)).cells[at],
+                    "a train arriving and leaving on the minute is a lower bound",
+                )
+                assertEquals(null, shown(BusanLtTrain(H23 + 2700, "a03", false, null)).cells[at])
+            }
+
+            it("prefers a lower bound of boarding to a 출발 예정 minute where two lines give a cell") {
+                val both =
+                    config().copy(
+                        lines = config().lines + ("L1" to BusanLtLine("H1", mapOf(DayType.WEEKDAY to "weekday"))),
+                    )
+                val shared = mapOf("L1" to listOf("a02", "a03"), "L2" to listOf("a02", "a03"))
+                val l1Train = BusanLtTrain(H23 + 2410, "a03", false)
+                val l2Late = BusanLtTrain(H23 + 3000, "a03", false, H23 + 2970)
+                val sharedChecks =
+                    mapOf(
+                        BusanLtKey(DayType.WEEKDAY, "L1", "a02", "a03") to BusanLtCheck("23:40:10", "a03", "agree"),
+                        BusanLtKey(DayType.WEEKDAY, "L2", "a02", "a03") to BusanLtCheck("23:50:00", "a03", "agree"),
+                    )
+                val cells =
+                    busanLastTrains(
+                        evidence(committed = sharedChecks).copy(config = both),
+                        BusanLtNetwork(
+                            { line, _ ->
+                                mapOf(("a02" to "a03") to BusanLtDirect.Train(if (line == "L1") l1Train else l2Late))
+                            },
+                            shared::getValue,
+                            setOf("a02"),
+                            setOf("a03"),
+                        ),
+                        "2026-11-16",
+                    ).cells
+                assertEquals(
+                    mapOf(Triple(DayType.WEEKDAY, "a03", "a02") to cell(LastTrainKind.MARGIN_DIRECT, 1420, "a03")),
+                    cells,
+                )
             }
 
             it("switches a cell off when its operator table differs, it starts there, or home is no origin") {

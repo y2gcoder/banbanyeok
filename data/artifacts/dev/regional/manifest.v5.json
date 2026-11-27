@@ -1,0 +1,454 @@
+{
+  "candidateCount": 154,
+  "dataVersion": "20261123.1",
+  "files": {
+    "candidates": {
+      "bytes": 1765,
+      "path": "regional/versions/20261123.1/candidates.d46f9a5a9a32ac80.json",
+      "sha256": "d46f9a5a9a32ac8014d7ff6214f2c9bdbd5711d1a8f7d3f37f90872edf044fcc"
+    },
+    "lastTrain": {
+      "bytes": 1849940,
+      "path": "regional/versions/20261123.1/lt.9d3e6048153dea09.bin",
+      "sha256": "9d3e6048153dea09c24079771dda2b95544d301d064e900236e6b2fedbaeeba7"
+    },
+    "od": {
+      "bytes": 371540,
+      "path": "regional/versions/20261123.1/od.69eb01e4232dbc35.bin",
+      "sha256": "69eb01e4232dbc359962efee904671db480cb40beb9631cd62644d4954f7200a"
+    },
+    "odSlots": {
+      "holiday-day": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-holiday-day.0e2b04d3f720c71e.bin",
+        "sha256": "0e2b04d3f720c71e189fd465fa2421c548b7691763ff65a223614c5d98d39b53"
+      },
+      "holiday-evening": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-holiday-evening.6256ef712a6a38d7.bin",
+        "sha256": "6256ef712a6a38d779d543b0048810d9e95268935064b17eab132012b40a52fc"
+      },
+      "holiday-morning": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-holiday-morning.97418c70b8e4de26.bin",
+        "sha256": "97418c70b8e4de267217b82e6b3a3e3217f6ee0cb5d5077b4f38eb8f8f0c3b45"
+      },
+      "holiday-night": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-holiday-night.046f8c50fc2a9b2b.bin",
+        "sha256": "046f8c50fc2a9b2b21f027e92f1482c40cd4dd44b2553da205553b30057b4b2e"
+      },
+      "saturday-day": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-saturday-day.22c0e9849eff3baf.bin",
+        "sha256": "22c0e9849eff3baf2cf3cefbcc0cfbba599afdd70762d205661fb9a0fa2b8404"
+      },
+      "saturday-evening": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-saturday-evening.885ec701903407da.bin",
+        "sha256": "885ec701903407dab0d8de0a5e25e956efcbb9b18d5554cde322924bed08c6bd"
+      },
+      "saturday-morning": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-saturday-morning.fd5d934cee403d4f.bin",
+        "sha256": "fd5d934cee403d4fa7360c2099802512e21ca1fd31eb09f592086c2a408592a8"
+      },
+      "saturday-night": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-saturday-night.24f89ed62a2bd76e.bin",
+        "sha256": "24f89ed62a2bd76e2508924b5bb2d69c6bd72f8342598295966e524acfc161c2"
+      },
+      "weekday-evening": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-weekday-evening.a23ce759c203b60d.bin",
+        "sha256": "a23ce759c203b60d011578670f9f2c350d676ee3229e9a4b08cdb51b51fa4e9a"
+      },
+      "weekday-morning": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-weekday-morning.86328422bf9ab258.bin",
+        "sha256": "86328422bf9ab258d6adcf273bd19c72e2b3292f976752e33ac40be89774796e"
+      },
+      "weekday-night": {
+        "bytes": 371540,
+        "path": "regional/versions/20261123.1/od-weekday-night.3cdd00bb7f7be433.bin",
+        "sha256": "3cdd00bb7f7be433adcdbb12a4a1398220fd6395cf156d4c19ec03de38b183b0"
+      }
+    },
+    "registry": {
+      "bytes": 367096,
+      "path": "regional/versions/20261123.1/stations.8e4bf8322a7def23.json",
+      "sha256": "8e4bf8322a7def2396775351ee6c3fa713bbd3161adf17e1f3fac32c3b6d947a"
+    },
+    "routeGraph": {
+      "bytes": 25558,
+      "path": "regional/versions/20261123.1/rg.4aa627c8de058552.bin",
+      "sha256": "4aa627c8de058552808198060486613e6fb54d6e30bcbf0863b0585883df23ac"
+    }
+  },
+  "generatedAt": "2026-11-23T13:16:25Z",
+  "lastTrainAsOf": "2026-11-16",
+  "lastTrainModel": "numbered-v1+walk2x5m+source3m+busan-direct-2",
+  "lastTrainPartialDays": [
+    "weekday",
+    "saturday"
+  ],
+  "minClientSchema": 5,
+  "originCount": 800,
+  "regionCoverage": {
+    "busan": {
+      "holiday-day": {
+        "available": true,
+        "missingServices": [
+          "부산4호선"
+        ],
+        "unsupportedOrigins": [
+          "304",
+          "60g",
+          "a39",
+          "c9d",
+          "ccs",
+          "f5s",
+          "jm3",
+          "tad",
+          "tqz",
+          "v0f",
+          "wrq",
+          "x07"
+        ]
+      },
+      "holiday-evening": {
+        "available": true,
+        "missingServices": [
+          "부산4호선"
+        ],
+        "unsupportedOrigins": [
+          "304",
+          "60g",
+          "a39",
+          "c9d",
+          "ccs",
+          "f5s",
+          "jm3",
+          "tad",
+          "tqz",
+          "v0f",
+          "wrq",
+          "x07"
+        ]
+      },
+      "holiday-morning": {
+        "available": true,
+        "missingServices": [
+          "부산4호선"
+        ],
+        "unsupportedOrigins": [
+          "304",
+          "60g",
+          "a39",
+          "c9d",
+          "ccs",
+          "f5s",
+          "jm3",
+          "tad",
+          "tqz",
+          "v0f",
+          "wrq",
+          "x07"
+        ]
+      },
+      "holiday-night": {
+        "available": true,
+        "missingServices": [
+          "부산4호선"
+        ],
+        "unsupportedOrigins": [
+          "304",
+          "60g",
+          "a39",
+          "c9d",
+          "ccs",
+          "f5s",
+          "jm3",
+          "tad",
+          "tqz",
+          "v0f",
+          "wrq",
+          "x07"
+        ]
+      },
+      "saturday-day": {
+        "available": true,
+        "missingServices": [
+          "동해선",
+          "부산김해경전철"
+        ],
+        "unsupportedOrigins": [
+          "1ad",
+          "1sh",
+          "2p2",
+          "4qr",
+          "58d",
+          "5z0",
+          "6d5",
+          "7jn",
+          "b1v",
+          "bte",
+          "dm4",
+          "dps",
+          "e74",
+          "ej0",
+          "f7w",
+          "f96",
+          "fbk",
+          "fmv",
+          "g9w",
+          "kg8",
+          "ksy",
+          "mff",
+          "n2d",
+          "nzp",
+          "pmd",
+          "pyw",
+          "qw3",
+          "r67",
+          "sf5",
+          "st0",
+          "syv",
+          "v4k",
+          "v5y",
+          "y7k",
+          "yha",
+          "z4w",
+          "zcb",
+          "zzk"
+        ]
+      },
+      "saturday-evening": {
+        "available": true,
+        "missingServices": [
+          "동해선",
+          "부산김해경전철"
+        ],
+        "unsupportedOrigins": [
+          "1ad",
+          "1sh",
+          "2p2",
+          "4qr",
+          "58d",
+          "5z0",
+          "6d5",
+          "7jn",
+          "b1v",
+          "bte",
+          "dm4",
+          "dps",
+          "e74",
+          "ej0",
+          "f7w",
+          "f96",
+          "fbk",
+          "fmv",
+          "g9w",
+          "kg8",
+          "ksy",
+          "mff",
+          "n2d",
+          "nzp",
+          "pmd",
+          "pyw",
+          "qw3",
+          "r67",
+          "sf5",
+          "st0",
+          "syv",
+          "v4k",
+          "v5y",
+          "y7k",
+          "yha",
+          "z4w",
+          "zcb",
+          "zzk"
+        ]
+      },
+      "saturday-morning": {
+        "available": true,
+        "missingServices": [
+          "동해선",
+          "부산김해경전철"
+        ],
+        "unsupportedOrigins": [
+          "1ad",
+          "1sh",
+          "2p2",
+          "4qr",
+          "58d",
+          "5z0",
+          "6d5",
+          "7jn",
+          "b1v",
+          "bte",
+          "dm4",
+          "dps",
+          "e74",
+          "ej0",
+          "f7w",
+          "f96",
+          "fbk",
+          "fmv",
+          "g9w",
+          "kg8",
+          "ksy",
+          "mff",
+          "n2d",
+          "nzp",
+          "pmd",
+          "pyw",
+          "qw3",
+          "r67",
+          "sf5",
+          "st0",
+          "syv",
+          "v4k",
+          "v5y",
+          "y7k",
+          "yha",
+          "z4w",
+          "zcb",
+          "zzk"
+        ]
+      },
+      "saturday-night": {
+        "available": true,
+        "missingServices": [
+          "동해선",
+          "부산김해경전철"
+        ],
+        "unsupportedOrigins": [
+          "1ad",
+          "1sh",
+          "2p2",
+          "4qr",
+          "58d",
+          "5z0",
+          "6d5",
+          "7jn",
+          "b1v",
+          "bte",
+          "dm4",
+          "dps",
+          "e74",
+          "ej0",
+          "f7w",
+          "f96",
+          "fbk",
+          "fmv",
+          "g9w",
+          "kg8",
+          "ksy",
+          "mff",
+          "n2d",
+          "nzp",
+          "pmd",
+          "pyw",
+          "qw3",
+          "r67",
+          "sf5",
+          "st0",
+          "syv",
+          "v4k",
+          "v5y",
+          "y7k",
+          "yha",
+          "z4w",
+          "zcb",
+          "zzk"
+        ]
+      },
+      "weekday-day": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "weekday-evening": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "weekday-morning": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "weekday-night": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      }
+    },
+    "capital": {
+      "holiday-day": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "holiday-evening": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "holiday-morning": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "holiday-night": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "saturday-day": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "saturday-evening": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "saturday-morning": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "saturday-night": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "weekday-day": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "weekday-evening": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "weekday-morning": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      },
+      "weekday-night": {
+        "available": true,
+        "missingServices": [],
+        "unsupportedOrigins": []
+      }
+    }
+  },
+  "registryVersion": 5,
+  "schemaVersion": 5,
+  "timeModel": "slot-half-headway"
+}

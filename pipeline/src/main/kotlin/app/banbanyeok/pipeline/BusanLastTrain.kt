@@ -93,12 +93,21 @@ private val VERDICTS = setOf("agree", "differs", "origin", "missing", "ambiguous
 private const val OPERATOR_MAX_DAYS = 14
 private val SHOWN_RANGE = 1200..1619
 
-/** The later minute on screen wins (margin times are floored to ten minutes there), then the direct one. */
+/**
+ * Where two lines give a cell: a lower bound of boarding beats a 출발 예정 minute, which the leave-by summary leaves out;
+ * then the later minute on screen wins (margin times are floored to ten minutes there), then the direct one.
+ */
 private val SHOWN_LATEST =
     compareBy<LastTrainCell>(
-        { cell -> requireNotNull(cell.minute).let { if (cell.kind == LastTrainKind.DIRECT) it else it - it % 10 } },
+        { it.kind != LastTrainKind.SCHEDULED_DIRECT },
+        { it.shownMinute() },
         { it.kind == LastTrainKind.DIRECT },
     )
+
+private fun LastTrainCell.shownMinute(): Int {
+    val value = requireNotNull(minute)
+    return if (kind == LastTrainKind.MARGIN_DIRECT) value - value % 10 else value
+}
 
 internal fun parseBusanLtConfig(config: JsonObject): BusanLtConfig {
     val tables =
@@ -249,6 +258,17 @@ internal fun busanLastTrains(
                         day.id to jsonValue(cells.keys.count { it.first == day })
                     },
                 ),
+            "scheduledCells" to
+                JsonObject(
+                    DayType.entries.associate { day ->
+                        day.id to
+                            jsonValue(
+                                cells.count { (key, cell) ->
+                                    key.first == day && cell.kind == LastTrainKind.SCHEDULED_DIRECT
+                                },
+                            )
+                    },
+                ),
         ),
     )
 }
@@ -294,6 +314,7 @@ private fun lineDay(
             "checkedBy" to jsonValue(table.id),
             "verdicts" to JsonObject(verdicts.mapValues { jsonValue(it.value) }),
             "shownCells" to jsonValue(cells.size),
+            "scheduledCells" to jsonValue(cells.count { it.second.kind == LastTrainKind.SCHEDULED_DIRECT }),
             "offReasons" to jsonValue(off),
         )
     return BusanLtLineDay(keys, cells, report)
@@ -301,8 +322,9 @@ private fun lineDay(
 
 /**
  * The lt cell of one check, or null. 1~4호선 give the arrival minute both sources agree on as a margin time (분류 3):
- * it is the planned lower bound, not the departure. 동해선 gives the departure minute both agree on to the second as
- * direct (분류 1).
+ * it is the planned lower bound, not the departure. 동해선 gives the departure minute both agree on to the second. It
+ * is direct (분류 1) when that minute is at or before TAGO's planned arrival, the lower bound of boarding; 출발 예정
+ * (분류 4) when it is after (a departure at :00 seconds, its arrival 30 seconds before); off when TAGO has no arrival.
  */
 private fun shownCell(
     key: BusanLtKey,
@@ -317,6 +339,12 @@ private fun shownCell(
     }
     val agreed = train?.takeIf { check.verdict == "agree" && key.home in homes } ?: return null
     val minute = (agreed.seconds / 60).takeIf { it in SHOWN_RANGE } ?: return null
-    val kind = if (table.source == BUSAN_TAGO_RECEIPT) LastTrainKind.DIRECT else LastTrainKind.MARGIN_DIRECT
+    val kind =
+        when {
+            table.source != BUSAN_TAGO_RECEIPT -> LastTrainKind.MARGIN_DIRECT
+            agreed.arrival == null -> return null
+            minute * 60 <= agreed.arrival -> LastTrainKind.DIRECT
+            else -> LastTrainKind.SCHEDULED_DIRECT
+        }
     return Triple(key.day, key.home, key.meeting) to LastTrainCell(kind, minute, StationCode.parse(agreed.destination))
 }

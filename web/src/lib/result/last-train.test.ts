@@ -11,6 +11,7 @@ import {
   type MeetingWhen,
   marginNote,
   recalculatingLastTrainView,
+  scheduledNote,
   toLastTrainView,
 } from "./last-train";
 import { toResultView } from "./view-model";
@@ -40,6 +41,12 @@ const direct = (minute: number, bound = "광교"): LastTrainEntry => ({
 });
 const transfer = (minute: number): LastTrainEntry => ({ kind: "margin", minute, transfer: true });
 const check: LastTrainEntry = { kind: "check" };
+/** 부산권 동해선의 출발 예정(계획 도착보다 30초 늦은 `:00`초 출발 분). 평일 교대→남창은 23:33 망양행이다. */
+const scheduled = (minute: number, bound = "망양"): LastTrainEntry => ({
+  kind: "scheduled",
+  minute,
+  boundFor: { stationCode: "kf5", stationName: bound },
+});
 
 function view(
   basis: Basis,
@@ -334,9 +341,10 @@ describe("막차 칸", () => {
     const texts = bases.flatMap((basis) => {
       // 약속이 없는 화면과 새벽 약속(약속 전에 떠나는 줄) 둘 다 본다.
       return [undefined, { date: "2026-11-28", time: "02:59" }].flatMap((meeting) => {
-        const found = view(basis, [direct(1443), transfer(1389), check], undefined, meeting);
+        const found = view(basis, [direct(1443), transfer(1389), check, scheduled(1413)], undefined, meeting);
         const notes = found.rows.flatMap((r) => {
           if (r.state.kind === "margin") return [marginNote(r.state)];
+          if (r.state.kind === "scheduled") return [scheduledNote(found.stationName)];
           return r.state.kind === "gone" ? [r.state.text] : [];
         });
         return [found.notice, found.lead, found.checkReason, found.partialNote, found.footnote, ...notes];
@@ -685,5 +693,90 @@ describe("결과를 화면 값으로 바꿀 때의 막차", () => {
       candidates: rest.candidates.map(({ lastTrains: _trains, ...candidate }) => candidate),
     };
     expect(toResultView(old).candidates[0]?.lastTrain).toBeNull();
+  });
+});
+
+describe("출발 예정(부산권 동해선의 계획 도착보다 늦은 출발 분, ADR-0010)", () => {
+  const gyodae = { code: "6k4", name: "교대", region: "busan" };
+  const names = ["민수", "지연", "하늘", "보라"];
+  function busanView(entries: LastTrainEntry[], people?: LastTrainPerson[], meeting?: MeetingWhen) {
+    const who = people ?? entries.map((_, i) => person(i, names[i] ?? ""));
+    const found = toLastTrainView(
+      weekday,
+      entries.map((entry, i) => ({ ...entry, participantId: who[i]?.participantId ?? String(i) })),
+      gyodae,
+      who,
+      meeting,
+    );
+    if (!found) throw new Error("막차 칸 없음");
+    return found;
+  }
+
+  it("평일 교대→남창 23:33은 분 그대로 출발 예정 줄이고, 행선지를 붙인다", () => {
+    expect(lastTrainState(scheduled(1413))).toEqual({
+      kind: "scheduled",
+      minute: 1413,
+      clock: "23:33",
+      nextDay: false,
+      transfer: false,
+      bound: "망양행",
+    });
+    expect(lastTrainState(scheduled(1449))).toMatchObject({ kind: "scheduled", clock: "00:09", nextDay: true });
+    expect(scheduledNote("교대역")).toBe("교대역에서 이 시각에 떠날 예정이에요. 조금 일찍 타세요.");
+  });
+
+  it("모두 출발 예정이면 나갈 시각을 말하지 않는다: 맨 위·접힌 요약은 '출발 예정 시각만'", () => {
+    const only = busanView([scheduled(1413), scheduled(1420, "부전")]);
+    expect(only.lead).toBe("막차는 출발 예정 시각만 있어요");
+    expect(lastTrainSummary(only)).toBe("막차는 출발 예정 시각만 있어요");
+    expect(only.rows.map((row) => row.state.kind)).toEqual(["scheduled", "scheduled"]);
+    const unchecked = busanView([scheduled(1413), check]);
+    expect(unchecked.lead).toBe("막차는 출발 예정 시각만 있어요 · 더 확인할 분 있음");
+  });
+
+  it("출발 예정과 나갈 시각이 섞이면 출발 예정인 분을 뺐다고 밝히고, 더 이른 출발 예정을 가장 이른 시각처럼 말하지 않는다", () => {
+    // 민수는 출발 예정 23:33, 지연은 여유 시각 23:47(화면 23:40). 견준 것은 지연뿐이다.
+    const mixed = busanView([scheduled(1413), transfer(1427)]);
+    expect(mixed.lead).toBe("출발 예정인 분 빼고 가장 이름: 지연 23:40");
+    expect(lastTrainSummary(mixed)).toBe(mixed.lead);
+    expect(mixed.lead).not.toMatch(/전 출발|23:33/);
+    expect(busanView([scheduled(1413), direct(1427), check]).lead).toBe(
+      "출발 예정인 분 빼고 가장 이름: 지연 23:47 · 더 확인할 분 있음",
+    );
+    const hidden = busanView(
+      [scheduled(1413), direct(1427)],
+      [person(0, "민수"), person(1, "지연"), person(2, "하늘", { hidden: true })],
+    );
+    expect(hidden.lead).toBe("출발 예정인 분 빼고 공개된 시각 중 가장 이름: 지연 23:47");
+  });
+
+  it("출발 예정이 없는 부산권 칸은 예전 말 그대로다", () => {
+    expect(busanView([direct(1425), transfer(1427)]).lead).toBe("지연 23:40 전 출발");
+  });
+
+  it("계획 출발이 약속 시각 이하면 직행 확정처럼 '약속 전에 떠나요'라고 알린다(같은 분 포함)", () => {
+    const meeting = { date: "2026-11-27", time: "23:40" };
+    expect(lastTrainState(scheduled(1413), meeting)).toEqual({
+      kind: "gone",
+      atMeeting: false,
+      source: "scheduled",
+      text: "11월 27일 23:33 막차는 약속 전에 떠나요.",
+    });
+    expect(lastTrainState(scheduled(1413), { date: "2026-11-27", time: "23:33" })).toMatchObject({
+      kind: "gone",
+      atMeeting: true,
+      text: "11월 27일 23:33 막차는 약속 시각에 떠나요.",
+    });
+    expect(lastTrainState(scheduled(1413), { date: "2026-11-27", time: "23:32" })).toMatchObject({
+      kind: "scheduled",
+    });
+    expect(busanView([scheduled(1413), transfer(1427)], undefined, meeting).lead).toBe(
+      "약속 전에 막차가 떠나는 분이 있어요.",
+    );
+  });
+
+  it("공유 그림에는 출발 예정을 그리지 않는다(줄을 비운다)", () => {
+    expect(lastTrainCardLine(lastTrainState(scheduled(1413)), OG_TEXT)).toBeNull();
+    expect(lastTrainCardLine(lastTrainState(scheduled(1449)), OG_TEXT)).toBeNull();
   });
 });
