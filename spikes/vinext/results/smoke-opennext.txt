@@ -1,0 +1,44 @@
+== 대기: http://localhost:18787
+ok   /
+ok   /privacy
+ok   /meet
+ok   /sitemap.xml
+ok   /meet/10t-1qs
+ok   조합 og:image에 그림 버전이 있음(/meet/10t-1qs/opengraph-image?v=6e4d1336)
+ok   정적 OG /meet/10t-1qs/opengraph-image?v=6e4d1336
+ok   /r/new HTML에 localhost 없음
+ok   /r/new og:image가 정식 주소
+ok   /r/abcdefghjk HTML에 localhost 없음
+ok   /r/abcdefghjk og:image가 정식 주소
+ok   /result?v=2&o=10t.1qs&m=f&t=weekday-day HTML에 localhost 없음
+ok   /result?v=2&o=10t.1qs&m=f&t=weekday-day og:image가 정식 주소
+ok   홈 og:image에 그림 버전이 있음(/opengraph-image?v=a5ba6de0)
+ok   사이트 기본 그림 /opengraph-image?v=a5ba6de0
+ok   허브 og:image가 사이트 기본 그림(/opengraph-image?v=a5ba6de0)
+ok   robots.txt(색인 허용)
+ok   /favicon.ico
+ok   /manifest.webmanifest
+ok   매니페스트 아이콘 /icons/icon-192.png
+ok   매니페스트 아이콘 /icons/icon-512.png
+ok   매니페스트 아이콘 /icons/maskable-192.png
+ok   매니페스트 아이콘 /icons/maskable-512.png
+ok   apple-touch-icon /apple-icon.png?apple-icon.3xq1sbvm99mpz.png
+ok   헤더 content-security-policy
+ok   헤더 x-content-type-options: nosniff
+ok   헤더 referrer-policy
+ok   헤더 x-frame-options
+ok   /api/healthz → 서버 ok
+ok   /api/v1/recommend(fair, Origin 포함) → 후보 응답
+ok   /api/v1/recommend(fast, Origin 포함) → 후보 응답
+ok   /api/v1/recommend(favor, Origin 포함) → 후보 응답
+ok   /api/v1/recommend(timeSlot saturday-night) → 같은 기준으로 계산
+ok   POST /api/v1/rooms(Origin 포함) → 방 만들기
+ok   POST /rooms/{id}/participants(Origin 포함) → 참여
+ok   GET /rooms/{id}/result → 후보 응답
+ok   DELETE /rooms/{id}(방장 토큰, Origin 포함) → 방 정리
+ok   동적 OG /s/og
+ok   /s 미리보기 메타(og:image → /s/og)
+ok   /s og:image가 정식 주소(https://banbanyeok.app/s/og?…)
+ok   /s og:image 주소 → 200 image/png
+warn 카카오톡 공유 확인 건너뜀(KAKAO_JS_KEY 없음)
+ok   첫 화면에 네이버 소유 확인 메타가 있음

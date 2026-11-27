@@ -7,3 +7,6 @@ test-results/
 blob-report/
 .dev.vars
 cloudflare-env.d.ts
+/dist/
+.vinext/
+.cloudflare/

@@ -1,0 +1,53 @@
+# 응답 비교: opennext 대 vinext
+
+같은 로컬 Ktor 서버·같은 빌드 값. 조합 `/meet/10t-1qs`, 조합 그림 `/meet/10t-1qs/opengraph-image?v=6e4d1336`, 사이트 그림 `/opengraph-image?v=a5ba6de0`.
+
+## 페이지·자산 25개 중 차이 없음 3개
+
+| 경로 | opennext | vinext | 차이 |
+|---|---|---|---|
+| `/` | 200 | 200 | `headers.cache-control`: s-maxage=31536000 → s-maxage=31536000, stale-while-revalidate<br>`headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/privacy` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/meet` | 200 | 200 | `headers.cache-control`: s-maxage=31536000 → s-maxage=31536000, stale-while-revalidate<br>`headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/meet/10t-1qs` | 200 | 200 | `headers.cache-control`: s-maxage=31536000 → s-maxage=31536000, stale-while-revalidate<br>`headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/meet/10t-1qs/opengraph-image?v=6e4d1336` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep…<br>`png`: {"a": [1200, 630], "b": [1200, 630], "diffPixels": 23363, "maxDelta": 227} → null |
+| `/opengraph-image?v=a5ba6de0` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep…<br>`png`: {"a": [1200, 630], "b": [1200, 630], "diffPixels": 34035, "maxDelta": 216} → null |
+| `/sitemap.xml` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/robots.txt` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/manifest.webmanifest` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/favicon.ico` | 200 | 200 | `headers.content-security-policy`: null → default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:;…<br>`headers.content-type`: image/vnd.microsoft.icon → image/x-icon<br>`headers.cross-origin-opener-policy`: null → same-origin-allow-popups<br>`headers.permissions-policy`: null → camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()<br>`headers.referrer-policy`: null → strict-origin-when-cross-origin<br>`headers.strict-transport-security`: null → max-age=31536000<br>외 3건 |
+| `/icon.svg` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/apple-icon.png` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/problems` | 200 | 200 | `headers.cache-control`: s-maxage=31536000 → s-maxage=31536000, stale-while-revalidate<br>`headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/problems/invalid-station` | 200 | 200 | `headers.cache-control`: s-maxage=31536000 → s-maxage=31536000, stale-while-revalidate<br>`headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/r/new` | 200 | 200 | `headers.cache-control`: s-maxage=31536000 → s-maxage=31536000, stale-while-revalidate<br>`headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/r/abcdefghjk` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/does-not-exist` | 404 | 404 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/result?v=2&o=10t.1qs&m=f&t=weekday-day` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/s?v=1&o=10t.1qs&m=f` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/s/og?v=1&o=10t.1qs&m=f` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep…<br>`png`: {"a": [1200, 630], "b": [1200, 630], "diffPixels": 11171, "maxDelta": 216} → null |
+| `/s?v=1&o=zzz.zzz&m=f` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep… |
+| `/s/og?v=1&o=zzz.zzz&m=f` | 200 | 200 | `headers.vary`: next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, rsc → next-router-prefetch, next-router-segment-prefetch, next-router-state-tree, next-url, rsc, x-vinext-interception-context, x-vinext-intercep…<br>`png`: {"a": [1200, 630], "b": [1200, 630], "diffPixels": 26209, "maxDelta": 216} → null |
+| `/api/healthz` | 200 | 200 | 없음 |
+| `/api/v1/manifest` | 200 | 200 | 없음 |
+| `/api/v1/rooms/abcdefghjk` | 404 | 404 | 없음 |
+
+## 합성 API·방 흐름(각 Worker에 따로 만든 방)
+
+| 단계 | opennext | vinext |
+|---|---|---|
+| recommend fair | [200, "8b7177f45e46"] | [200, "8b7177f45e46"] |
+| recommend fast | [200, "06461aedaeab"] | [200, "06461aedaeab"] |
+| recommend favor | [200, "7a698c2a23a2"] | [200, "7a698c2a23a2"] |
+| room create | [201, null] | [201, null] |
+| room join | [201, null] | [201, null] |
+| room result | [200, 3] | [200, 3] |
+| room page | [200, "/r/<id>/og?sv=2&dv=20261123.1&pv=4&iv=72cd48e6"] | [200, "/r/<id>/og?sv=2&dv=20261123.1&pv=4&iv=72cd48e6"] |
+| room og (현재 버전) | [200, "public, max-age=86400, s-maxage=86400", "image/png"] | [200, "public, max-age=86400, s-maxage=86400", "image/png"] |
+| room og (버전 없음 → 기본 그림) | [200, "public, max-age=60"] | [200, "public, max-age=60"] |
+| room og (옛 버전 → 기본 그림) | [200, "public, max-age=60"] | [200, "public, max-age=60"] |
+| room delete | [204, null] | [204, null] |
+
+방 그림(png) 픽셀 비교: {"a": [1200, 630], "b": [1200, 630], "diffPixels": 4192, "maxDelta": 216}
+
+방 그림(default) 픽셀 비교: {"a": [1200, 630], "b": [1200, 630], "diffPixels": 26209, "maxDelta": 216}

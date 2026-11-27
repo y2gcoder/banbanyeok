@@ -12,6 +12,11 @@ export default tseslint.config(
       "test-results/**",
       "next-env.d.ts",
       "src/lib/api/schema.gen.ts",
+      // vinext 비교 실험(#254, spikes/vinext): 앱 tsconfig 밖이라 타입 인식 린트를 하지 않는다(타입은 vinext/tsconfig.json으로 본다).
+      "dist/**",
+      ".cloudflare/**",
+      "vite.config.ts",
+      "cloudflare.config.ts",
     ],
   },
   {

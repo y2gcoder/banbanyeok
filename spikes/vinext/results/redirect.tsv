@@ -1,0 +1,19 @@
+target	host	request	status	location	cache-control
+opennext	www.banbanyeok.app	GET /meet?x=1	301	https://banbanyeok.app/meet?x=1	public, max-age=3600
+opennext	www.banbanyeok.app	POST /api/v1/rooms	308	https://banbanyeok.app/api/v1/rooms	public, max-age=3600
+opennext	www.banbanyeok.app	GET /_next/static/x.js	301	https://banbanyeok.app/_next/static/x.js	public, max-age=3600
+opennext	banbanyeok-web.example.workers.dev	GET /meet?x=1	301	https://banbanyeok.app/meet?x=1	public, max-age=3600
+opennext	banbanyeok-web.example.workers.dev	POST /api/v1/rooms	308	https://banbanyeok.app/api/v1/rooms	public, max-age=3600
+opennext	banbanyeok-web.example.workers.dev	GET /_next/static/x.js	301	https://banbanyeok.app/_next/static/x.js	public, max-age=3600
+opennext	localhost	GET /meet?x=1	301	https://banbanyeok.app/meet?x=1	public, max-age=3600
+opennext	localhost	POST /api/v1/rooms	308	https://banbanyeok.app/api/v1/rooms	public, max-age=3600
+opennext	localhost	GET /_next/static/x.js	301	https://banbanyeok.app/_next/static/x.js	public, max-age=3600
+vinext	www.banbanyeok.app	GET /meet?x=1	301	https://banbanyeok.app/meet?x=1	public, max-age=3600
+vinext	www.banbanyeok.app	POST /api/v1/rooms	308	https://banbanyeok.app/api/v1/rooms	public, max-age=3600
+vinext	www.banbanyeok.app	GET /_next/static/x.js	404		public, max-age=31536000, immutable
+vinext	banbanyeok-web.example.workers.dev	GET /meet?x=1	301	https://banbanyeok.app/meet?x=1	public, max-age=3600
+vinext	banbanyeok-web.example.workers.dev	POST /api/v1/rooms	308	https://banbanyeok.app/api/v1/rooms	public, max-age=3600
+vinext	banbanyeok-web.example.workers.dev	GET /_next/static/x.js	404		public, max-age=31536000, immutable
+vinext	localhost	GET /meet?x=1	200		s-maxage=31536000, stale-while-revalidate
+vinext	localhost	POST /api/v1/rooms	415		no-store
+vinext	localhost	GET /_next/static/x.js	404		public, max-age=31536000, immutable
