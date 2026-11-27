@@ -23,18 +23,7 @@ public sealed interface AddResult {
 public data class ParticipantChange(
     val nickname: String?,
     val originCode: String,
-    val hidden: Boolean,
     val updatedAt: Instant,
-    /**
-     * 바뀐 뒤 이 사람이 뽑기 대상이 될 수 없다([FavorDrawRule.isCandidate]). 뽑기 방에서 이 사람이 당첨자면 같은 트랜잭션에서
-     * 당첨자를 비운다(트리거가 뽑기 전으로 돌린다). 저장 때 다시 보므로 읽은 뒤 다시 뽑아 당첨자가 바뀌었어도 맞다.
-     */
-    val releasesDrawWin: Boolean = false,
-    /**
-     * 저장할 때 이미 숨긴 참가자일 때만 바꾼다(ADR-0007: 새로 숨기지 않는다). 읽은 뒤 다른 요청이 숨김을 풀었다면 바꾸지 않고 false다.
-     * 숨김을 유지하는([hidden] = true) 변경에 쓴다.
-     */
-    val onlyIfHidden: Boolean = false,
 )
 
 public data class RoomChange(

@@ -104,12 +104,7 @@ fun apiServices(
 /** HTTP 계층 테스트용: 서비스는 MockK로 대체하고 라우트·오류 형식·인증 헤더·플러그인만 실제로 돌린다. */
 class MockedServices {
     val anon = mockk<AnonUserService>()
-    val rooms =
-        mockk<RoomService>().also {
-            // 라우트가 본문을 읽자마자 부르는 숨김 규칙(ADR-0007). 규칙 자체는 RoomService 테스트가 본다.
-            every { it.checkNewParticipant(any<ParticipantInput>()) } just Runs
-            every { it.checkNewParticipant(any<CreateRoomCommand>()) } just Runs
-        }
+    val rooms = mockk<RoomService>()
     val results = mockk<RoomResultService>()
     val recommendation = mockk<RecommendationService>()
 

@@ -12,9 +12,8 @@ public class OriginRule(
     public fun requireAllowed(
         room: Room,
         code: String,
-        hidden: Boolean = false,
     ) {
-        regions.requireMatch(room, code, hidden)
+        regions.requireMatch(room, code)
         if (!stations.departs(stations.canonical(code), room.meeting)) {
             throw RoomException(RoomError.SCHEDULE_UNAVAILABLE, "이 방의 요일·시간대에 확인된 시간표가 없는 출발역입니다")
         }
@@ -28,10 +27,9 @@ public class OriginRule(
         room: Room,
         participants: List<Participant>,
         code: String,
-        hidden: Boolean = false,
     ): Room {
-        val target = if (participants.isEmpty()) room.copy(region = regions.regionFor(code, hidden)) else room
-        requireAllowed(target, code, hidden)
+        val target = if (participants.isEmpty()) room.copy(region = regions.regionFor(code)) else room
+        requireAllowed(target, code)
         return target
     }
 }

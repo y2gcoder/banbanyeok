@@ -132,12 +132,9 @@ class RoomEnteredByHostTest :
                 }
             }
 
-            it("rejects a hidden or unknown origin before anything is stored") {
+            it("rejects an unknown origin before anything is stored") {
                 runTest {
                     val fixture = RoomFixture()
-                    shouldFailWith(RoomError.HIDE_NOT_AVAILABLE) {
-                        fixture.service.create(drawCommand(listOf(minsu.copy(hidden = true))))
-                    }
                     shouldFailWith(RoomError.INVALID_STATION) {
                         fixture.service.create(drawCommand(listOf(minsu, ParticipantInput("하늘", "zzz"))))
                     }

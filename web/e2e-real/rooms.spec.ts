@@ -95,7 +95,7 @@ async function addParticipants(request: APIRequestContext, roomId: string, count
   }
 }
 
-test("방 만들기 → 친구 참여(숨기기 없음) → 옛 방처럼 숨김 → 숨김 확인 → 결과 → 숨김 풀기·삭제 → 만났나 → 방 삭제", async ({
+test("방 만들기 → 친구 참여(숨기기 없음) → 결과 → 고치기·삭제 → 만났나 → 방 삭제", async ({
   page,
   context,
   browser,
@@ -142,35 +142,26 @@ test("방 만들기 → 친구 참여(숨기기 없음) → 옛 방처럼 숨김
   await shot(friend.page, "4-friend-join-filled");
   await friend.page.getByRole("button", { name: "참여하기" }).click();
   await expect(friendPeople.getByText("홍대입구에서 오는 분")).toBeVisible();
-  // 아직 남은 옛 방처럼 이 친구가 출발역을 숨긴 채 들어와 있다(새로 숨길 수 없어 DB에서 숨긴다). 아래는 그 방의 지금 동작이다.
-  hideAsBefore(hostRoom, (await storedRecord(friend.page, hostRoom))?.participantId ?? "");
-  await friend.page.reload();
 
-  // 친구 화면: 본인 줄에만 (나), 본인에게만 자기 출발역이 보인다. 결과가 나오고 길찾기는 만든 사람 쪽만.
-  await expect(friendPeople.getByRole("listitem").filter({ hasText: "참가자 2" })).toBeVisible();
+  // 친구 화면: 본인 줄에만 (나). 결과가 나온다.
   await expect(friendPeople.getByText("(나)")).toBeVisible();
-  await expect(friendPeople.getByText("홍대입구 · 나에게만 보여요")).toBeVisible();
   const friendResult = friend.page.getByRole("region", { name: "만날 역 후보" });
   await expect(friendResult.getByRole("article").first()).toBeVisible();
   await shot(friend.page, "5-friend-after-join");
 
-  // 방장 화면은 새로 고치지 않아도 목록이 갱신된다(주기적 갱신). 숨긴 사람의 출발역은 어디에도 없다.
+  // 방장 화면은 새로 고치지 않아도 목록이 갱신된다(주기적 갱신). 모든 사람의 출발역이 보인다(ADR-0012).
   const hostPeople = page.getByRole("region", { name: "들어온 사람" });
-  await expect(hostPeople.getByRole("listitem").filter({ hasText: "참가자 2" })).toBeVisible({ timeout: 30_000 });
-  await expect(hostPeople.getByText("출발역 비공개")).toBeVisible();
-  await expect(hostPeople.getByText("홍대입구")).toHaveCount(0);
+  await expect(hostPeople.getByRole("listitem").filter({ hasText: "홍대입구에서 오는 분" })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(hostPeople.getByText("출발역 비공개")).toHaveCount(0);
   const hostResult = page.getByRole("region", { name: "만날 역 후보" });
   const top = hostResult.getByRole("article").first();
-  // 1위 요약의 시간 줄(처음 것). 같은 이름이 "자세히" 안의 막대·막차 칸에도 있다.
-  await expect(top.getByText("참가자 2", { exact: true }).first()).toBeVisible();
-  await expect(top.getByText("출발역 비공개").first()).toBeVisible(); // 시간·환승은 보이고 역 이름만 가려진다
   await expect(top.getByText("민수(나)").first()).toBeVisible();
-  // 집에 가는 막차: 출발역을 숨긴 참가자 2의 줄은 방장 화면에 없다.
   await top.getByRole("button", { name: /자세히/ }).click();
   const hostLastTrain = top.getByRole("region", { name: "집에 가는 막차" });
   await expect(hostLastTrain).toBeVisible();
-  await expect(hostLastTrain).not.toContainText("참가자 2");
-  await expect(hostLastTrain.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeVisible();
+  await expect(hostLastTrain.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toHaveCount(0);
   await expectNoA11yViolations(page);
   await shot(page, "6-host-with-result");
   // 반응형(U1): 방장 화면(목록·결과·방장 설정)을 폰~데스크톱 크기로 바꿔 가며 본다. 넓으면 목록과 결과가 나란히.
@@ -186,25 +177,27 @@ test("방 만들기 → 친구 참여(숨기기 없음) → 옛 방처럼 숨김
     { resultFirstOnPhone: true },
   );
 
-  // 서버 응답에도 숨긴 출발역 코드가 없다(방장·토큰 없는 사람 모두).
+  // 서버 응답: 계약의 호환 필드 hidden은 늘 false이고 출발역 코드가 있다(ADR-0012).
   const hostRoomBody = await page.evaluate(
     async ({ id, token }) =>
       await (await fetch(`/api/v1/rooms/${id}`, { headers: { authorization: `Bearer ${token}` } })).text(),
     { id: hostRoom, token: hostRecord?.participantToken ?? "" },
   );
   const parsed = JSON.parse(hostRoomBody) as {
-    participants: { label: string; originCode: string | null; originName: string | null }[];
+    participants: { label: string; hidden: boolean; originCode: string | null }[];
   };
-  expect(parsed.participants.find((p) => p.label === "참가자 2")).toMatchObject({ originCode: null, originName: null });
-  expect(hostRoomBody).not.toContain("홍대입구");
+  expect(parsed.participants.map((p) => p.hidden)).toEqual([false, false]);
+  expect(parsed.participants.every((p) => p.originCode !== null)).toBe(true);
 
-  // 토큰 없는 구경꾼도 같은 방을 보고 같은 숨김을 본다.
+  // 토큰 없는 구경꾼도 같은 방을 본다.
   const viewer = await newFriend(browser, testInfo);
   await viewer.page.goto(link);
   await expect(
-    viewer.page.getByRole("region", { name: "들어온 사람" }).getByRole("listitem").filter({ hasText: "참가자 2" }),
+    viewer.page
+      .getByRole("region", { name: "들어온 사람" })
+      .getByRole("listitem")
+      .filter({ hasText: "홍대입구에서 오는 분" }),
   ).toBeVisible();
-  await expect(viewer.page.getByRole("region", { name: "들어온 사람" }).getByText("홍대입구")).toHaveCount(0);
   // 반응형(U1): 참여 전 화면(참여 폼 + 결과). 넓으면 참여 폼과 결과가 나란히, 폰에서는 결과가 참여 폼보다 먼저다(#168).
   await sweepViewports(
     viewer.page,
@@ -214,23 +207,16 @@ test("방 만들기 → 친구 참여(숨기기 없음) → 옛 방처럼 숨김
   );
   await viewer.context.close();
 
-  // 친구: 내 입력 수정(이미 숨긴 본인은 '계속 숨기기'가 켜진 채 보이고, 풀고 다른 역으로)
+  // 친구: 내 입력 수정. 고치기 폼에도 숨기기 칸은 없다.
   await friend.page.getByRole("button", { name: "수정 내 항목" }).click();
   await expect(friend.page.getByRole("heading", { name: "내 출발역 고치기" })).toBeVisible();
   await shot(friend.page, "7-friend-edit");
-  const keepHidden = friend.page.getByRole("checkbox", { name: "출발역 이름 계속 숨기기" });
-  await expect(keepHidden).toBeChecked();
-  await keepHidden.uncheck();
+  await expect(friend.page.getByRole("form", { name: "내 출발역 고치기" }).getByRole("checkbox")).toHaveCount(0);
   await pickStation(friend.page, "내 출발역", "사당", /^사당\s?2호선/);
   await friend.page.getByRole("button", { name: "저장하기" }).click();
-  await expect(friendPeople.getByText("출발역 비공개")).toHaveCount(0);
   await expect(friendPeople.getByText("사당에서 오는 분")).toBeVisible();
   await expect(friendPeople.getByText("(나)")).toBeVisible();
-  // 푼 뒤에는 다시 숨길 칸이 없다.
-  await friend.page.getByRole("button", { name: "수정 내 항목" }).click();
-  await expect(friend.page.getByRole("form", { name: "내 출발역 고치기" }).getByRole("checkbox")).toHaveCount(0);
-  await friend.page.getByRole("button", { name: "취소" }).click();
-  // 방장은 이제 친구의 출발역이 보인다.
+  // 방장도 친구의 바뀐 출발역을 본다.
   await page.reload();
   await expect(
     page.getByRole("region", { name: "들어온 사람" }).getByRole("listitem").filter({ hasText: "사당에서 오는 분" }),
@@ -356,6 +342,28 @@ test("없는 방·형식이 틀린 주소·만료 기록 정리", async ({ page 
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem("bby.room.bbbbbbbbbb"))).toBeNull();
   expect(await page.evaluate(() => window.localStorage.getItem("bby.room.cccccccccc"))).not.toBeNull();
   expect(await page.evaluate(() => window.localStorage.getItem("banbanyeok:me"))).not.toBeNull();
+});
+
+test("숨긴 참가자가 남은 옛 방(백업에서 되살아난 경우 등)은 누구에게도 열리지 않는다(ADR-0012)", async ({
+  page,
+  request,
+}) => {
+  const created = await request.post("/api/v1/rooms", {
+    data: { mode: "fair", host: { originCode: GANGNAM, nickname: "민수" } },
+  });
+  const { roomId } = (await created.json()) as { roomId: string };
+  const joined = await request.post(`/api/v1/rooms/${roomId}/participants`, { data: { originCode: "ryf" } });
+  const { participantId } = (await joined.json()) as { participantId: string };
+  hideAsBefore(roomId, participantId);
+
+  for (const path of [`/api/v1/rooms/${roomId}`, `/api/v1/rooms/${roomId}/result`, `/api/v1/rooms/${roomId}/preview`]) {
+    const response = await request.get(path);
+    expect(response.status(), path).toBe(404);
+    expect(((await response.json()) as { code: string }).code, path).toBe("ROOM_NOT_FOUND");
+  }
+  await page.goto(`/r/${roomId}`);
+  await expect(page.getByRole("heading", { name: "찾을 수 없는 방이에요" })).toBeVisible();
+  await expect(page.getByText("홍대입구")).toHaveCount(0);
 });
 
 test("콜드스타트: 서버가 4초 늦어도 설명이 먼저 보이고 안내 문구가 단계적으로 바뀐다", async ({ page, request }) => {

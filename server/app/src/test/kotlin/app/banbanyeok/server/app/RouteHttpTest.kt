@@ -14,7 +14,6 @@ import app.banbanyeok.server.recommendation.sampleRouteGraph
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
 import app.banbanyeok.server.room.FixedDrawRandom
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -64,19 +63,17 @@ private fun request(origins: List<String>): String =
         put("timeSlot", "weekday-day")
     }.toString()
 
-/** 방장 03v, 출발역을 숨긴 [hiddenOrigin], 31a. 장난감 행렬과 장난감 노선 그래프. [hidden]이 false면 대조군: 같은 사람이 출발역을 공개한다. */
+/** 방장 03v, 이름 없는 [guestOrigin], 31a. 장난감 행렬과 장난감 노선 그래프. */
 internal class RouteRoom(
-    hiddenOrigin: String,
+    guestOrigin: String,
     recommendation: RecommendationService? = null,
     private val date: java.time.LocalDate? = null,
-    private val hidden: Boolean = true,
 ) {
     val fixture =
         RoomFixture(
             stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")),
             // 뽑기의 운: 처음 뽑기는 첫 대상, 다시 뽑기는 둘째 대상.
             drawRandom = FixedDrawRandom(0, 1),
-            newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
         )
     val recommendation =
         recommendation ?: RecommendationService(
@@ -90,10 +87,10 @@ internal class RouteRoom(
             this.recommendation,
             testTimes,
         )
-    val origin = hiddenOrigin
+    val origin = guestOrigin
     lateinit var roomId: String
-    lateinit var hiddenId: String
-    lateinit var hiddenToken: String
+    lateinit var guestId: String
+    lateinit var guestToken: String
     lateinit var managementToken: String
     lateinit var thirdToken: String
     lateinit var hostId: String
@@ -106,18 +103,18 @@ internal class RouteRoom(
     ): RouteRoom {
         val created =
             fixture.service.create(
-                CreateRoomCommand(mode, favorTarget, date, ParticipantInput("민수", "03v", false), null, null),
+                CreateRoomCommand(mode, favorTarget, date, ParticipantInput("민수", "03v"), null, null),
             )
-        val hidden = fixture.service.join(created.roomId, ParticipantInput(null, origin, hidden), null)
-        val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a", false), null)
+        val guest = fixture.service.join(created.roomId, ParticipantInput(null, origin), null)
+        val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a"), null)
         thirdToken = third.participantToken
         thirdId = third.participantId
         hostId = created.participantId
         managementToken = created.hostToken
         roomId = created.roomId
         hostToken = created.participantToken
-        hiddenId = hidden.participantId
-        hiddenToken = hidden.participantToken
+        guestId = guest.participantId
+        guestToken = guest.participantToken
         return this
     }
 
@@ -181,31 +178,15 @@ class RouteHttpTest :
         }
 
         describe("routes in a room's result") {
-            it("give the hidden participant's route to that participant only") {
+            it("give every travelling participant's route to every viewer") {
                 runTest {
                     val room = RouteRoom("225").open()
-                    room.json(null).routeIds().forEach { (room.hiddenId in it) shouldBe false }
-                    room.json(room.hostToken).routeIds().forEach { (room.hiddenId in it) shouldBe false }
-                    val own = room.json(room.hiddenToken)
-                    own.cards().zip(own.routeIds()).forEach { (card, ids) ->
-                        (room.hiddenId in ids) shouldBe (card.text("stationCode") != "225")
-                    }
-                }
-            }
-
-            it("serialize the same routes for others whatever station the hidden participant comes from") {
-                runTest {
-                    val one = RouteRoom("225").open().json(null)
-                    val other = RouteRoom("130").open().json(null)
-
-                    fun JsonObject.byStation() =
-                        cards().associate {
-                            it.text("stationCode") to
-                                it.getValue("routes").toString()
+                    for (token in listOf(null, room.hostToken, room.guestToken)) {
+                        val json = room.json(token)
+                        json.cards().zip(json.routeIds()).forEach { (card, ids) ->
+                            (room.guestId in ids) shouldBe (card.text("stationCode") != "225")
                         }
-                    val shared = one.byStation().keys.intersect(other.byStation().keys)
-                    shared.isNotEmpty() shouldBe true
-                    shared.forEach { one.byStation().getValue(it) shouldBe other.byStation().getValue(it) }
+                    }
                 }
             }
         }

@@ -66,7 +66,7 @@ export const PROBLEMS = {
       status: 400,
       title: "출발역 숨기기를 쓸 수 없음",
       meaning:
-        "출발역 숨기기는 이제 제공하지 않습니다. 방 만들기·참여에서는 숨길 수 없고, 고칠 때는 이미 숨긴 사람만 숨김을 유지하거나 풀 수 있습니다. 숨기기를 끄고 다시 보내세요.",
+        "출발역 숨기기는 이제 제공하지 않습니다. 방 만들기·참여·고치기 모두 숨길 수 없습니다. 숨기기를 끄고 다시 보내세요.",
     },
     {
       code: "INVALID_NICKNAME",
@@ -247,7 +247,7 @@ export const PROBLEMS = {
       slug: "not-enough-draw-candidates",
       status: 409,
       title: "뽑을 사람이 부족함",
-      meaning: "출발역을 숨기지 않은 참가자가 2명 이상이어야 뽑을 수 있습니다. 숨긴 사람은 뽑기에서 빠집니다.",
+      meaning: "방에 있는 참가자가 2명 이상이어야 뽑을 수 있습니다.",
     },
     {
       code: "DRAW_LIMIT_REACHED",

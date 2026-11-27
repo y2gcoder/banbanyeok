@@ -94,7 +94,16 @@ fun RecommendRequestDto.toStatelessRequest(): StatelessRequest {
     return StatelessRequest(origins, names, requireRecommendMode(mode), favorIndex, slot)
 }
 
-fun ParticipantInputDto.toInput() = ParticipantInput(nickname, originCode, hidden)
+/**
+ * 출발역 숨기기는 받지 않는다(ADR-0007). 옛 화면이 숨겼다고 믿는 채 출발역이 드러나지 않게 조용히 무시하지 않고 거절한다. 방 만들기·참여는
+ * 이 변환이 `Idempotency-Key` 재생보다 먼저라서, 같은 키로 숨긴 본문을 보내도 앞선 공개 성공을 재생하지 않는다.
+ */
+fun ParticipantInputDto.toInput(hiddenDetail: String = "출발역 숨기기는 이제 쓸 수 없습니다. 숨기기를 끄고 다시 보내 주세요") =
+    if (hidden) {
+        throw AppException(ErrorKind.INVALID, "HIDE_NOT_AVAILABLE", hiddenDetail)
+    } else {
+        ParticipantInput(nickname, originCode)
+    }
 
 private fun parseDate(text: String): LocalDate =
     try {

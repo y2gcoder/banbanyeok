@@ -23,8 +23,7 @@ private class ShareCase(
 private fun participantChange(
     nickname: String? = null,
     origin: String = "03v",
-    hidden: Boolean = false,
-) = ParticipantChange(nickname, origin, hidden, T0.plusSeconds(90))
+) = ParticipantChange(nickname, origin, T0.plusSeconds(90))
 
 private val shareCases =
     listOf(
@@ -40,9 +39,6 @@ private val shareCases =
         },
         ShareCase("a nickname change", bumps = true, releases = false) {
             updateParticipant(it, "pid002", participantChange(nickname = "지연"), activity(3))
-        },
-        ShareCase("a hide toggle", bumps = true, releases = false) {
-            updateParticipant(it, "pid002", participantChange(hidden = true), activity(3))
         },
         ShareCase("a mode change", bumps = true, releases = false) {
             updateRoom(it, RoomChange(mode = RoomMode.FAST), activity(3))
@@ -149,8 +145,8 @@ internal fun DescribeSpecRootScope.shareVersions(repos: () -> RepositoryPair) {
             versions += rooms.version(room.id)
             rooms.removeParticipant(room.id, "pid002", activity(2))
             versions += rooms.version(room.id)
-            for ((n, hidden) in listOf(true, false, true).withIndex()) {
-                rooms.updateParticipant(room.id, "host01", participantChange(hidden = hidden), activity(3L + n))
+            for ((n, nickname) in listOf("지연", null, "지연").withIndex()) {
+                rooms.updateParticipant(room.id, "host01", participantChange(nickname = nickname), activity(3L + n))
                 versions += rooms.version(room.id)
             }
             versions.map { it.value }.shouldBeStrictlyIncreasing()
@@ -215,11 +211,11 @@ internal fun DescribeSpecRootScope.decisionGuards(repos: () -> RepositoryPair) {
             rooms.find(roomId)!!.room.decision shouldBe replace
         }
 
-        it("accepts a screen that saw the decision even after a later hide toggle") {
+        it("accepts a screen that saw the decision even after a later nickname change") {
             val rooms = repos().rooms
             val roomId = rooms.decidedRoom()
             val seen = rooms.version(roomId)
-            rooms.updateParticipant(roomId, "pid002", participantChange(hidden = true), activity(3))
+            rooms.updateParticipant(roomId, "pid002", participantChange(nickname = "지연"), activity(3))
             rooms.decide(roomId, DecisionRequest("pid002", null, seen), 4) shouldBe DecisionResult.Applied
         }
 

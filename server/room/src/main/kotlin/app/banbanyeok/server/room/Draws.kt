@@ -38,19 +38,13 @@ public data class DrawRequest(
 /**
  * '누구 쪽으로' 뽑기(#172)의 규칙을 한 곳에 둔다: 누가 대상인지, 몇 번 뽑을 수 있는지, 화면에 어떻게 보이는지.
  * 운은 [random]이 정한다(운영은 SecureRandom, 테스트는 고정 값). 뽑은 시각은 저장소가 방 행을 잠근 뒤 [clock]에서 읽는다(실제로 뽑은 때).
- * 대상과 당첨은 참가자 ID·숨김 여부·입장 순서에서만 나오고
- * 출발역은 보지 않는다(숨긴 출발역 비간섭, ADR-0004). 두 저장소(Postgres, 메모리 fake)가 방 행을 잠근 채 [verdict]를 부른다.
+ * 대상과 당첨은 참가자 ID·입장 순서에서만 나오고
+ * 출발역은 보지 않는다. 두 저장소(Postgres, 메모리 fake)가 방 행을 잠근 채 [verdict]를 부른다.
  */
 public class FavorDrawRule(
     private val random: RandomGenerator,
     private val clock: Clock,
 ) {
-    /**
-     * 뽑기 대상인지. 출발역을 숨긴 사람은 빠진다: 숨긴 사람 쪽 결과는 본인만 볼 수 있어서(ADR-0005), 뽑히면 사람마다 결과가 갈린다.
-     * 숨기기를 다시 보는 #173에서 이 규칙을 걷어낼 수 있게 서버에서는 여기 한 곳에만 둔다.
-     */
-    public fun isCandidate(participant: Participant): Boolean = !participant.hidden
-
     /**
      * 순서가 규칙이다. 화면이 본 세대가 지금 세대가 아니면(그사이 뽑기 전으로 돌아갔다) [DrawResult.Stale]이라, 리셋 전에 보낸 요청이
      * 다른 인스턴스로 재시도돼도 새로 뽑지 않는다. 같은 세대에서 이미 그 회차 이상이면 [DrawResult.Unchanged]라서 성공한 요청의
@@ -62,7 +56,6 @@ public class FavorDrawRule(
         request: DrawRequest,
     ): DrawResult {
         val draw = room.favorDraw ?: return DrawResult.NotAvailable
-        val candidates = participants.filter(::isCandidate)
         return when {
             request.generation != draw.generation -> {
                 DrawResult.Stale
@@ -80,17 +73,17 @@ public class FavorDrawRule(
                 DrawResult.Stale
             }
 
-            candidates.size < MIN_CANDIDATES -> {
+            participants.size < MIN_CANDIDATES -> {
                 DrawResult.TooFew
             }
 
             else -> {
-                val winner = candidates[random.nextInt(candidates.size)]
+                val winner = participants[random.nextInt(participants.size)]
                 val next =
                     FavorDraw(
                         generation = draw.generation,
                         round = request.round,
-                        candidates = candidates.map { it.id },
+                        candidates = participants.map { it.id },
                         roster = participants.map { it.id },
                         drawnAt = clock.instant(),
                     )
@@ -107,15 +100,14 @@ public class FavorDrawRule(
         val draw = room.favorDraw ?: return null
         val winner = room.favorParticipantId?.takeIf { id -> participants.any { it.id == id } }
         if (draw.round == 0 || winner == null || draw.drawnAt == null) {
-            val (candidates, hidden) = participants.partition(::isCandidate)
             return FavorDrawView(
                 generation = draw.generation,
                 round = 0,
                 maxRounds = MAX_ROUNDS,
-                candidates = candidates.map { it.id },
+                candidates = participants.map { it.id },
                 winner = null,
                 drawnAt = null,
-                excluded = hidden.map { DrawExclusion(it.id, DrawExclusionReason.HIDDEN) },
+                excluded = emptyList(),
             )
         }
         val drawn = draw.candidates.toSet()
@@ -128,7 +120,8 @@ public class FavorDrawRule(
             candidates = draw.candidates,
             winner = winner,
             drawnAt = draw.drawnAt,
-            // 뽑을 때 방에 있었는데 대상이 아니었으면 숨겨서 빠진 것이고, 명단에 없으면 뽑은 뒤에 들어온 것이다.
+            // 뽑을 때 방에 있었는데 대상이 아니었으면 ADR-0007 전에 숨겨서 빠진 것이고(그 전에 뽑은 기록에서만 나온다),
+            // 명단에 없으면 뽑은 뒤에 들어온 것이다.
             excluded =
                 participants
                     .filter { it.id !in drawn }

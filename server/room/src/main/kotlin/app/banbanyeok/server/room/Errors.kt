@@ -19,8 +19,6 @@ public enum class RoomError(
     /** 방 만들기의 다른 사람 칸(#227)이 규칙에 맞지 않는다(뽑기 방이 아님, 인원 초과, 방장 자리 범위 밖). */
     INVALID_OTHERS(ErrorKind.INVALID),
 
-    /** 새로 출발역을 숨기려 했다(ADR-0007). 이미 숨긴 참가자의 유지·풀기는 된다. */
-    HIDE_NOT_AVAILABLE(ErrorKind.INVALID),
     UNAUTHORIZED(ErrorKind.UNAUTHENTICATED),
     FORBIDDEN(ErrorKind.FORBIDDEN),
     ROOM_NOT_FOUND(ErrorKind.NOT_FOUND),
@@ -38,7 +36,7 @@ public enum class RoomError(
     /** 방을 만들 때 대상을 뽑기로 정한 방이 아니다. */
     DRAW_NOT_AVAILABLE(ErrorKind.CONFLICT),
 
-    /** 뽑기 대상(출발역을 숨기지 않은 참가자)이 2명 미만이다. */
+    /** 뽑기 대상(방에 있는 참가자)이 2명 미만이다. */
     NOT_ENOUGH_DRAW_CANDIDATES(ErrorKind.CONFLICT),
 
     /** 다시 뽑기를 이미 썼다. */

@@ -68,7 +68,7 @@ class InMemoryRoomRepository : RoomRepository {
 
                 else -> {
                     val room =
-                        origins?.joined(stored.room, stored.participants, participant.originCode, participant.hidden)
+                        origins?.joined(stored.room, stored.participants, participant.originCode)
                             ?: stored.room
                     write(roomId) { it.copy(room = room, participants = it.participants + participant) }
                     touch(roomId, activity)
@@ -86,9 +86,8 @@ class InMemoryRoomRepository : RoomRepository {
     ): Boolean =
         lock.withLock {
             val stored = rooms[roomId] ?: return@withLock false
-            val current = stored.participants.firstOrNull { it.id == participantId } ?: return@withLock false
-            if (change.onlyIfHidden && !current.hidden) return@withLock false
-            origins?.requireAllowed(stored.room, change.originCode, change.hidden)
+            if (stored.participants.none { it.id == participantId }) return@withLock false
+            origins?.requireAllowed(stored.room, change.originCode)
             write(roomId) {
                 it.copy(
                     participants =
@@ -99,16 +98,11 @@ class InMemoryRoomRepository : RoomRepository {
                                 p.copy(
                                     nickname = change.nickname,
                                     originCode = change.originCode,
-                                    hidden = change.hidden,
                                     updatedAt = change.updatedAt,
                                 )
                             }
                         },
                 )
-            }
-            val room = rooms.getValue(roomId).room
-            if (change.releasesDrawWin && room.favorDraw != null && room.favorParticipantId == participantId) {
-                write(roomId) { it.copy(room = it.room.copy(favorParticipantId = null)) }
             }
             touch(roomId, activity)
             true
@@ -292,7 +286,7 @@ internal fun settle(
     val kept = after.participants.mapNotNull { p -> was[p.id]?.let { it to p } }
     val releases =
         was.keys != after.participants.map { it.id }.toSet() || kept.any { (o, n) -> o.originCode != n.originCode }
-    val looks = kept.any { (o, n) -> o.nickname != n.nickname || o.hidden != n.hidden }
+    val looks = kept.any { (o, n) -> o.nickname != n.nickname }
     val decisionChanged = releases || new.decision != old.decision
     if (!decisionChanged && !looks && new.previewColumns() == old.previewColumns()) return new
     val version = ShareVersion(old.shareVersion.value + 1)

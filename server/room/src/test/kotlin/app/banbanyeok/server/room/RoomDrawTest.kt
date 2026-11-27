@@ -15,7 +15,7 @@ private suspend fun shouldFailWith(
     shouldThrow<RoomException> { block() }.error shouldBe error
 }
 
-/** 방장(민수)·지연·하늘이 있는 뽑기 방. [hiddenFriend]면 하늘이 출발역을 숨겼다. */
+/** 방장(민수)·지연·하늘이 있는 뽑기 방. */
 private class DrawRoom(
     val roomId: String,
     val hostToken: String,
@@ -27,7 +27,7 @@ private class DrawRoom(
     val thirdPart: String,
 )
 
-private suspend fun RoomFixture.drawRoom(hiddenThird: Boolean = false): DrawRoom {
+private suspend fun RoomFixture.drawRoom(): DrawRoom {
     val created =
         service.create(
             CreateRoomCommand(
@@ -42,7 +42,7 @@ private suspend fun RoomFixture.drawRoom(hiddenThird: Boolean = false): DrawRoom
     clock.advance(Duration.ofMinutes(1))
     val friend = service.join(created.roomId, ParticipantInput("지연", "130"), null)
     clock.advance(Duration.ofMinutes(1))
-    val third = service.join(created.roomId, ParticipantInput("하늘", "225", hiddenThird), null)
+    val third = service.join(created.roomId, ParticipantInput("하늘", "225"), null)
     clock.advance(Duration.ofMinutes(1))
     return DrawRoom(
         created.roomId,
@@ -60,11 +60,7 @@ private fun drawTest(
     vararg picks: Int,
     body: suspend RoomFixture.() -> Unit,
 ) = runTest {
-    // 숨긴 사람이 빠지는 규칙은 아직 남은 옛 방에서 그대로다(ADR-0007).
-    RoomFixture(
-        drawRandom = FixedDrawRandom(*(if (picks.isEmpty()) intArrayOf(0) else picks)),
-        newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
-    ).body()
+    RoomFixture(drawRandom = FixedDrawRandom(*(if (picks.isEmpty()) intArrayOf(0) else picks))).body()
 }
 
 class RoomDrawTest :
@@ -72,7 +68,7 @@ class RoomDrawTest :
         describe("creating a draw room") {
             it("is a favor room with no target yet, and shows who would be drawn now") {
                 drawTest {
-                    val room = drawRoom(hiddenThird = true)
+                    val room = drawRoom()
                     val view = service.get(room.roomId, null)
                     view.mode shouldBe RoomMode.FAVOR
                     view.favorParticipantId.shouldBeNull()
@@ -81,10 +77,10 @@ class RoomDrawTest :
                             generation = 0,
                             round = 0,
                             maxRounds = 2,
-                            candidates = listOf(room.hostId, room.friendId),
+                            candidates = listOf(room.hostId, room.friendId, room.thirdId),
                             winner = null,
                             drawnAt = null,
-                            excluded = listOf(DrawExclusion(room.thirdId, DrawExclusionReason.HIDDEN)),
+                            excluded = emptyList(),
                         )
                 }
             }
@@ -154,21 +150,18 @@ class RoomDrawTest :
                 }
             }
 
-            it("leaves out participants who hid their origin and needs two candidates") {
+            it("draws among everyone in the room and needs two of them") {
                 drawTest(1) {
-                    val room = drawRoom(hiddenThird = true)
+                    val room = drawRoom()
                     val drawn = service.drawFavor(room.roomId, room.hostToken, 0, 1)
-                    drawn.favorDraw!!.candidates shouldBe listOf(room.hostId, room.friendId)
-                    drawn.favorDraw.excluded shouldBe listOf(DrawExclusion(room.thirdId, DrawExclusionReason.HIDDEN))
+                    drawn.favorDraw!!.candidates shouldBe listOf(room.hostId, room.friendId, room.thirdId)
+                    drawn.favorDraw.excluded shouldBe emptyList()
                     drawn.favorParticipantId shouldBe room.friendId
 
-                    val alone = drawRoom(hiddenThird = true)
-                    service.updateParticipant(
-                        alone.roomId,
-                        alone.friendId,
-                        alone.friendPart,
-                        ParticipantInput("지연", "130", true),
-                    )
+                    val alone =
+                        service.create(
+                            CreateRoomCommand(RoomMode.FAVOR, "draw", null, ParticipantInput("민수", "03v"), null, null),
+                        )
                     shouldFailWith(RoomError.NOT_ENOUGH_DRAW_CANDIDATES) {
                         service.drawFavor(alone.roomId, alone.hostToken, 0, 1)
                     }
@@ -201,7 +194,7 @@ class RoomDrawTest :
                     clock.advance(Duration.ofMinutes(1))
                     service.drawFavor(created.roomId, created.hostToken, 0, 1)
                     clock.advance(Duration.ofMinutes(1))
-                    val late = service.join(created.roomId, ParticipantInput("하늘", "225", hidden = true), null)
+                    val late = service.join(created.roomId, ParticipantInput("하늘", "225"), null)
                     val draw = service.get(created.roomId, null).favorDraw.shouldNotBeNull()
                     draw.candidates shouldBe listOf(created.participantId, friend.participantId)
                     draw.excluded shouldBe listOf(DrawExclusion(late.participantId, DrawExclusionReason.LATE))
@@ -225,27 +218,22 @@ class RoomDrawTest :
                 }
             }
 
-            it("goes back to not drawn when the winner hides their origin, and keeps it when someone else does") {
-                drawTest(1) {
+            it("still names someone left out by a draw made before ADR-0007 as hidden") {
+                drawTest {
                     val room = drawRoom()
-                    service.drawFavor(room.roomId, room.hostToken, 0, 1)
-                    service.updateParticipant(
-                        room.roomId,
-                        room.thirdId,
-                        room.thirdPart,
-                        ParticipantInput("하늘", "225", true),
+                    val stored = rooms.find(room.roomId).shouldNotBeNull().room
+                    val everyone = listOf(room.hostId, room.friendId, room.thirdId)
+                    val legacyDraw = FavorDraw(0, 1, everyone - room.thirdId, everyone, clock.instant())
+                    rooms.create(
+                        stored.copy(id = "legacydraw", favorDraw = legacyDraw, favorParticipantId = room.friendId),
+                        rooms.find(room.roomId).shouldNotBeNull().participants,
                     )
-                    service.get(room.roomId, null).favorParticipantId shouldBe room.friendId
-                    service.updateParticipant(
-                        room.roomId,
-                        room.friendId,
-                        room.friendPart,
-                        ParticipantInput("지연", "130", true),
-                    )
-                    val after = service.get(room.roomId, null)
-                    after.favorParticipantId.shouldBeNull()
-                    after.favorDraw!!.round shouldBe 0
-                    after.favorDraw.candidates shouldBe listOf(room.hostId)
+                    service
+                        .get("legacydraw", null)
+                        .favorDraw
+                        .shouldNotBeNull()
+                        .excluded shouldBe
+                        listOf(DrawExclusion(room.thirdId, DrawExclusionReason.HIDDEN))
                 }
             }
 

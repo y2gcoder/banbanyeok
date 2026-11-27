@@ -5,13 +5,8 @@ import app.banbanyeok.server.recommendation.OdTravelTimeProvider
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.recommendation.codeNames
 import app.banbanyeok.server.recommendation.sampleOd
-import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
-import app.banbanyeok.server.room.NewHiddenOrigins
-import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
-import app.banbanyeok.server.room.RoomMode
-import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.client.HttpClient
@@ -29,7 +24,7 @@ private const val PARTICIPANT_PATH = "/v1/rooms/{roomId}/participants/{participa
 
 private val stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz"))
 
-/** 지금 서버(새 숨김 거절)로 [fixture]의 방을 HTTP로 다룬다. */
+/** [fixture]의 방을 HTTP로 다룬다. */
 private fun withApi(
     fixture: RoomFixture,
     block: suspend HttpClient.() -> Unit,
@@ -64,7 +59,10 @@ private suspend fun HttpResponse.shouldBeHideNotAvailable(
     body().getValue("code").jsonPrimitive.content shouldBe "HIDE_NOT_AVAILABLE"
 }
 
-/** ADR-0007(#173): 새로 숨기는 요청은 명확한 오류로 거절하고, 이미 숨긴 사람은 유지하거나 풀 수만 있다. */
+/**
+ * ADR-0007(#173, #182): 숨기는 요청은 누구의 것이든 명확한 오류로 거절한다. 옛 화면이 늘 보내는 `hidden: false`는 받는다.
+ * 응답의 `hidden`은 계약의 호환 필드라 늘 false다.
+ */
 class NoNewHiddenOriginHttpTest :
     DescribeSpec({
         describe("no new hidden origins (ADR-0007)") {
@@ -146,34 +144,49 @@ class NoNewHiddenOriginHttpTest :
                 }
             }
 
-            it("lets someone who hid before keep it or show their origin, then not hide again") {
-                val legacy = RoomFixture(stations = stations, newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
-                val created =
-                    legacy.service.create(
-                        CreateRoomCommand(RoomMode.FAIR, null, null, ParticipantInput("민수", "03v"), null, null),
-                    )
-                val hidden = legacy.service.join(created.roomId, ParticipantInput(null, "130", true), null)
-                val path = "/v1/rooms/${created.roomId}/participants/${hidden.participantId}"
-                withApi(RoomFixture(rooms = legacy.rooms, clock = legacy.clock, stations = stations)) {
-                    for ((body, status) in listOf(
-                        """{"nickname":"지연","originCode":"130","hidden":true}""" to 200,
-                        """{"nickname":"지연","originCode":"130","hidden":false}""" to 200,
-                        """{"nickname":"지연","originCode":"130","hidden":true}""" to 400,
-                    )) {
-                        withClue(body) {
-                            val response = json(HttpMethod.Put, path, body, hidden.participantToken)
-                            response.status.value shouldBe status
-                            OpenApiContract.assertValid(HttpMethod.Put, PARTICIPANT_PATH, response)
-                        }
-                    }
+            it(
+                "takes hidden=false from an old screen on every write, and refuses keeping a hide while changing nothing",
+            ) {
+                val fixture = RoomFixture(stations = stations)
+                withApi(fixture) {
+                    val created =
+                        json(
+                            HttpMethod.Post,
+                            "/v1/rooms",
+                            """{"mode":"fair","host":{"originCode":"03v","hidden":false}}""",
+                        )
+                    created.status.value shouldBe 201
+                    val roomId =
+                        created
+                            .body()
+                            .getValue("roomId")
+                            .jsonPrimitive.content
+                    val joined =
+                        json(
+                            HttpMethod.Post,
+                            "/v1/rooms/$roomId/participants",
+                            """{"originCode":"130","hidden":false}""",
+                        ).body()
+                    val path = "/v1/rooms/$roomId/participants/${joined.getValue(
+                        "participantId",
+                    ).jsonPrimitive.content}"
+                    val token = joined.getValue("participantToken").jsonPrimitive.content
                     val shown =
-                        json(HttpMethod.Get, "/v1/rooms/${created.roomId}")
+                        json(HttpMethod.Put, path, """{"nickname":"지연","originCode":"130","hidden":false}""", token)
+                    shown.status.value shouldBe 200
+                    OpenApiContract.assertValid(HttpMethod.Put, PARTICIPANT_PATH, shown)
+                    // 옛 화면의 '계속 숨기기'도 새로 숨기는 것과 같이 거절한다. 이 서버에는 숨긴 사람이 없다.
+                    json(HttpMethod.Put, path, """{"nickname":"수진","originCode":"225","hidden":true}""", token)
+                        .shouldBeHideNotAvailable(HttpMethod.Put, PARTICIPANT_PATH)
+                    val participant =
+                        json(HttpMethod.Get, "/v1/rooms/$roomId")
                             .body()
                             .getValue("participants")
                             .jsonArray[1]
                             .jsonObject
-                    shown.getValue("hidden").jsonPrimitive.content shouldBe "false"
-                    shown.getValue("originCode").jsonPrimitive.content shouldBe "130"
+                    participant.getValue("hidden").jsonPrimitive.content shouldBe "false"
+                    participant.getValue("nickname").jsonPrimitive.content shouldBe "지연"
+                    participant.getValue("originCode").jsonPrimitive.content shouldBe "130"
                 }
             }
         }

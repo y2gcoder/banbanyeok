@@ -27,7 +27,6 @@ public class RoomService(
     private val clock: Clock,
     /** 뽑기의 운. 테스트는 고정 값을 넣는다. */
     drawRandom: RandomGenerator = SecureRandom(),
-    private val newHidden: NewHiddenOrigins = NewHiddenOrigins.REJECTED,
 ) {
     private val decisions = DecisionRule(stations)
     private val regions = RoomRegionRule(stations)
@@ -94,13 +93,12 @@ public class RoomService(
     ): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
-        checkNewParticipant(command)
         validateCreation(command, now)
         val others = command.others.map(::validated)
         val meeting = Meeting(command.meetingDate, command.meetingTime, command.meetingBand)
         stations.awaitSchedule(host.originCode, meeting)
         others.forEach { stations.awaitSchedule(it.originCode, meeting) }
-        val region = regions.regionFor(host.originCode, host.hidden)
+        val region = regions.regionFor(host.originCode)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
         val (hostToken, participantToken) =
@@ -129,7 +127,7 @@ public class RoomService(
                 favorDraw = if (drawn) FavorDraw.PENDING else null,
                 region = region,
             )
-        origins.requireAllowed(room, host.originCode, host.hidden)
+        origins.requireAllowed(room, host.originCode)
         others.forEach { origins.requireAllowed(room, it.originCode) }
         val hostEntry = newParticipant(hostParticipantId, participantToken.hash, anonId, host, now)
         val entered =
@@ -159,7 +157,6 @@ public class RoomService(
         val now = clock.instant()
         val room = loadActive(roomId, now).room
         val participant = validated(input)
-        checkNewParticipant(participant)
         stations.awaitSchedule(participant.originCode, room.meeting)
         val participantId = ids.participantId()
         val token = tokens.issue()
@@ -201,7 +198,7 @@ public class RoomService(
         if (stations.isOrigin(origin)) regions.requireMatch(stored.room, origin)
     }
 
-    /** 토큰은 선택이다. 유효한 participantToken이면 본인 항목의 출발역이 숨김이어도 보인다. 잘못된 토큰은 무시한다. */
+    /** 토큰은 선택이다. 유효한 participantToken이면 본인 항목에 isSelf가 붙는다. 잘못된 토큰은 무시한다. */
     public suspend fun get(
         roomId: String,
         viewerToken: String?,
@@ -223,7 +220,6 @@ public class RoomService(
                     it.id,
                     it.nickname,
                     stations.canonical(it.originCode),
-                    it.hidden,
                 )
             },
         )
@@ -245,27 +241,13 @@ public class RoomService(
             reject(RoomError.FORBIDDEN, "본인 항목만 고칠 수 있습니다")
         }
         val value = validated(input)
-        // 이미 숨긴 사람만 숨김을 유지할 수 있다. 풀고 나면 다시 숨기지 못한다. 저장할 때도 다시 본다(다른 탭이 그사이 풀었을 수 있다).
-        val keepsHidden = value.hidden && newHidden == NewHiddenOrigins.REJECTED
-        if (keepsHidden && !stored.participants.first { it.id == participantId }.hidden) rejectNewHidden()
         stations.awaitSchedule(value.originCode, stored.room.meeting)
         // 저장된 코드가 폐기된 코드여도 정식 코드가 같으면 그대로 쓴다. 출발역이 바뀐 것으로 보면 트리거가 정한 역을 풀기 때문이다.
         val storedOrigin = stored.participants.first { it.id == participantId }.originCode
         val origin = if (stations.canonical(storedOrigin) == value.originCode) storedOrigin else value.originCode
-        val updated = stored.participants.first { it.id == participantId }.copy(hidden = value.hidden)
-        val change =
-            ParticipantChange(
-                value.nickname,
-                origin,
-                value.hidden,
-                now,
-                releasesDrawWin = !draws.isCandidate(updated),
-                onlyIfHidden = keepsHidden,
-            )
+        val change = ParticipantChange(value.nickname, origin, now)
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
         if (!rooms.updateParticipant(roomId, participantId, change, activity, origins)) {
-            val stillThere = rooms.find(roomId)?.participants?.any { it.id == participantId } == true
-            if (keepsHidden && stillThere) rejectNewHidden()
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
         }
         return get(roomId, token).participants.first { it.id == participantId }
@@ -379,7 +361,7 @@ public class RoomService(
         when (rooms.writeDraw(stored.room.id, DrawRequest(generation, round), activity, draws)) {
             is DrawResult.Drawn, DrawResult.Unchanged -> Unit
             DrawResult.NotAvailable -> reject(RoomError.DRAW_NOT_AVAILABLE, "뽑기로 만든 방이 아닙니다")
-            DrawResult.TooFew -> reject(RoomError.NOT_ENOUGH_DRAW_CANDIDATES, "출발역을 숨기지 않은 참가자가 2명 이상이어야 합니다")
+            DrawResult.TooFew -> reject(RoomError.NOT_ENOUGH_DRAW_CANDIDATES, "뽑기에 들어갈 참가자가 2명 이상이어야 합니다")
             DrawResult.LimitReached -> reject(RoomError.DRAW_LIMIT_REACHED, "다시 뽑기는 한 번만 할 수 있습니다")
             DrawResult.Stale -> reject(RoomError.ROOM_CHANGED, "화면을 본 뒤 뽑기 상태가 바뀌었습니다")
             DrawResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
@@ -488,8 +470,7 @@ public class RoomService(
                     ParticipantView(
                         id = it.id,
                         nickname = it.nickname,
-                        hidden = it.hidden,
-                        originCode = if (!it.hidden || it.id == selfId) stations.canonical(it.originCode) else null,
+                        originCode = stations.canonical(it.originCode),
                         isHost = it.id == room.hostParticipantId,
                         isSelf = it.id == selfId,
                         enteredByHost = it.enteredByHost,
@@ -635,35 +616,13 @@ public class RoomService(
         return input.copy(nickname = nickname, originCode = originCode)
     }
 
-    /**
-     * 새로 들어오는 참가자(방 만들기의 방장, 참여)의 숨김 규칙(ADR-0007). 멱등 재시도가 캐시된 성공을 재생하기 전에도 부른다: 같은 키로
-     * 숨긴 본문을 보내면 숨기지 않은 응답을 조용히 돌려주지 않고 거절한다.
-     */
-    public fun checkNewParticipant(input: ParticipantInput) {
-        if (input.hidden) rejectNewHidden()
-    }
-
-    /** 방 만들기의 숨김 규칙. 대신 넣는 칸은 숨길 수 없다: 숨김은 본인이 고르는 것이다. */
-    public fun checkNewParticipant(command: CreateRoomCommand) {
-        checkNewParticipant(command.host)
-        if (command.others.any { it.hidden }) {
-            reject(RoomError.HIDE_NOT_AVAILABLE, "다른 사람 칸은 출발역을 숨길 수 없습니다")
-        }
-    }
-
-    private fun rejectNewHidden() {
-        if (newHidden == NewHiddenOrigins.REJECTED) {
-            reject(RoomError.HIDE_NOT_AVAILABLE, "출발역 숨기기는 이제 쓸 수 없습니다. 숨기기를 끄고 다시 보내 주세요")
-        }
-    }
-
     private fun newParticipant(
         id: String,
         tokenHash: TokenHash,
         anonId: String?,
         input: ParticipantInput,
         now: Instant,
-    ) = Participant(id, tokenHash, anonId, input.nickname, input.originCode, input.hidden, now, now)
+    ) = Participant(id, tokenHash, anonId, input.nickname, input.originCode, now, now)
 
     /**
      * 방을 만들 때의 입장 순서. 원래 입력 순서(방장은 [hostPosition] 자리)대로 1마이크로초씩 늦춰 입장 시각을 준다. 입장 순서가 표시 이름의

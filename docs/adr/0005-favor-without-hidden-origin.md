@@ -1,6 +1,6 @@
 # ADR-0005: '누구 쪽으로'는 다른 사람에게 숨긴 사람을 기준에서 뺀다
 
-- 상태: accepted (운영자 결정, 2026-11-24, #162)
+- 상태: superseded by [ADR-0007](0007-stop-new-hidden-origins.md) (#182에서 서버가 더는 적용하지 않음, [ADR-0012](0012-retire-hidden-origins-in-steps.md))
 - 더하는 결정: [ADR-0004](0004-hidden-origin-times-coarsened.md)(숨긴 사람의 시간은 5분 단위로), docs/01-synthesis.md '공평 규칙'의 favor 상한
 - 2026-11-25부터 새로 숨길 수 없다([ADR-0007](0007-stop-new-hidden-origins.md)). 이 결정은 이미 숨긴 사람이 남은 방에만 쓰고, 옛 방이 모두 사라지면 걷어낸다.
 

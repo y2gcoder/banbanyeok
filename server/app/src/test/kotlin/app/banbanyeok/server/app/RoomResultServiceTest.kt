@@ -15,7 +15,6 @@ import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.recommendation.time.TimeBasis
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.ErrorKind
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -31,7 +30,7 @@ import java.time.LocalTime
 
 private fun resultTest(body: suspend (RoomFixture, RoomResultService) -> Unit) =
     runTest {
-        val fixture = RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
+        val fixture = RoomFixture()
         val recommendation = RecommendationService(OdTravelTimeProvider(sampleOd, "20261112.1"), codeNames)
         body(fixture, RoomResultService(fixture.service, recommendation, testTimes))
     }
@@ -40,15 +39,14 @@ private fun create(
     mode: RoomMode = RoomMode.FAIR,
     favorTarget: String? = null,
     origin: String = "03v",
-    hidden: Boolean = false,
-) = CreateRoomCommand(mode, favorTarget, null, ParticipantInput("민수", origin, hidden), null, null)
+) = CreateRoomCommand(mode, favorTarget, null, ParticipantInput("민수", origin), null, null)
 
 class RoomResultServiceTest :
     DescribeSpec({
         describe("the time basis of a room") {
             it("computes the slot of the meeting date and time, weekday daytime when the room has neither") {
                 runTest {
-                    val fixture = RoomFixture(newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
+                    val fixture = RoomFixture()
                     val everySlot = TimeSlot.ALL.filter { it != TimeSlot.DEFAULT }.associateWith { sampleOd }
                     val recommendation =
                         RecommendationService(OdTravelTimeProvider(sampleOd, "20261112.1", everySlot), codeNames)
@@ -64,13 +62,13 @@ class RoomResultServiceTest :
                                     RoomMode.FAIR,
                                     null,
                                     date?.let(LocalDate::parse),
-                                    ParticipantInput(null, "03v", false),
+                                    ParticipantInput(null, "03v"),
                                     null,
                                     null,
                                     time?.let(LocalTime::parse),
                                 ),
                             )
-                        fixture.service.join(created.roomId, ParticipantInput(null, "130", false), null)
+                        fixture.service.join(created.roomId, ParticipantInput(null, "130"), null)
                         return results.result(created.roomId, null, null, null).recommendation.timeBasis
                     }
                     basis(null, null) shouldBe TimeBasis(TimeSlot.DEFAULT, "평일 낮")
@@ -83,10 +81,10 @@ class RoomResultServiceTest :
         }
 
         describe("computing a room's result") {
-            it("uses hidden participants' real stations for the times but hides their station in the participants") {
+            it("uses every participant's station for the times and shows it in the participants") {
                 resultTest { fixture, results ->
-                    val created = fixture.service.create(create(origin = "03v", hidden = true))
-                    fixture.service.join(created.roomId, ParticipantInput("지연", "130", false), null)
+                    val created = fixture.service.create(create(origin = "03v"))
+                    fixture.service.join(created.roomId, ParticipantInput("지연", "130"), null)
                     val result = results.result(created.roomId, null, null, null)
                     result.recommendation.candidates
                         .first()
@@ -96,17 +94,7 @@ class RoomResultServiceTest :
                         .times
                         .map { it.seconds } shouldContainExactly
                         listOf(600, 0)
-                    result.participants.map { it.originCode } shouldContainExactly listOf(null, "130")
-                }
-            }
-
-            it("shows a hidden participant their own station when they send their token") {
-                resultTest { fixture, results ->
-                    val created = fixture.service.create(create(hidden = true))
-                    fixture.service.join(created.roomId, ParticipantInput("지연", "130", false), null)
-                    val result = results.result(created.roomId, created.participantToken, null, null)
                     result.participants.map { it.originCode } shouldContainExactly listOf("03v", "130")
-                    result.participants.map { it.isSelf } shouldContainExactly listOf(true, false)
                 }
             }
 
@@ -118,12 +106,12 @@ class RoomResultServiceTest :
                                 RoomMode.FAIR,
                                 null,
                                 null,
-                                ParticipantInput(null, "03v", false),
+                                ParticipantInput(null, "03v"),
                                 null,
                                 null,
                             ),
                         )
-                    fixture.service.join(anonymous.roomId, ParticipantInput(null, "130", false), null)
+                    fixture.service.join(anonymous.roomId, ParticipantInput(null, "130"), null)
                     val reasons =
                         results
                             .result(
@@ -138,7 +126,7 @@ class RoomResultServiceTest :
                     reasons shouldNotContain "친구"
 
                     val named = fixture.service.create(create())
-                    fixture.service.join(named.roomId, ParticipantInput("지연", "130", false), null)
+                    fixture.service.join(named.roomId, ParticipantInput("지연", "130"), null)
                     results
                         .result(
                             named.roomId,
@@ -164,7 +152,7 @@ class RoomResultServiceTest :
             it("favors the room's target by default and lets the request override mode and target") {
                 resultTest { fixture, results ->
                     val created = fixture.service.create(create(RoomMode.FAVOR, CreateRoomCommand.HOST_TARGET))
-                    val friend = fixture.service.join(created.roomId, ParticipantInput("지연", "225", false), null)
+                    val friend = fixture.service.join(created.roomId, ParticipantInput("지연", "225"), null)
                     results.result(created.roomId, null, null, null).recommendation.mode shouldBe RecommendMode.FAVOR
                     val fast = results.result(created.roomId, null, RecommendMode.FAST, null)
                     fast.recommendation.candidates
@@ -192,7 +180,7 @@ class RoomResultServiceTest :
             it("asks for a favor target when the mode is favor and nobody is targeted") {
                 resultTest { fixture, results ->
                     val created = fixture.service.create(create())
-                    fixture.service.join(created.roomId, ParticipantInput("지연", "225", false), null)
+                    fixture.service.join(created.roomId, ParticipantInput("지연", "225"), null)
                     // 오류 코드로 바꾸는 일은 HTTP 계층의 방 표가 한다(RecommendationErrorTableTest).
                     val e =
                         shouldThrow<RecommendationException> {
@@ -205,7 +193,7 @@ class RoomResultServiceTest :
             it("rejects a station that is no longer in the data") {
                 resultTest { fixture, _ ->
                     val created = fixture.service.create(create())
-                    fixture.service.join(created.roomId, ParticipantInput("지연", "225", false), null)
+                    fixture.service.join(created.roomId, ParticipantInput("지연", "225"), null)
                     val shrunk =
                         RecommendationService(
                             OdTravelTimeProvider(
