@@ -2,7 +2,7 @@
 
 - 상태: superseded by [ADR-0007](0007-stop-new-hidden-origins.md) (#182에서 서버가 더는 적용하지 않음, [ADR-0012](0012-retire-hidden-origins-in-steps.md))
 - 고치는 결정: docs/01-synthesis.md '숨기기'(숨긴 출발역은 이름만 가리고 시간은 보임)
-- 2026-11-25부터 새로 숨길 수 없다([ADR-0007](0007-stop-new-hidden-origins.md)). 이 결정은 이미 숨긴 사람이 남은 방에만 쓰고, 옛 방이 모두 사라지면 걷어낸다.
+- 2026-11-25부터 새로 숨길 수 없다([ADR-0007](0007-stop-new-hidden-origins.md)). 그 뒤 옛 방에만 남았던 이 규칙과 관련 코드도 [ADR-0012](0012-retire-hidden-origins-in-steps.md)에 따라 폐기한다.
 
 출발역을 숨겨도 시간은 정확히 보였다. 그래서 숨긴 사람의 출발역이 만날 역 후보(1·2·3위 모두)이면
 다른 사람의 결과 화면, 링크 미리보기, 공유 문구에 그 사람의 시간이 0분으로 나갔다. 그림에는 "바로 여기"로 나갔다.

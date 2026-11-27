@@ -13,13 +13,11 @@ public enum class RecommendMode { FAIR, FAST, FAVOR }
 
 /**
  * 계산에 들어가는 사람 한 명. [id]는 방에서는 participantId, 무상태 추천에서는 입력 순서의 인덱스 문자열이다.
- * [hidden]이면 [originCode]는 계산에만 쓰고 표시 이름·문장에는 출발역을 쓰지 않는다.
  */
 public class RecommendParticipant(
     public val id: String,
     public val nickname: String?,
     public val originCode: String,
-    public val hidden: Boolean = false,
 )
 
 public class RecommendRequest(
@@ -31,26 +29,16 @@ public class RecommendRequest(
     public val time: TimeBasis = TimeBasis.of(TimeSlot.DEFAULT),
     /** [time]의 요일 종류를 믿을 수 있는가. 막차 시각은 [DayCertainty.KNOWN]일 때만 낸다. */
     public val dayCertainty: DayCertainty = DayCertainty.KNOWN,
-    /**
-     * 이 결과를 보는 참가자의 [RecommendParticipant.id](방에서 토큰으로 확인한 본인). 숨긴 사람의 막차는 본인 요청에만 붙고, 숨긴 사람
-     * 쪽으로 맞춘 결과(favor)도 본인만 받는다(#162).
-     */
-    public val viewerId: String? = null,
 )
 
-/**
- * 한 사람의 시간. 출발역을 숨긴 사람을 본인이 아닌 요청이 볼 때는 뭉뚱그린 시간이고 [transfers]가 null이다([HiddenTimes], #142).
- */
+/** 한 사람이 후보 역까지 가는 시간과 환승 횟수. */
 public data class ParticipantTime(
     public val participantId: String,
     public val seconds: Int,
     public val transfers: Int?,
 )
 
-/**
- * 상위 후보 한 장. [times]와 최장·차이·합계·우대 시간·[reason]은 **보는 사람에게 보이는 값**이다: 출발역을 숨긴 다른 사람의 칸은
- * 뭉뚱그린 값이고 집계도 그 값으로 다시 계산한다([HiddenTimes]). 순위는 정확한 값으로 정했다.
- */
+/** 상위 후보 한 장. 순위는 초 단위의 시간으로 정한다. */
 public data class RecommendedStation(
     public val rank: Int,
     public val stationCode: String,
@@ -62,10 +50,10 @@ public data class RecommendedStation(
     public val favoredSeconds: Int?,
     public val reasonCode: String,
     public val reason: String,
-    /** 이 역에서 돌아가는 사람별 막차(#62). 막차 표를 쓸 수 없으면 null. 숨긴 사람은 본인 요청일 때만 들어 있다. */
+    /** 이 역에서 돌아가는 사람별 막차(#62). 막차 표를 쓸 수 없으면 null. */
     public val lastTrains: List<ParticipantLastTrain>? = null,
     /**
-     * 이 역까지 사람별 화면용 경로(#120). 노선 그래프를 쓸 수 없으면 null. 숨긴 사람은 본인 요청일 때만, 같은 역에서 출발하는 사람은 없다.
+     * 이 역까지 사람별 화면용 경로(#120). 노선 그래프를 쓸 수 없으면 null. 같은 역에서 출발하는 사람은 제외한다.
      * 순위·시간과 상관없는 표시 값이다(시간·환승 수는 [times]가 od 값이다).
      */
     public val routes: List<ParticipantRoute>? = null,
@@ -111,9 +99,6 @@ public enum class RecommendationError {
     SCHEDULE_UNAVAILABLE,
     FAVOR_TARGET_REQUIRED,
     FAVOR_TARGET_UNKNOWN,
-
-    /** 우대 대상이 출발역을 숨긴 사람인데 그 사람 본인의 요청이 아니다(#162). */
-    FAVOR_TARGET_HIDDEN,
 }
 
 /** 요청이 규칙에 맞지 않는다. 호출하는 쪽(HTTP 계층)이 400/409 등으로 옮긴다. */

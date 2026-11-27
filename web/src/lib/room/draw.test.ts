@@ -36,7 +36,7 @@ describe("roomDraw(#172): 서버가 정한 대상·당첨·빠진 사람을 그�
     expect(roomDraw(oldServer)).toBeNull();
   });
 
-  it("뽑기 전: 대상은 입장 순서, 숨긴 사람은 이유와 함께 빠지고 당첨자는 없다", () => {
+  it("뽑기 전: 대상은 입장 순서고 당첨자는 없다", () => {
     const draw = roomDraw(
       room(
         {
@@ -46,9 +46,9 @@ describe("roomDraw(#172): 서버가 정한 대상·당첨·빠진 사람을 그�
           candidates: ["민수", "지영"],
           winner: null,
           drawnAt: null,
-          excluded: [{ participantId: "하늘", reason: "hidden" }],
+          excluded: [],
         },
-        [person("민수"), person("지영"), person("하늘", { hidden: true })],
+        [person("민수"), person("지영"), person("하늘")],
       ),
     );
     expect(draw?.candidates.map((c) => [c.name, c.personIndex])).toEqual([
@@ -56,7 +56,6 @@ describe("roomDraw(#172): 서버가 정한 대상·당첨·빠진 사람을 그�
       ["지영", 1],
     ]);
     expect(draw?.winner).toBeNull();
-    expect(draw?.hiddenNames).toEqual(["하늘"]);
     expect(draw?.key).toBe("0:0");
   });
 
@@ -78,7 +77,7 @@ describe("roomDraw(#172): 서버가 정한 대상·당첨·빠진 사람을 그�
     expect(draw?.winner).toBe(1);
     expect(draw?.winnerId).toBe("하늘");
     expect(draw?.candidates[1]?.personIndex).toBe(2);
-    expect(draw?.late).toEqual([{ name: "지영", hidden: false }]);
+    expect(draw?.late).toEqual(["지영"]);
     expect(draw?.selfLate).toBe(true);
     expect(draw?.key).toBe("3:2");
     expect(draw?.generation).toBe(3);

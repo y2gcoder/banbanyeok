@@ -38,16 +38,15 @@ export type SharedCardData = {
   /** 역 이름 아래 큰 줄. 없으면 "에서 볼까?"(방에서 정한 역은 "에서 만나요"). */
   suffix?: string;
   /**
-   * 입력 순서. 이름은 서버 짧은 이름(shortLabel)을 글꼴에 있는 글자만으로 정리한 값(`ogSafeName`)이다. 출발역을 숨긴 사람은 서버가
-   * "참가자 N"으로 주므로 숨긴 출발역은 그림에 나올 수 없다. `favored`는 "누구 쪽으로"에서 고른 사람. `minutes`가 null이면 그 역까지 갈 수 없다.
+   * 입력 순서. 이름은 서버 짧은 이름(shortLabel)을 글꼴에 있는 글자만으로 정리한 값(`ogSafeName`)이다. `favored`는 "누구 쪽으로"에서 고른
+   * 사람이다. `minutes`가 null이면 그 역까지 갈 수 없거나 서버가 그 값을 미리보기에 싣지 않은 경우다.
    */
   people: {
     name: string;
     minutes: number | null;
     favored: boolean;
     /**
-     * 시간 아래의 작은 줄 "막차 00:03" / "늦어도 23:00"(#62). 시각을 모르면(확인 필요) 키가 없다. 출발역을 숨긴 사람에게는
-     * 늘 없다(미리보기는 누가 보든 같은 그림이다).
+     * 시간 아래의 작은 줄 "막차 00:03" / "늦어도 23:00"(#62). 시각이 없으면 키를 생략한다.
      */
     lastTrain?: string;
   }[];
@@ -56,8 +55,7 @@ export type SharedCardData = {
   /** 왼쪽 아래 두 줄을 직접 정한다(방에서 정한 역: "민수가 정했어요" / "11월 21일 (토) 저녁"). 없으면 최장·차이·기준. */
   footer?: { main: string; sub: string };
   /**
-   * 방 미리보기의 "지도 한가운데였다면" 비교 문장(#68 2단계). 왼쪽 아래 맨 끝 줄에 둔다. 서버는 출발역을 숨긴 사람이 있으면 값을 주지
-   * 않으므로 숨긴 사람이 있는 방에는 이 줄이 없다. 무상태 링크는 숫자판(`ScoreboardCard`)의 `compareLine`을 쓴다.
+   * 방 미리보기의 "지도 한가운데였다면" 비교 문장(#68 2단계). 왼쪽 아래 맨 끝 줄에 둔다. 무상태 링크는 숫자판(`ScoreboardCard`)의 `compareLine`을 쓴다.
    */
   middleLine?: string;
   /** 결과를 숨긴 그림(뽑기 방에서 뽑은 뒤, #172): 이름 옆 시간·노선 강조·역 배지를 그리지 않고 고리 안에 "?"를 둔다. */
@@ -84,10 +82,10 @@ export function sharedPreview(view: ResultView, state: ShareState): SharedPrevie
   };
 }
 
-/** 그림에 넣는 막차 줄. 그 사람의 줄에 시각이 있고, 본인에게만 보이는 줄(출발역을 숨긴 본인)이 아닐 때만. */
+/** 그림에 넣는 막차 줄. 시각이 있는 사람의 줄에만 넣는다. */
 function cardLastTrain(lastTrain: LastTrainView | null, index: number): string | null {
   const row = lastTrain?.rows.find((r) => r.index === index);
-  if (!row || row.onlyMe || (row.state.kind !== "direct" && row.state.kind !== "margin")) return null;
+  if (!row || (row.state.kind !== "direct" && row.state.kind !== "margin")) return null;
   return lastTrainCardLine(row.state, OG_TEXT);
 }
 

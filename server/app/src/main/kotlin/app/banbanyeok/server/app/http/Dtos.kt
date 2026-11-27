@@ -33,6 +33,7 @@ data class AnonCreatedDto(
 data class ParticipantInputDto(
     val nickname: String? = null,
     val originCode: String,
+    /** 옛 요청의 true를 무시하지 않고 HTTP 경계에서 거절하기 위한 필드. */
     val hidden: Boolean = false,
 )
 
@@ -103,6 +104,7 @@ data class JoinedDto(
 data class ParticipantDto(
     val participantId: String,
     val nickname: String?,
+    /** 옛 웹의 엄격한 false 비교를 위한 응답 필드. 항상 false다. */
     val hidden: Boolean,
     val originCode: String?,
     val originName: String?,
@@ -160,7 +162,7 @@ data class FavorDrawDto(
 @Serializable
 data class DrawExclusionDto(
     val participantId: String,
-    /** `hidden` / `late`. */
+    /** 뽑은 뒤 들어옴(`late`). */
     val reason: String,
 )
 

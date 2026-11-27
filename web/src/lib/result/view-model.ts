@@ -26,14 +26,14 @@ type PersonView = {
 export type PersonTimeView = PersonView & {
   seconds: number;
   minutes: number;
-  /** 최단 경로의 환승 수(od 값). 출발역을 숨긴 다른 사람이면 서버가 주지 않아(null, #142) 보이지 않는다. */
+  /** 최단 경로의 환승 수(od 값). 서버가 값 없이 보내면 표시하지 않는다. */
   transfers: number | null;
   /**
    * 화면에 쓰는 환승 수. 보이는 경로(`route`)가 있으면 그 경로의 환승 수다: 최단보다 2분 안에서 느리지만 환승이 적은 길을 보일 때
    * 막대와 글자가 어긋나지 않게 한다. 분(`minutes`)과 순위는 언제나 od 값이다. null이면 환승을 쓰지 않는다.
    */
   shownTransfers: number | null;
-  /** 이 사람이 만날 역까지 가는 경로(#120). 서버가 주지 않았으면(그래프 없음·숨긴 출발역·같은 역) null이고 중립색 막대로 그린다. */
+  /** 이 사람이 만날 역까지 가는 경로(#120). 서버가 주지 않았으면(그래프 없음·같은 역) null이고 중립색 막대로 그린다. */
   route: RouteView | null;
   /** 카카오맵 대중교통 길찾기(출발역 → 만날 역). 좌표를 모르면 null. */
   directionsUrl: string | null;
@@ -80,8 +80,6 @@ export type ResultView = {
    * 이 값으로 만든 공유 그림은 오래 캐시하지 않는다(`/s/og`).
    */
   lastTrainPending: boolean;
-  /** 출발역을 숨긴 참가자가 있다(옛 방, ADR-0007). 반반지수(`banbanLine`)가 이때 꺼진다. */
-  anyHidden: boolean;
 };
 
 function place(code: string | null, name: string | null) {
@@ -108,7 +106,6 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
       const from = place(person.originCode, person.originName);
       const id = result.participants[i]?.participantId;
       const route = toRouteView(c.routes?.find((r) => r.participantId === id));
-      // 숨긴 다른 사람의 칸은 서버가 시간을 5분 단위로 뭉뚱그리고 환승은 주지 않는다(#142). 시간은 받은 값 그대로 쓴다.
       const transfers = time ? (time.transfers ?? null) : 0;
       return {
         ...person,
@@ -138,8 +135,6 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
                 index: person.index,
                 participantId: participant?.participantId ?? "",
                 shortName: person.shortName,
-                hidden: participant?.hidden === true,
-                isSelf: participant?.isSelf === true,
                 originCode: person.originCode,
                 mapUrl: home && destination ? kakaoTransitUrl(destination, home) : null,
               };
@@ -178,6 +173,5 @@ export function toResultView(result: RecommendResult, options: ResultViewOptions
       ? toMapMiddleView(result, { stationCode: first.stationCode, minutes: first.aggregate.minutes })
       : null,
     lastTrainPending: result.lastTrainPending === true,
-    anyHidden: result.participants.some((p) => p.hidden === true),
   };
 }

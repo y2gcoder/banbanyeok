@@ -20,9 +20,6 @@ const CLOSE_GROUP = 6;
 /** 기본 층을 명사형으로 바꾸는 최장 시간(분, 화면 값). 1시간이 넘으면 '도'가 '겨우'처럼 읽힌다(운영자 결정 14, 2026-11-26). */
 const NOUN_FROM_MINUTES = 60;
 
-/** 숨긴 사람의 시간은 남에게 300초의 배수로 간다(ADR-0004, 서버 `HiddenTimes.coarse`). */
-const HIDDEN_STEP_SECONDS = 300;
-
 function closeText(minutes: readonly number[]): string | null {
   const pair = minutes.length === 2;
   const gap = Math.max(...minutes) - Math.min(...minutes);
@@ -33,16 +30,11 @@ function closeText(minutes: readonly number[]): string | null {
 }
 
 /**
- * 공평 기준에서 모두가 갈 수 있을 때만 값이 있다. 출발역을 숨긴 사람이 있으면 없다: 본인은 정확한 시간을, 남은 5분 단위로 올린
- * 시간을 보므로 같은 방에서 말이 갈린다.
+ * 공평 기준에서 모두가 갈 수 있을 때만 값이 있다.
  */
-export function banbanLine(input: {
-  mode: Mode;
-  minutes: readonly (number | null)[];
-  hidden: boolean;
-}): BanbanLine | null {
-  const { mode, minutes, hidden } = input;
-  if (hidden || mode !== "fair" || minutes.length < 2 || minutes.some((m) => m === null)) return null;
+export function banbanLine(input: { mode: Mode; minutes: readonly (number | null)[] }): BanbanLine | null {
+  const { mode, minutes } = input;
+  if (mode !== "fair" || minutes.length < 2 || minutes.some((m) => m === null)) return null;
   const shown = minutes as readonly number[];
   const close = closeText(shown);
   if (close !== null) return { kind: "close", text: close };
@@ -52,12 +44,4 @@ export function banbanLine(input: {
       ? `${OG_TEXT.banbanLongestLead}${formatMinutes(longest)}${OG_TEXT.banbanLongestTail}`
       : `${OG_TEXT.banbanLongestNoun}${formatMinutes(longest)}`;
   return { kind: "longest", text };
-}
-
-/**
- * 방 미리보기에는 숨김 표시가 없다. 숨긴 사람의 시간은 300초의 배수로 오므로, 그런 시간이 하나라도 있으면 숨긴 사람이 있을 수 있다고
- * 본다. 숨긴 0초도 300초가 되므로 0초는 공개 시간이다.
- */
-export function mayIncludeHidden(seconds: readonly (number | null)[]): boolean {
-  return seconds.some((s) => s !== null && s > 0 && s % HIDDEN_STEP_SECONDS === 0);
 }

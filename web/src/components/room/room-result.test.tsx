@@ -37,12 +37,10 @@ const room: Room = {
       shortLabel: "강남",
     }),
     participant("p3", {
-      hidden: true,
-      originCode: null,
-      originName: null,
-      label: "참가자 3",
-      labelKind: "ordinal",
-      shortLabel: "참가자 3",
+      originCode: "s1q",
+      originName: "동대문역사문화공원",
+      label: "동대문역사문화공원에서 오는 분",
+      shortLabel: "동대문역사문화공원",
     }),
   ],
 };
@@ -76,31 +74,18 @@ describe("방 결과의 배려 대상 알약", () => {
     expect(picker).not.toHaveTextContent("에서 오는 분");
   });
 
-  it("출발역을 숨긴 다른 사람은 고를 수 없다(그 사람 쪽 결과는 본인만 본다, #162)", () => {
+  it("참여자 모두를 고를 수 있다", () => {
     renderResult(room);
-    expect(screen.queryByRole("button", { name: "참가자 3" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "동대문역사문화공원" })).toBeInTheDocument();
   });
 
-  it("숨긴 본인은 자기 쪽을 고를 수 있다", () => {
-    const self = {
-      ...room,
-      participants: room.participants.map((p) =>
-        p.participantId === "p3"
-          ? { ...p, isSelf: true, originCode: "s1q", originName: "동대문역사문화공원", shortLabel: "참가자 3" }
-          : p,
-      ),
-    };
-    renderResult(self);
-    expect(screen.getByRole("button", { name: "참가자 3" })).toBeInTheDocument();
-  });
-
-  it("방의 기본 배려 대상이 숨긴 다른 사람이면 공평하게로 받는다(미리보기와 같은 규칙)", () => {
-    renderResult({ ...room, favorTarget: "p3" });
-    expect(screen.getByRole("tab", { name: "공평하게" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByRole("group", { name: "누구 쪽으로 기울일까요?" })).not.toBeInTheDocument();
+  it("기본 배려 대상이 방을 나갔다면 첫 참가자를 고른다", () => {
+    renderResult({ ...room, favorTarget: "gone" });
+    expect(screen.getByRole("tab", { name: "누구 쪽으로" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "홍대입구" })).toHaveAttribute("aria-pressed", "true");
     expect(vi.mocked(api.getRoomResult)).toHaveBeenLastCalledWith(
       room.roomId,
-      { mode: "fair", favor: null },
+      { mode: "favor", favor: "p1" },
       null,
       expect.anything(),
     );
@@ -138,7 +123,7 @@ describe("방 결과가 방 없음을 받으면", () => {
 describe("방의 약속을 바꾸는 동안의 막차 칸(#83 재검토)", () => {
   type Result = Awaited<ReturnType<typeof api.getRoomResult>>;
 
-  // 강남(지연, 공개)·부천(숨김). 1위 신도림의 강남 방면 직행 막차: 금요일 운행일 24:27(1467분), 토요일 운행일 23:27(1407분).
+  // 강남(지연)·부천. 1위 신도림의 강남 방면 직행 막차: 금요일 운행일 24:27(1467분), 토요일 운행일 23:27(1407분).
   const people = [
     participant("p1", {
       isHost: true,
@@ -150,12 +135,10 @@ describe("방의 약속을 바꾸는 동안의 막차 칸(#83 재검토)", () =>
       shortLabel: "지연",
     }),
     participant("p2", {
-      hidden: true,
-      originCode: null,
-      originName: null,
-      label: "참가자 2",
-      labelKind: "ordinal",
-      shortLabel: "참가자 2",
+      originCode: "6dk",
+      originName: "부천",
+      label: "부천에서 오는 분",
+      shortLabel: "부천",
     }),
   ];
   const meetingRoom = (shareVersion: number, meetingDate: string, meetingTime: string): Room => ({

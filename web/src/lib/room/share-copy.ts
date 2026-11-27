@@ -9,7 +9,7 @@ import { ogParticipantNames, ogSafeName } from "@/lib/copy/og-coverage";
 import { OG_TEXT, SITE_OG_IMAGE_PATH } from "@/lib/copy/og-text";
 import { withJosa } from "@/lib/display/korean";
 import { formatSeconds, minutesFromSeconds } from "@/lib/display/minutes";
-import { banbanLine, mayIncludeHidden } from "@/lib/result/banban-index";
+import { banbanLine } from "@/lib/result/banban-index";
 import { lastTrainCardLine, lastTrainState } from "@/lib/result/last-train";
 import { middleSentence, middleView } from "@/lib/result/map-middle";
 import { modeSentence } from "@/lib/result/mode-sentence";
@@ -34,15 +34,13 @@ export type RoomShareCopy = {
 type Computed = Exclude<RoomPreview, { stage: "collecting" }>;
 
 /**
- * 방 미리보기 그림(`/r/<id>/og`)에 귀갓길 막차 줄(#62)을 그릴지. 처리방침 6항의 방 링크 미리보기 목록에 "출발역을 공개한 참여자의
- * 귀갓길 막차 시각(출발역을 숨긴 사람은 넣지 않음)"을 적은 판(#84)부터 켠다. `policy.test.ts`가 6항에 "막차"가 없는데 켜져 있으면
- * 실패한다. 켜고 끄면 그림이 달라지므로 `ROOM_OG_IMAGE_VERSION`도 바뀐다(스위치 상태로 센다). 출발역을 숨긴 사람에게는 서버가
- * 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다). 결과·방 화면의 막차 칸과 공유 링크 숫자판(`/s/og`)은 이 스위치와 상관없다.
+ * 방 미리보기 그림에 귀갓길 막차 줄(#62)을 그릴지. 처리방침 6항에 해당 항목을 적은 판(#84)부터 적용한다.
+ * 방장이 대신 넣은 방의 미리보기에는 막차가 없다. 켜고 끄면 `ROOM_OG_IMAGE_VERSION`도 바뀐다.
  */
 export const ROOM_PREVIEW_LAST_TRAIN: boolean = true;
 
 /** `lastTrain`은 그림 값에 막차 줄을 넣을지. 기본은 `ROOM_PREVIEW_LAST_TRAIN`이고, 테스트가 켠 모습과 끈 모습을 둘 다 보려고 받는다. */
-type ShareCopyOptions = { lastTrain?: boolean; confirmedPublic?: boolean };
+type ShareCopyOptions = { lastTrain?: boolean };
 
 /** 모으는 중의 초대. 미리보기를 못 받았을 때(서버 실패·옛 서버·번호가 지금보다 큼)도 이 문구를 쓴다. */
 export const INVITE_COPY: RoomShareCopy = {
@@ -93,7 +91,7 @@ function cardName(preview: Computed, label: string): string {
 }
 
 /**
- * 1위 단계의 "지도 한가운데였다면" 비교(#68 2단계). 서버는 방의 기본 기준이 공평이고 출발역을 숨긴 사람이 없을 때만 `mapMiddle`을 준다.
+ * 1위 단계의 "지도 한가운데였다면" 비교(#68 2단계). 서버는 방의 기본 기준이 공평일 때만 `mapMiddle`을 준다.
  * 웹은 공평 기준인지와 화면 숫자(반올림한 분) 기준의 5분 규칙을 한 번 더 거른다(무상태 링크의 `toMapMiddleView`와 같은 규칙).
  * `name`은 이름을 고르는 방법(글은 서버 짧은 이름, 그림은 글꼴에 있는 글자로 거른 이름).
  */
@@ -108,17 +106,13 @@ function middleLine(preview: Computed, name: (index: number) => string): string 
   return view ? middleSentence(view, name(view.personIndex)) : null;
 }
 
-/**
- * 1위 단계의 반반지수(#202). 미리보기에는 숨김 표시가 없으므로, 숨긴 사람의 시간처럼 300초의 배수인 시간이 있으면 끈다.
- * 숨긴 사람의 시간은 남에게 5분 단위로 올라가 본인 화면과 말이 갈리기 때문이다.
- */
-function banbanOf(preview: Computed, confirmedPublic: boolean) {
+/** 1위 단계의 반반지수(#202). */
+function banbanOf(preview: Computed) {
   if (preview.stage !== "result") return null;
   const seconds = preview.station.times.map((t) => t.seconds);
   return banbanLine({
     mode: preview.basis.mode,
     minutes: seconds.map((s) => (s === null ? null : minutesFromSeconds(s))),
-    hidden: !confirmedPublic && mayIncludeHidden(seconds),
   });
 }
 
@@ -128,19 +122,18 @@ function card(
   modeLine: string,
   showLastTrain: boolean,
   footer?: SharedCardData["footer"],
-  confirmedPublic = false,
 ): SharedCardData {
   const names = cardNames(preview);
   const comparison = middleLine(preview, (index) => names[index] ?? "");
   const favored = preview.stage === "result" && preview.basis.mode === "favor" ? preview.basis.favorLabel : null;
   const meeting = { date: preview.room.meetingDate, time: preview.room.meetingTime };
-  const banban = banbanOf(preview, confirmedPublic);
+  const banban = banbanOf(preview);
   return {
     stationCode: preview.station.stationCode,
     stationName: preview.station.stationName,
     suffix,
     people: preview.station.times.map((t, index) => {
-      // 출발역을 숨긴 사람은 서버가 막차를 주지 않는다(미리보기는 누가 묻든 같은 값이다). 약속보다 먼저 떠나는 열차는 줄을 비운다.
+      // 약속보다 먼저 떠나는 열차는 줄을 비운다.
       const lastTrain = showLastTrain ? lastTrainCardLine(lastTrainState(t.lastTrain, meeting), OG_TEXT) : null;
       return {
         name: names[index] ?? `참가자 ${index + 1}`,
@@ -235,11 +228,7 @@ function enteredByHostCopy(preview: Computed): RoomShareCopy {
   };
 }
 
-function resultCopy(
-  preview: Extract<RoomPreview, { stage: "result" }>,
-  showLastTrain: boolean,
-  confirmedPublic: boolean,
-): RoomShareCopy {
+function resultCopy(preview: Extract<RoomPreview, { stage: "result" }>, showLastTrain: boolean): RoomShareCopy {
   if (preview.basis.mode === "favor" && preview.basis.drawRound !== undefined) return drawTeaserCopy(preview);
   const { stationName } = preview.station;
   const times = timesText(preview);
@@ -263,8 +252,6 @@ function resultCopy(
       OG_TEXT.sharedSuffix,
       modeSentence(preview.basis.mode, favorName) + basisSuffix(preview.room.timeBasis),
       showLastTrain,
-      undefined,
-      confirmedPublic,
     ),
   };
 }
@@ -293,7 +280,7 @@ export function roomShareCopy(preview: RoomPreview, options: ShareCopyOptions = 
     case "collecting":
       return INVITE_COPY;
     case "result":
-      return resultCopy(preview, showLastTrain, options.confirmedPublic === true);
+      return resultCopy(preview, showLastTrain);
     case "decided":
       return decidedCopy(preview, showLastTrain);
   }

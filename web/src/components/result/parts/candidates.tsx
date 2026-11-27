@@ -49,7 +49,7 @@ export function Candidates({
 }) {
   const [top, ...rest] = view.candidates;
   if (!top) return null;
-  const banban = banbanLine({ mode: view.mode, minutes: top.aggregate.minutes, hidden: view.anyHidden });
+  const banban = banbanLine({ mode: view.mode, minutes: top.aggregate.minutes });
   return (
     <>
       <TopCandidateCard candidate={top} choice={choice} meIndex={meIndex} mapMiddle={view.mapMiddle} banban={banban} />

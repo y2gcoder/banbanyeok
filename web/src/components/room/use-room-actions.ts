@@ -83,7 +83,7 @@ export function useRoomActions({
 
   const join = useMutation({
     mutationFn: (input: ParticipantInput) => joinRoom(roomId, input, keys.keyFor(input)),
-    onSuccess: (joined, input) => {
+    onSuccess: (joined) => {
       commit({
         v: 1,
         ...(record?.hostToken ? { hostToken: record.hostToken } : {}),
@@ -95,7 +95,7 @@ export function useRoomActions({
       keys.renew();
       const seconds = secondsSinceRoomCreated(room?.createdAt);
       track("participant_joined", {
-        hidden: input.hidden === true,
+        hidden: false,
         ...roomHashProperty({ roomId, roomHash: room?.roomHash }),
         ...(seconds === undefined ? {} : { seconds_since_room_created: seconds }),
       });

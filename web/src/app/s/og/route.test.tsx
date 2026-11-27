@@ -120,7 +120,7 @@ describe("/s/og", () => {
     expect(response.headers.get("cache-control")).toBe("public, max-age=60");
   });
 
-  it("반반지수(#202): 출발역을 숨긴 사람이 있으면 빼고, 없으면 막대와 한 줄을 그린다", async () => {
+  it("반반지수(#202): 막대와 한 줄을 그린다", async () => {
     const sample = SHARED_CASES.find((c) => c.id === "four-fair");
     if (!sample) throw new Error("표본 없음");
     loadSharedView.mockResolvedValue(toResultView(sample.result));
@@ -128,13 +128,5 @@ describe("/s/og", () => {
     expect(drawn).toEqual([
       expect.objectContaining({ text: expect.stringMatching(/^가장 오래 걸리는 사람도|^걸리는 시간이/) }),
     ]);
-    drawn.length = 0;
-    const hidden = {
-      ...sample.result,
-      participants: sample.result.participants.map((p, i) => (i === 1 ? { ...p, hidden: true } : p)),
-    };
-    loadSharedView.mockResolvedValue(toResultView(hidden));
-    expect((await GET(new Request(URL_OK))).status).toBe(200);
-    expect(drawn).toEqual([null]);
   });
 });

@@ -80,15 +80,14 @@ class StatelessRecommendationTest :
         }
 
         describe("the people") {
-            it("ids people by their position and hides nobody") {
+            it("ids people by their positions and keeps their origins") {
                 val sent =
                     sentToService(
                         request(null, origins = listOf("03v", "130", "225"), nicknames = listOf("민수", null, "지연")),
                     )
                 sent.participants.map { it.id } shouldBe listOf("0", "1", "2")
                 sent.participants.map { it.nickname } shouldBe listOf("민수", null, "지연")
-                sent.participants.map { it.hidden } shouldBe listOf(false, false, false)
-                sent.viewerId.shouldBeNull()
+                sent.participants.map { it.originCode } shouldBe listOf("03v", "130", "225")
             }
 
             it("replaces retired station codes with their current codes") {

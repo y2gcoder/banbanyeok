@@ -2,7 +2,7 @@
 
 - 상태: superseded by [ADR-0007](0007-stop-new-hidden-origins.md) (#182에서 서버가 더는 적용하지 않음, [ADR-0012](0012-retire-hidden-origins-in-steps.md))
 - 더하는 결정: [ADR-0004](0004-hidden-origin-times-coarsened.md)(숨긴 사람의 시간은 5분 단위로), docs/01-synthesis.md '공평 규칙'의 favor 상한
-- 2026-11-25부터 새로 숨길 수 없다([ADR-0007](0007-stop-new-hidden-origins.md)). 이 결정은 이미 숨긴 사람이 남은 방에만 쓰고, 옛 방이 모두 사라지면 걷어낸다.
+- 2026-11-25부터 새로 숨길 수 없다([ADR-0007](0007-stop-new-hidden-origins.md)). 그 뒤 옛 방에만 남았던 이 규칙과 관련 코드도 [ADR-0012](0012-retire-hidden-origins-in-steps.md)에 따라 폐기한다.
 
 ADR-0004로 시간을 5분 단위로 뭉뚱그려도 '누구 쪽으로' 탭 두 곳에서 숨긴 출발역이 그대로 드러났다(#161 검토 중 재현, 같은 5분 구간에서 출발역만 바꾼 두 방).
 

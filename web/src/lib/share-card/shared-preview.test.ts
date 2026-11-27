@@ -131,15 +131,6 @@ describe("지도 한가운데 비교(#68)", () => {
     expect(scoreboardCardData(view, { ...state, mode: "fast" })?.compareLine).toBeNull();
   });
 
-  it("출발역을 숨긴 참가자가 있으면 비교가 없다(숨긴 출발역을 거꾸로 짐작할 수 있다)", () => {
-    const base = withMiddle([2400, 2100]);
-    const [first, second] = base.participants;
-    if (!first || !second) throw new Error("표본");
-    const hidden = toResultView({ ...base, participants: [first, { ...second, hidden: true, originName: null }] });
-    expect(hidden.mapMiddle).toBeNull();
-    expect(sharedPreview(hidden, state)?.description).not.toContain("지도 한가운데");
-  });
-
   it("차이가 아주 작을 때만 칭호: 2명은 1분 이하", () => {
     const even = toResultView(
       result({

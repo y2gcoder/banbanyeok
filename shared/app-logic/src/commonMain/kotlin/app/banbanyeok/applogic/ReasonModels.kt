@@ -80,8 +80,6 @@ public data class FavorContext(
  * @property comparison 비교 대상(1위는 2위, 대안은 1위). 후보가 하나뿐이면 null.
  * @property favor [mode]가 FAVOR일 때 필수, 아니면 null.
  * @property isFairBaseline 이 역이 엄밀한 공평 1위와 같은 역이다(빨리 만나기 1위 문구에 쓴다).
- * @property approximate 이 카드나 비교 대상의 시간 중 뭉뚱그린 값(출발역을 숨긴 다른 사람의 칸, #142)이 있다. 순위는 정확한 값으로
- *   정했으므로 보이는 숫자끼리는 순위와 어긋날 수 있다: 그때 "가장 짧아요", "덜 걸려요"처럼 순위와 반대로 읽히는 말 대신 "거의 같아요"라고 쓴다.
  */
 public data class ReasonInput(
     val mode: ReasonMode,
@@ -97,7 +95,6 @@ public data class ReasonInput(
     val comparison: Comparison? = null,
     val favor: FavorContext? = null,
     val isFairBaseline: Boolean = false,
-    val approximate: Boolean = false,
 ) {
     public companion object {
         public const val MAX_RANK: Int = 3

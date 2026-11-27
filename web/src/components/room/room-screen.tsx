@@ -10,7 +10,7 @@ import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
 import { type RoomDraw, roomDraw } from "@/lib/room/draw";
-import { isRoomGone, isRoomWithheld, roomErrorMessage } from "@/lib/room/errors";
+import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { type HostProbe, settleRoomNotFound } from "@/lib/room/gone";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
@@ -23,7 +23,7 @@ import {
   withoutParticipant,
   writeRoomRecord,
 } from "@/lib/room/tokens";
-import { canFavor, hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
+import { hasStaleParticipantToken, joinState, roomPeople } from "@/lib/room/view";
 import { stationByCode } from "@/lib/stations";
 import { OPEN_SCOPE } from "@/lib/stations/scope";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ import { OutcomeCard } from "./outcome-card";
 import { PEOPLE_TITLE_ID, PeopleList } from "./people-list";
 import { ROOM_MAIN, ROOM_SIDE } from "./room-layout";
 import { type RoomDecisionMode, RoomResult } from "./room-result";
-import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell, RoomWithheld } from "./room-states";
+import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell } from "./room-states";
 import { RoomShareSection } from "./share-section";
 import { useFavorDraw } from "./use-favor-draw";
 import { useRoomActions } from "./use-room-actions";
@@ -46,26 +46,24 @@ import { useRoomDecision } from "./use-room-decision";
 /** 결과 위 "나도 출발역 넣기"가 옮겨 갈 참여 폼 자리. */
 const JOIN_FORM_ID = "join-form";
 
-const emptyValue = (): ParticipantFormValue => ({ nickname: "", station: null, hidden: false });
+const emptyValue = (): ParticipantFormValue => ({ nickname: "", station: null });
 
-/** 기억해 둔 "나"로 참여 폼의 처음 값을 만든다(역을 숨기는 설정까지 기억하지는 않는다). */
+/** 기억해 둔 "나"로 참여 폼의 처음 값을 만든다. */
 function rememberedValue(): ParticipantFormValue {
   const me = loadRememberedMe();
   const station = me ? stationByCode(me.code) : undefined;
-  return me && station?.supported ? { nickname: me.nickname, station, hidden: false } : emptyValue();
+  return me && station?.supported ? { nickname: me.nickname, station } : emptyValue();
 }
 
 /**
  * 방 설정 요약의 기준: "공평하게" / "빨리 만나기" / "{짧은 이름} 쪽으로"(배려 대상을 아직 모르면 "누구 쪽으로").
- * 배려 대상이 출발역을 숨긴 다른 사람이면 결과 화면·미리보기처럼 "공평하게"다(#162). 뽑기로 정하는 방은 "(뽑기)"를 붙이고, 아직 안
- * 뽑았으면 그렇다고 적는다(#172).
+ * 뽑기로 정하는 방은 "(뽑기)"를 붙이고, 아직 안 뽑았으면 그렇다고 적는다(#172).
  */
 function modeText(room: Room): string {
   if (room.mode === "fair") return "공평하게";
   if (room.mode === "fast") return "빨리 만나기";
   const target = room.participants.find((p) => p.participantId === room.favorTarget);
   if (room.favorDraw && !target) return "누구 쪽으로(뽑기 전)";
-  if (target && !canFavor(target)) return "공평하게";
   // shortLabel을 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로 쓴다.
   const name = target ? ((target.shortLabel as string | undefined) ?? target.label) : "누구";
   return room.favorDraw ? `${name} 쪽으로(뽑기)` : `${name} 쪽으로`;
@@ -109,8 +107,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   const token = record?.participantToken ?? null;
   const participantId = record?.participantId ?? null;
-  // 방을 읽을 때 싣는 자격. 참여자 토큰이 없는 방장 기기는 방장 토큰을 싣는다: 숨긴 참가자가 남은 옛 방은 이 방의 자격이 있어야 404가 아닌
-  // ROOM_WITHHELD를 주고, 404면 아래에서 기기 기록을 지우기 때문이다(ADR-0012).
+  // 참여자 토큰이 없는 방장 기기는 방장 토큰으로 방을 읽는다.
   const viewerToken = token ?? record?.hostToken ?? null;
   // 방이 없다는 답이 오면 되살릴 수 없으므로 더는 다시 불러오지 않는다. 방 쿼리 자신의 404는 queries.ts가 폴링·포커스 재요청을
   // 멈추고, 결과 쿼리가 먼저 받은 404는 여기서 방 쿼리를 끈다.
@@ -122,7 +119,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   // TanStack은 다시 불러오기가 실패해도 이전 data를 유지한다. 방이 없다는 답은 이전 화면을 남기지 않고 곧바로 안내로 바꾼다.
   const notFound = resultGone || (query.isError && isRoomGone(query.error));
   const gone = notFoundVerdict === "gone";
-  const withheld = !notFound && query.isError && isRoomWithheld(query.error);
 
   // 방 응답으로 기기 기록을 맞춘다: 내보내졌으면 참여자 토큰 정리. 저장해 둔 시각만 보고 지우지 않는다(서버는 활동마다 만료를 미룬다).
   useEffect(() => {
@@ -136,7 +132,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   const actions = useRoomActions({ roomId, room, record, commit, keys });
 
-  // 404는 그 요청에 실은 토큰에 대한 답이다. 지워진 참여자 토큰이나 숨긴 참가자가 남은 방이면 방은 있어도 404라서, 방장 토큰으로
+  // 404는 그 요청에 실은 토큰에 대한 답이다. 지워진 참여자 토큰은 방이 있어도 404를 받을 수 있어서, 방장 토큰으로
   // 다시 확인하고 그사이 다른 탭이 바꾼 기록은 지우지 않는다(lib/room/gone.ts). 방이 없다고 확정될 때만 기록을 지운다.
   useEffect(() => {
     if (!notFound || record === undefined || notFoundVerdict !== null || settling.current) return;
@@ -146,7 +142,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         await getRoom(roomId, hostToken);
         return "exists";
       } catch (error) {
-        if (isRoomWithheld(error)) return "exists";
         return isRoomGone(error) ? "gone" : "unknown";
       }
     };
@@ -234,18 +229,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     );
   }
   if (notFound) return <RoomLoading />;
-  if (withheld) {
-    return (
-      <RoomWithheld
-        canDeleteRoom={Boolean(record?.hostToken)}
-        canRemoveSelf={Boolean(token && participantId)}
-        busy={actions.busy}
-        error={actions.actionError}
-        onDeleteRoom={actions.remove}
-        onRemoveSelf={actions.leave}
-      />
-    );
-  }
   if (query.isError && !room) {
     return <RoomLoadError message={roomErrorMessage(query.error)} onRetry={() => void query.refetch()} />;
   }
@@ -262,7 +245,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
       // 이름은 사람이 넣은 원문(nickname)만 채운다. label("참가자 N" 등)을 이름 칸에 넣지 않는다.
       nickname: self?.nickname ?? "",
       station: station ?? null,
-      hidden: self?.hidden ?? false,
     };
   };
   const today = todayInSeoul();
@@ -305,7 +287,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           key="edit"
           mode="edit"
           initial={myValue()}
-          hiddenNow={room.participants.find((p) => p.isSelf === true)?.hidden === true}
           personIndex={Math.max(0, selfIndex)}
           pending={actions.editPending}
           timeBasis={room.timeBasis}
@@ -377,7 +358,6 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
         full={expectedCount === null ? null : room.participants.length >= expectedCount}
         joinedCount={room.participants.length}
         expectedCount={expectedCount}
-        hiddenInRoom={room.participants.some((p) => p.hidden)}
         focusOnMount={
           playDraw && drawControl.drewKey === draw.key
             ? "skip"

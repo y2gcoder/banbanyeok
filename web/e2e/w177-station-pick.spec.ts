@@ -4,21 +4,12 @@ import { prepareRoom } from "./support/room-fixture";
 /**
  * #177 출발역 목록에서 역을 고르면 그 역만 들어가고 다른 칸은 그대로다.
  *
- * 출발역 숨기기는 새로 켤 수 없어서(ADR-0007) 숨기기 칸은 이미 숨긴 본인의 '내 출발역 고치기'에만 있다. 숨기기 칸을 쓰는 경우는 그
- * 폼에서 보고(처음에 켜져 있다), 방 만들기·참여에서는 두 번째 누름이 아래 칸 어디에도 닿지 않는지를 본다.
- *
  * ① 클릭 관통: 항목을 누르면 목록이 바로 닫힘 상태가 되어(닫히는 동안은 포인터를 받지 않는다) 그 아래가 드러난다. 더블클릭·두 번 탭의
- *    두 번째 누름이 바로 아래 칸('출발역 이름 계속 숨기기', 추천 기준, '참여하기', 첫 화면은 '한 명 더')을 누르면 안 된다. 마우스(데스크톱
+ *    두 번째 누름이 바로 아래 칸(추천 기준, '참여하기', 첫 화면은 '한 명 더')을 누르면 안 된다. 마우스(데스크톱
  *    Chromium), 안드로이드 터치(Chromium), iOS 터치(WebKit, 두 번째 탭도 click detail이 1이다)에서 본다(playwright.config.ts의 프로젝트).
  *    두 번째 누름은 목록이 닫힘 상태가 된 뒤, 그 자리의 히트 테스트가 아래 칸을 가리키는 것을 확인하고 누른다(겹치지 않으면 실패).
- * ② 한 틱에 여러 변경: 역 선택과 숨기기 변경이 다시 그리기 전에 함께 와도 서로 덮지 않는다(옛 값을 펼쳐 쓰면 뒤의 것이 역을 지운다).
- * ③ 한글 조합 중 한 번 누름(운영자 제보: 맥에서 마우스로 한 번 눌렀는데 역은 안 들어가고 숨기기가 켜짐): "서울" 뒤에 "대"를 조합하는
- *    중이면 목록이 입력 칸보다 한 글자 늦었다("서울" 목록, 서울대입구가 셋째). macOS는 누르는 순간 조합을 먼저 확정하므로 목록이
- *    "서울대" 목록으로 바뀌어 누른 자리에 항목이 없고 누름이 아래 라벨에 떨어졌다. 누르기 전과 확정한 뒤 모두 그 자리의 히트 테스트가
- *    항목이어야 한다(Chromium은 CDP의 trusted 조합, WebKit은 페이지에서 보낸 조합 이벤트). 확정이 누름보다 늦는 경우(고른 뒤 확정)에도
- *    입력 칸은 고른 역 이름이어야 한다.
- * ④ 그대로여야 하는 것: 한 번 눌러 고른 뒤 목록 밖을 바로 누르는 것, Enter로 고른 뒤 바로 숨기기 칸을 누르는 것, 마우스로 따로 누른
- *    클릭(detail 1), 두 번째 누름 도중 키보드 Space(detail 0 click).
+ * ② 한글 조합 중에 역을 고를 때 조합이 먼저 확정돼도 고른 역만 들어가야 한다.
+ * ③ 목록 밖 이름 칸을 누르는 정상 클릭은 그대로 동작한다.
  */
 const SIZES = [
   { project: "desktop-chrome", width: 1366, height: 1290 }, // 제보 화면(2732×2578 @2x)
@@ -33,15 +24,13 @@ type Point = { x: number; y: number };
 
 const listClosed = (page: Page) =>
   page.waitForFunction(() => !document.querySelector('[data-slot="combobox-content"][data-open]'));
-type Fields = { name: Locator; station: Locator; hidden: Locator; hiddenLabel: Locator };
+type Fields = { name: Locator; station: Locator };
 
 // 역 목록이 열리면 나머지 화면은 접근성 트리에서 가려지므로 칸은 CSS로 찾는다.
 function fieldsIn(form: Locator): Fields {
   return {
     name: form.locator('input[id$="-name"]'),
     station: form.locator('input[id$="-station"]'),
-    hidden: form.locator('input[type="checkbox"][id$="-hidden"]'),
-    hiddenLabel: form.locator('label[for$="-hidden"]'),
   };
 }
 
@@ -59,27 +48,23 @@ async function openJoin(page: Page): Promise<Fields> {
   return fieldsIn(form);
 }
 
-/** 출발역을 이미 숨긴 본인의 '내 출발역 고치기'. 숨기기 칸이 켜진 채로 있고, 출발역 칸은 비워 둔다(검색어만 들어가게). */
-async function openEditHidden(page: Page): Promise<Fields> {
-  await page.goto(await prepareRoom(page, "hidden-self"));
+/** 이미 참여한 사람의 '내 출발역 고치기'. */
+async function openEdit(page: Page): Promise<Fields> {
+  await page.goto(await prepareRoom(page, "friend-joined"));
   await page.getByRole("button", { name: "수정 내 항목" }).click();
   const form = page.getByRole("form", { name: "내 출발역 고치기" });
   await expect(form).toBeVisible();
   const f = fieldsIn(form);
-  await expect(f.hidden).toBeChecked();
   await f.station.fill("");
   await page.keyboard.press("Escape");
   await listClosed(page);
   return f;
 }
 
-/** 숨기기 칸이 있는 폼(이미 숨긴 본인). */
-const HIDE_FORMS = [{ id: "내 항목 고치기(이미 숨긴 본인)", open: openEditHidden }] as const;
-
-/** 숨기기 칸이 없는 폼. 두 번째 누름은 아래의 무엇에도 닿지 않아야 한다. */
-const NO_HIDE_FORMS = [
+const FORMS = [
   { id: "방 만들기", open: openCreate },
   { id: "방 참여", open: openJoin },
+  { id: "내 항목 고치기", open: openEdit },
 ] as const;
 
 /**
@@ -212,15 +197,12 @@ for (const size of SIZES) {
     });
     const touch = !size.project.startsWith("desktop-");
 
-    for (const { id, open } of NO_HIDE_FORMS) {
-      test(`${id}: 숨기기 칸이 없고, 목록의 역을 두 번 눌러도 그 역만 들어가며 두 번째 누름은 아래에 닿지 않는다`, async ({
-        page,
-      }) => {
+    for (const { id, open } of FORMS) {
+      test(`${id}: 목록의 역을 두 번 눌러도 그 역만 들어가며 두 번째 누름은 아래에 닿지 않는다`, async ({ page }) => {
         const f = await open(page);
-        await expect(f.hidden).toHaveCount(0);
         const posts: string[] = [];
         page.on("request", (req) => {
-          if (req.method() === "POST") posts.push(req.url());
+          if (["POST", "PUT"].includes(req.method())) posts.push(req.url());
         });
         await f.name.fill("서연");
         const option = await search(page, f.station, "서울대입구", /^서울대입구/);
@@ -250,63 +232,6 @@ for (const size of SIZES) {
         await expect(f.station).toHaveValue("서울대입구");
         await expect(f.name).toHaveValue("서연");
         expect(posts).toEqual([]);
-      });
-    }
-
-    for (const { id, open } of HIDE_FORMS) {
-      test(`${id}: 목록의 역을 두 번 눌러도 그 역만 들어가고 숨기기·이름은 그대로`, async ({ page }) => {
-        const f = await open(page);
-        await f.name.fill("서연");
-        const option = await search(page, f.station, "서울대입구", /^서울대입구/);
-        await pressTwice(page, await overlapCenter(option, f.hiddenLabel), f.hiddenLabel, touch);
-        await expect(f.station).toHaveValue("서울대입구");
-        await expect(f.hidden).toBeChecked();
-        await expect(f.name).toHaveValue("서연");
-      });
-
-      test(`${id}: 한글 조합 중에 목록의 역을 한 번 누르면(누르는 순간 확정) 그 역이 들어가고 숨기기는 그대로`, async ({
-        page,
-        browserName,
-      }) => {
-        const f = await open(page);
-        await f.name.fill("서연");
-        await search(page, f.station, "서울", /^서울대입구/);
-        const ime = await imeFor(page, f.station, browserName);
-        await ime.start("대");
-        await expect(f.station).toHaveValue("서울대");
-        const option = page.getByRole("option", { name: /^서울대입구/ });
-        // 항목이 숨기기 라벨 위에 뜨는 곳을 누른다. 누르기 전에도, 누르는 순간 조합이 확정된 뒤에도 그 자리는 항목이어야 한다.
-        const point = await overlapCenter(option, f.hiddenLabel);
-        expect(await hits(option, point), "누르기 전 그 자리는 항목이다").toBe(true);
-        await ime.commit("대");
-        expect(await hits(option, point), "조합이 확정된 뒤에도 그 자리는 항목이다").toBe(true);
-        const before = await clicksSoFar(page);
-        if (touch) await page.touchscreen.tap(point.x, point.y);
-        else await page.mouse.click(point.x, point.y);
-        await expect.poll(() => clicksSoFar(page)).toBe(before + 1);
-        await expect(page.locator('[data-slot="combobox-content"]')).toHaveCount(0);
-        await expect(f.station).toHaveValue("서울대입구");
-        await expect(f.hidden).toBeChecked();
-        await expect(f.name).toHaveValue("서연");
-      });
-
-      test(`${id}: 역 선택과 숨기기가 한 틱에 와도 서로 덮지 않는다`, async ({ page }) => {
-        const f = await open(page);
-        await f.name.fill("서연");
-        const option = await search(page, f.station, "서울대입구", /^서울대입구/);
-        // 다시 그리기 전에 두 변경을 잇달아 보낸다(같은 작업 안의 두 클릭).
-        const [optionNode, hiddenNode] = await Promise.all([option.elementHandle(), f.hidden.elementHandle()]);
-        await page.evaluate(
-          ([o, h]) => {
-            (o as HTMLElement).click();
-            (h as HTMLElement).click();
-          },
-          [optionNode, hiddenNode] as const,
-        );
-        await expect(page.locator('[data-slot="combobox-content"]')).toHaveCount(0);
-        await expect(f.station).toHaveValue("서울대입구");
-        await expect(f.hidden).not.toBeChecked();
-        await expect(f.name).toHaveValue("서연");
       });
     }
 
@@ -386,43 +311,6 @@ for (const size of SIZES) {
       await expect(f.station).toHaveValue("서울대입구");
     });
 
-    test("내 항목 고치기: 마우스로 고른 뒤 따로 누른 클릭(detail 1)은 고른 자리 바로 옆이어도 닿는다", async ({
-      page,
-    }) => {
-      test.skip(touch, "마우스만");
-      const f = await openEditHidden(page);
-      const option = await search(page, f.station, "서울대입구", /^서울대입구/);
-      const point = await overlapCenter(option, f.hiddenLabel);
-      await page.mouse.click(point.x, point.y);
-      await listClosed(page);
-      const beside = { x: point.x + 18, y: point.y };
-      expect(await hits(f.hiddenLabel, beside), "옆자리에 숨기기 라벨이 드러나야 한다").toBe(true);
-      await page.mouse.click(beside.x, beside.y, { clickCount: 1 });
-      await expect(f.hidden).not.toBeChecked();
-      await expect(f.station).toHaveValue("서울대입구");
-    });
-
-    test("내 항목 고치기: 더블클릭의 두 번째 누름 도중 키보드 Space는 그대로이고, 그 마우스 클릭만 막는다", async ({
-      page,
-    }) => {
-      test.skip(touch, "마우스만");
-      const f = await openEditHidden(page);
-      const option = await search(page, f.station, "서울대입구", /^서울대입구/);
-      const point = await overlapCenter(option, f.hiddenLabel);
-      await page.mouse.click(point.x, point.y);
-      await listClosed(page);
-      expect(await hits(f.hiddenLabel, point), "두 번째 누름 자리에 숨기기 라벨이 드러나야 한다").toBe(true);
-      await f.hidden.focus();
-      await page.mouse.down({ clickCount: 2 });
-      await page.keyboard.press("Space");
-      await expect(f.hidden).not.toBeChecked();
-      const before = await clicksSoFar(page);
-      await page.mouse.up({ clickCount: 2 });
-      await expect.poll(() => clicksSoFar(page)).toBe(before + 1);
-      await expect(f.hidden).not.toBeChecked();
-      await expect(f.station).toHaveValue("서울대입구");
-    });
-
     test("방 만들기: 한 번 눌러 고른 뒤 목록 밖(이름 칸)을 바로 누르면 그대로 움직인다", async ({ page }) => {
       const f = await openCreate(page);
       const option = await search(page, f.station, "서울대입구", /^서울대입구/);
@@ -432,19 +320,6 @@ for (const size of SIZES) {
       await expect(f.name).toBeFocused();
       await page.keyboard.type("민수");
       await expect(f.name).toHaveValue("민수");
-      await expect(f.station).toHaveValue("서울대입구");
-    });
-
-    test("내 항목 고치기: Enter로 고른 뒤 바로 숨기기 칸을 누르면 바뀐다", async ({ page }) => {
-      const f = await openEditHidden(page);
-      await search(page, f.station, "서울대입구", /^서울대입구/);
-      await page.keyboard.press("Enter");
-      await listClosed(page);
-      const box = await f.hidden.boundingBox();
-      if (!box) throw new Error("숨기기 칸이 없다");
-      if (touch) await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-      else await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-      await expect(f.hidden).not.toBeChecked();
       await expect(f.station).toHaveValue("서울대입구");
     });
 

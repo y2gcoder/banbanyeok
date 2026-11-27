@@ -1,6 +1,5 @@
 /**
- * 방의 권역과, 방 참여·고치기 칸이 고를 수 있는 범위(#180). 방 응답에는 권역 필드가 없어(계약에 숨긴 출발역의 권역을 싣지 않는다)
- * 보이는 출발역 코드를 이 웹 빌드의 역 인덱스로 읽는다.
+ * 방의 권역과, 방 참여·고치기 칸이 고를 수 있는 범위(#180). 방 응답의 출발역 코드를 이 웹 빌드의 역 인덱스로 읽는다.
  */
 import type { Room } from "@/lib/api/types";
 import {
@@ -13,15 +12,13 @@ import {
 } from "@/lib/stations";
 import { OPEN_SCOPE, type StationScope } from "@/lib/stations/scope";
 
-const visibleCodes = (room: Room): (string | null)[] => room.participants.map((p) => p.originCode ?? null);
+const originCodes = (room: Room): (string | null)[] => room.participants.map((p) => p.originCode ?? null);
 
 /**
- * 방의 권역. 숨긴 참가자가 있는 옛 방은 수도권 방 규칙을 따른다(ADR-0008). 보이는 출발역이 한 권역이면 그 권역이고,
- * 권역을 모르거나(인덱스에 없는 코드) 이미 섞였으면 null이다.
+ * 알려진 출발역이 한 권역에 속하면 그 권역이다. 모두 모르거나 섞였으면 null이다.
  */
 export function roomRegion(room: Room): RegionId | null {
-  if (room.participants.some((p) => p.hidden)) return "capital";
-  const regions = regionsOf(visibleCodes(room));
+  const regions = regionsOf(originCodes(room));
   return regions.length === 1 ? (regions[0] ?? null) : null;
 }
 
@@ -37,7 +34,7 @@ export function roomStationScope(room: Room): StationScope {
   return { region: roomRegion(room), slot: fresh ? (room.timeBasis?.timeSlot ?? null) : null };
 }
 
-/** 오류 문구가 짚을 권역 이름: 방에 보이는 출발역과 이번에 고른 역의 권역. 숨긴 출발역은 들어가지 않는다. */
+/** 오류 문구가 짚을 권역 이름: 방의 출발역과 이번에 고른 역의 권역. */
 export function roomRegionNames(room: Room | undefined, picked?: string | null): string[] {
-  return regionsOf([...(room ? visibleCodes(room) : []), picked]).map(regionName);
+  return regionsOf([...(room ? originCodes(room) : []), picked]).map(regionName);
 }

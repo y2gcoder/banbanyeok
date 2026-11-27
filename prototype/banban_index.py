@@ -28,9 +28,9 @@ def format_minutes(minutes):
     return f'{hours}시간' if rest == 0 else f'{hours}시간 {rest}분'
 
 
-def banban_line(mode, minutes, hidden):
-    """공평 기준에서 모두 갈 수 있고 숨긴 사람이 없을 때만 {'kind', 'text'}. 그 밖에는 None."""
-    if hidden or mode != 'fair' or len(minutes) < 2 or any(m is None for m in minutes):
+def banban_line(mode, minutes):
+    """공평 기준에서 모두 갈 수 있을 때만 {'kind', 'text'}. 그 밖에는 None."""
+    if mode != 'fair' or len(minutes) < 2 or any(m is None for m in minutes):
         return None
     pair = len(minutes) == 2
     gap = max(minutes) - min(minutes)
@@ -47,26 +47,25 @@ def banban_line(mode, minutes, hidden):
 
 
 FIXED = [
-    ('pair_one_minute', 'fair', [21, 22], False, '2명 1분 차이: 강조 층'),
-    ('pair_two_minutes', 'fair', [20, 22], False, '2명 문턱(2분) 안'),
-    ('pair_three_minutes', 'fair', [19, 22], False, '2명 문턱 밖: 기본 층'),
-    ('pair_same', 'fair', [26, 26], False, '0분 차이'),
-    ('group_four_minutes', 'fair', [16, 20, 19], False, '3명 4분 차이: 실제 차이를 말한다'),
-    ('group_six_minutes', 'fair', [38, 34, 37, 32], False, '3명 이상 문턱(6분) 안'),
-    ('group_seven_minutes', 'fair', [27, 28, 21, 22], False, '3명 이상 문턱 밖'),
-    ('group_spread', 'fair', [27, 28, 16, 7], False, '4명 차이 21분: 기본 층'),
-    ('group_same', 'fair', [49, 49, 49], False, '3명 0분 차이'),
-    ('over_an_hour', 'fair', [46, 53, 94], False, '1시간이 넘는 최장: 명사형'),
-    ('just_under_an_hour', 'fair', [40, 59], False, '59분: 도 형'),
-    ('exactly_an_hour', 'fair', [40, 60], False, '정각 1시간: 명사형'),
-    ('just_over_an_hour', 'fair', [40, 61], False, '1시간 1분: 명사형'),
-    ('close_over_an_hour', 'fair', [93, 94], False, '1시간이 넘어도 차이가 작으면 강조 층'),
-    ('origin_is_meeting', 'fair', [0, 31], False, '한 사람이 출발역에서 만난다'),
-    ('fast_mode', 'fast', [21, 22], False, '빨리 만나기에는 없다'),
-    ('favor_mode', 'favor', [21, 22], False, '누구 쪽으로에는 없다'),
-    ('hidden', 'fair', [21, 22], True, '숨긴 사람이 있으면 없다'),
-    ('no_route', 'fair', [21, None], False, '갈 수 없는 사람이 있으면 없다'),
-    ('one_person', 'fair', [21], False, '한 사람이면 없다'),
+    ('pair_one_minute', 'fair', [21, 22], '2명 1분 차이: 강조 층'),
+    ('pair_two_minutes', 'fair', [20, 22], '2명 문턱(2분) 안'),
+    ('pair_three_minutes', 'fair', [19, 22], '2명 문턱 밖: 기본 층'),
+    ('pair_same', 'fair', [26, 26], '0분 차이'),
+    ('group_four_minutes', 'fair', [16, 20, 19], '3명 4분 차이: 실제 차이를 말한다'),
+    ('group_six_minutes', 'fair', [38, 34, 37, 32], '3명 이상 문턱(6분) 안'),
+    ('group_seven_minutes', 'fair', [27, 28, 21, 22], '3명 이상 문턱 밖'),
+    ('group_spread', 'fair', [27, 28, 16, 7], '4명 차이 21분: 기본 층'),
+    ('group_same', 'fair', [49, 49, 49], '3명 0분 차이'),
+    ('over_an_hour', 'fair', [46, 53, 94], '1시간이 넘는 최장: 명사형'),
+    ('just_under_an_hour', 'fair', [40, 59], '59분: 도 형'),
+    ('exactly_an_hour', 'fair', [40, 60], '정각 1시간: 명사형'),
+    ('just_over_an_hour', 'fair', [40, 61], '1시간 1분: 명사형'),
+    ('close_over_an_hour', 'fair', [93, 94], '1시간이 넘어도 차이가 작으면 강조 층'),
+    ('origin_is_meeting', 'fair', [0, 31], '한 사람이 출발역에서 만난다'),
+    ('fast_mode', 'fast', [21, 22], '빨리 만나기에는 없다'),
+    ('favor_mode', 'favor', [21, 22], '누구 쪽으로에는 없다'),
+    ('no_route', 'fair', [21, None], '갈 수 없는 사람이 있으면 없다'),
+    ('one_person', 'fair', [21], '한 사람이면 없다'),
 ]
 
 
@@ -78,22 +77,22 @@ def random_cases():
         n = rng.choice((2, 3, 4))
         base = rng.randrange(0, 150)
         minutes = [base + rng.randrange(0, rng.choice((3, 8, 13, 40))) for _ in range(n)]
-        cases.append((f'random_{i:04d}', 'fair', minutes, False, None))
+        cases.append((f'random_{i:04d}', 'fair', minutes, None))
     return cases
 
 
 def build():
     vectors = []
-    for vid, mode, minutes, hidden, note in FIXED + random_cases():
-        vector = {'id': vid, 'mode': mode, 'minutes': minutes, 'hidden': hidden,
-                  'expected': banban_line(mode, minutes, hidden)}
+    for vid, mode, minutes, note in FIXED + random_cases():
+        vector = {'id': vid, 'mode': mode, 'minutes': minutes,
+                  'expected': banban_line(mode, minutes)}
         if note:
             vector['note'] = note
         vectors.append(vector)
     return {
         'version': 1,
         'source': 'prototype/banban_index.py',
-        'rule': '공평 기준에서 모두 갈 수 있고 숨긴 사람이 없을 때만. 걸리는 시간 차이(최장 − 최단, 화면 분)가 '
+        'rule': '공평 기준에서 모두 갈 수 있을 때만. 걸리는 시간 차이(최장 − 최단, 화면 분)가 '
                 '2명 2분, 3명 이상 6분 이내면 강조 층(close), 아니면 기본 층(longest). 기본 층은 최장이 60분 미만이면 '
                 '"가장 오래 걸리는 사람도 N분이에요", 60분 이상이면 "가장 오래 걸리는 사람 1시간 N분"',
         'vectors': vectors,

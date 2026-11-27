@@ -19,7 +19,6 @@ const pending: RoomDraw = {
   candidates: people,
   winner: null,
   winnerId: null,
-  hiddenNames: ["참가자 3"],
   late: [],
   selfLate: false,
   drawnAt: null,
@@ -43,7 +42,6 @@ function card(over: Partial<FavorDrawCardProps> = {}) {
     full: true,
     joinedCount: 4,
     expectedCount: 4,
-    hiddenInRoom: false,
     pending: false,
     error: null,
     onDraw: vi.fn(),
@@ -76,7 +74,7 @@ afterEach(() => {
 });
 
 describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
-  it("뽑기 전에는 한 줄로 접혀 있고(방장은 바로 뽑을 수 있음), 펼치면 숨긴 사람이 빠진 이유가 보인다", () => {
+  it("뽑기 전에는 한 줄로 접혀 있고 펼치면 뽑기 방법을 볼 수 있다", () => {
     reduceMotion(false);
     card();
     expect(screen.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeTruthy();
@@ -84,7 +82,8 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByText(/뽑기에서 빠졌어요/)).toBeNull();
     fireEvent.click(toggle);
-    expect(screen.getByText(/참가자 3은 출발역을 숨겨서/)).toBeTruthy();
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(/뽑힌 사람 쪽으로 만날 역을 맞춰요/)).toBeInTheDocument();
   });
 
   it("뽑기를 누르면 초점이 카드 제목에 남고, 서버가 거절하면 오류 안내로 옮긴다", () => {
@@ -176,19 +175,18 @@ describe("'누구 쪽으로' 뽑기 카드(#172)", () => {
     expect(document.activeElement).toBe(screen.getByRole("alert"));
   });
 
-  it("숨긴 사람이 있는 방에서는 배려 상한 문장을 그 사람을 빼고 말하고, 숨긴 채 뒤늦게 온 사람은 다시 뽑아도 들어간다고 하지 않는다", () => {
+  it("배려 상한을 설명하고 늦게 들어온 사람은 다시 뽑을 때 포함한다고 안내한다", () => {
     reduceMotion(false);
     const late = {
       ...drawn,
-      late: [
-        { name: "서준", hidden: false },
-        { name: "참가자 5", hidden: true },
-      ],
+      late: ["서준", "참가자 5"],
     };
-    card({ draw: late, hiddenInRoom: true });
+    card({ draw: late });
     fireEvent.click(screen.getByRole("button", { name: "사다리 결과 보기" }));
-    expect(screen.getByText(/출발역을 숨긴 사람을 빼면, 다른 사람도 공평 1위보다 15분/)).toBeTruthy();
-    expect(screen.getByText("서준, 참가자 5가 뽑기 뒤에 들어왔어요. 다시 뽑으면 서준도 함께 들어가요.")).toBeTruthy();
+    expect(screen.getByText(/다른 사람도 공평 1위보다 15분/)).toBeTruthy();
+    expect(
+      screen.getByText("서준, 참가자 5가 뽑기 뒤에 들어왔어요. 다시 뽑으면 서준, 참가자 5도 함께 들어가요."),
+    ).toBeTruthy();
   });
 
   it("다시 뽑은 결과는 모두에게 '다시 뽑음'으로 보이고, 더 뽑을 수 없다", () => {

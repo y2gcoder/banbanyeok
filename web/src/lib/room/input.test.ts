@@ -11,38 +11,36 @@ const gangnam = station("강남");
 const TODAY = "2026-11-15";
 
 describe("참여 입력", () => {
-  it("이름은 앞뒤 공백을 빼고, 비면 보내지 않으며, hidden은 항상 보낸다", () => {
-    expect(toParticipantInput({ nickname: "  민수 ", station: gangnam, hidden: false })).toEqual({
+  it("이름은 앞뒤 공백을 빼고, 비면 보내지 않으며, 옛 hidden 필드는 보내지 않는다", () => {
+    expect(toParticipantInput({ nickname: "  민수 ", station: gangnam })).toEqual({
       ok: true,
-      value: { originCode: gangnam.code, hidden: false, nickname: "민수" },
+      value: { originCode: gangnam.code, nickname: "민수" },
     });
-    expect(toParticipantInput({ nickname: "   ", station: gangnam, hidden: true })).toEqual({
+    expect(toParticipantInput({ nickname: "   ", station: gangnam })).toEqual({
       ok: true,
-      value: { originCode: gangnam.code, hidden: true },
+      value: { originCode: gangnam.code },
     });
   });
 
   it("출발역이 없거나 계산할 수 없는 역이면 거부한다", () => {
-    expect(toParticipantInput({ nickname: "", station: null, hidden: false })).toMatchObject({ ok: false });
-    expect(
-      toParticipantInput({ nickname: "", station: { ...gangnam, supported: false }, hidden: false }),
-    ).toMatchObject({
+    expect(toParticipantInput({ nickname: "", station: null })).toMatchObject({ ok: false });
+    expect(toParticipantInput({ nickname: "", station: { ...gangnam, supported: false } })).toMatchObject({
       ok: false,
     });
   });
 
   it("이름은 코드포인트 20자까지(이모지 20개는 통과, 21개는 거부), 제어 문자·짝 없는 서로게이트는 거부", () => {
     const emoji = (n: number) => "🙂".repeat(n);
-    expect(toParticipantInput({ nickname: emoji(20), station: gangnam, hidden: false }).ok).toBe(true);
-    expect(toParticipantInput({ nickname: emoji(21), station: gangnam, hidden: false }).ok).toBe(false);
-    expect(toParticipantInput({ nickname: "a\u0007b", station: gangnam, hidden: false }).ok).toBe(false);
-    expect(toParticipantInput({ nickname: "a\ud800", station: gangnam, hidden: false }).ok).toBe(false);
+    expect(toParticipantInput({ nickname: emoji(20), station: gangnam }).ok).toBe(true);
+    expect(toParticipantInput({ nickname: emoji(21), station: gangnam }).ok).toBe(false);
+    expect(toParticipantInput({ nickname: "a\u0007b", station: gangnam }).ok).toBe(false);
+    expect(toParticipantInput({ nickname: "a\ud800", station: gangnam }).ok).toBe(false);
   });
 });
 
 describe("방 만들기 본문", () => {
   const form = (patch: Partial<CreateRoomForm> = {}): CreateRoomForm => ({
-    host: { nickname: "", station: gangnam, hidden: false },
+    host: { nickname: "", station: gangnam },
     mode: "fair",
     meetingDate: "",
     meetingTime: "",
@@ -54,7 +52,7 @@ describe("방 만들기 본문", () => {
   it("기본은 mode와 host만 보낸다", () => {
     expect(toCreateRoomRequest(form(), TODAY)).toEqual({
       ok: true,
-      value: { mode: "fair", host: { originCode: gangnam.code, hidden: false } },
+      value: { mode: "fair", host: { originCode: gangnam.code } },
     });
   });
 
@@ -66,7 +64,7 @@ describe("방 만들기 본문", () => {
         favorTarget: "host",
         meetingDate: "2026-11-20",
         expectedCount: 3,
-        host: { originCode: gangnam.code, hidden: false },
+        host: { originCode: gangnam.code },
       },
     });
   });

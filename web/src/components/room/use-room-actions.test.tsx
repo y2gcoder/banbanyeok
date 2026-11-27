@@ -18,7 +18,7 @@ vi.mock("@/lib/analytics", async (importOriginal) => ({ ...(await importOriginal
 
 const ROOM = "qt7yvmsht3";
 const KEEP = "2999-01-01T00:00:00Z";
-const INPUT: ParticipantInput = { nickname: "지수", originCode: "ryf", hidden: true } as ParticipantInput;
+const INPUT: ParticipantInput = { nickname: "지수", originCode: "ryf", hidden: false } as ParticipantInput;
 const err = (status: number, code: string) => new ApiRequestError(status, code, "서버 문구");
 
 const host: RoomRecord = { v: 1, hostToken: "host-tok", keepUntil: KEEP };
@@ -101,13 +101,13 @@ describe("useRoomActions: 성공 뒤처리 순서", () => {
     expect(api.joinRoom).toHaveBeenCalledWith(ROOM, INPUT, expect.any(String));
   });
 
-  it("참여 통계에는 숨김 여부와 방 해시만 싣고 토큰은 싣지 않는다", async () => {
+  it("참여 통계에는 기존 false 값과 방 해시를 싣고 토큰은 보내지 않는다", async () => {
     const { result } = setup(null);
     act(() => result.current.join(INPUT));
     await waitFor(() => expect(track).toHaveBeenCalled());
     const [name, props] = vi.mocked(track).mock.calls[0] ?? [];
     expect(name).toBe("participant_joined");
-    expect(props).toMatchObject({ hidden: true, room_hash: "0123456789abcdef" });
+    expect(props).toMatchObject({ hidden: false, room_hash: "0123456789abcdef" });
     expect(JSON.stringify(props)).not.toMatch(/tok-|host-tok/);
   });
 

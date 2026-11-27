@@ -15,7 +15,6 @@ type Person = {
   origin: string | null;
   seconds: number;
   /** 출발역을 숨겼는가. 없으면 `origin`이 null일 때 숨긴 것으로 본다. */
-  hidden?: boolean;
 };
 
 type Basis = { slot: TimeSlot; label: string };
@@ -82,10 +81,9 @@ function build(
     },
     participants: people.map((p, i) => ({
       participantId: String(i),
-      hidden: p.hidden ?? p.origin === null,
+      hidden: false,
       // 숨겼는데 출발역이 오는 사람은 이 화면을 보는 본인이다(서버는 본인에게만 본인 출발역을 준다).
-      ...(p.hidden && p.origin !== null ? { isSelf: true } : {}),
-      originCode: p.origin === null ? null : p.hidden ? sampleStationCode(p.origin) : "000",
+      originCode: p.origin === null ? null : "000",
       originName: p.origin,
       label: p.label,
       labelKind: p.kind,
@@ -132,9 +130,7 @@ function build(
 }
 
 /** 숨긴 사람의 출발역(그림·설명 어디에도 나오면 안 된다). */
-export const HIDDEN_ORIGIN = "선릉";
 /** 숨긴 사람 본인에게만 오는 막차의 행선지. 이것도 그림·설명 어디에도 나오면 안 된다. */
-const HIDDEN_BOUND = "숨긴행선지";
 
 export const SHARED_CASES = [
   // 막차 줄(#62): 직행 확정은 분 그대로("막차 00:03"), 여유 시각은 10분 단위로 내려("늦어도 23:00"), 확인 필요는 줄이 빈다.
@@ -216,7 +212,7 @@ export const SHARED_CASES = [
     },
   ),
   build(
-    "nickname-hidden",
+    "long-nickname-with-missing-train",
     "왕십리",
     [
       {
@@ -226,25 +222,10 @@ export const SHARED_CASES = [
         origin: "신촌",
         seconds: 2040,
       },
-      // 방에서 출발역을 숨긴 사람: 서버가 출발역 이름을 주지 않고 이름은 "참가자 N"이다. HIDDEN_ORIGIN은 응답 어디에도 없다.
       { label: "참가자 2", shortLabel: "참가자 2", kind: "ordinal", origin: null, seconds: 1500 },
       person("잠실", 1800),
     ],
-    // 숨긴 사람의 막차는 서버가 주지 않는다.
     { mode: "favor", favorIndex: 1, lastTrains: [changing(1402), null, direct(1474, "성수")] },
-  ),
-  // 출발역을 숨긴 사람 본인이 보는 경우: 서버가 본인에게만 출발역 이름(HIDDEN_ORIGIN)을 주지만 이름은 여전히 "참가자 N"이다.
-  // 미리보기는 링크를 받는 모두가 보므로 이 출발역이 그림·설명에 나오면 안 된다.
-  build(
-    "hidden-self-view",
-    "역삼",
-    [
-      person("강남", 300),
-      { label: "참가자 2", shortLabel: "참가자 2", kind: "ordinal", origin: HIDDEN_ORIGIN, hidden: true, seconds: 240 },
-      person("홍대입구", 2100),
-    ],
-    // 본인에게는 서버가 본인의 막차도 준다. 미리보기 그림에는 넣지 않는다.
-    { mode: "favor", favorIndex: 1, lastTrains: [direct(1484, "성수"), direct(1479, HIDDEN_BOUND), changing(1432)] },
   ),
   build("same-station", "신논현", [
     { ...person("강남", 600), label: "강남에서 오는 분 1", shortLabel: "강남 1" },

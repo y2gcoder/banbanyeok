@@ -107,11 +107,8 @@ describe("사다리 방 확인 대화상자", () => {
 
     expect(createRoom).toHaveBeenCalledTimes(1);
     expect(createRoom.mock.calls[0]?.[0]).toEqual({
-      host: { nickname: "하늘", originCode: "dxy", hidden: false },
-      others: [
-        { nickname: "민수", originCode: "k3a", hidden: false },
-        { originCode: "ryf", hidden: false },
-      ],
+      host: { nickname: "하늘", originCode: "dxy" },
+      others: [{ nickname: "민수", originCode: "k3a" }, { originCode: "ryf" }],
       hostPosition: 2,
       meetingDate: "2026-11-28",
       meetingBand: "evening",

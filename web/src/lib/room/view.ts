@@ -7,11 +7,10 @@ export type RoomPerson = {
   id: string;
   /** 서버가 만든 표시 이름(label). */
   name: string;
-  /** 출발역 이름. 가린 사람은 "출발역 비공개", 본인이 가린 경우는 본인에게만 보인다는 안내를 덧붙인다. */
+  /** 출발역 이름. */
   originText: string;
   isSelf: boolean;
   isHost: boolean;
-  hidden: boolean;
   /** 방장이 방을 만들 때 대신 넣은 칸(#227). */
   enteredByHost: boolean;
 };
@@ -20,14 +19,9 @@ export function roomPeople(room: Room): RoomPerson[] {
   return room.participants.map((p) => ({
     id: p.participantId,
     name: p.label,
-    originText: p.originName
-      ? p.hidden && p.isSelf
-        ? `${p.originName} · 나에게만 보여요`
-        : p.originName
-      : "출발역 비공개",
+    originText: p.originName ?? "출발역 정보 없음",
     isSelf: p.isSelf === true,
     isHost: p.isHost === true,
-    hidden: p.hidden,
     enteredByHost: p.enteredByHost === true,
   }));
 }
@@ -45,14 +39,6 @@ export function joinState(room: Room): JoinState {
 /** 기록에는 참여자 토큰이 있는데 방에는 내 항목이 없다(내보내졌거나 지워짐). 토큰을 정리해야 한다. */
 export function hasStaleParticipantToken(room: Room, record: RoomRecord | null): boolean {
   return Boolean(record?.participantToken) && !room.participants.some((p) => p.isSelf === true);
-}
-
-/**
- * 이 사람 쪽으로 맞춘 결과('누구 쪽으로' 탭)를 내가 볼 수 있는지. 출발역을 숨긴 사람 쪽 결과는 그 사람 본인만 본다(#162): 그 순위는
- * 그 사람의 정확한 시간으로 정해져 1위가 출발역 근처로 모인다. 서버도 본인이 아닌 요청은 `FAVOR_TARGET_HIDDEN`으로 거절한다.
- */
-export function canFavor(person: { hidden: boolean; isSelf?: boolean }): boolean {
-  return !person.hidden || person.isSelf === true;
 }
 
 /** 방의 기본 배려 대상이 방 참가자 중 몇 번째인지(없으면 null). 서버는 `favorTarget`에 참여자 ID를 준다. */

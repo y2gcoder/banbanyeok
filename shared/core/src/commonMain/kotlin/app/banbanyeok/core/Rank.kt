@@ -13,7 +13,7 @@ public fun rank(input: RankInput): RankResult {
     > = listOf({ it.maxSeconds.toLong() }, { it.spreadSeconds.toLong() }, { it.totalSeconds })
     val baseline = order(reachable, fairKeys, 0).firstOrNull()
     val target = if (input.mode.startsWith("favor:")) participants.indexOf(input.mode.substringAfter(':')) else -1
-    val caps = if (target >= 0 && baseline != null) favorCaps(baseline, target, input.uncapped) else null
+    val caps = if (target >= 0 && baseline != null) favorCaps(baseline, target) else null
     val eligible = eligibleCandidates(reachable, caps, target, excluded)
     val keys =
         when {
@@ -54,14 +54,13 @@ public fun rank(input: RankInput): RankResult {
     )
 }
 
-/** Baseline time + min(15 min, 50%) for everyone except the favored person and [uncapped] people. */
+/** Baseline time + min(15 min, 50%) for everyone except the favored person. */
 private fun favorCaps(
     baseline: Candidate,
     target: Int,
-    uncapped: Set<String>,
 ): Map<String, Long> =
     baseline.times
-        .filterIndexed { index, time -> index != target && time.participantId !in uncapped }
+        .filterIndexed { index, _ -> index != target }
         .associate { it.participantId to it.seconds.toLong() + minOf(900L, it.seconds.toLong() / 2) }
 
 private fun validate(input: RankInput) {
@@ -78,7 +77,6 @@ private fun validate(input: RankInput) {
             input.participants.any { input.mode == "favor:$it" },
     ) { "Unknown mode or favor participant" }
     require(input.toleranceSeconds >= 0) { "Tolerance must be nonnegative seconds" }
-    require(input.participants.containsAll(input.uncapped)) { "Uncapped participants must be participants" }
     for (matrix in listOf(input.times, input.transfers)) {
         require(matrix.size == input.participants.size && matrix.all { it.size == input.candidates.size }) {
             "Matrix dimensions must match participants by candidates"

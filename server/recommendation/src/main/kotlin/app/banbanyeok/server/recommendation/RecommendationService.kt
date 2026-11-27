@@ -46,11 +46,7 @@ public class RecommendationService(
         slotsReady.await(request.time.slot)
         val matrix = travelTimes.measure(request.participants.map { it.originCode }, request.time.slot)
         val timeBasis = computedBasis(request, matrix)
-        val riders =
-            LastTrainAttacher.Riders(
-                request.participants.map { LastTrainAttacher.Rider(it.id, it.originCode, it.hidden) },
-                request.viewerId,
-            )
+        val riders = request.participants.map { LastTrainAttacher.Rider(it.id, it.originCode) }
         // 막차 표는 여기서 한 번 읽는다. 순위·시간·이유에는 쓰이지 않고, 순위를 다 정한 뒤 카드에 붙는다.
         val lookup = lastTrains.forRequest(request.time.slot, timeBasis.slot, request.dayCertainty, riders)
         val attached = lookup.attached
@@ -62,8 +58,7 @@ public class RecommendationService(
         val routed =
             routes.forRequest(
                 matrix.slot,
-                request.participants.map { RouteAttacher.Rider(it.id, it.originCode, it.hidden) },
-                request.viewerId,
+                request.participants.map { RouteAttacher.Rider(it.id, it.originCode) },
             )
         val recommendation =
             if (routed == null) {
@@ -75,7 +70,7 @@ public class RecommendationService(
     }
 
     private fun RecommendRequest.withParticipants(people: List<RecommendParticipant>) =
-        RecommendRequest(people, mode, favorId, time, dayCertainty, viewerId)
+        RecommendRequest(people, mode, favorId, time, dayCertainty)
 
     /** 실제로 계산한 구분. 요청한 구분의 행렬이 없으면 기본 구분이다. */
     private fun computedBasis(
@@ -92,27 +87,11 @@ public class RecommendationService(
         if (people.any { !travelTimes.isOrigin(it.originCode) }) {
             reject(RecommendationError.UNKNOWN_STATION, "알 수 없는 출발역이 있습니다")
         }
-        val regions =
-            people
-                .map {
-                    if (it.hidden) {
-                        StationRegion.CAPITAL
-                    } else {
-                        travelTimes.regionOf(
-                            it.originCode,
-                        )
-                    }
-                }.toSet()
+        val regions = people.map { travelTimes.regionOf(it.originCode) }.toSet()
         val region = regions.singleOrNull() ?: reject(RecommendationError.REGION_MISMATCH, "방과 추천은 한 권역 안에서 계산합니다")
         if (request.mode == RecommendMode.FAVOR) {
             val target = request.favorId ?: reject(RecommendationError.FAVOR_TARGET_REQUIRED, "우대 대상이 필요합니다")
-            val favored =
-                people.firstOrNull { it.id == target }
-                    ?: reject(RecommendationError.FAVOR_TARGET_UNKNOWN, "우대 대상이 참가자에 없습니다")
-            // 숨긴 사람 쪽으로 맞춘 순위는 그 사람의 정확한 시간으로 정해져 1위가 출발역 근처로 모인다(#162). 본인만 본다.
-            if (favored.hidden && favored.id != request.viewerId) {
-                reject(RecommendationError.FAVOR_TARGET_HIDDEN, "출발역을 숨긴 사람 쪽으로 맞춘 결과는 본인만 볼 수 있습니다")
-            }
+            if (people.none { it.id == target }) reject(RecommendationError.FAVOR_TARGET_UNKNOWN, "우대 대상이 참가자에 없습니다")
         }
         return region
     }

@@ -216,7 +216,7 @@ describe("방 요청이 계약을 지킨다", () => {
   const gangnam = searchStations("강남").find((s) => s.name === "강남" && s.supported);
   if (!gangnam) throw new Error("테스트 역이 없다");
   const form = (patch: Partial<CreateRoomForm> = {}): CreateRoomForm => ({
-    host: { nickname: "민수", station: gangnam, hidden: true },
+    host: { nickname: "민수", station: gangnam },
     mode: "fair",
     meetingDate: "",
     meetingTime: "",
@@ -241,14 +241,13 @@ describe("방 요청이 계약을 지킨다", () => {
     }
   });
 
-  it("참여·수정 본문(이름 있음·없음, 숨김)과 outcome 본문", () => {
+  it("참여·수정 본문(이름 있음·없음)과 outcome 본문", () => {
     for (const nickname of ["민수", ""]) {
-      for (const hidden of [true, false]) {
-        const checked = toParticipantInput({ nickname, station: gangnam, hidden });
-        if (!checked.ok) throw new Error(checked.message);
-        expect(participantSchema(checked.value), JSON.stringify(participantSchema.errors)).toBe(true);
-        expect(updateSchema(checked.value)).toBe(true);
-      }
+      const checked = toParticipantInput({ nickname, station: gangnam });
+      if (!checked.ok) throw new Error(checked.message);
+      expect(participantSchema(checked.value), JSON.stringify(participantSchema.errors)).toBe(true);
+      expect(updateSchema(checked.value)).toBe(true);
+      expect(checked.value).not.toHaveProperty("hidden");
     }
     for (const choice of [
       { kind: "top1" },

@@ -88,7 +88,7 @@ const SAMPLE_IDS = [
   "three-middle",
   "four-middle-long-name",
   "three-middle-over-hour",
-  "nickname-hidden",
+  "long-nickname-with-missing-train",
   "four-fair",
 ];
 

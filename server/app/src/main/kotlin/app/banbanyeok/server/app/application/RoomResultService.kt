@@ -65,8 +65,8 @@ class RoomResultService(
     }
 
     /**
-     * 링크 미리보기 내용. 토큰 없이 방을 한 번 읽고(숨긴 출발역은 이미 가려져 있다) 방의 기본 기준으로 계산한다. 정한 역이 상위 후보에
-     * 없으면 그 역까지의 시간·막차를 같은 평가(한 번 잰 행렬, 한 번 읽은 막차 표)에서 꺼낸다. 1위 단계의 "지도 한가운데" 비교도 같은 평가에서 꺼낸다. 출발역이 지금 데이터에 없으면
+     * 링크 미리보기 내용. 토큰 없이 방을 한 번 읽고 방의 기본 기준으로 계산한다. 정한 역이 상위 후보에 없으면 그 역까지의
+     * 시간·막차를 같은 평가에서 꺼낸다. 1위 단계의 "지도 한가운데" 비교도 같은 평가에서 꺼낸다. 출발역이 지금 데이터에 없으면
      * [app.banbanyeok.server.recommendation.RecommendationError.UNKNOWN_STATION]이다.
      */
     suspend fun preview(roomId: String): RoomPreview {
@@ -173,7 +173,7 @@ class RoomResultService(
         )
     }
 
-    /** 같은 평가의 "지도 한가운데" 비교(#68 2단계)를 이름표로. 숨긴 사람이 있거나 공평 기준이 아니면 평가가 null을 준다. */
+    /** 같은 평가의 "지도 한가운데" 비교(#68 2단계)에 미리보기용 이름표를 붙인다. */
     private fun previewMiddle(
         mapMiddle: MapMiddle?,
         labels: Map<String, String>,
@@ -193,8 +193,6 @@ class RoomResultService(
     ): RecommendRequest {
         val view = context.view
         val time = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand)
-        // 토큰으로 확인한 본인(미리보기는 토큰 없이 읽으므로 늘 null이다).
-        val viewerId = view.participants.firstOrNull { it.isSelf }?.id
         val participants = context.computeParticipants.map { RecommendParticipant(it.id, it.nickname, it.originCode) }
         // 뽑기 방에서 아직 안 뽑았으면 방의 기본 기준은 공평하게다(#172). 첫 참가자 우대로 떨어지지 않게 한다.
         val drawPending = view.favorDraw?.let { it.winner == null } == true
@@ -205,7 +203,6 @@ class RoomResultService(
             favorId = favorTarget(requestedMode, favorId, view, roomDefault = mode == null),
             time = time,
             dayCertainty = times.certainty(view.meetingDate, view.meetingTime),
-            viewerId = viewerId,
         )
     }
 

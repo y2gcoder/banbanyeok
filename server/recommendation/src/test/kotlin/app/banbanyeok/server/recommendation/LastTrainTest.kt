@@ -47,8 +47,7 @@ private fun service(
 private fun person(
     id: String,
     origin: String,
-    hidden: Boolean = false,
-) = RecommendParticipant(id, null, origin, hidden)
+) = RecommendParticipant(id, null, origin)
 
 private val night = TimeSlot(DayType.WEEKDAY, TimeBand.NIGHT)
 
@@ -56,14 +55,12 @@ private fun request(
     people: List<RecommendParticipant> = listOf(person("a", "03v"), person("b", "130")),
     slot: TimeSlot = night,
     certainty: DayCertainty = DayCertainty.KNOWN,
-    viewer: String? = null,
     mode: RecommendMode = RecommendMode.FAIR,
 ) = RecommendRequest(
     people,
     mode,
     time = TimeBasis(slot, TimeSlotLabels.of(slot)),
     dayCertainty = certainty,
-    viewerId = viewer,
 )
 
 private fun Recommendation.at(station: String) = candidates.first { it.stationCode == station }.lastTrains
@@ -93,7 +90,7 @@ class LastTrainTest :
                         listOf(
                             request(mode = mode).let { if (mode == RecommendMode.FAVOR) favoring(it, "a") else it },
                             request(
-                                listOf(person("a", "03v"), person("b", "225", hidden = true), person("c", "31a")),
+                                listOf(person("a", "03v"), person("b", "225"), person("c", "31a")),
                                 mode = mode,
                             ).let { if (mode == RecommendMode.FAVOR) favoring(it, "c") else it },
                         )
@@ -233,59 +230,6 @@ class LastTrainTest :
             }
         }
 
-        describe("a participant who hid the origin") {
-            val people = listOf(person("a", "03v"), person("b", "225", hidden = true), person("c", "31a"))
-
-            it("is left out of everyone else's result") {
-                val result = service().evaluate(request(people)).recommendation
-                result.candidates.forEach { card ->
-                    card.lastTrains.shouldNotBeNull().map { it.participantId } shouldContainExactly listOf("a", "c")
-                }
-                service().evaluate(request(people, viewer = "a")).recommendation.candidates.forEach { card ->
-                    card.lastTrains.shouldNotBeNull().map { it.participantId } shouldContainExactly listOf("a", "c")
-                }
-            }
-
-            it("sees the own last train on the own request only") {
-                val own = service().evaluate(request(people, viewer = "b")).recommendation
-                own.candidates.forEach { card ->
-                    card.lastTrains.shouldNotBeNull().map { it.participantId } shouldBe
-                        listOf("a", "b", "c")
-                }
-                own.at("130").shouldNotBeNull()[1] shouldBe
-                    ParticipantLastTrain("b", LastTrainCell(LastTrainKind.MARGIN_DIRECT, 1421, code("31a")), "31a역")
-            }
-
-            it("gives others the same answer whatever the hidden origin is") {
-                // 숨긴 사람의 출발역만 다른 두 요청에서, 다른 사람이 받는 막차는 같다(같은 후보에 대해).
-                val one = service().evaluate(request(people)).recommendation
-                val other =
-                    service()
-                        .evaluate(
-                            request(listOf(person("a", "03v"), person("b", "130", hidden = true), person("c", "31a"))),
-                        ).recommendation
-                val shared =
-                    one.candidates.map { it.stationCode }.intersect(
-                        other.candidates.map { it.stationCode }.toSet(),
-                    )
-                shared.isNotEmpty() shouldBe true
-                shared.forEach { station -> one.at(station) shouldBe other.at(station) }
-            }
-
-            it("is also left out of last trains read for a station outside the ranking") {
-                val service = service()
-                val evaluation = service.evaluate(request(people))
-                evaluation.recommendation.lastTrainBasis shouldBe LastTrainBasis(DayType.WEEKDAY, asOf)
-                evaluation.lastTrainsAt("4xz").shouldNotBeNull().map { it.participantId } shouldBe listOf("a", "c")
-                service
-                    .evaluate(request(people, viewer = "b"))
-                    .lastTrainsAt("4xz")
-                    .shouldNotBeNull()
-                    .map { it.participantId } shouldBe
-                    listOf("a", "b", "c")
-            }
-        }
-
         describe("day certainty of a room's date") {
             val resolver = TimeSlotResolver(HolidayCalendar.bundled())
 
@@ -305,4 +249,4 @@ class LastTrainTest :
 private fun favoring(
     request: RecommendRequest,
     id: String,
-) = RecommendRequest(request.participants, request.mode, id, request.time, request.dayCertainty, request.viewerId)
+) = RecommendRequest(request.participants, request.mode, id, request.time, request.dayCertainty)

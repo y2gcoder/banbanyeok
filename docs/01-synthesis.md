@@ -11,16 +11,16 @@
 | 영역 | 결정 | 출처 |
 |---|---|---|
 | 제품 | 비회원, 익명 사용자 ID, 후보 3개 카드(사람별 시간·환승·이유), 모드 3종, 막차는 2차 | B, 사용자 |
-| 공평 규칙 | fair = (최장, 차이, 합계, ID), favor 상한 = fair 1위 대비 +min(15분, 50%)(숨긴 사람에게는 상한 없음, [ADR-0005](adr/0005-favor-without-hidden-origin.md)), 기본 동점 0분 | D |
+| 공평 규칙 | fair = (최장, 차이, 합계, ID), favor 상한 = fair 1위 대비 +min(15분, 50%), 기본 동점 0분 | D |
 | 데이터 | 자체 그래프 사전계산. 외부 경로 API 결과는 저장하지 않음. KTDB는 허용 범위 확인 전 사용 안 함 | A |
 | 교통 권역 | 전국 산출물 한 벌에 M1 역 권역을 기록하고, 한 방·한 추천은 같은 권역으로 제한한다 | [ADR-0008](adr/0008-region-model.md) |
 | 공유 코어 | KMP `shared/{core,schema,links,api-client,app-logic,analytics}` | C3, 사용자 |
 | 서버 | Ktor + Cloud Run(서울, min 0) + Postgres | C3 |
 | 웹 | Next.js(App Router) on **Cloudflare Workers + OpenNext** (수익화 계획이 있어 Vercel Hobby의 비상업 제한을 피함). 인기 역 조합 SEO 페이지 + 링크별 동적 OG | C3, 사용자 |
-| 숨기기 | **제공하지 않음**([ADR-0007](adr/0007-stop-new-hidden-origins.md) 2026-11-25, [ADR-0012](adr/0012-retire-hidden-origins-in-steps.md) #182): 만들기·참여·수정의 `hidden=true`는 `HIDE_NOT_AVAILABLE`. 숨긴 참가자가 남은 옛 방은 방의 토큰 없이 요청하면 404, 유효한 토큰으로 읽거나 고치면 403 `ROOM_WITHHELD`. 방장 토큰으로 방 전체를, 참여자 토큰으로 자기 항목을 지울 수 있다. `participants.hidden` 열과 계약의 호환 필드는 다음 단계에서 지운다. 예전 규칙(5분 단위 시간 [ADR-0004](adr/0004-hidden-origin-times-coarsened.md), 숨긴 사람 쪽 배려 [ADR-0005](adr/0005-favor-without-hidden-origin.md))은 끝남 | 사용자 |
+| 출발역 숨기기 | **제공하지 않음**([ADR-0007](adr/0007-stop-new-hidden-origins.md), [ADR-0012](adr/0012-retire-hidden-origins-in-steps.md), #182). DB 열과 추천·웹의 옛 분기를 제거했다. HTTP에서 옛 클라이언트의 `hidden: false`와 생략을 받고, `hidden: true`는 `HIDE_NOT_AVAILABLE`로 거절하며, 응답의 `hidden`은 항상 false다. 방장이 대신 입력한 방의 공개 미리보기 가림은 [ADR-0011](adr/0011-host-entered-draw-room.md)을 따른다 | 사용자 |
 | 앱 | Android Compose → iOS SwiftUI. RN/Expo/Compose Multiplatform 아님 | 사용자 |
 | 홈·공유 방식 | 홈의 각자 입력과 방장이 입력은 방 ID로 합류한다. 기존 무상태 추천·공유 링크는 URL 상태(3자 base32 역 코드)로 동작한다 | [ADR-0013](adr/0013-home-room-flow.md), C3 |
-| 계산 위치 | 클라이언트(혼자 입력, 즉시) + 서버(방, 숨기기). 코어는 한 벌 | C3 |
+| 계산 위치 | 클라이언트(혼자 입력, 즉시) + 서버(방). 코어는 한 벌 | C3 |
 | 통계 | PostHog, 익명 ID 시작, 출발역은 이벤트에 넣지 않음 | 사용자 |
 | 저장소 | 퍼블릭 GitHub 모노레포 하나 (Gradle 루트 + pnpm web + Xcode ios) | 사용자 |
 | plane 분리 | control = 파이프라인 + 검증 게이트 + 해시 산출물을 GCS에 발행 + manifest 포인터. data = 서버 + 웹. 관리자 서버 없음 | 코디네이터, C3 |
@@ -43,7 +43,7 @@
 
 **코디네이터 기본값으로 진행** (이의가 있으면 변경): 수치는 내부 정수 초(5) · 방 만료 7일 슬라이딩/최대 30일, 약속일 선택(7) · API는 같은 출처 rewrite(10) · 산출물은 GCS+WIF(11) · KTDB 미사용(12) · 스토어 제출은 로컬 수동(15) · 데이터 발행은 수동 디스패치 + 주간 예약(18) · iOS CI는 로컬 빌드(19) · 로그인은 당분간 없음(17) · PostHog 리전은 S0에서 결정(9).
 
-**사용자 결정 완료:** 수익화 있음 → Cloudflare + OpenNext (4) · 숨기기는 이름만 (6)
+**사용자 결정 완료:** 수익화 있음 → Cloudflare + OpenNext (4) · 이름은 선택 입력 (6)
 
 **사용자 결정 대기:**
 - 코드 라이선스 (13): AGPL-3.0(권고, 오픈소스 유지 + 닫힌 복제 서비스 차단) vs FSL(2년 경쟁 금지, 비 OSI). 정할 때까지 저장소는 private

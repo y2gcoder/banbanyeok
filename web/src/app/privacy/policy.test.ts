@@ -555,16 +555,16 @@ describe("개인정보 처리방침", () => {
 
   it.each([
     {
-      date: "2026-11-27",
-      label: "2026년 11월 27일 두 번째 개정판",
+      date: "2026-11-28",
+      label: "2026년 11월 28일 개정판",
       previousEnd: "은 같은 날 이 판을 시행하기 전까지 적용했습니다.",
-      previousPeriod: "2026년 11월 27일 하루, 2026년 11월 27일 두 번째 개정판 시행 전까지 적용했습니다.",
+      previousPeriod: "2026년 11월 28일 하루, 2026년 11월 28일 개정판 시행 전까지 적용했습니다.",
     },
     {
-      date: "2026-11-28",
-      label: "2026년 11월 28일 시행판",
+      date: "2026-11-29",
+      label: "2026년 11월 29일 시행판",
       previousEnd: "은 이 판을 시행한 날 배포 전까지 적용했습니다.",
-      previousPeriod: "2026년 11월 27일부터 2026년 11월 28일 이 판 시행 전까지 적용했습니다.",
+      previousPeriod: "2026년 11월 28일부터 2026년 11월 29일 이 판 시행 전까지 적용했습니다.",
     },
   ])("$date 시행판과 직전 판의 적용 기간을 구별한다", ({ date, ...expected }) => {
     expect(revisionHistory(date)).toEqual(expected);
@@ -574,7 +574,9 @@ describe("개인정보 처리방침", () => {
     const text = textOf(POLICY, "changes");
     expect(lineOf(POLICY, "changes", "변경 이력: 2026년 11월 26일 시행판은")).toContain("자체 합계를 도입");
     const { label, previousPeriod } = revisionHistory(REVISION_DATE);
-    expect(lineOf(POLICY, "changes", `변경 이력: ${label}은`)).toContain("홈의 두 입력 방식을 방 만들기로 바꿨습니다.");
+    expect(lineOf(POLICY, "changes", `변경 이력: ${label}은`)).toContain(
+      "출발역 숨기기 종료 뒤 현재 처리와 맞지 않는 설명을 정리했습니다.",
+    );
     const retire = lineOf(POLICY, "changes", "변경 이력: 2026년 11월 27일 개정판은");
     expect(retire).toContain("출발역 숨기기를 모두 그만두었습니다");
     expect(retire).toContain(
@@ -588,7 +590,7 @@ describe("개인정보 처리방침", () => {
       "11월 27일 시행판](https://github.com/y2gcoder/banbanyeok/blob/a619ff9/docs/legal/privacy-policy.md): 2026년 11월 27일 하루, 2026년 11월 27일 개정판 시행 전까지 적용했습니다.",
     );
     expect(text).toContain(
-      `11월 27일 개정판](https://github.com/y2gcoder/banbanyeok/blob/d1c28de7b040e1d1705a89849fe8b7743dd7cfe4/docs/legal/privacy-policy.md): ${previousPeriod}`,
+      `11월 28일 시행판](https://github.com/y2gcoder/banbanyeok/blob/be6f9cba34d938ff954c2720cf33407395a35b43/docs/legal/privacy-policy.md): ${previousPeriod}`,
     );
     expect(retire).toContain(
       "수집하는 정보, 처리 목적, 보유 기간, 처리 위탁과 국외 이전, 이용 통계는 바뀌지 않았습니다",
@@ -639,18 +641,9 @@ describe("개인정보 처리방침", () => {
     expect(stop).toContain(`2026년 11월 25일 시행판은 같은 날 이 판을 시행하기 전까지 적용했습니다`);
     expect(stop).toContain("수집하는 정보, 처리 목적, 보유 기간, 처리 위탁과 국외 이전, 이용 통계는 바뀌지 않았습니다");
     const stopItem = lineOf(POLICY, "third-party", "출발역 숨기기는");
-    expect(stopItem).toContain("2026년 11월 25일부터 새로 숨길 수 없었고");
-    expect(stopItem).toContain("그 전에 숨긴 사람도 숨김을 유지하거나 풀 수 없습니다");
-    expect(stopItem).toContain("그 전에 출발역을 숨긴 채 들어온 사람이 지금도 남아 있는 방은 내용");
-    expect(stopItem).toContain("방 링크만 아는 사람에게는 없는 방으로 보입니다");
-    // 그런 방의 권리 행사 경로(#244 검토): 참여한 기기의 지우기와 연락처 요청, 그 한계를 8항에 따로 적고 7항도 맞춘다.
-    const rightsLines = textOf(POLICY, "rights").split("\n");
-    const withheldRow =
-      rightsLines[rightsLines.indexOf("출발역을 숨긴 사람이 지금도 남아 있는 방(6항)의 내 정보") + 1] ?? "";
-    expect(withheldRow).toContain("내 항목 지우기만, 방을 만든 기기에서는 방 전체 지우기만");
-    expect(withheldRow).toContain("본인인지 확인할 수 있는 범위에서 지웁니다");
-    expect(withheldRow).toContain("보관 기간이 끝날 때(만든 뒤 최대 30일) 지워집니다");
-    expect(textOf(POLICY, "outsourcing")).toContain("출발역을 숨긴 사람이 남은 방은 8항에 적은 지우기만");
+    expect(stopItem).toBe("출발역 숨기기는 제공하지 않습니다.");
+    expect(textOf(POLICY, "rights")).not.toContain("출발역을 숨긴 사람이 지금도 남아 있는 방");
+    expect(textOf(POLICY, "outsourcing")).not.toContain("출발역을 숨긴 사람이 남은 방");
     expect(textOf(POLICY, "rights")).toContain("방에 넣은 내 출발역·이름 보기, 고치기, 지우기");
     expect(textOf(POLICY, "rights")).not.toContain("숨김 풀기");
     expect(textOf(POLICY, "purpose")).not.toContain("숨김 유지와 풀기");
@@ -673,7 +666,6 @@ describe("개인정보 처리방침", () => {
     expect(draw).toContain("11항: 이 기기의 방 기록에 그림을 이미 본 뽑기(세대와 회차)를 더했습니다");
     expect(textOf(POLICY, "cookies")).toContain("뽑기 그림을 이미 본 뽑기(세대와 회차");
     const drawItem = lineOf(POLICY, "third-party", "방을 만들 때 '누구 쪽으로'를 뽑기로 정한 방에서는");
-    expect(drawItem).toContain("출발역 숨기기를 그만두기 전에 뽑은 기록이면");
     expect(drawItem).not.toContain("출발역을 숨긴 사람은 뽑기 대상에서 빠집니다");
     expect(drawItem).toContain("이름과 식별자 없이 자리만 '나간 사람'으로 남음");
     expect(one(previewSentences(POLICY), "사다리 결과가 나왔어요")).toContain(
@@ -751,7 +743,7 @@ describe("개인정보 처리방침", () => {
       expect(existsSync(resolve(legal, url.split("/docs/legal/")[1] ?? "")), url).toBe(true);
     }
     const versions = text.split("\n").filter((l) => l.startsWith("["));
-    expect(versions).toHaveLength(13);
+    expect(versions).toHaveLength(14);
     expect(versions.map((l) => [...l.matchAll(/\]\(https:/g)].length)).toEqual(versions.map(() => 1));
     expect(text).toContain(
       "세 번째 개정판](https://github.com/y2gcoder/banbanyeok/blob/ecd3a47/docs/legal/privacy-policy.md): 2026년 11월 17일부터 2026년 11월 21일 시행판 시행 전까지 적용했습니다.",
@@ -782,7 +774,7 @@ describe("개인정보 처리방침", () => {
     expect(new Date(`${REVISION_DATE}T00:00:00Z`).toISOString().slice(0, 10)).toBe(REVISION_DATE);
     // 11-28 예정 판은 11-21 시행판으로 대신해 시행하지 않았으므로(UPCOMING_POLICY = null) 그날이 지나도 이력은 그대로 맞다. 상한을 두지 않아
     // 병합일이 11-28 뒤여도 REVISION_DATE만 고치면 된다. 하한은 직전 판(11-25 시행판)의 날이다.
-    expect(REVISION_DATE >= "2026-11-27").toBe(true);
+    expect(REVISION_DATE >= "2026-11-28").toBe(true);
     expect(textOf(POLICY, "changes").split("\n")[0]).toBe(
       `이 개인정보 처리방침은 ${koreanDate(REVISION_DATE, { year: true })}부터 적용됩니다.`,
     );
@@ -839,10 +831,11 @@ describe("개인정보 처리방침", () => {
     expect(earlierNoticesOn(date).map((e) => e.label.replace("2026년 ", ""))).toEqual(labels);
   });
 
-  it("중요한 변경 안내(CHANGE_NOTICE): 이 판은 다른 사람에게 보이는 범위가 바뀌어 켜고, 시행일부터 15항의 일수만큼이며 전후 비교가 빠짐없다", () => {
+  it("이전 #246의 중요 변경 안내는 본문 정리 후에도 기존 시행일과 종료일을 유지한다", () => {
     expect(CHANGE_NOTICE).not.toBeNull();
     expect(changeNoticeProblems(CHANGE_NOTICE, CHANGE_NOTICE_DAYS)).toEqual([]);
-    expect(CHANGE_NOTICE?.since).toBe(REVISION_DATE);
+    expect(CHANGE_NOTICE?.since).toBe("2026-11-28");
+    expect(CHANGE_NOTICE?.until).toBe("2026-12-04");
     expect(CHANGE_NOTICE?.previous.url).toBe(
       "https://github.com/y2gcoder/banbanyeok/blob/d1c28de7b040e1d1705a89849fe8b7743dd7cfe4/docs/legal/privacy-policy.md",
     );
@@ -864,9 +857,9 @@ describe("개인정보 처리방침", () => {
       { prefix: "[11월 24일 개정판] ", label: "2026년 11월 24일 개정판", since: "2026-11-24", count: 2 },
       { prefix: "[11월 24일 시행판] ", label: "2026년 11월 24일 시행판", since: "2026-11-24", count: 1 },
       { prefix: "[11월 21일 시행판] ", label: "2026년 11월 21일 시행판", since: "2026-11-21", count: 8 },
-    ].filter((e) => addDays(e.since, CHANGE_NOTICE_DAYS - 1) >= REVISION_DATE);
+    ].filter((e) => addDays(e.since, CHANGE_NOTICE_DAYS - 1) >= "2026-11-28");
     expect(EARLIER_NOTICES.map((e) => e.label)).toEqual(earlier.map((e) => e.label));
-    expect(EARLIER_NOTICES).toEqual(earlierNoticesOn(REVISION_DATE));
+    expect(EARLIER_NOTICES).toEqual(earlierNoticesOn("2026-11-28"));
     let at = mine.length;
     for (const e of earlier) {
       const group = rows.slice(at, at + e.count);

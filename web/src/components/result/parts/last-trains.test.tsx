@@ -21,8 +21,6 @@ function person(index: number, shortName: string, overrides: Partial<LastTrainPe
     index,
     participantId: String(index),
     shortName,
-    hidden: false,
-    isSelf: false,
     originCode: `h${index}`,
     mapUrl: `https://map.kakao.com/link/by/traffic/meeting/home${index}`,
     ...overrides,
@@ -215,61 +213,12 @@ describe("집에 가는 막차 칸", () => {
     expect(section).not.toHaveTextContent(/\d\d:\d\d|시간표|전 출발/);
   });
 
-  it("모두 출발역을 숨긴 방을 다른 사람이 보면 줄 없이 '본인 화면에서만 보여요'만 보인다", () => {
-    const people = [person(0, "참가자 1", { hidden: true }), person(1, "참가자 2", { hidden: true })];
-    const found = toLastTrainView({ ...weekday, partial: true }, [], station, people);
-    if (!found) throw new Error("막차 칸 없음");
-    render(<LastTrains view={found} />);
-    const section = screen.getByRole("region", { name: "강남역 집에 가는 막차" });
-    expect(section).toHaveTextContent("집에 가는 막차출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.");
-    expect(section).not.toHaveTextContent(/평일|일부 노선|수집 기준|참가자/);
-    expect(within(section).queryByRole("list")).toBeNull();
-  });
-
-  it("출발역을 숨긴 다른 사람은 줄이 없고 안내 한 줄만 있다", () => {
-    const people = [person(0, "민수"), person(1, "참가자 2", { hidden: true, originCode: null, mapUrl: null })];
-    const found = toLastTrainView(weekday, [{ ...direct, participantId: "0" }], station, people);
-    if (!found) throw new Error("막차 칸 없음");
-    render(<LastTrains view={found} />);
-    expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.queryByText("참가자 2")).toBeNull();
-    expect(screen.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeInTheDocument();
-  });
-
-  it("출발역을 숨긴 본인에게는 내 줄이 보이고 나에게만 보인다고 적는다", () => {
-    const people = [person(0, "민수"), person(1, "참가자 2", { hidden: true, isSelf: true })];
-    render(<LastTrains view={view(weekday, [direct, changing], people)} meIndex={1} />);
-    const rows = screen.getAllByRole("listitem");
-    expect(rows[1]).toHaveTextContent("참가자 2(나)나에게만 보여요");
-    expect(rows[1]).toHaveTextContent("늦어도22:20출발");
-    expect(screen.queryByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeNull();
-    // 맨 위 줄은 공개 참가자(민수)로 정한다.
-    expect(screen.getByText("공개된 시각 중 가장 이름: 민수 다음 날 00:03")).toBeInTheDocument();
-  });
-
   it("출발역이 바로 그 역인 사람에게는 버튼 없이 한 줄만 보인다", () => {
     const people = [person(0, "민수", { originCode: "k3a" }), person(1, "지연")];
     render(<LastTrains view={view(weekday, [{ kind: "check" }, changing], people)} />);
     const rows = screen.getAllByRole("listitem");
     expect(rows[0]).toHaveTextContent("민수출발역과 같은 역");
     expect(within(rows[0] as HTMLElement).queryByRole("link")).toBeNull();
-  });
-
-  it("공개한 사람은 이 역에서 출발하고 다른 친구는 숨겼으면: 접힌 줄은 공개한 사람으로 한정하고, 펼친 칸과 어긋나지 않는다", async () => {
-    const user = userEvent.setup();
-    // 민수의 출발역이 후보역(강남)이고, 다른 역에서 오는 참가자 2는 출발역을 숨겼다(다른 사람 화면: 민수 줄만 있다).
-    const people = [
-      person(0, "민수", { originCode: "k3a" }),
-      person(1, "참가자 2", { hidden: true, originCode: null, mapUrl: null }),
-    ];
-    render(<LastTrains view={view(weekday, [direct], people)} defaultOpen={false} />);
-    const toggle = screen.getByRole("button", { name: /집에 가는 막차/ });
-    expect(within(toggle).getByText("공개된 분은 모두 이 역에서 출발")).toBeVisible();
-    await user.click(toggle);
-    const rows = screen.getAllByRole("listitem");
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toHaveTextContent("민수출발역과 같은 역");
-    expect(screen.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeVisible();
   });
 });
 

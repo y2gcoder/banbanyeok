@@ -32,7 +32,7 @@ export function meetingForSlot(slot: TimeSlot, today: string, slotDefaulted = fa
 function participantAt(state: ShareState, index: number): ParticipantInput {
   const nickname = state.nicknames?.[index]?.trim();
   const originCode = state.origins[index] ?? "";
-  return nickname ? { nickname, originCode, hidden: false } : { originCode, hidden: false };
+  return nickname ? { nickname, originCode } : { originCode };
 }
 
 /** [hostIndex]는 결과의 입력 순서에서 "나"의 자리. */

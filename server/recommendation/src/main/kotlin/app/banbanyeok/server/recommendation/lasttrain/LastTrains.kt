@@ -103,7 +103,6 @@ internal object LastTrainRule {
 
 /**
  * 순위를 다 정한 뒤 만날 역마다 사람별 막차를 붙인다. 순위·시간·이유 문장에는 쓰이지 않는다.
- * **출발역을 숨긴 사람의 막차는 그 사람의 요청([Riders.viewerId])에만 넣는다**: 막차 시각으로 숨긴 출발역을 거꾸로 짐작할 수 있다.
  */
 internal class LastTrainAttacher(
     private val source: LastTrainSource,
@@ -111,16 +110,9 @@ internal class LastTrainAttacher(
     /** 역 코드의 표시 이름(직행 열차의 행선지). */
     private val names: (String) -> String?,
 ) {
-    /** 막차를 받을 사람들(요청 참가자 순서)과 이 결과를 보는 사람. */
-    class Riders(
-        val people: List<Rider>,
-        val viewerId: String?,
-    )
-
     class Rider(
         val id: String,
         val homeCode: String,
-        val hidden: Boolean,
     )
 
     /**
@@ -134,7 +126,7 @@ internal class LastTrainAttacher(
         requested: TimeSlot,
         computed: TimeSlot,
         certainty: DayCertainty,
-        riders: Riders,
+        riders: List<Rider>,
     ): Lookup {
         // 읽는 중인지 먼저 본다: 그 사이 읽기가 끝나면 아래 current()가 표를 주므로, 준비 중이라고 잘못 알리는 일이 없다.
         val pending = source.pending()
@@ -154,27 +146,25 @@ internal class LastTrainAttacher(
     class Attached(
         val basis: LastTrainBasis,
         private val table: LastTrainTable,
-        private val riders: Riders,
+        private val riders: List<Rider>,
         private val names: (String) -> String?,
     ) {
         fun at(stationCode: String): List<ParticipantLastTrain> =
-            riders.people
-                .filter { !it.hidden || it.id == riders.viewerId }
-                .map { person ->
-                    val cell =
-                        if (basis.unavailable != null) {
-                            LastTrainCell.UNKNOWN
-                        } else {
-                            LastTrainRule.cell(table, basis.dayType, person.homeCode, stationCode)
-                        }
-                    ParticipantLastTrain(
-                        person.id,
-                        cell,
-                        cell.boundFor?.let {
-                            names(it.toString())
-                                ?: it.toString()
-                        },
-                    )
-                }
+            riders.map { person ->
+                val cell =
+                    if (basis.unavailable != null) {
+                        LastTrainCell.UNKNOWN
+                    } else {
+                        LastTrainRule.cell(table, basis.dayType, person.homeCode, stationCode)
+                    }
+                ParticipantLastTrain(
+                    person.id,
+                    cell,
+                    cell.boundFor?.let {
+                        names(it.toString())
+                            ?: it.toString()
+                    },
+                )
+            }
     }
 }

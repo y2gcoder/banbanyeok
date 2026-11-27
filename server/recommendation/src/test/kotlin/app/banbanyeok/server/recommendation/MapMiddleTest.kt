@@ -177,17 +177,6 @@ class MapMiddleTest :
                 }
             }
 
-            it("is hidden when anyone hides their origin, since the origin could be worked back from it") {
-                val hidden =
-                    listOf(
-                        RecommendParticipant("p0", null, "03v"),
-                        RecommendParticipant("p1", null, "130", hidden = true),
-                    )
-                service().middleOf(RecommendRequest(hidden, RecommendMode.FAIR)).shouldBeNull()
-                // 같은 사람들이 숨기지 않으면 보인다(숨김 때문에만 가려진 것).
-                service().middleOf(RecommendRequest(people("03v", "130"), RecommendMode.FAIR)).shouldNotBeNull()
-            }
-
             it("is hidden when an origin has no coordinates") {
                 val partial = StationLocations { if (it == "130") null else coordinates[it] }
                 service(stationLocations = partial)

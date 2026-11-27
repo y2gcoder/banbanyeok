@@ -25,8 +25,7 @@ private fun service(
 private fun person(
     id: String,
     origin: String,
-    hidden: Boolean = false,
-) = RecommendParticipant(id, null, origin, hidden)
+) = RecommendParticipant(id, null, origin)
 
 private val origins = mapOf("a" to "03v", "b" to "225", "c" to "31a")
 
@@ -35,8 +34,7 @@ private val night = TimeSlot(DayType.WEEKDAY, TimeBand.NIGHT)
 private fun request(
     people: List<RecommendParticipant> = listOf(person("a", "03v"), person("c", "31a")),
     slot: TimeSlot = TimeSlot.DEFAULT,
-    viewer: String? = null,
-) = RecommendRequest(people, RecommendMode.FAIR, time = TimeBasis(slot, TimeSlotLabels.of(slot)), viewerId = viewer)
+) = RecommendRequest(people, RecommendMode.FAIR, time = TimeBasis(slot, TimeSlotLabels.of(slot)))
 
 private fun stop(code: String) = RouteStop(code, "${code}역")
 
@@ -65,7 +63,7 @@ class RouteTest :
                 // 03v → 4xz: 2호선만(60 + 1200초)보다 225에서 4호선으로 갈아타는 길(60 + 600 + 30 + 90 + 200초)이 2분 넘게 빠르다.
                 val attached =
                     RouteAttacher(RouteSource { graph }, codeNames::nameOf)
-                        .forRequest(TimeSlot.DEFAULT, listOf(RouteAttacher.Rider("a", "03v", false)), null)
+                        .forRequest(TimeSlot.DEFAULT, listOf(RouteAttacher.Rider("a", "03v")))
                         .shouldNotBeNull()
                 attached.at("4xz") shouldBe
                     listOf(
@@ -102,26 +100,6 @@ class RouteTest :
                 val fallback = service(slots = emptyMap()).evaluate(request(slot = night)).recommendation
                 fallback.timeBasis.slot shouldBe TimeSlot.DEFAULT
                 firstWait(fallback) shouldBe 60
-            }
-        }
-
-        describe("a participant who hid the origin") {
-            val people = listOf(person("a", "03v"), person("b", "225", hidden = true), person("c", "31a"))
-
-            it("has no route in anyone else's result or in a result without a viewer") {
-                listOf(null, "a", "c").forEach { viewer ->
-                    service().evaluate(request(people, viewer = viewer)).recommendation.candidates.forEach { card ->
-                        card.routes.shouldNotBeNull().none { it.participantId == "b" } shouldBe true
-                    }
-                }
-            }
-
-            it("sees the own route on the own request only") {
-                val own = service().evaluate(request(people, viewer = "b")).recommendation
-                own.candidates.forEach { card ->
-                    card.routes.shouldNotBeNull().map { it.participantId } shouldBe
-                        listOf("a", "b", "c").filter { origins[it] != card.stationCode }
-                }
             }
         }
     })

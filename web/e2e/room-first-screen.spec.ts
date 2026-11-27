@@ -23,12 +23,12 @@ test.describe("방 첫 화면에 1위", () => {
   // 이미 본 뽑기와 동작 줄이기는 처음부터 접힌 결과다. 재생 중에는 사다리를 먼저 본다.
   const cases: { scenario: RoomScenario; label: string; draw?: RoomDraw; reduced?: boolean }[] = [
     { scenario: "host-full", label: "방장" },
-    { scenario: "hidden-self", label: "출발역을 숨긴 본인" },
+    { scenario: "friend-joined", label: "참여한 친구" },
     { scenario: "friend-join", label: "링크로 들어와 아직 참여 전" },
     { scenario: "host-full", label: "뽑기 방, 방장, 뽑기 전", draw: "pending" },
     { scenario: "host-full", label: "뽑기 방, 방장, 처음 본 뽑기의 재생이 끝난 뒤", draw: "drawn" },
     { scenario: "host-full", label: "뽑기 방, 방장, 이미 본 뽑기", draw: "drawn-seen" },
-    { scenario: "hidden-self", label: "뽑기 방, 숨겨서 빠진 본인, 이미 본 뽑기", draw: "drawn-seen" },
+    { scenario: "friend-joined", label: "뽑기 방, 참여한 친구, 이미 본 뽑기", draw: "drawn-seen" },
     { scenario: "friend-join", label: "뽑기 방, 참여 전 방문자, 재생이 끝난 뒤", draw: "drawn" },
     { scenario: "friend-join", label: "뽑기 방, 참여 전 방문자, 동작 줄이기", draw: "drawn", reduced: true },
   ];
@@ -68,9 +68,9 @@ test.describe("방 첫 화면에 1위", () => {
       await expect(card).toBeVisible();
       expect(await page.evaluate(() => window.scrollY)).toBe(0);
       await expect(card.getByRole("heading", { name: "동대문역사문화공원" })).toBeInViewport({ ratio: 1 });
-      // 사람별 요약 줄(3명) 마지막 줄까지.
+      // 일반 방 3명과 사다리 방의 두 후보 모두 마지막 요약 줄까지 보인다.
       const rows = card.locator("ul").first().locator(":scope > li");
-      await expect(rows).toHaveCount(3);
+      await expect(rows).toHaveCount(draw ? 2 : 3);
       expect(await bottomOf(rows.last())).toBeLessThanOrEqual(PHONE.height);
       // 정하기는 화면에 따라 버튼(정하기) 또는 링크(바로 길찾기)다.
       const name = "이 역으로 정했어요";
