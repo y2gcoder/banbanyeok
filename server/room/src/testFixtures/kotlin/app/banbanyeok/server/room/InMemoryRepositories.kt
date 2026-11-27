@@ -14,6 +14,15 @@ class InMemoryRoomRepository : RoomRepository {
     private val drawGenerations = mutableMapOf<String, Int>()
     private val recoveries = mutableMapOf<TokenHash, String>()
 
+    /** ADR-0007 전에 숨긴 채 들어온 참가자(방 ID to 참가자 ID). Postgres의 `participants.hidden = true` 행 자리다(ADR-0012). */
+    private val hiddenBefore = mutableSetOf<Pair<String, String>>()
+
+    /** 테스트 전용: 숨긴 채 들어온 옛 참가자로 표시한다. 지금 서버로는 만들 수 없는 상태다. */
+    suspend fun hideAsBefore(
+        roomId: String,
+        participantId: String,
+    ) = lock.withLock { hiddenBefore += roomId to participantId }
+
     override suspend fun create(
         room: Room,
         participants: List<Participant>,
@@ -45,6 +54,7 @@ class InMemoryRoomRepository : RoomRepository {
             rooms[roomId]?.let {
                 it.copy(
                     participants = it.participants.sortedWith(compareBy({ p -> p.joinedAt }, { p -> p.id })),
+                    withheld = it.participants.any { p -> (roomId to p.id) in hiddenBefore },
                 )
             }
         }
@@ -69,7 +79,7 @@ class InMemoryRoomRepository : RoomRepository {
 
                 else -> {
                     val room =
-                        origins?.joined(stored.room, stored.participants, participant.originCode, participant.hidden)
+                        origins?.joined(stored.room, stored.participants, participant.originCode)
                             ?: stored.room
                     write(roomId) { it.copy(room = room, participants = it.participants + participant) }
                     touch(roomId, activity)
@@ -87,9 +97,8 @@ class InMemoryRoomRepository : RoomRepository {
     ): Boolean =
         lock.withLock {
             val stored = rooms[roomId] ?: return@withLock false
-            val current = stored.participants.firstOrNull { it.id == participantId } ?: return@withLock false
-            if (change.onlyIfHidden && !current.hidden) return@withLock false
-            origins?.requireAllowed(stored.room, change.originCode, change.hidden)
+            if (stored.participants.none { it.id == participantId }) return@withLock false
+            origins?.requireAllowed(stored.room, change.originCode)
             write(roomId) {
                 it.copy(
                     participants =
@@ -100,16 +109,11 @@ class InMemoryRoomRepository : RoomRepository {
                                 p.copy(
                                     nickname = change.nickname,
                                     originCode = change.originCode,
-                                    hidden = change.hidden,
                                     updatedAt = change.updatedAt,
                                 )
                             }
                         },
                 )
-            }
-            val room = rooms.getValue(roomId).room
-            if (change.releasesDrawWin && room.favorDraw != null && room.favorParticipantId == participantId) {
-                write(roomId) { it.copy(room = it.room.copy(favorParticipantId = null)) }
             }
             touch(roomId, activity)
             true
@@ -328,7 +332,7 @@ internal fun settle(
     val kept = after.participants.mapNotNull { p -> was[p.id]?.let { it to p } }
     val releases =
         was.keys != after.participants.map { it.id }.toSet() || kept.any { (o, n) -> o.originCode != n.originCode }
-    val looks = kept.any { (o, n) -> o.nickname != n.nickname || o.hidden != n.hidden }
+    val looks = kept.any { (o, n) -> o.nickname != n.nickname }
     val decisionChanged = releases || new.decision != old.decision
     if (!decisionChanged && !looks && new.previewColumns() == old.previewColumns()) return new
     val version = ShareVersion(old.shareVersion.value + 1)

@@ -54,7 +54,8 @@ fun ParticipantView.toDto(
 ) = ParticipantDto(
     participantId = id,
     nickname = nickname,
-    hidden = hidden,
+    // 계약의 호환 필드다. 이 서버는 숨긴 참가자를 내보내지 않는다(ADR-0007, #182).
+    hidden = false,
     originCode = originCode,
     originName = stations.displayName(originCode),
     isHost = isHost,
@@ -65,17 +66,14 @@ fun ParticipantView.toDto(
     enteredByHost = enteredByHost,
 )
 
-/**
- * 방 참여자의 표시 이름. 숨긴 사람은 보는 사람이 본인이어도 출발역 이름을 넘기지 않는다(누가 보든 같은 이름, data-format §8).
- * 결과 응답은 문장과 같은 값을 쓰도록 [Recommendation.labels]를 쓴다.
- */
+/** 방 참여자의 표시 이름(data-format §8). 결과 응답은 문장과 같은 값을 쓰도록 [Recommendation.labels]를 쓴다. */
 fun labelsOf(
     participants: List<ParticipantView>,
     stations: StationNames,
 ): List<ParticipantLabel> =
     ParticipantLabels.of(
         participants.map {
-            PersonRef(it.id, it.nickname, originName = if (it.hidden) null else stations.displayName(it.originCode))
+            PersonRef(it.id, it.nickname, originName = stations.displayName(it.originCode))
         },
     )
 

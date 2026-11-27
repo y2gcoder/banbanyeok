@@ -56,7 +56,7 @@ private fun stageTotal(stage: String): Long =
         }
     }
 
-/** 새로 숨길 수 없으므로(ADR-0007), ADR-0007 전에 숨긴 채 들어온 참가자는 DB 행을 직접 바꿔 만든다. */
+/** ADR-0007 전에 숨긴 채 들어온 참가자(남았거나 백업에서 되살아난 행)는 DB 행을 직접 바꿔 만든다. */
 private fun hideAsBefore(
     roomId: String,
     participantId: String,
@@ -158,33 +158,40 @@ class ApiIntegrationTest :
                                 ).bodyAsText(),
                         )
                     val friendToken = friend.str("participantToken")
-                    // 아직 남은 옛 방처럼, 이 친구는 숨긴 채 들어와 있다.
-                    hideAsBefore(roomId, friend.str("participantId"))
+                    val friendPath = "$room/participants/${friend.str("participantId")}"
 
-                    // 출발역 입력(수정): 친구가 한 번 바꿨다가 숨김을 유지한 채 다시 맞춘다.
-                    api.call(
-                        HttpMethod.Put,
-                        "$room/participants/${friend.str("participantId")}",
-                        """{"nickname":"지연","originCode":"$c","hidden":true}""",
-                        token = friendToken,
-                        contractPath = "$room/participants/${friend.str("participantId")}",
-                        expected = HttpStatusCode.OK,
-                    )
-                    api.call(
-                        HttpMethod.Put,
-                        "$room/participants/${friend.str("participantId")}",
-                        """{"nickname":"지연","originCode":"$b","hidden":true}""",
-                        token = friendToken,
-                        expected = HttpStatusCode.OK,
-                    )
+                    // 출발역 입력(수정): 옛 화면처럼 hidden=false를 실어 한 번 바꿨다가 다시 맞춘다. 숨기며 고치는 것은 받지 않는다.
+                    for (origin in listOf(c, b)) {
+                        api.call(
+                            HttpMethod.Put,
+                            friendPath,
+                            """{"nickname":"지연","originCode":"$origin","hidden":false}""",
+                            token = friendToken,
+                            contractPath = friendPath,
+                            expected = HttpStatusCode.OK,
+                        )
+                    }
+                    parse(
+                        api
+                            .call(
+                                HttpMethod.Put,
+                                friendPath,
+                                """{"nickname":"지연","originCode":"$c","hidden":true}""",
+                                token = friendToken,
+                                expected = HttpStatusCode.BadRequest,
+                            ).bodyAsText(),
+                    ).str("code") shouldBe "HIDE_NOT_AVAILABLE"
 
-                    // 익명 조회: 숨긴 출발역은 null, 본인 조회: 보인다.
+                    // 익명 조회에도 모든 출발역이 보이고, 계약의 호환 필드 hidden은 false다.
                     val anonymousView = parse(api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK).bodyAsText())
-                    val hiddenOrigins =
-                        anonymousView.jsonObject.getValue("participants").jsonArray.map {
-                            it.jsonObject["originCode"]?.jsonPrimitive?.contentOrNull
-                        }
-                    hiddenOrigins shouldContainExactly listOf(a, null)
+                    val people =
+                        anonymousView.jsonObject
+                            .getValue("participants")
+                            .jsonArray
+                            .map { it.jsonObject }
+                    people.map { it["originCode"]?.jsonPrimitive?.contentOrNull } shouldContainExactly listOf(a, b)
+                    people.map { it.getValue("hidden").jsonPrimitive.content } shouldContainExactly
+                        listOf("false", "false")
                     // 통계용 방 해시: 만들 때 받은 값과 같고, 방 ID 원문이 아니다.
                     val roomHash = anonymousView.str("roomHash")
                     roomHash shouldBe created.str("roomHash")
@@ -196,7 +203,6 @@ class ApiIntegrationTest :
                         .jsonArray[1]
                         .str("originCode") shouldBe b
 
-                    // 결과: 숨긴 참가자의 시간은 보이고 출발역은 가려진다.
                     val result = api.call(HttpMethod.Get, "$room/result", expected = HttpStatusCode.OK).bodyAsText()
                     val resultJson = parse(result)
                     resultJson.str("status") shouldBe "ok"
@@ -212,7 +218,6 @@ class ApiIntegrationTest :
                         .getValue("times")
                         .jsonArray.size shouldBe
                         2
-                    result shouldNotContain "\"originCode\":\"$b\""
 
                     // 방장이 배려 모드로 바꾸면 우대 대상의 시간이 카드에 실린다.
                     api.call(
@@ -246,6 +251,101 @@ class ApiIntegrationTest :
                     // 삭제
                     api.call(HttpMethod.Delete, room, token = hostToken, expected = HttpStatusCode.NoContent)
                     api.call(HttpMethod.Get, room, expected = HttpStatusCode.NotFound)
+                }
+            }
+
+            it(
+                "keeps a room with a hidden participant left from before ADR-0007 closed, and lets its own tokens delete",
+            ) {
+                integration { api, origins ->
+                    suspend fun legacyRoom(): Triple<JsonElement, JsonElement, String> {
+                        val created =
+                            parse(
+                                api
+                                    .call(
+                                        HttpMethod.Post,
+                                        "/v1/rooms",
+                                        """{"mode":"fair","host":{"nickname":"민수","originCode":"${origins[0]}"}}""",
+                                        expected = HttpStatusCode.Created,
+                                    ).bodyAsText(),
+                            )
+                        val roomId = created.str("roomId")
+                        val friend =
+                            parse(
+                                api
+                                    .call(
+                                        HttpMethod.Post,
+                                        "/v1/rooms/$roomId/participants",
+                                        """{"originCode":"${origins.last()}"}""",
+                                        expected = HttpStatusCode.Created,
+                                    ).bodyAsText(),
+                            )
+                        hideAsBefore(roomId, friend.str("participantId"))
+                        return Triple(created, friend, "/v1/rooms/$roomId")
+                    }
+
+                    val (created, friend, room) = legacyRoom()
+                    val friendPath = "$room/participants/${friend.str("participantId")}"
+                    val friendToken = friend.str("participantToken")
+                    // 토큰이 없거나 다른 것이면 없는 방과 같다: 방이 있는지, 누가 숨겼는지 알리지 않는다.
+                    for (path in listOf(room, "$room/result", "$room/preview")) {
+                        val body = api.call(HttpMethod.Get, path, expected = HttpStatusCode.NotFound).bodyAsText()
+                        parse(body).str("code") shouldBe "ROOM_NOT_FOUND"
+                        body shouldNotContain origins.last()
+                    }
+                    api.call(HttpMethod.Delete, room, token = "not-a-token", expected = HttpStatusCode.NotFound)
+                    api.call(
+                        HttpMethod.Post,
+                        "$room/participants",
+                        """{"originCode":"${origins[1]}"}""",
+                        expected = HttpStatusCode.NotFound,
+                    )
+                    // 그 방의 토큰이면 지금은 열 수 없다는 답(기기 기록을 지우지 않게 404와 다른 코드)이고, 내용은 없다.
+                    for (token in listOf(friendToken, created.str("hostToken"), created.str("participantToken"))) {
+                        for (path in listOf(room, "$room/result")) {
+                            val body =
+                                api
+                                    .call(
+                                        HttpMethod.Get,
+                                        path,
+                                        token = token,
+                                        expected = HttpStatusCode.Forbidden,
+                                    ).bodyAsText()
+                            parse(body).str("code") shouldBe "ROOM_WITHHELD"
+                            body shouldNotContain origins.last()
+                        }
+                    }
+                    api.call(
+                        HttpMethod.Put,
+                        friendPath,
+                        """{"originCode":"${origins.last()}","hidden":false}""",
+                        token = friendToken,
+                        expected = HttpStatusCode.Forbidden,
+                    )
+                    // 숨긴 본인은 자기 항목을 지울 수 있고, 숨긴 사람이 없어진 방은 다시 열린다.
+                    api.call(HttpMethod.Delete, friendPath, token = friendToken, expected = HttpStatusCode.NoContent)
+                    api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK)
+
+                    // 방장은 방장 토큰으로 방을 지울 수 있다. 참여자 토큰으로는 안 된다.
+                    val (other, _, otherRoom) = legacyRoom()
+                    api.call(
+                        HttpMethod.Delete,
+                        otherRoom,
+                        token = other.str("participantToken"),
+                        expected = HttpStatusCode.Forbidden,
+                    )
+                    api.call(
+                        HttpMethod.Delete,
+                        otherRoom,
+                        token = other.str("hostToken"),
+                        expected = HttpStatusCode.NoContent,
+                    )
+                    api.call(
+                        HttpMethod.Get,
+                        otherRoom,
+                        token = other.str("hostToken"),
+                        expected = HttpStatusCode.NotFound,
+                    )
                 }
             }
 
@@ -418,9 +518,6 @@ class ApiIntegrationTest :
                                 ).bodyAsText(),
                         )
                     val friendPart = friend.str("participantToken")
-                    // ADR-0007 전에 숨긴 채 들어온 참가자(새로 숨길 수 없다).
-                    hideAsBefore(created.str("roomId"), friend.str("participantId"))
-                    // 숨긴 본인의 토큰을 보내도 미리보기에는 출발역이 없다.
                     val shown =
                         api.call(
                             HttpMethod.Get,
@@ -430,7 +527,6 @@ class ApiIntegrationTest :
                         )
                     val result = parse(shown.bodyAsText())
                     result.str("stage") shouldBe "result"
-                    shown.bodyAsText() shouldNotContain "\"$b\""
                     val labels =
                         result.jsonObject
                             .getValue("station")
@@ -438,7 +534,7 @@ class ApiIntegrationTest :
                             .getValue("times")
                             .jsonArray
                             .map { it.str("label") }
-                    labels shouldContainExactly listOf("민수", "참가자 2")
+                    labels.first() shouldBe "민수"
 
                     val computed =
                         parse(api.call(HttpMethod.Get, "$room/result", expected = HttpStatusCode.OK).bodyAsText())
@@ -458,7 +554,7 @@ class ApiIntegrationTest :
                     val decided =
                         parse(api.call(HttpMethod.Get, "$room/preview", expected = HttpStatusCode.OK).bodyAsText())
                     decided.str("stage") shouldBe "decided"
-                    decided.str("decidedBy") shouldBe "참가자 2"
+                    decided.str("decidedBy") shouldBe labels[1]
                     decided.jsonObject
                         .getValue("station")
                         .str("stationCode") shouldBe second

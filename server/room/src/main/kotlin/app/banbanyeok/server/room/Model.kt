@@ -100,7 +100,7 @@ public data class Meeting(
 
 /**
  * 저장된 뽑기 상태. [round]가 0이면 아직 안 뽑았고 [candidates]·[roster]·[drawnAt]이 비어 있다(DB CHECK rooms_draw_complete).
- * 당첨자가 비면(나가거나 숨겼다) DB 트리거가 회차를 0으로 돌리고 [generation]을 1 올린다.
+ * 당첨자가 비면(나갔다) DB 트리거가 회차를 0으로 돌리고 [generation]을 1 올린다.
  */
 public data class FavorDraw(
     /** 뽑기 세대. 뽑기 전으로 돌아갈 때마다 1씩 커지고 줄지 않는다. 회차(0~2)는 세대 안에서 센다. */
@@ -108,7 +108,7 @@ public data class FavorDraw(
     val round: Int,
     /** 뽑을 때 대상이던 참가자 ID(입장 순서). */
     val candidates: List<String>,
-    /** 뽑을 때 방에 있던 모든 참가자 ID. 그 뒤에 들어온 사람(late)과 숨겨서 빠진 사람(hidden)을 이것으로 가른다. */
+    /** 뽑을 때 방에 있던 모든 참가자 ID. 그 뒤에 들어온 사람(late)과, ADR-0007 전에 숨겨서 빠진 사람(hidden)을 이것으로 가른다. */
     val roster: List<String>,
     val drawnAt: Instant?,
 ) {
@@ -136,7 +136,6 @@ public data class Participant(
     val anonId: String?,
     val nickname: String?,
     val originCode: String,
-    val hidden: Boolean,
     val joinedAt: Instant,
     val updatedAt: Instant,
     /** 방장이 방을 만들 때 대신 넣은 칸(#227). 토큰은 아무에게도 주지 않아 본인이 고치거나 지울 수 없고, 방장만 내보낼 수 있다. */
@@ -147,6 +146,11 @@ public data class Participant(
 public data class StoredRoom(
     val room: Room,
     val participants: List<Participant>,
+    /**
+     * ADR-0007 전에 출발역을 숨긴 채 들어온 참가자가 지금도 남아 있다(예상 밖으로 남았거나 백업에서 되살아난 행, ADR-0012). 이 판은 숨김을
+     * 가리지 않으므로 그 방의 내용을 아무에게도 보여 주지 않고, 그 방의 자격이 있는 사람에게 지우기만 열어 둔다.
+     */
+    val withheld: Boolean = false,
 )
 
 /** 값이 바뀌지 않았는지(Unchanged), 새 값(또는 null로 지우기)으로 바꿨는지(Set) 구별한다. */
@@ -160,22 +164,10 @@ public sealed interface Change<out T> {
 
 // ---- 서비스 입력/출력 ----
 
-/**
- * 새로 출발역을 숨기는 요청을 받는지(ADR-0007, #173). 이미 숨긴 채 방에 있는 참가자는 어느 쪽이든 방이 사라질 때까지 지금 규칙을 쓴다.
- * 숨김 코드를 걷어내는 2단계(#182)에서 함께 지운다.
- */
-public enum class NewHiddenOrigins {
-    /** 운영. 방 만들기·참여의 숨김과, 숨기지 않은 참가자가 고치기에서 숨기는 것을 [RoomError.HIDE_NOT_AVAILABLE]로 거절한다. */
-    REJECTED,
-
-    /** 테스트 픽스처 전용: ADR-0007 전에 숨긴 채 들어온 참가자가 있는 방(아직 남은 옛 방)을 재현한다. */
-    LEGACY_FIXTURE,
-}
-
+/** 출발역 숨기기(`hidden=true`)는 HTTP 경계에서 거절한다(ADR-0007, #182). 방 계층은 숨김을 모른다. */
 public data class ParticipantInput(
     val nickname: String?,
     val originCode: String,
-    val hidden: Boolean = false,
 )
 
 public data class CreateRoomCommand(
@@ -230,14 +222,10 @@ public data class RoomPatch(
     val meetingBand: Change<TimeBand> = Change.Unchanged,
 )
 
-/**
- * 요청자가 볼 수 있는 참여자. 숨긴 참가자의 [originCode]는 요청자 본인이 아니면 null이다(시간·환승은 결과에서 그대로 보인다).
- */
 public data class ParticipantView(
     val id: String,
     val nickname: String?,
-    val hidden: Boolean,
-    val originCode: String?,
+    val originCode: String,
     val isHost: Boolean,
     val isSelf: Boolean,
     val enteredByHost: Boolean = false,
@@ -266,7 +254,7 @@ public data class RoomView(
     val favorDraw: FavorDrawView? = null,
 )
 
-/** 화면에 보이는 뽑기 상태. 참가자 ID·숨김 여부·입장 시각과 저장된 결과에서만 나온다(출발역과 상관없다). */
+/** 화면에 보이는 뽑기 상태. 참가자 ID·입장 시각과 저장된 결과에서만 나온다(출발역과 상관없다). */
 public data class FavorDrawView(
     val generation: Int,
     val round: Int,
@@ -287,7 +275,7 @@ public data class DrawExclusion(
 )
 
 public enum class DrawExclusionReason {
-    /** 뽑을 때(뽑기 전이면 지금) 출발역을 숨겼다. */
+    /** 뽑을 때 방에 있었지만 대상이 아니었다: ADR-0007 전에 출발역을 숨긴 채 뽑힌 옛 뽑기다. 새로 생기지 않는다. */
     HIDDEN,
 
     /** 뽑은 뒤에 들어왔다. */
@@ -304,8 +292,6 @@ public data class ComputeParticipant(
     val id: String,
     val nickname: String?,
     val originCode: String,
-    /** 출발역을 숨겼다. 계산에는 [originCode]를 쓰지만 표시 이름·문장에는 출발역을 쓰지 않는다. */
-    val hidden: Boolean,
 )
 
 public data class CleanupReport(

@@ -28,7 +28,13 @@ fun DrawRoomCreateRequestDto.toCommand(): CreateRoomCommand {
             meetingBand = meetingBand,
             host = host,
         )
-    return room.toCommand(deviceToken = null).copy(others = others.map { it.toInput() }, hostPosition = hostPosition)
+    return room.toCommand(deviceToken = null).copy(
+        others =
+            others.map {
+                it.toInput("다른 사람 칸은 출발역을 숨길 수 없습니다")
+            },
+        hostPosition = hostPosition,
+    )
 }
 
 /** 같은 명단 입력 규칙을 쓰되 뽑기 상태를 만들지 않는다. 이전 결과에서 돌아오면 추천 기준도 이어 간다. */

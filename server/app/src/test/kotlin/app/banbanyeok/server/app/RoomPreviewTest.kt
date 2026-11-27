@@ -13,14 +13,12 @@ import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.recommendation.smallOd
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
 import app.banbanyeok.server.room.RoomPatch
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest
 
@@ -31,7 +29,6 @@ private fun previewTest(
     val fixture =
         RoomFixture(
             stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")),
-            newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
         )
     val recommendation = RecommendationService(OdTravelTimeProvider(od, "20261112.1"), codeNames)
     fixture.body(RoomResultService(fixture.service, recommendation, testTimes))
@@ -39,13 +36,12 @@ private fun previewTest(
 
 private fun hostCommand(
     mode: RoomMode = RoomMode.FAIR,
-    hidden: Boolean = false,
     nickname: String? = "민수",
 ) = CreateRoomCommand(
     mode,
     if (mode == RoomMode.FAVOR) CreateRoomCommand.HOST_TARGET else null,
     null,
-    ParticipantInput(nickname, "03v", hidden),
+    ParticipantInput(nickname, "03v"),
     null,
     null,
 )
@@ -73,30 +69,6 @@ class RoomPreviewTest :
                         PreviewStation("130", listOf(PreviewTime("민수", 600), PreviewTime("130역", 0)))
                     preview.dataVersion shouldBe "20261112.1"
                     preview.room.canJoin shouldBe true
-                }
-            }
-
-            it("names a hidden person without a nickname by room order and never carries their origin") {
-                previewTest { results ->
-                    val created = service.create(hostCommand(hidden = true, nickname = null))
-                    service.join(created.roomId, ParticipantInput("지연", "225"), null)
-                    val preview = results.preview(created.roomId).shouldBeInstanceOf<RoomPreview.Result>()
-                    preview.station.stationCode shouldBe "130"
-                    preview.station.times.map { it.label } shouldBe listOf("참가자 1", "지연")
-                    preview.toString() shouldNotContain "03v"
-                }
-            }
-
-            it(
-                "keeps the nickname of a hidden person who typed one (only a hidden person without a nickname is 참가자 N)",
-            ) {
-                // 처리방침 6항의 미리보기 이름 안내(#84): 이름을 입력하면 그 이름, 이름 없이 출발역을 숨기면 '참가자 N'.
-                previewTest { results ->
-                    val created = service.create(hostCommand(hidden = true, nickname = "비밀별"))
-                    service.join(created.roomId, ParticipantInput(null, "225", hidden = true), null)
-                    val preview = results.preview(created.roomId).shouldBeInstanceOf<RoomPreview.Result>()
-                    preview.station.times.map { it.label } shouldBe listOf("비밀별", "참가자 2")
-                    preview.toString() shouldNotContain "03v"
                 }
             }
 

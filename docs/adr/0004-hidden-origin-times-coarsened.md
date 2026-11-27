@@ -1,6 +1,6 @@
 # ADR-0004: 숨긴 출발역 참가자의 시간은 다른 사람에게 5분 단위로 보인다
 
-- 상태: accepted (운영자 결정, 2026-11-24, #142)
+- 상태: superseded by [ADR-0007](0007-stop-new-hidden-origins.md) (#182에서 서버가 더는 적용하지 않음, [ADR-0012](0012-retire-hidden-origins-in-steps.md))
 - 고치는 결정: docs/01-synthesis.md '숨기기'(숨긴 출발역은 이름만 가리고 시간은 보임)
 - 2026-11-25부터 새로 숨길 수 없다([ADR-0007](0007-stop-new-hidden-origins.md)). 이 결정은 이미 숨긴 사람이 남은 방에만 쓰고, 옛 방이 모두 사라지면 걷어낸다.
 

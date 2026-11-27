@@ -5,7 +5,6 @@ import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.app.http.ApiServices
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.room.CreateRoomCommand
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -109,7 +108,7 @@ class CharacterizationHttpTest :
         }
 
         it("keeps every room result and link preview response") {
-            val fixture = RoomFixture(stations = directory, newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
+            val fixture = RoomFixture(stations = directory)
             val results = RoomResultService(fixture.service, recommendation(), testTimes)
             val api =
                 apiServices(
@@ -132,20 +131,20 @@ class CharacterizationHttpTest :
                 val date: LocalDate?,
                 val time: LocalTime?,
                 val band: TimeBand?,
-                val origins: List<Pair<String, Boolean>>,
+                val origins: List<String>,
                 val decide: String? = null,
             )
             val specs =
                 listOf(
-                    Spec("collecting", RoomMode.FAIR, friday, null, null, listOf("홍대입구" to false)),
-                    Spec("no-date", RoomMode.FAIR, null, null, null, listOf("홍대입구" to false, "잠실" to false)),
+                    Spec("collecting", RoomMode.FAIR, friday, null, null, listOf("홍대입구")),
+                    Spec("no-date", RoomMode.FAIR, null, null, null, listOf("홍대입구", "잠실")),
                     Spec(
-                        "friday-evening-hidden",
+                        "friday-evening",
                         RoomMode.FAIR,
                         friday,
                         LocalTime.of(19, 30),
                         null,
-                        listOf("합정" to false, "강남" to true, "김포공항" to false),
+                        listOf("합정", "강남", "김포공항"),
                     ),
                     Spec(
                         "saturday-night-band",
@@ -153,7 +152,7 @@ class CharacterizationHttpTest :
                         saturday,
                         null,
                         TimeBand.NIGHT,
-                        listOf("광교" to false, "당산" to false, "잠실" to false, "홍대입구" to true),
+                        listOf("광교", "당산", "잠실", "홍대입구"),
                     ),
                     Spec(
                         "favor-host-after-midnight",
@@ -161,7 +160,7 @@ class CharacterizationHttpTest :
                         saturday,
                         LocalTime.of(1, 0),
                         null,
-                        listOf("홍대입구" to false, "잠실" to false, "강남" to false),
+                        listOf("홍대입구", "잠실", "강남"),
                     ),
                     Spec(
                         "christmas-decided-outside-top",
@@ -169,7 +168,7 @@ class CharacterizationHttpTest :
                         christmas,
                         LocalTime.of(12, 0),
                         null,
-                        listOf("홍대입구" to false, "잠실" to true),
+                        listOf("홍대입구", "잠실"),
                         decide = "김포공항",
                     ),
                     Spec(
@@ -178,7 +177,7 @@ class CharacterizationHttpTest :
                         friday,
                         LocalTime.of(22, 0),
                         null,
-                        listOf("합정" to false, "강남" to false),
+                        listOf("합정", "강남"),
                         decide = "top",
                     ),
                     Spec(
@@ -188,8 +187,8 @@ class CharacterizationHttpTest :
                         null,
                         TimeBand.EVENING,
                         listOf(
-                            "당산" to false,
-                            "잠실" to false,
+                            "당산",
+                            "잠실",
                         ),
                     ),
                 )
@@ -197,14 +196,14 @@ class CharacterizationHttpTest :
             testApplication {
                 application { apiModule(unlimited, api, clock) }
                 for (spec in specs) {
-                    val (host, hostHidden) = spec.origins.first()
+                    val host = spec.origins.first()
                     val created =
                         fixture.service.create(
                             CreateRoomCommand(
                                 spec.mode,
                                 if (spec.mode == RoomMode.FAVOR) CreateRoomCommand.HOST_TARGET else null,
                                 spec.date,
-                                ParticipantInput("방장", code(host), hostHidden),
+                                ParticipantInput("방장", code(host)),
                                 null,
                                 null,
                                 spec.time,
@@ -213,7 +212,7 @@ class CharacterizationHttpTest :
                         )
                     val tokens =
                         listOf(created.participantToken) +
-                            spec.origins.drop(1).mapIndexed { index, (origin, hidden) ->
+                            spec.origins.drop(1).mapIndexed { index, origin ->
                                 fixture.service
                                     .join(
                                         created.roomId,
@@ -226,7 +225,6 @@ class CharacterizationHttpTest :
                                                 "친구$index"
                                             },
                                             code(origin),
-                                            hidden,
                                         ),
                                         null,
                                     ).participantToken
@@ -378,9 +376,9 @@ private val RAW_ROOMS =
     listOf(
         "collecting preview",
         "no-date preview",
-        "friday-evening-hidden preview",
-        "friday-evening-hidden result anonymous",
-        "friday-evening-hidden result as #1",
+        "friday-evening preview",
+        "friday-evening result anonymous",
+        "friday-evening result as #1",
         "saturday-night-band result favor=host",
         "favor-host-after-midnight preview",
         "favor-host-after-midnight result as #0",

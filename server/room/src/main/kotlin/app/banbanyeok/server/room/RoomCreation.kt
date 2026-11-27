@@ -38,7 +38,7 @@ internal fun newParticipant(
     anonId: String?,
     input: ParticipantInput,
     now: Instant,
-) = Participant(id, tokenHash, anonId, input.nickname, input.originCode, input.hidden, now, now)
+) = Participant(id, tokenHash, anonId, input.nickname, input.originCode, now, now)
 
 /**
  * 방을 만들 때의 입장 순서. 원래 입력 순서(방장은 [hostPosition] 자리)대로 1마이크로초씩 늦춰 입장 시각을 준다. 입장 순서가 표시 이름의

@@ -18,8 +18,8 @@ const ROOM_ID = "abcdefghjk";
 type Computed = Exclude<RoomPreview, { stage: "collecting" }>;
 
 // What this test does NOT do: compare a room with hidden origin 130 against one with 225. There is one wire DTO per scenario,
-// and Kotlin's HiddenOriginNoninterferenceHttpTest proves that BOTH hidden origins produce exactly that DTO (it fails if either
-// room's preview differs from this fixture, and it writes the fixture: `mise run fixtures:hidden-origin`). The web outputs below
+// recorded from a server revision that still served hidden participants (before #182). Servers from #182 on never send a hidden
+// participant, so the fixture is frozen: it stands for an older server during a mixed deploy or rollback. The web outputs below
 // are computed only from the preview DTO (`getRoomPreview` is the only data source of the metadata), so the same DTO gives the
 // same metadata, share copy and image input for both rooms by construction; feeding it twice would only test determinism.
 //

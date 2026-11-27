@@ -27,6 +27,7 @@ import java.time.Clock
 
 private const val ROOMS = "/v1/rooms"
 private const val DRAW_ROOMS = "/v1/draw-rooms"
+private const val FILLED_ROOMS = "/v1/filled-rooms"
 private const val RECOVERY_KEY = "recovery-key-of-the-creating-browser-0001"
 private const val HOST_INPUT = """{"mode":"fair","host":{"originCode":"03v"}}"""
 private const val GUEST_INPUT = """{"originCode":"130"}"""
@@ -132,10 +133,10 @@ class RoomIdempotencyHttpTest :
                 val body =
                     """{"mode":"fast","host":{"originCode":"130"},"others":[{"originCode":"03v"}],""" +
                         """"hostPosition":1,"recoveryKey":"$RECOVERY_KEY"}"""
-                val response = json(HttpMethod.Post, "/v1/filled-rooms", body)
+                val response = json(HttpMethod.Post, FILLED_ROOMS, body)
                 response.status shouldBe HttpStatusCode.Created
                 val created = response.bodyObject()
-                json(HttpMethod.Post, "/v1/filled-rooms", body).bodyObject() shouldBe created
+                json(HttpMethod.Post, FILLED_ROOMS, body).bodyObject() shouldBe created
                 val path = "$ROOMS/${created.getValue("roomId").jsonPrimitive.content}"
                 val before = json(HttpMethod.Get, path).bodyObject()
                 before.getValue("mode").jsonPrimitive.content shouldBe "fast"
@@ -171,6 +172,35 @@ class RoomIdempotencyHttpTest :
                     .getValue("round")
                     .jsonPrimitive.content shouldBe "1"
                 after.getValue("roomId") shouldBe before.getValue("roomId")
+            }
+        }
+
+        it("rejects a hidden host or guest before replaying a public filled room") {
+            withRoomApi {
+                val body =
+                    """{"mode":"fair","host":{"originCode":"130","hidden":false},""" +
+                        """"others":[{"originCode":"03v","hidden":false}],"hostPosition":0,"recoveryKey":"$RECOVERY_KEY"}"""
+                val post: suspend (String) -> HttpResponse = { input ->
+                    json(HttpMethod.Post, FILLED_ROOMS, input) { headers.append("Idempotency-Key", "filled-room") }
+                }
+                val created = post(body)
+                created.status shouldBe HttpStatusCode.Created
+                OpenApiContract.assertValid(HttpMethod.Post, FILLED_ROOMS, created)
+                for (origin in listOf("130", "03v")) {
+                    val hidden =
+                        body.replace(
+                            """"originCode":"$origin","hidden":false""",
+                            """"originCode":"$origin","hidden":true""",
+                        )
+                    val response = post(hidden)
+                    response.status shouldBe HttpStatusCode.BadRequest
+                    OpenApiContract.assertValid(HttpMethod.Post, FILLED_ROOMS, response)
+                    response
+                        .bodyObject()
+                        .getValue("code")
+                        .jsonPrimitive.content shouldBe "HIDE_NOT_AVAILABLE"
+                }
+                post(body).bodyObject() shouldBe created.bodyObject()
             }
         }
 

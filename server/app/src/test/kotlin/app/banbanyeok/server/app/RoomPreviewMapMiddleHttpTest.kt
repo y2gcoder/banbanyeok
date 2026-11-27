@@ -3,7 +3,6 @@ package app.banbanyeok.server.app
 import app.banbanyeok.server.app.application.RoomResultService
 import app.banbanyeok.server.recommendation.RecommendationService
 import app.banbanyeok.server.room.CreateRoomCommand
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -40,7 +39,7 @@ private fun JsonObject.secondsOf(key: String) =
 
 /** 실제 dev 산출물(역 좌표 포함)로 방을 만들고 미리보기·무상태 추천을 같은 서버에서 부른다. */
 private class Rooms {
-    val fixture = RoomFixture(stations = directory, newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
+    val fixture = RoomFixture(stations = directory)
     private val recommendation = RecommendationService(directory.travel, directory, locations = directory)
     val api =
         apiServices(
@@ -52,33 +51,33 @@ private class Rooms {
             DevArtifacts.published,
         )
 
-    /** 방장은 "방장", 나머지는 이름 없이 들어온다. [origins]는 (역 이름, 숨김). 마지막 사람의 참여 토큰을 돌려준다. */
+    /** 방장은 "방장", 나머지는 이름 없이 들어온다. [origins]는 역 이름. 마지막 사람의 참여 토큰을 돌려준다. */
     suspend fun create(
         mode: RoomMode,
-        origins: List<Pair<String, Boolean>>,
+        origins: List<String>,
         date: LocalDate? = null,
         time: LocalTime? = null,
     ): Pair<String, String> {
-        val (host, hostHidden) = origins.first()
+        val host = origins.first()
         val created =
             fixture.service.create(
                 CreateRoomCommand(
                     mode,
                     null,
                     date,
-                    ParticipantInput("방장", codeOf(host), hostHidden),
+                    ParticipantInput("방장", codeOf(host)),
                     null,
                     null,
                     time,
                 ),
             )
         var last = created.participantToken
-        for ((origin, hidden) in origins.drop(1)) {
+        for (origin in origins.drop(1)) {
             last =
                 fixture.service
                     .join(
                         created.roomId,
-                        ParticipantInput(null, codeOf(origin), hidden),
+                        ParticipantInput(null, codeOf(origin)),
                         null,
                     ).participantToken
         }
@@ -124,7 +123,7 @@ class RoomPreviewMapMiddleHttpTest :
                         val (roomId, _) =
                             rooms.create(
                                 RoomMode.FAIR,
-                                listOf("홍대입구" to false, "잠실" to false),
+                                listOf("홍대입구", "잠실"),
                                 date,
                                 time,
                             )
@@ -174,25 +173,12 @@ class RoomPreviewMapMiddleHttpTest :
                 }
             }
 
-            it("leaves the key out entirely when anyone hides their origin") {
-                roomTest { rooms ->
-                    for (hidden in listOf(listOf(false, true), listOf(true, false), listOf(true, true))) {
-                        val (roomId, _) = rooms.create(RoomMode.FAIR, listOf("홍대입구", "잠실").zip(hidden))
-                        val (preview, raw) = client.preview(roomId)
-                        preview.text("stage") shouldBe "result"
-                        preview.containsKey("mapMiddle") shouldBe false
-                        raw shouldNotContain "mapMiddle"
-                        raw shouldNotContain "한강진"
-                    }
-                }
-            }
-
             it("leaves the key out for a fast room and for a decided station") {
                 roomTest { rooms ->
-                    val (fast, _) = rooms.create(RoomMode.FAST, listOf("홍대입구" to false, "잠실" to false))
+                    val (fast, _) = rooms.create(RoomMode.FAST, listOf("홍대입구", "잠실"))
                     client.preview(fast).first.containsKey("mapMiddle") shouldBe false
 
-                    val (fair, token) = rooms.create(RoomMode.FAIR, listOf("홍대입구" to false, "잠실" to false))
+                    val (fair, token) = rooms.create(RoomMode.FAIR, listOf("홍대입구", "잠실"))
                     client
                         .preview(fair)
                         .first["mapMiddle"]

@@ -80,8 +80,10 @@ class ShareVersionTriggerTest :
                     "UPDATE participants SET nickname = '지연', hidden = true WHERE room_id = ? AND pid = 'pid002'",
                     roomId,
                 )
+                // 숨긴 행이 있는 방은 이 판의 저장소가 없는 방으로 본다(#182). 풀고 나서 읽는다.
+                sql("UPDATE participants SET hidden = false WHERE room_id = ? AND pid = 'pid002'", roomId)
                 val after = state(roomId)
-                after.shareVersion.value shouldBe start.shareVersion.value + 2
+                after.shareVersion.value shouldBe start.shareVersion.value + 3
                 after.decision shouldBe start.decision
                 after.decisionBasis shouldBe start.decisionBasis
             }
@@ -129,7 +131,7 @@ class ShareVersionTriggerTest :
                             fakeDecisionRule,
                         )
                         val seen = state(roomId).shareVersion
-                        val change = ParticipantChange(null, "225", false, T0.plusSeconds(5))
+                        val change = ParticipantChange(null, "225", T0.plusSeconds(5))
                         coroutineScope {
                             listOf(
                                 async {

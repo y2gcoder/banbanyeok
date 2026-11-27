@@ -4,16 +4,12 @@ import io.kotest.core.spec.style.scopes.DescribeSpecRootScope
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 
-/** host01·pid002·pid003이 있는 뽑기 방(아직 안 뽑음). [hidden]에 든 사람은 출발역을 숨겼다. */
-private suspend fun RoomRepository.drawRoom(hidden: Set<String> = emptySet()): String {
+/** host01과 [others]가 있는 뽑기 방(아직 안 뽑음). */
+private suspend fun RoomRepository.drawRoom(others: List<String> = listOf("pid002", "pid003")): String {
     val room = aRoom(freshId()) { it.copy(mode = RoomMode.FAVOR, favorDraw = FavorDraw.PENDING) }
-    create(room, listOf(aParticipant("host01") { it.copy(hidden = "host01" in hidden) }))
-    for ((index, id) in listOf("pid002", "pid003").withIndex()) {
-        addParticipant(
-            room.id,
-            aParticipant(id, T0.plusSeconds(index + 1L)) { it.copy(hidden = id in hidden) },
-            activity(index + 1L),
-        )
+    create(room, listOf(aParticipant("host01")))
+    for ((index, id) in others.withIndex()) {
+        addParticipant(room.id, aParticipant(id, T0.plusSeconds(index + 1L)), activity(index + 1L))
     }
     return room.id
 }
@@ -37,14 +33,14 @@ internal fun DescribeSpecRootScope.favorDraws(repos: () -> RepositoryPair) {
             room.favorParticipantId.shouldBeNull()
         }
 
-        it("draws among the participants who did not hide their origin, in join order, and stores the result") {
+        it("draws among everyone in the room, in join order, and stores the result") {
             val rooms = repos().rooms
-            val roomId = rooms.drawRoom(hidden = setOf("pid002"))
+            val roomId = rooms.drawRoom()
             val before = rooms.room(roomId)
             // 뽑은 시각은 요청 시각(activity)이 아니라 잠근 뒤 규칙의 시계에서 읽는다.
-            val result = rooms.draw(roomId, 1, 5, fakeDrawRule(1, at = T0.plusSeconds(301)))
-            val stored =
-                FavorDraw(0, 1, listOf("host01", "pid003"), listOf("host01", "pid002", "pid003"), T0.plusSeconds(301))
+            val result = rooms.draw(roomId, 1, 5, fakeDrawRule(2, at = T0.plusSeconds(301)))
+            val everyone = listOf("host01", "pid002", "pid003")
+            val stored = FavorDraw(0, 1, everyone, everyone, T0.plusSeconds(301))
             result shouldBe DrawResult.Drawn("pid003", stored)
             val after = rooms.room(roomId)
             after.favorParticipantId shouldBe "pid003"
@@ -76,9 +72,9 @@ internal fun DescribeSpecRootScope.favorDraws(repos: () -> RepositoryPair) {
             rooms.create(plain, listOf(aParticipant("host01")))
             rooms.addParticipant(plain.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
             rooms.draw(plain.id, 1, 5) shouldBe DrawResult.NotAvailable
-            val hiddenRoom = rooms.drawRoom(hidden = setOf("pid002", "pid003"))
-            rooms.draw(hiddenRoom, 1, 5) shouldBe DrawResult.TooFew
-            rooms.room(hiddenRoom).favorDraw shouldBe FavorDraw.PENDING
+            val alone = rooms.drawRoom(others = emptyList())
+            rooms.draw(alone, 1, 5) shouldBe DrawResult.TooFew
+            rooms.room(alone).favorDraw shouldBe FavorDraw.PENDING
             rooms.draw(rooms.drawRoom(), 2, 5) shouldBe DrawResult.Stale
             rooms.draw(freshId(), 1, 5) shouldBe DrawResult.RoomNotFound
         }
@@ -127,19 +123,6 @@ internal fun DescribeSpecRootScope.favorDrawResets(repos: () -> RepositoryPair) 
             val after = rooms.room(roomId)
             after.favorDraw shouldBe drawn.favorDraw?.without("pid003")
             after.favorParticipantId shouldBe "host01"
-        }
-
-        it("goes back to not drawn when the winner can no longer be a candidate, and only then") {
-            val rooms = repos().rooms
-            val roomId = rooms.drawRoom()
-            rooms.draw(roomId, 1, 5).shouldBeDrawn()
-            val hide = ParticipantChange(null, "03v", true, T0.plusSeconds(400), releasesDrawWin = true)
-            rooms.updateParticipant(roomId, "pid002", hide, activity(6))
-            rooms.room(roomId).favorParticipantId shouldBe "host01"
-            rooms.updateParticipant(roomId, "host01", hide, activity(7))
-            val after = rooms.room(roomId)
-            after.favorDraw shouldBe FavorDraw.PENDING.copy(generation = 1)
-            after.favorParticipantId.shouldBeNull()
         }
     }
 }

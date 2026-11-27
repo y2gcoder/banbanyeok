@@ -18,7 +18,6 @@ import app.banbanyeok.server.recommendation.sampleLastTrains
 import app.banbanyeok.server.recommendation.sampleOd
 import app.banbanyeok.server.room.CreateRoomCommand
 import app.banbanyeok.server.room.FakeStationCatalog
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomFixture
 import app.banbanyeok.server.room.RoomMode
@@ -44,21 +43,19 @@ private class Room(
     val roomId: String,
     val hostToken: String,
     val hostId: String,
-    val hiddenId: String,
-    val hiddenToken: String,
+    val guestId: String,
+    val guestToken: String,
     val thirdId: String,
 )
 
-/** 방장 03v(민수), 출발역을 숨긴 [hiddenOrigin](참가자), 31a(지연). 평일 약속. */
+/** 방장 03v(민수), 225(이름 없는 참가자), 31a(지연). 평일 약속. */
 private suspend fun room(
-    hiddenOrigin: String = "225",
     date: LocalDate? = friday,
     source: LastTrainSource = LastTrainSource { LastTrainData(sampleLastTrains, sampleLastTrainAsOf) },
 ): Room {
     val fixture =
         RoomFixture(
             stations = FakeStationCatalog(meetingStations = setOf("03v", "130", "225", "31a", "4xz")),
-            newHidden = NewHiddenOrigins.LEGACY_FIXTURE,
         )
     val slots = TimeSlot.ALL.associateWith { sampleOd }
     val recommendation =
@@ -70,18 +67,18 @@ private suspend fun room(
         )
     val created =
         fixture.service.create(
-            CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v", false), null, null),
+            CreateRoomCommand(RoomMode.FAIR, null, date, ParticipantInput("민수", "03v"), null, null),
         )
-    val hidden = fixture.service.join(created.roomId, ParticipantInput(null, hiddenOrigin, true), null)
-    val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a", false), null)
+    val guest = fixture.service.join(created.roomId, ParticipantInput(null, "225"), null)
+    val third = fixture.service.join(created.roomId, ParticipantInput("지연", "31a"), null)
     return Room(
         fixture,
         RoomResultService(fixture.service, recommendation, testTimes),
         created.roomId,
         created.participantToken,
         created.participantId,
-        hidden.participantId,
-        hidden.participantToken,
+        guest.participantId,
+        guest.participantToken,
         third.participantId,
     )
 }
@@ -95,18 +92,6 @@ private suspend fun Room.resultJson(token: String?): JsonObject =
                 .serializer(),
             results.result(roomId, token, null, null).toDto(directory),
         ).jsonObject
-
-private fun JsonObject.lastTrainIds(): List<List<String>> =
-    getValue("candidates").jsonArray.map { card ->
-        card.jsonObject
-            .getValue("lastTrains")
-            .jsonArray
-            .map {
-                it.jsonObject
-                    .getValue("participantId")
-                    .jsonPrimitive.content
-            }
-    }
 
 class LastTrainRoomTest :
     DescribeSpec({
@@ -131,13 +116,13 @@ class LastTrainRoomTest :
                                 RoomMode.FAVOR,
                                 CreateRoomCommand.DRAW_TARGET,
                                 friday,
-                                ParticipantInput("민수", "03v", false),
+                                ParticipantInput("민수", "03v"),
                                 null,
                                 null,
                                 others =
                                     listOf(
-                                        ParticipantInput("지연", "31a", false),
-                                        ParticipantInput(null, "130", false),
+                                        ParticipantInput("지연", "31a"),
+                                        ParticipantInput(null, "130"),
                                     ),
                             ),
                         )
@@ -177,59 +162,26 @@ class LastTrainRoomTest :
         }
 
         describe("last trains in a room's result") {
-            it("gives the hidden participant's last train to that participant only") {
+            it("gives every participant's last train to every viewer") {
                 runTest {
                     val room = room()
-                    val everyone = room.results.result(room.roomId, null, null, null).recommendation
-                    val visible =
-                        everyone.candidates
-                            .first()
+                    for (token in listOf(null, room.hostToken, room.guestToken)) {
+                        val result = room.results.result(room.roomId, token, null, null).recommendation
+                        result.candidates.forEach { card -> card.lastTrains.shouldNotBeNull().size shouldBe 3 }
+                        result.candidates
+                            .first { it.stationCode == "130" }
                             .lastTrains
                             .shouldNotBeNull()
-                            .map { it.participantId }
-                    visible.size shouldBe 2
-                    (room.hiddenId in visible) shouldBe false
-                    // 다른 참여자(방장)의 토큰으로도 숨긴 사람의 막차는 없다.
-                    val asHost = room.results.result(room.roomId, room.hostToken, null, null).recommendation
-                    asHost.candidates.forEach { card ->
-                        (room.hiddenId in card.lastTrains.shouldNotBeNull().map { it.participantId }) shouldBe false
+                            .first { it.participantId == room.guestId }
+                            .cell.kind shouldBe LastTrainKind.MARGIN_DIRECT
                     }
-                    val own = room.results.result(room.roomId, room.hiddenToken, null, null).recommendation
-                    own.candidates.forEach { card -> card.lastTrains.shouldNotBeNull().size shouldBe 3 }
-                    own.candidates
-                        .first { it.stationCode == "130" }
-                        .lastTrains
-                        .shouldNotBeNull()
-                        .first { it.participantId == room.hiddenId }
-                        .cell.kind shouldBe LastTrainKind.MARGIN_DIRECT
-                }
-            }
-
-            it("serializes the same last trains for others whatever station the hidden participant comes from") {
-                runTest {
-                    // 숨긴 사람의 출발역만 다른 두 방. 다른 사람이 받는 JSON의 막차 부분은 같은 후보에서 글자까지 같다.
-                    val one = room(hiddenOrigin = "225").resultJson(null)
-                    val other = room(hiddenOrigin = "130").resultJson(null)
-
-                    fun JsonObject.byStation() =
-                        getValue("candidates").jsonArray.associate {
-                            it.jsonObject
-                                .getValue("stationCode")
-                                .jsonPrimitive.content to
-                                it.jsonObject.getValue("lastTrains").toString()
-                        }
-                    val shared = one.byStation().keys.intersect(other.byStation().keys)
-                    shared.isNotEmpty() shouldBe true
-                    shared.forEach { one.byStation().getValue(it) shouldBe other.byStation().getValue(it) }
-                    one.getValue("lastTrainBasis") shouldBe other.getValue("lastTrainBasis")
-                    one.lastTrainIds().forEach { it.size shouldBe 2 }
                 }
             }
 
             it("writes the kind, the minute and the destination, and nothing for a check") {
                 runTest {
                     val room = room()
-                    val json = room.resultJson(room.hiddenToken)
+                    val json = room.resultJson(room.guestToken)
                     json.getValue("lastTrainBasis").toString() shouldBe """{"dayType":"weekday","asOf":"2026-11-16"}"""
                     val at130 =
                         json
@@ -244,7 +196,7 @@ class LastTrainRoomTest :
                         """{"participantId":"${room.hostId}","kind":"direct","minute":1443,""" +
                         """"boundFor":{"stationCode":"4xz","stationName":"4xz역"}}"""
                     at130[1] shouldBe
-                        """{"participantId":"${room.hiddenId}","kind":"margin","minute":1421,"transfer":false,""" +
+                        """{"participantId":"${room.guestId}","kind":"margin","minute":1421,"transfer":false,""" +
                         """"boundFor":{"stationCode":"31a","stationName":"31a역"}}"""
                     at130[2] shouldBe """{"participantId":"${room.thirdId}","kind":"check"}"""
                 }
@@ -253,7 +205,7 @@ class LastTrainRoomTest :
             it("shows no time for a room without a date: weekday is only the default there") {
                 runTest {
                     val noDate = room(date = null)
-                    val result = noDate.results.result(noDate.roomId, noDate.hiddenToken, null, null).recommendation
+                    val result = noDate.results.result(noDate.roomId, noDate.guestToken, null, null).recommendation
                     result.lastTrainBasis?.unavailable shouldBe LastTrainUnavailable.DAY_UNKNOWN
                     result.candidates.forEach { card ->
                         card.lastTrains
@@ -269,7 +221,7 @@ class LastTrainRoomTest :
         }
 
         describe("last trains in a room's link preview") {
-            it("never carries the hidden participant's last train, whoever asks") {
+            it("carries everyone's last train by short name, without participant IDs") {
                 runTest {
                     val room = room()
                     val preview = room.results.preview(room.roomId).shouldBeInstanceOf<RoomPreview.Result>()
@@ -277,7 +229,7 @@ class LastTrainRoomTest :
                         .shouldNotBeNull()
                         .unavailable
                         .shouldBeNull()
-                    preview.station.times.map { it.lastTrain != null } shouldBe listOf(true, false, true)
+                    preview.station.times.map { it.lastTrain != null } shouldBe listOf(true, true, true)
                     val json =
                         apiJson
                             .encodeToJsonElement(
@@ -292,10 +244,10 @@ class LastTrainRoomTest :
                             .getValue("times")
                             .jsonArray
                             .map { it.jsonObject }
-                    times.map { "lastTrain" in it } shouldBe listOf(true, false, true)
+                    times.map { "lastTrain" in it } shouldBe listOf(true, true, true)
                     // 미리보기의 막차 항목에는 참가자 ID가 없다(이름표만 쓴다).
                     json.toString() shouldNotContain "participantId"
-                    json.toString() shouldNotContain room.hiddenId
+                    json.toString() shouldNotContain room.guestId
                 }
             }
 

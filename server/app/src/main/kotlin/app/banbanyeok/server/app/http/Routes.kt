@@ -61,7 +61,7 @@ private fun Route.roomCreationRoute(
 ) {
     post("/rooms") {
         val command = call.receive<RoomCreateRequestDto>().toCommand(call.bearerToken())
-        call.createRoom(services, idempotency, command) { services.rooms.create(command) }
+        call.createRoom(services, idempotency) { services.rooms.create(command) }
     }
     // 방장이 모두의 칸을 채운 사다리 방(#227). 경로를 나눠, 이 경로를 모르는 옛 서버는 다른 사람 칸을 버린 방을 만들지 않고 404로 거절한다.
     // 같은 복구 키는 인스턴스가 달라도 같은 방을 돌려준다(RoomService.createDrawRoom).
@@ -69,25 +69,22 @@ private fun Route.roomCreationRoute(
         val body = call.receive<DrawRoomCreateRequestDto>()
         val command = body.toCommand()
         val recoveryKey = requireRoomRecoveryKey(body.recoveryKey)
-        call.createRoom(services, idempotency, command) { services.rooms.createDrawRoom(command, recoveryKey) }
+        call.createRoom(services, idempotency) { services.rooms.createDrawRoom(command, recoveryKey) }
     }
     post("/filled-rooms") {
         val body = call.receive<FilledRoomCreateRequestDto>()
         val command = body.toCommand()
         val recoveryKey = requireRoomRecoveryKey(body.recoveryKey)
-        call.createRoom(services, idempotency, command) { services.rooms.createFilledRoom(command, recoveryKey) }
+        call.createRoom(services, idempotency) { services.rooms.createFilledRoom(command, recoveryKey) }
     }
 }
 
 private suspend fun ApplicationCall.createRoom(
     services: ApiServices,
     idempotency: IdempotencyCache,
-    command: CreateRoomCommand,
     create: suspend () -> CreatedRoom,
 ) {
     val rooms = services.rooms
-    // 본문은 재생보다 먼저 읽고 숨김 규칙을 본다: 같은 키의 재시도라도 숨긴 본문에 숨기지 않은 성공을 재생하지 않는다(ADR-0007).
-    rooms.checkNewParticipant(command)
     respondCreated<RoomCreatedDto>(idempotency, replay = { cached ->
         val expiresAt =
             rooms.creationReplayExpiry(
@@ -167,9 +164,7 @@ private fun Route.participantRoutes(
 ) {
     route("/participants") {
         post {
-            // 방 만들기와 같다: 재생보다 먼저 숨김 규칙을 본다(ADR-0007).
             val input = call.receive<ParticipantInputDto>().toInput()
-            services.rooms.checkNewParticipant(input)
             call.respondCreated<JoinedDto>(idempotency, replay = { cached ->
                 services.rooms.checkJoinReplay(
                     call.roomId(),
@@ -227,7 +222,7 @@ private fun Route.resultRoutes(services: ApiServices) {
             }
         call.respond(result.toDto(services.stations, call.lastTrainReader()))
     }
-    // 토큰을 읽지 않는다. 미리보기는 누가 묻든 같은 값이어야 한다(본인이 숨긴 출발역도 가린다).
+    // 토큰을 읽지 않는다. 미리보기는 누가 묻든 같은 값이어야 한다.
     get("/rooms/{roomId}/preview") {
         val preview: RoomPreviewDto =
             roomRecommendationErrors { services.results.preview(call.roomId()) }

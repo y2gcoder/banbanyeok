@@ -33,6 +33,7 @@ internal object ProblemTypes {
             "FORBIDDEN" to "할 수 없는 작업",
             "CORS_REJECTED" to "허용되지 않는 출처",
             "ROOM_NOT_FOUND" to "방을 찾을 수 없음",
+            "ROOM_WITHHELD" to "지금은 열 수 없는 방",
             "PARTICIPANT_NOT_FOUND" to "참가자를 찾을 수 없음",
             "NOT_FOUND" to "찾을 수 없음",
             "METHOD_NOT_ALLOWED" to "허용되지 않는 메서드",

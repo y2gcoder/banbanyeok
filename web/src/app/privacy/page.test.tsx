@@ -49,6 +49,7 @@ describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
   it.each([
     kst(REVISION_DATE), // 시행 0시 정각
     kst(REVISION_DATE, 12 * 3_600_000),
+    kst(REVISION_DATE, DAY), // 시행 다음 날 0시
     kst(CHANGE_NOTICE?.until ?? REVISION_DATE, DAY - 1000), // 안내 마지막 날 23:59:59
   ])("%s: 이 판 위에 중요한 변경 안내 상자(비교표·직전 판 링크)가 있다", async (now) => {
     expect(resolvePolicy(POLICY, UPCOMING_POLICY, now)).toEqual({ policy: POLICY, notice: null });
@@ -56,7 +57,8 @@ describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
     const box = document.getElementById("policy-change");
     expect(box).not.toBeNull();
     expect(box).toHaveTextContent(`개인정보 처리방침이 ${koreanDate(REVISION_DATE, { year: true })}부터 바뀌었습니다`);
-    expect(box).toHaveTextContent("혼자 입력한 결과의 저장 (2항)");
+    expect(box).toHaveTextContent("홈에서 대신 입력한 정보 저장 (2항)");
+    expect(box).toHaveTextContent("출발역 숨기기 (6항)");
     expect(box?.querySelector("a")?.getAttribute("href")).toBe(CHANGE_NOTICE?.previous.url);
     expect(document.getElementById("policy-notice")).toBeNull();
     const main = screen.getByRole("main");
@@ -92,6 +94,7 @@ describe("/privacy: 바로 시행한 판과 중요한 변경 안내", () => {
       "2026년 11월 25일 개정판",
       "2026년 11월 26일 시행판",
       "2026년 11월 27일 시행판",
+      "2026년 11월 27일 개정판",
     ]);
     expect(links[4]?.getAttribute("href")).toBe(historyUrl(HISTORY.withdrawn.file));
     expect(changes).not.toHaveTextContent("](https://");

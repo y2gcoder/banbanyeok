@@ -1,11 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { devices, expect, type Page, test } from "@playwright/test";
-import { joinHiddenAsBefore } from "./legacy-hidden";
 
 /**
- * '누구 쪽으로' 뽑기(#172) e2e: 실제 서버(Ktor + DB)에서 방장이 뽑기 방을 만들고, 친구 둘(한 명은 출발역을 숨김)이 들어온 뒤 뽑는다.
- * 새로 숨길 수 없으므로(ADR-0007) 숨긴 친구는 옛 방처럼 DB에서 숨긴다: 아직 남은 옛 방에서도 숨긴 사람이 뽑기에서 빠지는지 본다.
- * 운은 서버가 정하므로 누가 뽑힐지는 모른다. 대신 숨긴 사람은 대상에 없고, 다른 기기에서 열어도 같은 사람이 보이며, 새로고침해도
+ * '누구 쪽으로' 뽑기(#172) e2e: 실제 서버(Ktor + DB)에서 방장이 뽑기 방을 만들고, 친구 둘이 들어온 뒤 뽑는다.
+ * 운은 서버가 정하므로 누가 뽑힐지는 모른다. 대신 방에 있는 셋이 모두 대상이고, 다른 기기에서 열어도 같은 사람이 보이며, 새로고침해도
  * 바뀌지 않는지 본다.
  */
 const GANGNAM = "k3a";
@@ -24,11 +22,11 @@ async function expectNoA11yViolations(page: Page) {
 
 type ApiRoom = {
   favorTarget: string | null;
-  participants: { participantId: string; shortLabel: string; hidden: boolean }[];
+  participants: { participantId: string; shortLabel: string }[];
   favorDraw: { generation: number; round: number; candidates: string[]; winner: string | null } | null;
 };
 
-test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 기기에서도 같고 새로고침해도 그대로다", async ({
+test("뽑기 방: 방에 있는 모두가 대상이고, 방장이 뽑은 결과가 다른 기기에서도 같고 새로고침해도 그대로다", async ({
   page,
   browser,
   request,
@@ -47,16 +45,15 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   const roomId = new URL(page.url()).pathname.split("/").pop() ?? "";
   await expect(page.getByRole("button", { name: "사다리 타기" })).toBeDisabled();
 
-  // 친구 둘: 지영(신촌, 공개)과 출발역을 숨긴 사람(강남, 옛 방처럼).
-  const res = await request.post(`/api/v1/rooms/${roomId}/participants`, {
-    data: { nickname: "지영", originCode: SINCHON },
-  });
-  expect(res.status()).toBe(201);
-  await joinHiddenAsBefore(request, roomId, { originCode: GANGNAM });
+  // 친구 둘: 지영(신촌)과 이름 없는 사람(강남).
+  for (const data of [{ nickname: "지영", originCode: SINCHON }, { originCode: GANGNAM }]) {
+    const res = await request.post(`/api/v1/rooms/${roomId}/participants`, { data });
+    expect(res.status()).toBe(201);
+  }
   await page.reload();
   await expect(page.getByRole("heading", { name: "누구 쪽으로 뽑기 전" })).toBeVisible();
   await page.getByRole("button", { name: "뽑기 자세히 보기" }).click();
-  await expect(page.getByText(/출발역을 숨겨서 뽑기에서 빠졌어요/)).toBeVisible();
+  await expect(page.getByText(/뽑기에서 빠졌어요/)).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "공평하게" })).toHaveAttribute("aria-selected", "true");
   await expectNoA11yViolations(page);
 
@@ -70,9 +67,7 @@ test("뽑기 방: 숨긴 사람은 빠지고, 방장이 뽑은 결과가 다른 
   const stored = (await (await request.get(`/api/v1/rooms/${roomId}`)).json()) as ApiRoom;
   const draw = stored.favorDraw;
   expect(draw?.round).toBe(1);
-  const hiddenId = stored.participants.find((p) => p.hidden)?.participantId;
-  expect(draw?.candidates).toHaveLength(2);
-  expect(draw?.candidates).not.toContain(hiddenId);
+  expect(draw?.candidates).toEqual(stored.participants.map((p) => p.participantId));
   expect(stored.favorTarget).toBe(draw?.winner);
   const winnerName = stored.participants.find((p) => p.participantId === draw?.winner)?.shortLabel ?? "";
   await expect(heading).toHaveText(`${winnerName} 쪽으로!`);

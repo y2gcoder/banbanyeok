@@ -2,7 +2,6 @@ package app.banbanyeok.server.app
 
 import app.banbanyeok.schema.StationRegion
 import app.banbanyeok.server.room.CreateRoomCommand
-import app.banbanyeok.server.room.NewHiddenOrigins
 import app.banbanyeok.server.room.ParticipantInput
 import app.banbanyeok.server.room.RoomError
 import app.banbanyeok.server.room.RoomException
@@ -26,7 +25,7 @@ class RegionRollbackTest :
         val capital = DevArtifacts.origins.first()
         val otherCapital = DevArtifacts.origins.last()
 
-        fun rolledBack() = RoomFixture(stations = DevArtifacts.directory, newHidden = NewHiddenOrigins.LEGACY_FIXTURE)
+        fun rolledBack() = RoomFixture(stations = DevArtifacts.directory)
 
         /** 부산권을 켠 서버. 같은 저장소와 토큰 비밀을 쓴다. */
         fun RoomFixture.enabled(): RoomService {
@@ -107,16 +106,11 @@ class RegionRollbackTest :
             directory.originCodes.map(directory::regionOf).toSet() shouldBe setOf(StationRegion.CAPITAL)
         }
 
-        it("keeps metropolitan joins next to metropolitan and legacy hidden origins") {
-            listOf(false, true).forEach { hidden ->
-                val fixture = rolledBack()
-                val now = fixture.clock.instant()
-                val room = aRoom(createdAt = now)
-                fixture.rooms.create(
-                    room,
-                    listOf(aParticipant("host01", now).copy(originCode = capital, hidden = hidden)),
-                )
-                fixture.service.join(room.id, ParticipantInput(null, otherCapital), null)
-            }
+        it("keeps metropolitan joins next to metropolitan origins") {
+            val fixture = rolledBack()
+            val now = fixture.clock.instant()
+            val room = aRoom(createdAt = now)
+            fixture.rooms.create(room, listOf(aParticipant("host01", now).copy(originCode = capital)))
+            fixture.service.join(room.id, ParticipantInput(null, otherCapital), null)
         }
     })

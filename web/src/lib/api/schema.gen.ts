@@ -101,8 +101,9 @@ export interface paths {
          * 방장이 모두의 칸을 채운 방 생성
          * @description 방장이 채운 칸을 한 번에 저장하고 잠긴 방의 추천을 바로 보여 준다. 사다리는 만든 뒤 같은 방에서 방장이 고른다.
          *     `FilledRoomCreateRequest` 참고. `Idempotency-Key` 재생(같은 인스턴스, 10분)과 별도로 `recoveryKey`가 인스턴스와 상관없이 같은 방을
-         *     돌려준다. 이 경로를 모르는 옛 서버는 404(또는 405)로 거절하고 아무것도 저장하지 않는다. 웹은 이때 방을 만들 수
-         *     없다고만 알린다(배포는 서버 먼저, 되돌릴 때는 웹 먼저).
+         *     돌려준다. `hidden: true`는 재생·복구보다 먼저 거절한다(`HIDE_NOT_AVAILABLE`). 복원된 방에 숨긴 행이 남아 있어도 방의 내용 없이
+         *     생성 응답만 되돌려주므로 방장은 권한을 되찾아 방을 지울 수 있다(ADR-0012). 이 경로를 모르는 옛 서버는 404(또는 405)로 거절하고
+         *     아무것도 저장하지 않는다. 웹은 이때 방을 만들 수 없다고만 알린다(배포는 서버 먼저, 되돌릴 때는 웹 먼저).
          */
         post: operations["createFilledRoom"];
         delete?: never;
@@ -123,7 +124,7 @@ export interface paths {
         };
         /**
          * 방 상태 (토큰 없이 조회 가능)
-         * @description 숨긴 참가자의 `originCode`는 `null`이고 `hidden`은 `true`다. participantToken이 있으면 본인 항목은 그대로 보인다.
+         * @description participantToken이 있으면 본인 항목에 `isSelf`가 붙는다. 방장 토큰도 받는다(본인 항목 표시는 없다). 숨긴 참가자가 남은 옛 방은 그 방의 토큰이면 403 `ROOM_WITHHELD`, 아니면 404 `ROOM_NOT_FOUND`다(ADR-0012).
          */
         get: operations["getRoom"];
         put?: never;
@@ -208,8 +209,8 @@ export interface paths {
          * @description 방을 만들 때 `favorTarget=draw`를 골랐거나 방을 만든 뒤 사다리를 켠 방에서 방장이 배려 대상을 뽑는다. 운은 서버가 정한다(`SecureRandom`, 대상마다 1/N).
          *     결과는 방에 저장되어 누가 언제 열어도 같고, 화면의 그림(사다리)은 저장된 결과를 재생만 한다.
          *
-         *     대상은 뽑는 순간 출발역을 숨기지 않은 참가자다(입장 순서). 숨긴 사람은 빠진다: 그 사람 쪽 결과는 본인만 볼 수 있어서다(ADR-0005).
-         *     대상이 2명 미만이면 409 `NOT_ENOUGH_DRAW_CANDIDATES`. 대상과 당첨은 출발역에 따라 달라지지 않는다(숨긴 출발역 비간섭).
+         *     대상은 뽑는 순간 방에 있는 참가자다(입장 순서). 대상이 2명 미만이면 409 `NOT_ENOUGH_DRAW_CANDIDATES`. 대상과 당첨은 출발역에
+         *     따라 달라지지 않는다.
          *
          *     `generation`은 화면이 본 `favorDraw.generation`, `round`는 이번이 몇 번째 뽑기인지다(1 = 처음, 2 = 다시 뽑기). 멱등은 이 두
          *     값으로 방 행을 잠근 채 판정한다(재시도·새로고침 안전, 인스턴스와 상관없음):
@@ -261,9 +262,8 @@ export interface paths {
         };
         get?: never;
         /**
-         * 자기 출발역·별칭·숨김 수정
-         * @description 숨김은 이미 숨긴 참가자만 유지(`true`)하거나 풀(`false`) 수 있다. 출발역을 숨기지 않은 참가자가 `hidden=true`를 보내면 400
-         *     `HIDE_NOT_AVAILABLE`이다(ADR-0007).
+         * 자기 출발역·별칭 수정
+         * @description `hidden=true`는 400 `HIDE_NOT_AVAILABLE`이다(ADR-0007, #182). 옛 화면이 보내는 `hidden: false`는 받는다.
          */
         put: operations["updateParticipant"];
         post?: never;
@@ -438,19 +438,20 @@ export interface components {
          *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
          *     | 400 | `FAVOR_TARGET_HIDDEN` | 우대 대상이 출발역을 숨긴 참가자인데 그 사람 본인의 요청이 아니다(방 결과) |
-         *     | 400 | `HIDE_NOT_AVAILABLE` | 새로 출발역을 숨기려 했다(방 만들기 `host.hidden=true`, 참여 `hidden=true`, 숨기지 않은 참가자의 수정 `hidden=true`). 이미 숨긴 참가자의 유지·풀기는 된다(ADR-0007) |
+         *     | 400 | `HIDE_NOT_AVAILABLE` | 출발역을 숨기려 했다(방 만들기 `host.hidden=true`, 참여 `hidden=true`, 수정 `hidden=true`, 대신 넣는 칸의 `hidden=true`, ADR-0007) |
          *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OTHERS`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 403 | `CORS_REJECTED` | 허용 목록에 없는 출처의 브라우저 요청이거나 허용되지 않는 메서드의 사전 요청(preflight). 출처·메서드 값은 응답에 싣지 않는다 |
-         *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
+         *     | 403 | `ROOM_WITHHELD` | 숨긴 참가자가 남은 옛 방에 그 방의 토큰으로 왔다. 지우기(방장의 방 삭제, 자기 항목 삭제) 말고는 할 수 없다(ADR-0012) |
+         *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다. 숨긴 참가자가 남은 옛 방에 그 방의 토큰 없이 와도 같다 |
          *     | 405 | `METHOD_NOT_ALLOWED` | 이 경로에서 쓸 수 없는 메서드다(`Allow` 헤더) |
          *     | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
          *     | 409 | `NOT_ENOUGH_PARTICIPANTS`, `STATION_UNAVAILABLE` | 방 결과·미리보기를 계산할 수 없거나 2명 미만이라 정할 수 없다 |
          *     | 409 | `SCHEDULE_UNAVAILABLE` | 요청 구분 또는 출발역에 확인된 시간표가 없어 계산할 수 없다. 방 만들기·참여·출발역 수정에서는 그런 출발역을 저장하지 않는다 |
          *     | 409 | `ROOM_CHANGED` | 화면이 본 뒤 방이 바뀌어 정하기·풀기(`setDecision`)나 뽑기(`drawFavorTarget`)를 받지 않았다. 방을 다시 불러 확인한 뒤 다시 누른다 |
-         *     | 409 | `DRAW_NOT_AVAILABLE`, `NOT_ENOUGH_DRAW_CANDIDATES`, `DRAW_LIMIT_REACHED` | 뽑기 방이 아니거나, 출발역을 숨기지 않은 참가자가 2명 미만이거나, 다시 뽑기를 이미 썼다(`drawFavorTarget`) |
+         *     | 409 | `DRAW_NOT_AVAILABLE`, `NOT_ENOUGH_DRAW_CANDIDATES`, `DRAW_LIMIT_REACHED` | 뽑기 방이 아니거나, 방에 있는 참가자가 2명 미만이거나, 다시 뽑기를 이미 썼다(`drawFavorTarget`) |
          *     | 413 | `PAYLOAD_TOO_LARGE` | 요청 본문이 16 KiB를 넘는다 |
          *     | 415 | `UNSUPPORTED_MEDIA_TYPE` | 본문이 있는 요청의 `Content-Type`이 `application/json`이 아니다(본문 문법 오류는 `INVALID_REQUEST`) |
          *     | 429 | `RATE_LIMITED` | 속도 제한. `Retry-After`(초)를 따른다 |
@@ -540,9 +541,7 @@ export interface components {
             nickname?: string;
             originCode: components["schemas"]["StationCode"];
             /**
-             * @description 출발역 이름을 다른 사람에게 가린다. 시간은 보이지만 다른 사람에게는 5분 단위로 뭉뚱그린 값이고 환승 횟수는 보이지 않는다(`PersonalTime`).
-             *     새로 숨길 수는 없다(ADR-0007): 방 만들기·참여에서 `true`, 숨기지 않은 참가자의 수정에서 `true`는 400 `HIDE_NOT_AVAILABLE`이다.
-             *     이미 숨긴 참가자의 수정에서만 `true`(유지)를 받는다.
+             * @description 옛 클라이언트와 맞추려고 남긴 필드다. `false`(또는 생략)만 받고 `true`는 400 `HIDE_NOT_AVAILABLE`이다(ADR-0007, #182).
              * @default false
              */
             hidden: boolean;
@@ -577,8 +576,9 @@ export interface components {
              * @example 참가자 3
              */
             shortLabel: string;
+            /** @description 옛 클라이언트와 맞추려고 남긴 필드다. 이 판의 서버는 늘 `false`를 보낸다(#182) */
             hidden: boolean;
-            /** @description 숨긴 참가자는 요청자 본인이 아니면 `null` */
+            /** @description 이 판의 서버는 늘 보낸다. `null`은 숨긴 참가자를 가리던 옛 서버 판의 값이다(#182) */
             originCode: components["schemas"]["StationCode"] | null;
             /** @description originCode의 표시 이름. originCode가 null이면 null */
             originName?: string | null;
@@ -971,9 +971,9 @@ export interface components {
             decidedAt: string;
         };
         /**
-         * @description `round`=0이면 아직 안 뽑았다(방의 기본 결과·미리보기는 공평하게). 당첨자가 방을 나가거나(내보내기 포함) 출발역을 숨기면
-         *     `round`=0으로 돌아가고 `generation`이 1 오른다(다시 뽑기 횟수도 처음부터). 당첨자가 아닌 사람이 나가거나 숨기면 결과는 그대로다.
-         *     모든 값은 참가자 ID·숨김 여부·입장 시각과 서버의 운에서만 나오고 출발역과는 상관없다.
+         * @description `round`=0이면 아직 안 뽑았다(방의 기본 결과·미리보기는 공평하게). 당첨자가 방을 나가면(내보내기 포함) `round`=0으로 돌아가고
+         *     `generation`이 1 오른다(다시 뽑기 횟수도 처음부터). 당첨자가 아닌 사람이 나가면 결과는 그대로다.
+         *     모든 값은 참가자 ID·입장 시각과 서버의 운에서만 나오고 출발역과는 상관없다.
          */
         FavorDraw: {
             /** @description 뽑기 세대. 뽑기 전으로 돌아갈 때마다 1씩 커지고 줄지 않는다. 뽑기 요청에 그대로 보낸다 */
@@ -986,7 +986,7 @@ export interface components {
              */
             maxRounds: 2;
             /**
-             * @description 뽑기 대상의 participantId(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람(출발역을 숨기지 않은 참가자), 뽑은 뒤에는 뽑을 때의
+             * @description 뽑기 대상의 participantId(입장 순서). 뽑기 전에는 지금 뽑으면 들어갈 사람(방에 있는 모두), 뽑은 뒤에는 뽑을 때의
              *     대상 그대로다. 그 뒤에 나간(내보내진) 사람의 칸은 원래 ID 없이 자리 표시(`~N`, N은 칸 위치)로 남는다: 서버는 참가자를 지우는
              *     같은 트랜잭션에서 뽑기 명단의 그 ID를 지운다. 화면 그림의 칸 순서라 같은 세대·회차면 늘 같다
              */
@@ -995,7 +995,7 @@ export interface components {
             winner: string | null;
             /** Format: date-time */
             drawnAt: string | null;
-            /** @description 방에 있지만 대상이 아닌 사람과 이유. `hidden`은 뽑을 때(뽑기 전이면 지금) 방에 있었지만 출발역을 숨겼다, `late`는 뽑을 때 방에 없었다(뒤에 들어왔다) */
+            /** @description 방에 있지만 대상이 아닌 사람과 이유. `late`는 뽑을 때 방에 없었다(뒤에 들어왔다). `hidden`은 ADR-0007 전에 뽑은 기록에서만 나온다(뽑을 때 방에 있었지만 출발역을 숨겼다) */
             excluded: {
                 participantId: string;
                 /** @enum {string} */
@@ -1350,6 +1350,7 @@ export interface operations {
                     "application/json": components["schemas"]["Room"];
                 };
             };
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
         };
     };
@@ -1564,6 +1565,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             /** @description 방이 가득 찼거나 잠겼다(`ROOM_FULL`, `ROOM_LOCKED`), 또는 방의 약속 구분에 그 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`) */
             409: {
@@ -1675,6 +1677,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             /**
              * @description 참가자가 2명 미만(`NOT_ENOUGH_PARTICIPANTS`), 또는 참가자의 출발역이 지금 서버가 쓰는 데이터에 없다(`STATION_UNAVAILABLE`,
