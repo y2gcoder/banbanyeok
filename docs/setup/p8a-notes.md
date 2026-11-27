@@ -142,7 +142,7 @@ Supabase 무료는 "7일간 활동이 적으면" 일시정지된다. [공식 문
 4. **운영에 연결하기 전에, 새 DB에서 차례로**(2026-11-28 개정, #182·ADR-0012 3단계):
    (a) 만료된 방·익명 사용자를 지운다. 같은 서버 이미지의 `cleanup` 명령을 새 DB 연결로 실행한다(로컬이면 `server/app/build/install/app/bin/app cleanup`에 새 DB의 `DATABASE_URL`·`DATABASE_USER`·`DATABASE_PASSWORD`). 백업 시점에는 살아 있던 방이 이미 만료됐을 수 있다.
    (b) **백업 시점 이후에 들어온 삭제 요청(privacy@ 메일)을 다시 처리한다**: 복원은 그 사이의 삭제를 되돌리므로, 백업 시점 이후 접수·처리한 삭제 요청 목록을 확인해 같은 방·참여자를 다시 삭제한다(방침의 "요청하면 지체 없이 삭제" 약속 유지).
-   (c) 배포와 **같은 migrate**(마이그레이션 이미지 `server/db/Dockerfile`, 명령 `update`)를 새 DB에 돌린다. 이 migrate가 통과해야 운영에 연결한다. 숨김을 받던 때(ADR-0007 이전)의 백업이라 숨긴 참가자 행이 남아 있으면 ADR-0012 3단계의 `participants_hidden_retired` 제약에서 실패한다. 실패는 트랜잭션이라 데이터·이력은 그대로이고, 오류에는 제약 이름만 나온다. 이때 행을 고치거나 지워 통과시키지 않는다. 연결하지 않고, 그 방이 만료돼 (a)가 지운 뒤 다시 돌린다. `mise run db:restore-check`도 임시 DB에서 같은 migrate를 돌려 미리 알려 준다.
+   (c) 배포와 **같은 migrate**(마이그레이션 이미지 `server/db/Dockerfile`, 명령 `update`)를 새 DB에 돌린다. 이 migrate가 통과해야 운영에 연결한다. 숨김을 받던 때(ADR-0007 이전)의 백업이라 숨긴 참가자 행이 남아 있으면 ADR-0012 3단계의 `participants_hidden_retired` 제약에서 실패한다. 그 changeset은 되돌려져 행은 바뀌지 않고 오류에는 제약 이름만 나온다. 다만 Liquibase는 changeset마다 따로 커밋하므로, 그 앞에 밀린 changeset(이 제약보다 오래된 백업)은 적용된 채 멈춘다. 격리된 새 DB라 운영에는 닿지 않고, 다음에 통과하는 migrate가 어차피 적용할 것들이다. 이때 행을 고치거나 지워 통과시키지 않는다. 연결하지 않고, 그 방이 만료돼 (a)가 지운 뒤 다시 돌린다. `mise run db:restore-check`도 임시 DB에서 같은 migrate를 돌려 미리 알려 준다.
    (a)~(c)를 마치기 전에는 서비스를 열지 않는다.
    (d) 그 뒤 서버의 `DATABASE_URL`·`DATABASE_USER`(저장소 변수)와 비밀번호(Secret Manager)를 새 DB로 바꾸고 재배포한다. 배포 Job이 다시 migrate를 돌리고(변경 없이 끝난다) 그 성공 뒤에만 후보 리비전을 만든다.
 5. 부분 복구(방 하나 등)는 로컬에 복원한 뒤 필요한 행을 `COPY`/`INSERT`로 옮긴다(이때도 4의 (b)를 확인한다). 숨긴 참가자 행은 운영 DB의 `participants_hidden_retired` 제약이 거절하므로 옮기지 않는다.

@@ -9,6 +9,7 @@ import liquibase.resource.DirectoryResourceAccessor
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.testcontainers.containers.PostgreSQLContainer
 import java.io.File
+import java.sql.Connection
 import java.sql.DriverManager
 import liquibase.database.DatabaseFactory as LiquibaseDatabaseFactory
 
@@ -33,17 +34,9 @@ object TestDatabase {
      * "column does not exist"로 실패한다. 4단계 changeset 자체는 아니다(그 PR이 따로 만든다).
      */
     val step4DataSource: HikariDataSource by lazy {
-        dataSource
-        DriverManager.getConnection(container.jdbcUrl, container.username, container.password).use { connection ->
-            connection.createStatement().use { it.execute("CREATE DATABASE $STEP4_DB") }
-        }
-        val url =
-            container.jdbcUrl.substringBeforeLast('/') + "/" + STEP4_DB +
-                container.jdbcUrl.substringAfterLast('/').dropWhile { it != '?' }
+        val url = createDatabase(STEP4_DB)
         migrate(url)
-        DriverManager.getConnection(url, container.username, container.password).use { connection ->
-            connection.createStatement().use { it.execute(STEP4_SQL) }
-        }
+        connect(url).use { connection -> connection.createStatement().use { it.execute(STEP4_SQL) } }
         pool(url)
     }
 
@@ -72,15 +65,46 @@ object TestDatabase {
             },
         )
 
-    private fun migrate(url: String) {
-        val changelog = File(requireNotNull(System.getProperty("changelog.dir")) { "changelog.dir 시스템 속성이 없습니다" })
+    /** 같은 컨테이너에 빈 데이터베이스를 만들고 그 jdbc URL을 돌려준다. */
+    fun createDatabase(name: String): String {
+        dataSource
+        connect(container.jdbcUrl).use { connection ->
+            connection.createStatement().use { it.execute("CREATE DATABASE $name") }
+        }
+        return container.jdbcUrl.substringBeforeLast('/') + "/" + name +
+            container.jdbcUrl.substringAfterLast('/').dropWhile { it != '?' }
+    }
+
+    fun connect(url: String): Connection = DriverManager.getConnection(url, container.username, container.password)
+
+    /** 운영과 같은 changelog를 [url]에 적용한다. [count]가 있으면 앞에서부터 그만큼만 적용한다. */
+    fun migrate(
+        url: String,
+        count: Int? = null,
+    ) {
         val factory = LiquibaseDatabaseFactory.getInstance()
-        DriverManager.getConnection(url, container.username, container.password).use { connection ->
+        connect(url).use { connection ->
             val database = factory.findCorrectDatabaseImplementation(JdbcConnection(connection))
-            Liquibase("master.sql", DirectoryResourceAccessor(changelog), database).use { it.update("") }
+            Liquibase(MASTER, DirectoryResourceAccessor(changelogDir()), database).use {
+                if (count == null) it.update("") else it.update(count, "")
+            }
         }
     }
 
+    /** master.sql에서 [id] changeset보다 앞에 있는 changeset 수. */
+    fun changesetsBefore(id: String): Int {
+        val ids =
+            File(changelogDir(), MASTER)
+                .readLines()
+                .filter { it.startsWith("--changeset ") }
+                .map { it.substringAfter(':').substringBefore(' ') }
+        return ids.indexOf(id).also { check(it >= 0) { "changeset이 없습니다: $id" } }
+    }
+
+    private fun changelogDir() =
+        File(requireNotNull(System.getProperty("changelog.dir")) { "changelog.dir 시스템 속성이 없습니다" })
+
+    private const val MASTER = "master.sql"
     private const val POOL_SIZE = 8
     private const val STEP4_DB = "step4"
 
