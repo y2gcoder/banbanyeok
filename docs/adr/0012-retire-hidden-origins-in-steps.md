@@ -1,6 +1,6 @@
 # ADR-0012: 숨기기를 단계로 걷어낸다: 숨긴 행이 남은 방은 지우기만 열고, 열은 참조 없는 서버가 다 받은 뒤 지운다
 
-- 상태: proposed (#182, 운영자 확인 대기)
+- 상태: accepted (운영자 병합 승인, 2026-11-27, #244)
 - 바꾸는 결정: [ADR-0007](0007-stop-new-hidden-origins.md)의 '이미 숨긴 사람은 방이 사라질 때까지 지금 규칙을 쓰고 유지·풀기를 할 수 있다'
 - 끝내는 결정: [ADR-0004](0004-hidden-origin-times-coarsened.md), [ADR-0005](0005-favor-without-hidden-origin.md), [ADR-0006](0006-favor-draw.md)의 숨긴 사람 뽑기 제외
 - 따르는 결정: [ADR-0011](0011-host-entered-draw-room.md)(대신 넣은 방이 생긴 뒤에는 그 가림이 없는 서버로 되돌리지 않는다)

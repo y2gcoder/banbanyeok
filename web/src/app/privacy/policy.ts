@@ -99,7 +99,7 @@ const ANALYTICS_ITEMS =
  * 뒤에 시행해도 이력은 그대로 맞다. 직전 판은 하루 중에 이 판으로 바뀌므로 그 적용 기간은 '시행일 이 판 시행 전까지'로 적는다(전날까지가
  * 아니다).
  */
-export const REVISION_DATE: string = "2026-11-28";
+export const REVISION_DATE: string = "2026-11-27";
 
 /** 2026-11-21부터 공지했지만 시행하지 않은 예정 판(#79, 15항 세 단계 규칙)의 시행 예정일. */
 export const WITHDRAWN_EFFECTIVE_DATE = "2026-11-28";
