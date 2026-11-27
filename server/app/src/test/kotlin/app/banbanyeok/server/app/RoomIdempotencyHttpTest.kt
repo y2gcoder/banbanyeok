@@ -127,6 +127,53 @@ class RoomIdempotencyHttpTest :
             }
         }
 
+        it("starts the draw in the same filled room without recreating it") {
+            withRoomApi {
+                val body =
+                    """{"mode":"fast","host":{"originCode":"130"},"others":[{"originCode":"03v"}],""" +
+                        """"hostPosition":1,"recoveryKey":"$RECOVERY_KEY"}"""
+                val response = json(HttpMethod.Post, "/v1/filled-rooms", body)
+                response.status shouldBe HttpStatusCode.Created
+                val created = response.bodyObject()
+                json(HttpMethod.Post, "/v1/filled-rooms", body).bodyObject() shouldBe created
+                val path = "$ROOMS/${created.getValue("roomId").jsonPrimitive.content}"
+                val before = json(HttpMethod.Get, path).bodyObject()
+                before.getValue("mode").jsonPrimitive.content shouldBe "fast"
+                before["favorDraw"]?.jsonPrimitive?.contentOrNull shouldBe null
+                val seen = before.getValue("shareVersion").jsonPrimitive.content
+                val startBody = """{"seenVersion":$seen}"""
+                val startPath = "$path/favor-draw/start"
+                val host = created.getValue("hostToken").jsonPrimitive.content
+                val member = created.getValue("participantToken").jsonPrimitive.content
+                json(HttpMethod.Post, startPath, startBody, token = member).status shouldBe HttpStatusCode.Forbidden
+                val started = json(HttpMethod.Post, startPath, startBody, token = host)
+                started.status shouldBe HttpStatusCode.OK
+                val ready = started.bodyObject()
+                ready
+                    .getValue("favorDraw")
+                    .jsonObject
+                    .getValue("round")
+                    .jsonPrimitive.content shouldBe "0"
+                ready.getValue("participants") shouldBe before.getValue("participants")
+                json(HttpMethod.Post, startPath, startBody, token = host).bodyObject() shouldBe ready
+                val generation =
+                    ready
+                        .getValue("favorDraw")
+                        .jsonObject
+                        .getValue("generation")
+                        .jsonPrimitive.content
+                json(HttpMethod.Post, "$path/favor-draw", """{"generation":$generation,"round":1}""", token = host)
+                    .status shouldBe HttpStatusCode.OK
+                val after = json(HttpMethod.Post, startPath, startBody, token = host).bodyObject()
+                after
+                    .getValue("favorDraw")
+                    .jsonObject
+                    .getValue("round")
+                    .jsonPrimitive.content shouldBe "1"
+                after.getValue("roomId") shouldBe before.getValue("roomId")
+            }
+        }
+
         describe("creating a draw room with the other people already entered (#227)") {
             val body =
                 """{"host":{"nickname":"지연","originCode":"130"},""" +

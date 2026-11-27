@@ -11,6 +11,7 @@ import java.time.Instant
 class InMemoryRoomRepository : RoomRepository {
     private val lock = Mutex()
     private val rooms = LinkedHashMap<String, StoredRoom>()
+    private val drawGenerations = mutableMapOf<String, Int>()
     private val recoveries = mutableMapOf<TokenHash, String>()
 
     override suspend fun create(
@@ -208,6 +209,32 @@ class InMemoryRoomRepository : RoomRepository {
             }
         }
 
+    override suspend fun startFavorDraw(
+        roomId: String,
+        seen: ShareVersion,
+        activity: Activity,
+    ): DrawStartResult =
+        lock.withLock {
+            val room = rooms[roomId]?.room ?: return@withLock DrawStartResult.RoomNotFound
+            if (room.expiresAt <= activity.at) return@withLock DrawStartResult.RoomNotFound
+            if (room.favorDraw != null) return@withLock DrawStartResult.Ready
+            if (room.shareVersion != seen) return@withLock DrawStartResult.Stale
+            val generation = (drawGenerations[roomId] ?: 0) + 1
+            write(roomId) {
+                it.copy(
+                    room =
+                        room.copy(
+                            mode = RoomMode.FAVOR,
+                            favorParticipantId = null,
+                            favorDraw = FavorDraw.PENDING.copy(generation = generation),
+                            lastActivityAt = activity.at,
+                            expiresAt = activity.expiresAt,
+                        ),
+                )
+            }
+            DrawStartResult.Ready
+        }
+
     override suspend fun writeDraw(
         roomId: String,
         request: DrawRequest,
@@ -234,12 +261,19 @@ class InMemoryRoomRepository : RoomRepository {
             }
         }
 
-    override suspend fun delete(roomId: String): Boolean = lock.withLock { rooms.remove(roomId) != null }
+    override suspend fun delete(roomId: String): Boolean =
+        lock.withLock {
+            drawGenerations.remove(roomId)
+            rooms.remove(roomId) != null
+        }
 
     override suspend fun deleteExpired(now: Instant): Int =
         lock.withLock {
             val expired = rooms.values.filter { !it.room.expiresAt.isAfter(now) }.map { it.room.id }
-            expired.forEach(rooms::remove)
+            expired.forEach {
+                drawGenerations.remove(it)
+                rooms.remove(it)
+            }
             expired.size
         }
 
@@ -258,7 +292,9 @@ class InMemoryRoomRepository : RoomRepository {
     ) {
         val before = rooms.getValue(roomId)
         val after = change(before)
-        rooms[roomId] = after.copy(room = settle(before, after))
+        val settled = settle(before, after)
+        settled.favorDraw?.let { drawGenerations[roomId] = it.generation }
+        rooms[roomId] = after.copy(room = settled)
     }
 
     private fun touch(

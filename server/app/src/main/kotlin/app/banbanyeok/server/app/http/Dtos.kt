@@ -64,6 +64,24 @@ data class DrawRoomCreateRequestDto(
     val meetingBand: JsonElement? = null,
 )
 
+/** 방장이 다른 사람 칸까지 채워 일반 추천부터 보는 방(#245). */
+@Serializable
+data class FilledRoomCreateRequestDto(
+    val host: ParticipantInputDto,
+    val others: List<ParticipantInputDto>,
+    val hostPosition: Int,
+    val recoveryKey: String,
+    val mode: String = "fair",
+    val favorPosition: Int? = null,
+    val meetingDate: String? = null,
+    val meetingBand: JsonElement? = null,
+)
+
+@Serializable
+data class StartFavorDrawRequestDto(
+    val seenVersion: Long,
+)
+
 @Serializable
 data class RoomCreatedDto(
     val roomId: String,

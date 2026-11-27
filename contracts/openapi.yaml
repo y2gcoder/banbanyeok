@@ -165,6 +165,38 @@ paths:
               schema: {$ref: '#/components/schemas/Problem'}
         '429': {$ref: '#/components/responses/Error'}
 
+  /filled-rooms:
+    post:
+      tags: [rooms]
+      operationId: createFilledRoom
+      summary: 방장이 모두의 칸을 채운 방 생성
+      description: |
+        방장이 채운 칸을 한 번에 저장하고 잠긴 방의 추천을 바로 보여 준다. 사다리는 만든 뒤 같은 방에서 방장이 고른다.
+        `FilledRoomCreateRequest` 참고. `Idempotency-Key` 재생(같은 인스턴스, 10분)과 별도로 `recoveryKey`가 인스턴스와 상관없이 같은 방을
+        돌려준다. 이 경로를 모르는 옛 서버는 404(또는 405)로 거절하고 아무것도 저장하지 않는다. 웹은 이때 방을 만들 수
+        없다고만 알린다(배포는 서버 먼저, 되돌릴 때는 웹 먼저).
+      security: [{}]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FilledRoomCreateRequest'}
+      responses:
+        '201':
+          description: 생성됨. 방장 토큰과 방장의 참여자 토큰은 이 응답에서만 받는다.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RoomCreated'}
+        '400': {$ref: '#/components/responses/Error'}
+        '409':
+          description: 고른 약속 구분에 어느 칸의 출발역도 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+        '429': {$ref: '#/components/responses/Error'}
+
   /rooms/{roomId}:
     parameters:
       - $ref: '#/components/parameters/RoomId'
@@ -253,6 +285,40 @@ paths:
               schema: {$ref: '#/components/schemas/Problem'}
         '429': {$ref: '#/components/responses/Error'}
 
+  /rooms/{roomId}/favor-draw/start:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    post:
+      tags: [rooms]
+      operationId: startFavorDraw
+      summary: 이 방에서 사다리 켜기 (방장)
+      description: |
+        화면이 본 공유 번호와 같으면 이 방에서 사다리를 켠다. 그 사이 방이 바뀌었으면 409 `ROOM_CHANGED`다.
+        이미 사다리가 켜졌으면 뽑기를 초기화하거나 보관 기간을 늘리지 않고 현재 상태를 반환한다.
+        첫 뽑기까지 공평한 결과를 보여 준다. 실제 뽑기는 `drawFavorTarget`으로 요청한다.
+      security: [{hostToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seenVersion]
+              properties:
+                seenVersion: {type: integer, format: int64, minimum: 0}
+      responses:
+        '200':
+          description: 사다리가 켜진 방
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Room'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+
   /rooms/{roomId}/favor-draw:
     parameters:
       - $ref: '#/components/parameters/RoomId'
@@ -261,7 +327,7 @@ paths:
       operationId: drawFavorTarget
       summary: "'누구 쪽으로' 뽑기 (방장, #172)"
       description: |
-        방을 만들 때 `favorTarget=draw`를 고른 방에서 방장이 배려 대상을 뽑는다. 운은 서버가 정한다(`SecureRandom`, 대상마다 1/N).
+        방을 만들 때 `favorTarget=draw`를 골랐거나 방을 만든 뒤 사다리를 켠 방에서 방장이 배려 대상을 뽑는다. 운은 서버가 정한다(`SecureRandom`, 대상마다 1/N).
         결과는 방에 저장되어 누가 언제 열어도 같고, 화면의 그림(사다리)은 저장된 결과를 재생만 한다.
 
         대상은 뽑는 순간 출발역을 숨기지 않은 참가자다(입장 순서). 숨긴 사람은 빠진다: 그 사람 쪽 결과는 본인만 볼 수 있어서다(ADR-0005).
@@ -889,6 +955,22 @@ components:
         통계 이벤트의 `room_hash`(contracts/events.json)로 그대로 쓰는 값. 방 ID를 되돌릴 수 없다: 하위 키 roomKey = HMAC-SHA256(서버
         비밀 pepper, `banbanyeok/room_hash/v1`)로 HMAC-SHA256(roomKey, 방 ID)의 앞 8바이트를 16자리 소문자 hex로 쓴다(토큰 해시 키와 분리). 키가 서버에만 있어 통계 도구나 값을 본 사람이 방 ID를 전수 대입으로
         찾을 수 없다. 이 필드를 모르는 옛 서버는 보내지 않으므로 클라이언트는 없으면 `room_hash`를 생략한다
+
+    FilledRoomCreateRequest:
+      description: 기존 사다리 방과 같은 명단·복구 입력으로 잠긴 방을 만들고 일반 추천부터 보여 준다.
+      allOf:
+        - $ref: '#/components/schemas/DrawRoomCreateRequest'
+        - type: object
+          properties:
+            mode:
+              type: string
+              enum: [fair, fast, favor]
+              default: fair
+            favorPosition:
+              type: integer
+              minimum: 0
+              maximum: 3
+              description: 다시 입력한 favor 결과에서 배려 대상의 입력 순서. 생략하면 방장이다.
 
     RoomPatch:
       type: object

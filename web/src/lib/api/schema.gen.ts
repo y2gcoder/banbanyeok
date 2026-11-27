@@ -88,6 +88,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/filled-rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 방장이 모두의 칸을 채운 방 생성
+         * @description 방장이 채운 칸을 한 번에 저장하고 잠긴 방의 추천을 바로 보여 준다. 사다리는 만든 뒤 같은 방에서 방장이 고른다.
+         *     `FilledRoomCreateRequest` 참고. `Idempotency-Key` 재생(같은 인스턴스, 10분)과 별도로 `recoveryKey`가 인스턴스와 상관없이 같은 방을
+         *     돌려준다. 이 경로를 모르는 옛 서버는 404(또는 405)로 거절하고 아무것도 저장하지 않는다. 웹은 이때 방을 만들 수
+         *     없다고만 알린다(배포는 서버 먼저, 되돌릴 때는 웹 먼저).
+         */
+        post: operations["createFilledRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rooms/{roomId}": {
         parameters: {
             query?: never;
@@ -143,6 +166,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rooms/{roomId}/favor-draw/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 10자 Crockford base32 무작위 ID */
+                roomId: components["parameters"]["RoomId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 이 방에서 사다리 켜기 (방장)
+         * @description 화면이 본 공유 번호와 같으면 이 방에서 사다리를 켠다. 그 사이 방이 바뀌었으면 409 `ROOM_CHANGED`다.
+         *     이미 사다리가 켜졌으면 뽑기를 초기화하거나 보관 기간을 늘리지 않고 현재 상태를 반환한다.
+         *     첫 뽑기까지 공평한 결과를 보여 준다. 실제 뽑기는 `drawFavorTarget`으로 요청한다.
+         */
+        post: operations["startFavorDraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rooms/{roomId}/favor-draw": {
         parameters: {
             query?: never;
@@ -157,7 +205,7 @@ export interface paths {
         put?: never;
         /**
          * '누구 쪽으로' 뽑기 (방장, #172)
-         * @description 방을 만들 때 `favorTarget=draw`를 고른 방에서 방장이 배려 대상을 뽑는다. 운은 서버가 정한다(`SecureRandom`, 대상마다 1/N).
+         * @description 방을 만들 때 `favorTarget=draw`를 골랐거나 방을 만든 뒤 사다리를 켠 방에서 방장이 배려 대상을 뽑는다. 운은 서버가 정한다(`SecureRandom`, 대상마다 1/N).
          *     결과는 방에 저장되어 누가 언제 열어도 같고, 화면의 그림(사다리)은 저장된 결과를 재생만 한다.
          *
          *     대상은 뽑는 순간 출발역을 숨기지 않은 참가자다(입장 순서). 숨긴 사람은 빠진다: 그 사람 쪽 결과는 본인만 볼 수 있어서다(ADR-0005).
@@ -613,6 +661,16 @@ export interface components {
          *     찾을 수 없다. 이 필드를 모르는 옛 서버는 보내지 않으므로 클라이언트는 없으면 `room_hash`를 생략한다
          */
         RoomHash: string;
+        /** @description 기존 사다리 방과 같은 명단·복구 입력으로 잠긴 방을 만들고 일반 추천부터 보여 준다. */
+        FilledRoomCreateRequest: components["schemas"]["DrawRoomCreateRequest"] & {
+            /**
+             * @default fair
+             * @enum {string}
+             */
+            mode: "fair" | "fast" | "favor";
+            /** @description 다시 입력한 favor 결과에서 배려 대상의 입력 순서. 생략하면 방장이다. */
+            favorPosition?: number;
+        };
         RoomPatch: {
             /**
              * @description 방의 기본 기준. 뽑기 방(`favorDraw`가 있음)에서 favor가 아닌 기준으로 바꾸면 뽑기 방이 아니게 된다(`favorDraw`=null).
@@ -1234,6 +1292,43 @@ export interface operations {
             429: components["responses"]["Error"];
         };
     };
+    createFilledRoom: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FilledRoomCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description 생성됨. 방장 토큰과 방장의 참여자 토큰은 이 응답에서만 받는다. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomCreated"];
+                };
+            };
+            400: components["responses"]["Error"];
+            /** @description 고른 약속 구분에 어느 칸의 출발역도 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            429: components["responses"]["Error"];
+        };
+    };
     getRoom: {
         parameters: {
             query?: never;
@@ -1353,6 +1448,42 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            429: components["responses"]["Error"];
+        };
+    };
+    startFavorDraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 10자 Crockford base32 무작위 ID */
+                roomId: components["parameters"]["RoomId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: int64 */
+                    seenVersion: number;
+                };
+            };
+        };
+        responses: {
+            /** @description 사다리가 켜진 방 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             429: components["responses"]["Error"];
         };
     };

@@ -11,6 +11,7 @@ import app.banbanyeok.server.room.DecisionResult
 import app.banbanyeok.server.room.DecisionRule
 import app.banbanyeok.server.room.DrawRequest
 import app.banbanyeok.server.room.DrawResult
+import app.banbanyeok.server.room.DrawStartResult
 import app.banbanyeok.server.room.FavorDraw
 import app.banbanyeok.server.room.FavorDrawRule
 import app.banbanyeok.server.room.OriginRule
@@ -324,6 +325,28 @@ public class ExposedRoomRepository(
                     }
                 }
             }
+        }
+
+    override suspend fun startFavorDraw(
+        roomId: String,
+        seen: ShareVersion,
+        activity: Activity,
+    ): DrawStartResult =
+        inTransaction {
+            val row = lockedRoom(roomId) ?: return@inTransaction DrawStartResult.RoomNotFound
+            if (row[RoomsTable.expiresAt] <= activity.at) return@inTransaction DrawStartResult.RoomNotFound
+            if (row[RoomsTable.favorDraw]) return@inTransaction DrawStartResult.Ready
+            if (row[RoomsTable.shareVersion] != seen.value) return@inTransaction DrawStartResult.Stale
+            RoomsTable.update({ RoomsTable.id eq roomId }) {
+                it[mode] = RoomMode.FAVOR.name.lowercase()
+                it[favorPid] = null
+                it[favorDraw] = true
+                // 직접 기준을 바꿔 뽑기를 끝낸 뒤 다시 시작해도, 예전 회차 요청이 새 뽑기에 닿지 않는다.
+                it[drawGeneration] = row[drawGeneration] + 1
+                it[lastActivityAt] = activity.at
+                it[expiresAt] = activity.expiresAt
+            }
+            DrawStartResult.Ready
         }
 
     override suspend fun writeDraw(
