@@ -83,8 +83,6 @@ public class RoomService(
     ): CreatedRoom? {
         val now = clock.instant()
         val roomId = rooms.findByRecovery(hash, now.minus(RECOVERY_WINDOW)) ?: return null
-        // 숨긴 참가자가 남은 방(ADR-0012)도 돌려준다. 복구 키는 방장 토큰을 만드는 값이라 그 방의 자격이고, 응답에는 방의 내용이 없다.
-        // 돌려받은 기기는 방을 열어 ROOM_WITHHELD를 받고 방을 지울 수 있다. 돌려주지 않으면 새로 만들기가 키에 막혀 지울 길이 없다.
         val stored = findActive(roomId, now) ?: return null
         val (hostToken, participantToken) = creatorTokens(roomId, stored.room.hostParticipantId, recoveryKey)
         check(stored.room.hostHash == hostToken.hash) { "복구 키로 만든 방장 토큰이 저장된 해시와 다르다" }
@@ -166,7 +164,7 @@ public class RoomService(
         deviceToken: String?,
     ): JoinedRoom {
         val now = clock.instant()
-        val room = loadActive(roomId, now, token = null).room
+        val room = loadActive(roomId, now).room
         val participant = validated(input)
         stations.awaitSchedule(participant.originCode, room.meeting)
         val participantId = ids.participantId()
@@ -188,7 +186,7 @@ public class RoomService(
         participantId: String,
         participantToken: String,
     ): Instant? {
-        val stored = findActive(roomId, clock.instant())?.takeUnless { it.withheld } ?: return null
+        val stored = findActive(roomId, clock.instant()) ?: return null
         if (stored.room.hostParticipantId != participantId || caller(stored, hostToken) != Caller.Host) return null
         return stored.room.expiresAt.takeIf { caller(stored, participantToken) == Caller.Member(participantId) }
     }
@@ -200,7 +198,7 @@ public class RoomService(
         participantToken: String,
         originCode: String,
     ) {
-        val stored = loadActive(roomId, clock.instant(), participantToken)
+        val stored = loadActive(roomId, clock.instant())
         if (caller(stored, participantToken) != Caller.Member(participantId)) {
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
         }
@@ -214,7 +212,7 @@ public class RoomService(
         roomId: String,
         viewerToken: String?,
     ): RoomView {
-        val stored = loadActive(roomId, clock.instant(), viewerToken)
+        val stored = loadActive(roomId, clock.instant())
         return viewOf(stored, (caller(stored, viewerToken) as? Caller.Member)?.participantId)
     }
 
@@ -222,7 +220,7 @@ public class RoomService(
         roomId: String,
         viewerToken: String?,
     ): RoomResultContext {
-        val stored = loadActive(roomId, clock.instant(), viewerToken)
+        val stored = loadActive(roomId, clock.instant())
         val selfId = (caller(stored, viewerToken) as? Caller.Member)?.participantId
         return RoomResultContext(
             viewOf(stored, selfId),
@@ -243,7 +241,7 @@ public class RoomService(
         input: ParticipantInput,
     ): ParticipantView {
         val now = clock.instant()
-        val stored = loadActive(roomId, now, token)
+        val stored = loadActive(roomId, now)
         if (stored.participants.none { it.id == participantId }) {
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
         }
@@ -264,15 +262,14 @@ public class RoomService(
         return get(roomId, token).participants.first { it.id == participantId }
     }
 
-    /** 본인 항목 삭제, 또는 방장이 강퇴한다. 숨긴 참가자가 남은 방([StoredRoom.withheld])에서는 본인 항목 삭제만 된다(ADR-0012). */
+    /** 본인 항목 삭제, 또는 방장이 강퇴한다. */
     public suspend fun removeParticipant(
         roomId: String,
         participantId: String,
         token: String?,
     ) {
         val now = clock.instant()
-        val stored = findActive(roomId, now) ?: reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
-        if (stored.withheld && caller(stored, token) != Caller.Member(participantId)) withhold(stored, token)
+        val stored = loadActive(roomId, now)
         if (stored.participants.none { it.id == participantId }) {
             reject(RoomError.PARTICIPANT_NOT_FOUND, "참여자를 찾을 수 없습니다")
         }
@@ -288,7 +285,7 @@ public class RoomService(
         patch: RoomPatch,
     ): RoomView {
         val now = clock.instant()
-        val stored = loadActive(roomId, now, hostToken)
+        val stored = loadActive(roomId, now)
         requireHost(stored, hostToken)
         val meetingDate =
             when (val requested = patch.meetingDate) {
@@ -320,7 +317,7 @@ public class RoomService(
             }
             reject(RoomError.INVALID_MEETING_BAND, "meetingBand가 meetingTime의 시간대와 다릅니다")
         }
-        return viewOf(loadActive(roomId, now, hostToken), null)
+        return viewOf(loadActive(roomId, now), null)
     }
 
     /**
@@ -334,7 +331,7 @@ public class RoomService(
         seen: ShareVersion,
     ): RoomView {
         val now = clock.instant()
-        val stored = loadActive(roomId, now, token)
+        val stored = loadActive(roomId, now)
         val caller = requireCaller(stored, token)
         if (caller !is Caller.Member) reject(RoomError.FORBIDDEN, "참여자만 정할 수 있습니다")
         val decision = stationCode?.let { Decision(meetingStation(it), caller.participantId, now) }
@@ -353,7 +350,7 @@ public class RoomService(
             DecisionResult.NotMember -> reject(RoomError.UNAUTHORIZED, "인증이 필요합니다")
             DecisionResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
         }
-        return viewOf(loadActive(roomId, now, token), caller.participantId)
+        return viewOf(loadActive(roomId, now), caller.participantId)
     }
 
     /** 방장이 지금 방을 사다리로 전환한다. 이미 켜졌으면 뽑기 상태·만료 시각을 그대로 둔다. */
@@ -363,14 +360,14 @@ public class RoomService(
         seen: ShareVersion,
     ): RoomView {
         val now = clock.instant()
-        val stored = loadActive(roomId, now, hostToken)
+        val stored = loadActive(roomId, now)
         requireHost(stored, hostToken)
         when (rooms.startFavorDraw(stored.room.id, seen, activityOf(stored.room, stored.room.meetingDate, now))) {
             DrawStartResult.Ready -> Unit
             DrawStartResult.Stale -> reject(RoomError.ROOM_CHANGED, "화면을 본 뒤 방이 바뀌었습니다")
             DrawStartResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
         }
-        return viewOf(loadActive(roomId, now, hostToken), null)
+        return viewOf(loadActive(roomId, now), null)
     }
 
     /**
@@ -384,7 +381,7 @@ public class RoomService(
         round: Int,
     ): RoomView {
         val now = clock.instant()
-        val stored = loadActive(roomId, now, hostToken)
+        val stored = loadActive(roomId, now)
         requireHost(stored, hostToken)
         val activity = activityOf(stored.room, stored.room.meetingDate, now)
         when (rooms.writeDraw(stored.room.id, DrawRequest(generation, round), activity, draws)) {
@@ -395,16 +392,14 @@ public class RoomService(
             DrawResult.Stale -> reject(RoomError.ROOM_CHANGED, "화면을 본 뒤 뽑기 상태가 바뀌었습니다")
             DrawResult.RoomNotFound -> reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
         }
-        return viewOf(loadActive(roomId, now, hostToken), null)
+        return viewOf(loadActive(roomId, now), null)
     }
 
-    /** 방장이 방을 지운다. 숨긴 참가자가 남은 방([StoredRoom.withheld])도 방장 토큰으로 지울 수 있다(ADR-0012). */
     public suspend fun delete(
         roomId: String,
         hostToken: String?,
     ) {
-        val stored = findActive(roomId, clock.instant()) ?: reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
-        if (stored.withheld && caller(stored, hostToken) != Caller.Host) withhold(stored, hostToken)
+        val stored = loadActive(roomId, clock.instant())
         requireHost(stored, hostToken)
         rooms.delete(roomId)
     }
@@ -415,7 +410,7 @@ public class RoomService(
         outcome: Outcome,
     ) {
         val now = clock.instant()
-        val stored = loadActive(roomId, now, token)
+        val stored = loadActive(roomId, now)
         val caller = requireCaller(stored, token)
         if (caller !is Caller.Member) reject(RoomError.FORBIDDEN, "참여자만 답할 수 있습니다")
         if (outcome.stationCode != null && StationCode.parseOrNull(outcome.stationCode) == null) {
@@ -438,36 +433,10 @@ public class RoomService(
         ) : Caller
     }
 
-    /**
-     * 보여 줄 수 있는 방. 숨긴 참가자가 남은 방은 [token]이 그 방의 자격이면 [RoomError.ROOM_WITHHELD], 아니면 없는 방이다. 지우기 두 경로
-     * ([delete], [removeParticipant])만 이 함수를 거치지 않는다. [token]은 요청이 실은 방장·참여자 토큰(없으면 null)이다.
-     */
     private suspend fun loadActive(
         roomId: String,
         now: Instant,
-        token: String?,
-    ): StoredRoom {
-        val stored = findActive(roomId, now) ?: reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
-        if (stored.withheld) withhold(stored, token)
-        return stored
-    }
-
-    private fun withhold(
-        stored: StoredRoom,
-        token: String?,
-    ): Nothing =
-        when (caller(stored, token)) {
-            Caller.Host, is Caller.Member -> {
-                reject(
-                    RoomError.ROOM_WITHHELD,
-                    "지금은 열 수 없는 방입니다. 참여한 기기에서 내 항목을 지우거나, 방장은 방을 지울 수 있습니다",
-                )
-            }
-
-            Caller.Anonymous, Caller.Unknown -> {
-                reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
-            }
-        }
+    ): StoredRoom = findActive(roomId, now) ?: reject(RoomError.ROOM_NOT_FOUND, "방을 찾을 수 없습니다")
 
     private suspend fun findActive(
         roomId: String,

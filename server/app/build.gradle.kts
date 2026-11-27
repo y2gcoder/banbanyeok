@@ -39,6 +39,11 @@ tasks.named<Test>("integrationTest") {
             .dir("server/db/changelog")
             .asFile.path,
     )
+    // 경로만 넘기면 Gradle이 changelog 내용 변경을 모르고 테스트를 건너뛴다.
+    inputs
+        .dir(rootProject.layout.projectDirectory.dir("server/db/changelog"))
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+        .withPropertyName("changelog")
     systemProperty(
         "contracts.dir",
         rootProject.layout.projectDirectory

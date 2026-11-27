@@ -12,7 +12,8 @@ class ProjectConfig : AbstractProjectConfig() {
     override suspend fun afterProject() = TestDatabase.stop()
 }
 
-// 메모리 fake와 같은 계약을 실제 Postgres(Exposed)로 돌린다.
+// 메모리 fake와 같은 계약을 실제 Postgres(Exposed)로 돌린다. 지금 스키마와, participants.hidden을 지운 ADR-0012 4단계 모양 둘 다다:
+// 이 판의 저장소 SQL이 그 열을 참조하면(selectAll 포함) 4단계 모양에서 실패한다.
 class ExposedRoomRepositoryTest :
     DescribeSpec({
         include(
@@ -21,6 +22,15 @@ class ExposedRoomRepositoryTest :
                 RepositoryPair(
                     ExposedRoomRepository(TestDatabase.database, UnconfinedTestDispatcher()),
                     ExposedAnonUserRepository(TestDatabase.database, UnconfinedTestDispatcher()),
+                )
+            },
+        )
+        include(
+            "Exposed on Postgres without participants.hidden (ADR-0012 step 4 shape)",
+            roomRepositoryContract {
+                RepositoryPair(
+                    ExposedRoomRepository(TestDatabase.step4Database, UnconfinedTestDispatcher()),
+                    ExposedAnonUserRepository(TestDatabase.step4Database, UnconfinedTestDispatcher()),
                 )
             },
         )

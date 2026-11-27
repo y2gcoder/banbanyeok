@@ -65,7 +65,6 @@ internal object ParticipantsTable : Table("participants") {
     val tokenHash = binary("token_hash")
     val nickname = text("nickname").nullable()
     val originCode = text("origin_code")
-    val hidden = bool("hidden")
     val joinedAt = timestamp("joined_at")
     val updatedAt = timestamp("updated_at")
 

@@ -24,4 +24,12 @@ val changelogDir =
     rootProject.layout.projectDirectory
         .dir("server/db/changelog")
         .asFile.path
-tasks.named<Test>("integrationTest") { systemProperty("changelog.dir", changelogDir) }
+tasks.named<Test>("integrationTest") {
+    systemProperty("changelog.dir", changelogDir)
+    // 경로만 넘기면 Gradle이 내용 변경을 모르고 테스트를 건너뛴다. changelog와 복원 가드 확인 SQL(HiddenRetiredMigrationTest)을 입력으로 둔다.
+    inputs.dir(changelogDir).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("changelog")
+    inputs
+        .file(rootProject.layout.projectDirectory.file("scripts/db-guard-check.sql"))
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+        .withPropertyName("guardCheck")
+}
