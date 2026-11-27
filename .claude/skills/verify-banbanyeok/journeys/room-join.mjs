@@ -5,10 +5,7 @@ export default async ({ page, step, expect, db, newPerson, note }) => {
   await step("home", () => gotoHydrated(page, "/"));
   const panel = page.getByRole("tabpanel", { name: "각자 입력" });
   await step("home-room-form", async () => {
-    await Promise.all([
-      page.waitForRequest((req) => req.url().endsWith("/api/healthz")),
-      page.getByRole("tab", { name: "각자 입력" }).click(),
-    ]);
+    await expect(page.getByRole("tab", { name: "각자 입력" })).toHaveAttribute("aria-selected", "true");
     await expect(panel).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
     await panel.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");

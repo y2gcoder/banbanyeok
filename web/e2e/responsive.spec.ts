@@ -46,8 +46,8 @@ const SCREENS: readonly Screen[] = [
     actions: (p) => [
       p.getByRole("tab", { name: "모두 입력" }),
       p.getByRole("tab", { name: "각자 입력" }),
-      p.getByRole("combobox").first(),
-      p.getByRole("button", { name: /한 명 더/ }),
+      p.getByRole("combobox", { name: "내 출발역" }),
+      p.getByText("인원 정하기 (선택)", { exact: true }),
     ],
   },
   {
@@ -212,6 +212,7 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
 
   test("입력 화면: 입력값·추가한 줄이 남고, 탭은 제목 아래 온다", async ({ page }) => {
     await open(page, screen("home"));
+    await page.getByRole("tab", { name: "모두 입력" }).click();
     await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
     await pickStation(page, page.getByRole("combobox", { name: "민수의 출발역" }), "강남", /^강남\s?2호선/);
     await page.getByRole("button", { name: /한 명 더/ }).click();
@@ -286,7 +287,7 @@ test.describe("데스크톱 키보드", () => {
   test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
 
   test("Tab으로 차례대로 이동하며 포커스가 보이고, 키보드만으로 입력·제출한다", async ({ page }) => {
-    await open(page, screen("home"));
+    await Promise.all([page.waitForRequest((req) => req.url().endsWith("/api/healthz")), open(page, screen("home"))]);
     // 워드마크 → 선택 탭 → 안내가 있는 패널 → 계산 범위 → 이름·역 두 쌍 → 한 명 더 → 요일·시간대.
     // 부산권 공개 뒤에는 계산 범위 다음에 권역 고르기(수도권 | 부산권) 버튼 둘이 온다.
     const regions = REGIONAL ? ["BUTTON", "BUTTON"] : [];
@@ -305,10 +306,9 @@ test.describe("데스크톱 키보드", () => {
       "INPUT",
     ];
     // 처리방침 변경 공지 기간(공지 시작일 ≤ 오늘 < 시행일, 브라우저 날짜로 판단)에는 맨 위 한 줄 공지의 "자세히" 링크가 먼저 온다.
-    // 공지는 하이드레이션 뒤에 그려지므로 입력 칸이 준비된 뒤에 센다.
-    await expect(page.getByRole("textbox", { name: "1번째 사람 이름(선택)" })).toBeVisible();
     const notice = await page.getByRole("link", { name: "자세히" }).count();
     const expected = notice > 0 ? ["A", ...order] : order;
+    const firstTabIndex = notice > 0 ? 2 : 1;
     const visited: string[] = [];
     for (let i = 0; i < expected.length; i += 1) {
       await page.keyboard.press("Tab");
@@ -325,6 +325,11 @@ test.describe("데스크톱 키보드", () => {
       });
       visited.push(focus.tag);
       expect.soft(focus.visible, `포커스 표시: ${focus.tag} ${focus.name}`).toBe(true);
+      if (i === firstTabIndex) {
+        await expect(page.getByRole("tab", { name: "각자 입력" })).toBeFocused();
+        await page.keyboard.press("ArrowRight");
+        await expect(page.getByRole("tab", { name: "모두 입력" })).toBeFocused();
+      }
     }
     expect(visited).toEqual(expected);
 

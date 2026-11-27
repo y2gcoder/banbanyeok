@@ -452,6 +452,7 @@ for (const size of SIZES) {
       const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
       await page.goto("/");
       await warmUp;
+      await page.getByRole("tab", { name: "모두 입력" }).click();
       const form = page.locator("form").filter({ has: page.locator('input[id*="-station-"]') });
       const rows = form.locator("ol > li");
       await expect(rows).toHaveCount(2);

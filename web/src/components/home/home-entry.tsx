@@ -1,9 +1,10 @@
 "use client";
 
 import { Tabs } from "@base-ui/react/tabs";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { RegionProvider } from "@/components/common/region-choice";
 import { SupportedLinesDisclosure } from "@/components/common/supported-lines";
+import { parsePrefill, parseRestore } from "@/lib/form/prefill";
 import { HomeForm } from "./home-form";
 
 // Google Material Symbols Outlined, FILL 1, 24px (Apache 2.0).
@@ -26,13 +27,28 @@ const TAB_CLASS =
   "flex min-h-12 min-w-0 flex-wrap content-center items-center justify-center gap-x-1.5 gap-y-1 px-0.5 py-2 text-sm font-bold text-ink-soft first:rounded-tl-[calc(var(--radius-2xl)-1px)] last:rounded-tr-[calc(var(--radius-2xl)-1px)] hover:bg-platform aria-selected:bg-[#fff3c6] aria-selected:font-extrabold aria-selected:text-ink focus-visible:-outline-offset-4 forced-colors:aria-selected:outline-2 forced-colors:aria-selected:outline-[Highlight] forced-colors:aria-selected:focus-visible:outline-dashed";
 
 export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
-  const [hasOpenedRoom, setHasOpenedRoom] = useState(false);
+  const [tab, setTab] = useState<"room" | "all">("room");
+  const [hasOpenedAll, setHasOpenedAll] = useState(false);
+
+  useEffect(() => {
+    // 정적 홈을 유지하면서 출발역이 담긴 링크와 결과의 ‘다시 입력’만 모두 입력으로 연다.
+    const search = window.location.search;
+    if (parseRestore(search) || parsePrefill(search).length > 0) {
+      setTab("all");
+      setHasOpenedAll(true);
+    }
+  }, []);
 
   return (
     <Tabs.Root
-      defaultValue="all"
+      value={tab}
       onValueChange={(value) => {
-        if (value === "room") setHasOpenedRoom(true);
+        if (value === "all") {
+          setTab("all");
+          setHasOpenedAll(true);
+        } else if (value === "room") {
+          setTab("room");
+        }
       }}
       className="min-w-0 rounded-2xl border border-rule-strong bg-surface"
     >
@@ -57,7 +73,7 @@ export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
           <p className="text-sm text-ink-soft">초대 링크로 각자 출발역을 넣어요.</p>
           <RegionProvider>
             <SupportedLinesDisclosure />
-            {hasOpenedRoom ? roomForm : null}
+            {roomForm}
           </RegionProvider>
         </div>
       </Tabs.Panel>
@@ -67,7 +83,7 @@ export function HomeEntry({ roomForm }: { roomForm: ReactNode }) {
           <p className="text-sm text-ink-soft">바로 추천받고 결과 링크를 보내요.</p>
           <RegionProvider>
             <SupportedLinesDisclosure />
-            <HomeForm />
+            {hasOpenedAll ? <HomeForm /> : null}
           </RegionProvider>
         </div>
       </Tabs.Panel>

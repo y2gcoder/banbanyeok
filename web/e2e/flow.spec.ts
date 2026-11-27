@@ -23,6 +23,7 @@ async function pickStation(page: Page, field: string, query: string, option: Reg
 
 test("입력 4명이 차면 '한 명 더' 대신 눈에 덜 띄는 안내 버튼이 있고, 누르면 안내만 보인다", async ({ page }) => {
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("button", { name: /한 명 더/ }).click();
   await page.getByRole("button", { name: /한 명 더/ }).click();
   await expect(page.getByRole("combobox")).toHaveCount(4);
@@ -50,6 +51,7 @@ test("입력 → 결과 → 모드 바꾸기 → 링크 복사 → 받은 링크
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"));
   await page.goto("/");
   await warmUp;
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await expect(page.getByRole("heading", { name: /딱 반반일까/ })).toBeVisible();
   await expectAccessible(page);
   await shot(page, "1-home");

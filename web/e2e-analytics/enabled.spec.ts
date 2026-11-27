@@ -87,6 +87,7 @@ async function pickStation(page: Page, field: string, query: string, option: Reg
 /** 입력 → 결과 → 모드 → 정했어요를 쓴다(배너가 떠 있어도 막히지 않아야 한다). */
 async function useApp(page: Page) {
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await pickStation(page, "민수의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
@@ -250,6 +251,7 @@ test("인원 상한: 동의 전에는 안내 버튼을 눌러도 요청 0건, �
   const limitButton = page.getByRole("button", { name: "4명까지 돼요 · 더 필요해요?" });
 
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await fillToLimit();
   await limitButton.click();
   await limitButton.click();
@@ -261,6 +263,7 @@ test("인원 상한: 동의 전에는 안내 버튼을 눌러도 요청 0건, �
   await expect.poll(() => probe.events.map((e) => e.event), { timeout: 15_000 }).toContain("analytics_consent_changed");
   // 동의 전에 누른 화면에서는 이미 지나간 일이라 보내지 않는다. 새 화면(새로 연 페이지)에서 누르면 그때부터 센다.
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await expect(banner(page)).toHaveCount(0);
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill("민수");
   await fillToLimit();
@@ -769,6 +772,7 @@ test("유입 태그·평문 오류(#116 검토 재현): 공유 링크에 utm_ter
   const NICK = "검토별명";
   // 별명과 출발역 두 개가 든 정상 공유 링크를 만든다(동의 전이라 요청 0건).
   await page.goto("/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await page.getByRole("textbox", { name: "1번째 사람 이름(선택)" }).fill(NICK);
   await pickStation(page, `${NICK}의 출발역`, "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);

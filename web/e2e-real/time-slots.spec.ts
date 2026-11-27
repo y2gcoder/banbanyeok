@@ -77,6 +77,7 @@ test("입력 화면에서 고른 요일·시간대가 결과·공유 링크에 �
   const warmUp = page.waitForRequest((req) => req.url().endsWith("/api/healthz"), { timeout: 90_000 });
   await page.goto("/");
   await warmUp;
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   const when = page.getByRole("group", { name: "언제 만나요?" });
   await expect(when.getByRole("radio", { checked: true })).toHaveCount(2); // 기본값(지금 시각)이 처음부터 골라져 있다
   await page.getByRole("combobox", { name: "나의 출발역" }).fill("혜화");

@@ -4,6 +4,7 @@ import { gotoHydrated, pickStation } from "./lib.mjs";
 export default async ({ page, step, expect, db, newPerson, note }) => {
   const [[roomsBefore]] = db("rooms-before", "select count(*) from rooms");
   await gotoHydrated(page, "/");
+  await page.getByRole("tab", { name: "모두 입력" }).click();
   await pickStation(page, "나의 출발역", "강남", /^강남\s?2호선/);
   await pickStation(page, "친구1의 출발역", "ㅎㄷㅇㄱ", /^홍대입구\s?2호선/);
   await step("result", async () => {
