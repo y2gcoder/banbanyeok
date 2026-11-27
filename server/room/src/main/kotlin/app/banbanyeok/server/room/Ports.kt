@@ -55,16 +55,37 @@ public data class RoomChange(
     val endsDraw: Boolean = false,
 )
 
+/** 채운 사다리 방의 복구 키 해시와, 이 시각 뒤에 만든 방만 되찾을 수 있다는 기준. */
+public data class RecoverySlot(
+    val hash: TokenHash,
+    val recoverableAfter: Instant,
+)
+
+/** 같은 복구 키로 되찾을 수 있는 방이 이미 있다. 호출자는 그 방을 되찾는다. */
+public class RecoveryTaken : RuntimeException("recovery key already holds a room")
+
 /**
  * 방 저장소 포트. 정원·잠금 판정은 동시 참여에서도 맞도록 [addParticipant] 안에서 원자적으로 한다.
  * 메모리 fake와 Exposed 구현이 같은 계약 테스트를 통과한다. 쓰기마다 한 트랜잭션이라 방 하나의 쓰기를 한 포트에 둔다.
  */
 @Suppress("TooManyFunctions")
 public interface RoomRepository {
+    /**
+     * 방과 처음 참여자(방장과 대신 넣은 칸, 입장 순서)를 한 트랜잭션에 넣는다. [recovery]는 채운 사다리 방을 만든 기기의 복구 키다.
+     * 같은 키를 가진 방이 아직 되찾을 수 있으면(그 뒤에 만들었고 만료 전) 아무것도 넣지 않고 [RecoveryTaken]을 던진다. 되찾을 수 없는
+     * 앞선 방(오래됐거나 만료돼 정리 전)만 키를 놓는다. 여러 인스턴스가 같은 키로 동시에 만들어도 방은 하나다(DB의 부분 유일 인덱스).
+     */
     public suspend fun create(
         room: Room,
-        host: Participant,
+        participants: List<Participant>,
+        recovery: RecoverySlot? = null,
     )
+
+    /** [createdAfter] 이후에 [recoveryHash]로 만든 방의 ID. */
+    public suspend fun findByRecovery(
+        recoveryHash: TokenHash,
+        createdAfter: Instant,
+    ): String?
 
     public suspend fun find(roomId: String): StoredRoom?
 

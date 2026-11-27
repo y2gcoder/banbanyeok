@@ -35,6 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ room
     const times = preview.station.times;
     if (
       preview.stage === "result" &&
+      preview.room.enteredByHost !== true &&
       preview.basis.mode === "fair" &&
       times.every((t) => t.seconds !== null) &&
       mayIncludeHidden(times.map((t) => t.seconds))

@@ -1,5 +1,6 @@
 "use client";
 
+import { DicesIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Mode } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -21,13 +22,15 @@ type Props = {
   defaultFavorIndex: number;
   label: string;
   panelId: string;
+  /** 있으면 배려 대상 줄 끝에 "사다리로 뽑기"를 둔다(혼자 입력한 결과, #227). 사람을 고르는 자리라 역이 아니라 사람을 뽑는다는 뜻이 된다. */
+  onDraw?: () => void;
 };
 
 /**
  * 모드 탭(공평하게 / 빨리 만나기 / 누구 쪽으로)과, 배려 모드일 때 누구 쪽인지 고르는 줄. 사람 이름은 짧은 이름이다.
  * 고를 수 있는 사람이 없으면(방에서 모두 출발역을 숨겼고 나는 그중에 없다, #162) 배려 탭을 두지 않는다.
  */
-export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex, label, panelId }: Props) {
+export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex, label, panelId, onDraw }: Props) {
   const modes = people.length > 0 ? MODES : MODES.filter((value) => value !== "favor");
   return (
     <div className="flex flex-col gap-3">
@@ -77,6 +80,16 @@ export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex
           <span aria-hidden="true" className="text-sm text-muted-foreground">
             쪽으로
           </span>
+          {onDraw ? (
+            <button
+              type="button"
+              onClick={onDraw}
+              className="inline-flex h-11 items-center gap-1.5 rounded-full border border-dashed border-rule-strong bg-surface px-3.5 text-[15px] font-semibold text-ink"
+            >
+              <DicesIcon className="size-4" aria-hidden="true" />
+              사다리로 뽑기
+            </button>
+          ) : null}
         </fieldset>
       ) : null}
     </div>

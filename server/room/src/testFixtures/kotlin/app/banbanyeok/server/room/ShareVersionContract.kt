@@ -85,7 +85,7 @@ private val shareCases =
 /** host01·pid002가 있고 meetingTime 19:00, host01이 [DECIDED]로 정한 방. */
 private suspend fun RoomRepository.decidedRoom(): String {
     val room = aRoom(freshId()) { it.copy(meetingTime = LocalTime.of(19, 0)) }
-    create(room, aParticipant("host01"))
+    create(room, listOf(aParticipant("host01")))
     addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
     val seen = find(room.id)!!.room.shareVersion
     decide(room.id, DecisionRequest("host01", Decision(DECIDED, "host01", T0.plusSeconds(2)), seen), 2) shouldBe
@@ -131,7 +131,7 @@ internal fun DescribeSpecRootScope.shareVersions(repos: () -> RepositoryPair) {
         it("counts the host joining a new room as the first change and stamps the basis when a decision is made") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             rooms.version(room.id) shouldBe ShareVersion(1)
             val roomId = rooms.decidedRoom()
             val decided = rooms.find(roomId)!!.room
@@ -143,7 +143,7 @@ internal fun DescribeSpecRootScope.shareVersions(repos: () -> RepositoryPair) {
         it("never repeats a version when the room returns to an earlier state (join, leave, hide, unhide)") {
             val rooms = repos().rooms
             val room = aRoom(freshId())
-            rooms.create(room, aParticipant("host01"))
+            rooms.create(room, listOf(aParticipant("host01")))
             val versions = mutableListOf(rooms.version(room.id))
             rooms.addParticipant(room.id, aParticipant("pid002", T0.plusSeconds(1)), activity(1))
             versions += rooms.version(room.id)

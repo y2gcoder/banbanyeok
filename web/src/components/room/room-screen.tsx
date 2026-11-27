@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
 import { roomHashProperty, track } from "@/lib/analytics";
 import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
@@ -37,7 +38,6 @@ import { type RoomDecisionMode, RoomResult } from "./room-result";
 import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell } from "./room-states";
 import { RoomShareSection } from "./share-section";
 import { useFavorDraw } from "./use-favor-draw";
-import { useIdempotencyKey } from "./use-idempotency-key";
 import { useRoomActions } from "./use-room-actions";
 import { useRoomDecision } from "./use-room-decision";
 
@@ -172,6 +172,9 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
   }, [drawUnseen, reducedMotion, shownDraw, markDrawSeen, drawControl.drewKey]);
 
   const people = useMemo(() => (room ? roomPeople(room) : []), [room]);
+  const hostName = people.find((p) => p.isHost)?.name ?? "방장";
+  // 방장이 모두의 칸을 넣은 방(#227)인지는 지금 명단으로 정한다. 잠금을 풀어 직접 들어온 사람이 있으면 일반 잠긴 방 안내를 보인다.
+  const allEnteredByHost = people.some((p) => p.enteredByHost) && people.every((p) => p.isHost || p.enteredByHost);
   const stationScope = useMemo(() => (room ? roomStationScope(room) : null), [room]);
 
   // 정원이 찬 방에 들어오려던 사람(참여하지 않았고 방장도 아님): 인원 상한 수요로 한 번만 센다. 방장이 예상 인원을 4로 고르는 것은 세지 않는다.
@@ -285,7 +288,9 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
           )}
         </>
       ) : null}
-      {!joined && (state === "full" || state === "locked") ? <CannotJoin reason={state} /> : null}
+      {!joined && (state === "full" || state === "locked") ? (
+        <CannotJoin reason={state} enteredBy={allEnteredByHost ? hostName : null} />
+      ) : null}
     </>
   );
 

@@ -53,7 +53,25 @@ public class TokenService(
     /** 방 해시 전용 하위 키 = HMAC(pepper, [ROOM_HASH_KEY_LABEL]). 토큰 해시와 같은 키를 쓰지 않도록 한 번 유도해 둔다. */
     private val roomKey = SecretKeySpec(mac(key, ROOM_HASH_KEY_LABEL), ALGORITHM)
 
+    /** 채운 사다리 방 토큰 전용 하위 키 = HMAC(pepper, [CREATOR_KEY_LABEL]). 토큰 해시·방 해시 키와 분리한다. */
+    private val creatorKey = SecretKeySpec(mac(key, CREATOR_KEY_LABEL), ALGORITHM)
+
     public fun issue(): IssuedToken = ids.token().let { IssuedToken(it, hash(it)) }
+
+    /**
+     * 채운 사다리 방(#227)의 방장 토큰과 방장 참여자 토큰. 만든 기기의 복구 키와 서버 비밀로 정해지는 값이라, 응답을 잃은 기기가 같은
+     * 키로 다시 요청할 때마다(인스턴스·순서와 상관없이) 같은 토큰을 다시 돌려줄 수 있다. 서버는 이 원문을 저장하지 않고 늘 다시 계산한다.
+     * [role]은 토큰 종류(방장·참여자), [subject]는 방 ID와 참여자 ID다. 무작위 토큰과 같은 형식(32바이트 base64url)이다.
+     */
+    public fun creatorToken(
+        role: String,
+        subject: String,
+        recoveryKey: String,
+    ): IssuedToken {
+        val bytes = mac(creatorKey, "$role\u0000$subject\u0000$recoveryKey")
+        val plain = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        return IssuedToken(plain, hash(plain))
+    }
 
     public fun hash(token: String): TokenHash = TokenHash(mac(token))
 
@@ -76,6 +94,7 @@ public class TokenService(
     private companion object {
         const val ALGORITHM = "HmacSHA256"
         const val ROOM_HASH_KEY_LABEL = "banbanyeok/room_hash/v1"
+        const val CREATOR_KEY_LABEL = "banbanyeok/draw_room_creator/v1"
         const val ROOM_HASH_BYTES = 8
     }
 }

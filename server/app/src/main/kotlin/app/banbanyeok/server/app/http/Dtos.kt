@@ -49,6 +49,21 @@ data class RoomCreateRequestDto(
     val expectedCount: Int? = null,
 )
 
+/** 방장이 모두의 칸을 채운 사다리 방(#227, `POST /v1/draw-rooms`). 방은 늘 favor·draw이고 예상 인원은 없다. */
+@Serializable
+data class DrawRoomCreateRequestDto(
+    val host: ParticipantInputDto,
+    /** 방장이 대신 넣는 다른 사람 칸(1~3명). */
+    val others: List<ParticipantInputDto>,
+    /** 원래 입력 순서에서 방장의 자리. */
+    val hostPosition: Int,
+    /** 만든 기기가 요청 전에 저장해 둔 비밀 값. 같은 값으로 다시 보내면 같은 방의 방장 토큰을 새로 받는다. */
+    val recoveryKey: String,
+    val meetingDate: String? = null,
+    /** 문자열이 아니거나 모르는 값이면 INVALID_MEETING_BAND. null은 없음. */
+    val meetingBand: JsonElement? = null,
+)
+
 @Serializable
 data class RoomCreatedDto(
     val roomId: String,
@@ -81,6 +96,8 @@ data class ParticipantDto(
     val labelKind: String,
     /** 좁은 칸용 짧은 이름(출발역이면 "{출발역}", 그 밖에는 label과 같다). */
     val shortLabel: String,
+    /** 방장이 방을 만들 때 대신 넣은 칸(#227). */
+    val enteredByHost: Boolean,
 )
 
 @Serializable
@@ -315,6 +332,9 @@ data class PreviewRoomDto(
     val meetingTime: String?,
     val meetingBand: String?,
     val timeBasis: TimeBasisDto,
+    /** 방장이 대신 넣은 칸이 있는 방(#227)일 때만 `true`. 아니면 키가 없다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val enteredByHost: Boolean? = null,
 )
 
 @Serializable

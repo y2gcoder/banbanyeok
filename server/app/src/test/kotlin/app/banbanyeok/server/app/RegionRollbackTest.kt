@@ -87,7 +87,7 @@ class RegionRollbackTest :
             val fixture = rolledBack()
             val now = fixture.clock.instant()
             val room = aRoom(createdAt = now) { it.copy(region = null) }
-            fixture.rooms.create(room, aParticipant("host01", now).copy(originCode = capital))
+            fixture.rooms.create(room, listOf(aParticipant("host01", now).copy(originCode = capital)))
             shouldThrow<RoomException> {
                 fixture.service.join(room.id, ParticipantInput(null, otherCapital), null)
             }.error shouldBe RoomError.REGION_MISMATCH
@@ -97,7 +97,7 @@ class RegionRollbackTest :
             val fixture = rolledBack()
             val now = fixture.clock.instant()
             val room = aRoom(createdAt = now)
-            fixture.rooms.create(room, aParticipant("host01", now).copy(originCode = "zzz"))
+            fixture.rooms.create(room, listOf(aParticipant("host01", now).copy(originCode = "zzz")))
             fixture.service.join(room.id, ParticipantInput(null, capital), null)
         }
 
@@ -112,7 +112,10 @@ class RegionRollbackTest :
                 val fixture = rolledBack()
                 val now = fixture.clock.instant()
                 val room = aRoom(createdAt = now)
-                fixture.rooms.create(room, aParticipant("host01", now).copy(originCode = capital, hidden = hidden))
+                fixture.rooms.create(
+                    room,
+                    listOf(aParticipant("host01", now).copy(originCode = capital, hidden = hidden)),
+                )
                 fixture.service.join(room.id, ParticipantInput(null, otherCapital), null)
             }
         }

@@ -51,7 +51,15 @@ function drawOrder(people: SharedCardData["people"]): number[] {
 }
 
 /** 각자의 노선(같은 길이)이 만날 역으로 모이는 그림. "누구 쪽으로"면 고른 사람의 노선만 진하게 둔다. */
-function Lines({ people, teaser = false }: { people: SharedCardData["people"]; teaser?: boolean }) {
+function Lines({
+  people,
+  teaser = false,
+  unlabeled = false,
+}: {
+  people: SharedCardData["people"];
+  teaser?: boolean;
+  unlabeled?: boolean;
+}) {
   const rows = ys(people.length);
   const anyFavored = people.some((p) => p.favored);
   const ringY = AREA.height / 2;
@@ -113,7 +121,7 @@ function Lines({ people, teaser = false }: { people: SharedCardData["people"]; t
           {OG_TEXT.drawTeaserMark}
         </div>
       ) : null}
-      {people.map((person, i) => (
+      {(unlabeled ? [] : people).map((person, i) => (
         <div
           key={`label-${String(i)}`}
           style={{
@@ -133,7 +141,7 @@ function Lines({ people, teaser = false }: { people: SharedCardData["people"]; t
         </div>
       ))}
       {/* 막차 줄(#62): 각자의 노선 바로 아래, 작게. 시각을 모르거나 출발역을 숨긴 사람은 줄이 없다. */}
-      {people.map((person, i) =>
+      {(unlabeled ? [] : people).map((person, i) =>
         person.lastTrain ? (
           <div
             key={`last-${String(i)}`}
@@ -280,7 +288,11 @@ export function SharedCard({ data }: { data: SharedCardData }) {
             ) : null}
           </div>
         </div>
-        {banban ? <Bars people={data.people} /> : <Lines people={data.people} teaser={data.teaser ?? false} />}
+        {banban ? (
+          <Bars people={data.people} />
+        ) : (
+          <Lines people={data.people} teaser={data.teaser ?? false} unlabeled={data.unlabeled ?? false} />
+        )}
       </div>
     </OgFrame>
   );

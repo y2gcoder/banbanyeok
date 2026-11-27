@@ -26,6 +26,7 @@ internal object ProblemTypes {
             "INVALID_MEETING_BAND" to "약속 시간대가 올바르지 않음",
             "INVALID_TIME_SLOT" to "시간 구분이 올바르지 않음",
             "INVALID_EXPECTED_COUNT" to "예상 인원이 올바르지 않음",
+            "INVALID_OTHERS" to "다른 사람 칸이 올바르지 않음",
             "INVALID_OUTCOME" to "답이 올바르지 않음",
             "INVALID_IDEMPOTENCY_KEY" to "Idempotency-Key가 올바르지 않음",
             "UNAUTHORIZED" to "인증이 필요함",

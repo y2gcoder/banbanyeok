@@ -111,6 +111,14 @@ export const PROBLEMS = {
       meaning: "방의 예상 인원이 2~4명이 아닙니다.",
     },
     {
+      code: "INVALID_OTHERS",
+      slug: "invalid-others",
+      status: 400,
+      title: "다른 사람 칸이 올바르지 않음",
+      meaning:
+        "방장이 대신 넣는 다른 사람 칸은 사다리로 배려 대상을 뽑는 방에서만, 방장을 포함해 2~4명까지 넣을 수 있고 방장 자리는 입력 순서 안이어야 합니다.",
+    },
+    {
       code: "INVALID_OUTCOME",
       slug: "invalid-outcome",
       status: 400,

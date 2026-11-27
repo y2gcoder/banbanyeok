@@ -30,6 +30,18 @@ describe("방 토큰 기기 저장", () => {
     expect(window.localStorage.length).toBe(1);
   });
 
+  it("저장했는지 돌려준다: 짧은 검사는 통과해도 실제 기록이 저장 공간 부족으로 실패하면 false이고 던지지 않는다", () => {
+    expect(saveRoomRecord(ROOM, { hostToken: "h", keepUntil })).toBe(true);
+    const original = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+      if (key === roomKey("bbbbbbbbbb")) throw new DOMException("quota", "QuotaExceededError");
+      original.call(this, key, value);
+    });
+    expect(canStoreRoomTokens()).toBe(true);
+    expect(saveRoomRecord("bbbbbbbbbb", { hostToken: "h2", keepUntil })).toBe(false);
+    expect(loadRoomRecord("bbbbbbbbbb", NOW)).toBeNull();
+  });
+
   it("keepUntil은 처음 저장한 시각 + 30일(방 최대 수명)", () => {
     expect(Date.parse(keepUntil) - NOW).toBe(30 * DAY);
   });

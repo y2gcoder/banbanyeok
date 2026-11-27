@@ -5,9 +5,11 @@ import app.banbanyeok.schema.StationCode
 import app.banbanyeok.schema.TimeBand
 import java.security.SecureRandom
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import java.util.random.RandomGenerator
 
 /**
@@ -32,18 +34,77 @@ public class RoomService(
     private val origins = OriginRule(stations)
     private val draws = FavorDrawRule(drawRandom, clock)
 
-    public suspend fun create(command: CreateRoomCommand): CreatedRoom {
+    public suspend fun create(command: CreateRoomCommand): CreatedRoom = create(command, recovery = null)
+
+    /**
+     * 방장이 모두의 칸을 채운 사다리 방(#227, ADR-0011). [recoveryKey]는 만든 기기가 요청 전에 저장해 둔 무작위 값이다. 같은 키로 만든
+     * 방이 아직 되찾을 수 있으면(만든 뒤 [RECOVERY_WINDOW] 안, 만료 전) 새 방을 만들지 않고 그 방을 돌려준다. 방장 토큰과 방장 참여자
+     * 토큰은 키와 서버 비밀로 정해지므로([TokenService.creatorToken]) 몇 번을 다시 받아도, 여러 응답이 어떤 순서로 도착해도 같은 값이다.
+     * 여러 인스턴스가 같은 키로 동시에 만들면 저장소가 하나만 넣고([RecoveryTaken]) 나머지는 그 방을 돌려준다. 키의 원문은 저장하지 않는다.
+     */
+    public suspend fun createDrawRoom(
+        command: CreateRoomCommand,
+        recoveryKey: String,
+    ): CreatedRoom {
+        val hash = tokens.hash(recoveryKey)
+        recover(hash, recoveryKey)?.let { return it }
+        return try {
+            create(command, Recovery(hash, recoveryKey))
+        } catch (taken: RecoveryTaken) {
+            recover(hash, recoveryKey) ?: throw taken
+        }
+    }
+
+    private class Recovery(
+        val hash: TokenHash,
+        val key: String,
+    )
+
+    private fun creatorTokens(
+        roomId: String,
+        hostParticipantId: String,
+        recoveryKey: String,
+    ): Pair<IssuedToken, IssuedToken> =
+        tokens.creatorToken("host", roomId, recoveryKey) to
+            tokens.creatorToken("participant", "$roomId/$hostParticipantId", recoveryKey)
+
+    private suspend fun recover(
+        hash: TokenHash,
+        recoveryKey: String,
+    ): CreatedRoom? {
+        val now = clock.instant()
+        val roomId = rooms.findByRecovery(hash, now.minus(RECOVERY_WINDOW)) ?: return null
+        val stored = findActive(roomId, now) ?: return null
+        val (hostToken, participantToken) = creatorTokens(roomId, stored.room.hostParticipantId, recoveryKey)
+        check(stored.room.hostHash == hostToken.hash) { "복구 키로 만든 방장 토큰이 저장된 해시와 다르다" }
+        return CreatedRoom(
+            roomId,
+            hostToken.plain,
+            stored.room.hostParticipantId,
+            participantToken.plain,
+            stored.room.expiresAt,
+            tokens.roomHash(roomId),
+            recovered = true,
+        )
+    }
+
+    private suspend fun create(
+        command: CreateRoomCommand,
+        recovery: Recovery?,
+    ): CreatedRoom {
         val now = clock.instant()
         val host = validated(command.host)
-        checkNewParticipant(host)
+        checkNewParticipant(command)
         validateCreation(command, now)
+        val others = command.others.map(::validated)
         val meeting = Meeting(command.meetingDate, command.meetingTime, command.meetingBand)
         stations.awaitSchedule(host.originCode, meeting)
+        others.forEach { stations.awaitSchedule(it.originCode, meeting) }
         val region = regions.regionFor(host.originCode, host.hidden)
         val roomId = ids.roomId()
         val hostParticipantId = ids.participantId()
-        val hostToken = tokens.issue()
-        val participantToken = tokens.issue()
+        val (hostToken, participantToken) =
+            recovery?.let { creatorTokens(roomId, hostParticipantId, it.key) } ?: (tokens.issue() to tokens.issue())
         val expiresAt = ExpiryPolicy.expiresAt(now, now, command.meetingDate)
         val anonId = anonIdOf(command.deviceToken, now)
         val drawn = command.mode == RoomMode.FAVOR && command.favorTarget == CreateRoomCommand.DRAW_TARGET
@@ -60,7 +121,7 @@ public class RoomService(
                 meetingTime = command.meetingTime?.withSecond(0)?.withNano(0),
                 meetingBand = storedBand(command.meetingTime, command.meetingBand),
                 expectedCount = command.expectedCount,
-                locked = false,
+                locked = others.isNotEmpty(),
                 outcome = null,
                 createdAt = now,
                 lastActivityAt = now,
@@ -69,7 +130,17 @@ public class RoomService(
                 region = region,
             )
         origins.requireAllowed(room, host.originCode, host.hidden)
-        rooms.create(room, newParticipant(hostParticipantId, participantToken.hash, anonId, host, now))
+        others.forEach { origins.requireAllowed(room, it.originCode) }
+        val hostEntry = newParticipant(hostParticipantId, participantToken.hash, anonId, host, now)
+        val entered =
+            others.map {
+                newParticipant(ids.participantId(), tokens.issue().hash, null, it, now).copy(enteredByHost = true)
+            }
+        rooms.create(
+            room,
+            inputOrder(entered, hostEntry, command.hostPosition),
+            recovery?.let { RecoverySlot(it.hash, now.minus(RECOVERY_WINDOW)) },
+        )
         return CreatedRoom(
             roomId,
             hostToken.plain,
@@ -421,6 +492,7 @@ public class RoomService(
                         originCode = if (!it.hidden || it.id == selfId) stations.canonical(it.originCode) else null,
                         isHost = it.id == room.hostParticipantId,
                         isSelf = it.id == selfId,
+                        enteredByHost = it.enteredByHost,
                     )
                 },
         )
@@ -470,6 +542,27 @@ public class RoomService(
                 CreateRoomCommand.HOST_TARGET, CreateRoomCommand.DRAW_TARGET -> Unit
                 else -> reject(RoomError.FAVOR_TARGET_UNKNOWN, "방을 만들 때 우대 대상은 host나 draw입니다")
             }
+        }
+        validateOthers(command)
+    }
+
+    /**
+     * 대신 넣는 칸(#227)은 사다리로 배려 대상을 뽑는 방에서만 받는다. 저장하는 다른 사람의 출발역을 그 목적에 묶어 둔다.
+     * 방장까지 2~4명이고(예상 인원이 있으면 그 안), 방장의 자리는 입력 순서 안이어야 한다.
+     */
+    private fun validateOthers(command: CreateRoomCommand) {
+        if (command.others.isEmpty()) {
+            if (command.hostPosition != 0) reject(RoomError.INVALID_OTHERS, "다른 사람 칸이 없으면 방장 자리는 0입니다")
+            return
+        }
+        val drawn = command.mode == RoomMode.FAVOR && command.favorTarget == CreateRoomCommand.DRAW_TARGET
+        if (!drawn) reject(RoomError.INVALID_OTHERS, "다른 사람 칸은 배려 대상을 뽑기로 정하는 방에서만 넣을 수 있습니다")
+        val total = command.others.size + 1
+        if (total > (command.expectedCount ?: MAX_PEOPLE)) {
+            reject(RoomError.INVALID_OTHERS, "방장을 포함해 ${command.expectedCount ?: MAX_PEOPLE}명까지 넣을 수 있습니다")
+        }
+        if (command.hostPosition !in 0..command.others.size) {
+            reject(RoomError.INVALID_OTHERS, "방장 자리는 0~${command.others.size}이어야 합니다")
         }
     }
 
@@ -550,6 +643,14 @@ public class RoomService(
         if (input.hidden) rejectNewHidden()
     }
 
+    /** 방 만들기의 숨김 규칙. 대신 넣는 칸은 숨길 수 없다: 숨김은 본인이 고르는 것이다. */
+    public fun checkNewParticipant(command: CreateRoomCommand) {
+        checkNewParticipant(command.host)
+        if (command.others.any { it.hidden }) {
+            reject(RoomError.HIDE_NOT_AVAILABLE, "다른 사람 칸은 출발역을 숨길 수 없습니다")
+        }
+    }
+
     private fun rejectNewHidden() {
         if (newHidden == NewHiddenOrigins.REJECTED) {
             reject(RoomError.HIDE_NOT_AVAILABLE, "출발역 숨기기는 이제 쓸 수 없습니다. 숨기기를 끄고 다시 보내 주세요")
@@ -563,6 +664,20 @@ public class RoomService(
         input: ParticipantInput,
         now: Instant,
     ) = Participant(id, tokenHash, anonId, input.nickname, input.originCode, input.hidden, now, now)
+
+    /**
+     * 방을 만들 때의 입장 순서. 원래 입력 순서(방장은 [hostPosition] 자리)대로 1마이크로초씩 늦춰 입장 시각을 준다. 입장 순서가 표시 이름의
+     * 번호와 뽑기 대상의 칸 순서를 정하는데, 같은 시각이면 무작위 참가자 ID 순이 되기 때문이다(DB는 마이크로초까지 저장한다).
+     */
+    private fun inputOrder(
+        others: List<Participant>,
+        host: Participant,
+        hostPosition: Int,
+    ): List<Participant> {
+        val ordered = others.toMutableList().apply { add(hostPosition, host) }
+        val base = host.joinedAt.truncatedTo(ChronoUnit.MICROS)
+        return ordered.mapIndexed { i, p -> p.copy(joinedAt = base.plus(i.toLong(), ChronoUnit.MICROS)) }
+    }
 
     private fun activityOf(
         room: Room,
@@ -583,5 +698,8 @@ public class RoomService(
     private companion object {
         const val MIN_PEOPLE = 2
         const val MAX_PEOPLE = 4
+
+        /** 복구 키로 방을 되찾을 수 있는 기간(만든 뒤). 응답을 잃은 기기가 다시 시도할 만큼만 둔다. */
+        val RECOVERY_WINDOW: Duration = Duration.ofHours(24)
     }
 }

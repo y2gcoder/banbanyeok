@@ -107,7 +107,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid003",
@@ -119,7 +120,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -255,7 +257,8 @@
                     "isSelf": true,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid003",
@@ -267,7 +270,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -403,7 +407,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid003",
@@ -415,7 +420,8 @@
                     "isSelf": true,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -551,7 +557,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid003",
@@ -563,7 +570,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -699,7 +707,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid003",
@@ -711,7 +720,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -857,7 +867,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid003",
@@ -869,7 +880,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -1072,7 +1084,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid005",
@@ -1084,7 +1097,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid006",
@@ -1096,7 +1110,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -1264,7 +1279,8 @@
                     "isSelf": true,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid005",
@@ -1276,7 +1292,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid006",
@@ -1288,7 +1305,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -1456,7 +1474,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid005",
@@ -1468,7 +1487,8 @@
                     "isSelf": true,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid006",
@@ -1480,7 +1500,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -1669,7 +1690,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid005",
@@ -1681,7 +1703,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid006",
@@ -1693,7 +1716,8 @@
                     "isSelf": true,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -1861,7 +1885,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid005",
@@ -1873,7 +1898,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid006",
@@ -1885,7 +1911,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -2053,7 +2080,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid005",
@@ -2065,7 +2093,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid006",
@@ -2077,7 +2106,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -2256,7 +2286,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid005",
@@ -2268,7 +2299,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid006",
@@ -2280,7 +2312,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "eza",
@@ -2518,7 +2551,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -2530,7 +2564,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -2542,7 +2577,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -2554,7 +2590,8 @@
                     "isSelf": false,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -2753,7 +2790,8 @@
                     "isSelf": true,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -2765,7 +2803,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -2777,7 +2816,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -2789,7 +2829,8 @@
                     "isSelf": false,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -2988,7 +3029,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -3000,7 +3042,8 @@
                     "isSelf": true,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -3012,7 +3055,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -3024,7 +3068,8 @@
                     "isSelf": false,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -3223,7 +3268,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -3235,7 +3281,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -3247,7 +3294,8 @@
                     "isSelf": true,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -3259,7 +3307,8 @@
                     "isSelf": false,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -3458,7 +3507,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -3470,7 +3520,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -3482,7 +3533,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -3494,7 +3546,8 @@
                     "isSelf": true,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -3715,7 +3768,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -3727,7 +3781,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -3739,7 +3794,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -3751,7 +3807,8 @@
                     "isSelf": false,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -3942,7 +3999,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -3954,7 +4012,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -3966,7 +4025,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -3978,7 +4038,8 @@
                     "isSelf": false,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -4187,7 +4248,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid008",
@@ -4199,7 +4261,8 @@
                     "isSelf": false,
                     "label": "당산에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "당산"
+                    "shortLabel": "당산",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid009",
@@ -4211,7 +4274,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid010",
@@ -4223,7 +4287,8 @@
                     "isSelf": false,
                     "label": "친구2",
                     "labelKind": "name",
-                    "shortLabel": "친구2"
+                    "shortLabel": "친구2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "k3a",
@@ -4502,7 +4567,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -4514,7 +4580,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -4526,7 +4593,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -4718,7 +4786,8 @@
                     "isSelf": true,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -4730,7 +4799,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -4742,7 +4812,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -4934,7 +5005,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -4946,7 +5018,8 @@
                     "isSelf": true,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -4958,7 +5031,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -5150,7 +5224,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -5162,7 +5237,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -5174,7 +5250,8 @@
                     "isSelf": true,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -5366,7 +5443,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -5378,7 +5456,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -5390,7 +5469,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -5585,7 +5665,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -5597,7 +5678,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -5609,7 +5691,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -5803,7 +5886,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -5815,7 +5899,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -5827,7 +5912,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -6019,7 +6105,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid012",
@@ -6031,7 +6118,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid013",
@@ -6043,7 +6131,8 @@
                     "isSelf": false,
                     "label": "친구1",
                     "labelKind": "name",
-                    "shortLabel": "친구1"
+                    "shortLabel": "친구1",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "ct5",
@@ -6288,7 +6377,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid015",
@@ -6300,7 +6390,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -6437,7 +6528,8 @@
                     "isSelf": true,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid015",
@@ -6449,7 +6541,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -6586,7 +6679,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid015",
@@ -6598,7 +6692,8 @@
                     "isSelf": true,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -6753,7 +6848,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid015",
@@ -6765,7 +6861,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -6902,7 +6999,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid015",
@@ -6914,7 +7012,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -7056,7 +7155,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid015",
@@ -7068,7 +7168,8 @@
                     "isSelf": false,
                     "label": "참가자 2",
                     "labelKind": "ordinal",
-                    "shortLabel": "참가자 2"
+                    "shortLabel": "참가자 2",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "7gf",
@@ -7268,7 +7369,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid017",
@@ -7280,7 +7382,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "dka",
@@ -7442,7 +7545,8 @@
                     "isSelf": true,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid017",
@@ -7454,7 +7558,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "dka",
@@ -7616,7 +7721,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid017",
@@ -7628,7 +7734,8 @@
                     "isSelf": true,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "dka",
@@ -7790,7 +7897,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid017",
@@ -7802,7 +7910,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "dka",
@@ -7964,7 +8073,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid017",
@@ -7976,7 +8086,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "dka",
@@ -8141,7 +8252,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid017",
@@ -8153,7 +8265,8 @@
                     "isSelf": false,
                     "label": "강남에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "강남"
+                    "shortLabel": "강남",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "dka",
@@ -8386,7 +8499,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid019",
@@ -8398,7 +8512,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "s1q",
@@ -8534,7 +8649,8 @@
                     "isSelf": true,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid019",
@@ -8546,7 +8662,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "s1q",
@@ -8682,7 +8799,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid019",
@@ -8694,7 +8812,8 @@
                     "isSelf": true,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "s1q",
@@ -8830,7 +8949,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid019",
@@ -8842,7 +8962,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "s1q",
@@ -8978,7 +9099,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid019",
@@ -8990,7 +9112,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "s1q",
@@ -9136,7 +9259,8 @@
                     "isSelf": false,
                     "label": "방장",
                     "labelKind": "name",
-                    "shortLabel": "방장"
+                    "shortLabel": "방장",
+                    "enteredByHost": false
                 },
                 {
                     "participantId": "pid019",
@@ -9148,7 +9272,8 @@
                     "isSelf": false,
                     "label": "잠실에서 오는 분",
                     "labelKind": "origin",
-                    "shortLabel": "잠실"
+                    "shortLabel": "잠실",
+                    "enteredByHost": false
                 }
             ],
             "baselineStationCode": "s1q",
