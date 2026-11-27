@@ -41,7 +41,7 @@ export type PairCandidate = {
 
 export type PairPage = {
   slug: string;
-  path: string;
+  path: `${typeof PAIR_PATH_PREFIX}/${string}`;
   /** 표시·URL 순서(가나다). 파일의 a<b(코드순)와 다를 수 있다. */
   first: StationRef;
   second: StationRef;

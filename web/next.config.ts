@@ -14,6 +14,8 @@ const analytics = analyticsConfig({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // `Link`·`router.push`의 경로를 실제 페이지로 타입 검사한다(`pnpm typecheck`가 `next typegen`으로 경로 타입을 먼저 만든다).
+  typedRoutes: true,
   // 사이트 주소는 빌드 값으로 번들에 박는다(src/lib/seo/site.ts `siteEnv`). Worker 런타임 환경에는 없어서, 요청 때 렌더되는
   // 페이지(/s 등)의 og:image·canonical이 localhost로 나가던 문제를 막는다. 비밀값이 아니다(공개 주소).
   env: { SITE_URL: process.env.SITE_URL ?? "", SITE_NOINDEX: process.env.SITE_NOINDEX ?? "" },
