@@ -3,7 +3,7 @@
 #   BASE_URL           확인할 주소(필수)
 #   REDIRECT_FROM      공백으로 구분한 주소들: BASE_URL로 301 이동해야 한다(선택)
 #   SERVER_CONNECTED   1이면 /api/healthz가 200 ok여야 한다. 0이면 503 UPSTREAM_NOT_CONFIGURED여야 한다
-#   SITE_INDEXABLE     1이면 robots.txt가 sitemap을 안내해야 하고, 0이면 전체 차단이어야 한다
+#   SITE_INDEXABLE     1이면 사이트맵 전체의 robots 허용과 홈·허브·조합 1개의 색인 응답을 검사한다. 0이면 전체 차단이어야 한다
 #   KAKAO_JS_KEY       카카오 JavaScript 키(선택, 공개 값). 있으면 CSP가 카카오 SDK를 열고, 카카오가 이 키와 BASE_URL 출처의 공유 메시지를
 #                      받는지 확인한다(아래 "카카오톡 공유")
 #   SITE_URL           정식 주소(선택). 있으면 /r/new·/r/<가짜 ID>·/result?…의 og:image가 이 주소로 시작해야 하고(서버 연결과 무관),
@@ -159,12 +159,16 @@ fetch "$BASE_URL/meet"
 hub_og="$(grep -oE '<meta property="og:image" content="[^"]*"' <<<"$body" | first | sed -E 's#.*content="https?://[^/]+##; s#"$##')"
 if [ -n "${site_og_path:-}" ] && [ "$hub_og" = "$site_og_path" ]; then pass "허브 og:image가 사이트 기본 그림($hub_og)"; else bad "허브 og:image가 사이트 기본 그림이 아님: ${hub_og:-없음} (기대: ${site_og_path:-없음})"; fi
 
-# robots.txt
-fetch "$BASE_URL/robots.txt"
+# 색인 배포: 사이트맵 전체의 URL·크롤링 정책과 대표 URL 3개의 실제 응답(리디렉션 없이)을 확인한다.
 if [ "${SITE_INDEXABLE:-0}" = "1" ]; then
-  grep -q "Sitemap: " <<<"$body" && grep -q "Disallow: /api/" <<<"$body" && pass "robots.txt(색인 허용)" || bad "robots.txt가 색인 허용 형태가 아닙니다"
+  python3 -B "$(dirname "$0")/check-sitemap-indexing.py" "$BASE_URL" "${SITE_URL:-$BASE_URL}" || fail=1
 else
-  grep -q "Disallow: /" <<<"$body" && ! grep -q "Sitemap: " <<<"$body" && pass "robots.txt(전체 차단)" || bad "robots.txt가 전체 차단이 아닙니다"
+  fetch "$BASE_URL/robots.txt"
+  if [ "$status" = "200" ] && grep -qiE '^Disallow: */[[:space:]]*$' <<<"$body" && ! grep -qi '^Sitemap:' <<<"$body"; then
+    pass "robots.txt(전체 차단)"
+  else
+    bad "robots.txt가 전체 차단이 아닙니다"
+  fi
   fetch "$BASE_URL/"
   grep -q 'name="robots" content="noindex' <<<"$body" && pass "noindex 메타" || bad "noindex 메타가 없습니다"
 fi

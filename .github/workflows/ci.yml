@@ -82,6 +82,7 @@ jobs:
               - 'scripts/test-publish-artifacts.sh'
               - '.github/release.yml'
               - 'web/scripts/smoke-deploy.sh'
+              - 'web/scripts/check-sitemap-indexing.py'
               - 'web/scripts/test-smoke-deploy.py'
               - 'web/scripts/wait-data-version.sh'
               - 'web/scripts/regional-precheck.sh'
@@ -161,7 +162,7 @@ jobs:
           python3 -B prototype/banban_index.py --check
 
   # 웹(web/): 타입 검사 → 린트(Biome·ESLint 타입 규칙·Knip·dependency-cruiser) → 단위·컴포넌트 테스트
-  # → 계약 동기화(openapi 타입·역 인덱스 재생성 후 diff) → 모바일 e2e(가짜 서버) → OpenNext Cloudflare 빌드(배포 없음).
+  # → 계약 동기화 → 모바일 e2e(가짜 서버·비색인) → OpenNext 빌드 → 색인 사이트맵 전체 검사(루프백).
   web:
     needs: changes
     if: needs.changes.outputs.web == 'true'
@@ -192,7 +193,21 @@ jobs:
             web/playwright-report/
             web/playwright-report-analytics/
           retention-days: 7
-      - run: pnpm cf:build
+      - name: OpenNext 빌드와 색인 사이트맵 검사
+        env:
+          SITE_URL: https://seo.example.invalid
+          SITE_NOINDEX: ''
+        run: |
+          pnpm cf:build
+          base_url=http://127.0.0.1:41757
+          node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 41757 > "$RUNNER_TEMP/seo-web.log" 2>&1 &
+          web_pid=$!
+          trap 'kill "$web_pid" 2>/dev/null || true' EXIT
+          if ! curl -q --noproxy '*' -fsS --max-time 2 --retry 10 --retry-connrefused --retry-delay 1 -o /dev/null "$base_url/"; then
+            cat "$RUNNER_TEMP/seo-web.log"
+            exit 1
+          fi
+          python3 -B scripts/check-sitemap-indexing.py "$base_url" "$SITE_URL" --all
 
   # 실제 서버 대상 e2e: compose Postgres → Liquibase → Ktor(dev 산출물) + 웹 프로덕션 빌드. 가짜 서버 없이
   # 입력 → 결과(서버가 만든 표시 이름) → 공유 링크 → 받은 링크에서 사람 고르기와 폐기된 역 코드 링크를 확인한다.
@@ -247,7 +262,7 @@ jobs:
           retention-days: 7
 
   # 배포 스크립트 단위 테스트(실제 배포·Cloudflare·GCP 호출 없음): 서버·웹 배포 계획(임시 git 저장소·가짜 gh·가짜 gcloud),
-  # 웹 스모크(가짜 curl로 카카오 접속 실패 재시도), 웹 직전 버전 기록·되돌리기(가짜 wrangler + 핀된 실제 wrangler를 루프백 가짜 API에 붙여 JSON·오류 형식 확인).
+  # 웹 스모크(가짜 curl로 색인 회귀·카카오 접속 실패 재시도), 웹 직전 버전 기록·되돌리기(가짜 wrangler + 핀된 실제 wrangler를 루프백 가짜 API에 붙여 JSON·오류 형식 확인).
   deploy-scripts:
     needs: changes
     if: needs.changes.outputs.deploy == 'true'
