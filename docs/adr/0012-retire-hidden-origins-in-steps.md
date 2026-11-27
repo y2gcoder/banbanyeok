@@ -60,6 +60,9 @@ ADR-0007의 2단계를 시작할 조건이 찼다. 2026-11-27 운영 DB 읽기 �
    뒤에 한다. 이 판은 숨긴 행을 알지 못하므로, 조건이 차기 전에 트래픽을 받으면 남았거나 백업에서 되살아난 숨긴 행이 있는(아직 만료되지
    않은) 방의 출발역이 드러난다. 이 판의 통합 테스트는 지금 스키마와, 4단계 모양(트리거에서 `hidden`을 뺀 뒤 열을 지운 DB,
    `TestDatabase.step4DataSource`) 둘 다에서 돈다. 4단계 PR은 그 SQL을 changeset으로 옮기고 테스트용 모양을 지운다.
+   이 판의 서버는 `ROOM_WITHHELD`를 내지 않지만, 계약(`contracts/openapi.yaml`의 설명, `contracts/problems.json`과 `ProblemTypes`의 코드)과
+   웹의 처리, 처리방침의 해당 문구는 남긴다. 그런 방은 이때 모두 만료라 보이는 동작은 같고, 이 정리는 계약·웹 변경이라 4단계 뒤에 한다.
+   검증 여정 `journeys/room-join.mjs`가 `hidden`을 읽어 새 참가자가 숨기지 않았는지 보므로 4단계 PR에서 함께 고친다.
 4. **트리거 교체와 열 삭제(별도 PR, 별도 배포)**: Liquibase changeset으로 공유 번호 트리거 함수에서 `hidden` 비교를 빼고 트리거를
    `UPDATE OF nickname, origin_code`로 다시 만든 뒤 `participants.hidden`을 DROP한다. 이 migrate는 3단계 서버가 트래픽을 받는 동안 돌고,
    3단계 서버는 열을 참조하지 않으므로 깨지지 않는다. 이 뒤로는 3단계 이후 판으로만 되돌린다(2단계 이전 판은 `selectAll()`과 숨김 처리가
