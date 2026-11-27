@@ -211,7 +211,7 @@ function enteredByHostCopy(preview: Computed): RoomShareCopy {
         stationCode: preview.station.stationCode,
         stationName: preview.station.stationName,
         suffix: OG_TEXT.decidedSuffix,
-        footer: { main: when ?? OG_TEXT.drawTeaserHint, sub: OG_TEXT.timesInRoom },
+        footer: when ? { main: when, sub: OG_TEXT.timesInRoom } : { main: OG_TEXT.timesInRoom, sub: "" },
       },
     };
   }

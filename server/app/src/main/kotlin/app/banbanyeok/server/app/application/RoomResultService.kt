@@ -78,22 +78,9 @@ class RoomResultService(
         val request = requestOf(context, mode = null, favorId = null)
         val evaluation = recommendation.evaluate(request)
         val ranked = evaluation.recommendation
-        // 방장이 대신 넣은 칸이 있는 방(#227)은 순번 이름만 싣는다. 이름이 없는 칸의 짧은 이름은 출발역 이름이고, 막차와 지도 한가운데
-        // 비교도 출발역에서 나온다. 방 화면(토큰으로 읽는 방·결과)은 그대로다.
+        // 방장이 대신 넣은 칸이 있는 방(#227)은 순번 이름만 싣고, 출발역에서 나오는 막차와 지도 한가운데 비교를 싣지 않는다.
         val withheld = room.enteredByHost
-        val shortLabels =
-            if (withheld) {
-                request.participants.indices.map {
-                    "참가자 ${it + 1}"
-                }
-            } else {
-                ranked.labels.map { it.short }
-            }
-        val labels =
-            request.participants
-                .map { it.id }
-                .zip(shortLabels)
-                .toMap()
+        val labels = previewLabels(request, ranked, withheld)
         val lastTrainBasis = ranked.lastTrainBasis.takeUnless { withheld }
         val lastTrainPending = ranked.lastTrainPending && !withheld
         val drawRound = view.favorDraw?.round?.takeIf { it > 0 && request.mode == RecommendMode.FAVOR }
@@ -150,6 +137,23 @@ class RoomResultService(
                 )
             }
         }
+    }
+
+    /**
+     * 참여자 ID → 미리보기 이름. [withheld]면 순번("참가자 N")이다: 이름이 없는 칸의 짧은 이름은 출발역 이름이라 방장이 대신 넣은 방의
+     * 미리보기에는 싣지 않는다. 방 화면(토큰으로 읽는 방·결과)은 그대로다.
+     */
+    private fun previewLabels(
+        request: RecommendRequest,
+        ranked: Recommendation,
+        withheld: Boolean,
+    ): Map<String, String> {
+        val shortLabels =
+            if (withheld) request.participants.indices.map { "참가자 ${it + 1}" } else ranked.labels.map { it.short }
+        return request.participants
+            .map { it.id }
+            .zip(shortLabels)
+            .toMap()
     }
 
     private fun previewRoom(context: RoomResultContext): PreviewRoom {

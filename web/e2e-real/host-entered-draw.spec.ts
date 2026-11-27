@@ -1,7 +1,17 @@
 import { execFileSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
-import { type Browser, devices, expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
+import {
+  type APIRequestContext,
+  type Browser,
+  devices,
+  expect,
+  type Locator,
+  type Page,
+  type TestInfo,
+  test,
+} from "@playwright/test";
 
 /**
  * 혼자 입력한 결과에서 사다리 방 만들기(#227) e2e: 실제 서버(Ktor + DB)에서 추천 화면의 진입점 → 확인 대화상자 → 모두의 칸을 채운 잠긴
@@ -155,6 +165,73 @@ test("혼자 입력한 결과 → 확인 → 채운 사다리 방 → 뽑기, �
   await expect(page.getByRole("heading", { name: `${winnerName} 쪽으로!` })).toBeVisible();
   const again = (await (await request.get(`/api/v1/rooms/${roomId}`)).json()) as ApiRoom;
   expect(again.favorDraw?.winner).toBe(drawn.favorDraw?.winner);
+});
+
+const KAKAO_UA = "facebookexternalhit/1.1; kakaotalk-scrap/1.0; +https://devtalk.kakao.com/t/scrap/33984";
+const decode = (text: string) =>
+  text
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+
+/** 메신저 크롤러처럼 지금 공유 번호의 방 링크를 읽어 미리보기(제목·설명·그림)와 그 그림, 공용 미리보기 응답을 받는다. */
+async function messengerPreview(request: APIRequestContext, roomId: string, testInfo: TestInfo, name: string) {
+  const { shareVersion } = (await (await request.get(`/api/v1/rooms/${roomId}`)).json()) as { shareVersion: number };
+  const html = await (
+    await request.get(`/r/${roomId}?sv=${shareVersion}`, { headers: { "user-agent": KAKAO_UA } })
+  ).text();
+  const meta = (property: string) =>
+    decode(html.match(new RegExp(`<meta property="${property}" content="([^"]*)"`))?.[1] ?? "");
+  const image = new URL(meta("og:image"));
+  const png = await request.get(image.pathname + image.search);
+  expect(png.status()).toBe(200);
+  expect(png.headers()["content-type"]).toBe("image/png");
+  writeFileSync(testInfo.outputPath(`og-${name}.png`), await png.body());
+  const api = await (await request.get(`/api/v1/rooms/${roomId}/preview`)).text();
+  return { title: meta("og:title"), description: meta("og:description"), image, api };
+}
+
+test("방장이 대신 넣은 방의 링크 미리보기는 뽑기 전·뒤 모두 이름·출발역·시간 없이 방에서 확인하라고 안내한다(방 화면은 그대로)", async ({
+  page,
+  request,
+}, testInfo) => {
+  const me = uniqueName();
+  const roomId = await createFilledRoom(page, resultWith(me));
+  const stored = (await (await request.get(`/api/v1/rooms/${roomId}`)).json()) as {
+    participants: { nickname: string | null; originName: string | null }[];
+  };
+  const personal = stored.participants.flatMap((p) => [p.nickname, p.originName]).filter((v) => v !== null);
+  expect(personal).toEqual(expect.arrayContaining([me, "하늘", "강남", "홍대입구"]));
+  const people = page.getByRole("region", { name: "들어온 사람" });
+  for (const text of [me, "하늘", "홍대입구"]) await expect(people).toContainText(text);
+
+  const before = await messengerPreview(request, roomId, testInfo, "host-entered-before");
+  expect([before.title, before.description]).toEqual([
+    "만날 역 후보가 나왔어요 | 반반역",
+    "만날 역과 각자 시간은 방에서 확인해요",
+  ]);
+  expect(before.image.pathname).toBe(`/r/${roomId}/og`);
+
+  await page.getByRole("button", { name: "사다리 타기" }).first().click();
+  await page.getByRole("button", { name: "건너뛰고 결과 보기" }).click();
+  await expect(page.getByRole("heading", { name: / 쪽으로!$/ })).toBeVisible();
+  const after = await messengerPreview(request, roomId, testInfo, "host-entered-drawn");
+  expect([after.title, after.description]).toEqual([
+    "사다리 결과가 나왔어요! 누구 쪽일까요? | 반반역",
+    "사다리 결과는 방에서 확인해요",
+  ]);
+  expect(after.image.searchParams.get("sv")).not.toBe(before.image.searchParams.get("sv"));
+
+  for (const shown of [before, after]) {
+    const text = [shown.title, shown.description, shown.api].join(" ");
+    for (const value of personal) expect(text, value).not.toContain(value);
+    expect(shown.title + shown.description).not.toMatch(/\d+분/);
+    expect(JSON.parse(shown.api).room.enteredByHost).toBe(true);
+  }
+  await page.reload();
+  for (const text of [me, "하늘", "홍대입구"]) await expect(people).toContainText(text);
 });
 
 /** 혼자 입력한 결과에서 대화상자로 채운 방을 만든다(하늘이 방장). 만든 방 ID를 돌려준다. */
