@@ -100,7 +100,7 @@ export interface paths {
         };
         /**
          * 방 상태 (토큰 없이 조회 가능)
-         * @description participantToken이 있으면 본인 항목에 `isSelf`가 붙는다. 숨긴 참가자가 남은 옛 방은 404 `ROOM_NOT_FOUND`다(#182).
+         * @description participantToken이 있으면 본인 항목에 `isSelf`가 붙는다. 방장 토큰도 받는다(본인 항목 표시는 없다). 숨긴 참가자가 남은 옛 방은 그 방의 토큰이면 403 `ROOM_WITHHELD`, 아니면 404 `ROOM_NOT_FOUND`다(ADR-0012).
          */
         get: operations["getRoom"];
         put?: never;
@@ -394,7 +394,8 @@ export interface components {
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 403 | `CORS_REJECTED` | 허용 목록에 없는 출처의 브라우저 요청이거나 허용되지 않는 메서드의 사전 요청(preflight). 출처·메서드 값은 응답에 싣지 않는다 |
-         *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다 |
+         *     | 403 | `ROOM_WITHHELD` | 숨긴 참가자가 남은 옛 방에 그 방의 토큰으로 왔다. 지우기(방장의 방 삭제, 자기 항목 삭제) 말고는 할 수 없다(ADR-0012) |
+         *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다. 숨긴 참가자가 남은 옛 방에 그 방의 토큰 없이 와도 같다 |
          *     | 405 | `METHOD_NOT_ALLOWED` | 이 경로에서 쓸 수 없는 메서드다(`Allow` 헤더) |
          *     | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
@@ -1253,6 +1254,7 @@ export interface operations {
                     "application/json": components["schemas"]["Room"];
                 };
             };
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
         };
     };
@@ -1431,6 +1433,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             /** @description 방이 가득 찼거나 잠겼다(`ROOM_FULL`, `ROOM_LOCKED`), 또는 방의 약속 구분에 그 출발역의 배차 지원이 없다(`SCHEDULE_UNAVAILABLE`) */
             409: {
@@ -1542,6 +1545,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             /**
              * @description 참가자가 2명 미만(`NOT_ENOUGH_PARTICIPANTS`), 또는 참가자의 출발역이 지금 서버가 쓰는 데이터에 없다(`STATION_UNAVAILABLE`,

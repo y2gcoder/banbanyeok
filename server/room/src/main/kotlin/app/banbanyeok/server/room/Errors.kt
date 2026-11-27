@@ -22,6 +22,12 @@ public enum class RoomError(
     UNAUTHORIZED(ErrorKind.UNAUTHENTICATED),
     FORBIDDEN(ErrorKind.FORBIDDEN),
     ROOM_NOT_FOUND(ErrorKind.NOT_FOUND),
+
+    /**
+     * 숨긴 참가자가 남은 방([StoredRoom.withheld])에 그 방의 자격으로 왔다. 내용은 보여 주지 않고 지우기만 된다. 자격이 없으면 없는 방과
+     * 같은 [ROOM_NOT_FOUND]다(방이 있는지 알리지 않는다). 404와 다른 코드라, 이 코드를 모르는 옛 웹도 기기 기록을 지우지 않는다.
+     */
+    ROOM_WITHHELD(ErrorKind.FORBIDDEN),
     PARTICIPANT_NOT_FOUND(ErrorKind.NOT_FOUND),
     ROOM_FULL(ErrorKind.CONFLICT),
     ROOM_LOCKED(ErrorKind.CONFLICT),

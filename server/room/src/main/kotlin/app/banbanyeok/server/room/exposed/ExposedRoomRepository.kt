@@ -124,16 +124,15 @@ public class ExposedRoomRepository(
                     .selectAll()
                     .where { RoomsTable.id eq roomId }
                     .singleOrNull()
-                    ?.takeUnless { hasHiddenParticipant(roomId) }
                     ?.toRoom()
-                    ?.let { StoredRoom(it, participantsOf(roomId)) }
+                    ?.let { StoredRoom(it, participantsOf(roomId), withheld = hasHiddenParticipant(roomId)) }
             }
         }
 
     /**
-     * ADR-0007 전에 출발역을 숨긴 채 들어온 참가자가 있는 방은 없는 방으로 본다. 앱은 더는 숨김을 가리지 않으므로, 이런 행이
-     * 남아 있거나(예상 밖) 백업에서 되살아나도 출발역을 내보내지 않는다. `participants.hidden`을 읽는 곳은 여기뿐이다. 마지막 숨김 가능
-     * 시각(1단계 서버 배포 2026-11-25) + 방 최대 보관 30일이 지나면 이런 방은 모두 만료라서, 열을 지우는 2단계(#182)에서 함께 지운다.
+     * ADR-0007 전에 출발역을 숨긴 채 들어온 참가자가 지금도 남아 있는 방인지([StoredRoom.withheld]). 앱은 더는 숨김을 가리지 않으므로,
+     * 이런 행이 남아 있거나(예상 밖) 백업에서 되살아나도 서비스가 그 방의 내용을 내보내지 않는다. 앱 코드가 `participants.hidden`을 이름으로
+     * 읽는 곳은 여기뿐이다(`ParticipantsTable` 정의 때문에 `selectAll`도 이 열을 SQL에 싣는다). 열을 지우는 순서는 ADR-0012.
      */
     private fun hasHiddenParticipant(roomId: String): Boolean =
         !ParticipantsTable

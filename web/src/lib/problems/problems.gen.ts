@@ -162,6 +162,14 @@ export const PROBLEMS = {
       meaning: "없거나 만료된 방입니다.",
     },
     {
+      code: "ROOM_WITHHELD",
+      slug: "room-withheld",
+      status: 403,
+      title: "지금은 열 수 없는 방",
+      meaning:
+        "출발역 숨기기를 그만두기 전에 숨긴 채 들어온 사람이 남아 있어 방의 내용을 보여 주지 않습니다. 참여한 기기에서 내 항목을 지우거나, 방장은 방을 지울 수 있습니다.",
+    },
+    {
       code: "PARTICIPANT_NOT_FOUND",
       slug: "participant-not-found",
       status: 404,

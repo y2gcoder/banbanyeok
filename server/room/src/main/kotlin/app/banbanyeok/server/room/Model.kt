@@ -146,6 +146,11 @@ public data class Participant(
 public data class StoredRoom(
     val room: Room,
     val participants: List<Participant>,
+    /**
+     * ADR-0007 전에 출발역을 숨긴 채 들어온 참가자가 지금도 남아 있다(예상 밖으로 남았거나 백업에서 되살아난 행, ADR-0012). 이 판은 숨김을
+     * 가리지 않으므로 그 방의 내용을 아무에게도 보여 주지 않고, 그 방의 자격이 있는 사람에게 지우기만 열어 둔다.
+     */
+    val withheld: Boolean = false,
 )
 
 /** 값이 바뀌지 않았는지(Unchanged), 새 값(또는 null로 지우기)으로 바꿨는지(Set) 구별한다. */

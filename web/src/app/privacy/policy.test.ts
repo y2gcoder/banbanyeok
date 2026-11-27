@@ -557,12 +557,27 @@ describe("개인정보 처리방침", () => {
     const day = koreanDate(REVISION_DATE, { year: true });
     expect(lineOf(POLICY, "changes", "변경 이력: 2026년 11월 26일 시행판은")).toContain("자체 합계를 도입");
     // 이 판(#182): 숨기기를 모두 그만두고, 숨긴 사람이 있던 방은 열리지 않는다.
-    const thisLabel = REVISION_DATE === "2026-11-27" ? "2026년 11월 27일 개정판" : `${day} 시행판`;
+    // 직전 판(11월 27일 시행판)과 같은 날 시행하면 이 판은 '11월 27일 개정판'이고 직전 판은 그날 이 판 전까지 적용했다.
+    const sameDay = REVISION_DATE === "2026-11-27";
+    const thisLabel = sameDay ? "2026년 11월 27일 개정판" : `${day} 시행판`;
     const retire = lineOf(POLICY, "changes", `변경 이력: ${thisLabel}은`);
     expect(retire).toContain("출발역 숨기기를 모두 그만두었습니다");
-    expect(retire).toContain("그 전에 출발역을 숨긴 채 들어온 사람이 있는 방은 이 판부터 열리지 않고");
+    expect(retire).toContain(
+      "그 전에 출발역을 숨긴 채 들어온 사람이 지금도 남아 있는 방은 이 판부터 내용(방 화면, 결과, 링크 미리보기)을 아무에게도 보여 주지 않고",
+    );
+    expect(retire).toContain("그 방에 참여한 기기에서는 내 항목 지우기만, 방을 만든 기기에서는 방 전체 지우기만");
+    expect(retire).toContain("8항: 그런 방의 권리 행사 방법");
     expect(retire).toContain("다른 사람에게 보이는 범위가 바뀌므로 화면에 알립니다");
-    expect(retire).toContain("2026년 11월 27일 시행판은 이 판을 시행한 날 배포 전까지 적용했습니다");
+    expect(retire).toContain(
+      sameDay
+        ? "2026년 11월 27일 시행판은 같은 날 이 판을 시행하기 전까지 적용했습니다"
+        : "2026년 11월 27일 시행판은 이 판을 시행한 날 배포 전까지 적용했습니다",
+    );
+    expect(textOf(POLICY, "changes")).toContain(
+      sameDay
+        ? "11월 27일 시행판](https://github.com/y2gcoder/banbanyeok/blob/a619ff9/docs/legal/privacy-policy.md): 2026년 11월 27일 하루, 2026년 11월 27일 개정판 시행 전까지 적용했습니다."
+        : `11월 27일 시행판](https://github.com/y2gcoder/banbanyeok/blob/a619ff9/docs/legal/privacy-policy.md): 2026년 11월 27일부터 ${day} 이 판 시행 전까지 적용했습니다.`,
+    );
     expect(retire).toContain(
       "수집하는 정보, 처리 목적, 보유 기간, 처리 위탁과 국외 이전, 이용 통계는 바뀌지 않았습니다",
     );
@@ -614,7 +629,16 @@ describe("개인정보 처리방침", () => {
     const stopItem = lineOf(POLICY, "third-party", "출발역 숨기기는");
     expect(stopItem).toContain("2026년 11월 25일부터 새로 숨길 수 없었고");
     expect(stopItem).toContain("그 전에 숨긴 사람도 숨김을 유지하거나 풀 수 없습니다");
-    expect(stopItem).toContain("그 전에 출발역을 숨긴 채 들어온 사람이 있는 방은 열리지 않으며");
+    expect(stopItem).toContain("그 전에 출발역을 숨긴 채 들어온 사람이 지금도 남아 있는 방은 내용");
+    expect(stopItem).toContain("방 링크만 아는 사람에게는 없는 방으로 보입니다");
+    // 그런 방의 권리 행사 경로(#244 검토): 참여한 기기의 지우기와 연락처 요청, 그 한계를 8항에 따로 적고 7항도 맞춘다.
+    const rightsLines = textOf(POLICY, "rights").split("\n");
+    const withheldRow =
+      rightsLines[rightsLines.indexOf("출발역을 숨긴 사람이 지금도 남아 있는 방(6항)의 내 정보") + 1] ?? "";
+    expect(withheldRow).toContain("내 항목 지우기만, 방을 만든 기기에서는 방 전체 지우기만");
+    expect(withheldRow).toContain("본인인지 확인할 수 있는 범위에서 지웁니다");
+    expect(withheldRow).toContain("보관 기간이 끝날 때(만든 뒤 최대 30일) 지워집니다");
+    expect(textOf(POLICY, "outsourcing")).toContain("출발역을 숨긴 사람이 남은 방은 8항에 적은 지우기만");
     expect(textOf(POLICY, "rights")).toContain("방에 넣은 내 출발역·이름 보기, 고치기, 지우기");
     expect(textOf(POLICY, "rights")).not.toContain("숨김 풀기");
     expect(textOf(POLICY, "purpose")).not.toContain("숨김 유지와 풀기");
@@ -806,8 +830,8 @@ describe("개인정보 처리방침", () => {
     const rows = CHANGE_NOTICE?.rows ?? [];
     const mine = rows.filter((r) => !r.item.startsWith("["));
     expect(mine.map((r) => r.item)).toEqual(["출발역 숨기기 (6항)", "권리 행사: 방에 넣은 내 정보 (8항)"]);
-    expect(rows[0]?.after).toContain("그 전에 숨긴 채 들어온 사람이 있는 방은 열리지 않음");
-    expect(rows[1]?.after).toBe("출발역·이름 보기, 고치기, 지우기");
+    expect(rows[0]?.after).toContain("그 전에 숨긴 채 들어온 사람이 지금도 남아 있는 방은 내용");
+    expect(rows[1]?.after).toContain("참여한 기기에서 내 항목 지우기, 방을 만든 기기에서 방 전체 지우기만");
     expect(CHANGE_NOTICE?.summary).toContain("출발역 숨기기를 모두 그만두었습니다");
     expect(CHANGE_NOTICE?.summary).not.toMatch(/\d+일까지/);
     // 앞선 판 중 이 판 시행일에 7일 안내 기간이 남은 판만, 새 판부터 머리말을 붙여 뒤에 싣는다(15항의 7일 약속을 끊지 않는다).

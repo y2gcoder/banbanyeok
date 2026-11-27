@@ -4,14 +4,13 @@ package app.banbanyeok.server.room
 
 import app.banbanyeok.server.room.exposed.ExposedRoomRepository
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 /**
  * ADR-0007 전에 출발역을 숨긴 채 들어온 행(예상 밖으로 남았거나 백업에서 되살아난 것)을 앱이 숨김을 가리지 않는 판에서 본다(#182).
- * 그런 방은 없는 방이라서 누구의 출발역도 나가지 않는다.
+ * 저장소는 그 방에 표시만 하고([StoredRoom.withheld]), 무엇을 보여 주고 무엇을 허용할지는 서비스가 정한다(ADR-0012).
  */
 class LegacyHiddenRoomTest :
     DescribeSpec({
@@ -37,24 +36,29 @@ class LegacyHiddenRoomTest :
             return room.id
         }
 
-        it("treats a room with a hidden participant as missing, and shows it again once nobody is hidden") {
+        it("marks a room with a hidden participant as withheld, and clears the mark once nobody is hidden") {
             val roomId = twoPeople()
             markHidden(roomId, "pid002")
-            rooms.find(roomId).shouldBeNull()
+            rooms.find(roomId).shouldNotBeNull().withheld shouldBe true
             markHidden(roomId, "pid002", hidden = false)
-            rooms
-                .find(roomId)
-                .shouldNotBeNull()
-                .participants
-                .map { it.id } shouldBe listOf("host01", "pid002")
+            val shown = rooms.find(roomId).shouldNotBeNull()
+            shown.withheld shouldBe false
+            shown.participants.map { it.id } shouldBe listOf("host01", "pid002")
+        }
+
+        it("clears the mark when the hidden participant's row is deleted") {
+            val roomId = twoPeople()
+            markHidden(roomId, "pid002")
+            rooms.removeParticipant(roomId, "pid002", activity(2)) shouldBe true
+            rooms.find(roomId).shouldNotBeNull().withheld shouldBe false
         }
 
         it("does not touch other rooms") {
             val hiddenRoom = twoPeople()
             val plainRoom = twoPeople()
             markHidden(hiddenRoom, "host01")
-            rooms.find(hiddenRoom).shouldBeNull()
-            rooms.find(plainRoom).shouldNotBeNull()
+            rooms.find(hiddenRoom).shouldNotBeNull().withheld shouldBe true
+            rooms.find(plainRoom).shouldNotBeNull().withheld shouldBe false
         }
 
         it("stores new participants as not hidden without writing the column") {

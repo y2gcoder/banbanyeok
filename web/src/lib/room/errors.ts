@@ -9,6 +9,7 @@ import {
 
 const MESSAGES: Readonly<Record<string, string>> = {
   ROOM_NOT_FOUND: "없거나 만료된 방이에요.",
+  ROOM_WITHHELD: "지금은 열 수 없는 방이에요. 이 기기에서는 지우기만 할 수 있어요.",
   ROOM_FULL: "방이 가득 찼어요. 한 방에는 최대 4명까지 들어올 수 있어요.",
   ROOM_LOCKED: "이 방은 지금 새로 들어올 수 없어요. 방장이 잠갔거나 정해 둔 인원이 다 찼어요.",
   INVALID_STATION: "계산할 수 없는 역이에요. 다른 역을 골라 주세요.",
@@ -67,6 +68,13 @@ export const isStaleRoom = (error: unknown): boolean =>
 /** 방이 없다(만료·삭제·없는 ID 모두 같은 404). */
 export const isRoomGone = (error: unknown): boolean =>
   error instanceof ApiRequestError && error.code === "ROOM_NOT_FOUND";
+
+/**
+ * 숨긴 참가자가 남은 옛 방에 이 방의 토큰으로 왔다(ADR-0012). 방은 있으므로 기기 기록을 지우지 않는다: 서버를 이전 판으로 되돌리면
+ * 같은 기록으로 다시 열고 고칠 수 있어야 한다. 지금 할 수 있는 것은 지우기(방장의 방 삭제, 내 항목 삭제)뿐이다.
+ */
+export const isRoomWithheld = (error: unknown): boolean =>
+  error instanceof ApiRequestError && error.code === "ROOM_WITHHELD";
 
 /** 토큰이 더는 통하지 않는다(내보내졌거나 항목이 지워짐). 다시 참여하게 안내한다. */
 export const isTokenRejected = (error: unknown): boolean =>

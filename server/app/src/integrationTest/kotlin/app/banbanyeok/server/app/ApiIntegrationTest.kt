@@ -255,51 +255,95 @@ class ApiIntegrationTest :
             }
 
             it(
-                "treats a room with a hidden participant left from before ADR-0007 as missing, for every read and write",
+                "keeps a room with a hidden participant left from before ADR-0007 closed, and lets its own tokens delete",
             ) {
                 integration { api, origins ->
-                    val created =
-                        parse(
-                            api
-                                .call(
-                                    HttpMethod.Post,
-                                    "/v1/rooms",
-                                    """{"mode":"fair","host":{"nickname":"민수","originCode":"${origins[0]}"}}""",
-                                    expected = HttpStatusCode.Created,
-                                ).bodyAsText(),
-                        )
-                    val roomId = created.str("roomId")
-                    val room = "/v1/rooms/$roomId"
-                    val friend =
-                        parse(
-                            api
-                                .call(
-                                    HttpMethod.Post,
-                                    "$room/participants",
-                                    """{"originCode":"${origins.last()}"}""",
-                                    expected = HttpStatusCode.Created,
-                                ).bodyAsText(),
-                        )
-                    hideAsBefore(roomId, friend.str("participantId"))
+                    suspend fun legacyRoom(): Triple<JsonElement, JsonElement, String> {
+                        val created =
+                            parse(
+                                api
+                                    .call(
+                                        HttpMethod.Post,
+                                        "/v1/rooms",
+                                        """{"mode":"fair","host":{"nickname":"민수","originCode":"${origins[0]}"}}""",
+                                        expected = HttpStatusCode.Created,
+                                    ).bodyAsText(),
+                            )
+                        val roomId = created.str("roomId")
+                        val friend =
+                            parse(
+                                api
+                                    .call(
+                                        HttpMethod.Post,
+                                        "/v1/rooms/$roomId/participants",
+                                        """{"originCode":"${origins.last()}"}""",
+                                        expected = HttpStatusCode.Created,
+                                    ).bodyAsText(),
+                            )
+                        hideAsBefore(roomId, friend.str("participantId"))
+                        return Triple(created, friend, "/v1/rooms/$roomId")
+                    }
+
+                    val (created, friend, room) = legacyRoom()
                     val friendPath = "$room/participants/${friend.str("participantId")}"
-                    val token = friend.str("participantToken")
+                    val friendToken = friend.str("participantToken")
+                    // 토큰이 없거나 다른 것이면 없는 방과 같다: 방이 있는지, 누가 숨겼는지 알리지 않는다.
                     for (path in listOf(room, "$room/result", "$room/preview")) {
-                        val missing = api.call(HttpMethod.Get, path, token = token, expected = HttpStatusCode.NotFound)
-                        val body = missing.bodyAsText()
+                        val body = api.call(HttpMethod.Get, path, expected = HttpStatusCode.NotFound).bodyAsText()
                         parse(body).str("code") shouldBe "ROOM_NOT_FOUND"
                         body shouldNotContain origins.last()
+                    }
+                    api.call(HttpMethod.Delete, room, token = "not-a-token", expected = HttpStatusCode.NotFound)
+                    api.call(
+                        HttpMethod.Post,
+                        "$room/participants",
+                        """{"originCode":"${origins[1]}"}""",
+                        expected = HttpStatusCode.NotFound,
+                    )
+                    // 그 방의 토큰이면 지금은 열 수 없다는 답(기기 기록을 지우지 않게 404와 다른 코드)이고, 내용은 없다.
+                    for (token in listOf(friendToken, created.str("hostToken"), created.str("participantToken"))) {
+                        for (path in listOf(room, "$room/result")) {
+                            val body =
+                                api
+                                    .call(
+                                        HttpMethod.Get,
+                                        path,
+                                        token = token,
+                                        expected = HttpStatusCode.Forbidden,
+                                    ).bodyAsText()
+                            parse(body).str("code") shouldBe "ROOM_WITHHELD"
+                            body shouldNotContain origins.last()
+                        }
                     }
                     api.call(
                         HttpMethod.Put,
                         friendPath,
                         """{"originCode":"${origins.last()}","hidden":false}""",
-                        token = token,
-                        expected = HttpStatusCode.NotFound,
+                        token = friendToken,
+                        expected = HttpStatusCode.Forbidden,
+                    )
+                    // 숨긴 본인은 자기 항목을 지울 수 있고, 숨긴 사람이 없어진 방은 다시 열린다.
+                    api.call(HttpMethod.Delete, friendPath, token = friendToken, expected = HttpStatusCode.NoContent)
+                    api.call(HttpMethod.Get, room, expected = HttpStatusCode.OK)
+
+                    // 방장은 방장 토큰으로 방을 지울 수 있다. 참여자 토큰으로는 안 된다.
+                    val (other, _, otherRoom) = legacyRoom()
+                    api.call(
+                        HttpMethod.Delete,
+                        otherRoom,
+                        token = other.str("participantToken"),
+                        expected = HttpStatusCode.Forbidden,
                     )
                     api.call(
-                        HttpMethod.Post,
-                        "$room/participants",
-                        """{"originCode":"${origins[1]}"}""",
+                        HttpMethod.Delete,
+                        otherRoom,
+                        token = other.str("hostToken"),
+                        expected = HttpStatusCode.NoContent,
+                    )
+                    api.call(
+                        HttpMethod.Get,
+                        otherRoom,
+                        token = other.str("hostToken"),
                         expected = HttpStatusCode.NotFound,
                     )
                 }

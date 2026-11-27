@@ -260,6 +260,47 @@ describe("방 화면", () => {
     await waitFor(() => expect(window.localStorage.getItem(`bby.room.${ROOM}`)).toBeNull());
   });
 
+  it("숨긴 참가자가 남은 옛 방(ROOM_WITHHELD)이면 기기 기록을 지우지 않고, 이 기기의 자격으로 지우기만 보인다(ADR-0012)", async () => {
+    const record = {
+      v: 1,
+      hostToken: "host-tok",
+      participantToken: "tok-1",
+      participantId: "m1",
+      keepUntil: "2999-01-01T00:00:00Z",
+    };
+    window.localStorage.setItem(`bby.room.${ROOM}`, JSON.stringify(record));
+    vi.mocked(api.getRoom).mockRejectedValue(new ApiRequestError(403, "ROOM_WITHHELD", "지금은 열 수 없는 방입니다"));
+    vi.mocked(api.removeParticipant).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderScreen();
+    expect(await screen.findByRole("heading", { name: "지금은 열 수 없는 방이에요" })).toBeInTheDocument();
+    expect(screen.queryByText("(나)")).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null")).toEqual(record);
+    expect(screen.getByRole("button", { name: /방 삭제/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /삭제 내 항목/ }));
+    await user.click(screen.getByRole("button", { name: "지우기" }));
+    await waitFor(() => expect(api.removeParticipant).toHaveBeenCalledWith(ROOM, "m1", "tok-1"));
+    // 내 항목만 빠지고 방장 자격은 남는다(방은 아직 열 수 없으니 방장은 방을 지울 수 있어야 한다).
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null")).toMatchObject({
+        hostToken: "host-tok",
+      }),
+    );
+    expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null").participantToken).toBeUndefined();
+  });
+
+  it("참여자 토큰이 없는 방장 기기는 방을 읽을 때 방장 토큰을 실어, 숨긴 참가자가 남은 방에서도 기록을 잃지 않는다", async () => {
+    const record = { v: 1, hostToken: "host-tok", keepUntil: "2999-01-01T00:00:00Z" };
+    window.localStorage.setItem(`bby.room.${ROOM}`, JSON.stringify(record));
+    vi.mocked(api.getRoom).mockRejectedValue(new ApiRequestError(403, "ROOM_WITHHELD", "지금은 열 수 없는 방입니다"));
+    renderScreen();
+    expect(await screen.findByRole("heading", { name: "지금은 열 수 없는 방이에요" })).toBeInTheDocument();
+    expect(vi.mocked(api.getRoom).mock.calls[0]?.[1]).toBe("host-tok");
+    expect(screen.queryByRole("button", { name: /삭제 내 항목/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /방 삭제/ })).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(`bby.room.${ROOM}`) ?? "null")).toEqual(record);
+  });
+
   it("방을 보는 중에 방 쿼리가 404를 받으면(방장이 지움) 이전 화면을 남기지 않고 방 없음 안내로 바꾼다", async () => {
     const { ApiRequestError } = await import("@/lib/api/client");
     window.localStorage.setItem(

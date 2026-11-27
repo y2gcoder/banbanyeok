@@ -8,7 +8,7 @@ import type { Room } from "@/lib/api/types";
 import { loadRememberedMe, saveRememberedMe } from "@/lib/form/remember";
 import { MAX_PEOPLE } from "@/lib/link/codec";
 import { type RoomDraw, roomDraw } from "@/lib/room/draw";
-import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
+import { isRoomGone, isRoomWithheld, roomErrorMessage } from "@/lib/room/errors";
 import { normalizeRoomId } from "@/lib/room/id";
 import type { ParticipantFormValue } from "@/lib/room/input";
 import { roomQueryOptions } from "@/lib/room/queries";
@@ -35,7 +35,7 @@ import { OutcomeCard } from "./outcome-card";
 import { PEOPLE_TITLE_ID, PeopleList } from "./people-list";
 import { ROOM_MAIN, ROOM_SIDE } from "./room-layout";
 import { type RoomDecisionMode, RoomResult } from "./room-result";
-import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell } from "./room-states";
+import { CannotJoin, RoomGone, RoomIntro, RoomLoadError, RoomLoading, RoomShell, RoomWithheld } from "./room-states";
 import { RoomShareSection } from "./share-section";
 import { useFavorDraw } from "./use-favor-draw";
 import { useRoomActions } from "./use-room-actions";
@@ -103,15 +103,19 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   const token = record?.participantToken ?? null;
   const participantId = record?.participantId ?? null;
+  // 방을 읽을 때 싣는 자격. 참여자 토큰이 없는 방장 기기는 방장 토큰을 싣는다: 숨긴 참가자가 남은 옛 방은 이 방의 자격이 있어야 404가 아닌
+  // ROOM_WITHHELD를 주고, 404면 아래에서 기기 기록을 지우기 때문이다(ADR-0012).
+  const viewerToken = token ?? record?.hostToken ?? null;
   // 방이 없다는 답이 오면 되살릴 수 없으므로 더는 다시 불러오지 않는다. 방 쿼리 자신의 404는 queries.ts가 폴링·포커스 재요청을
   // 멈추고, 결과 쿼리가 먼저 받은 404는 여기서 방 쿼리를 끈다.
   const query = useQuery({
-    ...roomQueryOptions(roomId, token, participantId),
+    ...roomQueryOptions(roomId, viewerToken, participantId),
     enabled: record !== undefined && !resultGone,
   });
   const room = query.data;
   // TanStack은 다시 불러오기가 실패해도 이전 data를 유지한다. 방이 없다는 답은 이전 화면을 남기지 않고 곧바로 안내로 바꾼다.
   const gone = resultGone || (query.isError && isRoomGone(query.error));
+  const withheld = !gone && query.isError && isRoomWithheld(query.error);
 
   // 방 응답으로 기기 기록을 맞춘다: 서버가 방이 없다고 하면 기록 삭제, 내보내졌으면 참여자 토큰 정리.
   // 저장해 둔 시각만 보고 지우지 않는다(서버는 활동마다 만료를 미룬다).
@@ -190,6 +194,18 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
 
   if (record === undefined || (query.isPending && !room)) return <RoomLoading />;
   if (gone) return <RoomGone />;
+  if (withheld) {
+    return (
+      <RoomWithheld
+        canDeleteRoom={Boolean(record?.hostToken)}
+        canRemoveSelf={Boolean(token && participantId)}
+        busy={actions.busy}
+        error={actions.actionError}
+        onDeleteRoom={actions.remove}
+        onRemoveSelf={actions.leave}
+      />
+    );
+  }
   if (query.isError && !room) {
     return <RoomLoadError message={roomErrorMessage(query.error)} onRetry={() => void query.refetch()} />;
   }
@@ -338,7 +354,7 @@ export function RoomScreen({ roomId: rawRoomId }: { roomId: string }) {
     <RoomResult
       roomId={roomId}
       room={room}
-      participantToken={token}
+      participantToken={viewerToken}
       participantId={participantId}
       isHost={isHost}
       decision={decision}
