@@ -193,7 +193,7 @@ async function messengerPreview(request: APIRequestContext, roomId: string, test
   return { title: meta("og:title"), description: meta("og:description"), image, api };
 }
 
-test("방장이 대신 넣은 방의 링크 미리보기는 뽑기 전·뒤 모두 이름·출발역·시간 없이 방에서 확인하라고 안내한다(방 화면은 그대로)", async ({
+test("방장이 대신 넣은 방의 링크 미리보기와 공유 칸 안내는 뽑기 전·뒤·정한 뒤 모두 이름·출발역·시간이 없다(방 화면은 그대로)", async ({
   page,
   request,
 }, testInfo) => {
@@ -213,6 +213,10 @@ test("방장이 대신 넣은 방의 링크 미리보기는 뽑기 전·뒤 모�
     "만날 역과 각자 시간은 방에서 확인해요",
   ]);
   expect(before.image.pathname).toBe(`/r/${roomId}/og`);
+  const shareHint = page.getByRole("region", { name: "링크 다시 보내기" }).getByText(/카톡 미리보기/);
+  await expect(shareHint).toHaveText(
+    /이름, 출발역, 각자 시간과 1위 역·사다리 결과를 넣지 않고 방에서 확인하라고만 보여요/,
+  );
 
   await page.getByRole("button", { name: "사다리 타기" }).first().click();
   await page.getByRole("button", { name: "건너뛰고 결과 보기" }).click();
@@ -223,12 +227,28 @@ test("방장이 대신 넣은 방의 링크 미리보기는 뽑기 전·뒤 모�
     "사다리 결과는 방에서 확인해요",
   ]);
   expect(after.image.searchParams.get("sv")).not.toBe(before.image.searchParams.get("sv"));
+  await expect(shareHint).toHaveText(/이름, 출발역, 각자 시간과 1위 역·사다리 결과를 넣지 않고/);
 
-  for (const shown of [before, after]) {
+  await page.getByRole("button", { name: "이 역으로 정했어요" }).first().click();
+  const banner = page.getByRole("region", { name: /에서 만나요$/ });
+  await expect(banner).toBeVisible();
+  const decided = await messengerPreview(request, roomId, testInfo, "host-entered-decided");
+  const station = (JSON.parse(decided.api) as { station: { stationName: string } }).station.stationName;
+  await expect(banner).toHaveAccessibleName(`${station}에서 만나요`);
+  expect(decided.title).toBe(`${station}에서 만나요 | 반반역`);
+  expect(decided.description).toMatch(/^\d+월 \d+일 \([일월화수목금토]\) [가-힣]+ · 각자 시간은 방에서 확인해요$/);
+  await expect(shareHint).toHaveText(/정한 역과 약속만 보이고 이름, 출발역, 각자 시간은 넣지 않아요/);
+
+  for (const shown of [before, after, decided]) {
     const text = [shown.title, shown.description, shown.api].join(" ");
     for (const value of personal) expect(text, value).not.toContain(value);
     expect(shown.title + shown.description).not.toMatch(/\d+분/);
-    expect(JSON.parse(shown.api).room.enteredByHost).toBe(true);
+    const api = JSON.parse(shown.api) as {
+      room: { enteredByHost?: boolean };
+      station: { times: { seconds: unknown }[] };
+    };
+    expect(api.room.enteredByHost).toBe(true);
+    expect(api.station.times.map((t) => t.seconds)).toEqual([null, null, null]);
   }
   await page.reload();
   for (const text of [me, "하늘", "홍대입구"]) await expect(people).toContainText(text);

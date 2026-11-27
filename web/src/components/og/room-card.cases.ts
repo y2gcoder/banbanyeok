@@ -222,7 +222,7 @@ export const ROOM_DRAW_TEASER: RoomPreview = {
 };
 
 /**
- * 방장이 대신 넣은 칸이 있는 방(#227)의 미리보기. 서버가 주는 모양 그대로다: 이름은 순번이고 막차·지도 한가운데 비교가 없다.
+ * 방장이 대신 넣은 칸이 있는 방(#227)의 미리보기. 서버가 주는 모양 그대로다: 이름은 순번, 시간은 null이고 막차·지도 한가운데 비교가 없다.
  * 뽑기 전(공평하게), 뽑은 뒤, 정한 역 세 단계다. 그림은 노선만 그리고 이름·시간이 없다.
  */
 const HOST_ENTERED_ROOM: Result["room"] = { ...ROOM, canJoin: false, enteredByHost: true };
@@ -230,9 +230,9 @@ const HOST_ENTERED_STATION: Result["station"] = {
   stationCode: "s1q",
   stationName: "동대문역사문화공원",
   times: [
-    { label: "참가자 1", seconds: 1260 },
-    { label: "참가자 2", seconds: 0 },
-    { label: "참가자 3", seconds: 1500 },
+    { label: "참가자 1", seconds: null },
+    { label: "참가자 2", seconds: null },
+    { label: "참가자 3", seconds: null },
   ],
 };
 

@@ -241,11 +241,13 @@ class RoomIdempotencyHttpTest :
                 stages.count { it == UsageStage.CREATE_ROOM } shouldBe 1
             }
 
-            it("keeps names and origins out of the link preview before and after the draw, but not out of the room") {
+            it("keeps names, times and origins out of the link preview before and after the draw and once decided") {
                 withRoomApi {
                     val dated = body.replace(""""hostPosition":1""", """"hostPosition":1,"meetingDate":"2026-11-27"""")
                     val created = json(HttpMethod.Post, DRAW_ROOMS, dated).bodyObject()
-                    val path = "$ROOMS/${created.getValue("roomId").jsonPrimitive.content}"
+
+                    fun JsonObject.text(key: String) = getValue(key).jsonPrimitive.content
+                    val path = "$ROOMS/${created.text("roomId")}"
                     val personal =
                         json(HttpMethod.Get, path)
                             .bodyObject()
@@ -253,48 +255,55 @@ class RoomIdempotencyHttpTest :
                             .jsonArray
                             .mapNotNull { it.jsonObject["nickname"]?.jsonPrimitive?.contentOrNull }
                     personal shouldBe listOf("민수", "지연")
-                    val hostToken = created.getValue("hostToken").jsonPrimitive.content
-                    val previews =
-                        listOf(json(HttpMethod.Get, "$path/preview")) +
-                            json(HttpMethod.Post, "$path/favor-draw", """{"generation":0,"round":1}""", hostToken).let {
-                                it.status shouldBe HttpStatusCode.OK
-                                listOf(json(HttpMethod.Get, "$path/preview"))
-                            }
-                    previews.forEach { response ->
+                    val before = json(HttpMethod.Get, "$path/preview")
+                    json(
+                        HttpMethod.Post,
+                        "$path/favor-draw",
+                        """{"generation":0,"round":1}""",
+                        created.text("hostToken"),
+                    ).status shouldBe HttpStatusCode.OK
+                    val drawn = json(HttpMethod.Get, "$path/preview")
+                    val station =
+                        drawn
+                            .bodyObject()
+                            .getValue("station")
+                            .jsonObject
+                            .text("stationCode")
+                    val seen = json(HttpMethod.Get, path).bodyObject().text("shareVersion")
+                    json(
+                        HttpMethod.Put,
+                        "$path/decision",
+                        """{"stationCode":"$station","seenVersion":$seen}""",
+                        created.text("participantToken"),
+                    ).status shouldBe HttpStatusCode.OK
+                    val decided = json(HttpMethod.Get, "$path/preview")
+                    listOf(before, drawn, decided).map { it.bodyObject().text("stage") } shouldBe
+                        listOf("result", "result", "decided")
+                    listOf(before, drawn, decided).forEach { response ->
                         OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/{roomId}/preview", response)
                         val text = response.bodyAsText()
                         personal.filter { it in text } shouldBe emptyList()
                         ("lastTrain" in text) shouldBe false
                         ("mapMiddle" in text) shouldBe false
                         val preview = response.bodyObject()
-                        preview
-                            .getValue("room")
-                            .jsonObject
-                            .getValue("enteredByHost")
-                            .jsonPrimitive.content shouldBe
-                            "true"
-                        preview
-                            .getValue("station")
-                            .jsonObject
-                            .getValue("times")
-                            .jsonArray
-                            .map {
+                        preview.getValue("room").jsonObject.text("enteredByHost") shouldBe "true"
+                        preview.getValue("station").jsonObject.getValue("times").jsonArray.map {
+                            it.jsonObject.text("label") to
                                 it.jsonObject
-                                    .getValue("label")
-                                    .jsonPrimitive.content
-                            } shouldBe
-                            listOf("참가자 1", "참가자 2", "참가자 3")
+                                    .getValue("seconds")
+                                    .jsonPrimitive.contentOrNull
+                        } shouldBe listOf("참가자 1" to null, "참가자 2" to null, "참가자 3" to null)
                     }
-                    previews
-                        .last()
+                    drawn
                         .bodyObject()
-                        .getValue(
-                            "basis",
-                        ).jsonObject
-                        .getValue("drawRound")
-                        .jsonPrimitive.content shouldBe
-                        "1"
-                    json(HttpMethod.Get, "$path/result").bodyAsText().let { result -> ("민수" in result) shouldBe true }
+                        .getValue("basis")
+                        .jsonObject
+                        .text("drawRound") shouldBe "1"
+                    decided.bodyObject().text("decidedBy") shouldBe "참가자 2"
+                    json(HttpMethod.Get, "$path/result").bodyAsText().let { result ->
+                        ("민수" in result) shouldBe true
+                        Regex(""""seconds":\d+""").containsMatchIn(result) shouldBe true
+                    }
                 }
             }
 

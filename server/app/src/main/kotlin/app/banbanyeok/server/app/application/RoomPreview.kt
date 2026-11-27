@@ -62,7 +62,7 @@ data class PreviewRoom(
     val meetingBand: TimeBand?,
     /** 약속 날짜·시각에서 정한 계산 기준과 문구(방 응답의 `timeBasis`와 같다). */
     val timeBasis: TimeBasis,
-    /** 방장이 대신 넣은 칸이 있다(#227). 이름은 순번("참가자 N")이고 막차·지도 한가운데 비교가 없다. */
+    /** 방장이 대신 넣은 칸이 있다(#227). 이름은 순번("참가자 N")이고 사람별 소요시간은 null, 막차·지도 한가운데 비교가 없다. */
     val enteredByHost: Boolean = false,
 )
 

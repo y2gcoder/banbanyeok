@@ -81,7 +81,7 @@ Cloud Scheduler db-backup-weekly (월 03:17 KST) ─▶ Cloud Run Job db-backup 
 
 ### 3.3 배포 흐름과 롤백
 
-`deploy-server.yml`: 인증 → 서버 이미지(AppCDS 학습 포함)·마이그레이션 이미지 빌드·푸시 → `migrate` Job 갱신·실행·대기 → 산출물 발행 → **후보 리비전을 트래픽 0·태그 `candidate`로 배포** → 후보 URL에서 스모크(`scripts/smoke-server.sh`: `/v1/healthz`(아래 참고), manifest 버전, 추천 1건, 없는 방 404로 DB 읽기, 방 생성·조회·삭제로 DB 쓰기·pepper) → 트래픽 전환 → 공개 URL 재확인 → `cleanup` Job 갱신. 후보 스모크가 실패하면 트래픽이 바뀌지 않는다. 전환 뒤 확인이 실패하면 직전 리비전으로 되돌린다. 동시 실행은 `concurrency: deploy-server`(대기, 취소 없음)로 막는다. main push 때는 `deploy.yml`이 웹과의 순서를 맞춰 이 워크플로를 부른다([d104-notes.md](d104-notes.md)).
+`deploy-server.yml`: 인증 → 서버 이미지(AppCDS 학습 포함)·마이그레이션 이미지 빌드·푸시 → `migrate` Job 갱신·실행·대기 → 산출물 발행 → **후보 리비전을 트래픽 0·태그 `candidate`로 배포** → 후보 URL에서 스모크(`scripts/smoke-server.sh`: `/v1/healthz`(아래 참고), manifest 버전, 추천 1건, 없는 방 404로 DB 읽기, 방 생성·조회·삭제로 DB 쓰기·pepper) → 트래픽 전환 → 공개 URL 재확인 → `cleanup` Job 갱신. 후보 스모크가 실패하면 트래픽이 바뀌지 않는다. 전환 뒤 확인이 실패하면 직전 리비전으로 되돌린다. 사람이 리비전을 골라 되돌릴 때는 [ADR-0011](../adr/0011-host-entered-draw-room.md)의 제약을 지킨다: 방장이 대신 넣은 방이 하나라도 만들어진 뒤에는 링크 미리보기 가림(#227)이 없는 리비전으로 되돌리지 않는다(마지막 그런 방이 만료·정리될 때까지, 최대 35일). 동시 실행은 `concurrency: deploy-server`(대기, 취소 없음)로 막는다. main push 때는 `deploy.yml`이 웹과의 순서를 맞춰 이 워크플로를 부른다([d104-notes.md](d104-notes.md)).
 
 트리거: `workflow_dispatch` + main 푸시 중 `server/**`(changelog 포함)·`contracts/**`·`shared/**`·`build-logic/**`·`gradle/**`·`data/artifacts/dev/**`·발행 스크립트·워크플로 자신. 새 데이터 발행은 새 리비전을 낸다(P3 8절 권고 1: 리비전이 곧 데이터 버전).
 

@@ -1026,8 +1026,9 @@ export interface components {
             timeBasis: components["schemas"]["TimeBasis"];
             /**
              * @description 방장이 대신 넣은 칸(`Participant.enteredByHost`)이 하나라도 있는 방(#227)일 때만 `true`다. 아니면 키가 없다. 이 방의 미리보기는
-             *     이름을 싣지 않는다: `station.times[].label`·`basis.favorLabel`·`decidedBy`가 모두 순번("참가자 N")이고, 출발역에서 나오는
-             *     막차(`lastTrainBasis`·`lastTrainPending`·`station.times[].lastTrain`)와 `mapMiddle`도 없다. 방 응답(`Room`)과 결과는 그대로다
+             *     이름과 사람별 소요시간을 싣지 않는다: `station.times[].label`·`basis.favorLabel`·`decidedBy`가 모두 순번("참가자 N")이고
+             *     `station.times[].seconds`는 모두 null이다(갈 수 없다는 뜻이 아니다). 출발역에서 나오는 막차(`lastTrainBasis`·
+             *     `lastTrainPending`·`station.times[].lastTrain`)와 `mapMiddle`도 없다. 방 응답(`Room`)과 결과는 그대로다
              * @enum {boolean}
              */
             enteredByHost?: true;
@@ -1052,7 +1053,7 @@ export interface components {
         PreviewTime: {
             /** @description 짧은 이름(`Participant.shortLabel`). 숨긴 사람은 "참가자 N" */
             label: string;
-            /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null. 출발역을 숨긴 사람은 5분 단위로 뭉뚱그린 값이다(`PersonalTime`, 미리보기는 누가 묻든 같은 값) */
+            /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null. 출발역을 숨긴 사람은 5분 단위로 뭉뚱그린 값이다(`PersonalTime`, 미리보기는 누가 묻든 같은 값). 방장이 대신 넣은 칸이 있는 방(`PreviewRoom.enteredByHost`)이면 모두 null이다 */
             seconds: number | null;
             /**
              * @description 그 역에서 돌아가는 막차. `LastTrain`에서 `participantId`를 뺀 모양이다(미리보기는 이름표만 쓴다). **출발역을 숨긴 사람에게는

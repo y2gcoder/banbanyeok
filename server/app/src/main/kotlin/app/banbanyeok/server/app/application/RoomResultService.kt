@@ -78,10 +78,11 @@ class RoomResultService(
         val request = requestOf(context, mode = null, favorId = null)
         val evaluation = recommendation.evaluate(request)
         val ranked = evaluation.recommendation
-        // 방장이 대신 넣은 칸이 있는 방(#227)은 순번 이름만 싣고, 출발역에서 나오는 막차와 지도 한가운데 비교를 싣지 않는다.
+        // 방장이 대신 넣은 칸이 있는 방(#227)은 순번 이름만 싣고, 사람별 소요시간(null)과 출발역에서 나오는 막차·지도 한가운데 비교를
+        // 싣지 않는다.
         val withheld = room.enteredByHost
         val labels = previewLabels(request, ranked, withheld)
-        val lastTrainBasis = ranked.lastTrainBasis.takeUnless { withheld }
+        val lastTrainBasis = ranked.lastTrainBasis
         val lastTrainPending = ranked.lastTrainPending && !withheld
         val drawRound = view.favorDraw?.round?.takeIf { it > 0 && request.mode == RecommendMode.FAVOR }
         val basis = PreviewBasis(request.mode, request.favorId?.let(labels::getValue), drawRound)
@@ -91,10 +92,12 @@ class RoomResultService(
             seconds: List<Int?>,
             lastTrains: List<ParticipantLastTrain>?,
         ): PreviewStation {
-            val trains = lastTrains.takeUnless { withheld }.orEmpty().associateBy { it.participantId }
+            val trains = lastTrains.orEmpty().associateBy { it.participantId }
             return PreviewStation(
                 code,
-                request.participants.zip(seconds) { p, s -> PreviewTime(labels.getValue(p.id), s, trains[p.id]) },
+                request.participants.zip(seconds) { p, s ->
+                    PreviewTime(labels.getValue(p.id), s.takeUnless { withheld }, trains[p.id])
+                },
             )
         }
 
