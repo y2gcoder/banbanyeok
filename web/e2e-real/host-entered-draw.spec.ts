@@ -96,7 +96,7 @@ test("혼자 입력한 결과 → 확인 → 채운 사다리 방 → 뽑기, �
   const dialog = page.getByRole("dialog", { name: "사다리로 누구 쪽일지 뽑을까요?" });
   await expect(dialog).toContainText("사다리는 역이 아니라 사람을 뽑아요.");
   await expect(dialog).toContainText(
-    "방 링크를 가진 사람은 누구나 이름, 출발역, 각자 걸리는 시간과 사다리 결과를 볼 수 있어요.",
+    "방 링크를 가진 사람은 누구나 이름, 출발역, 각자 걸리는 시간과 사다리 결과를 볼 수 있어요. 메신저에 뜨는 링크 미리보기에는 이름·출발역·시간을 넣지 않아요.",
   );
   await expectNoA11yViolations(page);
   await dialog.locator("label", { hasText: "하늘" }).click();

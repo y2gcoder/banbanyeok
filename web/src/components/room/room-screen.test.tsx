@@ -734,8 +734,11 @@ describe("방장이 모두의 출발역을 넣은 사다리 방(#227)", () => {
       screen.getByRole("heading", { name: "민수가 모두의 출발역을 넣었어요" }).closest("[role=status]"),
     ).not.toBeNull();
     expect(
-      screen.getByText(/따로 들어오지 않아도 돼요\. 내 이름이나 출발역이 틀렸으면 민수에게 알려 주세요\./),
+      screen.getByText(
+        /내 칸이 틀렸거나 빼고 싶으면 민수에게 알려 주세요\. 방장은 그 칸을 고칠 수는 없고, 내보내거나 방을 지울 수 있어요\./,
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "개인정보 처리방침의 연락처" })).toHaveAttribute("href", "/privacy#rights");
     expect(screen.queryByRole("heading", { name: "나도 출발역 넣기" })).not.toBeInTheDocument();
   });
 

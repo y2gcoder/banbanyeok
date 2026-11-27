@@ -135,6 +135,7 @@ fun RoomPreview.toDto(stations: StationNames): RoomPreviewDto {
             meetingTime = room.meetingTime?.wire(),
             meetingBand = room.meetingBand?.id,
             timeBasis = room.timeBasis.toDto(requested = room.timeBasis.slot),
+            enteredByHost = true.takeIf { room.enteredByHost },
         )
 
     fun PreviewBasis.dto() = PreviewBasisDto(mode.wire(), favorLabel, drawRound)

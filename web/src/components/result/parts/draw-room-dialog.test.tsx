@@ -90,7 +90,7 @@ describe("사다리 방 확인 대화상자", () => {
     expect(dialog).toHaveTextContent("넣은 3명의 이름(넣은 경우)과 출발역, 약속 요일·시간대가 방에 저장돼요.");
     expect(dialog).toHaveTextContent("약속일(11월 28일 (토)) 다음 날 방이 사라져요.");
     expect(dialog).toHaveTextContent(
-      "방 링크를 가진 사람은 누구나 이름, 출발역, 각자 걸리는 시간과 사다리 결과를 볼 수 있어요.",
+      "방 링크를 가진 사람은 누구나 이름, 출발역, 각자 걸리는 시간과 사다리 결과를 볼 수 있어요. 메신저에 뜨는 링크 미리보기에는 이름·출발역·시간을 넣지 않아요.",
     );
     expect(dialog).toHaveTextContent("다른 사람이 더 들어오지 않게 방을 잠가 둬요.");
     expect(createRoom).not.toHaveBeenCalled();

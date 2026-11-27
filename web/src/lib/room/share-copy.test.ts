@@ -380,6 +380,63 @@ describe("방 공유 문구", () => {
   });
 });
 
+describe("방장이 대신 넣은 칸이 있는 방(#227)", () => {
+  const entered = (over: Partial<Room> = {}) => room({ enteredByHost: true, canJoin: false, ...over });
+  // 서버는 이 방에 순번 이름만 주지만, 이름이 실려 와도(옛 서버·잘못된 응답) 글과 그림에 나오지 않아야 한다.
+  const stages = {
+    before: result({ room: entered() }),
+    drawn: result({ room: entered(), basis: { mode: "favor", favorLabel: "민수", drawRound: 1 } }),
+    decided: decided({
+      room: entered({ meetingDate: "2026-11-21", meetingBand: "evening", timeBasis: SATURDAY_EVENING }),
+    }),
+  };
+
+  it("뽑기 전·뽑은 뒤·정한 역 모두 이름·출발역·시간 없이 방에서 확인하라고 안내한다", () => {
+    for (const [stage, preview] of Object.entries(stages)) {
+      const copy = roomShareCopy(preview);
+      const text = JSON.stringify([copy.preview, copy.message, copy.card]);
+      for (const label of ["민수", "참가자 2", "홍대입구"]) expect(text, `${stage}: ${label}`).not.toContain(label);
+      expect(text, stage).not.toMatch(/\d+분/);
+      expect(copy.preview.description, stage).toContain("방에서 확인해요");
+      expect(copy.card?.unlabeled, stage).toBe(true);
+      expect(copy.card?.people, stage).toHaveLength(3);
+      expect(
+        copy.card?.people.every((p) => p.name === "" && p.minutes === null && !p.lastTrain),
+        stage,
+      ).toBe(true);
+    }
+    expect(roomShareCopy(stages.before).preview).toEqual({
+      title: "만날 역 후보가 나왔어요",
+      description: "만날 역과 각자 시간은 방에서 확인해요",
+    });
+    expect(roomShareCopy(stages.drawn).preview).toEqual({
+      title: "사다리 결과가 나왔어요! 누구 쪽일까요?",
+      description: "사다리 결과는 방에서 확인해요",
+    });
+    expect(roomShareCopy(stages.decided).preview).toEqual({
+      title: "강남에서 만나요",
+      description: "11월 21일 (토) 저녁 · 각자 시간은 방에서 확인해요",
+    });
+  });
+
+  it("뽑기 전·뽑은 뒤에는 역도 감추고, 정한 역만 역 이름을 보인다", () => {
+    expect(JSON.stringify(roomShareCopy(stages.before))).not.toContain("동대문역사문화공원");
+    expect(JSON.stringify(roomShareCopy(stages.drawn))).not.toContain("동대문역사문화공원");
+    expect(roomShareCopy(stages.decided).card?.stationCode).toBe("k3a");
+  });
+
+  it("방장이 잠금을 풀어 더 들어올 수 있으면 출발역을 넣어 달라는 말을 앞에 붙인다", () => {
+    expect(roomShareCopy(result({ room: entered({ canJoin: true }) })).preview.description).toBe(
+      "아직이면 출발역 넣어 주세요 · 만날 역과 각자 시간은 방에서 확인해요",
+    );
+  });
+
+  it("각자 입력한 방(표시 없음)은 지금처럼 이름과 시간을 싣는다", () => {
+    expect(roomShareCopy(result()).preview.description).toContain("민수 22분");
+    expect(roomShareCopy(decided()).preview.description).toContain("민수가 정했어요");
+  });
+});
+
 describe("카카오톡 공유 메시지", () => {
   const ORIGIN = "https://banbanyeok.app";
   const sent = (preview: RoomPreview | undefined) => kakaoFeedSettings(roomKakaoMessage("qt7yvmsht3", preview), ORIGIN);

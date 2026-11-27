@@ -33,14 +33,14 @@ export const PAIR_OG_IMAGE_VERSION = "dfb4e426";
  * 입력이 바뀌면 `components/og/og-image-version.test.ts`가 실패하고 새 값을 알려 준다(바뀐 값을 여기에 적는다).
  * 방 미리보기(`/r/og`)는 다른 그림(`SharedCard`)이고 `ROOM_OG_IMAGE_VERSION`을 쓴다.
  */
-export const SHARED_OG_IMAGE_VERSION = "8d6d8c29";
+export const SHARED_OG_IMAGE_VERSION = "b98e17ec";
 
 /**
  * 방 미리보기 그림(`app/r/[roomId]/og/route.tsx`, 노선 그림 `SharedCard`)의 버전. 숫자판과 같은 이유·방식이다: 방의 공유 번호(`sv`)는
  * 방 내용이 바뀔 때만 오르므로, 그림을 그리는 코드·문구만 바뀐 뒤 같은 방을 다시 공유하면 주소가 같아 옛 그림이 캐시에서 나온다.
  * 그래서 `/r/<id>/og` 주소에 `iv=`로 붙인다(`roomImagePath`). 입력이 바뀌면 `components/og/og-image-version.test.ts`가 새 값을 알려 준다.
  */
-export const ROOM_OG_IMAGE_VERSION = "4d78bf8f";
+export const ROOM_OG_IMAGE_VERSION = "3a5580cb";
 
 /**
  * 방 공유의 **보이는 범위 정책** 버전. 방 내용(공유 번호 `sv`)과 그리는 코드(`ROOM_OG_IMAGE_VERSION`)가 그대로여도, 서버가 같은 방을
@@ -101,6 +101,13 @@ export const OG_TEXT = {
   drawTeaserQuestion: "누구 쪽일까요?",
   drawTeaserHint: "방에서 확인해요",
   drawTeaserMark: "?",
+  /**
+   * 방장이 대신 넣은 칸이 있는 방(#227): 이름·시간 없이 노선만 그린 그림. 뽑기 전 큰 줄 두 줄("만날 역 후보가 / 나왔어요")과 아래 줄
+   * ("방에서 확인해요" / "각자 시간은 방에서 확인해요"). 뽑은 뒤는 `drawTeaser*`, 정한 역은 `decidedSuffix`를 쓴다.
+   */
+  candidatesHead: "만날 역 후보가",
+  candidatesTail: "나왔어요",
+  timesInRoom: "각자 시간은 방에서 확인해요",
   /** 공유 링크 그림 "A 숫자판"(`/s/og`): 차이가 아주 작을 때의 칭호와 지도 한가운데 비교 문장 "지도 한가운데인 한강진역이면 잠실은 14분 더 걸려요". */
   evenTitle: "완벽한 반반",
   middleLead: "지도 한가운데인 ",

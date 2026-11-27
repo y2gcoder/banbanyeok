@@ -306,6 +306,8 @@ describe("개인정보 처리방침", () => {
       lastTrainPending: "막차 표 준비 중 표시",
       // 11월 25일 시행판(#172)에 더한 키.
       "basis.drawRound": "배려 대상을 뽑기로 정했으면 몇 번째 뽑기인지",
+      // 이 판(#227)에 더한 키.
+      "room.enteredByHost": "방장이 대신 넣은 칸이 있는 방인지",
     };
     expect(leaves.sort()).toEqual(Object.keys(described).sort());
     const sentences = previewSentences(POLICY);
@@ -314,12 +316,14 @@ describe("개인정보 처리방침", () => {
     const preview = sentences.join(" ");
     for (const [key, phrase] of Object.entries(described)) expect(preview, key).toContain(phrase);
     expect(one(sentences, "막차 표 준비 중 표시")).toContain("서버의 상태이고 참여자의 정보가 아닙니다");
-    // 11월 25일 시행판 전부터 응답에 있던 키는 그 판 비교표의 '바뀌기 전'에도 적는다(그 판에 더한 키는 '바뀐 후'). 이 판(#227)은 응답의
-    // 키를 바꾸지 않는다. 앞선 판의 행은 안내 기간이 끝나면 이 판의 안내에서 빠지므로, 그 판의 행 원본에서 본다.
-    expect(CHANGE_NOTICE?.rows.some((r) => !r.item.startsWith("[") && r.item.includes("방 미리보기 응답"))).toBe(false);
+    // 11월 25일 시행판 전부터 응답에 있던 키는 그 판 비교표의 '바뀌기 전'에도 적는다(그 판에 더한 키는 '바뀐 후'). 이 판(#227)에 더한
+    // 키는 이 판의 비교표 '바뀐 후'에 있다. 앞선 판의 행은 안내 기간이 끝나면 이 판의 안내에서 빠지므로, 그 판의 행 원본에서 본다.
+    const thisRevision = ["room.enteredByHost"];
+    const mine = CHANGE_NOTICE?.rows.find((r) => r.item.startsWith("방 링크 미리보기: 방장이 대신 넣은 칸이 있는 방"));
+    for (const key of thisRevision) expect(mine?.after, key).toContain(described[key]);
     const rowsOf = (label: string) => EARLIER_REVISIONS.find((e) => e.label === label)?.rows ?? [];
     const row = rowsOf("2026년 11월 25일 시행판").find((r) => r.item.startsWith("[11월 25일 시행판] 방 미리보기 응답"));
-    for (const [key, phrase] of Object.entries(described)) {
+    for (const [key, phrase] of Object.entries(described).filter(([key]) => !thisRevision.includes(key))) {
       const added = key === "basis.drawRound";
       expect(added ? row?.after : row?.before, key).toContain(phrase);
       if (added) expect(row?.before, key).not.toContain(phrase);
@@ -329,7 +333,7 @@ describe("개인정보 처리방침", () => {
       r.item.startsWith("[11월 21일 시행판] 방 미리보기 응답"),
     );
     for (const [key, phrase] of Object.entries(described)) {
-      if (key === "basis.drawRound") continue;
+      if (key === "basis.drawRound" || thisRevision.includes(key)) continue;
       const added = key.startsWith("mapMiddle.") || key === "lastTrainPending";
       expect(added ? nov21?.after : nov21?.before, key).toContain(phrase);
       if (added) expect(nov21?.before, key).not.toContain(phrase);
@@ -779,6 +783,7 @@ describe("개인정보 처리방침", () => {
       "혼자 입력한 결과의 저장 (2항)",
       "방 정보 (2항)",
       "방 화면 (6항)",
+      "방 링크 미리보기: 방장이 대신 넣은 칸이 있는 방 (6항)",
       "권리 행사: 방장이 대신 넣은 내 정보 (8항)",
     ]);
     expect(rows[0]?.after).toContain("'사다리로 뽑기'를 골라 확인하면");

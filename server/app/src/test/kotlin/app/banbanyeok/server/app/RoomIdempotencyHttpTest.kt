@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -238,6 +239,84 @@ class RoomIdempotencyHttpTest :
                         HttpStatusCode.NoContent
                 }
                 stages.count { it == UsageStage.CREATE_ROOM } shouldBe 1
+            }
+
+            it("keeps names and origins out of the link preview before and after the draw, but not out of the room") {
+                withRoomApi {
+                    val dated = body.replace(""""hostPosition":1""", """"hostPosition":1,"meetingDate":"2026-11-27"""")
+                    val created = json(HttpMethod.Post, DRAW_ROOMS, dated).bodyObject()
+                    val path = "$ROOMS/${created.getValue("roomId").jsonPrimitive.content}"
+                    val personal =
+                        json(HttpMethod.Get, path)
+                            .bodyObject()
+                            .getValue("participants")
+                            .jsonArray
+                            .mapNotNull { it.jsonObject["nickname"]?.jsonPrimitive?.contentOrNull }
+                    personal shouldBe listOf("민수", "지연")
+                    val hostToken = created.getValue("hostToken").jsonPrimitive.content
+                    val previews =
+                        listOf(json(HttpMethod.Get, "$path/preview")) +
+                            json(HttpMethod.Post, "$path/favor-draw", """{"generation":0,"round":1}""", hostToken).let {
+                                it.status shouldBe HttpStatusCode.OK
+                                listOf(json(HttpMethod.Get, "$path/preview"))
+                            }
+                    previews.forEach { response ->
+                        OpenApiContract.assertValid(HttpMethod.Get, "/v1/rooms/{roomId}/preview", response)
+                        val text = response.bodyAsText()
+                        personal.filter { it in text } shouldBe emptyList()
+                        ("lastTrain" in text) shouldBe false
+                        ("mapMiddle" in text) shouldBe false
+                        val preview = response.bodyObject()
+                        preview
+                            .getValue("room")
+                            .jsonObject
+                            .getValue("enteredByHost")
+                            .jsonPrimitive.content shouldBe
+                            "true"
+                        preview
+                            .getValue("station")
+                            .jsonObject
+                            .getValue("times")
+                            .jsonArray
+                            .map {
+                                it.jsonObject
+                                    .getValue("label")
+                                    .jsonPrimitive.content
+                            } shouldBe
+                            listOf("참가자 1", "참가자 2", "참가자 3")
+                    }
+                    previews
+                        .last()
+                        .bodyObject()
+                        .getValue(
+                            "basis",
+                        ).jsonObject
+                        .getValue("drawRound")
+                        .jsonPrimitive.content shouldBe
+                        "1"
+                    json(HttpMethod.Get, "$path/result").bodyAsText().let { result -> ("민수" in result) shouldBe true }
+                }
+            }
+
+            it("leaves the preview of a room where everyone entered themselves as before") {
+                withRoomApi {
+                    val created = createRoom().bodyObject()
+                    val path = "$ROOMS/${created.getValue("roomId").jsonPrimitive.content}"
+                    joinRoom(path)
+                    val preview = json(HttpMethod.Get, "$path/preview").bodyObject()
+                    ("enteredByHost" in preview.getValue("room").jsonObject) shouldBe false
+                    preview
+                        .getValue("station")
+                        .jsonObject
+                        .getValue("times")
+                        .jsonArray
+                        .none {
+                            it.jsonObject
+                                .getValue("label")
+                                .jsonPrimitive.content
+                                .startsWith("참가자")
+                        } shouldBe true
+                }
             }
 
             it("rejects a guessable recovery key before storing anything") {

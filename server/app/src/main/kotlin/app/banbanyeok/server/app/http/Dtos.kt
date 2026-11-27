@@ -332,6 +332,9 @@ data class PreviewRoomDto(
     val meetingTime: String?,
     val meetingBand: String?,
     val timeBasis: TimeBasisDto,
+    /** 방장이 대신 넣은 칸이 있는 방(#227)일 때만 `true`. 아니면 키가 없다. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val enteredByHost: Boolean? = null,
 )
 
 @Serializable

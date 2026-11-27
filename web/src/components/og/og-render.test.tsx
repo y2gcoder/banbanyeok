@@ -17,7 +17,7 @@ import { sharedCardData, sharedPreview } from "@/lib/share-card/shared-preview";
 import { stationByCode } from "@/lib/stations";
 import fixture from "../../../fixtures/seo-pairs.json";
 import { PairCard } from "./pair-card";
-import { ROOM_CASES, ROOM_DRAW_TEASER } from "./room-card.cases";
+import { ROOM_CASES, ROOM_DRAW_TEASER, ROOM_HOST_ENTERED } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
 import { HIDDEN_ORIGIN, SHARED_CASES } from "./shared-card.cases";
@@ -281,6 +281,21 @@ describe("OG 이미지 그리기(satori)", () => {
     const drawn = await render(<SharedCard data={card} />);
     expectPng(drawn);
     if (screensDir) writeFileSync(join(screensDir, "og-room-draw-teaser.png"), drawn.bytes);
+  });
+
+  it("방장이 대신 넣은 방의 링크 이미지(#227): 뽑기 전·뽑은 뒤·정한 역 모두 이름·시간 없이 노선만, 글꼴에 없는 글자 없음", async () => {
+    for (const { id, preview } of ROOM_HOST_ENTERED) {
+      const card = roomShareCopy(preview).card;
+      if (!card) throw new Error(`${id}: 그림 데이터 없음`);
+      const markup = renderToStaticMarkup(<SharedCard data={card} />);
+      expect(markup, id).not.toContain("참가자");
+      expect(markup, id).not.toMatch(/\d+분|바로 여기|경로 없음|막차/);
+      const text = [card.stationName, card.suffix, card.footer?.main, card.footer?.sub].join("");
+      expect(missingGlyphs(text), id).toEqual([]);
+      const drawn = await render(<SharedCard data={card} />);
+      expectPng(drawn);
+      if (screensDir) writeFileSync(join(screensDir, `og-${id}.png`), drawn.bytes);
+    }
   });
 
   it("방 링크 이미지: 결과(배려), 정한 역(약속·숨긴 사람이 정함·경로 없음), 4명, 새벽 약속(02:59·03:00), 글꼴에 없는 글자 없음", async () => {

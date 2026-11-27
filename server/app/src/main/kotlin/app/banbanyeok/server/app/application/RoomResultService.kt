@@ -78,11 +78,24 @@ class RoomResultService(
         val request = requestOf(context, mode = null, favorId = null)
         val evaluation = recommendation.evaluate(request)
         val ranked = evaluation.recommendation
+        // 방장이 대신 넣은 칸이 있는 방(#227)은 순번 이름만 싣는다. 이름이 없는 칸의 짧은 이름은 출발역 이름이고, 막차와 지도 한가운데
+        // 비교도 출발역에서 나온다. 방 화면(토큰으로 읽는 방·결과)은 그대로다.
+        val withheld = room.enteredByHost
+        val shortLabels =
+            if (withheld) {
+                request.participants.indices.map {
+                    "참가자 ${it + 1}"
+                }
+            } else {
+                ranked.labels.map { it.short }
+            }
         val labels =
             request.participants
                 .map { it.id }
-                .zip(ranked.labels.map { it.short })
+                .zip(shortLabels)
                 .toMap()
+        val lastTrainBasis = ranked.lastTrainBasis.takeUnless { withheld }
+        val lastTrainPending = ranked.lastTrainPending && !withheld
         val drawRound = view.favorDraw?.round?.takeIf { it > 0 && request.mode == RecommendMode.FAVOR }
         val basis = PreviewBasis(request.mode, request.favorId?.let(labels::getValue), drawRound)
 
@@ -91,7 +104,7 @@ class RoomResultService(
             seconds: List<Int?>,
             lastTrains: List<ParticipantLastTrain>?,
         ): PreviewStation {
-            val trains = lastTrains.orEmpty().associateBy { it.participantId }
+            val trains = lastTrains.takeUnless { withheld }.orEmpty().associateBy { it.participantId }
             return PreviewStation(
                 code,
                 request.participants.zip(seconds) { p, s -> PreviewTime(labels.getValue(p.id), s, trains[p.id]) },
@@ -116,8 +129,8 @@ class RoomResultService(
                     station(decision.stationCode, seconds, lastTrains),
                     labels.getValue(decision.decidedBy),
                     decision.decidedAt,
-                    ranked.lastTrainBasis,
-                    ranked.lastTrainPending,
+                    lastTrainBasis,
+                    lastTrainPending,
                 )
             }
 
@@ -131,9 +144,9 @@ class RoomResultService(
                     ranked.dataVersion,
                     basis,
                     station(top.stationCode, top.times.map { it.seconds }, top.lastTrains),
-                    ranked.lastTrainBasis,
-                    previewMiddle(evaluation.mapMiddle, labels),
-                    ranked.lastTrainPending,
+                    lastTrainBasis,
+                    previewMiddle(evaluation.mapMiddle.takeUnless { withheld }, labels),
+                    lastTrainPending,
                 )
             }
         }
@@ -150,6 +163,7 @@ class RoomResultService(
             meetingTime = view.meetingTime,
             meetingBand = view.meetingBand,
             timeBasis = times.resolve(view.meetingDate, view.meetingTime, view.meetingBand),
+            enteredByHost = view.participants.any { it.enteredByHost },
         )
     }
 

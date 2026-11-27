@@ -188,6 +188,53 @@ function drawTeaserCopy(preview: Extract<RoomPreview, { stage: "result" }>): Roo
   };
 }
 
+/**
+ * 방장이 대신 넣은 칸이 있는 방(#227, `room.enteredByHost`). 이름은 그 사람이 직접 넣은 값이 아니므로 메신저에 보이는 미리보기(제목·설명·
+ * 그림)와 공유 문구에 사람 이름·시간·막차를 넣지 않고, 결과는 방에서 확인하라고 안내한다. 서버도 이 방의 미리보기에는 순번 이름만 주고
+ * 막차를 싣지 않는다. 그림은 사람 수만큼의 노선만 그린다. 정한 역은 사람 정보가 아니므로 역 이름을 그대로 보인다. 방 화면은 그대로다.
+ */
+function enteredByHostCopy(preview: Computed): RoomShareCopy {
+  const { room } = preview;
+  const people = preview.station.times.map(() => ({ name: "", minutes: null, favored: false }));
+  const anonymous = { people, modeLine: "", unlabeled: true } as const;
+  const join = room.canJoin ? `아직이면 출발역 넣어 주세요${SEP}` : "";
+  if (preview.stage === "decided") {
+    const when = meetingWhenText(room.meetingDate, room.meetingTime, room.meetingBand);
+    const title = `${preview.station.stationName}${OG_TEXT.decidedSuffix}`;
+    const description = [when, OG_TEXT.timesInRoom].filter(Boolean).join(SEP);
+    return {
+      stage: "decided",
+      preview: { title, description },
+      message: { title, text: description, button: "카톡으로 정한 역 알리기" },
+      card: {
+        ...anonymous,
+        stationCode: preview.station.stationCode,
+        stationName: preview.station.stationName,
+        suffix: OG_TEXT.decidedSuffix,
+        footer: { main: when ?? OG_TEXT.drawTeaserHint, sub: OG_TEXT.timesInRoom },
+      },
+    };
+  }
+  const drawn = preview.basis.mode === "favor" && preview.basis.drawRound !== undefined;
+  const [head, tail, main] = drawn
+    ? [OG_TEXT.drawTeaserHead, OG_TEXT.drawTeaserTail, OG_TEXT.drawTeaserQuestion]
+    : [OG_TEXT.candidatesHead, OG_TEXT.candidatesTail, OG_TEXT.timesInRoom];
+  const title = drawn ? `${head} ${tail} ${main}` : `${head} ${tail}`;
+  const description = `${join}${drawn ? `사다리 결과는 ${OG_TEXT.drawTeaserHint}` : `만날 역과 ${OG_TEXT.timesInRoom}`}`;
+  return {
+    stage: "result",
+    preview: { title, description },
+    message: { title, text: description, button: "카톡으로 결과 보내기" },
+    card: {
+      ...anonymous,
+      stationName: head,
+      suffix: tail,
+      footer: { main, sub: drawn ? OG_TEXT.drawTeaserHint : "" },
+      teaser: true,
+    },
+  };
+}
+
 function resultCopy(
   preview: Extract<RoomPreview, { stage: "result" }>,
   showLastTrain: boolean,
@@ -241,6 +288,7 @@ function decidedCopy(preview: Extract<RoomPreview, { stage: "decided" }>, showLa
 
 export function roomShareCopy(preview: RoomPreview, options: ShareCopyOptions = {}): RoomShareCopy {
   const showLastTrain = options.lastTrain ?? ROOM_PREVIEW_LAST_TRAIN;
+  if (preview.stage !== "collecting" && preview.room.enteredByHost === true) return enteredByHostCopy(preview);
   switch (preview.stage) {
     case "collecting":
       return INVITE_COPY;
