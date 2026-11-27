@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 반반역 검증 인스턴스: launch | doctor | drive | db | cleanup | where. 사용법은 ../SKILL.md.
+# 반반역 검증 인스턴스. 사용법은 ../SKILL.md.
 set -euo pipefail
 
 skill_dir=$(cd "$(dirname "$0")/.." && pwd)
@@ -263,6 +263,10 @@ drive() {
   BBY_VERIFY_RUN="$RUN" BBY_REPO="$repo" BBY_SKILL="$skill_dir" node "$skill_dir/scripts/drive.mjs" "$@"
 }
 
+report() {
+  node "$skill_dir/scripts/report.mjs" "$(run_dir)" "$@"
+}
+
 db() {
   load_state
   (( $# == 1 )) || die "db '<SQL>'"
@@ -325,8 +329,9 @@ case "$cmd" in
   launch) launch ;;
   doctor) doctor ;;
   drive) drive "$@" ;;
+  report) report "$@" ;;
   db) db "$@" ;;
   cleanup) cleanup ;;
   where) where ;;
-  *) die "사용법: verify.sh {launch|doctor|drive <여정> [phone|desktop]|db '<SQL>'|cleanup|where}" ;;
+  *) die "사용법: verify.sh {launch|doctor|drive <여정> [phone|desktop]|report [--artifact]|db '<SQL>'|cleanup|where}" ;;
 esac
