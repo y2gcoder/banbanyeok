@@ -18,6 +18,7 @@ dependencies {
 }
 
 // The committed-data tests read these; without them a data-only change would replay a cached test result.
+// Keep these inputs as literal declarations in this block for scripts/check-kotlin-ci-inputs.py.
 tasks.named<Test>("test") {
     inputs.dir(rootProject.file("data/artifacts/dev")).withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(rootProject.file("data/config")).withPathSensitivity(PathSensitivity.RELATIVE)
