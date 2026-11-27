@@ -131,9 +131,44 @@ class RoomWithheldTest :
                 }
             }
 
-            it("does not hand a withheld room back to a creation retry or a draw-room recovery") {
+            it("does not hand a withheld room back to a creation retry") {
                 withheldRoom {
                     fixture.service.creationReplayExpiry(roomId, hostToken, hostId, hostPart).shouldBeNull()
+                }
+            }
+
+            it(
+                "hands a draw-room retry with the same recovery key back its room, which stays withheld but can be deleted",
+            ) {
+                runTest {
+                    val fixture = RoomFixture()
+                    val command =
+                        CreateRoomCommand(
+                            RoomMode.FAVOR,
+                            CreateRoomCommand.DRAW_TARGET,
+                            null,
+                            ParticipantInput("민수", "03v"),
+                            null,
+                            null,
+                            others = listOf(ParticipantInput("지연", "130")),
+                        )
+                    val created = fixture.service.createDrawRoom(command, "recovery-key-1")
+                    val entered =
+                        fixture.rooms
+                            .find(created.roomId)!!
+                            .participants
+                            .single { it.enteredByHost }
+                    fixture.rooms.hideAsBefore(created.roomId, entered.id)
+                    val again = fixture.service.createDrawRoom(command, "recovery-key-1")
+                    again.roomId shouldBe created.roomId
+                    again.hostToken shouldBe created.hostToken
+                    again.recovered shouldBe true
+                    fixture.rooms.find("room000002").shouldBeNull()
+                    shouldFailWith(
+                        RoomError.ROOM_WITHHELD,
+                    ) { fixture.service.get(created.roomId, again.participantToken) }
+                    fixture.service.delete(created.roomId, again.hostToken)
+                    fixture.rooms.find(created.roomId).shouldBeNull()
                 }
             }
         }

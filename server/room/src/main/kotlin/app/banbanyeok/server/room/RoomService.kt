@@ -73,7 +73,9 @@ public class RoomService(
     ): CreatedRoom? {
         val now = clock.instant()
         val roomId = rooms.findByRecovery(hash, now.minus(RECOVERY_WINDOW)) ?: return null
-        val stored = findActive(roomId, now)?.takeUnless { it.withheld } ?: return null
+        // 숨긴 참가자가 남은 방(ADR-0012)도 돌려준다. 복구 키는 방장 토큰을 만드는 값이라 그 방의 자격이고, 응답에는 방의 내용이 없다.
+        // 돌려받은 기기는 방을 열어 ROOM_WITHHELD를 받고 방을 지울 수 있다. 돌려주지 않으면 새로 만들기가 키에 막혀 지울 길이 없다.
+        val stored = findActive(roomId, now) ?: return null
         val (hostToken, participantToken) = creatorTokens(roomId, stored.room.hostParticipantId, recoveryKey)
         check(stored.room.hostHash == hostToken.hash) { "복구 키로 만든 방장 토큰이 저장된 해시와 다르다" }
         return CreatedRoom(
