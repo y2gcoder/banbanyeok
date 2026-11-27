@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import liquibase.exception.LiquibaseException
+import java.io.File
 
 private const val GUARD = "20261128-participants-hidden-retired"
 
@@ -26,6 +27,12 @@ private fun execute(
     url: String,
     sql: String,
 ) = TestDatabase.connect(url).use { connection -> connection.createStatement().use { it.executeUpdate(sql) } }
+
+/** 복원한 DB를 운영에 붙이기 전에 돌리는 카탈로그 확인(scripts/db-guard-check.sql, docs/setup/p8a-notes.md 3.6절). */
+private val guardCheck =
+    File(requireNotNull(System.getProperty("changelog.dir")), "../../../scripts/db-guard-check.sql").readText()
+
+private fun guardFailure(url: String): String? = runCatching { execute(url, guardCheck) }.exceptionOrNull()?.message
 
 /**
  * ADR-0012 3단계의 배포 관문: 숨긴 참가자 행이 남은 DB(예: 숨김을 받던 때의 백업을 되살린 DB)에서는 같은 migrate가 실패하고 아무것도 바꾸지
@@ -67,5 +74,26 @@ class HiddenRetiredMigrationTest :
             scalar(url, "SELECT convalidated FROM pg_constraint WHERE conname = 'participants_hidden_retired'") shouldBe
                 "t"
             TestDatabase.migrate(url)
+        }
+
+        it("passes the restore guard check only when the validated constraint itself is there, not just its history") {
+            val url = TestDatabase.createDatabase("guard_check")
+            TestDatabase.migrate(url)
+            guardFailure(url) shouldBe null
+
+            execute(url, "ALTER TABLE participants DROP CONSTRAINT participants_hidden_retired")
+            scalar(url, "SELECT count(*) FROM databasechangelog WHERE id = '$GUARD'") shouldBe "1"
+            TestDatabase.migrate(url)
+            guardFailure(url).orEmpty() shouldContain "participants_hidden_retired is missing"
+
+            execute(
+                url,
+                "ALTER TABLE participants ADD CONSTRAINT participants_hidden_retired CHECK (hidden IS NOT TRUE) NOT VALID",
+            )
+            guardFailure(url).orEmpty() shouldContain "is not validated"
+
+            execute(url, "ALTER TABLE participants DROP CONSTRAINT participants_hidden_retired")
+            execute(url, "ALTER TABLE participants ADD CONSTRAINT participants_hidden_retired CHECK (true)")
+            guardFailure(url).orEmpty() shouldContain "unexpected definition"
         }
     })
