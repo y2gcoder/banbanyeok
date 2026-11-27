@@ -1,6 +1,6 @@
 ---
 name: verify-banbanyeok
-description: "반반역(banbanyeok) 웹 앱을 빈 DB에서 실제로 띄우고(Postgres·Ktor 서버·Next 웹), 폰 390×844와 데스크톱 화면에서 사용자처럼 조작해 스크린샷·접근성 트리·API 기록·DB 상태를 증거로 남긴 뒤 띄운 것만 정리한다. 화면·서버 동작을 바꾼 PR을 증명할 때, '실제로 되는지 보여 줘', 버그 재현, 기능 회귀 확인에 쓴다."
+description: "반반역(banbanyeok) 웹 앱을 빈 DB에서 실제로 띄우고(Postgres·Ktor 서버·Next 웹), 폰 390×844와 데스크톱에서 사용자처럼 조작해 캡처·영상·접근성 트리·API 기록·DB 상태를 남긴다. 검증 결과와 증거를 보고서로 보여 주고 띄운 것만 정리한다. 화면·서버 동작을 바꾼 PR, 버그 재현, 기능 회귀 확인에 쓴다."
 ---
 
 # 반반역 검증
@@ -14,6 +14,7 @@ V=.claude/skills/verify-banbanyeok/scripts/verify.sh
 bash $V launch                    # 빈 DB → migrate → seed → server → web, 사용 가능해질 때까지 기다린다
 bash $V doctor                    # 이 인스턴스가 우리 것이고 쓸 만한지(읽기 전용)
 bash $V drive <여정> [phone|desktop]   # 여정 하나를 실제 브라우저로. 기본 phone
+bash $V report                    # 이 실행의 여정, 캡처, 영상을 모은 HTML 보고서 경로
 bash $V db '<SQL>'                # 이 실행의 DB에 읽기 전용 쿼리(쓰기는 거부된다)
 bash $V cleanup                   # 띄운 프로세스(PID)와 compose 프로젝트만 정리. 증거는 남긴다
 bash $V where                     # 마지막 실행 폴더
@@ -84,7 +85,7 @@ export default async ({ page, step, expect, db, newPerson, note, viewport }) => 
 
 ## Evidence
 
-증거는 `<실행 폴더>/evidence/<여정>-<화면>-<시각>/`에 남는다. 저장소 밖이라 커밋되지 않고 cleanup도 지우지 않는다. 실행 폴더는 `bash $V where`로 찾는다.
+증거는 `<실행 폴더>/evidence/<여정>-<화면>-<시각>-<접미사>/`에 남는다. 저장소 밖이라 커밋되지 않고 cleanup도 지우지 않는다. 실행 폴더는 `bash $V where`로 찾는다.
 
 | 파일 | 내용 |
 |---|---|
@@ -94,6 +95,7 @@ export default async ({ page, step, expect, db, newPerson, note, viewport }) => 
 | `console.txt` | 콘솔 error·warning과 페이지 오류 |
 | `db-<이름>.tsv`, `<이름>.txt` | 여정이 남긴 DB 조회와 메모(복사한 링크 등) |
 | `trace.zip`, `trace-ctx1.zip` | Playwright 추적(동작마다 화면·DOM·네트워크). `pnpm --dir web exec playwright show-trace <파일>` |
+| `video-main/*.webm`, `video-ctx1/*.webm` | 브라우저 컨텍스트별 화면 녹화. 컨텍스트가 닫힐 때 저장 |
 | `result.json`, `failure.png` | 통과 여부, 오류 스택, 실행 ID, 띄운 커밋 |
 
 증명 기준은 다음과 같다.
@@ -102,7 +104,10 @@ export default async ({ page, step, expect, db, newPerson, note, viewport }) => 
 - 동작과 그 결과 상태를 함께 남긴다. 마지막 화면 하나로는 부족하다.
 - 부작용을 화면과 따로 확인한다. 방·참가자·뽑기는 `db`로 행을 보고, 쓰지 않아야 하는 화면(결과 보기, 공유)은 전후 행 수가 같은지 본다.
 - 바꾼 화면은 `phone`과 `desktop` 둘 다 돌린다.
-- 보고에는 여정 이름, 화면, 증거 폴더 경로, `result.json`의 `ok`를 적는다. 돌리지 못한 경로는 시도한 명령과 막힌 이유를 적는다. 다른 경로로 대신 통과시키지 않는다.
+- 여정 실행이 끝나면 실패한 실행도 포함해 `bash $V report`를 실행한다. `cleanup` 이후에도 보고서를 만들 수 있다. `report.html`은 실행 시작 커밋, 여정·화면별 판정, 단계별 캡처, 재생 가능한 WebM과 상세 증거 링크를 모은다.
+- **Claude Code**에서 사용자가 Artifact 게시를 승인했고 `Artifact` 도구를 쓸 수 있으면 `bash $V report --artifact`로 캡처와 영상을 내장한 `report-artifact.html`을 만들고 비공개 Artifact로 게시한다. Artifact 크기 제한으로 빠진 미디어나 뷰어에서 재생되지 않는 영상은 로컬 `report.html`에서 열 수 있게 경로를 함께 적는다. 게시 전 캡처·영상에 포함된 내용을 확인한다. [Claude Code Artifact 제약](https://code.claude.com/docs/en/artifacts#page-constraints)
+- **Codex**에서는 `report.html`을 결과 파일로 링크한다. HTML 미리보기가 있는 앱에서 열거나 로컬 브라우저에서 열 수 있다. 로컬 미디어는 HTML 파일과 `evidence/` 디렉터리를 같은 위치에 둔 채 연다. [Codex 파일 미리보기](https://learn.chatgpt.com/docs/artifacts-viewer)
+- 채팅에는 보고서 링크와 핵심 판정을 함께 준다. 실행하지 못한 경로는 시도한 명령과 막힌 이유를 별도로 적는다.
 
 PR에 화면을 붙일 때는 필요한 `png`만 골라 올린다. `result.json`의 오류 스택과 `trace.zip`에는 로컬 절대 경로가 들어 있으므로 공개 저장소에 폴더째 올리지 않는다.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // verify.sh drive가 부른다. 여정 하나를 실제 브라우저로 돌리고 단계마다 증거를 남긴다. 사용법은 ../SKILL.md의 Drive.
 import { execFileSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -41,21 +41,22 @@ const journeyName = journeyPath.split("/").pop().replace(/\.mjs$/, "");
 const now = new Date();
 const pad = (n) => String(n).padStart(2, "0");
 const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-const out = join(run, "evidence", `${journeyName}-${viewportArg}-${stamp}`);
-mkdirSync(out, { recursive: true });
+const out = mkdtempSync(join(run, "evidence", `${journeyName}-${viewportArg}-${stamp}-`));
 const log = (file, line) => appendFileSync(join(out, file), `${line}\n`);
 
-const browser = await chromium.launch();
+let browser;
+let page;
 const contexts = [];
 async function newContext() {
+  const label = contexts.length === 0 ? "main" : `ctx${contexts.length}`;
   const context = await browser.newContext({
     ...device,
     baseURL,
     locale: "ko-KR",
     timezoneId: "Asia/Seoul",
     permissions: ["clipboard-read", "clipboard-write"],
+    recordVideo: { dir: join(out, `video-${label}`), size: device.viewport },
   });
-  const label = contexts.length === 0 ? "main" : `ctx${contexts.length}`;
   contexts.push(context);
   await context.tracing.start({ screenshots: true, snapshots: true, title: `${journeyName} ${label}` });
   context.on("response", (res) => {
@@ -74,8 +75,6 @@ async function newContext() {
 }
 
 let stepNo = 0;
-const context = await newContext();
-const page = await context.newPage();
 
 async function capture(name, target = page) {
   stepNo += 1;
@@ -86,8 +85,6 @@ async function capture(name, target = page) {
 }
 
 const helpers = {
-  page,
-  context,
   expect,
   baseURL,
   out,
@@ -120,20 +117,25 @@ const helpers = {
   },
 };
 
-let result = { journey: journeyName, viewport: viewportArg, baseURL, runId: state.RUN_ID, head: state.REPO_HEAD };
+let result = { journey: journeyName, viewport: viewportArg, baseURL, runId: state.RUN_ID, head: state.REPO_HEAD, startedAt: now.toISOString() };
 try {
+  browser = await chromium.launch();
+  const context = await newContext();
+  page = await context.newPage();
   const journey = (await import(pathToFileURL(journeyPath).href)).default;
-  await journey(helpers);
+  await journey({ ...helpers, page, context });
   result = { ...result, ok: true };
 } catch (error) {
   result = { ...result, ok: false, error: String(error?.stack ?? error) };
-  await page.screenshot({ path: join(out, "failure.png"), fullPage: true }).catch(() => {});
+  await page?.screenshot({ path: join(out, "failure.png"), fullPage: true }).catch(() => {});
 } finally {
   for (const [i, ctx] of contexts.entries()) {
     await ctx.tracing.stop({ path: join(out, i === 0 ? "trace.zip" : `trace-ctx${i}.zip`) }).catch(() => {});
+    await ctx.close().catch(() => {});
   }
-  await browser.close();
-  writeFileSync(join(out, "result.json"), `${JSON.stringify(result, null, 2)}\n`);
+  await browser?.close().catch(() => {});
+  writeFileSync(join(out, "result.json.tmp"), `${JSON.stringify(result, null, 2)}\n`);
+  renameSync(join(out, "result.json.tmp"), join(out, "result.json"));
 }
 console.log(`${result.ok ? "PASS" : "FAIL"} ${journeyName} (${viewportArg})`);
 console.log(`evidence: ${out}`);
