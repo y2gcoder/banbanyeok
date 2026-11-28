@@ -36,7 +36,7 @@
 여러 작업자가 한 맥의 메모리를 나눠 쓴다. Gradle 데몬과 Kotlin 데몬은 각각 `-Xmx3g`까지 쓴다(`gradle.properties`, Kotlin 데몬은 같은 값을 물려받는다).
 
 - Gradle은 mise가 설치한 JDK로 실행한다(`mise run`, `mise exec`). 임시 디렉터리에 설치한 JDK(`mktemp`, 세션 scratchpad, 임시 `MISE_DATA_DIR`)로 Gradle을 실행할 때는 `env GRADLE_OPTS=-Dorg.gradle.daemon=false 'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy=in-process' <명령>`으로 실행한다. 환경 변수라서 mise 태스크 안의 `gradlew`에도 전달되고, 빌드가 끝날 때 Gradle·Kotlin 데몬이 함께 내려간다. JDK 디렉터리를 지운 뒤 남은 Gradle 데몬은 유휴 종료 검사가 계속 실패해서 힙을 쥔 채 남는다(Gradle 9.7.0에서 확인).
-- 이 맥은 `~/.gradle/gradle.properties`에서 데몬 유휴 시간을 15분으로 정해 두어, mise JDK로 띄운 데몬은 쓰지 않으면 스스로 내려간다. 다른 작업자의 빌드도 같은 데몬을 쓰므로 그대로 둔다(`gradlew --stop`은 모든 작업자의 데몬을 끈다).
+- 이 맥은 `~/.gradle/gradle.properties`에서 Gradle 데몬 유휴 시간을 15분으로 정해 두어, mise JDK로 띄운 Gradle 데몬은 쓰지 않으면 스스로 내려간다(Kotlin 데몬은 자기 유휴 시간을 따로 따른다). 다른 작업자의 빌드도 같은 데몬을 쓰므로 그대로 둔다. `gradlew --stop`은 같은 Gradle 버전·같은 Gradle 사용자 홈을 쓰는 모든 작업자의 데몬을 끈다.
 
 ## 스킬
 
