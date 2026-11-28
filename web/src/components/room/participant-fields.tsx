@@ -22,6 +22,8 @@ type Props = {
   scope?: StationScope;
   /** 방 만들기의 "○○권으로 바꾸기". 방 참여·고치기에는 없다(방의 권역을 따른다). */
   onSwitchRegion?: (region: RegionId) => void;
+  onInitialStationSearch?: () => void;
+  nicknameInputRef?: (input: HTMLInputElement | null) => void;
 };
 
 /**
@@ -29,7 +31,16 @@ type Props = {
  * 칸마다 보이는 작은 라벨("이름 (선택)" / "출발역")을 두고 이름 칸도 입력칸 모양(연한 테두리 + 연필)으로 그린다. 굵은 글씨의
  * 테두리 없는 이름 칸이 바로 아래 출발역 칸의 제목처럼 읽히던 문제(W3)를 막는다. 첫 화면의 "나/친구1" 칸과는 다른 화면이다.
  */
-export function ParticipantFields({ idPrefix, value, onChange, personIndex, scope, onSwitchRegion }: Props) {
+export function ParticipantFields({
+  idPrefix,
+  value,
+  onChange,
+  personIndex,
+  scope,
+  onSwitchRegion,
+  onInitialStationSearch,
+  nicknameInputRef,
+}: Props) {
   const nameId = `${idPrefix}-name`;
   const stationId = `${idPrefix}-station`;
   return (
@@ -52,6 +63,7 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex, scop
                 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
               />
               <input
+                ref={nicknameInputRef}
                 id={nameId}
                 value={value.nickname}
                 onChange={(e) => onChange({ nickname: e.target.value })}
@@ -71,6 +83,7 @@ export function ParticipantFields({ idPrefix, value, onChange, personIndex, scop
               value={value.station}
               onChange={(station) => onChange({ station })}
               {...(scope ? { scope } : {})}
+              {...(onInitialStationSearch ? { onInitialSearch: onInitialStationSearch } : {})}
               {...(onSwitchRegion ? { onSwitchRegion } : {})}
             />
           </div>

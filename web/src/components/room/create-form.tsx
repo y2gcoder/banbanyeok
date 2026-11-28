@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { DicesIcon, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { RegionPicker, useRegionChoice } from "@/components/common/region-choice";
 import { useIdempotencyKey } from "@/components/common/use-idempotency-key";
 import { slowMessage, useSlowStage } from "@/components/common/use-slow-hint";
@@ -50,11 +50,28 @@ const FAVOR_TARGETS: readonly { target: FavorTargetChoice; label: string; hint: 
 const COUNTS = [2, 3, 4] as const;
 
 /** 방 만들기(방장). 만들면 방장 토큰·참여자 토큰을 이 기기에 저장하고 방 화면으로 간다. */
-export function CreateRoomForm({ className }: { className?: string }) {
+export function CreateRoomForm({
+  className,
+  preserveInitialInputs,
+}: {
+  className?: string;
+  preserveInitialInputs?: boolean;
+}) {
   const router = useRouter();
   const id = useId();
   const keys = useIdempotencyKey();
   const [host, setHost] = useState<ParticipantFormValue>({ nickname: "", station: null });
+  const hasInitialStationSearch = useRef(false);
+  const hasInitialNickname = useRef(false);
+  const readInitialNickname = useCallback((input: HTMLInputElement | null) => {
+    if (!input || input.value === input.defaultValue) return;
+    const nickname = input.value;
+    hasInitialNickname.current = true;
+    setHost((current) => ({ ...current, nickname }));
+  }, []);
+  const markInitialStationSearch = useCallback(() => {
+    hasInitialStationSearch.current = true;
+  }, []);
   const [mode, setMode] = useState<Mode>("fair");
   const [favorTarget, setFavorTarget] = useState<FavorTargetChoice>("host");
   const [when, setWhen] = useState<MeetingWhen>(NO_MEETING_WHEN);
@@ -83,8 +100,18 @@ export function CreateRoomForm({ className }: { className?: string }) {
     const me = loadRememberedMe();
     const station = me ? stationByCode(me.code) : undefined;
     if (me && station?.supported) {
-      adopt(station.region);
-      setHost((current) => (current.station ? current : { ...current, nickname: me.nickname, station }));
+      if (hasInitialStationSearch.current) {
+        setHost((current) =>
+          hasInitialNickname.current || current.nickname ? current : { ...current, nickname: me.nickname },
+        );
+      } else {
+        adopt(station.region);
+        setHost((current) =>
+          current.station
+            ? current
+            : { nickname: hasInitialNickname.current ? current.nickname : me.nickname, station },
+        );
+      }
     }
   }, [adopt]);
 
@@ -178,6 +205,9 @@ export function CreateRoomForm({ className }: { className?: string }) {
           setHost((current) => ({ ...current, ...patch }));
         }}
         personIndex={0}
+        {...(preserveInitialInputs
+          ? { onInitialStationSearch: markInitialStationSearch, nicknameInputRef: readInitialNickname }
+          : {})}
       />
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-[15px] font-bold text-ink">추천 기준</legend>
