@@ -54,6 +54,12 @@ Claude Code 작업자는 poteto-mode로 일합니다([AGENTS.md](AGENTS.md) '작
 
 직접 띄울 때는 Orca에서 Claude Code를 `--surface terminal --json`으로 열고, 첫 입력에 `/pstack:poteto-mode <대기 지시>`를 보냅니다. 대기 지시에는 다음 메시지가 올 때까지 작업을 시작하지 말고 대기하라고 적습니다. Orca는 작업 지시서 앞에 안내문을 붙이므로 poteto-mode는 첫 터미널 입력에서 켜야 합니다. `--json` 응답에서 받은 핸들의 터미널이 `tui-idle`이 된 후, 같은 핸들을 `orca orchestration worker-start --terminal`에 넘겨 작업 지시를 보냅니다.
 
+### 인터페이스 리뷰 스킬
+
+Codex와 Claude Code에서 같은 스킬을 사용할 수 있습니다. 화면 변경이 들어간 PR을 살펴볼 때는 Codex에서 `$interface-review pr <번호>`, Claude Code에서 `/interface-review pr <번호>`로 검토합니다. 특정 컴포넌트의 긴 입력·좁은 폭·빈 상태를 한 화면에서 비교하려면 Codex의 `$break` 또는 Claude Code의 `/break`에 컴포넌트를 지정합니다. 임시 검토 화면은 로컬에서 합성 데이터로 확인하고 커밋에서 제외합니다. 실제 서버를 연결한 폰·데스크톱 여정은 [반반역 검증 스킬](.claude/skills/verify-banbanyeok/SKILL.md)을 사용합니다.
+
+Jakub Krehel의 [스킬 원본](https://github.com/jakubkrehel/skills/tree/672ae44ace6aaed65b86cbb1e2fd6fbea0e79578)에서 인터페이스 리뷰 묶음과 `break`를 가져왔습니다. [MIT 라이선스](.claude/skills/jakubkrehel-LICENSE)는 원본과 함께 보관합니다.
+
 ## 라이선스
 
 코드는 [AGPL-3.0](LICENSE)입니다. 공공데이터 출처는 [data/ATTRIBUTION.md](data/ATTRIBUTION.md)를 보세요.
