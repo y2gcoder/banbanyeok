@@ -638,55 +638,5 @@
     "expectedFirst": "boundary",
     "reason": "상한과 정확히 같은 45분은 허용한다.",
     "expectedReasonContains": "A 우선"
-  },
-  {
-    "id": "favor_uncapped_hidden",
-    "input": {
-      "participants": [
-        "A",
-        "B",
-        "C"
-      ],
-      "candidates": [
-        "baseline",
-        "near_A"
-      ],
-      "times": [
-        [
-          30,
-          10
-        ],
-        [
-          30,
-          40
-        ],
-        [
-          0,
-          60
-        ]
-      ],
-      "transfers": [
-        [
-          0,
-          0
-        ],
-        [
-          0,
-          0
-        ],
-        [
-          0,
-          0
-        ]
-      ],
-      "mode": "favor:A",
-      "tolerance": 0,
-      "uncapped": [
-        "C"
-      ]
-    },
-    "expectedFirst": "near_A",
-    "reason": "출발역을 숨긴 C에게는 상한을 두지 않는다(기준 0분이면 상한도 0분이 되어 C의 출발역에 따라 후보가 갈린다, #162). B 상한 45분만 지킨다.",
-    "expectedReasonContains": "A 우선"
   }
 ]

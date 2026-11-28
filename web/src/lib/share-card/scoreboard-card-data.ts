@@ -35,6 +35,6 @@ export function scoreboardCardData(view: ResultView, state: ShareState): Scorebo
     title: spread === null ? null : evenTitle(view.mode, spread, minutes.length),
     compareLine: middle && name ? mapMiddleSentence(view, name) : null,
     basisLine: basisText(view),
-    banban: banbanLine({ mode: view.mode, minutes: base.people.map((p) => p.minutes), hidden: view.anyHidden }),
+    banban: banbanLine({ mode: view.mode, minutes: base.people.map((p) => p.minutes) }),
   };
 }

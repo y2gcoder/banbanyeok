@@ -20,7 +20,7 @@ import { PairCard } from "./pair-card";
 import { ROOM_CASES, ROOM_DRAW_TEASER, ROOM_HOST_ENTERED } from "./room-card.cases";
 import { ScoreboardCard } from "./scoreboard-card";
 import { SharedCard } from "./shared-card";
-import { HIDDEN_ORIGIN, SHARED_CASES } from "./shared-card.cases";
+import { SHARED_CASES } from "./shared-card.cases";
 import { SiteCard } from "./site-card";
 
 /** 있으면 공유 링크 그림을 이 폴더에 PNG로 남긴다(PR 화면 캡처용: OG_SCREENS_DIR=../docs/setup/v1-screens pnpm exec vitest run og-render). */
@@ -161,13 +161,11 @@ describe("OG 이미지 그리기(satori)", () => {
     if (screensDir) writeFileSync(join(screensDir, "og-site.png"), drawn.bytes);
   });
 
-  it("공유 링크 이미지: 정해 둔 경우 전부(2·3·4명, 긴 별칭, 숨김, 같은 역, 0분, 빠른·누구 쪽으로, 기준 문구, 긴 역 이름, 1시간 넘음)", async () => {
+  it("공유 링크 이미지: 정해 둔 경우 전부(2·3·4명, 긴 별칭, 같은 역, 0분, 빠른·누구 쪽으로, 기준 문구, 긴 역 이름, 1시간 넘음)", async () => {
     for (const c of SHARED_CASES) {
       const view = toResultView(c.result);
       const data = sharedCardData(view, c.state);
       if (!data) throw new Error(`${c.id}: 그림 데이터 없음`);
-      // 숨긴 출발역은 그림 값·미리보기 설명 어디에도 없다(입력에 본인 시점의 출발역 이름이 들어 있어도: hidden-self-view).
-      expect(JSON.stringify([data, sharedPreview(view, c.state)])).not.toContain(HIDDEN_ORIGIN);
       expect(missingGlyphs(data.people.map((p) => p.lastTrain ?? "").join("")), c.id).toEqual([]);
       const drawn = await render(<SharedCard data={data} />);
       expectPng(drawn);
@@ -175,7 +173,7 @@ describe("OG 이미지 그리기(satori)", () => {
     }
   });
 
-  it("공유 링크 이미지 A 숫자판(/s/og): 정해 둔 경우 전부, 글꼴에 없는 글자 없음, 숨긴 출발역 없음", async () => {
+  it("공유 링크 이미지 A 숫자판(/s/og): 정해 둔 경우 전부, 글꼴에 없는 글자 없음", async () => {
     for (const c of SHARED_CASES) {
       const view = toResultView(c.result);
       const data = scoreboardCardData(view, c.state);
@@ -191,7 +189,6 @@ describe("OG 이미지 그리기(satori)", () => {
         ...data.people.map((p) => p.lastTrain ?? ""),
       ].join("");
       expect(missingGlyphs(text), c.id).toEqual([]);
-      expect(JSON.stringify(data), c.id).not.toContain(HIDDEN_ORIGIN);
       const drawn = await render(<ScoreboardCard data={data} />);
       expectPng(drawn);
       if (screensDir) writeFileSync(join(screensDir, `og-scoreboard-${c.id}.png`), drawn.bytes);
@@ -223,23 +220,7 @@ describe("OG 이미지 그리기(satori)", () => {
     }
   });
 
-  it("숨긴 사람 본인 시점처럼 입력에 숨긴 출발역 이름이 있어도 그림 값·미리보기 설명에는 '참가자 N'만 나온다", () => {
-    const c = SHARED_CASES.find((x) => x.id === "hidden-self-view");
-    if (!c) throw new Error("표본 없음");
-    expect(JSON.stringify(c.result)).toContain(HIDDEN_ORIGIN); // 입력에는 있다(본인에게만 오는 originName)
-    const hiddenCode = c.result.participants.find((p) => p.hidden)?.originCode;
-    expect(hiddenCode).toBeTruthy(); // 본인에게만 오는 실제 숨긴 출발역 코드
-    const view = toResultView(c.result);
-    const data = sharedCardData(view, c.state);
-    const preview = sharedPreview(view, c.state);
-    expect(data?.people.map((p) => p.name)).toEqual(["강남", "참가자 2", "홍대입구"]);
-    expect(data?.modeLine).toBe("참가자 2 쪽으로 고름");
-    expect(preview?.description).toBe("강남 5분 · 참가자 2 4분 · 홍대입구 35분 · 참가자 2 쪽으로 고름");
-    expect(JSON.stringify([data, preview])).not.toContain(HIDDEN_ORIGIN);
-    expect(JSON.stringify([data, scoreboardCardData(view, c.state)])).not.toContain(JSON.stringify(hiddenCode));
-  });
-
-  it('막차 줄: 직행 확정은 분 그대로, 여유 시각은 10분 단위로 내리고, 자정을 넘기면 "다음 날"을 붙이고, 확인 필요와 숨긴 사람은 줄이 없다', () => {
+  it('막차 줄: 직행 확정은 분 그대로, 여유 시각은 10분 단위로 내리고, 자정을 넘기면 "다음 날"을 붙이고, 확인 필요에는 줄이 없다', () => {
     const lines = (id: string) => {
       const c = SHARED_CASES.find((x) => x.id === id);
       if (!c) throw new Error(`표본 없음: ${id}`);
@@ -248,12 +229,7 @@ describe("OG 이미지 그리기(satori)", () => {
     expect(lines("two-last-train")).toEqual(["막차 다음 날 00:03", "늦어도 23:00"]);
     // 직행 확정 24:38, 갈아타는 23:51 → 23:50, 열차 한 대 여유 23:45 → 23:40, 확인 필요.
     expect(lines("four-last-train-middle")).toEqual(["막차 다음 날 00:38", "늦어도 23:50", "늦어도 23:40", null]);
-    // 숨긴 사람의 항목은 서버가 주지 않는다.
-    expect(lines("nickname-hidden")).toEqual(["늦어도 23:20", null, "막차 다음 날 00:34"]);
-    // 숨긴 본인에게는 서버가 본인의 막차도 주지만, 누구나 보는 그림에는 넣지 않는다.
-    const self = SHARED_CASES.find((x) => x.id === "hidden-self-view");
-    expect(JSON.stringify(self?.result)).toContain("숨긴행선지");
-    expect(lines("hidden-self-view")).toEqual(["막차 다음 날 00:44", null, "늦어도 23:50"]);
+    expect(lines("long-nickname-with-missing-train")).toEqual(["늦어도 23:20", null, "막차 다음 날 00:34"]);
     // 막차를 모르는 응답(옛 서버·옛 링크)은 줄이 없다: 그림이 예전과 같다.
     expect(lines("four-fair")).toEqual([null, null, null, null]);
     // 미리보기 설명(og:description, 공유 문구와 같은 말)에는 막차를 넣지 않는다: 그림에만 있다.

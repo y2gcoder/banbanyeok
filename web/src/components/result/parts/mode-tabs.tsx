@@ -28,7 +28,7 @@ type Props = {
 
 /**
  * 모드 탭(공평하게 / 빨리 만나기 / 누구 쪽으로)과, 배려 모드일 때 누구 쪽인지 고르는 줄. 사람 이름은 짧은 이름이다.
- * 고를 수 있는 사람이 없으면(방에서 모두 출발역을 숨겼고 나는 그중에 없다, #162) 배려 탭을 두지 않는다.
+ * 고를 수 있는 사람이 없으면 배려 탭을 두지 않는다.
  */
 export function ModeTabs({ mode, favorIndex, people, onChange, defaultFavorIndex, label, panelId, onDraw }: Props) {
   const modes = people.length > 0 ? MODES : MODES.filter((value) => value !== "favor");

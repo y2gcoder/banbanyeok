@@ -73,7 +73,7 @@ test.describe("다시 입력: 입력이 모두 되돌아온다", () => {
     await page.getByRole("option", { name: /^잠실\s?2호선/ }).click();
     await expect(page.getByRole("combobox", { name: "민수의 출발역" })).toHaveValue("혜화");
     const created = await submitFilledRoom(page);
-    expect(created).toMatchObject({ meetingBand: "night", others: [{ originCode: "dxy", hidden: false }] });
+    expect(created).toMatchObject({ meetingBand: "night", others: [{ originCode: "dxy" }] });
   });
 });
 

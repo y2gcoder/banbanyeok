@@ -25,23 +25,22 @@ const room = (participants: RoomParticipant[], patch: Partial<Room> = {}): Room 
 });
 
 describe("방 화면 값", () => {
-  it("이름은 서버 label 그대로, 가린 사람은 출발역 비공개, 본인이 가렸으면 본인에게만 보인다는 안내", () => {
+  it("서버 label과 출발역 이름을 그대로 쓴다", () => {
     const view = roomPeople(
       room([
         person({ participantId: "a", label: "민수", labelKind: "name", isHost: true }),
         person({
           participantId: "b",
-          hidden: true,
           originCode: null,
           originName: null,
           label: "참가자 2",
           labelKind: "ordinal",
         }),
-        person({ participantId: "c", hidden: true, isSelf: true, label: "참가자 3", labelKind: "ordinal" }),
+        person({ participantId: "c", isSelf: true, label: "참가자 3", labelKind: "ordinal" }),
       ]),
     );
     expect(view.map((p) => p.name)).toEqual(["민수", "참가자 2", "참가자 3"]);
-    expect(view.map((p) => p.originText)).toEqual(["강남", "출발역 비공개", "강남 · 나에게만 보여요"]);
+    expect(view.map((p) => p.originText)).toEqual(["강남", "출발역 정보 없음", "강남"]);
     expect(view.map((p) => p.isSelf)).toEqual([false, false, true]);
     expect(view[0]?.isHost).toBe(true);
   });

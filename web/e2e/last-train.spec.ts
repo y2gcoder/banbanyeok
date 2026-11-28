@@ -165,29 +165,13 @@ test.describe("집에 가는 막차", () => {
     await expect(section(page).first().getByRole("listitem").nth(1)).toContainText("참가자 2(나)");
   });
 
-  test("방: 출발역을 숨긴 사람의 막차는 다른 사람 화면에 없고 안내 한 줄만 있다", async ({ page }) => {
-    await page.goto(await prepareRoom(page, "host-full"));
-    await openTop(page);
-    const first = section(page).first();
-    await expect(first).toBeVisible();
-    await expect(first.getByRole("listitem")).toHaveCount(2);
-    await expect(first).not.toContainText("참가자 2");
-    await expect(first.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeVisible();
-    // 공개한 사람 가운데 확인 필요(긴 이름의 친구)가 있어, 맨 위 줄이 범위를 밝힌다.
-    await expect(first.getByText("공개된 시각 중 가장 이름: 민수 23:52 · 더 확인할 분 있음")).toBeVisible();
-    await expect(first.getByRole("listitem").first()).toContainText("민수(나)막차23:52· 성수행");
-    // 모두 시각이 있지 않아도, 일부 노선만 계산한 요일 종류면 알린다.
-    await expect(first.getByText("토요일은 일부 노선만 막차 표시.")).toBeVisible();
-    expect(await horizontalOverflow(page)).toEqual([]);
-  });
-
   test("방: 새벽 약속(토요일 02:59)에서는 약속보다 먼저 떠나는 막차를 귀가 시각으로 보이지 않는다", async ({
     page,
   }) => {
     await page.goto(await prepareRoom(page, "host-full", undefined, "dawn"));
     await openTop(page);
     const first = section(page).first();
-    await expect(first.getByRole("listitem")).toHaveCount(2);
+    await expect(first.getByRole("listitem")).toHaveCount(3);
     // 금요일 운행일의 24:27 = 토요일 00:27, 약속(02:59)보다 먼저다.
     const mine = first.getByRole("listitem").first();
     await expect(mine).toContainText("민수(나)11월 28일 00:27 막차는 약속 전에 떠나요.");
@@ -204,38 +188,10 @@ test.describe("집에 가는 막차", () => {
     await expect(
       first.getByText("약속 날짜가 없어 요일을 알 수 없어요. 요일마다 막차가 달라 보여 드리지 못해요."),
     ).toHaveCount(1);
-    await expect(first.getByRole("listitem")).toHaveCount(2);
-    await expect(first.getByRole("link", { name: /지도 앱에서 막차 확인하기$/ })).toHaveCount(2);
+    await expect(first.getByRole("listitem")).toHaveCount(3);
+    await expect(first.getByRole("link", { name: /지도 앱에서 막차 확인하기$/ })).toHaveCount(3);
     await expect(first.getByText("시간표 수집 기준 2026년 11월 16일.")).toBeVisible();
     await expect(first).not.toContainText(/평일|일부 노선|계산했어요|전 출발|\d\d:\d\d/);
-    expect(await horizontalOverflow(page)).toEqual([]);
-  });
-
-  test("방: 모두 출발역을 숨겼으면 본인이 아닌 사람에게는 '본인 화면에서만 보여요'만 보인다", async ({ page }) => {
-    await page.goto(await prepareRoom(page, "friend-join", undefined, "all-hidden"));
-    await openTop(page);
-    const first = section(page).first();
-    await expect(first).toBeVisible();
-    await expect(first.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toBeVisible();
-    await expect(first.getByRole("listitem")).toHaveCount(0);
-    await expect(first).not.toContainText(/토요일|일부 노선|수집 기준|\d\d:\d\d/);
-  });
-
-  test("방: 출발역을 숨긴 본인에게는 내 막차가 보이고 나에게만 보인다고 적는다", async ({ page }) => {
-    await page.goto(await prepareRoom(page, "hidden-self"));
-    await openTop(page);
-    const first = section(page).first();
-    await expect(first.getByRole("listitem")).toHaveCount(3);
-    const mine = first.getByRole("listitem").nth(1);
-    await expect(mine).toContainText("참가자 2(나)나에게만 보여요");
-    // 22:47 → 22:40
-    await expect(mine).toContainText("늦어도22:40출발");
-    const href = (await mine.getByRole("link").getAttribute("href")) ?? "";
-    expect(decodeURIComponent(href)).toMatch(/\/동대문역사문화공원역,[\d.]+,[\d.]+\/합정역,/);
-    await expect(first.getByText("출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.")).toHaveCount(0);
-    // 맨 위 줄은 출발역을 공개한 사람으로만 정한다(내가 더 일러도 민수다). 숨긴 내 값은 공용 문구에 쓰지 않는다.
-    await expect(first.getByText("공개된 시각 중 가장 이름: 민수 23:52 · 더 확인할 분 있음")).toBeVisible();
-    await expect(first.getByText(/22:40.*가장 이름/)).toHaveCount(0);
     expect(await horizontalOverflow(page)).toEqual([]);
   });
 });

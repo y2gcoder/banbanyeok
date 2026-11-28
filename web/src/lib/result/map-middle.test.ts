@@ -7,19 +7,15 @@ import { evenTitle, MIDDLE_MIN_EXTRA, middleSentence, middleView, toMapMiddleVie
 
 type Input = Parameters<typeof toMapMiddleView>[0];
 
-function input(
-  seconds: number[],
-  overrides: { mode?: RecommendResult["mode"]; hidden?: boolean[]; code?: string } = {},
-): Input {
+function input(seconds: number[], overrides: { mode?: RecommendResult["mode"]; code?: string } = {}): Input {
   return {
     mode: overrides.mode ?? "fair",
-    participants: seconds.map((_, i) => ({ participantId: String(i), hidden: overrides.hidden?.[i] ?? false })),
     mapMiddle: {
       stationCode: overrides.code ?? "mid",
       stationName: "한강진",
       times: seconds.map((s, i) => ({ participantId: String(i), seconds: s, transfers: 1 })),
     },
-  } as Input;
+  };
 }
 
 const TOP = { stationCode: "top", minutes: [21, 21] };
@@ -41,13 +37,8 @@ describe("toMapMiddleView", () => {
     expect(toMapMiddleView(input([1380, 2100], { mode: "favor" }), TOP)).toBeNull();
   });
 
-  it("출발역을 숨긴 사람이 한 명이라도 있으면 없다", () => {
-    expect(toMapMiddleView(input([1380, 2100], { hidden: [false, true] }), TOP)).toBeNull();
-    expect(toMapMiddleView(input([1380, 2100], { hidden: [true, false] }), TOP)).toBeNull();
-  });
-
   it("서버가 값을 주지 않았거나 1위 추천 역과 같으면 없다", () => {
-    expect(toMapMiddleView({ mode: "fair", participants: input([1380, 2100]).participants }, TOP)).toBeNull();
+    expect(toMapMiddleView({ mode: "fair" }, TOP)).toBeNull();
     expect(toMapMiddleView(input([1380, 2100], { code: "top" }), TOP)).toBeNull();
   });
 

@@ -11,7 +11,7 @@ import type { Band } from "@/lib/when/time-slot";
 
 export type Checked<T> = { ok: true; value: T } | { ok: false; message: string };
 
-export type ParticipantFormValue = { nickname: string; station: Station | null; hidden: boolean };
+export type ParticipantFormValue = { nickname: string; station: Station | null };
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: 제어 문자를 막으려는 검사다.
 const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
@@ -25,7 +25,7 @@ function checkNickname(raw: string): Checked<string | null> {
   return { ok: true, value: nickname };
 }
 
-/** 이름은 넣은 사람만 보낸다. `hidden`은 항상 보낸다(꺼 둔 값도 명시). */
+/** 이름은 넣은 사람만 보낸다. */
 export function toParticipantInput(form: ParticipantFormValue): Checked<ParticipantInput> {
   const nickname = checkNickname(form.nickname);
   if (!nickname.ok) return nickname;
@@ -35,7 +35,6 @@ export function toParticipantInput(form: ParticipantFormValue): Checked<Particip
     ok: true,
     value: {
       originCode: form.station.code,
-      hidden: form.hidden,
       ...(nickname.value ? { nickname: nickname.value } : {}),
     },
   };

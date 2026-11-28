@@ -40,7 +40,6 @@ public data class ParticipantRoute(
 
 /**
  * 순위를 다 정한 뒤 만날 역마다 사람별 경로를 붙인다. 순위·시간·이유 문장에는 쓰이지 않는다.
- * **출발역을 숨긴 사람의 경로는 그 사람의 요청([viewerId])에만 넣는다**: 경로의 첫 역이 곧 출발역이다.
  */
 internal class RouteAttacher(
     private val source: RouteSource,
@@ -49,7 +48,6 @@ internal class RouteAttacher(
     class Rider(
         val id: String,
         val originCode: String,
-        val hidden: Boolean,
     )
 
     /**
@@ -59,10 +57,9 @@ internal class RouteAttacher(
     fun forRequest(
         slot: TimeSlot,
         riders: List<Rider>,
-        viewerId: String?,
     ): Attached? {
         val graph = source.current() ?: return null
-        return Attached(RouteSearch(graph, slot), riders.filter { !it.hidden || it.id == viewerId }, names)
+        return Attached(RouteSearch(graph, slot), riders, names)
     }
 
     class Attached(

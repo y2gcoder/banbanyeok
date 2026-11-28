@@ -78,9 +78,9 @@ describe("입력 화면", () => {
     expect(createFilledRoom).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: "fair",
-        host: { originCode: "ryf", hidden: false },
+        host: { originCode: "ryf" },
         hostPosition: 1,
-        others: [{ nickname: "민수", originCode: "k3a", hidden: false }],
+        others: [{ nickname: "민수", originCode: "k3a" }],
         recoveryKey: expect.any(String),
       }),
       expect.any(String),

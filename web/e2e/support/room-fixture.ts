@@ -2,35 +2,34 @@ import type { Page } from "@playwright/test";
 
 /**
  * 방 화면 배치 점검용 가짜 방 API. 가짜 서버(mock/)는 방을 구현하지 않으므로(r1-notes 10-4) 같은 출처 `/api/v1/rooms**` 요청을
- * 브라우저에서 가로채 정해 둔 응답을 준다. 방 흐름 자체(숨김·토큰·멱등)는 e2e-real/rooms.spec.ts가 실제 서버로 검증한다.
+ * 브라우저에서 가로채 정해 둔 응답을 준다. 방 흐름 자체(권한·토큰·멱등)는 e2e-real/rooms.spec.ts가 실제 서버로 검증한다.
  * 여기서는 화면 상태별 **배치**만 본다: 방장 혼자 / 친구가 참여 전 / 방장이 3명과 결과를 보는 화면.
  */
 export const FAKE_ROOM_ID = "qt7yvmsht3";
 const HOST_TOKEN = "htok-layout-host";
 const HOST_PARTICIPANT_TOKEN = "ptok-layout-host";
-const HIDDEN_PARTICIPANT_TOKEN = "ptok-layout-hidden";
+const FRIEND_PARTICIPANT_TOKEN = "ptok-layout-friend";
 
 /**
- * `hidden-self`: 출발역을 숨긴 친구(참가자 2) 본인이 보는 화면. 본인에게만 본인의 출발역과 막차가 온다.
+ * `friend-joined`: 참여한 친구가 보는 화면.
  * `friend-alone`: 방장 혼자인 방에 링크로 들어와 아직 참여 전인 화면(결과 전).
  */
-export type RoomScenario = "host-alone" | "friend-join" | "host-full" | "hidden-self" | "friend-alone";
+export type RoomScenario = "host-alone" | "friend-join" | "host-full" | "friend-joined" | "friend-alone";
 
 /** 열어 둔 방의 인원을 테스트 중에 바꾼다: `alone`이면 방장 한 명, 아니면 세 명. 다음 방 요청부터 적용된다. */
 export type RoomCrowd = { alone: boolean };
 
 /**
- * 막차 칸(#62)의 갈래를 보려고 약속과 숨김만 바꾼 방.
+ * 막차 칸(#62)의 갈래를 보려고 약속 구분을 바꾼 방.
  * - `dawn`: 토요일 02:59 약속(금요일 운행일). 민수의 막차는 토요일 00:27이라 약속보다 먼저 떠난다.
  * - `undated`: 약속 날짜가 없는 방. 서버는 요일을 몰라 시각을 주지 않는다(`day_unknown`, 기본값 평일·partial은 그대로 온다).
- * - `all-hidden`: 모두 출발역을 숨긴 방. 본인이 아닌 사람에게는 막차 항목이 하나도 오지 않는다.
  */
-export type RoomVariant = "default" | "dawn" | "undated" | "all-hidden";
+export type RoomVariant = "default" | "dawn" | "undated";
 
 /**
  * '누구 쪽으로' 뽑기 방(#172)으로 열기: `pending`은 아직 안 뽑음, `drawn`은 지연이와 함께 오는 아주 긴 이름(f2)이 뽑힘(이 기기는
  * 처음 봄: 한 번 재생), `drawn-seen`은 같은 뽑기를 이 기기에서 이미 봄(기록이 있는 시나리오만, 처음부터 접힌 결과).
- * 숨긴 참가자 2는 대상에서 빠진다. 없으면 공평하게 방이다.
+ * 뽑기 설정이 없으면 공평하게 방이다.
  */
 export type RoomDraw = "pending" | "drawn" | "drawn-seen";
 
@@ -51,14 +50,14 @@ const HOST = {
   nickname: "민수",
   isHost: true,
 };
-const HIDDEN_FRIEND = {
+const FRIEND = {
   participantId: "f1",
-  hidden: true,
-  originCode: null,
-  originName: null,
-  label: "참가자 2",
-  labelKind: "ordinal",
-  shortLabel: "참가자 2",
+  hidden: false,
+  originCode: "ep4",
+  originName: "합정",
+  label: "합정에서 오는 분",
+  labelKind: "origin",
+  shortLabel: "합정",
   nickname: null,
   isHost: false,
 };
@@ -125,16 +124,15 @@ const CANDIDATES = [
 
 /**
  * 집에 가는 막차(#62). 약속일이 토요일이라 일부 노선만 계산한 요일 종류다(`partial`). 민수는 직행 확정, 긴 이름의 친구는 확인 필요,
- * 출발역을 숨긴 참가자 2는 본인에게만 온다(갈아타는 여유 시각 22:47 → 화면 22:40).
+ * 합정에서 오는 분은 갈아타는 여유 시각(22:47 → 화면 22:40)이다.
  */
 const LAST_TRAIN_BASIS = { dayType: "saturday", asOf: "2026-11-16", partial: true };
 
-function lastTrains(selfId: string | null, variant: RoomVariant = "default") {
-  if (variant === "all-hidden") return [];
+function lastTrains(variant: RoomVariant) {
   if (variant === "undated") {
     return [
       { participantId: "h1", kind: "check" },
-      ...(selfId === "f1" ? [{ participantId: "f1", kind: "check" }] : []),
+      { participantId: "f1", kind: "check" },
       { participantId: "f2", kind: "check" },
     ];
   }
@@ -146,7 +144,7 @@ function lastTrains(selfId: string | null, variant: RoomVariant = "default") {
       minute: variant === "dawn" ? 1467 : 1432,
       boundFor: { stationCode: "bvq", stationName: "성수" },
     },
-    ...(selfId === "f1" ? [{ participantId: "f1", kind: "margin", minute: 1367, transfer: true }] : []),
+    { participantId: "f1", kind: "margin", minute: 1367, transfer: true },
     { participantId: "f2", kind: "check" },
   ];
 }
@@ -213,22 +211,12 @@ export async function prepareRoom(
   crowd: RoomCrowd = { alone: scenario === "host-alone" || scenario === "friend-alone" },
   draw?: RoomDraw,
 ): Promise<string> {
-  const peopleNow = () => {
-    const listed = crowd.alone ? [HOST] : [HOST, HIDDEN_FRIEND, NAMED_FRIEND];
-    return variant === "all-hidden"
-      ? listed.map((p, i) => ({
-          ...p,
-          hidden: true,
-          originCode: null,
-          originName: null,
-          label: p.nickname ?? `참가자 ${i + 1}`,
-          shortLabel: p.nickname ?? `참가자 ${i + 1}`,
-        }))
-      : listed;
-  };
+  const guests = draw ? [NAMED_FRIEND] : [FRIEND, NAMED_FRIEND];
+  const friendId = draw ? NAMED_FRIEND.participantId : FRIEND.participantId;
+  const peopleNow = () => (crowd.alone ? [HOST] : [HOST, ...guests]);
   const meeting = meetingOf(variant);
   const asHost = scenario === "host-alone" || scenario === "host-full";
-  if (asHost || scenario === "hidden-self") {
+  if (asHost || scenario === "friend-joined") {
     const record = asHost
       ? {
           v: 1,
@@ -240,8 +228,8 @@ export async function prepareRoom(
         }
       : {
           v: 1,
-          participantToken: HIDDEN_PARTICIPANT_TOKEN,
-          participantId: "f1",
+          participantToken: FRIEND_PARTICIPANT_TOKEN,
+          participantId: friendId,
           keepUntil: "2999-01-01T00:00:00.000Z",
           ...(draw === "drawn-seen" ? { drawSeen: "0:1" } : {}),
         };
@@ -258,13 +246,11 @@ export async function prepareRoom(
     const selfId =
       authorization === `Bearer ${HOST_PARTICIPANT_TOKEN}`
         ? "h1"
-        : authorization === `Bearer ${HIDDEN_PARTICIPANT_TOKEN}`
-          ? "f1"
+        : authorization === `Bearer ${FRIEND_PARTICIPANT_TOKEN}`
+          ? friendId
           : null;
-    // 출발역을 숨긴 사람 본인에게는 서버가 본인의 출발역을 준다(다른 사람에게는 null).
     const participants = people.map((p) => ({
       ...p,
-      ...(p.participantId === "f1" && selfId === "f1" ? { originCode: "ep4", originName: "합정" } : {}),
       isSelf: p.participantId === selfId,
     }));
     if (request.method() === "GET" && path === `/rooms/${FAKE_ROOM_ID}`) {
@@ -279,10 +265,10 @@ export async function prepareRoom(
                   generation: 0,
                   round: draw !== "pending" ? 1 : 0,
                   maxRounds: 2,
-                  candidates: ["h1", "f2"],
+                  candidates: people.map((p) => p.participantId),
                   winner: draw !== "pending" ? "f2" : null,
                   drawnAt: draw !== "pending" ? "2026-11-21T10:14:00Z" : null,
-                  excluded: [{ participantId: "f1", reason: "hidden" }],
+                  excluded: [],
                 },
               }
             : {}),
@@ -317,13 +303,12 @@ export async function prepareRoom(
           station: {
             stationCode: top?.stationCode,
             stationName: top?.stationName,
-            // 미리보기는 누가 묻든 같다: 숨긴 사람의 막차는 없다.
-            times: people.map((p, i) => {
-              const lastTrain = lastTrains(null, variant).find((t) => t.participantId === p.participantId);
+            times: people.map((p) => {
+              const lastTrain = lastTrains(variant).find((t) => t.participantId === p.participantId);
               const { participantId: _id, ...entry } = lastTrain ?? { participantId: "" };
               return {
                 label: p.shortLabel,
-                seconds: top?.times[i]?.seconds ?? null,
+                seconds: top?.times.find((t) => t.participantId === p.participantId)?.seconds ?? null,
                 ...(lastTrain ? { lastTrain: entry } : {}),
               };
             }),
@@ -340,7 +325,18 @@ export async function prepareRoom(
           dataVersion: "20261114.5",
           participants,
           baselineStationCode: "s1q",
-          candidates: CANDIDATES.map((c) => ({ ...c, lastTrains: lastTrains(selfId, variant) })),
+          candidates: CANDIDATES.map((c) => {
+            const times = c.times.filter((t) => people.some((p) => p.participantId === t.participantId));
+            const seconds = times.map((t) => t.seconds);
+            return {
+              ...c,
+              times,
+              maxSeconds: Math.max(...seconds),
+              spreadSeconds: Math.max(...seconds) - Math.min(...seconds),
+              totalSeconds: seconds.reduce((sum, duration) => sum + duration, 0),
+              lastTrains: lastTrains(variant).filter((t) => people.some((p) => p.participantId === t.participantId)),
+            };
+          }),
           timeBasis: meeting.timeBasis,
           lastTrainBasis: meeting.lastTrainBasis,
         }),

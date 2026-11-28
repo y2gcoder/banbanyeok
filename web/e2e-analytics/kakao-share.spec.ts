@@ -236,7 +236,7 @@ async function expectRoomMessage(probe: Probe, page: Page, baseURL: string | und
     object_type: "feed",
     content: {
       title: "지금은 동대문역사문화공원이 제일 공평해요",
-      description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 참가자 2 21분 · 지연이와 함께 오는 아주 긴 이름 19분",
+      description: "아직이면 출발역 넣어 주세요 · 민수 22분 · 합정 21분 · 지연이와 함께 오는 아주 긴 이름 19분",
       // 그림 버전(iv)이 붙는다: 방 내용이 그대로여도 그리는 코드가 바뀌면 다시 공유한 메시지가 새 그림을 받는다.
       image_url: `${baseURL}/r/${FAKE_ROOM_ID}/og?sv=5&dv=20261114.5&pv=${ROOM_SHARE_POLICY_VERSION}&iv=${ROOM_OG_IMAGE_VERSION}`,
       link: { web_url: link, mobile_web_url: link },

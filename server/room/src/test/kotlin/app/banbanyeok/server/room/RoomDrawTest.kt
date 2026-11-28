@@ -218,7 +218,7 @@ class RoomDrawTest :
                 }
             }
 
-            it("still names someone left out by a draw made before ADR-0007 as hidden") {
+            it("keeps the original draw without listing historical exclusions as late arrivals") {
                 drawTest {
                     val room = drawRoom()
                     val stored = rooms.find(room.roomId).shouldNotBeNull().room
@@ -228,12 +228,10 @@ class RoomDrawTest :
                         stored.copy(id = "legacydraw", favorDraw = legacyDraw, favorParticipantId = room.friendId),
                         rooms.find(room.roomId).shouldNotBeNull().participants,
                     )
-                    service
-                        .get("legacydraw", null)
-                        .favorDraw
-                        .shouldNotBeNull()
-                        .excluded shouldBe
-                        listOf(DrawExclusion(room.thirdId, DrawExclusionReason.HIDDEN))
+                    val draw = service.get("legacydraw", null).favorDraw.shouldNotBeNull()
+                    draw.candidates shouldBe legacyDraw.candidates
+                    draw.winner shouldBe room.friendId
+                    draw.excluded shouldBe emptyList()
                 }
             }
 

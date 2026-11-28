@@ -16,8 +16,6 @@ public data class GoldenInput(
     val transfers: List<List<Int?>>,
     val mode: String,
     val tolerance: Double,
-    /** 배려 상한을 두지 않는 참가자(방에서 출발역을 숨긴 사람, #162). 없으면 빈 목록. */
-    val uncapped: List<String> = emptyList(),
 )
 
 @Serializable

@@ -49,7 +49,6 @@ class RecommendationErrorTableTest :
                     RecommendationError.SCHEDULE_UNAVAILABLE to "SCHEDULE_UNAVAILABLE",
                     RecommendationError.FAVOR_TARGET_REQUIRED to "FAVOR_TARGET_REQUIRED",
                     RecommendationError.FAVOR_TARGET_UNKNOWN to "FAVOR_TARGET_UNKNOWN",
-                    RecommendationError.FAVOR_TARGET_HIDDEN to "FAVOR_TARGET_HIDDEN",
                 )
             it("lists every error") { table.keys shouldBe RecommendationError.entries.toSet() }
             for ((error, code) in table) {
@@ -102,12 +101,6 @@ class RecommendationErrorTableTest :
                         Triple(HttpStatusCode.BadRequest, "FAVOR_TARGET_REQUIRED", "우대 대상이 필요합니다"),
                     RecommendationError.FAVOR_TARGET_UNKNOWN to
                         Triple(HttpStatusCode.BadRequest, "FAVOR_TARGET_UNKNOWN", "우대 대상이 참가자에 없습니다"),
-                    RecommendationError.FAVOR_TARGET_HIDDEN to
-                        Triple(
-                            HttpStatusCode.BadRequest,
-                            "FAVOR_TARGET_HIDDEN",
-                            "출발역을 숨긴 사람 쪽으로 맞춘 결과는 본인만 볼 수 있습니다",
-                        ),
                 )
             it("lists every error") { table.keys shouldBe RecommendationError.entries.toSet() }
             for ((error, expected) in table) {

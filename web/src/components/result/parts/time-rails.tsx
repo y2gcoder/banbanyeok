@@ -6,7 +6,7 @@ import type { RouteView } from "@/lib/result/route";
 import type { PersonTimeView } from "@/lib/result/view-model";
 import { lineColor } from "@/lib/stations/lines";
 
-/** 환승 글. 출발역을 숨긴 다른 사람은 서버가 환승을 주지 않으므로(#142) 쓰지 않는다. */
+/** 환승 글. 환승 수가 없으면 표시하지 않는다. */
 export function shownTransferLabel(person: Pick<PersonTimeView, "shownTransfers">): string | null {
   return person.shownTransfers === null ? null : transferLabel(person.shownTransfers);
 }
@@ -67,7 +67,7 @@ function RouteFill({ route, width }: { route: RouteView; width: string }) {
   );
 }
 
-/** 경로를 모르면(서버가 주지 않음·숨긴 출발역) 막대와 끝점은 중립색이다. 역의 호선 배지와 헷갈리지 않게 한다. */
+/** 경로를 모르면(서버가 주지 않음) 막대와 끝점은 중립색이다. 역의 호선 배지와 헷갈리지 않게 한다. */
 function Track({ person, end, step }: { person: PersonTimeView; end: number; step: number }) {
   const at = percent(person.minutes, end);
   const last = person.route?.lines.at(-1);

@@ -17,7 +17,7 @@ import type { RoomDraw } from "@/lib/room/draw";
 import { isRoomGone, roomErrorMessage } from "@/lib/room/errors";
 import { roomResultQueryOptions } from "@/lib/room/queries";
 import { roomRegionNames } from "@/lib/room/region";
-import { canFavor, favorIndexOf } from "@/lib/room/view";
+import { favorIndexOf } from "@/lib/room/view";
 import { DecisionBanner } from "./decision-banner";
 import type { DecisionControl } from "./use-room-decision";
 
@@ -73,7 +73,7 @@ function roomChoiceOf(
 }
 
 /**
- * 방 결과. 서버가 방 전체로 계산한다(숨긴 사람의 출발역은 가려지고 시간·환승은 보인다). 모드 탭은 보는 사람의 화면 설정이고
+ * 방 결과. 서버가 방 전체로 계산한다. 모드 탭은 보는 사람의 화면 설정이고
  * 처음 값은 방의 추천 기준·배려 대상이다. 이름은 서버 label·shortLabel이고 "(나)"는 내 토큰이 가리키는 사람에게만 붙는다.
  */
 export function RoomResult({
@@ -91,10 +91,10 @@ export function RoomResult({
   const panelId = useId();
   const queryClient = useQueryClient();
   // 배려 대상 알약은 좁은 칸이라 짧은 이름(shortLabel). 모르는 옛 서버(웹이 먼저 배포된 사이)는 label로.
-  // 출발역을 숨긴 다른 사람은 고를 수 없다(그 사람 쪽 결과는 본인만 본다, #162).
-  const people = room.participants.flatMap((p, index) =>
-    canFavor(p) ? [{ index, name: (p.shortLabel as string | undefined) ?? p.label }] : [],
-  );
+  const people = room.participants.map((p, index) => ({
+    index,
+    name: (p.shortLabel as string | undefined) ?? p.label,
+  }));
   // 뽑기로 정하는 방에서 아직 안 뽑았으면 공평하게로 시작한다(서버의 방 기본 결과·미리보기와 같다, #172).
   const [pick, setPick] = useState<Pick>(() =>
     room.favorDraw && !room.favorDraw.winner
@@ -112,9 +112,7 @@ export function RoomResult({
   const favorIndexRaw =
     pick.favorId === null ? -1 : room.participants.findIndex((p) => p.participantId === pick.favorId);
   const favorTargetIndex = favorIndexRaw >= 0 ? favorIndexRaw : (favorIndexOf(room) ?? 0);
-  const favorTarget = room.participants[favorTargetIndex];
-  // 그 사람이 출발역을 숨긴 다른 사람이면(방의 기본 기준이거나, 고른 뒤 숨겼다) 공평하게로 본다. 서버의 방 기본 기준·미리보기와 같은 규칙이다.
-  const mode: Mode = pick.mode === "favor" && favorTarget !== undefined && !canFavor(favorTarget) ? "fair" : pick.mode;
+  const mode = pick.mode;
   const favorIndex = mode === "favor" ? favorTargetIndex : null;
   const favorId = favorIndex === null ? null : (room.participants[favorIndex]?.participantId ?? null);
 

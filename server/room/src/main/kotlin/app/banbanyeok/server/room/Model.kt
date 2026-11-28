@@ -108,7 +108,7 @@ public data class FavorDraw(
     val round: Int,
     /** 뽑을 때 대상이던 참가자 ID(입장 순서). */
     val candidates: List<String>,
-    /** 뽑을 때 방에 있던 모든 참가자 ID. 그 뒤에 들어온 사람(late)과, ADR-0007 전에 숨겨서 빠진 사람(hidden)을 이것으로 가른다. */
+    /** 뽑을 때 방에 있던 모든 참가자 ID. 이 명단에 없는 현재 참가자는 뽑은 뒤에 들어온 사람이다. */
     val roster: List<String>,
     val drawnAt: Instant?,
 ) {
@@ -270,9 +270,6 @@ public data class DrawExclusion(
 )
 
 public enum class DrawExclusionReason {
-    /** 뽑을 때 방에 있었지만 대상이 아니었다: ADR-0007 전에 출발역을 숨긴 채 뽑힌 옛 뽑기다. 새로 생기지 않는다. */
-    HIDDEN,
-
     /** 뽑은 뒤에 들어왔다. */
     LATE,
 }

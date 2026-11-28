@@ -188,7 +188,6 @@ private fun statelessCode(error: RecommendationError): String =
         RecommendationError.SCHEDULE_UNAVAILABLE -> "SCHEDULE_UNAVAILABLE"
         RecommendationError.FAVOR_TARGET_REQUIRED -> "FAVOR_TARGET_REQUIRED"
         RecommendationError.FAVOR_TARGET_UNKNOWN -> "FAVOR_TARGET_UNKNOWN"
-        RecommendationError.FAVOR_TARGET_HIDDEN -> "FAVOR_TARGET_HIDDEN"
     }
 
 /**
@@ -226,9 +225,5 @@ internal fun RecommendationException.asRoomError(): AppException =
 
         RecommendationError.FAVOR_TARGET_UNKNOWN -> {
             AppException(ErrorKind.INVALID, "FAVOR_TARGET_UNKNOWN", "우대 대상이 참가자에 없습니다", this)
-        }
-
-        RecommendationError.FAVOR_TARGET_HIDDEN -> {
-            AppException(ErrorKind.INVALID, "FAVOR_TARGET_HIDDEN", "출발역을 숨긴 사람 쪽으로 맞춘 결과는 본인만 볼 수 있습니다", this)
         }
     }

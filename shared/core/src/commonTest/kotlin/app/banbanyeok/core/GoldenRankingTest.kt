@@ -7,11 +7,11 @@ import kotlin.test.assertEquals
 
 class GoldenRankingTest {
     @Test
-    fun allSeventeenFullRankingsMatchOracle() {
+    fun allFullRankingsMatchOracle() {
         val scenarios = GoldenCodec.parseScenarios(ContractFiles.text("golden/scenarios.json"))
         val expected = GoldenCodec.parseExpected(ContractFiles.text("golden/expected.ranking.json"))
         assertEquals("minutes", expected.unit)
-        assertEquals(17, scenarios.size)
+        assertEquals(16, scenarios.size)
         assertEquals(scenarios.map { it.id }, expected.scenarios.map { it.id })
         for ((scenario, snapshot) in scenarios.zip(expected.scenarios)) {
             val input = scenario.input
@@ -24,7 +24,6 @@ class GoldenRankingTest {
                         input.transfers,
                         input.mode,
                         (input.tolerance * 60).toInt(),
-                        input.uncapped.toSet(),
                     ),
                 )
             val expectedRows =

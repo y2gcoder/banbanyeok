@@ -5,14 +5,13 @@ import { horizontalOverflow } from "./support/layout";
 /**
  * '누구 쪽으로' 뽑기(#172) 화면. 가짜 서버(mock/)는 방을 구현하지 않으므로 같은 출처 `/api/v1/rooms**`를 가로채 뽑기 방을 흉내 낸다
  * (운은 서버가 정한다: 여기서는 지영이 뽑힌다). 실제 서버로 하는 흐름은 e2e-real/favor-draw.spec.ts에 있다.
- * 방: 민수(방장), 참가자 2(출발역 숨김), 지영. 숨긴 사람은 뽑기에서 빠진다.
+ * 방: 민수(방장)와 지영.
  */
 const PHONE = { width: 390, height: 844 };
 const ROOM_ID = "qt7yvmsht3";
 const HOST_TOKEN = "htok-draw-host";
 const HOST_PART = "ptok-draw-host";
 const JIYOUNG_PART = "ptok-draw-jiyoung";
-const HIDDEN_PART = "ptok-draw-hidden";
 
 const BASIS = {
   timeSlot: "weekday-day",
@@ -36,17 +35,6 @@ const PEOPLE = [
     isHost: true,
   },
   {
-    participantId: "f1",
-    hidden: true,
-    originCode: null,
-    originName: null,
-    label: "참가자 2",
-    shortLabel: "참가자 2",
-    nickname: null,
-    labelKind: "ordinal",
-    isHost: false,
-  },
-  {
     participantId: "f2",
     hidden: false,
     originCode: "1qs",
@@ -65,11 +53,11 @@ const CANDIDATES = [
 ].map((c) => ({
   ...c,
   times: PEOPLE.map((p, i) => ({ participantId: p.participantId, seconds: 1200 + i * 60, transfers: 0 })),
-  maxSeconds: 1320,
-  spreadSeconds: 120,
-  totalSeconds: 3780,
+  maxSeconds: 1260,
+  spreadSeconds: 60,
+  totalSeconds: 2460,
   reasonCode: "FAIR_MINIMAX",
-  reason: "가장 오래 걸리는 사람도 22분이에요.",
+  reason: "가장 오래 걸리는 사람도 21분이에요.",
 }));
 
 /**
@@ -114,7 +102,7 @@ async function fakeDrawRoom(page: Page, state: DrawState, record?: Record<string
       candidates: state.candidates ?? ["h1", "f2"],
       winner: state.winner,
       drawnAt: state.winner ? "2026-11-25T11:14:00Z" : null,
-      excluded: [{ participantId: "f1", reason: "hidden" }],
+      excluded: [],
     },
   });
   await page.route("**/api/v1/rooms/**", async (route) => {
@@ -122,14 +110,7 @@ async function fakeDrawRoom(page: Page, state: DrawState, record?: Record<string
     const url = new URL(request.url());
     const path = url.pathname.replace("/api/v1", "");
     const auth = request.headers().authorization;
-    const selfId =
-      auth === `Bearer ${HOST_PART}`
-        ? "h1"
-        : auth === `Bearer ${JIYOUNG_PART}`
-          ? "f2"
-          : auth === `Bearer ${HIDDEN_PART}`
-            ? "f1"
-            : null;
+    const selfId = auth === `Bearer ${HOST_PART}` ? "h1" : auth === `Bearer ${JIYOUNG_PART}` ? "f2" : null;
     const ok = (body: unknown) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
     if (request.method() === "POST" && path === `/rooms/${ROOM_ID}/favor-draw`) {
@@ -304,7 +285,7 @@ test.describe("'누구 쪽으로' 뽑기", () => {
         hostToken: HOST_TOKEN,
         participantToken: HOST_PART,
         participantId: "h1",
-        expectedCount: 3,
+        expectedCount: 2,
       }),
     );
     await expectDrawOrder(page, "누구 쪽으로 뽑기 전");
@@ -312,7 +293,7 @@ test.describe("'누구 쪽으로' 뽑기", () => {
     await expectTouchTarget(page, "사다리 타기");
     await expectTouchTarget(page, "뽑기 자세히 보기");
     await page.getByRole("button", { name: "뽑기 자세히 보기" }).click();
-    await expect(page.getByText(/참가자 2는 출발역을 숨겨서/)).toBeVisible();
+    await expect(page.getByText(/뽑힌 사람 쪽으로 만날 역을 맞춰요/)).toBeVisible();
     await expectNoA11yViolations(page);
     expect(await horizontalOverflow(page)).toEqual([]);
 
@@ -448,16 +429,5 @@ test.describe("'누구 쪽으로' 뽑기", () => {
     await expect(page.getByRole("heading", { name: "뽑는 중…" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("heading", { name: "지영 쪽으로!" })).toBeFocused();
-  });
-
-  test("출발역을 숨긴 본인: 펼치면 뽑기에서 빠졌다는 안내를 보고, 그림에는 본인 칸이 없다", async ({ page }) => {
-    const state: DrawState = { round: 1, winner: "f2" };
-    await page.goto(await fakeDrawRoom(page, state, { participantToken: HIDDEN_PART, participantId: "f1", ...SEEN }));
-    await page.getByRole("button", { name: "사다리 결과 보기" }).click();
-    await expect(page.getByText(/참가자 2는 뽑을 때 출발역을 숨겨서/)).toBeVisible();
-    await expect(page.getByText(/출발역을 숨긴 사람을 빼면, 다른 사람도/)).toBeVisible();
-    const pills = page.getByRole("img", { name: /사다리타기/ }).locator("xpath=preceding-sibling::ol");
-    await expect(pills).toHaveText(/민수.*지영/);
-    await expect(pills.getByText("참가자 2")).toHaveCount(0);
   });
 });

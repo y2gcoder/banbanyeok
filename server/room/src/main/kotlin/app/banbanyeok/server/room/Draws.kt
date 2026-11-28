@@ -126,15 +126,11 @@ public class FavorDrawRule(
             candidates = draw.candidates,
             winner = winner,
             drawnAt = draw.drawnAt,
-            // 뽑을 때 방에 있었는데 대상이 아니었으면 ADR-0007 전에 숨겨서 빠진 것이고(그 전에 뽑은 기록에서만 나온다),
-            // 명단에 없으면 뽑은 뒤에 들어온 것이다.
+            // 뽑을 때 명단에 없었던 사람만 뒤늦게 들어온 사람으로 표시한다.
             excluded =
                 participants
-                    .filter { it.id !in drawn }
-                    .map {
-                        val reason = if (it.id in roster) DrawExclusionReason.HIDDEN else DrawExclusionReason.LATE
-                        DrawExclusion(it.id, reason)
-                    },
+                    .filter { it.id !in drawn && it.id !in roster }
+                    .map { DrawExclusion(it.id, DrawExclusionReason.LATE) },
         )
     }
 

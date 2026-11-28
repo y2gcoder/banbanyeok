@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon, DicesIcon, EyeOffIcon, RotateCcwIcon, SkipForwardIcon, UserPlusIcon } from "lucide-react";
+import { ChevronDownIcon, DicesIcon, RotateCcwIcon, SkipForwardIcon, UserPlusIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { withJosa } from "@/lib/display/korean";
@@ -24,8 +24,6 @@ export type FavorDrawCardProps = {
   full: boolean | null;
   joinedCount: number;
   expectedCount: number | null;
-  /** 방에 출발역을 숨긴 사람이 있다(그 사람에게는 배려 상한이 없다, ADR-0005). */
-  hiddenInRoom: boolean;
   /** 마운트하면 초점을 둘 곳: 이 기기가 막 뽑아 재생하면 건너뛰기 버튼. */
   focusOnMount?: "skip" | "heading" | null;
   /** 방장의 뽑기 요청이 서버로 가는 중. */
@@ -140,10 +138,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
   const redrawsLeft = Math.max(0, draw.maxRounds - draw.round);
   const enough = draw.candidates.length >= 2;
   const by = draw.round >= 2 ? "방장이 한 번 다시 뽑았어요" : "방장이 뽑았어요";
-  const lateEligible = draw.late.filter((p) => !p.hidden).map((p) => p.name);
-  const fairness = props.hiddenInRoom
-    ? "출발역을 숨긴 사람을 빼면, 다른 사람도 공평 1위보다 15분(또는 그 시간의 절반) 넘게 더 가지 않아요."
-    : "다른 사람도 공평 1위보다 15분(또는 그 시간의 절반) 넘게 더 가지 않아요.";
+  const fairness = "다른 사람도 공평 1위보다 15분(또는 그 시간의 절반) 넘게 더 가지 않아요.";
   const title = phase === "playing" ? "뽑는 중…" : winnerName ? `${winnerName} 쪽으로!` : "누구 쪽으로 뽑기 전";
   const collapsedResult = !expanded && phase === "done";
 
@@ -264,26 +259,15 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
             </Button>
           ) : null}
 
-          {draw.hiddenNames.length > 0 && phase !== "playing" ? (
-            <p className="flex items-start gap-1.5 rounded-xl bg-muted px-3 py-2.5 text-[14px] text-ink-soft">
-              <EyeOffIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <span>
-                {withJosa(draw.hiddenNames.join(", "), "은/는")}{" "}
-                {draw.winner === null ? "출발역을 숨겨서" : "뽑을 때 출발역을 숨겨서"} 뽑기에서 빠졌어요. 숨긴 사람 쪽
-                결과는 본인만 볼 수 있어서예요.
-              </span>
-            </p>
-          ) : null}
-
           {draw.late.length > 0 && phase === "done" ? (
             <p className="flex items-start gap-1.5 rounded-xl bg-muted px-3 py-2.5 text-[14px] text-ink-soft">
               <UserPlusIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               <span>
                 {viewer === "late"
                   ? "뽑기 뒤에 들어왔어요. 이번 뽑기에는 없었지만 결과는 그대로예요."
-                  : `${withJosa(draw.late.map((p) => p.name).join(", "), "이/가")} 뽑기 뒤에 들어왔어요.${
-                      viewer === "host" && redrawsLeft > 0 && lateEligible.length > 0
-                        ? ` 다시 뽑으면 ${lateEligible.join(", ")}도 함께 들어가요.`
+                  : `${withJosa(draw.late.join(", "), "이/가")} 뽑기 뒤에 들어왔어요.${
+                      viewer === "host" && redrawsLeft > 0 && draw.late.length > 0
+                        ? ` 다시 뽑으면 ${draw.late.join(", ")}도 함께 들어가요.`
                         : ""
                     }`}
               </span>
@@ -293,11 +277,7 @@ export function FavorDrawCard(props: FavorDrawCardProps) {
           {viewer === "host" && phase === "idle" ? (
             <div className="flex flex-col gap-2">
               {!enough ? (
-                <p className="text-[14px] text-ink-soft">
-                  {props.hiddenInRoom
-                    ? "출발역을 숨기지 않은 사람이 두 명 이상이어야 뽑을 수 있어요."
-                    : "두 명 이상 들어와야 뽑을 수 있어요."}
-                </p>
+                <p className="text-[14px] text-ink-soft">두 명 이상 들어와야 뽑을 수 있어요.</p>
               ) : props.full === false ? (
                 <p className="text-[14px] text-ink-soft">
                   아직 {props.joinedCount}/{props.expectedCount}명이에요. 다 들어온 뒤에 뽑는 게 좋아요.

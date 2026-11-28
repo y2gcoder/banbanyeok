@@ -35,7 +35,7 @@ const room = (over: Partial<Room> = {}): Room => ({
   ...over,
 });
 
-/** 민수(강남) 22분 29초, 숨긴 사람(서버가 "참가자 2"로 준다) 21분 27초, 홍대입구(이름 없음) 19분 24초. */
+/** 민수(강남) 22분 29초, 역 이름이 없는 사람(서버가 "참가자 2"로 준다) 21분 27초, 홍대입구(이름 없음) 19분 24초. */
 const TIMES = [
   { label: "민수", seconds: 1349 },
   { label: "참가자 2", seconds: 1287 },
@@ -148,7 +148,7 @@ describe("방 공유 문구", () => {
     });
   });
 
-  it("정한 사람이 숨긴 사람이면 서버가 준 '참가자 N'으로, 약속이 없으면 그 칸을 뺀다", () => {
+  it("정한 사람은 서버가 준 '참가자 N'으로, 약속이 없으면 그 칸을 뺀다", () => {
     const copy = roomShareCopy(decided({ decidedBy: "참가자 2", room: room() }));
     expect(copy.preview.description).toBe("참가자 2가 정했어요 · 민수 22분 · 참가자 2 21분 · 홍대입구 19분");
     expect(copy.card?.footer).toEqual({ main: "참가자 2가 정했어요", sub: "가장 오래 걸려도 22분" });
@@ -263,7 +263,7 @@ describe("방 공유 문구", () => {
     const station = {
       stationCode: "k3a",
       stationName: "강남",
-      // 숨긴 "참가자 2"에게는 서버가 막차 키를 주지 않는다. 홍대입구는 갈아타는 여유 시각(23:09 → 23:00)이다.
+      // "참가자 2"의 막차 시각은 확인할 수 없다. 홍대입구는 갈아타는 여유 시각(23:09 → 23:00)이다.
       times: [
         {
           label: "민수",
@@ -336,7 +336,7 @@ describe("방 공유 문구", () => {
       expect(roomKakaoMessage("qt7yvmsht3", result({ station, mapMiddle })).description).toContain(sentence);
     });
 
-    it("키가 없으면(숨긴 사람이 있는 방·조건 미달·옛 서버) 비교만 빠지고 나머지는 그대로다", () => {
+    it("키가 없으면(조건 미달·옛 서버) 비교만 빠지고 나머지는 그대로다", () => {
       const withMiddle = roomShareCopy(result({ station, mapMiddle }));
       const without = roomShareCopy(result({ station }));
       expect(without.preview.description).toBe(withMiddle.preview.description.replace(` · ${sentence}`, ""));
@@ -371,7 +371,7 @@ describe("방 공유 문구", () => {
     });
   });
 
-  it("출발역 이름은 서버가 주지 않으므로 어떤 문구에도 나올 수 없다(숨긴 사람은 '참가자 N')", () => {
+  it("출발역 이름은 서버가 주지 않으므로 어떤 문구에도 나올 수 없다(서버가 준 순번을 쓴다)", () => {
     for (const preview of [result(), decided(), result({ room: room({ canJoin: false }) })]) {
       const text = JSON.stringify(roomShareCopy(preview));
       expect(text).toContain("참가자 2");
@@ -503,7 +503,7 @@ describe("카카오톡 공유 메시지", () => {
     }
   });
 
-  it("이름은 글이라 이모지도 그대로 가고, 숨긴 사람은 '참가자 N'이며 출발역 이름은 어디에도 없다", () => {
+  it("이름은 글이라 이모지도 그대로 가고, 순번은 그대로이며 출발역 이름은 어디에도 없다", () => {
     const times = [
       { label: "🎂", seconds: 600 },
       { label: "참가자 2", seconds: 700 },

@@ -81,7 +81,7 @@ class StatelessRecommendation(
                 ),
             )
         // 구분 행렬 대기·측정·막차 표 읽기는 evaluate가 한 번씩 한다. 순위와 지도 한가운데 비교가 같은 행렬에서 나온다.
-        // 이 경로의 참가자는 출발역을 숨길 수 없다(hidden = false). 지도 한가운데 비교는 조건을 모두 만족할 때만 붙는다.
+        // 지도 한가운데 비교는 조건을 모두 만족할 때만 붙는다.
         return StatelessResult(
             evaluation.recommendation,
             evaluation.mapMiddle,

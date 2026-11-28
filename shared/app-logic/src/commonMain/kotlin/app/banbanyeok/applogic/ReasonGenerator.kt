@@ -100,10 +100,6 @@ public object ReasonGenerator {
                         if (dSpread > 0) " 대신 시간 차이는 ${v.dur(dSpread)} 더 작아요." else ""
                 }
 
-                dMax < 0 && v.input.approximate -> {
-                    "${v.withWa(vs)} 최장 시간은 거의 같아요."
-                }
-
                 dMax < 0 -> {
                     "${label}보다 가장 오래 걸리는 사람이 ${v.dur(-dMax)} 덜 걸려요."
                 }
@@ -121,7 +117,7 @@ public object ReasonGenerator {
     private fun fastWinner(v: View): String {
         val together = if (v.n == 2) "둘이 합쳐" else "${v.n}명 모두 합쳐"
         val claim =
-            if (v.input.toleranceSeconds > 0 || v.input.approximate) "후보 중 가장 짧은 편이에요." else "후보 중 가장 짧아요."
+            if (v.input.toleranceSeconds > 0) "후보 중 가장 짧은 편이에요." else "후보 중 가장 짧아요."
         val first = "$together ${v.dur(v.totalMin)}, $claim"
         val second =
             when {
@@ -158,10 +154,6 @@ public object ReasonGenerator {
                 dTotal > 0 -> {
                     "${label}보다 합쳐서 ${v.dur(dTotal)} 더 걸려요." +
                         if (dMax > 0) " 대신 가장 오래 걸리는 사람은 ${v.dur(dMax)} 덜 걸려요." else ""
-                }
-
-                dTotal < 0 && v.input.approximate -> {
-                    "합계는 ${v.withWa(vs)} 거의 같아요."
                 }
 
                 dTotal < 0 -> {
@@ -247,11 +239,6 @@ public object ReasonGenerator {
                     fav,
                     Josa.EUN_NEUN,
                 )} ${v.dur(mine - theirs)} 더 걸려요 (${v.dur(mine)})."
-
-                mine < theirs && v.input.approximate -> "${Korean.attach(
-                    fav,
-                    Josa.EUN_NEUN,
-                )} ${v.withWa(vs)} 거의 같은 ${v.dur(mine)}이에요."
 
                 mine < theirs -> "${label}보다 ${Korean.attach(
                     fav,

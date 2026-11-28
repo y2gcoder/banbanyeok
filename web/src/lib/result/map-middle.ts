@@ -33,23 +33,22 @@ export type MapMiddleView = {
 };
 
 /**
- * 보여 줄 때만 값을 준다. 숨기는 경우: 공평 기준이 아니다 · 출발역을 숨긴 참가자가 있다(지도 한가운데 역과 평균점에서 숨긴 출발역을
- * 거꾸로 짐작할 수 있다) · 서버가 값을 안 줬다 · 그 밖에 `middleView`가 거르는 경우.
- * `topMinutes`는 1위 추천 역의 사람별 표시 분(입력 순서)이다.
+ * 공평 기준으로 서버가 비교 값을 응답에 실었을 때만 계산한다.
+ * `top.minutes`는 1위 추천 역의 사람별 표시 분이다(입력 순서).
  */
 export function toMapMiddleView(
-  result: Pick<RecommendResult, "mode" | "participants" | "mapMiddle">,
+  result: Pick<RecommendResult, "mode" | "mapMiddle">,
   top: { stationCode: string; minutes: readonly number[] },
 ): MapMiddleView | null {
   const middle = result.mapMiddle;
-  if (result.mode !== "fair" || !middle || result.participants.some((p) => p.hidden)) return null;
+  if (result.mode !== "fair" || !middle) return null;
   return middleView(middle, top);
 }
 
 /**
  * 서버가 준 지도 한가운데 값(무상태 `Result.mapMiddle`이든 방 미리보기 `RoomPreviewResult.mapMiddle`이든 같은 모양의 시간)을 화면 값으로.
  * 숨기는 경우: 추천 역과 같은 역이다 · 사람 수가 맞지 않는다 · 가장 오래 걸리는 시간이 `MIDDLE_MIN_EXTRA`분보다 적게 늘었다.
- * 공평 기준인지·숨긴 사람이 없는지는 부르는 쪽이 먼저 본다(방 미리보기에는 숨김 표시가 없어 서버의 조건을 따른다).
+ * 공평 기준인지는 부르는 쪽이 먼저 본다.
  */
 export function middleView(
   middle: { stationCode: string; stationName: string; times: readonly { seconds: number }[] },

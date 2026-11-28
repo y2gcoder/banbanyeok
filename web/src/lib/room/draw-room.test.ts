@@ -44,10 +44,10 @@ describe("meetingForSlot", () => {
 describe("toDrawRoomRequest", () => {
   it("makes the chosen person the host and keeps everyone else in input order around them", () => {
     expect(toDrawRoomRequest(state(), 1, THURSDAY)).toEqual({
-      host: { originCode: "ryf", hidden: false },
+      host: { originCode: "ryf" },
       others: [
-        { nickname: "민수", originCode: "k3a", hidden: false },
-        { nickname: "하늘", originCode: "dxy", hidden: false },
+        { nickname: "민수", originCode: "k3a" },
+        { nickname: "하늘", originCode: "dxy" },
       ],
       hostPosition: 1,
       meetingBand: "evening",
@@ -56,11 +56,8 @@ describe("toDrawRoomRequest", () => {
 
   it("sends no names when the result had none, and carries a weekend date", () => {
     expect(toDrawRoomRequest(state({ nicknames: null, timeSlot: "saturday-day" }), 0, THURSDAY)).toEqual({
-      host: { originCode: "k3a", hidden: false },
-      others: [
-        { originCode: "ryf", hidden: false },
-        { originCode: "dxy", hidden: false },
-      ],
+      host: { originCode: "k3a" },
+      others: [{ originCode: "ryf" }, { originCode: "dxy" }],
       hostPosition: 0,
       meetingDate: "2026-11-28",
       meetingBand: "day",

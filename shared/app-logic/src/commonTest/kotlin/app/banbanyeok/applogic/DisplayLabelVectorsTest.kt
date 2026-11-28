@@ -3,7 +3,6 @@ package app.banbanyeok.applogic
 import app.banbanyeok.contracts.ContractFiles
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
@@ -21,7 +20,7 @@ class DisplayLabelVectorsTest {
     @Test
     fun vectorFileHasExpectedShape() {
         assertEquals(2, file.getValue("formatVersion").jsonPrimitive.int)
-        assertTrue(vectors.size >= 12, "벡터 수: ${vectors.size}")
+        assertTrue(vectors.size >= 11, "벡터 수: ${vectors.size}")
         assertEquals(vectors.size, vectors.map { it.getValue("id").jsonPrimitive.content }.toSet().size, "id 중복")
     }
 
@@ -32,11 +31,10 @@ class DisplayLabelVectorsTest {
             val people =
                 vector.getValue("people").jsonArray.mapIndexed { i, element ->
                     val person = element.jsonObject
-                    val hidden = person.getValue("hidden").jsonPrimitive.boolean
                     PersonRef(
                         id = "p$i",
                         name = person.getValue("name").jsonPrimitive.contentOrNull,
-                        originName = if (hidden) null else person.getValue("originName").jsonPrimitive.contentOrNull,
+                        originName = person.getValue("originName").jsonPrimitive.contentOrNull,
                     )
                 }
             val expected =

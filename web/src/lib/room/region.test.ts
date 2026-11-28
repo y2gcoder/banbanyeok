@@ -10,7 +10,7 @@ vi.mock("@/lib/stations/index.gen.json", async () => ({
   default: (await import("@/lib/stations/regional.fixture.gen.json")).default,
 }));
 
-const person = (originCode: string | null, hidden = false) => ({ originCode, hidden });
+const person = (originCode: string | null) => ({ originCode, hidden: false });
 const room = (participants: { originCode: string | null; hidden: boolean }[], dataVersion = "20261126.1") =>
   ({
     dataVersion,
@@ -21,9 +21,9 @@ const room = (participants: { originCode: string | null; hidden: boolean }[], da
 const problem = (code: string, status: number) => new ApiRequestError(status, code, "서버 문구");
 
 describe("방의 권역", () => {
-  it("보이는 출발역의 권역이고, 숨긴 사람이 있는 옛 방은 수도권이다", () => {
+  it("알려진 출발역의 권역을 쓴다", () => {
     expect(roomRegion(room([person("004"), person("005")]))).toBe("busan");
-    expect(roomRegion(room([person(null, true), person("004")]))).toBe("capital");
+    expect(roomRegion(room([person(null), person("004")]))).toBe("busan");
   });
 
   it("이미 섞였거나 모르는 역뿐이면 권역을 정하지 않는다", () => {
@@ -50,7 +50,7 @@ describe("권역·시간표 오류 문구", () => {
     expect(roomErrorMessage(error, roomRegionNames(room([person("001")]), "004"))).toBe(
       "수도권 역과 부산권 역은 함께 계산하지 않아요. 같은 권역의 역으로 골라 주세요.",
     );
-    expect(roomErrorMessage(error, roomRegionNames(room([person(null, true)]), "004"))).toBe(
+    expect(roomErrorMessage(error, roomRegionNames(room([person(null)]), "004"))).toBe(
       "한 번에 한 권역 안에서만 계산해요. 같은 권역의 역으로 골라 주세요.",
     );
     expect(resultErrorMessage(error)).toBe("한 번에 한 권역 안에서만 계산해요. 같은 권역의 역으로 골라 주세요.");

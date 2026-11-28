@@ -54,7 +54,7 @@ export function CreateRoomForm({ className }: { className?: string }) {
   const router = useRouter();
   const id = useId();
   const keys = useIdempotencyKey();
-  const [host, setHost] = useState<ParticipantFormValue>({ nickname: "", station: null, hidden: false });
+  const [host, setHost] = useState<ParticipantFormValue>({ nickname: "", station: null });
   const [mode, setMode] = useState<Mode>("fair");
   const [favorTarget, setFavorTarget] = useState<FavorTargetChoice>("host");
   const [when, setWhen] = useState<MeetingWhen>(NO_MEETING_WHEN);
@@ -122,7 +122,7 @@ export function CreateRoomForm({ className }: { className?: string }) {
       keys.renew();
       saveRememberedMe({ code: body.host.originCode, nickname: body.host.nickname ?? "" });
       track("room_created", {
-        hidden_used: body.host.hidden === true,
+        hidden_used: false,
         ...roomHashProperty({ roomId: created.roomId, roomHash: created.roomHash }),
         ...(body.expectedCount ? { participant_count_expected: body.expectedCount } : {}),
       });

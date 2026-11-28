@@ -235,7 +235,7 @@ test.describe("접힘 ↔ 펼침 전환: 실행 중에 화면 크기가 바뀌�
     const created = await submitFilledRoom(page);
     expect(created).toMatchObject({
       host: { nickname: "민수", originCode: "k3a" },
-      others: [{ originCode: "ryf", hidden: false }],
+      others: [{ originCode: "ryf" }],
     });
   });
 

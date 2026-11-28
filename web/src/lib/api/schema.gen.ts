@@ -101,8 +101,7 @@ export interface paths {
          * 방장이 모두의 칸을 채운 방 생성
          * @description 방장이 채운 칸을 한 번에 저장하고 잠긴 방의 추천을 바로 보여 준다. 사다리는 만든 뒤 같은 방에서 방장이 고른다.
          *     `FilledRoomCreateRequest` 참고. `Idempotency-Key` 재생(같은 인스턴스, 10분)과 별도로 `recoveryKey`가 인스턴스와 상관없이 같은 방을
-         *     돌려준다. `hidden: true`는 재생·복구보다 먼저 거절한다(`HIDE_NOT_AVAILABLE`). 복원된 방에 숨긴 행이 남아 있어도 방의 내용 없이
-         *     생성 응답만 되돌려주므로 방장은 권한을 되찾아 방을 지울 수 있다(ADR-0012). 이 경로를 모르는 옛 서버는 404(또는 405)로 거절하고
+         *     돌려준다. `hidden: true`는 재생·복구보다 먼저 거절한다(`HIDE_NOT_AVAILABLE`). 이 경로를 모르는 옛 서버는 404(또는 405)로 거절하고
          *     아무것도 저장하지 않는다. 웹은 이때 방을 만들 수 없다고만 알린다(배포는 서버 먼저, 되돌릴 때는 웹 먼저).
          */
         post: operations["createFilledRoom"];
@@ -124,7 +123,7 @@ export interface paths {
         };
         /**
          * 방 상태 (토큰 없이 조회 가능)
-         * @description participantToken이 있으면 본인 항목에 `isSelf`가 붙는다. 방장 토큰도 받는다(본인 항목 표시는 없다). 숨긴 참가자가 남은 옛 방은 그 방의 토큰이면 403 `ROOM_WITHHELD`, 아니면 404 `ROOM_NOT_FOUND`다(ADR-0012).
+         * @description participantToken이 있으면 본인 항목에 `isSelf`가 붙는다. 방장 토큰도 받는다(본인 항목 표시는 없다).
          */
         get: operations["getRoom"];
         put?: never;
@@ -155,7 +154,7 @@ export interface paths {
          *
          *     `seenVersion`은 화면이 본 공유 번호다(결과 카드에서 정하면 그 결과의 `Result.shareVersion`, 그 밖에는 `Room.shareVersion`).
          *     정한 역 칸이 그 뒤에 바뀌었으면(참여·출발역 변경·나가기·내보내기로 풀렸거나 다른 사람이 정했거나 풀었으면) 409 `ROOM_CHANGED`다.
-         *     별칭·숨기기·잠금·모드·약속 변경은 정함을 풀지 않으므로 409가 나지 않는다. 화면은 방과 결과를 다시 불러 확인한 뒤 다시 누른다.
+         *     별칭·잠금·모드·약속 변경은 정함을 풀지 않으므로 409가 나지 않는다. 화면은 방과 결과를 다시 불러 확인한 뒤 다시 누른다.
          *
          *     이미 그 상태면(같은 역이 정해져 있거나 정한 역 없이 풀기) 아무것도 바꾸지 않고 200이다(재시도 안전, 번호도 그대로).
          */
@@ -214,7 +213,7 @@ export interface paths {
          *
          *     `generation`은 화면이 본 `favorDraw.generation`, `round`는 이번이 몇 번째 뽑기인지다(1 = 처음, 2 = 다시 뽑기). 멱등은 이 두
          *     값으로 방 행을 잠근 채 판정한다(재시도·새로고침 안전, 인스턴스와 상관없음):
-         *     - `generation`이 방의 세대와 다르면(그사이 당첨자가 나가거나 숨겨 뽑기 전으로 돌아갔다) 409 `ROOM_CHANGED`. 리셋 전에 보낸 요청이
+         *     - `generation`이 방의 세대와 다르면(그사이 당첨자가 나가 뽑기 전으로 돌아갔다) 409 `ROOM_CHANGED`. 리셋 전에 보낸 요청이
          *       재시도돼도 새로 뽑지 않는다.
          *     - 같은 세대에서 방의 `favorDraw.round`가 이미 `round` 이상이면 아무것도 바꾸지 않고 지금 방을 돌려준다.
          *     - `favorDraw.round + 1`이면 뽑는다. 다시 뽑기는 한 번이라 `round`가 `favorDraw.maxRounds`보다 크면 409 `DRAW_LIMIT_REACHED`.
@@ -285,16 +284,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 서버 계산 결과 (숨긴 방은 필수)
-         * @description 후보 최대 3개 카드를 순위순으로 돌려준다. 숨긴 참가자는 `originCode`가 `null`이고, 본인 요청이 아니면 시간은 5분 단위로 뭉뚱그린 값, 환승은 null이다(`PersonalTime`, #142).
-         *     participantToken이 있으면 본인 출발역과 경로 상세를 포함한다. 상세 경로 필드는 P3에서 확정한다.
-         *
-         *     숨긴 참가자 쪽으로 맞춘 결과(favor 대상 = 숨긴 사람)는 그 사람 본인의 요청에만 낸다(#162). 다른 요청(토큰 없음·다른 참가자)이
-         *     그 사람을 `favor`로 고르면(또는 `mode=favor`만 보내 방의 우대 대상이 그 사람이면) 400 `FAVOR_TARGET_HIDDEN`이다. `mode`를 생략해
-         *     방의 기본 기준으로 계산하는데 그 우대 대상(나갔으면 첫 참가자)이 숨긴 사람이면, 본인이 아닌 요청은 `mode=fair`로 계산한다.
-         *     뽑기 방(`favorDraw`)에서 아직 안 뽑았으면 `mode`를 생략한 요청은 누구든 `mode=fair`로 계산한다(#172).
-         *     favor의 배려 상한은 숨긴 참가자에게 두지 않는다(누가 보든 같다). 그래서 다른 사람 쪽으로 맞춘 결과의 후보는 숨긴 사람의 출발역에 따라
-         *     갈리지 않는다. 숨긴 사람이 없는 방의 결과는 그대로이고, 공평하게·빨리 만나기 순위는 숨긴 사람이 있어도 바뀌지 않는다.
+         * 방 추천 결과
+         * @description 후보 최대 3개 카드를 순위순으로 돌려준다. 뽑기 방(`favorDraw`)에서 아직 안 뽑았으면 `mode`를 생략한 요청은
+         *     공평하게로 계산한다(#172). 참가자 토큰은 본인 표시와 권한 확인에 쓴다.
          */
         get: operations["getRoomResult"];
         put?: never;
@@ -318,12 +310,12 @@ export interface paths {
         /**
          * 링크 미리보기 내용 (누구에게나 같은 값)
          * @description 공유 링크 `/r/{roomId}?sv={n}`의 미리보기(제목·설명·그림)와 공유 문구가 쓰는 방의 지금 상태. 토큰을 보내도 읽지 않는다. 그래서
-         *     누가 묻든 같은 값이고 출발역 필드가 없다(이름은 짧은 이름, 숨긴 사람은 "참가자 N"). 번호(`room.shareVersion`)와 내용은 방을 한 번
+         *     누가 묻든 같은 값이고 출발역 필드가 없다. 번호(`room.shareVersion`)와 내용은 방을 한 번
          *     읽은 같은 값에서 나온다.
          *
          *     결과는 방의 기본 기준(`Room.mode`·`favorTarget`)으로 계산한다. favor 방에서 우대 대상이 나갔으면 첫 참가자를 우대한다.
          *     뽑기 방(`favorDraw`)에서 아직 안 뽑았으면 공평하게로 계산한다(`basis.mode`=`fair`).
-         *     그 우대 대상이 출발역을 숨긴 사람이면 공평하게(`basis.mode=fair`, `favorLabel=null`)로 계산한다(토큰 없는 결과 요청과 같다, #162).
+         *     방장이 대신 넣은 칸이 있으면 이름은 순번으로, 시간은 null로 내고 막차와 지도 한가운데 비교는 생략한다.
          *     단계(`stage`): `collecting`은 2명 미만이거나 모두 갈 수 있는 후보가 없다. `result`는 기본 기준의 1위. `decided`는 정한 역이며
          *     상위 3곳 밖이어도 그 역까지의 시간을 싣는다.
          */
@@ -437,14 +429,12 @@ export interface components {
          *     | 400 | `REGION_MISMATCH` | 한 계산이나 방에 권역이 섞였다 |
          *     | 400 | `INVALID_PEOPLE_COUNT` | `/recommend`의 참가자가 2~4명이 아니다 |
          *     | 400 | `INVALID_MODE`, `FAVOR_TARGET_REQUIRED`, `FAVOR_TARGET_UNKNOWN` | 모드가 올바르지 않거나 우대 대상이 없다 |
-         *     | 400 | `FAVOR_TARGET_HIDDEN` | 우대 대상이 출발역을 숨긴 참가자인데 그 사람 본인의 요청이 아니다(방 결과) |
          *     | 400 | `HIDE_NOT_AVAILABLE` | 출발역을 숨기려 했다(방 만들기 `host.hidden=true`, 참여 `hidden=true`, 수정 `hidden=true`, 대신 넣는 칸의 `hidden=true`, ADR-0007) |
          *     | 400 | `INVALID_NICKNAME`, `INVALID_MEETING_DATE`, `INVALID_MEETING_TIME`, `INVALID_MEETING_BAND`, `INVALID_TIME_SLOT`, `INVALID_EXPECTED_COUNT`, `INVALID_OTHERS`, `INVALID_OUTCOME`, `INVALID_IDEMPOTENCY_KEY` | 해당 입력이 규칙에 맞지 않는다 |
          *     | 401 | `UNAUTHORIZED` | 토큰이 없거나 이 방의 토큰이 아니다 (`WWW-Authenticate: Bearer`) |
          *     | 403 | `FORBIDDEN` | 유효한 토큰이지만 이 작업을 할 수 없다(남의 항목 수정, 방장 전용 작업 등) |
          *     | 403 | `CORS_REJECTED` | 허용 목록에 없는 출처의 브라우저 요청이거나 허용되지 않는 메서드의 사전 요청(preflight). 출처·메서드 값은 응답에 싣지 않는다 |
-         *     | 403 | `ROOM_WITHHELD` | 숨긴 참가자가 남은 옛 방에 그 방의 토큰으로 왔다. 지우기(방장의 방 삭제, 자기 항목 삭제) 말고는 할 수 없다(ADR-0012) |
-         *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다. 숨긴 참가자가 남은 옛 방에 그 방의 토큰 없이 와도 같다 |
+         *     | 404 | `ROOM_NOT_FOUND`, `PARTICIPANT_NOT_FOUND`, `NOT_FOUND` | 방(만료 포함)·참여자·경로가 없다. |
          *     | 405 | `METHOD_NOT_ALLOWED` | 이 경로에서 쓸 수 없는 메서드다(`Allow` 헤더) |
          *     | 406 | `NOT_ACCEPTABLE` | `Accept`가 서버가 낼 수 있는 응답 형식(`application/json`)을 하나도 받지 않는다. 오류 형식만 받겠다는 `application/problem+json`도 성공 응답에는 해당하지 않아 같은 406이다 |
          *     | 409 | `ROOM_FULL`, `ROOM_LOCKED` | 참여할 수 없다 |
@@ -541,10 +531,10 @@ export interface components {
             nickname?: string;
             originCode: components["schemas"]["StationCode"];
             /**
-             * @description 옛 클라이언트와 맞추려고 남긴 필드다. `false`(또는 생략)만 받고 `true`는 400 `HIDE_NOT_AVAILABLE`이다(ADR-0007, #182).
-             * @default false
+             * @deprecated
+             * @description 옛 클라이언트 요청용이다. 새 클라이언트는 생략한다. `false`(또는 생략)만 받고 `true`는 400 `HIDE_NOT_AVAILABLE`이다(ADR-0007, #182).
              */
-            hidden: boolean;
+            hidden?: boolean;
         };
         Participant: {
             participantId: string;
@@ -552,9 +542,8 @@ export interface components {
             nickname?: string | null;
             /**
              * @description 화면에 쓰는 표시 이름. **서버가 만들고 클라이언트는 그대로 쓴다**(contracts/data-format.md §8). 이름이 있으면 그 이름,
-             *     없으면 "{출발역 이름}에서 오는 분"(같은 출발역이 여럿이면 입력 순서대로 " 1", " 2"), 출발역을 숨긴 참가자는
-             *     "참가자 {방 안 순번}"이다. 보는 사람과 관계없이 같은 값이며(본인이 숨겼어도 "참가자 N"), 시점 표현("나")과 내부
-             *     식별자를 쓰지 않는다. 보는 사람 표시("(나)")는 클라이언트가 붙인다.
+             *     없으면 "{출발역 이름}에서 오는 분"(같은 출발역이 여럿이면 입력 순서대로 " 1", " 2"), 역 이름도 없으면
+             *     "참가자 {방 안 순번}"이다. 같은 방에서는 보는 사람과 관계없이 같은 값이며 시점 표현("나")과 내부 식별자를 쓰지 않는다. 보는 사람 표시("(나)")는 클라이언트가 붙인다.
              * @example 민수
              * @example 강남에서 오는 분
              * @example 강남에서 오는 분 2
@@ -576,9 +565,12 @@ export interface components {
              * @example 참가자 3
              */
             shortLabel: string;
-            /** @description 옛 클라이언트와 맞추려고 남긴 필드다. 이 판의 서버는 늘 `false`를 보낸다(#182) */
+            /**
+             * @deprecated
+             * @description 옛 클라이언트와 맞추려고 늘 `false`를 보낸다(#182)
+             */
             hidden: boolean;
-            /** @description 이 판의 서버는 늘 보낸다. `null`은 숨긴 참가자를 가리던 옛 서버 판의 값이다(#182) */
+            /** @description 출발역 코드. 현재 서버는 항상 역 코드를 보낸다 */
             originCode: components["schemas"]["StationCode"] | null;
             /** @description originCode의 표시 이름. originCode가 null이면 null */
             originName?: string | null;
@@ -730,16 +722,12 @@ export interface components {
              */
             timeBasis?: components["schemas"]["TimeBasis"];
         };
-        /**
-         * @description 한 사람이 그 역까지 걸리는 시간과 환승 횟수. **출발역을 숨긴 참가자의 칸은 그 참가자 본인의 요청(participantToken)이 아니면
-         *     뭉뚱그린 값이다**(#142): `seconds`는 표시 분(`(초 + 30) / 60`)을 5분 단위로 올린 값의 초(0분도 5분, 즉 300의 배수이고 최소 300)이고
-         *     `transfers`는 null이다. 정확한 값은 본인 응답에만 있다. 순위(`rank`)는 언제나 정확한 값으로 정한 것이다.
-         */
+        /** @description 한 사람이 그 역까지 걸리는 시간과 환승 횟수. 순위는 초 단위 시간으로 정한다. */
         PersonalTime: {
             /** @description /recommend에서는 입력 순서의 인덱스 문자열("0","1",...) */
             participantId: string;
             seconds: number;
-            /** @description 출발역을 숨긴 다른 참가자의 칸은 null이다(위 설명). 클라이언트는 null이면 환승 횟수를 표시하지 않는다 */
+            /** @description 클라이언트는 null이면 환승 횟수를 표시하지 않는다 */
             transfers: number | null;
         };
         Candidate: {
@@ -747,7 +735,7 @@ export interface components {
             stationCode: components["schemas"]["StationCode"];
             /** @description 만날 역의 표시 이름 */
             stationName: string;
-            /** @description 참가자 순서는 응답의 `participants`와 같다. 숨긴 참가자의 시간도 보이지만, 본인 요청이 아니면 5분 단위로 뭉뚱그린 값이다(`PersonalTime`). */
+            /** @description 참가자 순서는 응답의 `participants`와 같다. */
             times: components["schemas"]["PersonalTime"][];
             /** @description `times`(이 응답에 보이는 값)의 최장 */
             maxSeconds: number;
@@ -760,7 +748,7 @@ export interface components {
             /** @enum {string} */
             reasonCode: "FAIR_MINIMAX" | "FAIR_ALTERNATIVE" | "FAST_TOTAL" | "FAST_ALTERNATIVE" | "FAVOR_CAPPED" | "FAVOR_ALTERNATIVE";
             /**
-             * @description 추천 이유 문장(한국어). 숫자는 이 응답에 보이는 `times`(숨긴 참가자는 뭉뚱그린 값)로 만든다. **서버가 만들어 넣는다**(웹·앱이 같은 문장을 쓰게 하려는 결정). 클라이언트는 문장을 다시
+             * @description 추천 이유 문장(한국어). 숫자는 이 응답의 `times`로 만든다. **서버가 만들어 넣는다**(웹·앱이 같은 문장을 쓰게 하려는 결정). 클라이언트는 문장을 다시
              *     만들지 않고 그대로 보여 준다. 생성 규칙은 `shared/app-logic`(docs/setup/p6-notes.md). `reasonCode`는 문구와 별개로
              *     표현(아이콘·강조 등)에 쓰므로 유지한다.
              *
@@ -773,9 +761,6 @@ export interface components {
             /**
              * @description 이 역에서 각자 집(출발역)으로 돌아가는 막차(#62). `Result.lastTrainBasis`가 있을 때만 있고, 없으면 키 자체가 없다.
              *     순위를 다 정한 뒤 붙이는 값이라 순위·시간·이유에는 쓰이지 않는다. 참가자 순서는 `participants`와 같다.
-             *
-             *     **출발역을 숨긴 참가자의 항목은 그 참가자 본인의 요청(participantToken)에만 들어 있다.** 다른 사람의 응답, 토큰 없는
-             *     응답, 미리보기에는 없다(막차 시각으로 숨긴 출발역을 거꾸로 짐작할 수 있다). `/recommend`에는 숨김이 없으므로 모두 들어 있다.
              */
             lastTrains?: components["schemas"]["LastTrain"][];
             /**
@@ -786,8 +771,7 @@ export interface components {
              *     보이는 경로는 최단 경로가 아닐 수 있다: 최단 시간보다 **2분 이내로 더 걸리는 경로 가운데 환승이 가장 적은 것**(같으면 더 빠른
              *     것)이다. 그래서 `legs`의 환승 수가 `times[].transfers`(최단 경로의 환승 수)보다 적을 수 있다. 시간(`times[].seconds`)은 언제나 최단이다.
              *
-             *     항목 순서는 `participants`와 같고, 만날 역에서 출발하는 사람(시간 0)은 빠진다. **출발역을 숨긴 참가자의 경로는 그 참가자 본인의
-             *     요청(participantToken)에만 들어 있다**(경로의 첫 역이 곧 출발역이다). 다른 사람의 응답, 토큰 없는 응답, 미리보기에는 없다.
+             *     항목 순서는 `participants`와 같고, 만날 역에서 출발하는 사람(시간 0)은 빠진다.
              */
             routes?: components["schemas"]["ParticipantRoute"][];
         };
@@ -931,7 +915,7 @@ export interface components {
             dataVersion: string;
             participants: components["schemas"]["Participant"][];
             timeBasis: components["schemas"]["TimeBasis"];
-            /** @description 엄밀한 공평 1위. favor 상한의 기준(출발역을 숨긴 참가자에게는 상한이 없다) */
+            /** @description 엄밀한 공평 1위. favor 상한의 기준 */
             baselineStationCode?: components["schemas"]["StationCode"] | null;
             /** @description 요청 구분에서 배차가 확인되지 않아 계산에서 제외한 같은 권역의 계통 표시 이름. 해당 계통이 있을 때만 싣는다. */
             missingServices?: string[];
@@ -949,8 +933,7 @@ export interface components {
             /**
              * @description "지도 한가운데였다면" 비교. **다음을 모두 만족할 때만 있고, 하나라도 어기면 키 자체가 없다**(클라이언트는 없으면 비교를 그냥
              *     뺀다): `mode=fair`일 때, 지도 한가운데 역이 1위 추천 역과 다를 때, 모두가 그 역에 갈 수 있을 때, 그 역의 가장 오래 걸리는
-             *     시간이 1위 추천 역보다 5분(화면에 보이는 분 기준) 이상 길 때, **출발역을 숨긴 참가자가 없을 때**(숨긴 출발역을 거꾸로
-             *     짐작할 수 있다). `/recommend`와 방 링크 미리보기(`RoomPreviewResult.mapMiddle`)만 계산하고 방 결과(`/rooms/{roomId}/result`)에는 없다.
+             *     시간이 1위 추천 역보다 5분(화면에 보이는 분 기준) 이상 길 때. `/recommend`와 방 링크 미리보기(`RoomPreviewResult.mapMiddle`)만 계산하고 방 결과(`/rooms/{roomId}/result`)에는 없다.
              */
             mapMiddle?: components["schemas"]["MapMiddle"];
             /** @description 방 결과에만 있다(`/recommend`에는 없다). 이 결과를 계산한 방의 공유 번호이고, 결과 카드에서 정할 때 `seenVersion`으로 보낸다 */
@@ -958,7 +941,7 @@ export interface components {
         };
         /**
          * Format: int64
-         * @description 방 공유 번호. 미리보기에 보이는 것(참여자·이름·숨기기·출발역·모드·우대 대상·잠금·약속·정한 역)이 바뀔 때마다 서버(DB)가 올리고
+         * @description 방 공유 번호. 미리보기에 보이는 것(참여자·이름·출발역·모드·우대 대상·잠금·약속·정한 역)이 바뀔 때마다 서버(DB)가 올리고
          *     줄지 않는다. 내용 해시가 아니라서 같은 상태로 돌아와도 번호는 커진다. `dataVersion`(역 데이터 버전)과 다르다.
          */
         ShareVersion: number;
@@ -995,11 +978,11 @@ export interface components {
             winner: string | null;
             /** Format: date-time */
             drawnAt: string | null;
-            /** @description 방에 있지만 대상이 아닌 사람과 이유. `late`는 뽑을 때 방에 없었다(뒤에 들어왔다). `hidden`은 ADR-0007 전에 뽑은 기록에서만 나온다(뽑을 때 방에 있었지만 출발역을 숨겼다) */
+            /** @description 뽑은 뒤에 들어온 사람과 제외 이유(`late`) */
             excluded: {
                 participantId: string;
                 /** @enum {string} */
-                reason: "hidden" | "late";
+                reason: "late";
             }[];
         };
         FavorDrawRequest: {
@@ -1033,7 +1016,7 @@ export interface components {
             /**
              * @description "지도 한가운데였다면" 비교(#68 2단계). 미리보기를 만든 같은 계산(같은 데이터 버전·같은 `room.timeBasis`)에서 나오고, 조건은
              *     `Result.mapMiddle`과 같다: 방의 기본 기준이 `fair`, 지도 한가운데 역이 `station`과 다름, 모두가 그 역에 갈 수 있음, 가장 오래
-             *     걸리는 시간이 화면에 보이는 분 기준 5분 이상 김, **출발역을 숨긴 참가자가 없음**. 하나라도 어기면 키 자체가 없다. 정한 역
+             *     걸리는 시간이 화면에 보이는 분 기준 5분 이상 김. 하나라도 어기면 키 자체가 없다. 정한 역
              *     단계(`RoomPreviewDecided`)에는 없다.
              */
             mapMiddle?: components["schemas"]["PreviewMapMiddle"];
@@ -1064,7 +1047,7 @@ export interface components {
             dataVersion: string;
             basis: components["schemas"]["PreviewBasis"];
             station: components["schemas"]["PreviewStation"];
-            /** @description 정한 사람의 짧은 이름(숨긴 사람은 "참가자 N") */
+            /** @description 정한 사람의 미리보기 이름 */
             decidedBy: string;
             /** Format: date-time */
             decidedAt: string;
@@ -1115,14 +1098,11 @@ export interface components {
             times: components["schemas"]["PreviewTime"][];
         };
         PreviewTime: {
-            /** @description 짧은 이름(`Participant.shortLabel`). 숨긴 사람은 "참가자 N" */
+            /** @description 짧은 이름(`Participant.shortLabel`). 방장이 대신 넣은 칸이 있으면 "참가자 N" */
             label: string;
-            /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null. 출발역을 숨긴 사람은 5분 단위로 뭉뚱그린 값이다(`PersonalTime`, 미리보기는 누가 묻든 같은 값). 방장이 대신 넣은 칸이 있는 방(`PreviewRoom.enteredByHost`)이면 모두 null이다 */
+            /** @description 그 역까지 걸리는 시간(초). 갈 수 없으면 null. 방장이 대신 넣은 칸이 있는 방(`PreviewRoom.enteredByHost`)이면 모두 null이다 */
             seconds: number | null;
-            /**
-             * @description 그 역에서 돌아가는 막차. `LastTrain`에서 `participantId`를 뺀 모양이다(미리보기는 이름표만 쓴다). **출발역을 숨긴 사람에게는
-             *     키가 없다**(미리보기는 누가 묻든 같은 값이다). 막차 표를 쓸 수 없을 때도 없다.
-             */
+            /** @description 그 역에서 돌아가는 막차. `LastTrain`에서 `participantId`를 뺀 모양이다(미리보기는 이름표만 쓴다). 방장이 대신 넣은 칸이 있는 방 또는 막차 표를 쓸 수 없을 때는 생략한다. */
             lastTrain?: {
                 /** @enum {string} */
                 kind: "direct" | "margin" | "scheduled" | "check";
@@ -1649,7 +1629,7 @@ export interface operations {
         parameters: {
             query?: {
                 mode?: components["schemas"]["Mode"];
-                /** @description `mode=favor`일 때 우대할 참가자의 participantId. 출발역을 숨긴 참가자는 본인 요청에서만 고를 수 있다(아니면 400 `FAVOR_TARGET_HIDDEN`) */
+                /** @description `mode=favor`일 때 우대할 참가자의 participantId */
                 favor?: string;
                 /**
                  * @description 이 클라이언트가 읽을 줄 아는 추가 막차 분류(쉼표로 구분, ADR-0010). 지금은 `scheduled`뿐이다. 이 값이 있으면 출발 예정 칸을

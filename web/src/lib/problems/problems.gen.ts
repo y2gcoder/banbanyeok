@@ -53,14 +53,6 @@ export const PROBLEMS = {
       meaning: "우대할 사람이 참가자 목록에 없습니다.",
     },
     {
-      code: "FAVOR_TARGET_HIDDEN",
-      slug: "favor-target-hidden",
-      status: 400,
-      title: "숨긴 사람 쪽 결과는 본인만 봄",
-      meaning:
-        "출발역을 숨긴 사람 쪽으로 맞춘 결과는 그 사람 본인만 볼 수 있습니다. 다른 사람에게는 '누구 쪽으로'에 그 사람이 없습니다.",
-    },
-    {
       code: "HIDE_NOT_AVAILABLE",
       slug: "hide-not-available",
       status: 400,
@@ -160,14 +152,6 @@ export const PROBLEMS = {
       status: 404,
       title: "방을 찾을 수 없음",
       meaning: "없거나 만료된 방입니다.",
-    },
-    {
-      code: "ROOM_WITHHELD",
-      slug: "room-withheld",
-      status: 403,
-      title: "지금은 열 수 없는 방",
-      meaning:
-        "출발역 숨기기를 그만두기 전에 숨긴 채 들어온 사람이 남아 있어 방의 내용을 보여 주지 않습니다. 참여한 기기에서 내 항목을 지우거나, 방장은 방을 지울 수 있습니다.",
     },
     {
       code: "PARTICIPANT_NOT_FOUND",

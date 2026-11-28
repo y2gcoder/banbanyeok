@@ -126,8 +126,6 @@ export type LastTrainRow = {
   name: string;
   /** 시각이 있는 줄 / 약속 전에 떠남 / 확인 필요 / 출발역이 바로 그 역(돌아갈 길이 없다). */
   state: LastTrainTime | LastTrainGone | { kind: "check" } | { kind: "same" };
-  /** 출발역을 숨긴 본인의 줄: 이 화면에만 있다(다른 사람 화면·미리보기에는 없다). */
-  onlyMe: boolean;
   /** 카카오맵 대중교통 길찾기(만날 역 → 이 사람의 출발역). 좌표를 모르면 null. */
   mapUrl: string | null;
 };
@@ -149,8 +147,6 @@ export type LastTrainView = {
   checkReason: string | null;
   /** 이 요일 종류는 일부 노선만 계산했다는 한 줄. 요일을 알고 계산한 응답이 `partial`이면 줄의 종류와 상관없이 있다. */
   partialNote: string | null;
-  /** 출발역을 숨겨 이 화면에 줄이 없는 사람이 있다. */
-  hiddenOthers: boolean;
   /** 맨 아래 공통 안내(시간표 수집 기준일). 줄이 없는 칸은 null. */
   footnote: string | null;
   /** 여유 시각이 무엇인지: 부산권 칸은 운영사 시간표와 맞춰 본 도착 분이다(ADR-0010). 그 밖은 대조 전 값이다. */
@@ -202,18 +198,15 @@ function leaveByText(time: LastTrainTime): string {
 }
 
 /**
- * 맨 위 한 줄. **출발역을 공개한 사람**의 줄만 본다(숨긴 본인의 값은 넣지 않는다: 사람마다 다른 말이 되지 않게).
+ * 맨 위 한 줄. 참가자의 막차 상태를 비교한다.
  * - 약속 시각까지 떠나는 줄이 있으면 그 사실이 먼저다(가장 이른 시각을 귀가 시각처럼 말하지 않는다).
- * - 견주지 못한 사람이 있으면 "공개된 시각 중"으로 범위를 밝힌다: 출발역을 숨긴 사람이 있거나(`anyHidden`, 누가 보든 같은 공개
- *   사실이다. 숨긴 본인 화면에서 본인의 더 이른 줄 위에 전체 비교처럼 읽히지 않게), 공개한 사람의 줄에 확인 필요가 있을 때.
- *   "더 확인할 분 있음"은 공개한 줄에 확인 필요가 있을 때만 붙인다.
+ * - 확인이 필요한 사람이 있으면 "공개된 시각 중"으로 범위를 밝히고 "더 확인할 분 있음"을 덧붙인다.
  * - 출발 예정 줄은 견주지 않는다. 다른 시각과 섞이면 "출발 예정인 분 빼고"로 범위를 밝히고, 출발 예정뿐이면 그렇다고만 말한다.
  *   약속 시각까지 떠나는 출발 예정 줄은 직행 확정처럼 위의 경고에 넣는다(계획 출발 분이 그대로다).
- * - 모두 공개했고 모두 나갈 시각(직행 확정·여유 시각)이 있을 때만 "○○ 23시 전 출발"이다.
+ * - 모두 나갈 시각(직행 확정·여유 시각)이 있을 때만 "○○ 23시 전 출발"이다.
  */
-function leadText(rows: readonly LastTrainRow[], anyHidden: boolean): string | null {
-  const open = rows.filter((row) => !row.onlyMe);
-  const gone = open.flatMap((row) => (row.state.kind === "gone" ? [row.state] : []));
+function leadText(rows: readonly LastTrainRow[]): string | null {
+  const gone = rows.flatMap((row) => (row.state.kind === "gone" ? [row.state] : []));
   // 약속 전에 떠나는 줄이 하나라도 있으면 "약속 전", 모두 약속과 같은 분이면 "약속 시각"이라고 말한다.
   const direct = gone.filter((state) => state.source !== "margin");
   if (direct.length > 0) {
@@ -226,25 +219,24 @@ function leadText(rows: readonly LastTrainRow[], anyHidden: boolean): string | n
       ? "막차가 약속 시각 무렵일 수 있는 분이 있어요."
       : "막차가 약속 시각보다 이를 수 있는 분이 있어요.";
   }
-  const earliest = open
+  const earliest = rows
     .flatMap((row) => (row.state.kind === "direct" || row.state.kind === "margin" ? [{ row, time: row.state }] : []))
     .reduce<{ row: LastTrainRow; time: LastTrainTime } | null>(
       (first, next) => (first === null || next.time.minute < first.time.minute ? next : first),
       null,
     );
-  const unchecked = open.some((row) => row.state.kind === "check");
+  const unchecked = rows.some((row) => row.state.kind === "check");
   const more = unchecked ? " · 더 확인할 분 있음" : "";
   // 출발 예정은 나갈 시각을 견주는 데 넣지 않는다. 그런 분이 있으면 견준 범위에서 뺐다고 밝힌다(전체를 견준 것처럼 읽히지 않게).
-  const scheduled = open.some((row) => row.state.kind === "scheduled");
+  const scheduled = rows.some((row) => row.state.kind === "scheduled");
   if (!earliest) {
     if (!scheduled) return null;
-    return `${anyHidden ? "공개된 막차는" : "막차는"} 출발 예정 시각만 있어요${more}`;
+    return `막차는 출발 예정 시각만 있어요${more}`;
   }
   if (scheduled) {
-    const scope = anyHidden ? "출발 예정인 분 빼고 공개된 시각 중" : "출발 예정인 분 빼고";
-    return `${scope} 가장 이름: ${earliest.row.name} ${clockWithDay(earliest.time)}${more}`;
+    return `출발 예정인 분 빼고 가장 이름: ${earliest.row.name} ${clockWithDay(earliest.time)}${more}`;
   }
-  if (anyHidden || unchecked) {
+  if (unchecked) {
     return `공개된 시각 중 가장 이름: ${earliest.row.name} ${clockWithDay(earliest.time)}${more}`;
   }
   return `${earliest.row.name} ${leaveByText(earliest.time)} 전 출발`;
@@ -275,10 +267,6 @@ export type LastTrainPerson = {
   index: number;
   participantId: string;
   shortName: string;
-  /** 출발역을 숨겼다. */
-  hidden: boolean;
-  /** 이 화면을 보는 본인(방의 내 토큰). */
-  isSelf: boolean;
   originCode: string | null;
   /** 만날 역 → 이 사람의 출발역 길찾기. */
   mapUrl: string | null;
@@ -286,8 +274,6 @@ export type LastTrainPerson = {
 
 /**
  * 한 후보 역의 막차 칸. 기준(`lastTrainBasis`)이나 항목이 없으면 null(칸을 그리지 않는다: 막차 표가 없는 서버, 표를 읽는 중).
- * - 출발역을 숨긴 다른 사람은 줄이 없다(서버가 항목을 주지 않는다). 숨긴 본인의 줄은 본인 화면에만 있다.
- * - 모두가 숨긴 방을 본인이 아닌 사람이 보면 줄이 하나도 없다. 그때도 칸은 두고 "본인 화면에서만 보여요"만 말한다.
  * - `meeting`은 방의 약속이다. 있으면 약속보다 먼저 떠나는 열차를 가려낸다(`lastTrainState`).
  */
 export function toLastTrainView(
@@ -300,30 +286,14 @@ export function toLastTrainView(
   const marginBasis: MarginBasis = station.region === "busan" ? "checked-arrival" : "unchecked";
   if (!basis || !entries) return null;
   const byId = new Map(entries.map((entry) => [entry.participantId, entry]));
-  const rows = people.flatMap((person): LastTrainRow[] => {
-    if (person.hidden && !person.isSelf) return [];
-    const base = { index: person.index, name: person.shortName, onlyMe: person.hidden };
-    if (person.originCode === station.code) return [{ ...base, state: { kind: "same" }, mapUrl: null }];
+  const rows = people.map((person): LastTrainRow => {
+    const base = { index: person.index, name: person.shortName };
+    if (person.originCode === station.code) return { ...base, state: { kind: "same" }, mapUrl: null };
     const state = lastTrainState(byId.get(person.participantId), meeting);
-    return [{ ...base, state: state ?? { kind: "check" }, mapUrl: person.mapUrl }];
+    return { ...base, state: state ?? { kind: "check" }, mapUrl: person.mapUrl };
   });
-  const hiddenOthers = people.some((person) => person.hidden && !person.isSelf);
   const stationName = stationLabel(station.name);
-  if (rows.length === 0) {
-    if (!hiddenOthers) return null;
-    return {
-      stationName,
-      dayLabel: null,
-      notice: null,
-      lead: null,
-      rows,
-      checkReason: null,
-      partialNote: null,
-      hiddenOthers,
-      footnote: null,
-      marginBasis,
-    };
-  }
+  if (rows.length === 0) return null;
   const collected = `시간표 수집 기준 ${koreanDate(basis.asOf)}.`;
   const notice = unavailableNotice(basis);
   if (notice) {
@@ -336,7 +306,6 @@ export function toLastTrainView(
       rows,
       checkReason: null,
       partialNote: null,
-      hiddenOthers,
       footnote: collected,
       marginBasis,
     };
@@ -346,14 +315,10 @@ export function toLastTrainView(
     stationName,
     dayLabel: day,
     notice: null,
-    lead: leadText(
-      rows,
-      people.some((person) => person.hidden),
-    ),
+    lead: leadText(rows),
     rows,
     checkReason: checkReason(basis),
     partialNote: basis.partial ? `${withJosa(day, "은/는")} 일부 노선만 막차 표시.` : null,
-    hiddenOthers,
     footnote: `${collected} 공사·행사로 달라질 수 있으니 타기 전에 한 번 더 확인하세요. 승강장까지 걷는 시간은 빠져 있어요.`,
     marginBasis,
   };
@@ -372,7 +337,6 @@ export function recalculatingLastTrainView(station: { name: string }): LastTrain
     rows: [],
     checkReason: null,
     partialNote: null,
-    hiddenOthers: false,
     footnote: null,
     marginBasis: "unchecked",
   };
@@ -380,19 +344,12 @@ export function recalculatingLastTrainView(station: { name: string }): LastTrain
 
 /**
  * 접힌 막차 칸의 한 줄(#122). 펼치지 않아도 꼭 알아야 할 것을 남긴다: 계산하지 못한 이유(`notice`), 약속 전에 떠나는 사람(경고 문장),
- * 공개된 시각 가운데 가장 이른 것(`lead`). 숨긴 사람 규칙은 `lead`와 같다: 공개한 줄만 보고, 숨긴 사람이 있으면 누가 보든 같은 말로
- * 범위를 밝힌다(숨긴 사람의 출발역을 짐작하게 하지 않는다). 공개한 줄이 없으면 숨김 안내, 공개한 사람이 모두 이 역에서 출발하면 그 사실,
- * 시각이 하나도 없으면 확인이 필요하다고 말한다.
+ * 확인할 수 있는 시각 가운데 가장 이른 것(`lead`). 모두 이 역에서 출발하면 그 사실을, 시각이 없으면 확인이 필요하다고 말한다.
  */
 export function lastTrainSummary(view: LastTrainView): string {
   if (view.notice) return view.notice;
   if (view.lead) return view.lead;
-  const open = view.rows.filter((row) => !row.onlyMe);
-  if (open.length === 0) return "출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.";
-  if (open.every((row) => row.state.kind === "same")) {
-    const anyHidden = view.hiddenOthers || view.rows.some((row) => row.onlyMe);
-    return anyHidden ? "공개된 분은 모두 이 역에서 출발" : "모두 이 역에서 출발";
-  }
+  if (view.rows.length > 0 && view.rows.every((row) => row.state.kind === "same")) return "모두 이 역에서 출발";
   return "막차 확인 필요";
 }
 

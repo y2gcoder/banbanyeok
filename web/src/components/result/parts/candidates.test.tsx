@@ -9,15 +9,7 @@ import type { ChoiceContext } from "./directions";
 
 const code = (name: string) => searchStations(name)[0]?.code ?? "000";
 
-function resultOf({
-  mode = "fair",
-  minutes,
-  hidden = false,
-}: {
-  mode?: Mode;
-  minutes: [number, number];
-  hidden?: boolean;
-}): RecommendResult {
+function resultOf({ mode = "fair", minutes }: { mode?: Mode; minutes: [number, number] }): RecommendResult {
   const seconds = minutes.map((m) => m * 60);
   return {
     status: "ok",
@@ -44,7 +36,7 @@ function resultOf({
       },
       {
         participantId: "1",
-        hidden,
+        hidden: false,
         originCode: code("홍대입구"),
         originName: "홍대입구",
         nickname: null,
@@ -90,14 +82,6 @@ describe("1위 카드의 반반지수(#202)", () => {
     const { card } = topCard(resultOf({ minutes: [21, 22] }));
     expect(within(card).getByText("걸리는 시간이 두 사람 1분 차이예요")).toBeVisible();
     expect(within(card).queryByText(/가장 오래 걸리는 사람도/)).toBeNull();
-  });
-
-  it("숨긴 참가자가 있으면(본인 화면 21·22분) 끄고 최장·차이 줄을 그대로 둔다", () => {
-    const { card, bars } = topCard(resultOf({ minutes: [21, 22], hidden: true }), 0);
-    expect(within(card).queryByText(/걸리는 시간이|가장 오래 걸리는 사람도/)).toBeNull();
-    expect(within(card).getByText("최장")).toBeVisible();
-    expect(within(card).getByText("차이")).toBeVisible();
-    expect(bars).toBe(0);
   });
 
   it("빨리 만나기에는 없다(합계·최장 줄 그대로)", () => {

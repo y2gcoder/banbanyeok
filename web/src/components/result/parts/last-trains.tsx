@@ -199,17 +199,11 @@ export function LastTrains({
                       <span className="ml-1 text-xs font-semibold text-muted-foreground">(나)</span>
                     ) : null}
                   </span>
-                  {row.onlyMe ? <span className="text-xs text-muted-foreground">나에게만 보여요</span> : null}
                 </p>
                 <Detail row={row} view={view} />
               </li>
             ))}
           </ul>
-        ) : null}
-        {view.hiddenOthers ? (
-          <p className="text-[13px] leading-snug break-keep text-muted-foreground">
-            출발역을 숨긴 분의 막차는 본인 화면에서만 보여요.
-          </p>
         ) : null}
         {view.partialNote ? (
           <p className="text-[13px] leading-snug break-keep text-ink-soft">{parenSafe(view.partialNote)}</p>
