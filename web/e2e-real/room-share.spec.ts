@@ -6,9 +6,11 @@ import {
   devices,
   expect,
   type Page,
+  type Route,
   type TestInfo,
   test,
 } from "@playwright/test";
+import { copyVersionedRoomLink, expectInviteLink, ROOM_PREVIEW_URL, waitForRoomPreview } from "./room-share-clipboard";
 
 /**
  * 방 공유 번호와 정한 역(#51) e2e: 실제 서버(Ktor + DB)에 붙은 웹에서 링크 번호(`?sv=`)가 단계마다 오르고, 크롤러가 받는 미리보기
@@ -48,13 +50,9 @@ async function newFriend(browser: Browser, testInfo: TestInfo) {
   return { context, page: await context.newPage() };
 }
 
-/** 공유 칸의 "링크 복사"로 복사한 링크의 공유 번호. */
+/** 결과·확정은 그 단계의 공유 버튼을 확인한 뒤에 버전 링크를 읽는다. */
 async function sharedVersion(page: Page, roomId: string): Promise<number> {
-  await page.getByRole("button", { name: /^링크(를)? 복사/ }).click();
-  const link = new URL(await page.evaluate(() => navigator.clipboard.readText()));
-  expect(link.pathname).toBe(`/r/${roomId}`);
-  // 방 공유 번호와 보이는 범위 정책 버전(#142)만 붙는다.
-  expect([...link.searchParams.keys()]).toEqual(["sv", "pv"]);
+  const link = await copyVersionedRoomLink(page, roomId);
   return Number(link.searchParams.get("sv"));
 }
 
@@ -98,17 +96,38 @@ test("방 공유: 단계마다 링크 번호와 미리보기가 바뀌고, 오�
   test.setTimeout(120_000);
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  // 방장이 방을 만든다(모으는 중).
-  await page.goto("/r/new");
-  await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
-  await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
-  await page.getByRole("button", { name: "방 만들기" }).click();
-  await expect(page).toHaveURL(/\/r\/[0-9a-hjkmnp-tv-z]{10}$/);
-  const roomId = new URL(page.url()).pathname.split("/").pop() ?? "";
-  await expect(page.getByRole("heading", { name: "친구에게 링크를 보내 주세요" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "카톡으로 보내기" })).toBeVisible();
-  const collectingVersion = await sharedVersion(page, roomId);
-  expect(collectingVersion).toBeGreaterThanOrEqual(1);
+  const { roomId, collectingVersion } =
+    await test.step("미리보기 전에는 기본 초대, 응답 뒤에는 버전 링크 복사", async () => {
+      const requested = Promise.withResolvers<void>();
+      const release = Promise.withResolvers<void>();
+      const holdPreview = async (route: Route) => {
+        requested.resolve();
+        await release.promise;
+        await route.continue();
+      };
+      await page.route(ROOM_PREVIEW_URL, holdPreview);
+      try {
+        await page.goto("/r/new");
+        await page.getByRole("textbox", { name: "내 이름 (선택)" }).fill("민수");
+        await pickStation(page, "내 출발역", "강남", /^강남\s?2호선/);
+        await page.getByRole("button", { name: "방 만들기" }).click();
+        await expect(page).toHaveURL(/\/r\/[0-9a-hjkmnp-tv-z]{10}$/);
+        const roomId = new URL(page.url()).pathname.split("/").pop() ?? "";
+        await expect(page.getByRole("heading", { name: "친구에게 링크를 보내 주세요" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "카톡으로 보내기" })).toBeVisible();
+        await requested.promise;
+        await expectInviteLink(page, roomId);
+
+        const ready = waitForRoomPreview(page, roomId);
+        release.resolve();
+        const collectingVersion = await ready;
+        await copyVersionedRoomLink(page, roomId, collectingVersion);
+        return { roomId, collectingVersion };
+      } finally {
+        release.resolve();
+        await page.unroute(ROOM_PREVIEW_URL, holdPreview);
+      }
+    });
   await shots(page, "1-collecting-host");
 
   const collecting = await scrape(request, `/r/${roomId}?sv=${collectingVersion}`);

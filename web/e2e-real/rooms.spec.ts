@@ -10,6 +10,7 @@ import {
   type TestInfo,
   test,
 } from "@playwright/test";
+import { copyVersionedRoomLink, waitForRoomPreview } from "./room-share-clipboard";
 import { sweepViewports } from "./viewport-sweep";
 
 /**
@@ -101,7 +102,7 @@ test("방 만들기 → 친구 참여(숨기기 없음) → 결과 → 고치기
 }, testInfo) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const csp = watchCsp(page);
-  const hostRoom = await createRoom(page, { shot: true });
+  const [version, hostRoom] = await Promise.all([waitForRoomPreview(page), createRoom(page, { shot: true })]);
 
   // 방장 화면: 링크 보내기가 먼저, 혼자일 때는 결과가 아직 없다. 토큰은 이 기기 저장소에만 있고 주소에는 없다.
   await expect(page.getByRole("heading", { name: "내가 만든 방" })).toBeVisible();
@@ -121,9 +122,7 @@ test("방 만들기 → 친구 참여(숨기기 없음) → 결과 → 고치기
   await expectNoA11yViolations(page);
   await shot(page, "2-host-waiting");
 
-  await page.getByRole("button", { name: "링크 복사" }).click();
-  const link = await page.evaluate(() => navigator.clipboard.readText());
-  expect(link).toMatch(/\/r\/[0-9a-hjkmnp-tv-z]{10}\?sv=\d+&pv=\d+$/); // 공유 링크에는 방 공유 번호와 보이는 범위 정책 버전만 붙는다
+  const link = (await copyVersionedRoomLink(page, hostRoom, version)).href;
   expect(link).not.toContain(hostRecord?.hostToken ?? "never");
 
   // 친구(다른 컨텍스트): 링크를 열면 방장이 보이고 참여한다. 참여 폼에는 숨기기가 없다(ADR-0007).
