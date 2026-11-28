@@ -31,6 +31,13 @@
 - 추천 알고리즘이나 골든 데이터를 바꾸면 `mise run golden:regen`으로 다시 만들고 diff를 사용자가 검토하게 한다. 확인만 할 때는 `mise run golden:check`.
 - 웹-서버 계약의 원본은 `contracts/openapi.yaml`이다. 계약을 바꾸면 양쪽 생성물(`pnpm --filter web gen:api` 등)을 함께 갱신한다.
 
+## 빌드 자원
+
+여러 작업자가 한 맥의 메모리를 나눠 쓴다. Gradle 데몬과 Kotlin 데몬은 각각 `-Xmx3g`까지 쓴다(`gradle.properties`, Kotlin 데몬은 같은 값을 물려받는다).
+
+- Gradle은 mise가 설치한 JDK로 실행한다(`mise run`, `mise exec`). 임시 디렉터리에 설치한 JDK(`mktemp`, 세션 scratchpad, 임시 `MISE_DATA_DIR`)로 Gradle을 실행할 때는 `--no-daemon -Pkotlin.compiler.execution.strategy=in-process`를 붙인다. 이렇게 하면 빌드가 끝날 때 데몬이 함께 내려간다. JDK 디렉터리를 지운 뒤 남은 Gradle 데몬은 유휴 종료 검사가 계속 실패해서 힙을 쥔 채 남는다.
+- mise JDK로 띄운 데몬은 유휴 15분 뒤 스스로 내려간다. 다른 작업자의 빌드도 같은 데몬을 쓰므로 그대로 둔다.
+
 ## 스킬
 
 - 먼저 호출 범위를 정한다. 이 저장소에 의존하는 스킬은 여기에 둔다. 여러 개인 저장소에서 같은 작업을 직접 호출해야 하면 홈 레포에서 원본을 관리하고 실제로 쓰는 에이전트의 사용자 경로에 설치한다.
