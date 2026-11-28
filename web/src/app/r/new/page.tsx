@@ -34,6 +34,7 @@ export default function Page() {
         </section>
       </div>
       <CreateRoomForm
+        preserveInitialInputs
         className={`${ROOM_MAIN} wide:rounded-2xl wide:border wide:border-rule wide:bg-surface wide:p-4 wide:shadow-[0_1px_0_var(--rule)] lg:p-8`}
       />
     </RoomShell>

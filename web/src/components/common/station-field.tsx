@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LineBadges } from "@/components/common/line-badge";
 import { NoStationMatch } from "@/components/common/supported-lines";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,8 @@ type Props = {
   scope?: StationScope;
   /** 다른 권역에만 있는 역을 쳤을 때 "○○권으로 바꾸기"를 누르면 부른다. 없으면(방 참여) 바꾸기 버튼이 없다. */
   onSwitchRegion?: (region: RegionId) => void;
+  /** 첫 수화에서 브라우저가 이미 받은 검색어가 있으면 호출한다. */
+  onInitialSearch?: () => void;
 };
 
 /**
@@ -39,8 +41,30 @@ type Props = {
  * 이유가 붙는다(lib/stations/scope.ts). 결과가 없으면 계산 범위를 알리고, 다른 권역에 있는 이름이면 그 권역을 한 줄로 알린다
  * (목록이 있어도 다른 권역에만 정확히 같은 이름이 있으면 목록 아래에).
  */
-export function StationField({ id, value, onChange, describedBy, scope = OPEN_SCOPE, onSwitchRegion }: Props) {
+export function StationField({
+  id,
+  value,
+  onChange,
+  describedBy,
+  scope = OPEN_SCOPE,
+  onSwitchRegion,
+  onInitialSearch,
+}: Props) {
   const [query, setQuery] = useState(value?.name ?? "");
+  const [open, setOpen] = useState(false);
+  const inputAttached = useRef(false);
+  // 수화가 입력에 제어값을 다시 쓰기 전에 사용자가 브라우저에 입력한 글을 상태로 옮긴다.
+  const readInitialInput = useCallback(
+    (input: HTMLInputElement | null) => {
+      if (!input || !onInitialSearch || inputAttached.current) return;
+      inputAttached.current = true;
+      if (input.value === input.defaultValue) return;
+      onInitialSearch();
+      setQuery(input.value);
+      if (input === input.ownerDocument.activeElement && input.value.trim()) setOpen(true);
+    },
+    [onInitialSearch],
+  );
   // 부모가 역을 채워 넣은 경우(기억해 둔 "나", SEO 페이지의 미리 채우기)에도 입력 칸에 이름이 보이게 한다. 부모가 역을 지우면
   // (권역 바꾸기) 칸에 남은 그 역 이름도 지운다. 그사이 사용자가 고쳐 친 글자는 그대로 둔다.
   const lastValue = useRef(value);
@@ -78,6 +102,8 @@ export function StationField({ id, value, onChange, describedBy, scope = OPEN_SC
     <Combobox<Station>
       items={items}
       filter={null}
+      open={onInitialSearch ? open : undefined}
+      onOpenChange={onInitialSearch ? setOpen : undefined}
       value={value}
       onValueChange={(next, details) => {
         if (details.reason === "item-press") {
@@ -99,6 +125,7 @@ export function StationField({ id, value, onChange, describedBy, scope = OPEN_SC
       autoHighlight
     >
       <ComboboxInput
+        ref={onInitialSearch ? readInitialInput : undefined}
         id={id}
         placeholder="역 이름 입력 (예: 홍대입구)"
         autoComplete="off"
